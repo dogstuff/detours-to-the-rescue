@@ -87,7 +87,7 @@ static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
 		return requested;
 
 	log_warn(
-		"Requested MSAA x%d is unsupported on this device/format. "
+		"graphics: Requested MSAA x%d is unsupported on this device/format. "
 		"Falling back to x1.",
 		s_msaa_sample_count_to_int(requested)
 	);
@@ -144,7 +144,9 @@ static void s_refresh_render_resolution(DTTR_BackendState *state) {
 		return;
 
 	if (!dttr_graphics_resize_render_textures(render_width, render_height)) {
-		log_warn("Failed to resize render textures to %dx%d", render_width, render_height);
+		log_warn(
+			"graphics: Failed to resize render textures to %dx%d", render_width, render_height
+		);
 	}
 }
 
@@ -156,7 +158,7 @@ static bool s_try_create_device_for_driver(
 
 	if (!state->m_device) {
 		log_warn(
-			"Failed to create SDL GPU device for driver '%s' "
+			"graphics: Failed to create SDL GPU device for driver '%s' "
 			"(requested_formats=0x%x): %s",
 			driver ? driver : "default",
 			(unsigned int)requested_formats,
@@ -167,7 +169,7 @@ static bool s_try_create_device_for_driver(
 
 	if (!SDL_ClaimWindowForGPUDevice(state->m_device, state->m_window)) {
 		log_warn(
-			"Failed to claim window for SDL GPU driver '%s': %s",
+			"graphics: Failed to claim window for SDL GPU driver '%s': %s",
 			driver ? driver : "default",
 			SDL_GetError()
 		);
@@ -185,7 +187,7 @@ static bool s_try_create_device_for_driver(
 		return true;
 
 	log_warn(
-		"SDL GPU driver '%s' does not support required shader format. Available "
+		"graphics: SDL GPU driver '%s' does not support required shader format. Available "
 		"mask=0x%x",
 		active_driver ? active_driver : "unknown",
 		(unsigned int)available_formats
@@ -220,7 +222,8 @@ static bool s_create_device(DTTR_BackendState *state) {
 			return true;
 
 		log_error(
-			"GPU device creation failed for configured graphics_api='%s'; no fallback APIs "
+			"graphics: GPU device creation failed for configured graphics_api='%s'; no fallback "
+			"APIs "
 			"will be attempted",
 			requested_driver
 		);
@@ -239,7 +242,7 @@ static bool s_create_device(DTTR_BackendState *state) {
 			return true;
 	}
 
-	log_error("GPU device creation failed for all supported APIs (d3d12/metal/vulkan)");
+	log_error("graphics: GPU device creation failed for all supported APIs (d3d12/metal/vulkan)");
 	return false;
 }
 
@@ -254,7 +257,7 @@ HWND dttr_graphics_init(void) {
 	}
 
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
-		log_error("SDL_Init failed: %s", SDL_GetError());
+		log_error("graphics: SDL_Init failed: %s", SDL_GetError());
 		return NULL;
 	}
 
@@ -276,7 +279,7 @@ HWND dttr_graphics_init(void) {
 	);
 
 	if (!state->m_window) {
-		log_error("Window creation failed: %s", SDL_GetError());
+		log_error("graphics: Window creation failed: %s", SDL_GetError());
 		return NULL;
 	}
 
@@ -288,13 +291,13 @@ HWND dttr_graphics_init(void) {
 
 	state->m_msaa_sample_count = s_select_msaa_sample_count(state);
 	log_info(
-		"MSAA requested: x%d, effective: x%d",
+		"graphics: MSAA requested: x%d, effective: x%d",
 		g_dttr_config.m_msaa_samples,
 		s_msaa_sample_count_to_int(state->m_msaa_sample_count)
 	);
 
 	log_info(
-		"SDL GPU initialized with %s (shaders: %s)",
+		"graphics: SDL GPU initialized with %s (shaders: %s)",
 		SDL_GetGPUDeviceDriver(state->m_device),
 		dttr_graphics_shader_format_name(state->m_shader_format)
 	);
@@ -302,7 +305,7 @@ HWND dttr_graphics_init(void) {
 	s_update_window_title(state);
 
 	if (!dttr_graphics_create_pipelines() || !dttr_graphics_create_resources()) {
-		log_error("Failed to create GPU resources");
+		log_error("graphics: Failed to create GPU resources");
 		return NULL;
 	}
 

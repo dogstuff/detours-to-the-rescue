@@ -22,6 +22,11 @@ tasks:
       - setup-build
     cmds:
       - cmake --build "{{ .BUILD_DIR }}" --config Debug
+
+  build-release:
+    deps:
+      - build
+    cmds:
       - cmake --build "{{ .BUILD_DIR }}" --config Release
 
   setup-build:

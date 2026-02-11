@@ -13,13 +13,27 @@ stages:
 build:
   stage: build
   script:
-    - nix develop --command bash -c 'task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && cd build/dist && zip -r ../../dttr-dist.zip .'
+    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && (cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug.zip Debug/)"
   artifacts:
     paths:
-      - dttr-dist.zip
+      - dttr-*-debug.zip
+    expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
+      when: never
     - if: $CI_PIPELINE_SOURCE == "push"
+
+build-release:
+  stage: build
+  script:
+    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug.zip Debug/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release.zip Release/"
+  artifacts:
+    paths:
+      - dttr-*-debug.zip
+      - dttr-*-release.zip
+    expire_in: 2 weeks
+  rules:
+    - if: $CI_COMMIT_TAG
 
 test:
   stage: test
@@ -46,18 +60,21 @@ release:
   script:
     - echo "Creating release ${CI_COMMIT_TAG}"
   needs:
-    - job: build
+    - job: build-release
       artifacts: true
   release:
     tag_name: $CI_COMMIT_TAG
-    description: "Release ${CI_COMMIT_TAG}"
+    description: |
+      $(glab changelog generate --from $CI_COMMIT_TAG --to $CI_COMMIT_SHA)
     assets:
       links:
-        - name: "dttr-${CI_COMMIT_TAG}.zip"
-          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-dist.zip"
+        - name: "dttr-${CI_COMMIT_TAG}-release.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-release.zip"
+        - name: "dttr-${CI_COMMIT_TAG}-debug.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-debug.zip"
   artifacts:
     paths:
-      - dttr-dist.zip
+      - dttr-*-release.zip
+      - dttr-*-debug.zip
   rules:
     - if: $CI_COMMIT_TAG
-

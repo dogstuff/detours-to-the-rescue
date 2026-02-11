@@ -39,7 +39,9 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 		DWORD old;
 		if (!VirtualProtect(ddraw_out, sizeof(void *), PAGE_READWRITE, &old)) {
 			log_error(
-				"VirtualProtect failed for ddraw_out=%p error=%lu", ddraw_out, GetLastError()
+				"graphics: VirtualProtect failed for ddraw_out=%p error=%lu",
+				ddraw_out,
+				GetLastError()
 			);
 		} else {
 			*ddraw_out = ddraw7;
@@ -47,7 +49,7 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 		}
 	}
 
-	log_info("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
+	log_info("graphics: DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
 	return S_OK;
 }
 
@@ -57,20 +59,20 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
 	LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags
 ) {
 	log_info(
-		"DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
+		"graphics: DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
 		lpCallback,
 		lpContext,
 		dwFlags
 	);
 
 	if (!lpCallback) {
-		log_info("DirectDrawEnumerateExA complete");
+		log_info("graphics: DirectDrawEnumerateExA complete");
 		return S_OK;
 	}
 
 	lpCallback(NULL, "DTTR Virtual Display", "display", lpContext, NULL);
 
-	log_info("DirectDrawEnumerateExA complete");
+	log_info("graphics: DirectDrawEnumerateExA complete");
 	return S_OK;
 }
 
@@ -79,12 +81,12 @@ void dttr_graphics_hook_init(HMODULE module) {
 	g_dttr_graphics_hook_hwnd = dttr_graphics_init();
 
 	if (!g_dttr_graphics_hook_hwnd) {
-		log_error("Failed to initialize graphics backend");
+		log_error("graphics: Failed to initialize backend");
 		return;
 	}
 
 	if (!s_get_or_create_ddraw7()) {
-		log_error("Failed to create DirectDraw translator");
+		log_error("graphics: Failed to create DirectDraw translator");
 		return;
 	}
 
@@ -106,6 +108,3 @@ void dttr_graphics_hook_cleanup(void) {
 	free(g_dttr_graphics_hook_ddraw7);
 	g_dttr_graphics_hook_ddraw7 = NULL;
 }
-
-// Returns the window handle created by graphics initialization
-HWND dttr_graphics_get_hwnd(void) { return g_dttr_graphics_hook_hwnd; }

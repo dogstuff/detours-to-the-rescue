@@ -599,8 +599,10 @@ void dttr_graphics_begin_frame(void) {
 
 	state->m_cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
 
-	if (!state->m_cmd)
+	if (!state->m_cmd) {
+		log_error("graphics: Failed to acquire GPU command buffer");
 		return;
+	}
 
 	s_release_deferred_texture_destroys(state);
 	s_upload_pending_textures(state, state->m_cmd);
@@ -619,7 +621,7 @@ void dttr_graphics_begin_frame(void) {
 		= SDL_MapGPUTransferBuffer(state->m_device, state->m_transfer_buffer, true);
 
 	if (!state->m_transfer_mapped)
-		log_warn("BeginFrame: MapGPUTransferBuffer failed");
+		log_warn("graphics: BeginFrame: MapGPUTransferBuffer failed");
 
 	state->m_frame_active = true;
 }

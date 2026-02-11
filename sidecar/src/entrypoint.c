@@ -36,7 +36,6 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 
 static void s_tick_main_loop(void) {
 	if (g_pcdogs_rendering_enabled_get()) {
-		dttr_inputs_tick();
 		if (pcdogs_render_frame()) {
 			SDL_Delay(1);
 		}
@@ -52,40 +51,35 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	FILE *const log_file = fopen("dttr_sidecar.log", "w+");
 
 	if (!log_file) {
-		s_raise_error("Could not open log file dttr_sidecar.log");
+		s_raise_error("init: Could not open log file dttr_sidecar.log");
 	}
 
 	log_set_level(LOG_INFO);
 
-	log_info(
-		"hook: Applied HOOK_FUNC %s at 0x%08X",
-		"dttr_hook_win_main",
-		(unsigned)dttr_hook_win_main_site
-	);
-
-	log_info("Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
+	log_info("init: Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
 
 	if (!dttr_config_load(DTTR_CONFIG_FILENAME)) {
-		log_error("Configuration load failed - aborting");
+		log_error("init: Configuration load failed - aborting");
 		return 1;
 	}
 
 	log_add_fp(log_file, g_dttr_config.m_log_level);
-	log_info("File log level set to %s", log_level_string(g_dttr_config.m_log_level));
+	log_info("init: File log level set to %s", log_level_string(g_dttr_config.m_log_level));
 
 	const HWND hwnd = dttr_graphics_init();
 
 	if (hwnd == NULL) {
-		log_error("Failed to initialize graphics - aborting");
+		log_error("graphics: Failed to initialize - aborting");
 		return 1;
 	}
 
-	log_info("Initializing game globals...");
+	log_info("init: Initializing game globals...");
 	s_interop_pcdogs_globals_init(g_dttr_pc_dogs_module);
 
-	log_info("Initializing game functions...");
+	log_info("init: Initializing game functions...");
 	s_interop_pcdogs_functions_init(g_dttr_pc_dogs_module);
 
+	dttr_crt_hook_init(g_dttr_pc_dogs_module);
 	dttr_inputs_init(g_dttr_pc_dogs_module);
 	dttr_graphics_hook_init(g_dttr_pc_dogs_module);
 
@@ -116,6 +110,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 		s_tick_main_loop();
 	}
 
+	dttr_crt_hook_cleanup();
 	dttr_graphics_hook_cleanup();
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();

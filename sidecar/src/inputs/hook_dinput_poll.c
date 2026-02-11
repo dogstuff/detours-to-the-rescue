@@ -4,6 +4,8 @@
 #include <string.h>
 #include <windows.h>
 
+#include "log.h"
+
 typedef struct {
 	LONG m_x;
 	LONG m_y;
@@ -86,6 +88,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(S_DIJoyState));
 
 	if (!state) {
+		log_error("inputs: Failed to allocate joystick poll state");
 		return NULL;
 	}
 

@@ -28,8 +28,6 @@ DTTR_INTEROP_PATCH_PTR(
 void dttr_graphics_hook_init(HMODULE module);
 /// Removes DirectDraw-related runtime hooks and releases hook state
 void dttr_graphics_hook_cleanup(void);
-/// Returns the Win32 window handle created by the graphics subsystem
-HWND dttr_graphics_get_hwnd(void);
 
 /// Intercepts DirectDrawCreateEx and returns the sidecar DirectDraw translator
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawcreateex
@@ -56,5 +54,24 @@ DTTR_INTEROP_PATCH_PTR(
 	0x168d2fc,
 	dttr_graphics_hook_directdraw_enumerate_ex_a_callback
 )
+
+/// Wraps the game's internal OpenFileWithMode for direct calls
+DTTR_INTEROP_WRAP_CACHED(
+	dttr_crt_open_file_with_mode,
+	0x463D3,
+	void *,
+	(const char *path, char *mode, int flags),
+	(path, mode, flags)
+)
+
+/// Hooks the game's internal OpenFile to gracefully handle failures
+void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode);
+DTTR_INTEROP_HOOK_FUNC(dttr_crt_hook_open_file, 0x463F3, dttr_crt_hook_open_file_callback)
+
+/// Installs CRT hooks
+void dttr_crt_hook_init(HMODULE mod);
+
+/// Removes CRT hooks and frees trampoline memory
+void dttr_crt_hook_cleanup(void);
 
 #endif

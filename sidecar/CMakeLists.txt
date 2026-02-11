@@ -26,6 +26,7 @@ add_library(dttr_sidecar SHARED
     src/graphics/com_direct3dtexture2.c
     src/graphics/com_directdraw7.c
     src/graphics/com_directdrawsurface7.c
+    src/crt/crt.c
 )
 
 target_include_directories(dttr_sidecar PRIVATE

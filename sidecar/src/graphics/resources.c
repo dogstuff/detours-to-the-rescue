@@ -1,5 +1,7 @@
 #include "graphics_internal.h"
 
+#include "log.h"
+
 #include <string.h>
 
 // Creates persistent vertex and transfer buffers used by per-frame uploads
@@ -194,13 +196,31 @@ bool dttr_graphics_create_resources(void) {
 	s_create_render_textures(state);
 	s_create_dummy_texture(state);
 
-	if (!state->m_vertex_buffer || !state->m_transfer_buffer || !state->m_samplers[0]
-		|| !state->m_samplers[1] || !state->m_samplers[2] || !state->m_samplers[3]
-		|| !state->m_render_target || !state->m_depth_texture || !state->m_dummy_texture)
+	if (!state->m_vertex_buffer || !state->m_transfer_buffer) {
+		log_error("graphics: Failed to create frame buffers");
 		return false;
+	}
 
-	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target)
+	if (!state->m_samplers[0] || !state->m_samplers[1] || !state->m_samplers[2]
+		|| !state->m_samplers[3]) {
+		log_error("graphics: Failed to create samplers");
 		return false;
+	}
+
+	if (!state->m_render_target || !state->m_depth_texture) {
+		log_error("graphics: Failed to create render textures");
+		return false;
+	}
+
+	if (!state->m_dummy_texture) {
+		log_error("graphics: Failed to create dummy texture");
+		return false;
+	}
+
+	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target) {
+		log_error("graphics: Failed to create MSAA render target");
+		return false;
+	}
 
 	// initialize the 1x1 fallback texture via compute shader
 	s_upload_dummy_white_pixel(state);
@@ -233,11 +253,15 @@ bool dttr_graphics_resize_render_textures(int width, int height) {
 	state->m_height = height;
 	s_create_render_textures(state);
 
-	if (!state->m_render_target || !state->m_depth_texture)
+	if (!state->m_render_target || !state->m_depth_texture) {
+		log_error("graphics: Failed to recreate render textures at %dx%d", width, height);
 		return false;
+	}
 
-	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target)
+	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target) {
+		log_error("graphics: Failed to recreate MSAA render target at %dx%d", width, height);
 		return false;
+	}
 
 	return true;
 }

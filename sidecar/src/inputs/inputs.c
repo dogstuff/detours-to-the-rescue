@@ -9,14 +9,20 @@
 SDL_Gamepad *g_dttr_gamepad;
 
 void dttr_inputs_init(HMODULE module) {
-	SDL_InitSubSystem(SDL_INIT_GAMEPAD);
+	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+		log_error("inputs: SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
+	}
 
 	int count = 0;
 	SDL_JoystickID *const joysticks = SDL_GetGamepads(&count);
 
 	if (joysticks && count > 0) {
 		g_dttr_gamepad = SDL_OpenGamepad(joysticks[0]);
-		log_info("Gamepad connected: %s", SDL_GetGamepadName(g_dttr_gamepad));
+		if (g_dttr_gamepad) {
+			log_info("inputs: Gamepad connected: %s", SDL_GetGamepadName(g_dttr_gamepad));
+		} else {
+			log_error("inputs: Failed to open gamepad: %s", SDL_GetError());
+		}
 	}
 
 	SDL_free(joysticks);
@@ -27,10 +33,12 @@ void dttr_inputs_init(HMODULE module) {
 }
 
 void dttr_inputs_late_init(void) {
-	if (g_dttr_gamepad) {
-		g_pcdogs_joystick_available_set(1);
-		log_info("Joystick available flag set");
+	if (!g_dttr_gamepad) {
+		return;
 	}
+
+	g_pcdogs_joystick_available_set(1);
+	log_info("inputs: Joystick available flag set");
 }
 
 void dttr_inputs_cleanup(void) {
@@ -43,5 +51,3 @@ void dttr_inputs_cleanup(void) {
 		g_dttr_gamepad = NULL;
 	}
 }
-
-void dttr_inputs_tick(void) {}

@@ -85,7 +85,7 @@ s_d3d_device7_mat4_double_to_float(float *restrict out, const double *restrict i
 /// Selects the backend transform matrix pair for a D3D transform state token
 static bool
 s_d3d_device7_get_transform_state(DWORD type, double **out_matrix_d, float **out_matrix_f) {
-	const DTTR_BackendState *state = &g_dttr_backend;
+	DTTR_BackendState *state = &g_dttr_backend;
 	switch (type) {
 	case D3DTRANSFORMSTATE_WORLD:
 		*out_matrix_d = state->m_model_d;
@@ -134,7 +134,7 @@ static void s_d3d_device7_set_transform_state(DWORD type, const float *m) {
 
 	if (!s_d3d_device7_mat4_float_to_double(matrix_d, m)) {
 		log_warn(
-			"SetTransform(%s): rejected non-finite matrix input",
+			"graphics: SetTransform(%s) rejected non-finite matrix input",
 			s_d3d_device7_transform_label(type)
 		);
 		return;
@@ -249,7 +249,7 @@ static void s_d3d_device7_record_draw(
 	if (!dttr_graphics_is_gpu_thread() || !state->m_cmd || !verts || count == 0)
 		return;
 	if (!state->m_device || !state->m_transfer_buffer || !state->m_vertex_buffer) {
-		log_warn("DTTR_DrawPrimitive: missing device/buffers");
+		log_warn("graphics: DrawPrimitive: missing device/buffers");
 		return;
 	}
 	if (count > DTTR_MAX_FRAME_VERTICES)
@@ -278,7 +278,7 @@ static void s_d3d_device7_record_draw(
 		return;
 	if (state->m_vertex_offset + count > DTTR_MAX_FRAME_VERTICES) {
 		log_warn(
-			"DTTR_DrawPrimitive: frame vertex limit reached (%u + %u > %u)",
+			"graphics: DrawPrimitive: frame vertex limit reached (%u + %u > %u)",
 			state->m_vertex_offset,
 			count,
 			DTTR_MAX_FRAME_VERTICES
@@ -286,7 +286,7 @@ static void s_d3d_device7_record_draw(
 		return;
 	}
 	if (state->m_batch_count >= DTTR_MAX_BATCH_RECORDS) {
-		log_warn("DTTR_DrawPrimitive: batch record limit reached (%u)", state->m_batch_count);
+		log_warn("graphics: DrawPrimitive: batch record limit reached (%u)", state->m_batch_count);
 		return;
 	}
 
@@ -588,7 +588,7 @@ s_d3ddevice7_multiplytransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD ty
 		double rhs[DTTR_MAT4_ELEMS];
 		double result[DTTR_MAT4_ELEMS];
 		if (!s_d3d_device7_mat4_float_to_double(rhs, (const float *)matrix)) {
-			log_warn("MultiplyTransform: rejected non-finite matrix input");
+			log_warn("graphics: MultiplyTransform: rejected non-finite matrix input");
 			return S_OK;
 		}
 		s_d3d_device7_mat4_multiply_d(result, matrix_d, rhs);
