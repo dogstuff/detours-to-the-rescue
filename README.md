@@ -73,6 +73,7 @@ task container-build
 
 ## Known issues
 
+- [ ]
 - [ ] Intro movie playback is currently disabled pending adoption of LibVLC
 - [ ] Shimmering/precision issues are more apparent when using logical scaling at high resolutions
 - [ ] Some textures occasionally appear deep black any white
