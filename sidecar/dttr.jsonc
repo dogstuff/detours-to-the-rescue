@@ -1,7 +1,7 @@
 {
   // The minimum log level to output.
   // Choices: trace, debug, info, warn, error, fatal
-  "log_level": "trace",
+  "log_level": "info",
 
   "graphics": {
     // The GPU backend to use.
