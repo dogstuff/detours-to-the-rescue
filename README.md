@@ -24,7 +24,7 @@ DttR implements purpose-built translators for the following outdated APIs:
 * DirectInput & WinAPI Inputs -> SDL3
 * More to come probably
 
-Because this project was created with the [102 Dalmatians Speedrunning Community](https://102.dog/) in mind,
+Because this project was created with the [102 Dalmatians Speedrunning Community](https://www.102.dog/) in mind,
 it aims to modify as little of the original game logic as possible.
 
 The generated internal documentation for this project can be found [here](https://dogstuff.gitlab.io/detours-to-the-rescue/).
