@@ -3,6 +3,7 @@ project(dttr VERSION 0.0.1 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+add_compile_options(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=)
 
 if(NOT DEFINED DTTR_VERSION)
     set(DTTR_VERSION "${PROJECT_VERSION}")
