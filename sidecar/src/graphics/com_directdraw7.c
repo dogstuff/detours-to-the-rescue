@@ -163,7 +163,7 @@ static HRESULT __stdcall s_ddraw7_setdisplaymode(
 	}
 
 	log_info(
-		"SetDisplayMode request: %lux%lu %lu-bpp @ %luHz flags=0x%lx",
+		"graphics: SetDisplayMode request: %lux%lu %lu-bpp @ %luHz flags=0x%lx",
 		(unsigned long)w,
 		(unsigned long)h,
 		(unsigned long)bpp,
@@ -255,7 +255,7 @@ DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7(void) {
 	if (dd7) {
 		dd7->m_vtbl = &s_vtbl;
 		log_info(
-			"Created DDraw7 translator at %p, vtbl=%p, QueryInterface=%p",
+			"graphics: Created DDraw7 translator at %p, vtbl=%p, QueryInterface=%p",
 			dd7,
 			dd7->m_vtbl,
 			dd7->m_vtbl->QueryInterface

@@ -93,6 +93,21 @@ extern "C" {
 		); \
 	} while (0)
 
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(hook, mod) \
+	do { \
+		hook##_install(mod); \
+		if (hook##_trampoline) { \
+			log_info( \
+				"hook: Applied HOOK_FUNC %s at 0x%08X", #hook, \
+				(unsigned)hook##_site \
+			); \
+		} else { \
+			log_error( \
+				"hook: Failed to allocate trampoline for %s", #hook \
+			); \
+		} \
+	} while (0)
+
 #define DTTR_INTEROP_PATCH_CALL_LOG(hook, mod) \
 	do { \
 		hook##_patch(mod); \
@@ -245,6 +260,54 @@ extern "C" {
 #define DTTR_INTEROP_HOOK_FUNC(name, func_addr, target) \
 	DTTR_INTEROP_PATCH_JMP(name, func_addr, target) \
 	static inline void name##_install(HMODULE mod) { name##_patch(mod); }
+
+// Replace entire function with a JMP and allocate a trampoline for calling through to the original
+// Exposes name##_trampoline (uint8_t*) that the callback casts to the original function
+#ifdef DTTR_INTEROP_IMPLEMENT
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
+	uintptr_t name##_site = 0; \
+	uint8_t name##_orig[5] = {0}; \
+	uint8_t *name##_trampoline = NULL;
+#else
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
+	extern uintptr_t name##_site; \
+	extern uint8_t name##_orig[5]; \
+	extern uint8_t *name##_trampoline;
+#endif
+
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE(name, func_addr, target) \
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
+	static inline void name##_install(HMODULE mod) { \
+		const uintptr_t site = (uintptr_t)mod + (func_addr); \
+		name##_trampoline = (uint8_t *)VirtualAlloc( \
+			NULL, 16, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE \
+		); \
+		if (!name##_trampoline) { return; } \
+		memcpy(name##_trampoline, (void *)site, 5); \
+		name##_trampoline[5] = 0xE9; \
+		*(int32_t *)(name##_trampoline + 6) = \
+			(int32_t)((site + 5) - ((uintptr_t)name##_trampoline + 10)); \
+		DWORD old; \
+		VirtualProtect((void *)site, 5, PAGE_EXECUTE_READWRITE, &old); \
+		memcpy(name##_orig, (void *)site, 5); \
+		*(uint8_t *)site = 0xE9; \
+		*(int32_t *)(site + 1) = \
+			(int32_t)((uintptr_t)(target) - (site + 5)); \
+		VirtualProtect((void *)site, 5, old, &old); \
+		name##_site = site; \
+	} \
+	static inline void name##_unpatch(void) { \
+		if (name##_site) { \
+			DWORD old; \
+			VirtualProtect((void *)name##_site, 5, PAGE_EXECUTE_READWRITE, &old); \
+			memcpy((void *)name##_site, name##_orig, 5); \
+			VirtualProtect((void *)name##_site, 5, old, &old); \
+		} \
+		if (name##_trampoline) { \
+			VirtualFree(name##_trampoline, 0, MEM_RELEASE); \
+			name##_trampoline = NULL; \
+		} \
+	}
 
 // Hook a COM method by patching its vtable entry at runtime
 // https://learn.microsoft.com/en-us/windows/win32/prog-dx-with-com

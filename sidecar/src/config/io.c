@@ -151,11 +151,12 @@ static void s_config_apply_buttons(DTTR_Config *config, const cJSON *buttons) {
 		}
 
 		int button = DTTR_GAMEPAD_MAPPING_NONE;
-		if (s_config_parse_gamepad_button(value, &button)) {
-			config->m_gamepad_mappings[index] = button;
-		} else {
+		if (!s_config_parse_gamepad_button(value, &button)) {
 			s_errors_addf("gamepad.buttons.%s: invalid button name \"%s\"", item->string, value);
+			return;
 		}
+
+		config->m_gamepad_mappings[index] = button;
 	}
 }
 
@@ -163,7 +164,7 @@ bool dttr_config_load(const char *filename) {
 	s_errors_clear();
 
 	if (!filename || !filename[0]) {
-		log_error("Config load failed: empty filename");
+		log_error("config: Load failed: empty filename");
 		dttr_config_set_defaults(&g_dttr_config);
 		return false;
 	}
@@ -173,7 +174,7 @@ bool dttr_config_load(const char *filename) {
 	// Read file into memory
 	FILE *f = fopen(filename, "rb");
 	if (!f) {
-		log_warn("Config file '%s' not found. Using defaults.", filename);
+		log_warn("config: File '%s' not found. Using defaults.", filename);
 		return true;
 	}
 
@@ -183,14 +184,14 @@ bool dttr_config_load(const char *filename) {
 
 	if (file_size <= 0) {
 		fclose(f);
-		log_warn("Config file '%s' is empty. Using defaults.", filename);
+		log_warn("config: File '%s' is empty. Using defaults.", filename);
 		return true;
 	}
 
 	sds buf = sdsnewlen(SDS_NOINIT, (size_t)file_size);
 	if (!buf) {
 		fclose(f);
-		log_error("Config load failed: out of memory");
+		log_error("config: Load failed: out of memory");
 		return false;
 	}
 
@@ -207,9 +208,12 @@ bool dttr_config_load(const char *filename) {
 
 	if (!root) {
 		const char *error_ptr = cJSON_GetErrorPtr();
-		log_error("Config JSON parse failed near: %.20s", error_ptr ? error_ptr : "(unknown)");
+
+		log_error("config: JSON parse failed near: %.20s", error_ptr ? error_ptr : "(unknown)");
+
 		s_errors_addf("Failed to parse %s (near: %.20s)", filename, error_ptr ? error_ptr : "?");
 		s_errors_show();
+
 		return false;
 	}
 
@@ -220,8 +224,10 @@ bool dttr_config_load(const char *filename) {
 			if (cJSON_IsObject(item)) {
 				continue;
 			}
+
 			char num_buf[32];
 			const char *value = s_cjson_value_as_string(item, num_buf, sizeof(num_buf));
+
 			if (value && !s_config_apply_entry(&g_dttr_config, NULL, item->string, value)) {
 				s_errors_addf("%s: invalid value \"%s\"", item->string, value);
 			}
@@ -230,11 +236,14 @@ bool dttr_config_load(const char *filename) {
 
 	// Walk the "graphics" object
 	const cJSON *graphics = cJSON_GetObjectItemCaseSensitive(root, "graphics");
+
 	if (cJSON_IsObject(graphics)) {
 		const cJSON *item = NULL;
+
 		cJSON_ArrayForEach(item, graphics) {
 			char num_buf[32];
 			const char *value = s_cjson_value_as_string(item, num_buf, sizeof(num_buf));
+
 			if (value && !s_config_apply_entry(&g_dttr_config, "graphics", item->string, value)) {
 				s_errors_addf("graphics.%s: invalid value \"%s\"", item->string, value);
 			}
