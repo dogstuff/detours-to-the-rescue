@@ -48,7 +48,7 @@ static void s_tick_main_loop(void) {
 int32_t _stdcall dttr_hook_win_main_callback(
 	HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow
 ) {
-	FILE *const log_file = fopen("dttr_sidecar.log", "w+");
+	FILE *const log_file = fopen("dttr_sidecar.log", "a+");
 
 	if (!log_file) {
 		s_raise_error("init: Could not open log file dttr_sidecar.log");
