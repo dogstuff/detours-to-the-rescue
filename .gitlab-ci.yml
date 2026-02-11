@@ -32,6 +32,8 @@ pages:
   stage: deploy
   script:
     - nix develop --command task generate-docs
+    - rm -rf public
+    - cp -r docs/html public
   artifacts:
     paths:
       - public
