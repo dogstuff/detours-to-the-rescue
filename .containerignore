@@ -1,0 +1,8 @@
+.git
+build
+.temp
+.toolchain
+.direnv
+.venv
+.cache
+results

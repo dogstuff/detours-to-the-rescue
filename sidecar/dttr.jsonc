@@ -1,0 +1,95 @@
+{
+  // The minimum log level to output.
+  // Choices: trace, debug, info, warn, error, fatal
+  "log_level": "trace",
+
+  "graphics": {
+    // The GPU backend to use.
+    // Choices: auto, vulkan, direct3d12, metal
+    "graphics_api": "auto",
+
+    // The initial width of the game window in pixels.
+    "window_width": 640,
+
+    // The initial height of the game window in pixels.
+    "window_height": 480,
+
+    // How the game should scale to fit the window.
+    // Choices: letterbox, stretch, integer
+    "scaling_fit": "letterbox",
+
+    // The type of scaling to use when the window size exceeds the game resolution.
+    // Choices:
+    // - logical: Scales inputs in render calls to match the window size, effectively rendering the game at a higher resolution.
+    // - present: Applies scaling to finished frames, effectively preserving the game's native resolution.
+    "scaling_method": "logical",
+
+    // Precision mode: raw, stabilized
+    "precision_mode": "stabilized",
+
+    // The filtering algorithm used when scaling the rendered frame to the display.
+    // Choices: nearest, linear
+    "present_scaling_algorithm": "linear",
+
+    // Number of multisample anti-aliasing samples. Set to 1 to disable.
+    "msaa_samples": 2,
+
+    // Wait for each texture upload to finish before continuing.
+    "texture_upload_sync": false,
+
+    // Generate mipmaps for textures to reduce aliasing at smaller sizes.
+    "generate_texture_mipmaps": true,
+
+    // Whether to start the game in fullscreen mode. Press F11 to toggle at runtime.
+    "fullscreen": false
+  },
+  "gamepad": {
+    // Whether to enable gamepad input. Set to false to disable all gamepad support.
+    "enabled": true,
+
+    // Axis mappings:
+    //   axis_left_x, axis_left_y, axis_right_x, axis_right_y,
+    //   axis_left_trigger, axis_right_trigger, none
+    "axis_stick_x": "axis_left_x",
+    "axis_stick_y": "axis_left_y",
+    "axis_camera_rz": "axis_right_x",
+
+    // Per-axis deadzone (scaled axis units, default 700)
+    "deadzone_stick_x": 700,
+    "deadzone_stick_y": 700,
+    "deadzone_camera_rz": 700,
+
+    // SDL gamepad to 102 Dalmatians "joystick" button mappings:
+    //
+    // Keys: joy_up/down/left/right, joy_1 through joy_13
+    //
+    // Values: south, east, west, north, back, guide, start,
+    //   left_stick_click, right_stick_click, left_shoulder, right_shoulder,
+    //   dpad_up, dpad_down, dpad_left, dpad_right, misc1,
+    //   right_paddle1, left_paddle1, right_paddle2, left_paddle2,
+    //   touchpad, left_trigger, right_trigger, none
+    //
+    // This configuration is for some bootleg Xbox 360 controller I found
+    // because I couldn't find my controller adapter.
+    //
+    // This is just an example and can be reconfigured to match your controller.
+    "buttons": {
+      "joy_up": "dpad_up",
+      "joy_down": "dpad_down",
+      "joy_left": "dpad_left",
+      "joy_right": "dpad_right",
+
+      // joy_1 is used to confirm selections in menus.
+      "joy_1": "south",
+      // joy_2 is used to go back in menus.
+      "joy_2": "east",
+      "joy_3": "west",
+      "joy_4": "north",
+      "joy_5": "left_trigger",
+      "joy_6": "right_trigger",
+
+      // joy_9 is always the start/pause button.
+      "joy_9": "start"
+    }
+  }
+}

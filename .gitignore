@@ -1,0 +1,10 @@
+.direnv
+.toolchain
+compile_commands.json
+test.bin
+cmake-build-*
+build*
+!scripts/*
+.cache
+docs
+public

@@ -1,0 +1,63 @@
+version: '3'
+
+vars:
+  BUILD_DIR: build
+  TOOLCHAIN_DIR: .toolchain
+  TOOLCHAIN_FILE: .toolchain/toolchain.cmake
+  SHADER_OUTPUT_DIR: sidecar/include/gen
+
+  GIT_SHORT_SHA:
+    sh: git rev-parse --short HEAD
+  DTTR_VERSION: '{{.DTTR_VERSION | default .GIT_SHORT_SHA}}'
+
+  DOCKER: podman
+  CONTAINER_IMAGE: dttr-toolchain
+  CONTAINERFILE_BUILD: build.Containerfile
+
+tasks:
+  build:
+    deps:
+      - build-asm
+      - build-shaders
+      - setup-build
+    cmds:
+      - cmake --build "{{ .BUILD_DIR }}" --config Debug
+      - cmake --build "{{ .BUILD_DIR }}" --config Release
+
+  setup-build:
+    cmds:
+      - cmake -G "Ninja Multi-Config" -B "{{ .BUILD_DIR }}" -DCMAKE_TOOLCHAIN_FILE="{{ .TOOLCHAIN_FILE }}" -DDTTR_VERSION="{{ .DTTR_VERSION }}"
+
+  clean:
+    cmds:
+      - rm -rf "{{ .BUILD_DIR }}"
+      - rm -rf "{{ .TOOLCHAIN_DIR }}"
+
+  build-asm:
+    vars:
+      ASM_DIR: '{{ .ROOT_DIR }}/loader/asm'
+      OUTPUT_FILE: '{{ .ROOT_DIR }}/loader/include/gen/asm.h'
+      BIN_DIR:
+        sh: mktemp -d
+    cmds:
+      - bash ./scripts/build-asm.sh "{{ .ASM_DIR }}" "{{ .OUTPUT_FILE }}" "{{ .BIN_DIR }}"
+
+  build-shaders:
+    cmds:
+      - cmd: 'echo "WARN: Skipping build-shaders on macOS because shadercross is unavailable. Consider using container builds instead."'
+        platforms: [darwin]
+      - cmd: 'bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"'
+        platforms: [linux, windows]
+
+  container-build:
+    cmds:
+      - "{{ .DOCKER }} build -t {{ .CONTAINER_IMAGE }} -f {{ .CONTAINERFILE_BUILD }} {{ .ROOT_DIR }}"
+      - "{{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR }} -v {{ .ROOT_DIR }}:/workspace -w /workspace {{ .CONTAINER_IMAGE }} sh -lc 'rm -rf build-container && task build BUILD_DIR=build-container DTTR_VERSION={{ .DTTR_VERSION }}'"
+
+  format:
+    cmds:
+      - find ./loader ./sidecar -iname '*.h' -o -iname '*.c' | xargs clang-format -i
+
+  generate-docs:
+    cmds:
+      - doxygen doxyfile.ini

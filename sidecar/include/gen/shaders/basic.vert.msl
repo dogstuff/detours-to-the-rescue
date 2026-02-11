@@ -1,0 +1,47 @@
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using namespace metal;
+
+struct Uniforms
+{
+    float4x4 u_mvp;
+    float2 u_screen_size;
+    float u_is_2d;
+    float _pad;
+};
+
+struct main0_out
+{
+    float4 v_color [[user(locn0)]];
+    float2 v_texcoord [[user(locn1)]];
+    float4 gl_Position [[position]];
+};
+
+struct main0_in
+{
+    float3 a_position [[attribute(0)]];
+    float a_rhw [[attribute(1)]];
+    float4 a_color [[attribute(2)]];
+    float2 a_texcoord [[attribute(3)]];
+};
+
+vertex main0_out main0(main0_in in [[stage_in]], constant Uniforms& _22 [[buffer(0)]])
+{
+    main0_out out = {};
+    out.v_color = in.a_color;
+    out.v_texcoord = in.a_texcoord;
+    if (_22.u_is_2d > 0.5)
+    {
+        float2 ndc = ((in.a_position.xy / _22.u_screen_size) * 2.0) - float2(1.0);
+        ndc.y = -ndc.y;
+        float w = 1.0 / in.a_rhw;
+        out.gl_Position = float4(ndc * w, in.a_position.z * w, w);
+    }
+    else
+    {
+        out.gl_Position = _22.u_mvp * float4(in.a_position, 1.0);
+    }
+    return out;
+}
+

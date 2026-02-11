@@ -1,0 +1,98 @@
+#include <SDL3/SDL.h>
+#include <dttr_sidecar.h>
+#include <stdint.h>
+#include <windows.h>
+
+/// GetAsyncKeyState returns this value with the high bit set to indicate the key is currently held
+/// down
+#define GETASYNCKEYSTATE_KEY_PRESSED 0x8000
+
+// clang-format off
+static const SDL_Scancode s_vk_to_scancode[256] = {
+	['A'] = SDL_SCANCODE_A,     ['B'] = SDL_SCANCODE_B,
+	['C'] = SDL_SCANCODE_C,     ['D'] = SDL_SCANCODE_D,
+	['E'] = SDL_SCANCODE_E,     ['F'] = SDL_SCANCODE_F,
+	['G'] = SDL_SCANCODE_G,     ['H'] = SDL_SCANCODE_H,
+	['I'] = SDL_SCANCODE_I,     ['J'] = SDL_SCANCODE_J,
+	['K'] = SDL_SCANCODE_K,     ['L'] = SDL_SCANCODE_L,
+	['M'] = SDL_SCANCODE_M,     ['N'] = SDL_SCANCODE_N,
+	['O'] = SDL_SCANCODE_O,     ['P'] = SDL_SCANCODE_P,
+	['Q'] = SDL_SCANCODE_Q,     ['R'] = SDL_SCANCODE_R,
+	['S'] = SDL_SCANCODE_S,     ['T'] = SDL_SCANCODE_T,
+	['U'] = SDL_SCANCODE_U,     ['V'] = SDL_SCANCODE_V,
+	['W'] = SDL_SCANCODE_W,     ['X'] = SDL_SCANCODE_X,
+	['Y'] = SDL_SCANCODE_Y,     ['Z'] = SDL_SCANCODE_Z,
+	['0'] = SDL_SCANCODE_0,     ['1'] = SDL_SCANCODE_1,
+	['2'] = SDL_SCANCODE_2,     ['3'] = SDL_SCANCODE_3,
+	['4'] = SDL_SCANCODE_4,     ['5'] = SDL_SCANCODE_5,
+	['6'] = SDL_SCANCODE_6,     ['7'] = SDL_SCANCODE_7,
+	['8'] = SDL_SCANCODE_8,     ['9'] = SDL_SCANCODE_9,
+	[VK_RETURN]    = SDL_SCANCODE_RETURN,
+	[VK_ESCAPE]    = SDL_SCANCODE_ESCAPE,
+	[VK_BACK]      = SDL_SCANCODE_BACKSPACE,
+	[VK_TAB]       = SDL_SCANCODE_TAB,
+	[VK_SPACE]     = SDL_SCANCODE_SPACE,
+	[VK_F1]        = SDL_SCANCODE_F1,
+	[VK_F2]        = SDL_SCANCODE_F2,
+	[VK_F3]        = SDL_SCANCODE_F3,
+	[VK_F4]        = SDL_SCANCODE_F4,
+	[VK_F5]        = SDL_SCANCODE_F5,
+	[VK_F6]        = SDL_SCANCODE_F6,
+	[VK_F7]        = SDL_SCANCODE_F7,
+	[VK_F8]        = SDL_SCANCODE_F8,
+	[VK_F9]        = SDL_SCANCODE_F9,
+	[VK_F10]       = SDL_SCANCODE_F10,
+	[VK_F11]       = SDL_SCANCODE_F11,
+	[VK_F12]       = SDL_SCANCODE_F12,
+	[VK_INSERT]    = SDL_SCANCODE_INSERT,
+	[VK_DELETE]    = SDL_SCANCODE_DELETE,
+	[VK_HOME]      = SDL_SCANCODE_HOME,
+	[VK_END]       = SDL_SCANCODE_END,
+	[VK_PRIOR]     = SDL_SCANCODE_PAGEUP,
+	[VK_NEXT]      = SDL_SCANCODE_PAGEDOWN,
+	[VK_RIGHT]     = SDL_SCANCODE_RIGHT,
+	[VK_LEFT]      = SDL_SCANCODE_LEFT,
+	[VK_DOWN]      = SDL_SCANCODE_DOWN,
+	[VK_UP]        = SDL_SCANCODE_UP,
+	[VK_CONTROL]   = SDL_SCANCODE_LCTRL,
+	[VK_LCONTROL]  = SDL_SCANCODE_LCTRL,
+	[VK_RCONTROL]  = SDL_SCANCODE_RCTRL,
+	[VK_SHIFT]     = SDL_SCANCODE_LSHIFT,
+	[VK_LSHIFT]    = SDL_SCANCODE_LSHIFT,
+	[VK_RSHIFT]    = SDL_SCANCODE_RSHIFT,
+	[VK_MENU]      = SDL_SCANCODE_LALT,
+	[VK_LMENU]     = SDL_SCANCODE_LALT,
+	[VK_RMENU]     = SDL_SCANCODE_RALT,
+	[VK_NUMPAD0]   = SDL_SCANCODE_KP_0,
+	[VK_NUMPAD1]   = SDL_SCANCODE_KP_1,
+	[VK_NUMPAD2]   = SDL_SCANCODE_KP_2,
+	[VK_NUMPAD3]   = SDL_SCANCODE_KP_3,
+	[VK_NUMPAD4]   = SDL_SCANCODE_KP_4,
+	[VK_NUMPAD5]   = SDL_SCANCODE_KP_5,
+	[VK_NUMPAD6]   = SDL_SCANCODE_KP_6,
+	[VK_NUMPAD7]   = SDL_SCANCODE_KP_7,
+	[VK_NUMPAD8]   = SDL_SCANCODE_KP_8,
+	[VK_NUMPAD9]   = SDL_SCANCODE_KP_9,
+	[VK_MULTIPLY]  = SDL_SCANCODE_KP_MULTIPLY,
+	[VK_ADD]       = SDL_SCANCODE_KP_PLUS,
+	[VK_SUBTRACT]  = SDL_SCANCODE_KP_MINUS,
+	[VK_DECIMAL]   = SDL_SCANCODE_KP_PERIOD,
+	[VK_DIVIDE]    = SDL_SCANCODE_KP_DIVIDE,
+};
+// clang-format on
+
+SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey) {
+	if (vkey < 0 || vkey >= (int)SDL_arraysize(s_vk_to_scancode)) {
+		return 0;
+	}
+
+	const SDL_Scancode scancode = s_vk_to_scancode[vkey];
+
+	if (scancode == SDL_SCANCODE_UNKNOWN) {
+		return 0;
+	}
+
+	const bool *keyboard_state = SDL_GetKeyboardState(NULL);
+
+	return keyboard_state[scancode] ? (SHORT)GETASYNCKEYSTATE_KEY_PRESSED : 0;
+}

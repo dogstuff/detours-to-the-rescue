@@ -1,0 +1,81 @@
+#include "dttr_sidecar.h"
+#include "log.h"
+
+// clang-format off
+#define DTTR_GAMEPAD_MAPPING_DEFAULTS \
+	.m_gamepad_mappings = { \
+		[PCDOGS_GAMEPAD_IDX_UP]       = DTTR_GAMEPAD_MAPPING_NONE, \
+		[PCDOGS_GAMEPAD_IDX_DOWN]     = DTTR_GAMEPAD_MAPPING_NONE, \
+		[PCDOGS_GAMEPAD_IDX_LEFT]     = DTTR_GAMEPAD_MAPPING_NONE, \
+		[PCDOGS_GAMEPAD_IDX_RIGHT]    = DTTR_GAMEPAD_MAPPING_NONE, \
+		[PCDOGS_GAMEPAD_IDX_POV_UP]   = DTTR_GAMEPAD_MAPPING_NONE, \
+		[PCDOGS_GAMEPAD_IDX_POV_DOWN] = DTTR_GAMEPAD_MAPPING_NONE, \
+		[PCDOGS_GAMEPAD_IDX_BTN_0]    = SDL_GAMEPAD_BUTTON_SOUTH, \
+		[PCDOGS_GAMEPAD_IDX_BTN_1]    = SDL_GAMEPAD_BUTTON_EAST, \
+		[PCDOGS_GAMEPAD_IDX_BTN_2]    = SDL_GAMEPAD_BUTTON_WEST, \
+		[PCDOGS_GAMEPAD_IDX_BTN_3]    = SDL_GAMEPAD_BUTTON_NORTH, \
+		[PCDOGS_GAMEPAD_IDX_BTN_4]    = SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, \
+		[PCDOGS_GAMEPAD_IDX_BTN_5]    = SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, \
+		[PCDOGS_GAMEPAD_IDX_BTN_6]    = SDL_GAMEPAD_BUTTON_BACK, \
+		[PCDOGS_GAMEPAD_IDX_BTN_7]    = SDL_GAMEPAD_BUTTON_LEFT_STICK, \
+		[PCDOGS_GAMEPAD_IDX_BTN_8]    = SDL_GAMEPAD_BUTTON_START, \
+		[PCDOGS_GAMEPAD_IDX_BTN_9]    = SDL_GAMEPAD_BUTTON_RIGHT_STICK, \
+		[PCDOGS_GAMEPAD_IDX_BTN_10]   = SDL_GAMEPAD_BUTTON_GUIDE, \
+		[PCDOGS_GAMEPAD_IDX_BTN_11]   = SDL_GAMEPAD_BUTTON_DPAD_UP, \
+		[PCDOGS_GAMEPAD_IDX_BTN_12]   = SDL_GAMEPAD_BUTTON_DPAD_LEFT, \
+	}
+#define DTTR_GAMEPAD_AXIS_DEFAULTS \
+	.m_gamepad_axes = { \
+		[DTTR_GAMEPAD_AXIS_IDX_STICK_X]  = SDL_GAMEPAD_AXIS_LEFTX, \
+		[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]  = SDL_GAMEPAD_AXIS_LEFTY, \
+		[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = SDL_GAMEPAD_AXIS_RIGHTX, \
+	}, \
+	.m_gamepad_axis_deadzone = { \
+		[DTTR_GAMEPAD_AXIS_IDX_STICK_X]  = 700, \
+		[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]  = 700, \
+		[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = 700, \
+	}
+// clang-format on
+
+static const DTTR_Config s_default_config = {
+	.m_log_level = LOG_INFO,
+	.m_scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
+	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
+	.m_precision_mode = DTTR_PRECISION_MODE_STABILIZED,
+	.m_graphics_api = DTTR_GRAPHICS_API_AUTO,
+	.m_present_filter = SDL_GPU_FILTER_LINEAR,
+	.m_window_width = WINDOW_WIDTH,
+	.m_window_height = WINDOW_HEIGHT,
+	.m_msaa_samples = 2,
+	.m_texture_upload_sync = false,
+	.m_generate_texture_mipmaps = true,
+	.m_fullscreen = false,
+	.m_gamepad_enabled = true,
+	DTTR_GAMEPAD_MAPPING_DEFAULTS,
+	DTTR_GAMEPAD_AXIS_DEFAULTS,
+};
+
+DTTR_Config g_dttr_config = {
+	.m_log_level = LOG_INFO,
+	.m_scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
+	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
+	.m_precision_mode = DTTR_PRECISION_MODE_STABILIZED,
+	.m_graphics_api = DTTR_GRAPHICS_API_AUTO,
+	.m_present_filter = SDL_GPU_FILTER_LINEAR,
+	.m_window_width = WINDOW_WIDTH,
+	.m_window_height = WINDOW_HEIGHT,
+	.m_msaa_samples = 2,
+	.m_texture_upload_sync = false,
+	.m_generate_texture_mipmaps = true,
+	.m_fullscreen = false,
+	.m_gamepad_enabled = true,
+	DTTR_GAMEPAD_MAPPING_DEFAULTS,
+	DTTR_GAMEPAD_AXIS_DEFAULTS,
+};
+
+void dttr_config_set_defaults(DTTR_Config *config) {
+	if (!config) {
+		return;
+	}
+	*config = s_default_config;
+}

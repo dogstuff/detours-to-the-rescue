@@ -1,0 +1,19 @@
+Language: Cpp
+BasedOnStyle: LLVM
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+ColumnLimit: 100
+
+# Only wrap when line exceeds ColumnLimit, then one arg per line
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Block indent style - closing paren on its own line at block indent
+AlignAfterOpenBracket: BlockIndent
+
+# Keep wrapped assignment RHS from hanging under '='
+BreakBeforeBinaryOperators: All
