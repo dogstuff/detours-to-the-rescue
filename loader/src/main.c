@@ -1,3 +1,4 @@
+#include <dttr_crashdump.h>
 #include <dttr_errors.h>
 #include <gen/asm.h>
 #include <stdio.h>
@@ -99,6 +100,8 @@ s_build_sidecar_shell_code(const char *dll_path, uintptr_t original_entry, uint8
 }
 
 int main(void) {
+	dttr_crashdump_init("dttr_loader");
+
 	STARTUPINFOW child_startup_info = {sizeof(STARTUPINFOW)};
 	PROCESS_INFORMATION child_info = {0};
 	WCHAR cmd_line[] = L"pcdogs.exe";
