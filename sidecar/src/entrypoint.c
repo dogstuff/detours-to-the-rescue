@@ -1,5 +1,6 @@
 #include <windows.h>
 
+#include "dttr_crashdump.h"
 #include "dttr_sidecar.h"
 #include "graphics/graphics_com_internal.h"
 #include "log.h"
@@ -48,6 +49,8 @@ static void s_tick_main_loop(void) {
 int32_t _stdcall dttr_hook_win_main_callback(
 	HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow
 ) {
+	dttr_crashdump_init("dttr_sidecar");
+
 	FILE *const log_file = fopen("dttr_sidecar.log", "a+");
 
 	if (!log_file) {

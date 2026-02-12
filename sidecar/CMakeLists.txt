@@ -35,6 +35,8 @@ target_include_directories(dttr_sidecar PRIVATE
     "${DTTR_VLC_DIR}/sdk/include"
 )
 
+target_link_options(dttr_sidecar PRIVATE -static)
+
 target_compile_definitions(dttr_sidecar PRIVATE
     DTTR_VERSION="${DTTR_VERSION}"
 )
@@ -48,6 +50,7 @@ set_target_properties(vlc PROPERTIES
 target_link_libraries(dttr_sidecar PRIVATE
     kernel32
     psapi
+
     PkgConfig::SDL3
     vlc
     sds
