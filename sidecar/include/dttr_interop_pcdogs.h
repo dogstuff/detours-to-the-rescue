@@ -6,29 +6,90 @@
 typedef HMODULE DTTR_GameModule;
 
 // These are game globals used by the sidecar runtime
-DTTR_INTEROP_VAR(g_pcdogs_ddraw_object, void *, 0x168A6F0)
 
-DTTR_INTEROP_VAR(g_pcdogs_game_initialized, int, 0x23490C)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_ddraw_object,
+	void *,
+	"\xA1????\x8B\x15????\x81\xEC\x9C\x00\x00\x00",
+	"x????xx????xxxxxx",
+	*(uint32_t *)(match + 1)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_gamepad_button_flags, uint32_t, 0x234980)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_game_initialized,
+	int,
+	"\x89\x35????\xC6\x44\x24?\x10",
+	"xx????xxx?x",
+	*(uint32_t *)(match + 2)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_graphics_initialized, uint64_t, 0x15A9570)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_gamepad_button_flags,
+	uint32_t,
+	"\x8B\x15????\x8B\x06\x0B\xC2\x89\x06\x81\xFB\xBC\x02\x00\x00",
+	"xx????xxxxxxxxxxxx",
+	*(uint32_t *)(match + 2)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_keyboard_mapping_buttons, void *, 0x9CA3C)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_graphics_initialized,
+	uint64_t,
+	"\xA0????\x84\xC0\x0F\x84????\xA1",
+	"x????xxxx????x",
+	*(uint32_t *)(match + 1)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_keyboard_mapping_keys, void *, 0x9CA38)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_keyboard_mapping_buttons,
+	void *,
+	"\x8B\x15????\x50\x56",
+	"xx????xx",
+	*(uint32_t *)(match + 2)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_main_window_handle, void *, 0x234910)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_keyboard_mapping_keys,
+	void *,
+	"\xA3????\xA1????\x8D\x14\x8D",
+	"x????x????xxx",
+	*(uint32_t *)(match + 1)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_main_window_handle2, void *, 0x9CA40)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_main_window_handle,
+	void *,
+	"\xA1????\x83\xC4\x08\x6A\x03",
+	"x????xxxxx",
+	*(uint32_t *)(match + 1)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_mapping_count, uint32_t, 0x23497C)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_main_window_handle2, void *, "\xA3????\xFF\xD7", "x????xx", *(uint32_t *)(match + 1)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_rendering_enabled, int, 0x234900)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_mapping_count,
+	uint32_t,
+	"\x8B\x0D????\x8B\x15????\x50",
+	"xx????xx????x",
+	*(uint32_t *)(match + 2)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_should_quit, int, 0x9CA48)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_rendering_enabled, int, "\x39\x35????\x74?\xE8", "xx????x?x", *(uint32_t *)(match + 2)
+)
 
-DTTR_INTEROP_VAR(g_pcdogs_joystick_available, uint8_t, 0x15A9570)
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_should_quit, int, "\x39\x35????\x75?\x39\x35", "xx????x?xx", *(uint32_t *)(match + 2)
+)
+
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_joystick_available,
+	uint8_t,
+	"\xA0????\x84\xC0\x0F\x84????\xA1",
+	"x????xxxx????x",
+	*(uint32_t *)(match + 1)
+)
 
 // Resolves cached addresses for global-variable wrappers
 static void s_interop_pcdogs_globals_init(HMODULE mod) {
@@ -46,43 +107,131 @@ static void s_interop_pcdogs_globals_init(HMODULE mod) {
 	g_pcdogs_should_quit_init(mod);
 }
 
-// These are game functions used by the sidecar runtime
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_find_and_load_game_pak_file, __cdecl, 0x3eea0, void, (void), ())
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_find_and_load_game_pak_file,
+	__cdecl,
+	"\x81\xEC\x10\x01\x00\x00\x57",
+	"xxxxxxx",
+	match,
+	void,
+	(void),
+	()
+)
 
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_initialize_game_engine, __cdecl, 0x2c80f, int, (void), ())
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_initialize_game_engine,
+	__cdecl,
+	"\xE8????\x85\xC0\x75?\x32\xC0",
+	"x????xxx?xx",
+	match,
+	int,
+	(void),
+	()
+)
 
-DTTR_INTEROP_WRAP_CACHED_CC(
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
 	pcdogs_initialize_graphics_subsystem,
 	__cdecl,
-	0x3d740,
+	"\xE8????\x8B\x44\x24?\x8B\x4C\x24?\x50",
+	"x????xxx?xxx?x",
+	match,
 	void,
 	(HWND hwnd, HINSTANCE h_instance),
 	(hwnd, h_instance)
 )
 
-DTTR_INTEROP_WRAP_CACHED_CC(
-	pcdogs_initialize_graphics_capabilities, __cdecl, 0x3e860, void, (void), ()
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_initialize_graphics_capabilities,
+	__cdecl,
+	"\xE8????\xE8????\xE8????\xA1",
+	"x????x????x????x",
+	match,
+	void,
+	(void),
+	()
 )
 
-DTTR_INTEROP_WRAP_CACHED_CC(
-	pcdogs_initialize_window_handle, __cdecl, 0x450a0, int, (HWND hwnd), (hwnd)
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_initialize_window_handle,
+	__cdecl,
+	"\xA1????\x56\x57\x8B\x7C\x24",
+	"x????xxxxx",
+	match,
+	int,
+	(HWND hwnd),
+	(hwnd)
 )
 
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_initialize_game_systems, __cdecl, 0x3d770, void, (void), ())
-
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_render_frame, __cdecl, 0x3e0a0, int, (void), ())
-
-DTTR_INTEROP_WRAP_CACHED_CC(
-	pcdogs_is_key_pressed, __cdecl, 0x45010, unsigned int, (char scan_code), (scan_code)
+// Sig matches call site; resolves relative call to function
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_initialize_game_systems,
+	__cdecl,
+	"\xE8????\x8D\x54\x24?\x56",
+	"x????xxx?x",
+	match + 5 + *(int32_t *)(match + 1),
+	void,
+	(void),
+	()
 )
 
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_reset_input_and_state, __cdecl, 0x3e2f0, void, (void), ())
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_render_frame, __cdecl, "\x51\x53\xE8????\xA1", "xxx????x", match, int, (void), ()
+)
 
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_take_screenshot, __cdecl, 0x18b90, void, (void), ())
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_is_key_pressed,
+	__cdecl,
+	"\xA1????\x33\xC9\x85\xC0\x53",
+	"x????xxxxx",
+	match,
+	unsigned int,
+	(char scan_code),
+	(scan_code)
+)
 
-DTTR_INTEROP_WRAP_CACHED_CC(pcdogs_malloc, __cdecl, 0x465d4, void *, (size_t size), (size))
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_reset_input_and_state,
+	__cdecl,
+	"\xE8????\xA1????\x25\xDF\xF4\xFF\xFF",
+	"x????x????xxxxx",
+	match,
+	void,
+	(void),
+	()
+)
 
-// Resolves cached addresses for function wrappers
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_take_screenshot,
+	__cdecl,
+	"\x81\xEC\x04\x01\x00\x00\x56",
+	"xxxxxxx",
+	match,
+	void,
+	(void),
+	()
+)
+
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_CC_SIG(
+	pcdogs_malloc,
+	__cdecl,
+	"\xFF\x35????\xFF\x74\x24",
+	"xx????xxx",
+	match,
+	void *,
+	(size_t size),
+	(size)
+)
+
 static void s_interop_pcdogs_functions_init(DTTR_GameModule mod) {
 	pcdogs_find_and_load_game_pak_file_init(mod);
 	pcdogs_initialize_game_engine_init(mod);

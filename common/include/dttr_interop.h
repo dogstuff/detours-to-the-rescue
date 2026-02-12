@@ -6,10 +6,43 @@
 #include <stdint.h>
 #include <string.h>
 #include <windows.h>
+#include <psapi.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Scan a module for a byte pattern with mask and return the address of the first match
+// sig is a byte string, mask uses 'x' for exact match and '?' for wildcard
+// Returns the absolute address of the match, or 0 if not found
+static inline uintptr_t dttr_interop_sigscan(
+	HMODULE mod, const char *sig, const char *mask
+) {
+	MODULEINFO mi;
+	if (!GetModuleInformation(GetCurrentProcess(), mod, &mi, sizeof(mi))) {
+		return 0;
+	}
+	const uint8_t *base = (const uint8_t *)mi.lpBaseOfDll;
+	const size_t size = mi.SizeOfImage;
+	const size_t len = strlen(mask);
+	if (len == 0 || len > size) {
+		return 0;
+	}
+	for (size_t i = 0; i <= size - len; i++) {
+		for (size_t j = 0; ; j++) {
+			if (j == len) return (uintptr_t)(base + i);
+			if (mask[j] == 'x' && base[i + j] != (uint8_t)sig[j]) break;
+		}
+	}
+	return 0;
+}
+
+// Address resolution helpers used internally by the macros below
+// RESOLVE_OFFSET computes an absolute address from a module-relative offset
+// RESOLVE_SIG scans for a byte pattern, binds the match address to `match`, and evaluates expr
+#define DTTR_INTEROP_RESOLVE_OFFSET(mod, offset) ((uintptr_t)(mod) + (offset))
+#define DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr) \
+	(__extension__({ const uintptr_t match = dttr_interop_sigscan((mod), (sig), (mask)); (uintptr_t)(expr); }))
 
 // Wraps a function at an offset from the module base
 // First parameter of the generated function is always HMODULE
@@ -35,22 +68,34 @@ extern "C" {
 #define DTTR_INTEROP_WRAP_CACHED_STORAGE(name) extern uintptr_t name##_addr;
 #endif
 
-#define DTTR_INTEROP_WRAP_CACHED(name, offset, ret, params, args) \
+#define DTTR_INTEROP_WRAP_CACHED_IMPL(name, resolve, ret, params, args) \
 	typedef ret(*name##_fn_t) params; \
 	DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
-		name##_addr = (uintptr_t)mod + (offset); \
+		name##_addr = (resolve); \
 	} \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
+#define DTTR_INTEROP_WRAP_CACHED(name, offset, ret, params, args) \
+	DTTR_INTEROP_WRAP_CACHED_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, offset), ret, params, args)
+
+#define DTTR_INTEROP_WRAP_CACHED_SIG(name, sig, mask, expr, ret, params, args) \
+	DTTR_INTEROP_WRAP_CACHED_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
+
 // Wraps a function with cached address resolution and an explicit calling convention
-#define DTTR_INTEROP_WRAP_CACHED_CC(name, cc, offset, ret, params, args) \
+#define DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, resolve, ret, params, args) \
 	typedef ret(cc *name##_fn_t) params; \
 	DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
-		name##_addr = (uintptr_t)mod + (offset); \
+		name##_addr = (resolve); \
 	} \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
+
+#define DTTR_INTEROP_WRAP_CACHED_CC(name, cc, offset, ret, params, args) \
+	DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, DTTR_INTEROP_RESOLVE_OFFSET(mod, offset), ret, params, args)
+
+#define DTTR_INTEROP_WRAP_CACHED_CC_SIG(name, cc, sig, mask, expr, ret, params, args) \
+	DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
 
 // Provides accessor functions for a module global variable
 // name_init(mod), name_ptr(), name_get(), name_set(val)
@@ -60,14 +105,20 @@ extern "C" {
 #define DTTR_INTEROP_VAR_STORAGE(name) extern uintptr_t name##_addr;
 #endif
 
-#define DTTR_INTEROP_VAR(name, type, offset) \
+#define DTTR_INTEROP_VAR_IMPL(name, type, resolve) \
 	DTTR_INTEROP_VAR_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
-		name##_addr = (uintptr_t)mod + (offset); \
+		name##_addr = (resolve); \
 	} \
 	static inline type *name##_ptr(void) { return (type *)name##_addr; } \
 	static inline type name##_get(void) { return *(type *)name##_addr; } \
 	static inline void name##_set(type val) { *(type *)name##_addr = val; }
+
+#define DTTR_INTEROP_VAR(name, type, offset) \
+	DTTR_INTEROP_VAR_IMPL(name, type, DTTR_INTEROP_RESOLVE_OFFSET(mod, offset))
+
+#define DTTR_INTEROP_VAR_SIG(name, type, sig, mask, expr) \
+	DTTR_INTEROP_VAR_IMPL(name, type, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr))
 
 // These macros patch code to redirect CALL/JMP instructions and pointers
 // The instruction opcodes are E8 for CALL rel32, E9 for JMP rel32, EB for JMP rel8, FF15 for CALL [addr], and FF25 for JMP [addr]
@@ -134,10 +185,10 @@ extern "C" {
 		hook##_unpatch(); \
 	} while (0)
 
-#define DTTR_INTEROP_PATCH_CALL(name, call_addr, target) \
+#define DTTR_INTEROP_PATCH_CALL_IMPL(name, resolve, target) \
 	DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
-		name##_site = (uintptr_t)mod + (call_addr); \
+		name##_site = (resolve); \
 		DWORD old; \
 		VirtualProtect((void *)name##_site, 5, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)name##_site, 5); \
@@ -155,6 +206,12 @@ extern "C" {
 		} \
 	}
 
+#define DTTR_INTEROP_PATCH_CALL(name, call_addr, target) \
+	DTTR_INTEROP_PATCH_CALL_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, call_addr), target)
+
+#define DTTR_INTEROP_PATCH_CALL_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_CALL_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+
 // Works the same as PATCH_CALL but writes E9 (JMP) instead of E8
 #ifdef DTTR_INTEROP_IMPLEMENT
 #define DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
@@ -166,10 +223,10 @@ extern "C" {
 	extern uint8_t name##_orig[5];
 #endif
 
-#define DTTR_INTEROP_PATCH_JMP(name, jmp_addr, target) \
+#define DTTR_INTEROP_PATCH_JMP_IMPL(name, resolve, target) \
 	DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
-		name##_site = (uintptr_t)mod + (jmp_addr); \
+		name##_site = (resolve); \
 		DWORD old; \
 		VirtualProtect((void *)name##_site, 5, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)name##_site, 5); \
@@ -187,6 +244,12 @@ extern "C" {
 		} \
 	}
 
+#define DTTR_INTEROP_PATCH_JMP(name, jmp_addr, target) \
+	DTTR_INTEROP_PATCH_JMP_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, jmp_addr), target)
+
+#define DTTR_INTEROP_PATCH_JMP_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_JMP_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+
 // Patch a pointer/address (e.g. vtable entry, IAT)
 // name_patch(mod), name_unpatch(), name_orig_ptr()
 #ifdef DTTR_INTEROP_IMPLEMENT
@@ -199,10 +262,10 @@ extern "C" {
 	extern uintptr_t name##_orig;
 #endif
 
-#define DTTR_INTEROP_PATCH_PTR(name, ptr_addr, target) \
+#define DTTR_INTEROP_PATCH_PTR_IMPL(name, resolve, target) \
 	DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
-		name##_site = (uintptr_t)mod + (ptr_addr); \
+		name##_site = (resolve); \
 		DWORD old; \
 		VirtualProtect( \
 			(void *)name##_site, sizeof(void *), PAGE_EXECUTE_READWRITE, &old \
@@ -223,6 +286,12 @@ extern "C" {
 	} \
 	static inline void *name##_orig_ptr(void) { return (void *)name##_orig; }
 
+#define DTTR_INTEROP_PATCH_PTR(name, ptr_addr, target) \
+	DTTR_INTEROP_PATCH_PTR_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, ptr_addr), target)
+
+#define DTTR_INTEROP_PATCH_PTR_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_PTR_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+
 // Overwrites `size` bytes at a fixed offset with caller-supplied content, saving the originals for restoration
 // Generates name_patch(mod, bytes) to apply and name_unpatch() to restore
 #ifdef DTTR_INTEROP_IMPLEMENT
@@ -235,10 +304,10 @@ extern "C" {
 	extern uint8_t name##_orig[size];
 #endif
 
-#define DTTR_INTEROP_PATCH_BYTES(name, addr, size) \
+#define DTTR_INTEROP_PATCH_BYTES_IMPL(name, resolve, size) \
 	DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
 	static inline void name##_patch(HMODULE mod, const uint8_t *bytes) { \
-		name##_site = (uintptr_t)mod + (addr); \
+		name##_site = (resolve); \
 		DWORD old; \
 		VirtualProtect((void *)name##_site, size, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)name##_site, size); \
@@ -256,9 +325,19 @@ extern "C" {
 		} \
 	}
 
+#define DTTR_INTEROP_PATCH_BYTES(name, addr, size) \
+	DTTR_INTEROP_PATCH_BYTES_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, addr), size)
+
+#define DTTR_INTEROP_PATCH_BYTES_SIG(name, sig, mask, expr, size) \
+	DTTR_INTEROP_PATCH_BYTES_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), size)
+
 // Replace entire function by writing a JMP at its start
 #define DTTR_INTEROP_HOOK_FUNC(name, func_addr, target) \
 	DTTR_INTEROP_PATCH_JMP(name, func_addr, target) \
+	static inline void name##_install(HMODULE mod) { name##_patch(mod); }
+
+#define DTTR_INTEROP_HOOK_FUNC_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_JMP_SIG(name, sig, mask, expr, target) \
 	static inline void name##_install(HMODULE mod) { name##_patch(mod); }
 
 // Replace entire function with a JMP and allocate a trampoline for calling through to the original
@@ -275,10 +354,10 @@ extern "C" {
 	extern uint8_t *name##_trampoline;
 #endif
 
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE(name, func_addr, target) \
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, resolve, target) \
 	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	static inline void name##_install(HMODULE mod) { \
-		const uintptr_t site = (uintptr_t)mod + (func_addr); \
+		const uintptr_t site = (resolve); \
 		name##_trampoline = (uint8_t *)VirtualAlloc( \
 			NULL, 16, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE \
 		); \
@@ -308,6 +387,12 @@ extern "C" {
 			name##_trampoline = NULL; \
 		} \
 	}
+
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE(name, func_addr, target) \
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, func_addr), target)
+
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
 
 // Hook a COM method by patching its vtable entry at runtime
 // https://learn.microsoft.com/en-us/windows/win32/prog-dx-with-com
