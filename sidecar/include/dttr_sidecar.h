@@ -8,6 +8,11 @@
 #include <SDL3/SDL.h>
 #include <dttr_interop_pcdogs.h>
 
+#define DTTR_PREFIX_CONFIG "[config] "
+#define DTTR_PREFIX_GRAPHICS "[graphics] "
+#define DTTR_PREFIX_INIT "[init] "
+#define DTTR_PREFIX_INPUTS "[inputs] "
+
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 

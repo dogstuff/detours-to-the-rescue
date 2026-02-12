@@ -164,7 +164,7 @@ bool dttr_config_load(const char *filename) {
 	s_errors_clear();
 
 	if (!filename || !filename[0]) {
-		log_error("config: Load failed: empty filename");
+		log_error(DTTR_PREFIX_CONFIG "Load failed: empty filename");
 		dttr_config_set_defaults(&g_dttr_config);
 		return false;
 	}
@@ -174,7 +174,7 @@ bool dttr_config_load(const char *filename) {
 	// Read file into memory
 	FILE *f = fopen(filename, "rb");
 	if (!f) {
-		log_warn("config: File '%s' not found. Using defaults.", filename);
+		log_warn(DTTR_PREFIX_CONFIG "File '%s' not found. Using defaults.", filename);
 		return true;
 	}
 
@@ -184,14 +184,14 @@ bool dttr_config_load(const char *filename) {
 
 	if (file_size <= 0) {
 		fclose(f);
-		log_warn("config: File '%s' is empty. Using defaults.", filename);
+		log_warn(DTTR_PREFIX_CONFIG "File '%s' is empty. Using defaults.", filename);
 		return true;
 	}
 
 	sds buf = sdsnewlen(SDS_NOINIT, (size_t)file_size);
 	if (!buf) {
 		fclose(f);
-		log_error("config: Load failed: out of memory");
+		log_error(DTTR_PREFIX_CONFIG "Load failed: out of memory");
 		return false;
 	}
 
@@ -209,7 +209,9 @@ bool dttr_config_load(const char *filename) {
 	if (!root) {
 		const char *error_ptr = cJSON_GetErrorPtr();
 
-		log_error("config: JSON parse failed near: %.20s", error_ptr ? error_ptr : "(unknown)");
+		log_error(
+			DTTR_PREFIX_CONFIG "JSON parse failed near: %.20s", error_ptr ? error_ptr : "(unknown)"
+		);
 
 		s_errors_addf("Failed to parse %s (near: %.20s)", filename, error_ptr ? error_ptr : "?");
 		s_errors_show();

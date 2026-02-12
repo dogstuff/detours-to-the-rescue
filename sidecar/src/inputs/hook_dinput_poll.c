@@ -88,7 +88,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(S_DIJoyState));
 
 	if (!state) {
-		log_error("inputs: Failed to allocate joystick poll state");
+		log_error(DTTR_PREFIX_INPUTS "Failed to allocate joystick poll state");
 		return NULL;
 	}
 

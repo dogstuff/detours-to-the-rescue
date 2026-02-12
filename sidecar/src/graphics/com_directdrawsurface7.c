@@ -299,7 +299,7 @@ s_surface_texture_create_or_retain(int width, int height, const void *pixels, ui
 
 	if (state->m_staged_texture_count >= DTTR_MAX_STAGED_TEXTURES) {
 		SDL_UnlockMutex(state->m_texture_mutex);
-		log_error("graphics: Too many textures");
+		log_error(DTTR_PREFIX_GRAPHICS "Too many textures");
 		return DTTR_INVALID_TEXTURE;
 	}
 

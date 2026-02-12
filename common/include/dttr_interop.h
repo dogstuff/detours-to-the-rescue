@@ -7,6 +7,10 @@
 #include <string.h>
 #include <windows.h>
 #include <psapi.h>
+#include <log.h>
+
+#define DTTR_PREFIX_HOOK    "[hook] "
+#define DTTR_PREFIX_INTEROP "[interop] "
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,12 +41,38 @@ static inline uintptr_t dttr_interop_sigscan(
 	return 0;
 }
 
+// Checks that a resolved address is non-zero and falls within the module's address range
+static inline int dttr_interop_validate_resolve(
+	HMODULE mod, uintptr_t addr, const char *name
+) {
+	if (!addr) {
+		log_error(DTTR_PREFIX_INTEROP "%s: resolved to NULL", name);
+		return 0;
+	}
+	MODULEINFO mi;
+	if (GetModuleInformation(GetCurrentProcess(), mod, &mi, sizeof(mi))) {
+		const uintptr_t mod_base = (uintptr_t)mi.lpBaseOfDll;
+		const uintptr_t mod_end = mod_base + mi.SizeOfImage;
+		if (addr < mod_base || addr >= mod_end) {
+			log_error(
+				DTTR_PREFIX_INTEROP "%s: resolved to 0x%08X (outside module 0x%08X-0x%08X)",
+				name, (unsigned)addr, (unsigned)mod_base, (unsigned)mod_end
+			);
+			return 0;
+		}
+	}
+	return 1;
+}
+
 // Address resolution helpers used internally by the macros below
 // RESOLVE_OFFSET computes an absolute address from a module-relative offset
 // RESOLVE_SIG scans for a byte pattern, binds the match address to `match`, and evaluates expr
 #define DTTR_INTEROP_RESOLVE_OFFSET(mod, offset) ((uintptr_t)(mod) + (offset))
 #define DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr) \
-	(__extension__({ const uintptr_t match = dttr_interop_sigscan((mod), (sig), (mask)); (uintptr_t)(expr); }))
+	(__extension__({ \
+		const uintptr_t match = dttr_interop_sigscan((mod), (sig), (mask)); \
+		match ? (uintptr_t)(expr) : 0; \
+	}))
 
 // Wraps a function at an offset from the module base
 // First parameter of the generated function is always HMODULE
@@ -73,6 +103,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
 		name##_addr = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_addr, #name)) { \
+			name##_addr = 0; \
+		} \
 	} \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
@@ -88,6 +121,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
 		name##_addr = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_addr, #name)) { \
+			name##_addr = 0; \
+		} \
 	} \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
@@ -109,6 +145,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_VAR_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
 		name##_addr = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_addr, #name)) { \
+			name##_addr = 0; \
+		} \
 	} \
 	static inline type *name##_ptr(void) { return (type *)name##_addr; } \
 	static inline type name##_get(void) { return *(type *)name##_addr; } \
@@ -139,7 +178,7 @@ static inline uintptr_t dttr_interop_sigscan(
 	do { \
 		hook##_install(mod); \
 		log_info( \
-			"hook: Applied HOOK_FUNC %s at 0x%08X", #hook, \
+			DTTR_PREFIX_HOOK "Applied HOOK_FUNC %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
 	} while (0)
@@ -149,12 +188,12 @@ static inline uintptr_t dttr_interop_sigscan(
 		hook##_install(mod); \
 		if (hook##_trampoline) { \
 			log_info( \
-				"hook: Applied HOOK_FUNC %s at 0x%08X", #hook, \
+				DTTR_PREFIX_HOOK "Applied HOOK_FUNC %s at 0x%08X", #hook, \
 				(unsigned)hook##_site \
 			); \
 		} else { \
 			log_error( \
-				"hook: Failed to allocate trampoline for %s", #hook \
+				DTTR_PREFIX_HOOK "Failed to allocate trampoline for %s", #hook \
 			); \
 		} \
 	} while (0)
@@ -163,7 +202,7 @@ static inline uintptr_t dttr_interop_sigscan(
 	do { \
 		hook##_patch(mod); \
 		log_info( \
-			"hook: Applied PATCH_CALL %s at 0x%08X", #hook, \
+			DTTR_PREFIX_HOOK "Applied PATCH_CALL %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
 	} while (0)
@@ -172,7 +211,7 @@ static inline uintptr_t dttr_interop_sigscan(
 	do { \
 		hook##_patch(mod); \
 		log_info( \
-			"hook: Applied PATCH_PTR %s at 0x%08X", #hook, \
+			DTTR_PREFIX_HOOK "Applied PATCH_PTR %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
 	} while (0)
@@ -180,7 +219,7 @@ static inline uintptr_t dttr_interop_sigscan(
 #define DTTR_INTEROP_UNHOOK_LOG(hook) \
 	do { \
 		log_info( \
-			"hook: Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
+			DTTR_PREFIX_HOOK "Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
 		); \
 		hook##_unpatch(); \
 	} while (0)
@@ -189,6 +228,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
 		name##_site = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
+			name##_site = 0; return; \
+		} \
 		DWORD old; \
 		VirtualProtect((void *)name##_site, 5, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)name##_site, 5); \
@@ -227,6 +269,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
 		name##_site = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
+			name##_site = 0; return; \
+		} \
 		DWORD old; \
 		VirtualProtect((void *)name##_site, 5, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)name##_site, 5); \
@@ -266,6 +311,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
 		name##_site = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
+			name##_site = 0; return; \
+		} \
 		DWORD old; \
 		VirtualProtect( \
 			(void *)name##_site, sizeof(void *), PAGE_EXECUTE_READWRITE, &old \
@@ -308,6 +356,9 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
 	static inline void name##_patch(HMODULE mod, const uint8_t *bytes) { \
 		name##_site = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
+			name##_site = 0; return; \
+		} \
 		DWORD old; \
 		VirtualProtect((void *)name##_site, size, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)name##_site, size); \
@@ -358,6 +409,7 @@ static inline uintptr_t dttr_interop_sigscan(
 	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	static inline void name##_install(HMODULE mod) { \
 		const uintptr_t site = (resolve); \
+		if (!dttr_interop_validate_resolve(mod, site, #name)) { return; } \
 		name##_trampoline = (uint8_t *)VirtualAlloc( \
 			NULL, 16, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE \
 		); \
