@@ -197,28 +197,28 @@ bool dttr_graphics_create_resources(void) {
 	s_create_dummy_texture(state);
 
 	if (!state->m_vertex_buffer || !state->m_transfer_buffer) {
-		log_error("graphics: Failed to create frame buffers");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create frame buffers");
 		return false;
 	}
 
 	if (!state->m_samplers[0] || !state->m_samplers[1] || !state->m_samplers[2]
 		|| !state->m_samplers[3]) {
-		log_error("graphics: Failed to create samplers");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create samplers");
 		return false;
 	}
 
 	if (!state->m_render_target || !state->m_depth_texture) {
-		log_error("graphics: Failed to create render textures");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create render textures");
 		return false;
 	}
 
 	if (!state->m_dummy_texture) {
-		log_error("graphics: Failed to create dummy texture");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create dummy texture");
 		return false;
 	}
 
 	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target) {
-		log_error("graphics: Failed to create MSAA render target");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create MSAA render target");
 		return false;
 	}
 
@@ -254,12 +254,16 @@ bool dttr_graphics_resize_render_textures(int width, int height) {
 	s_create_render_textures(state);
 
 	if (!state->m_render_target || !state->m_depth_texture) {
-		log_error("graphics: Failed to recreate render textures at %dx%d", width, height);
+		log_error(
+			DTTR_PREFIX_GRAPHICS "Failed to recreate render textures at %dx%d", width, height
+		);
 		return false;
 	}
 
 	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target) {
-		log_error("graphics: Failed to recreate MSAA render target at %dx%d", width, height);
+		log_error(
+			DTTR_PREFIX_GRAPHICS "Failed to recreate MSAA render target at %dx%d", width, height
+		);
 		return false;
 	}
 

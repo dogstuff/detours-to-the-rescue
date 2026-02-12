@@ -39,7 +39,7 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 		DWORD old;
 		if (!VirtualProtect(ddraw_out, sizeof(void *), PAGE_READWRITE, &old)) {
 			log_error(
-				"graphics: VirtualProtect failed for ddraw_out=%p error=%lu",
+				DTTR_PREFIX_GRAPHICS "VirtualProtect failed for ddraw_out=%p error=%lu",
 				ddraw_out,
 				GetLastError()
 			);
@@ -49,7 +49,7 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 		}
 	}
 
-	log_info("graphics: DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
+	log_info(DTTR_PREFIX_GRAPHICS "DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
 	return S_OK;
 }
 
@@ -59,20 +59,21 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
 	LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags
 ) {
 	log_info(
-		"graphics: DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
+		DTTR_PREFIX_GRAPHICS
+		"DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
 		lpCallback,
 		lpContext,
 		dwFlags
 	);
 
 	if (!lpCallback) {
-		log_info("graphics: DirectDrawEnumerateExA complete");
+		log_info(DTTR_PREFIX_GRAPHICS "DirectDrawEnumerateExA complete");
 		return S_OK;
 	}
 
 	lpCallback(NULL, "DTTR Virtual Display", "display", lpContext, NULL);
 
-	log_info("graphics: DirectDrawEnumerateExA complete");
+	log_info(DTTR_PREFIX_GRAPHICS "DirectDrawEnumerateExA complete");
 	return S_OK;
 }
 
@@ -81,12 +82,12 @@ void dttr_graphics_hook_init(HMODULE module) {
 	g_dttr_graphics_hook_hwnd = dttr_graphics_init();
 
 	if (!g_dttr_graphics_hook_hwnd) {
-		log_error("graphics: Failed to initialize backend");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to initialize backend");
 		return;
 	}
 
 	if (!s_get_or_create_ddraw7()) {
-		log_error("graphics: Failed to create DirectDraw translator");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create DirectDraw translator");
 		return;
 	}
 

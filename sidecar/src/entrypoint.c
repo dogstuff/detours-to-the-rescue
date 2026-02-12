@@ -51,32 +51,34 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	FILE *const log_file = fopen("dttr_sidecar.log", "a+");
 
 	if (!log_file) {
-		s_raise_error("init: Could not open log file dttr_sidecar.log");
+		s_raise_error(DTTR_PREFIX_INIT "Could not open log file dttr_sidecar.log");
 	}
 
 	log_set_level(LOG_INFO);
 
-	log_info("init: Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
+	log_info(DTTR_PREFIX_INIT "Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
 
 	if (!dttr_config_load(DTTR_CONFIG_FILENAME)) {
-		log_error("init: Configuration load failed - aborting");
+		log_error(DTTR_PREFIX_INIT "Configuration load failed - aborting");
 		return 1;
 	}
 
 	log_add_fp(log_file, g_dttr_config.m_log_level);
-	log_info("init: File log level set to %s", log_level_string(g_dttr_config.m_log_level));
+	log_info(
+		DTTR_PREFIX_INIT "File log level set to %s", log_level_string(g_dttr_config.m_log_level)
+	);
 
 	const HWND hwnd = dttr_graphics_init();
 
 	if (hwnd == NULL) {
-		log_error("graphics: Failed to initialize - aborting");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to initialize - aborting");
 		return 1;
 	}
 
-	log_info("init: Initializing game globals...");
+	log_info(DTTR_PREFIX_INIT "Initializing game globals...");
 	s_interop_pcdogs_globals_init(g_dttr_pc_dogs_module);
 
-	log_info("init: Initializing game functions...");
+	log_info(DTTR_PREFIX_INIT "Initializing game functions...");
 	s_interop_pcdogs_functions_init(g_dttr_pc_dogs_module);
 
 	dttr_crt_hook_init(g_dttr_pc_dogs_module);

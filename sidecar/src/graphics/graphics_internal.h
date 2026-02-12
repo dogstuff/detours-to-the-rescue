@@ -1,6 +1,7 @@
 #ifndef DTTR_INTERNAL_H
 #define DTTR_INTERNAL_H
 
+#include "dttr_sidecar.h"
 #include <SDL3/SDL.h>
 #include <dttr_interop.h>
 #include <kvec.h>

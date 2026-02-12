@@ -600,7 +600,7 @@ void dttr_graphics_begin_frame(void) {
 	state->m_cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
 
 	if (!state->m_cmd) {
-		log_error("graphics: Failed to acquire GPU command buffer");
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to acquire GPU command buffer");
 		return;
 	}
 
@@ -621,7 +621,7 @@ void dttr_graphics_begin_frame(void) {
 		= SDL_MapGPUTransferBuffer(state->m_device, state->m_transfer_buffer, true);
 
 	if (!state->m_transfer_mapped)
-		log_warn("graphics: BeginFrame: MapGPUTransferBuffer failed");
+		log_warn(DTTR_PREFIX_GRAPHICS "BeginFrame: MapGPUTransferBuffer failed");
 
 	state->m_frame_active = true;
 }

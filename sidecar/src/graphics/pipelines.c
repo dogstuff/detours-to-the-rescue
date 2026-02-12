@@ -230,7 +230,9 @@ s_create_graphics_pipelines(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_G
 				if (state->m_pipelines[idx])
 					continue;
 
-				log_error("graphics: Failed to create pipeline[%d]: %s", idx, SDL_GetError());
+				log_error(
+					DTTR_PREFIX_GRAPHICS "Failed to create pipeline[%d]: %s", idx, SDL_GetError()
+				);
 				return false;
 			}
 		}
@@ -247,7 +249,7 @@ static bool s_create_buf2tex_pipeline(DTTR_BackendState *state) {
 	if (state->m_buf2tex_pipeline)
 		return true;
 
-	log_error("graphics: Failed to create buf2tex compute pipeline: %s", SDL_GetError());
+	log_error(DTTR_PREFIX_GRAPHICS "Failed to create buf2tex compute pipeline: %s", SDL_GetError());
 	return false;
 }
 
@@ -259,7 +261,7 @@ bool dttr_graphics_create_pipelines(void) {
 	SDL_GPUShader *vert = s_create_shader(&vert_blob, SDL_GPU_SHADERSTAGE_VERTEX, 0);
 
 	if (!vert) {
-		log_error("graphics: Failed to create vertex shader: %s", SDL_GetError());
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create vertex shader: %s", SDL_GetError());
 		return false;
 	}
 
@@ -268,7 +270,7 @@ bool dttr_graphics_create_pipelines(void) {
 	SDL_GPUShader *frag = s_create_shader(&frag_blob, SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
 	if (!frag) {
-		log_error("graphics: Failed to create fragment shader: %s", SDL_GetError());
+		log_error(DTTR_PREFIX_GRAPHICS "Failed to create fragment shader: %s", SDL_GetError());
 		s_release_shader_pair(state, vert, NULL);
 		return false;
 	}
