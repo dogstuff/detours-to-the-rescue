@@ -11,17 +11,37 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow
 );
 
-DTTR_INTEROP_HOOK_FUNC(dttr_hook_win_main, 0x3e590, dttr_hook_win_main_callback)
+// Sig matches function prologue directly
+DTTR_INTEROP_HOOK_FUNC_SIG(
+	dttr_hook_win_main,
+	"\x83\xEC\x40\x53\x8B\x5C\x24",
+	"xxxxxxx",
+	match,
+	dttr_hook_win_main_callback
+)
 
 /// Replaces DirectInput joystick polling with SDL gamepad state
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device);
-DTTR_INTEROP_HOOK_FUNC(dttr_inputs_hook_dinput_poll, 0x1a390, dttr_inputs_hook_dinput_poll_callback)
+
+// Sig matches function prologue directly
+DTTR_INTEROP_HOOK_FUNC_SIG(
+	dttr_inputs_hook_dinput_poll,
+	"\x56\x8B\x74\x24?\x56\x8B\x06",
+	"xxxx?xxx",
+	match,
+	dttr_inputs_hook_dinput_poll_callback
+)
 
 /// Replaces GetAsyncKeyState with SDL keyboard state so keyboard input works in the SDL window
 SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey);
 
-DTTR_INTEROP_PATCH_PTR(
-	dttr_inputs_hook_get_async_key_state, 0x168D3E4, dttr_inputs_hook_get_async_key_state_callback
+// Sig resolves absolute address from mov operand
+DTTR_INTEROP_PATCH_PTR_SIG(
+	dttr_inputs_hook_get_async_key_state,
+	"\x8B\x1D????\x56\x33\xF6",
+	"xx????xxx",
+	*(uint32_t *)(match + 2),
+	dttr_inputs_hook_get_async_key_state_callback
 )
 
 /// Installs DirectDraw-related runtime hooks
@@ -45,20 +65,30 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
 	LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags
 );
 
-DTTR_INTEROP_PATCH_PTR(
-	dttr_hook_directdraw_create_ex, 0x168d2f8, dttr_graphics_hook_directdraw_create_ex_callback
+// Sig matches call site; resolves through import thunk to IAT entry
+DTTR_INTEROP_PATCH_PTR_SIG(
+	dttr_hook_directdraw_create_ex,
+	"\xE8????\x85\xC0\x7D?\x68\xF4\xEA\x44\x00",
+	"x????xxx?xxxxx",
+	*(uint32_t *)(match + 5 + *(int32_t *)(match + 1) + 2),
+	dttr_graphics_hook_directdraw_create_ex_callback
 )
 
-DTTR_INTEROP_PATCH_PTR(
+// Sig matches call site; resolves through import thunk to IAT entry
+DTTR_INTEROP_PATCH_PTR_SIG(
 	dttr_hook_directdraw_enumerate_ex_a,
-	0x168d2fc,
+	"\xE8????\x8B\xF0\xA1",
+	"x????xxx",
+	*(uint32_t *)(match + 5 + *(int32_t *)(match + 1) + 2),
 	dttr_graphics_hook_directdraw_enumerate_ex_a_callback
 )
 
-/// Wraps the game's internal OpenFileWithMode for direct calls
-DTTR_INTEROP_WRAP_CACHED(
+// Sig matches function prologue directly
+DTTR_INTEROP_WRAP_CACHED_SIG(
 	dttr_crt_open_file_with_mode,
-	0x463D3,
+	"\xE8????\x85\xC0\x75?\xC3",
+	"x????xxx?x",
+	match,
 	void *,
 	(const char *path, char *mode, int flags),
 	(path, mode, flags)
@@ -66,7 +96,15 @@ DTTR_INTEROP_WRAP_CACHED(
 
 /// Hooks the game's internal OpenFile to gracefully handle failures
 void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode);
-DTTR_INTEROP_HOOK_FUNC(dttr_crt_hook_open_file, 0x463F3, dttr_crt_hook_open_file_callback)
+
+// Sig matches function prologue directly
+DTTR_INTEROP_HOOK_FUNC_SIG(
+	dttr_crt_hook_open_file,
+	"\x6A\x40\xFF\x74\x24\x0C\xFF\x74\x24\x0C\xE8",
+	"xxxxxxxxxxx",
+	match,
+	dttr_crt_hook_open_file_callback
+)
 
 /// Installs CRT hooks
 void dttr_crt_hook_init(HMODULE mod);
