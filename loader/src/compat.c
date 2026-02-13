@@ -125,15 +125,23 @@ void dttr_compat_create_process(const WCHAR *image_name, sds shim_data, PROCESS_
 		len++;
 	memcpy(nt_path + 4, full_path, (len + 1) * sizeof(WCHAR));
 
-	s_unicode_string us_image, us_cmd;
+	WCHAR cwd[MAX_PATH];
+	memcpy(cwd, full_path, (len + 1) * sizeof(WCHAR));
+	WCHAR *const last_sep = wcsrchr(cwd, L'\\');
+	if (last_sep)
+		*(last_sep + 1) = L'\0';
+
+	s_unicode_string us_image, us_cmd, us_cwd;
 	rtl_init_unicode_string(&us_image, nt_path);
 	rtl_init_unicode_string(&us_cmd, image_name);
+	rtl_init_unicode_string(&us_cwd, cwd);
 
 	log_info("NT image path: %ls", nt_path);
+	log_info("Working directory: %ls", cwd);
 
 	PVOID params = NULL;
 	NTSTATUS status = rtl_create_process_parameters_ex(
-		&params, &us_image, NULL, NULL, &us_cmd, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROC_PARAMS_NORMALIZED
+		&params, &us_image, NULL, &us_cwd, &us_cmd, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROC_PARAMS_NORMALIZED
 	);
 	if (!NT_SUCCESS(status)) {
 		DTTR_FATAL("RtlCreateProcessParametersEx failed: 0x%08lX", (unsigned long)status);
