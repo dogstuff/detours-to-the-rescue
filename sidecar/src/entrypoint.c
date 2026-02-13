@@ -50,9 +50,8 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	dttr_crashdump_init("dttr_sidecar");
 
 	FILE *const log_file = fopen("dttr_sidecar.log", "a+");
-
 	if (!log_file) {
-		s_raise_error("Could not open log file dttr_sidecar.log");
+		DTTR_FATAL("Could not open log file dttr_sidecar.log");
 	}
 
 	log_set_level(LOG_INFO);
@@ -67,7 +66,7 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	log_add_fp(log_file, g_dttr_config.m_log_level);
 	log_info("File log level set to %s", log_level_string(g_dttr_config.m_log_level));
 
-	const HWND hwnd = dttr_graphics_init();
+	HWND hwnd = dttr_graphics_init();
 
 	if (hwnd == NULL) {
 		log_error("Failed to initialize - aborting");
@@ -80,7 +79,7 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	log_info("Initializing game functions...");
 	s_interop_pcdogs_functions_init(g_dttr_pc_dogs_module);
 
-	dttr_crt_hook_init(g_dttr_pc_dogs_module);
+	dttr_other_hook_init(g_dttr_pc_dogs_module);
 	dttr_inputs_init(g_dttr_pc_dogs_module);
 	dttr_graphics_hook_init(g_dttr_pc_dogs_module);
 
@@ -90,7 +89,7 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	pcdogs_find_and_load_game_pak_file();
 	pcdogs_initialize_game_engine();
 	pcdogs_initialize_graphics_subsystem(hwnd, NULL);
-	pcdogs_initialize_graphics_capabilities();
+	pcdogs_initialize_capabilities();
 
 	pcdogs_initialize_window_handle(hwnd);
 	pcdogs_reset_input_and_state();
@@ -111,7 +110,7 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 		s_tick_main_loop();
 	}
 
-	dttr_crt_hook_cleanup();
+	dttr_other_hook_cleanup();
 	dttr_graphics_hook_cleanup();
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();

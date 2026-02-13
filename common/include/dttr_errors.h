@@ -11,13 +11,6 @@
 #define typeof __typeof__
 #endif
 
-#define s_raise_error(error_message, ...) \
-	do { \
-		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
-		log_error("%s", _err_msg); \
-		sdsfree(_err_msg); \
-	} while (0)
-
 #define DTTR_FATAL(error_message, ...) \
 	do { \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
@@ -47,7 +40,7 @@
 		if (message == NULL) { \
 			message = "unknown"; \
 		} \
-		DTTR_FATAL("Win32 API Error 0x%X: %s", error_code, message); \
+		DTTR_FATAL("Win32 API Error 0x%lX: %s", error_code, message); \
 	} while (0)
 
 #define DTTR_UNWRAP_WINAPI_IF(result, is_error) \
