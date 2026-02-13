@@ -38,7 +38,10 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		if (choice == IDYES) {
 			log_info("chmod \"%s\" 0o%03o", path, minimum_needed_perms);
 			chmod(path, minimum_needed_perms);
-			return dttr_crt_hook_open_file_callback(path, mode);
+			result = dttr_crt_open_file_with_mode(path, mode, 0x40);
+			if (result)
+				return result;
+			log_error("chmod didn't resolve permission error for \"%s\": %s", path, strerror(errno));
 		}
 	}
 
@@ -56,10 +59,3 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 
 	return dttr_crt_open_file_with_mode("NUL", mode, 0x40);
 }
-
-void dttr_crt_hook_init(HMODULE mod) {
-	dttr_crt_open_file_with_mode_init(mod);
-	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_crt_hook_open_file, mod);
-}
-
-void dttr_crt_hook_cleanup(void) { DTTR_INTEROP_UNHOOK_LOG(dttr_crt_hook_open_file); }

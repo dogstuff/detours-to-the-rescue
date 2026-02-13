@@ -61,11 +61,22 @@ static inline int dttr_interop_validate_resolve(
 	return 1;
 }
 
+// Validates and logs a resolved address, expanding log_info at the call site for correct __FILE__ and __LINE__
+#define INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, addr, name) \
+	(dttr_interop_validate_resolve(mod, addr, name) ? \
+		(log_info("Resolved %s at 0x%08X", name, (unsigned)(addr)), 1) : 0)
+
 // Address resolution helpers used internally by the macros below
+// Resolves an E8 relative call at address p to its absolute target
+#define DTTR_E8_TARGET(p) ((p) + 5 + *(int32_t *)((p) + 1))
+
+// Reads the absolute jump target from an FF 25 import thunk at address p
+#define DTTR_FF25_ADDR(p) (*(uint32_t *)((p) + 2))
+
 // RESOLVE_OFFSET computes an absolute address from a module-relative offset
 // RESOLVE_SIG scans for a byte pattern, binds the match address to `match`, and evaluates expr
-#define DTTR_INTEROP_RESOLVE_OFFSET(mod, offset) ((uintptr_t)(mod) + (offset))
-#define DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr) \
+#define INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, offset) ((uintptr_t)(mod) + (offset))
+#define INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr) \
 	(__extension__({ \
 		const uintptr_t match = dttr_interop_sigscan((mod), (sig), (mask)); \
 		match ? (uintptr_t)(expr) : 0; \
@@ -90,59 +101,80 @@ static inline int dttr_interop_validate_resolve(
 // Call name_init(module) once, then call name() without passing module
 // Define DTTR_INTEROP_IMPLEMENT in exactly one .c file to provide storage
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_WRAP_CACHED_STORAGE(name) uintptr_t name##_addr = 0;
+#define INTERNAL_DTTR_INTEROP_WRAP_CACHED_STORAGE(name) uintptr_t name##_addr = 0;
 #else
-#define DTTR_INTEROP_WRAP_CACHED_STORAGE(name) extern uintptr_t name##_addr;
+#define INTERNAL_DTTR_INTEROP_WRAP_CACHED_STORAGE(name) extern uintptr_t name##_addr;
 #endif
 
-#define DTTR_INTEROP_WRAP_CACHED_IMPL(name, resolve, ret, params, args) \
+#define INTERNAL_DTTR_INTEROP_WRAP_CACHED_IMPL(name, resolve, ret, params, args) \
 	typedef ret(*name##_fn_t) params; \
-	DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
 		name##_addr = (resolve); \
-		if (!dttr_interop_validate_resolve(mod, name##_addr, #name)) { \
+		if (!INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, name##_addr, #name)) { \
 			name##_addr = 0; \
 		} \
 	} \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
 #define DTTR_INTEROP_WRAP_CACHED(name, offset, ret, params, args) \
-	DTTR_INTEROP_WRAP_CACHED_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, offset), ret, params, args)
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, offset), ret, params, args)
 
 #define DTTR_INTEROP_WRAP_CACHED_SIG(name, sig, mask, expr, ret, params, args) \
-	DTTR_INTEROP_WRAP_CACHED_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
 
 // Wraps a function with cached address resolution and an explicit calling convention
-#define DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, resolve, ret, params, args) \
+#define INTERNAL_DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, resolve, ret, params, args) \
 	typedef ret(cc *name##_fn_t) params; \
-	DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
 		name##_addr = (resolve); \
-		if (!dttr_interop_validate_resolve(mod, name##_addr, #name)) { \
+		if (!INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, name##_addr, #name)) { \
 			name##_addr = 0; \
 		} \
 	} \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
 #define DTTR_INTEROP_WRAP_CACHED_CC(name, cc, offset, ret, params, args) \
-	DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, DTTR_INTEROP_RESOLVE_OFFSET(mod, offset), ret, params, args)
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, offset), ret, params, args)
 
 #define DTTR_INTEROP_WRAP_CACHED_CC_SIG(name, cc, sig, mask, expr, ret, params, args) \
-	DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_CC_IMPL(name, cc, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
+
+// Like WRAP_CACHED_CC_SIG but for optional functions that may not exist in all game versions
+// name_init(mod) warns instead of erroring when the sig is not found
+// Callers must check name##_addr before calling name()
+#define INTERNAL_DTTR_INTEROP_WRAP_CACHED_CC_OPTIONAL_IMPL(name, cc, resolve, ret, params, args) \
+	typedef ret(cc *name##_fn_t) params; \
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_STORAGE(name) \
+	static inline void name##_init(HMODULE mod) { \
+		name##_addr = (resolve); \
+		if (!name##_addr) { \
+			log_warn("Skipped optional %s (not found)", #name); \
+			return; \
+		} \
+		if (!INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, name##_addr, #name)) { \
+			name##_addr = 0; \
+		} \
+	} \
+	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
+
+#define DTTR_INTEROP_WRAP_CACHED_CC_OPTIONAL_SIG(name, cc, sig, mask, expr, ret, params, args) \
+	INTERNAL_DTTR_INTEROP_WRAP_CACHED_CC_OPTIONAL_IMPL(name, cc, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), ret, params, args)
 
 // Provides accessor functions for a module global variable
 // name_init(mod), name_ptr(), name_get(), name_set(val)
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_VAR_STORAGE(name) uintptr_t name##_addr = 0;
+#define INTERNAL_DTTR_INTEROP_VAR_STORAGE(name) uintptr_t name##_addr = 0;
 #else
-#define DTTR_INTEROP_VAR_STORAGE(name) extern uintptr_t name##_addr;
+#define INTERNAL_DTTR_INTEROP_VAR_STORAGE(name) extern uintptr_t name##_addr;
 #endif
 
-#define DTTR_INTEROP_VAR_IMPL(name, type, resolve) \
-	DTTR_INTEROP_VAR_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_VAR_IMPL(name, type, resolve) \
+	INTERNAL_DTTR_INTEROP_VAR_STORAGE(name) \
 	static inline void name##_init(HMODULE mod) { \
 		name##_addr = (resolve); \
-		if (!dttr_interop_validate_resolve(mod, name##_addr, #name)) { \
+		if (!INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, name##_addr, #name)) { \
 			name##_addr = 0; \
 		} \
 	} \
@@ -151,10 +183,10 @@ static inline int dttr_interop_validate_resolve(
 	static inline void name##_set(type val) { *(type *)name##_addr = val; }
 
 #define DTTR_INTEROP_VAR(name, type, offset) \
-	DTTR_INTEROP_VAR_IMPL(name, type, DTTR_INTEROP_RESOLVE_OFFSET(mod, offset))
+	INTERNAL_DTTR_INTEROP_VAR_IMPL(name, type, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, offset))
 
 #define DTTR_INTEROP_VAR_SIG(name, type, sig, mask, expr) \
-	DTTR_INTEROP_VAR_IMPL(name, type, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr))
+	INTERNAL_DTTR_INTEROP_VAR_IMPL(name, type, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr))
 
 // These macros patch code to redirect CALL/JMP instructions and pointers
 // The instruction opcodes are E8 for CALL rel32, E9 for JMP rel32, EB for JMP rel8, FF15 for CALL [addr], and FF25 for JMP [addr]
@@ -162,11 +194,11 @@ static inline int dttr_interop_validate_resolve(
 // Patch a relative CALL (E8) instruction
 // name_patch(mod), name_unpatch()
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
 	uintptr_t name##_site = 0; \
 	uint8_t name##_orig[5] = {0};
 #else
-#define DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
 	extern uintptr_t name##_site; \
 	extern uint8_t name##_orig[5];
 #endif
@@ -180,6 +212,22 @@ static inline int dttr_interop_validate_resolve(
 		); \
 	} while (0)
 
+// Generic optional install+log for hooks/patches that may not exist in all game versions
+// Calls _install, then logs success or skip based on _site
+#define DTTR_INTEROP_OPTIONAL_LOG(hook, mod, type_name) \
+	do { \
+		hook##_install(mod); \
+		if (hook##_site) { \
+			log_info("Applied " type_name " %s at 0x%08X", #hook, (unsigned)hook##_site); \
+		} else { \
+			log_warn("Skipped optional " type_name " %s (not found)", #hook); \
+		} \
+	} while (0)
+
+#define DTTR_INTEROP_HOOK_FUNC_OPTIONAL_LOG(hook, mod) DTTR_INTEROP_OPTIONAL_LOG(hook, mod, "HOOK_FUNC")
+#define DTTR_INTEROP_PATCH_CALL_OPTIONAL_LOG(hook, mod) DTTR_INTEROP_OPTIONAL_LOG(hook, mod, "PATCH_CALL")
+#define DTTR_INTEROP_PATCH_PTR_OPTIONAL_LOG(hook, mod) DTTR_INTEROP_OPTIONAL_LOG(hook, mod, "PATCH_PTR")
+
 #define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(hook, mod) \
 	do { \
 		hook##_install(mod); \
@@ -191,6 +239,21 @@ static inline int dttr_interop_validate_resolve(
 		} else { \
 			log_error( \
 				"Failed to allocate trampoline for %s", #hook \
+			); \
+		} \
+	} while (0)
+
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_OPTIONAL_LOG(hook, mod) \
+	do { \
+		hook##_install(mod); \
+		if (hook##_trampoline) { \
+			log_info( \
+				"Applied HOOK_FUNC %s at 0x%08X", #hook, \
+				(unsigned)hook##_site \
+			); \
+		} else { \
+			log_warn( \
+				"Skipped optional HOOK_FUNC %s (not found)", #hook \
 			); \
 		} \
 	} while (0)
@@ -221,8 +284,18 @@ static inline int dttr_interop_validate_resolve(
 		hook##_unpatch(); \
 	} while (0)
 
-#define DTTR_INTEROP_PATCH_CALL_IMPL(name, resolve, target) \
-	DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
+#define DTTR_INTEROP_UNHOOK_OPTIONAL_LOG(hook) \
+	do { \
+		if (hook##_site) { \
+			log_info( \
+				"Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
+			); \
+			hook##_unpatch(); \
+		} \
+	} while (0)
+
+#define INTERNAL_DTTR_INTEROP_PATCH_CALL_IMPL(name, resolve, target) \
+	INTERNAL_DTTR_INTEROP_PATCH_CALL_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
 		name##_site = (resolve); \
 		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
@@ -246,24 +319,37 @@ static inline int dttr_interop_validate_resolve(
 	}
 
 #define DTTR_INTEROP_PATCH_CALL(name, call_addr, target) \
-	DTTR_INTEROP_PATCH_CALL_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, call_addr), target)
+	INTERNAL_DTTR_INTEROP_PATCH_CALL_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, call_addr), target)
 
 #define DTTR_INTEROP_PATCH_CALL_SIG(name, sig, mask, expr, target) \
-	DTTR_INTEROP_PATCH_CALL_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+	INTERNAL_DTTR_INTEROP_PATCH_CALL_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+
+// Shared _install wrapper for optional SIG variants
+// Pre-checks the signature before calling _patch, silently returning if not found
+#define INTERNAL_DTTR_INTEROP_OPTIONAL_INSTALL_SIG(name, sig, mask) \
+	static inline void name##_install(HMODULE mod) { \
+		if (!dttr_interop_sigscan(mod, sig, mask)) { return; } \
+		name##_patch(mod); \
+	}
+
+// Like PATCH_CALL_SIG but for optional patches that may not exist in all game versions
+#define DTTR_INTEROP_PATCH_CALL_OPTIONAL_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_CALL_SIG(name, sig, mask, expr, target) \
+	INTERNAL_DTTR_INTEROP_OPTIONAL_INSTALL_SIG(name, sig, mask)
 
 // Works the same as PATCH_CALL but writes E9 (JMP) instead of E8
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
 	uintptr_t name##_site = 0; \
 	uint8_t name##_orig[5] = {0};
 #else
-#define DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
 	extern uintptr_t name##_site; \
 	extern uint8_t name##_orig[5];
 #endif
 
-#define DTTR_INTEROP_PATCH_JMP_IMPL(name, resolve, target) \
-	DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_JMP_IMPL(name, resolve, target) \
+	INTERNAL_DTTR_INTEROP_PATCH_JMP_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
 		name##_site = (resolve); \
 		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
@@ -287,25 +373,25 @@ static inline int dttr_interop_validate_resolve(
 	}
 
 #define DTTR_INTEROP_PATCH_JMP(name, jmp_addr, target) \
-	DTTR_INTEROP_PATCH_JMP_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, jmp_addr), target)
+	INTERNAL_DTTR_INTEROP_PATCH_JMP_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, jmp_addr), target)
 
 #define DTTR_INTEROP_PATCH_JMP_SIG(name, sig, mask, expr, target) \
-	DTTR_INTEROP_PATCH_JMP_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+	INTERNAL_DTTR_INTEROP_PATCH_JMP_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
 
 // Patch a pointer/address (e.g. vtable entry, IAT)
 // name_patch(mod), name_unpatch(), name_orig_ptr()
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
 	uintptr_t name##_site = 0; \
 	uintptr_t name##_orig = 0;
 #else
-#define DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
 	extern uintptr_t name##_site; \
 	extern uintptr_t name##_orig;
 #endif
 
-#define DTTR_INTEROP_PATCH_PTR_IMPL(name, resolve, target) \
-	DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_PATCH_PTR_IMPL(name, resolve, target) \
+	INTERNAL_DTTR_INTEROP_PATCH_PTR_STORAGE(name) \
 	static inline void name##_patch(HMODULE mod) { \
 		name##_site = (resolve); \
 		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
@@ -332,25 +418,30 @@ static inline int dttr_interop_validate_resolve(
 	static inline void *name##_orig_ptr(void) { return (void *)name##_orig; }
 
 #define DTTR_INTEROP_PATCH_PTR(name, ptr_addr, target) \
-	DTTR_INTEROP_PATCH_PTR_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, ptr_addr), target)
+	INTERNAL_DTTR_INTEROP_PATCH_PTR_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, ptr_addr), target)
 
 #define DTTR_INTEROP_PATCH_PTR_SIG(name, sig, mask, expr, target) \
-	DTTR_INTEROP_PATCH_PTR_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+	INTERNAL_DTTR_INTEROP_PATCH_PTR_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+
+// Like PATCH_PTR_SIG but for optional patches that may not exist in all game versions
+#define DTTR_INTEROP_PATCH_PTR_OPTIONAL_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_PTR_SIG(name, sig, mask, expr, target) \
+	INTERNAL_DTTR_INTEROP_OPTIONAL_INSTALL_SIG(name, sig, mask)
 
 // Overwrites `size` bytes at a fixed offset with caller-supplied content, saving the originals for restoration
 // Generates name_patch(mod, bytes) to apply and name_unpatch() to restore
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
+#define INTERNAL_DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
 	uintptr_t name##_site = 0; \
 	uint8_t name##_orig[size] = {0};
 #else
-#define DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
+#define INTERNAL_DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
 	extern uintptr_t name##_site; \
 	extern uint8_t name##_orig[size];
 #endif
 
-#define DTTR_INTEROP_PATCH_BYTES_IMPL(name, resolve, size) \
-	DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
+#define INTERNAL_DTTR_INTEROP_PATCH_BYTES_IMPL(name, resolve, size) \
+	INTERNAL_DTTR_INTEROP_PATCH_BYTES_STORAGE(name, size) \
 	static inline void name##_patch(HMODULE mod, const uint8_t *bytes) { \
 		name##_site = (resolve); \
 		if (!dttr_interop_validate_resolve(mod, name##_site, #name)) { \
@@ -374,10 +465,19 @@ static inline int dttr_interop_validate_resolve(
 	}
 
 #define DTTR_INTEROP_PATCH_BYTES(name, addr, size) \
-	DTTR_INTEROP_PATCH_BYTES_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, addr), size)
+	INTERNAL_DTTR_INTEROP_PATCH_BYTES_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, addr), size)
 
 #define DTTR_INTEROP_PATCH_BYTES_SIG(name, sig, mask, expr, size) \
-	DTTR_INTEROP_PATCH_BYTES_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), size)
+	INTERNAL_DTTR_INTEROP_PATCH_BYTES_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), size)
+
+// Like PATCH_BYTES_SIG but for optional patches that may not exist in all game versions
+// Adds _install that silently returns if the signature is not found
+#define DTTR_INTEROP_PATCH_BYTES_OPTIONAL_SIG(name, sig, mask, expr, size) \
+	DTTR_INTEROP_PATCH_BYTES_SIG(name, sig, mask, expr, size) \
+	static inline void name##_install(HMODULE mod, const uint8_t *bytes) { \
+		if (!dttr_interop_sigscan(mod, sig, mask)) { return; } \
+		name##_patch(mod, bytes); \
+	}
 
 // Replace entire function by writing a JMP at its start
 #define DTTR_INTEROP_HOOK_FUNC(name, func_addr, target) \
@@ -388,22 +488,27 @@ static inline int dttr_interop_validate_resolve(
 	DTTR_INTEROP_PATCH_JMP_SIG(name, sig, mask, expr, target) \
 	static inline void name##_install(HMODULE mod) { name##_patch(mod); }
 
+// Like HOOK_FUNC_SIG but for optional hooks that may not exist in all game versions
+#define DTTR_INTEROP_HOOK_FUNC_OPTIONAL_SIG(name, sig, mask, expr, target) \
+	DTTR_INTEROP_PATCH_JMP_SIG(name, sig, mask, expr, target) \
+	INTERNAL_DTTR_INTEROP_OPTIONAL_INSTALL_SIG(name, sig, mask)
+
 // Replace entire function with a JMP and allocate a trampoline for calling through to the original
 // Exposes name##_trampoline (uint8_t*) that the callback casts to the original function
 #ifdef DTTR_INTEROP_IMPLEMENT
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	uintptr_t name##_site = 0; \
 	uint8_t name##_orig[5] = {0}; \
 	uint8_t *name##_trampoline = NULL;
 #else
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	extern uintptr_t name##_site; \
 	extern uint8_t name##_orig[5]; \
 	extern uint8_t *name##_trampoline;
 #endif
 
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, resolve, target) \
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
+#define INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, resolve, target) \
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	static inline void name##_install(HMODULE mod) { \
 		const uintptr_t site = (resolve); \
 		if (!dttr_interop_validate_resolve(mod, site, #name)) { return; } \
@@ -438,10 +543,20 @@ static inline int dttr_interop_validate_resolve(
 	}
 
 #define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE(name, func_addr, target) \
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, DTTR_INTEROP_RESOLVE_OFFSET(mod, func_addr), target)
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, func_addr), target)
 
 #define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_SIG(name, sig, mask, expr, target) \
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+
+// Like HOOK_FUNC_TRAMPOLINE_SIG but for optional hooks that may not exist in all game versions
+// _install silently returns if the signature is not found, avoiding log_error from validate_resolve
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_OPTIONAL_SIG(name, sig, mask, expr, target) \
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, \
+		(__extension__({ \
+			if (!dttr_interop_sigscan(mod, sig, mask)) return; \
+			INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr); \
+		})), \
+		target)
 
 // Hook a COM method by patching its vtable entry at runtime
 // https://learn.microsoft.com/en-us/windows/win32/prog-dx-with-com
