@@ -57,15 +57,16 @@ pages:
 release:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
+  variables:
+    GIT_DEPTH: 0
   script:
-    - echo "Creating release ${CI_COMMIT_TAG}"
+    - git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty="- %s" > changelog.md
   needs:
     - job: build-release
       artifacts: true
   release:
     tag_name: $CI_COMMIT_TAG
-    description: |
-      $(glab changelog generate --from $CI_COMMIT_TAG --to $CI_COMMIT_SHA)
+    description: ./changelog.md
     assets:
       links:
         - name: "dttr-${CI_COMMIT_TAG}-release.zip"
