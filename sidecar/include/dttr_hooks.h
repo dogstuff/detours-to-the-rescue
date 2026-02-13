@@ -7,17 +7,12 @@
 #include <windows.h>
 
 /// Replaces the game's WinMain entry point with sidecar bootstrapping logic
-int32_t _stdcall dttr_hook_win_main_callback(
-	HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow
-);
+int32_t _stdcall
+dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow);
 
 // Sig matches function prologue directly
 DTTR_INTEROP_HOOK_FUNC_SIG(
-	dttr_hook_win_main,
-	"\x83\xEC\x40\x53\x8B\x5C\x24",
-	"xxxxxxx",
-	match,
-	dttr_hook_win_main_callback
+	dttr_hook_win_main, "\x83\xEC\x40\x53\x8B\x5C\x24", "xxxxxxx", match, dttr_hook_win_main_callback
 )
 
 /// Replaces DirectInput joystick polling with SDL gamepad state
@@ -61,9 +56,8 @@ typedef BOOL(__stdcall *LPDDENUMCALLBACKEXA)(
 
 /// Intercepts DirectDrawEnumerateExA and enumerates the virtual display adapter
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawenumerateexa
-HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
-	LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags
-);
+HRESULT __stdcall
+dttr_graphics_hook_directdraw_enumerate_ex_a_callback(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags);
 
 // Sig matches call site; resolves through import thunk to IAT entry
 DTTR_INTEROP_PATCH_PTR_SIG(

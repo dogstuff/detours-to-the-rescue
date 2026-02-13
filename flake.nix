@@ -40,6 +40,7 @@
       devShells = forEachSystem (pkgs: let
         s = sdl3 pkgs;
         v = vlc pkgs;
+        mcfg = pkgs.pkgsCross.mingw32.windows.mcfgthreads;
       in {
         default = pkgs.mkShell {
           packages = with pkgs; [
@@ -97,6 +98,7 @@
             set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
             set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
             set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
+            link_directories("${mcfg}/lib")
             add_link_options(-static-libgcc)
             set(CMAKE_CROSSCOMPILING_EMULATOR wine)
             EOF

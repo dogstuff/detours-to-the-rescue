@@ -11,7 +11,7 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		return result;
 
 	log_error(
-		"crt: Gracefully handling failed _openfile for \"%s\" (mode \"%s\"). "
+		"Gracefully handling failed _openfile for \"%s\" (mode \"%s\"). "
 		"This is typically the result of a permissions issue.",
 		path,
 		mode

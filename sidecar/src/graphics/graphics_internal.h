@@ -238,9 +238,7 @@ void dttr_graphics_begin_frame(void);
 /// Submits queued GPU work and presents the current frame
 void dttr_graphics_end_frame(void);
 /// Uploads and presents one BGRA video frame directly to the swapchain
-bool dttr_graphics_present_video_frame_bgra(
-	const uint8_t *pixels, int width, int height, int stride
-);
+bool dttr_graphics_present_video_frame_bgra(const uint8_t *pixels, int width, int height, int stride);
 
 /// Returns true when called from the renderer's GPU thread
 bool dttr_graphics_is_gpu_thread(void);
@@ -259,8 +257,7 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat forma
 /// Returns the preferred shader format for a specific backend driver
 SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver);
 /// Chooses a shader format using driver preference with mask validation
-SDL_GPUShaderFormat
-dttr_graphics_select_shader_format_for_driver(const char *driver, SDL_GPUShaderFormat formats);
+SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(const char *driver, SDL_GPUShaderFormat formats);
 
 /// Builds all graphics pipelines used by the renderer
 bool dttr_graphics_create_pipelines(void);

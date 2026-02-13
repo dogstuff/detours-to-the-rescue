@@ -86,9 +86,7 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 
 static khash_t(dttr_config_lookup) *g_dttr_config_lookup = NULL;
 
-static int s_config_schema_count(void) {
-	return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0]));
-}
+static int s_config_schema_count(void) { return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0])); }
 
 static void s_config_schema_init(void) {
 	if (g_dttr_config_lookup) {
@@ -103,8 +101,7 @@ static void s_config_schema_init(void) {
 	for (int i = 0; i < s_config_schema_count(); i++) {
 		const S_ConfigFieldSpec *const spec = &s_config_schema[i];
 		int put_ret = 0;
-		const khint_t it
-			= kh_put(dttr_config_lookup, g_dttr_config_lookup, (char *)spec->key, &put_ret);
+		const khint_t it = kh_put(dttr_config_lookup, g_dttr_config_lookup, (char *)spec->key, &put_ret);
 		if (it != kh_end(g_dttr_config_lookup)) {
 			kh_value(g_dttr_config_lookup, it) = i;
 		}
@@ -123,8 +120,7 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 	}
 
 	const S_ConfigFieldSpec *const spec = &s_config_schema[kh_value(g_dttr_config_lookup, it)];
-	if (section != spec->section
-		&& (!section || !spec->section || strcmp(spec->section, section) != 0)) {
+	if (section != spec->section && (!section || !spec->section || strcmp(spec->section, section) != 0)) {
 		return NULL;
 	}
 
@@ -211,9 +207,7 @@ static bool s_config_assign_int(char *field, const char *value) {
 	return true;
 }
 
-bool s_config_apply_entry(
-	DTTR_Config *config, const char *section, const char *key, const char *value
-) {
+bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *key, const char *value) {
 	if (!config || !key || !value) {
 		return false;
 	}
@@ -280,9 +274,7 @@ static int s_gamepad_deadzone_key_to_index(const char *key) {
 	return -1;
 }
 
-bool s_config_apply_gamepad_entry(
-	DTTR_Config *config, const char *section, const char *key, const char *value
-) {
+bool s_config_apply_gamepad_entry(DTTR_Config *config, const char *section, const char *key, const char *value) {
 	if (!config || !section || !key || !value) {
 		return false;
 	}

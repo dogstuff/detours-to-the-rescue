@@ -23,11 +23,7 @@ static void s_update_window_title(const DTTR_BackendState *state) {
 
 	sdsclear(s_window_title);
 	s_window_title = sdscatprintf(
-		s_window_title,
-		"102 Dalmatians - DttR - " DTTR_VERSION " - %s - %dx%d",
-		driver ? driver : "unknown",
-		w,
-		h
+		s_window_title, "102 Dalmatians - DttR - " DTTR_VERSION " - %s - %dx%d", driver ? driver : "unknown", w, h
 	);
 	SDL_SetWindowTitle(state->m_window, s_window_title);
 }
@@ -70,33 +66,28 @@ static int s_msaa_sample_count_to_int(SDL_GPUSampleCount value) {
 
 // Selects the runtime MSAA sample count based on config and GPU support
 static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
-	const SDL_GPUSampleCount requested
-		= s_msaa_sample_count_from_config(g_dttr_config.m_msaa_samples);
+	const SDL_GPUSampleCount requested = s_msaa_sample_count_from_config(g_dttr_config.m_msaa_samples);
 	if (requested == SDL_GPU_SAMPLECOUNT_1)
 		return SDL_GPU_SAMPLECOUNT_1;
 
-	const SDL_GPUTextureFormat swapchain_fmt
-		= SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
-	const bool color_supported
-		= SDL_GPUTextureSupportsSampleCount(state->m_device, swapchain_fmt, requested);
-	const bool depth_supported = SDL_GPUTextureSupportsSampleCount(
-		state->m_device, SDL_GPU_TEXTUREFORMAT_D32_FLOAT, requested
-	);
+	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
+	const bool color_supported = SDL_GPUTextureSupportsSampleCount(state->m_device, swapchain_fmt, requested);
+	const bool depth_supported
+		= SDL_GPUTextureSupportsSampleCount(state->m_device, SDL_GPU_TEXTUREFORMAT_D32_FLOAT, requested);
 
 	if (color_supported && depth_supported)
 		return requested;
 
 	log_warn(
-		DTTR_PREFIX_GRAPHICS "Requested MSAA x%d is unsupported on this device/format. "
-							 "Falling back to x1.",
+		"Requested MSAA x%d is unsupported on this device/format. "
+		"Falling back to x1.",
 		s_msaa_sample_count_to_int(requested)
 	);
 	return SDL_GPU_SAMPLECOUNT_1;
 }
 
 // Selects the actual render target resolution from current config/state
-static void
-s_select_render_resolution(const DTTR_BackendState *state, int *out_width, int *out_height) {
+static void s_select_render_resolution(const DTTR_BackendState *state, int *out_width, int *out_height) {
 	int width = state->m_logical_width;
 	int height = state->m_logical_height;
 
@@ -106,8 +97,7 @@ s_select_render_resolution(const DTTR_BackendState *state, int *out_width, int *
 		int target_width = g_dttr_config.m_window_width;
 		int target_height = g_dttr_config.m_window_height;
 
-		if (state->m_window
-			&& SDL_GetWindowSizeInPixels(state->m_window, &window_px_width, &window_px_height)) {
+		if (state->m_window && SDL_GetWindowSizeInPixels(state->m_window, &window_px_width, &window_px_height)) {
 			if (window_px_width > target_width)
 				target_width = window_px_width;
 
@@ -144,11 +134,7 @@ static void s_refresh_render_resolution(DTTR_BackendState *state) {
 		return;
 
 	if (!dttr_graphics_resize_render_textures(render_width, render_height)) {
-		log_warn(
-			DTTR_PREFIX_GRAPHICS "Failed to resize render textures to %dx%d",
-			render_width,
-			render_height
-		);
+		log_warn("Failed to resize render textures to %dx%d", render_width, render_height);
 	}
 }
 
@@ -160,8 +146,8 @@ static bool s_try_create_device_for_driver(
 
 	if (!state->m_device) {
 		log_warn(
-			DTTR_PREFIX_GRAPHICS "Failed to create SDL GPU device for driver '%s' "
-								 "(requested_formats=0x%x): %s",
+			"Failed to create SDL GPU device for driver '%s' "
+			"(requested_formats=0x%x): %s",
 			driver ? driver : "default",
 			(unsigned int)requested_formats,
 			SDL_GetError()
@@ -170,11 +156,7 @@ static bool s_try_create_device_for_driver(
 	}
 
 	if (!SDL_ClaimWindowForGPUDevice(state->m_device, state->m_window)) {
-		log_warn(
-			DTTR_PREFIX_GRAPHICS "Failed to claim window for SDL GPU driver '%s': %s",
-			driver ? driver : "default",
-			SDL_GetError()
-		);
+		log_warn("Failed to claim window for SDL GPU driver '%s': %s", driver ? driver : "default", SDL_GetError());
 		SDL_DestroyGPUDevice(state->m_device);
 		state->m_device = NULL;
 		return false;
@@ -182,14 +164,12 @@ static bool s_try_create_device_for_driver(
 
 	const SDL_GPUShaderFormat available_formats = SDL_GetGPUShaderFormats(state->m_device);
 	const char *active_driver = SDL_GetGPUDeviceDriver(state->m_device);
-	state->m_shader_format
-		= dttr_graphics_select_shader_format_for_driver(active_driver, available_formats);
+	state->m_shader_format = dttr_graphics_select_shader_format_for_driver(active_driver, available_formats);
 
 	if (state->m_shader_format != SDL_GPU_SHADERFORMAT_INVALID)
 		return true;
 
 	log_warn(
-		DTTR_PREFIX_GRAPHICS
 		"SDL GPU driver '%s' does not support required shader format. Available "
 		"mask=0x%x",
 		active_driver ? active_driver : "unknown",
@@ -225,7 +205,6 @@ static bool s_create_device(DTTR_BackendState *state) {
 			return true;
 
 		log_error(
-			DTTR_PREFIX_GRAPHICS
 			"GPU device creation failed for configured graphics_api='%s'; no fallback "
 			"APIs "
 			"will be attempted",
@@ -246,10 +225,7 @@ static bool s_create_device(DTTR_BackendState *state) {
 			return true;
 	}
 
-	log_error(
-		DTTR_PREFIX_GRAPHICS
-		"GPU device creation failed for all supported APIs (d3d12/metal/vulkan)"
-	);
+	log_error("GPU device creation failed for all supported APIs (d3d12/metal/vulkan)");
 	return false;
 }
 
@@ -264,7 +240,7 @@ HWND dttr_graphics_init(void) {
 	}
 
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
-		log_error(DTTR_PREFIX_GRAPHICS "SDL_Init failed: %s", SDL_GetError());
+		log_error("SDL_Init failed: %s", SDL_GetError());
 		return NULL;
 	}
 
@@ -281,12 +257,11 @@ HWND dttr_graphics_init(void) {
 	state->m_logical_height = WINDOW_HEIGHT;
 	s_select_render_resolution(state, &state->m_width, &state->m_height);
 
-	state->m_window = SDL_CreateWindow(
-		"102 Dalmatians", initial_window_width, initial_window_height, SDL_WINDOW_RESIZABLE
-	);
+	state->m_window
+		= SDL_CreateWindow("102 Dalmatians", initial_window_width, initial_window_height, SDL_WINDOW_RESIZABLE);
 
 	if (!state->m_window) {
-		log_error(DTTR_PREFIX_GRAPHICS "Window creation failed: %s", SDL_GetError());
+		log_error("Window creation failed: %s", SDL_GetError());
 		return NULL;
 	}
 
@@ -298,13 +273,13 @@ HWND dttr_graphics_init(void) {
 
 	state->m_msaa_sample_count = s_select_msaa_sample_count(state);
 	log_info(
-		DTTR_PREFIX_GRAPHICS "MSAA requested: x%d, effective: x%d",
+		"MSAA requested: x%d, effective: x%d",
 		g_dttr_config.m_msaa_samples,
 		s_msaa_sample_count_to_int(state->m_msaa_sample_count)
 	);
 
 	log_info(
-		DTTR_PREFIX_GRAPHICS "SDL GPU initialized with %s (shaders: %s)",
+		"SDL GPU initialized with %s (shaders: %s)",
 		SDL_GetGPUDeviceDriver(state->m_device),
 		dttr_graphics_shader_format_name(state->m_shader_format)
 	);
@@ -312,7 +287,7 @@ HWND dttr_graphics_init(void) {
 	s_update_window_title(state);
 
 	if (!dttr_graphics_create_pipelines() || !dttr_graphics_create_resources()) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create GPU resources");
+		log_error("Failed to create GPU resources");
 		return NULL;
 	}
 

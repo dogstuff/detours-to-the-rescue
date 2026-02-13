@@ -38,42 +38,31 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 	if (ddraw_out) {
 		DWORD old;
 		if (!VirtualProtect(ddraw_out, sizeof(void *), PAGE_READWRITE, &old)) {
-			log_error(
-				DTTR_PREFIX_GRAPHICS "VirtualProtect failed for ddraw_out=%p error=%lu",
-				ddraw_out,
-				GetLastError()
-			);
+			log_error("VirtualProtect failed for ddraw_out=%p error=%lu", ddraw_out, GetLastError());
 		} else {
 			*ddraw_out = ddraw7;
 			VirtualProtect(ddraw_out, sizeof(void *), old, &old);
 		}
 	}
 
-	log_info(DTTR_PREFIX_GRAPHICS "DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
+	log_info("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
 	return S_OK;
 }
 
 // Calls the enumerate callback with our virtual display device
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawenumerateexa
-HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
-	LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags
-) {
-	log_info(
-		DTTR_PREFIX_GRAPHICS
-		"DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
-		lpCallback,
-		lpContext,
-		dwFlags
-	);
+HRESULT __stdcall
+dttr_graphics_hook_directdraw_enumerate_ex_a_callback(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags) {
+	log_info("DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x", lpCallback, lpContext, dwFlags);
 
 	if (!lpCallback) {
-		log_info(DTTR_PREFIX_GRAPHICS "DirectDrawEnumerateExA complete");
+		log_info("DirectDrawEnumerateExA complete");
 		return S_OK;
 	}
 
 	lpCallback(NULL, "DTTR Virtual Display", "display", lpContext, NULL);
 
-	log_info(DTTR_PREFIX_GRAPHICS "DirectDrawEnumerateExA complete");
+	log_info("DirectDrawEnumerateExA complete");
 	return S_OK;
 }
 
@@ -82,12 +71,12 @@ void dttr_graphics_hook_init(HMODULE module) {
 	g_dttr_graphics_hook_hwnd = dttr_graphics_init();
 
 	if (!g_dttr_graphics_hook_hwnd) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to initialize backend");
+		log_error("Failed to initialize backend");
 		return;
 	}
 
 	if (!s_get_or_create_ddraw7()) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create DirectDraw translator");
+		log_error("Failed to create DirectDraw translator");
 		return;
 	}
 

@@ -27,10 +27,8 @@ static void s_create_samplers(DTTR_BackendState *state) {
 				.min_filter = SDL_GPU_FILTER_LINEAR,
 				.mag_filter = SDL_GPU_FILTER_LINEAR,
 				.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR,
-				.address_mode_u
-				= cu ? SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE : SDL_GPU_SAMPLERADDRESSMODE_REPEAT,
-				.address_mode_v
-				= cv ? SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE : SDL_GPU_SAMPLERADDRESSMODE_REPEAT,
+				.address_mode_u = cu ? SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE : SDL_GPU_SAMPLERADDRESSMODE_REPEAT,
+				.address_mode_v = cv ? SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE : SDL_GPU_SAMPLERADDRESSMODE_REPEAT,
 				.enable_anisotropy = true,
 				.max_anisotropy = DTTR_MAX_ANISOTROPY,
 			};
@@ -42,8 +40,7 @@ static void s_create_samplers(DTTR_BackendState *state) {
 
 // Creates render-target and depth textures for the current render resolution
 static void s_create_render_textures(DTTR_BackendState *state) {
-	const SDL_GPUTextureFormat swapchain_fmt
-		= SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
+	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
 	const SDL_GPUSampleCount sample_count = state->m_msaa_sample_count;
 
 	const SDL_GPUTextureCreateInfo rt_info = {
@@ -92,8 +89,7 @@ static void s_create_dummy_texture(DTTR_BackendState *state) {
 	const SDL_GPUTextureCreateInfo dummy_tex_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
 		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER
-				 | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE,
+		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE,
 		.width = 1,
 		.height = 1,
 		.layer_count_or_depth = 1,
@@ -103,9 +99,8 @@ static void s_create_dummy_texture(DTTR_BackendState *state) {
 }
 
 // Uploads a single white pixel into the dummy texture via the compute path
-static void s_upload_dummy_pixel_to_texture(
-	const DTTR_BackendState *state, SDL_GPUBuffer *pixel_buf, SDL_GPUTransferBuffer *tbuf
-) {
+static void
+s_upload_dummy_pixel_to_texture(const DTTR_BackendState *state, SDL_GPUBuffer *pixel_buf, SDL_GPUTransferBuffer *tbuf) {
 	const uint32_t white_pixel = 0xFFFFFFFF;
 	const uint32_t buf_size = sizeof(white_pixel);
 
@@ -197,28 +192,27 @@ bool dttr_graphics_create_resources(void) {
 	s_create_dummy_texture(state);
 
 	if (!state->m_vertex_buffer || !state->m_transfer_buffer) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create frame buffers");
+		log_error("Failed to create frame buffers");
 		return false;
 	}
 
-	if (!state->m_samplers[0] || !state->m_samplers[1] || !state->m_samplers[2]
-		|| !state->m_samplers[3]) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create samplers");
+	if (!state->m_samplers[0] || !state->m_samplers[1] || !state->m_samplers[2] || !state->m_samplers[3]) {
+		log_error("Failed to create samplers");
 		return false;
 	}
 
 	if (!state->m_render_target || !state->m_depth_texture) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create render textures");
+		log_error("Failed to create render textures");
 		return false;
 	}
 
 	if (!state->m_dummy_texture) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create dummy texture");
+		log_error("Failed to create dummy texture");
 		return false;
 	}
 
 	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create MSAA render target");
+		log_error("Failed to create MSAA render target");
 		return false;
 	}
 
@@ -254,16 +248,12 @@ bool dttr_graphics_resize_render_textures(int width, int height) {
 	s_create_render_textures(state);
 
 	if (!state->m_render_target || !state->m_depth_texture) {
-		log_error(
-			DTTR_PREFIX_GRAPHICS "Failed to recreate render textures at %dx%d", width, height
-		);
+		log_error("Failed to recreate render textures at %dx%d", width, height);
 		return false;
 	}
 
 	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && !state->m_msaa_render_target) {
-		log_error(
-			DTTR_PREFIX_GRAPHICS "Failed to recreate MSAA render target at %dx%d", width, height
-		);
+		log_error("Failed to recreate MSAA render target at %dx%d", width, height);
 		return false;
 	}
 
