@@ -78,8 +78,7 @@ SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver) {
 }
 
 // Selects a driver-preferred shader format, then falls back to generic selection
-SDL_GPUShaderFormat
-dttr_graphics_select_shader_format_for_driver(const char *driver, SDL_GPUShaderFormat formats) {
+SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(const char *driver, SDL_GPUShaderFormat formats) {
 	const SDL_GPUShaderFormat preferred = dttr_graphics_shader_format_for_driver(driver);
 
 	if ((preferred != SDL_GPU_SHADERFORMAT_INVALID) && (formats & preferred))

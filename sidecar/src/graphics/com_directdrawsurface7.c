@@ -103,10 +103,7 @@ static DTTR_Texture s_surface_texture_cache_lookup_locked(uint64_t key) {
 }
 
 static uint64_t s_surface_texture_cache_key(
-	const DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	uint32_t width,
-	uint32_t height,
-	uint64_t source_hash
+	const DTTR_Graphics_COM_DirectDrawSurface7 *self, uint32_t width, uint32_t height, uint64_t source_hash
 ) {
 	const S_SurfaceTextureCacheSeed seed = {
 		.source_hash = source_hash,
@@ -177,8 +174,7 @@ static void s_surface_convert_rgb565_to_bgra8888(
 }
 
 // Ensures the per-surface 32-bit conversion scratch buffer can hold `size` bytes
-static uint32_t *
-s_surface_ensure_convert_buffer(DTTR_Graphics_COM_DirectDrawSurface7 *self, uint32_t size) {
+static uint32_t *s_surface_ensure_convert_buffer(DTTR_Graphics_COM_DirectDrawSurface7 *self, uint32_t size) {
 	if (!self || size == 0)
 		return NULL;
 
@@ -195,9 +191,8 @@ s_surface_ensure_convert_buffer(DTTR_Graphics_COM_DirectDrawSurface7 *self, uint
 }
 
 // Computes a stable hash of the source surface region and conversion-relevant state
-static uint64_t s_surface_hash_source_pixels(
-	const DTTR_Graphics_COM_DirectDrawSurface7 *self, uint32_t upload_w, uint32_t upload_h
-) {
+static uint64_t
+s_surface_hash_source_pixels(const DTTR_Graphics_COM_DirectDrawSurface7 *self, uint32_t upload_w, uint32_t upload_h) {
 	if (!self || !self->m_pixels || upload_w == 0 || upload_h == 0) {
 		return 0;
 	}
@@ -281,8 +276,7 @@ static bool s_surface_texture_retain(DTTR_Texture tex) {
 
 /// Creates a staged GPU texture handle from a CPU pixel buffer or reuses a deduplicated
 /// one from cache
-static DTTR_Texture
-s_surface_texture_create_or_retain(int width, int height, const void *pixels, uint64_t cache_key) {
+static DTTR_Texture s_surface_texture_create_or_retain(int width, int height, const void *pixels, uint64_t cache_key) {
 	DTTR_BackendState *state = &g_dttr_backend;
 	if (width <= 0 || height <= 0)
 		return DTTR_INVALID_TEXTURE;
@@ -299,7 +293,7 @@ s_surface_texture_create_or_retain(int width, int height, const void *pixels, ui
 
 	if (state->m_staged_texture_count >= DTTR_MAX_STAGED_TEXTURES) {
 		SDL_UnlockMutex(state->m_texture_mutex);
-		log_error(DTTR_PREFIX_GRAPHICS "Too many textures");
+		log_error("Too many textures");
 		return DTTR_INVALID_TEXTURE;
 	}
 
@@ -386,9 +380,8 @@ static void s_surface_texture_release(DTTR_Texture tex) {
 }
 
 /// Replaces pixel data and dimensions for an existing uniquely-owned staged texture handle
-static bool s_surface_texture_update_unique(
-	DTTR_Texture tex, int width, int height, const void *pixels, uint64_t cache_key
-) {
+static bool
+s_surface_texture_update_unique(DTTR_Texture tex, int width, int height, const void *pixels, uint64_t cache_key) {
 	DTTR_BackendState *state = &g_dttr_backend;
 	if (!tex || !pixels)
 		return false;
@@ -512,8 +505,7 @@ static void s_surface_upload_texture(DTTR_Graphics_COM_DirectDrawSurface7 *self)
 	const void *upload_data = converted;
 
 	bool upload_ok = false;
-	if (self->m_dttr_texture != DTTR_INVALID_TEXTURE
-		&& s_surface_texture_refcount(self->m_dttr_texture) > 1) {
+	if (self->m_dttr_texture != DTTR_INVALID_TEXTURE && s_surface_texture_refcount(self->m_dttr_texture) > 1) {
 		// Detach the shared texture because its content changed, then create or retain by the new
 		// content key
 		s_surface_texture_release(self->m_dttr_texture);
@@ -521,13 +513,10 @@ static void s_surface_upload_texture(DTTR_Graphics_COM_DirectDrawSurface7 *self)
 	}
 
 	if (self->m_dttr_texture == DTTR_INVALID_TEXTURE) {
-		self->m_dttr_texture
-			= s_surface_texture_create_or_retain(upload_w, upload_h, upload_data, cache_key);
+		self->m_dttr_texture = s_surface_texture_create_or_retain(upload_w, upload_h, upload_data, cache_key);
 		upload_ok = (self->m_dttr_texture != DTTR_INVALID_TEXTURE);
 	} else {
-		upload_ok = s_surface_texture_update_unique(
-			self->m_dttr_texture, upload_w, upload_h, upload_data, cache_key
-		);
+		upload_ok = s_surface_texture_update_unique(self->m_dttr_texture, upload_w, upload_h, upload_data, cache_key);
 	}
 
 	if (upload_ok) {
@@ -594,21 +583,12 @@ static ULONG __stdcall s_ddrawsurface7_release(DTTR_Graphics_COM_DirectDrawSurfa
 	return rc;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_addattachedsurface, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *surf
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_addattachedsurface, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *surf)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_addoverlaydirtyrect, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_addoverlaydirtyrect, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect)
 
 static HRESULT __stdcall s_ddrawsurface7_blt(
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	void *dstRect,
-	void *srcSurf,
-	void *srcRect,
-	DWORD flags,
-	void *bltFx
+	DTTR_Graphics_COM_DirectDrawSurface7 *self, void *dstRect, void *srcSurf, void *srcRect, DWORD flags, void *bltFx
 ) {
 
 	// The game uses colorfill to fill padding areas in video textures.
@@ -619,8 +599,7 @@ static HRESULT __stdcall s_ddrawsurface7_blt(
 
 	// Blit from source surface to destination
 	if (srcSurf) {
-		const DTTR_Graphics_COM_DirectDrawSurface7 *src
-			= (const DTTR_Graphics_COM_DirectDrawSurface7 *)srcSurf;
+		const DTTR_Graphics_COM_DirectDrawSurface7 *src = (const DTTR_Graphics_COM_DirectDrawSurface7 *)srcSurf;
 
 		if (src->m_pixels && self->m_pixels && src->m_bpp == self->m_bpp) {
 			const uint32_t bpp = src->m_bpp / 8;
@@ -686,10 +665,8 @@ static HRESULT __stdcall s_ddrawsurface7_blt(
 					copy_h = src->m_height - sy0;
 
 				for (uint32_t y = 0; y < copy_h; y++) {
-					const uint8_t *src_row
-						= (const uint8_t *)src->m_pixels + (sy0 + y) * src->m_pitch + sx0 * bpp;
-					uint8_t *dst_row
-						= (uint8_t *)self->m_pixels + (dy0 + y) * self->m_pitch + dx0 * bpp;
+					const uint8_t *src_row = (const uint8_t *)src->m_pixels + (sy0 + y) * src->m_pitch + sx0 * bpp;
+					uint8_t *dst_row = (uint8_t *)self->m_pixels + (dy0 + y) * self->m_pitch + dx0 * bpp;
 					memcpy(dst_row, src_row, copy_w * bpp);
 				}
 
@@ -716,11 +693,7 @@ static HRESULT __stdcall s_ddrawsurface7_blt(
 }
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_bltbatch,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	void *batch,
-	DWORD count,
-	DWORD flags
+	s_ddrawsurface7_bltbatch, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *batch, DWORD count, DWORD flags
 )
 
 DTTR_COM_NOOP_HRESULT(
@@ -734,38 +707,26 @@ DTTR_COM_NOOP_HRESULT(
 )
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_deleteattachedsurface,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	DWORD flags,
-	void *surf
+	s_ddrawsurface7_deleteattachedsurface, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *surf
 )
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_enumattachedsurfaces,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	void *ctx,
-	void *cb
+	s_ddrawsurface7_enumattachedsurfaces, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *ctx, void *cb
 )
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_enumoverlayzorders,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	DWORD flags,
-	void *ctx,
-	void *cb
+	s_ddrawsurface7_enumoverlayzorders, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *ctx, void *cb
 )
 
-static HRESULT __stdcall
-s_ddrawsurface7_flip(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *target, DWORD flags) {
+static HRESULT __stdcall s_ddrawsurface7_flip(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *target, DWORD flags) {
 
 	// Present the frame to the screen
 	s_surface_present();
 	return S_OK;
 }
 
-static HRESULT __stdcall s_ddrawsurface7_getattachedsurface(
-	DTTR_Graphics_COM_DirectDrawSurface7 *self, void *caps, void **surf
-) {
+static HRESULT __stdcall
+s_ddrawsurface7_getattachedsurface(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *caps, void **surf) {
 
 	if (!surf)
 		return S_OK;
@@ -776,34 +737,21 @@ static HRESULT __stdcall s_ddrawsurface7_getattachedsurface(
 	} else {
 		// Create a back buffer matching the primary surface format
 		self->m_back_buffer = dttr_graphics_com_create_directdrawsurface7(
-			self->m_width,
-			self->m_height,
-			self->m_bpp,
-			self->m_r_mask,
-			self->m_g_mask,
-			self->m_b_mask,
-			self->m_a_mask
+			self->m_width, self->m_height, self->m_bpp, self->m_r_mask, self->m_g_mask, self->m_b_mask, self->m_a_mask
 		);
 		*surf = self->m_back_buffer;
 	}
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_getbltstatus, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_getbltstatus, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags)
 
-DTTR_COM_STUB_MEMSET(
-	s_ddrawsurface7_getcaps, DTTR_SIZEOF_DDSCAPS2, void, DTTR_Graphics_COM_DirectDrawSurface7 *self
-)
+DTTR_COM_STUB_MEMSET(s_ddrawsurface7_getcaps, DTTR_SIZEOF_DDSCAPS2, void, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-DTTR_COM_STUB_SET(
-	s_ddrawsurface7_getclipper, void *, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self
-)
+DTTR_COM_STUB_SET(s_ddrawsurface7_getclipper, void *, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-static HRESULT __stdcall s_ddrawsurface7_getcolorkey(
-	DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *colorKey
-) {
+static HRESULT __stdcall
+s_ddrawsurface7_getcolorkey(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *colorKey) {
 	if (colorKey) {
 		DDCOLORKEY *ck = (DDCOLORKEY *)colorKey;
 		ck->dwColorSpaceLowValue = self->m_has_colorkey ? self->m_colorkey : 0;
@@ -814,9 +762,7 @@ static HRESULT __stdcall s_ddrawsurface7_getcolorkey(
 
 DTTR_COM_STUB_SET(s_ddrawsurface7_getdc, HDC, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_getflipstatus, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_getflipstatus, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags)
 
 static HRESULT __stdcall
 s_ddrawsurface7_getoverlayposition(DTTR_Graphics_COM_DirectDrawSurface7 *self, LONG *x, LONG *y) {
@@ -827,12 +773,9 @@ s_ddrawsurface7_getoverlayposition(DTTR_Graphics_COM_DirectDrawSurface7 *self, L
 	return S_OK;
 }
 
-DTTR_COM_STUB_SET(
-	s_ddrawsurface7_getpalette, void *, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self
-)
+DTTR_COM_STUB_SET(s_ddrawsurface7_getpalette, void *, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-static HRESULT __stdcall
-s_ddrawsurface7_getpixelformat(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *fmt) {
+static HRESULT __stdcall s_ddrawsurface7_getpixelformat(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *fmt) {
 
 	if (!fmt)
 		return S_OK;
@@ -852,8 +795,7 @@ s_ddrawsurface7_getpixelformat(DTTR_Graphics_COM_DirectDrawSurface7 *self, void 
 }
 
 /// Fills a caller-provided DDSURFACEDESC2 buffer from surface state
-static void
-s_surface_fill_desc(const DTTR_Graphics_COM_DirectDrawSurface7 *self, DDSURFACEDESC2 *d) {
+static void s_surface_fill_desc(const DTTR_Graphics_COM_DirectDrawSurface7 *self, DDSURFACEDESC2 *d) {
 	d->dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PITCH | DDSD_PIXELFORMAT;
 	d->dwHeight = self->m_height;
 	d->dwWidth = self->m_width;
@@ -869,8 +811,7 @@ s_surface_fill_desc(const DTTR_Graphics_COM_DirectDrawSurface7 *self, DDSURFACED
 	d->ddpfPixelFormat.dwRGBAlphaBitMask = self->m_a_mask;
 }
 
-static HRESULT __stdcall
-s_ddrawsurface7_getsurfacedesc(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *desc) {
+static HRESULT __stdcall s_ddrawsurface7_getsurfacedesc(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *desc) {
 
 	if (!desc)
 		return S_OK;
@@ -890,15 +831,12 @@ s_ddrawsurface7_getsurfacedesc(DTTR_Graphics_COM_DirectDrawSurface7 *self, void 
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_initialize, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *dd, void *desc
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_initialize, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *dd, void *desc)
 
 DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_islost, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-static HRESULT __stdcall s_ddrawsurface7_lock(
-	DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect, void *desc, DWORD flags, HANDLE event
-) {
+static HRESULT __stdcall
+s_ddrawsurface7_lock(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect, void *desc, DWORD flags, HANDLE event) {
 
 	if (!self->m_pixels) {
 		return DTTR_DDERR_GENERIC;
@@ -939,13 +877,10 @@ DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_releasedc, DTTR_Graphics_COM_DirectDrawSur
 
 DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_restore, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_setclipper, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *clipper
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_setclipper, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *clipper)
 
-static HRESULT __stdcall s_ddrawsurface7_setcolorkey(
-	DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *colorKey
-) {
+static HRESULT __stdcall
+s_ddrawsurface7_setcolorkey(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *colorKey) {
 	if (colorKey) {
 		const DDCOLORKEY *ck = (const DDCOLORKEY *)colorKey;
 		self->m_has_colorkey = true;
@@ -957,16 +892,11 @@ static HRESULT __stdcall s_ddrawsurface7_setcolorkey(
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_setoverlayposition, DTTR_Graphics_COM_DirectDrawSurface7 *self, LONG x, LONG y
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_setoverlayposition, DTTR_Graphics_COM_DirectDrawSurface7 *self, LONG x, LONG y)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_setpalette, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *palette
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_setpalette, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *palette)
 
-static HRESULT __stdcall
-s_ddrawsurface7_unlock(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect) {
+static HRESULT __stdcall s_ddrawsurface7_unlock(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect) {
 
 	if (!self->m_locked) {
 		return S_OK;
@@ -991,34 +921,20 @@ DTTR_COM_NOOP_HRESULT(
 	void *fx
 )
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_updateoverlaydisplay, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_updateoverlaydisplay, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags)
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_updateoverlayzorder,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	DWORD flags,
-	void *refSurf
+	s_ddrawsurface7_updateoverlayzorder, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags, void *refSurf
 )
 
-DTTR_COM_STUB_SET(
-	s_ddrawsurface7_getddinterface, void *, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self
-)
+DTTR_COM_STUB_SET(s_ddrawsurface7_getddinterface, void *, NULL, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_pagelock, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_pagelock, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags)
+
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_pageunlock, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags)
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_pageunlock, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags
-)
-
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_setsurfacedesc,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	void *desc,
-	DWORD flags
+	s_ddrawsurface7_setsurfacedesc, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *desc, DWORD flags
 )
 
 DTTR_COM_NOOP_HRESULT(
@@ -1031,29 +947,16 @@ DTTR_COM_NOOP_HRESULT(
 )
 
 DTTR_COM_STUB_SET(
-	s_ddrawsurface7_getprivatedata,
-	DWORD,
-	0,
-	DTTR_Graphics_COM_DirectDrawSurface7 *self,
-	void *tag,
-	void *data
+	s_ddrawsurface7_getprivatedata, DWORD, 0, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *tag, void *data
 )
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_freeprivatedata, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *tag
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_freeprivatedata, DTTR_Graphics_COM_DirectDrawSurface7 *self, void *tag)
 
-DTTR_COM_STUB_SET(
-	s_ddrawsurface7_getuniquenessvalue, DWORD, 1, DTTR_Graphics_COM_DirectDrawSurface7 *self
-)
+DTTR_COM_STUB_SET(s_ddrawsurface7_getuniquenessvalue, DWORD, 1, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_changeuniquenessvalue, DTTR_Graphics_COM_DirectDrawSurface7 *self
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_changeuniquenessvalue, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddrawsurface7_setpriority, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD priority
-)
+DTTR_COM_NOOP_HRESULT(s_ddrawsurface7_setpriority, DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD priority)
 
 DTTR_COM_STUB_SET(s_ddrawsurface7_getpriority, DWORD, 0, DTTR_Graphics_COM_DirectDrawSurface7 *self)
 
@@ -1114,16 +1017,9 @@ static DTTR_Graphics_COM_DirectDrawSurface7_VT s_vtbl = {
 };
 
 DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface7(
-	uint32_t width,
-	uint32_t height,
-	uint32_t bpp,
-	uint32_t r_mask,
-	uint32_t g_mask,
-	uint32_t b_mask,
-	uint32_t a_mask
+	uint32_t width, uint32_t height, uint32_t bpp, uint32_t r_mask, uint32_t g_mask, uint32_t b_mask, uint32_t a_mask
 ) {
-	DTTR_Graphics_COM_DirectDrawSurface7 *surf
-		= malloc(sizeof(DTTR_Graphics_COM_DirectDrawSurface7));
+	DTTR_Graphics_COM_DirectDrawSurface7 *surf = malloc(sizeof(DTTR_Graphics_COM_DirectDrawSurface7));
 	if (surf) {
 		surf->m_vtbl = &s_vtbl;
 		surf->m_refcount = 1;

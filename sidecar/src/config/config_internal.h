@@ -40,12 +40,8 @@ const char *s_config_format_scaling_method(DTTR_ScalingMethod method);
 const char *s_config_format_precision_mode(DTTR_PrecisionMode mode);
 const char *s_config_format_graphics_api(DTTR_GraphicsApi api);
 
-bool s_config_apply_entry(
-	DTTR_Config *config, const char *section, const char *key, const char *value
-);
+bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *key, const char *value);
 
-bool s_config_apply_gamepad_entry(
-	DTTR_Config *config, const char *section, const char *key, const char *value
-);
+bool s_config_apply_gamepad_entry(DTTR_Config *config, const char *section, const char *key, const char *value);
 
 #endif

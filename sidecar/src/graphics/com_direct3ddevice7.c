@@ -17,9 +17,7 @@ DTTR_Vertex g_dttr_device7_verts[MAX_VERTICES];
 DTTR_Vertex g_dttr_device7_expanded_verts[DTTR_MAX_FRAME_VERTICES * 3];
 
 /// Multiplies two row-major 4x4 float matrices into `out`
-static void s_d3d_device7_mat4_multiply_f(
-	float *restrict out, const float *restrict a, const float *restrict b
-) {
+static void s_d3d_device7_mat4_multiply_f(float *restrict out, const float *restrict a, const float *restrict b) {
 	float tmp[DTTR_MAT4_ELEMS];
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -32,9 +30,7 @@ static void s_d3d_device7_mat4_multiply_f(
 }
 
 /// Multiplies two row-major 4x4 double matrices into `out`
-static void s_d3d_device7_mat4_multiply_d(
-	double *restrict out, const double *restrict a, const double *restrict b
-) {
+static void s_d3d_device7_mat4_multiply_d(double *restrict out, const double *restrict a, const double *restrict b) {
 	double tmp[DTTR_MAT4_ELEMS];
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -67,8 +63,7 @@ static bool s_d3d_device7_mat4_float_to_double(double *restrict out, const float
 }
 
 /// Converts a double matrix to float, optionally zeroing tiny values
-static void
-s_d3d_device7_mat4_double_to_float(float *restrict out, const double *restrict in, bool stabilize) {
+static void s_d3d_device7_mat4_double_to_float(float *restrict out, const double *restrict in, bool stabilize) {
 	for (int i = 0; i < DTTR_MAT4_ELEMS; i++) {
 		double v = in[i];
 
@@ -83,8 +78,7 @@ s_d3d_device7_mat4_double_to_float(float *restrict out, const double *restrict i
 }
 
 /// Selects the backend transform matrix pair for a D3D transform state token
-static bool
-s_d3d_device7_get_transform_state(DWORD type, double **out_matrix_d, float **out_matrix_f) {
+static bool s_d3d_device7_get_transform_state(DWORD type, double **out_matrix_d, float **out_matrix_f) {
 	DTTR_BackendState *state = &g_dttr_backend;
 	switch (type) {
 	case D3DTRANSFORMSTATE_WORLD:
@@ -133,16 +127,11 @@ static void s_d3d_device7_set_transform_state(DWORD type, const float *m) {
 		return;
 
 	if (!s_d3d_device7_mat4_float_to_double(matrix_d, m)) {
-		log_warn(
-			DTTR_PREFIX_GRAPHICS "SetTransform(%s) rejected non-finite matrix input",
-			s_d3d_device7_transform_label(type)
-		);
+		log_warn("SetTransform(%s) rejected non-finite matrix input", s_d3d_device7_transform_label(type));
 		return;
 	}
 
-	s_d3d_device7_mat4_double_to_float(
-		matrix_f, matrix_d, s_d3d_device7_use_stabilized_precision()
-	);
+	s_d3d_device7_mat4_double_to_float(matrix_f, matrix_d, s_d3d_device7_use_stabilized_precision());
 }
 
 static void s_d3d_device7_compute_mv_stabilized(
@@ -152,9 +141,7 @@ static void s_d3d_device7_compute_mv_stabilized(
 }
 
 /// Expands a triangle strip into a triangle list
-static uint32_t s_d3d_device7_expand_strip(
-	const DTTR_Vertex *restrict in, uint32_t count, DTTR_Vertex *restrict out
-) {
+static uint32_t s_d3d_device7_expand_strip(const DTTR_Vertex *restrict in, uint32_t count, DTTR_Vertex *restrict out) {
 	if (count < 3)
 		return 0;
 	uint32_t n = 0;
@@ -173,9 +160,7 @@ static uint32_t s_d3d_device7_expand_strip(
 }
 
 /// Expands a triangle fan into a triangle list
-static uint32_t s_d3d_device7_expand_fan(
-	const DTTR_Vertex *restrict in, uint32_t count, DTTR_Vertex *restrict out
-) {
+static uint32_t s_d3d_device7_expand_fan(const DTTR_Vertex *restrict in, uint32_t count, DTTR_Vertex *restrict out) {
 	if (count < 3)
 		return 0;
 	uint32_t n = 0;
@@ -208,8 +193,7 @@ static DTTR_PrimitiveType s_d3d_device7_map_primitive_type(DWORD prim_type) {
 }
 
 /// Appends a clear record to the current frame batch
-static void
-s_d3d_device7_record_clear(uint32_t flags, uint32_t color, float depth, uint32_t stencil) {
+static void s_d3d_device7_record_clear(uint32_t flags, uint32_t color, float depth, uint32_t stencil) {
 	DTTR_BackendState *state = &g_dttr_backend;
 	if (!state->m_frame_active && dttr_graphics_is_gpu_thread())
 		dttr_graphics_begin_frame();
@@ -238,18 +222,14 @@ s_d3d_device7_record_clear(uint32_t flags, uint32_t color, float depth, uint32_t
 
 /// Appends a draw record to the current frame batch
 static void s_d3d_device7_record_draw(
-	DTTR_PrimitiveType type,
-	const DTTR_Vertex *verts,
-	uint32_t count,
-	bool transformed,
-	bool textured
+	DTTR_PrimitiveType type, const DTTR_Vertex *verts, uint32_t count, bool transformed, bool textured
 ) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
 	if (!dttr_graphics_is_gpu_thread() || !state->m_cmd || !verts || count == 0)
 		return;
 	if (!state->m_device || !state->m_transfer_buffer || !state->m_vertex_buffer) {
-		log_warn(DTTR_PREFIX_GRAPHICS "DrawPrimitive: missing device/buffers");
+		log_warn("DrawPrimitive: missing device/buffers");
 		return;
 	}
 	if (count > DTTR_MAX_FRAME_VERTICES)
@@ -278,7 +258,7 @@ static void s_d3d_device7_record_draw(
 		return;
 	if (state->m_vertex_offset + count > DTTR_MAX_FRAME_VERTICES) {
 		log_warn(
-			DTTR_PREFIX_GRAPHICS "DrawPrimitive: frame vertex limit reached (%u + %u > %u)",
+			"DrawPrimitive: frame vertex limit reached (%u + %u > %u)",
 			state->m_vertex_offset,
 			count,
 			DTTR_MAX_FRAME_VERTICES
@@ -286,17 +266,12 @@ static void s_d3d_device7_record_draw(
 		return;
 	}
 	if (state->m_batch_count >= DTTR_MAX_BATCH_RECORDS) {
-		log_warn(
-			DTTR_PREFIX_GRAPHICS "DrawPrimitive: batch record limit reached (%u)",
-			state->m_batch_count
-		);
+		log_warn("DrawPrimitive: batch record limit reached (%u)", state->m_batch_count);
 		return;
 	}
 
 	memcpy(
-		(uint8_t *)state->m_transfer_mapped + state->m_vertex_offset * DTTR_VERTEX_SIZE,
-		verts,
-		count * DTTR_VERTEX_SIZE
+		(uint8_t *)state->m_transfer_mapped + state->m_vertex_offset * DTTR_VERTEX_SIZE, verts, count * DTTR_VERTEX_SIZE
 	);
 
 	DTTR_BatchRecord *rec = &state->m_batch_records[state->m_batch_count++];
@@ -305,8 +280,7 @@ static void s_d3d_device7_record_draw(
 	rec->draw.vertex_count = count;
 	rec->draw.blend_mode = DTTR_BLEND_OFF;
 	if (state->m_blend_enabled) {
-		rec->draw.blend_mode
-			= (state->m_blend_dst == DTTR_BLEND_ONE) ? DTTR_BLEND_ADDITIVE : DTTR_BLEND_ALPHA;
+		rec->draw.blend_mode = (state->m_blend_dst == DTTR_BLEND_ONE) ? DTTR_BLEND_ADDITIVE : DTTR_BLEND_ALPHA;
 	}
 	rec->draw.depth_test = state->m_depth_test;
 	rec->draw.depth_write = state->m_depth_write;
@@ -328,8 +302,7 @@ static void s_d3d_device7_record_draw(
 	rec->draw.uniforms.m_is_2d = transformed ? 1.0f : 0.0f;
 	rec->draw.uniforms.m_has_texture = textured ? 1.0f : 0.0f;
 
-	rec->draw.texture
-		= (textured && state->m_bound_texture) ? state->m_bound_texture : state->m_dummy_texture;
+	rec->draw.texture = (textured && state->m_bound_texture) ? state->m_bound_texture : state->m_dummy_texture;
 	const int cu = (state->m_addr_u == DTTR_TEXADDR_CLAMP) ? 1 : 0;
 	const int cv = (state->m_addr_v == DTTR_TEXADDR_CLAMP) ? 1 : 0;
 	rec->draw.sampler = state->m_samplers[cu * 2 + cv];
@@ -346,8 +319,7 @@ static bool s_d3d_device7_ensure_staged_texture(DTTR_StagedTexture *st) {
 	const SDL_GPUTextureCreateInfo tex_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
 		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER
-				 | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE
+		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE
 				 | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
 		.width = st->m_width,
 		.height = st->m_height,
@@ -407,9 +379,7 @@ static void s_d3d_device7_set_depth_write(bool enabled) { g_dttr_backend.m_depth
 static void s_d3d_device7_set_depth_func(DTTR_CompareFunc func) {}
 
 /// Sets whether blending is enabled
-static void s_d3d_device7_set_blend_enabled(bool enabled) {
-	g_dttr_backend.m_blend_enabled = enabled;
-}
+static void s_d3d_device7_set_blend_enabled(bool enabled) { g_dttr_backend.m_blend_enabled = enabled; }
 
 /// Sets source and destination blend factors
 static void s_d3d_device7_set_blend_func(DTTR_BlendFactor src, DTTR_BlendFactor dst) {
@@ -421,14 +391,10 @@ static void s_d3d_device7_set_blend_func(DTTR_BlendFactor src, DTTR_BlendFactor 
 static void s_d3d_device7_set_cull_mode(DTTR_CullMode mode) {}
 
 /// Sets texture addressing mode for U coordinates
-static void s_d3d_device7_set_texture_address_u(DTTR_TextureAddress addr) {
-	g_dttr_backend.m_addr_u = addr;
-}
+static void s_d3d_device7_set_texture_address_u(DTTR_TextureAddress addr) { g_dttr_backend.m_addr_u = addr; }
 
 /// Sets texture addressing mode for V coordinates
-static void s_d3d_device7_set_texture_address_v(DTTR_TextureAddress addr) {
-	g_dttr_backend.m_addr_v = addr;
-}
+static void s_d3d_device7_set_texture_address_v(DTTR_TextureAddress addr) { g_dttr_backend.m_addr_v = addr; }
 
 /// Updates the viewport state used by transformed rendering paths
 static void s_d3d_device7_set_viewport(int x, int y, int w, int h, float min_z, float max_z) {
@@ -455,12 +421,9 @@ DTTR_COM_ADDREF(s_d3ddevice7_addref, DTTR_Graphics_COM_Direct3DDevice7)
 
 DTTR_COM_RELEASE(s_d3ddevice7_release, DTTR_Graphics_COM_Direct3DDevice7)
 
-DTTR_COM_STUB_MEMSET(
-	s_d3ddevice7_getcaps, DTTR_SIZEOF_D3DDEVICEDESC7, void, DTTR_Graphics_COM_Direct3DDevice7 *self
-)
+DTTR_COM_STUB_MEMSET(s_d3ddevice7_getcaps, DTTR_SIZEOF_D3DDEVICEDESC7, void, DTTR_Graphics_COM_Direct3DDevice7 *self)
 
-static HRESULT __stdcall
-s_d3ddevice7_enumtextureformats(DTTR_Graphics_COM_Direct3DDevice7 *self, void *cb, void *ctx) {
+static HRESULT __stdcall s_d3ddevice7_enumtextureformats(DTTR_Graphics_COM_Direct3DDevice7 *self, void *cb, void *ctx) {
 
 	if (!cb)
 		return S_OK;
@@ -505,25 +468,12 @@ DTTR_COM_NOOP_HRESULT(s_d3ddevice7_endscene, DTTR_Graphics_COM_Direct3DDevice7 *
 
 DTTR_COM_STUB_SET(s_d3ddevice7_getdirect3d, void *, NULL, DTTR_Graphics_COM_Direct3DDevice7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_setrendertarget,
-	DTTR_Graphics_COM_Direct3DDevice7 *self,
-	void *surface,
-	DWORD flags
-)
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_setrendertarget, DTTR_Graphics_COM_Direct3DDevice7 *self, void *surface, DWORD flags)
 
-DTTR_COM_STUB_SET(
-	s_d3ddevice7_getrendertarget, void *, NULL, DTTR_Graphics_COM_Direct3DDevice7 *self
-)
+DTTR_COM_STUB_SET(s_d3ddevice7_getrendertarget, void *, NULL, DTTR_Graphics_COM_Direct3DDevice7 *self)
 
 static HRESULT __stdcall s_d3ddevice7_clear(
-	DTTR_Graphics_COM_Direct3DDevice7 *self,
-	DWORD count,
-	void *rects,
-	DWORD flags,
-	DWORD color,
-	float z,
-	DWORD stencil
+	DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD count, void *rects, DWORD flags, DWORD color, float z, DWORD stencil
 ) {
 
 	uint32_t f = 0;
@@ -537,14 +487,12 @@ static HRESULT __stdcall s_d3ddevice7_clear(
 	return S_OK;
 }
 
-static HRESULT __stdcall
-s_d3ddevice7_settransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD type, void *matrix) {
+static HRESULT __stdcall s_d3ddevice7_settransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD type, void *matrix) {
 	s_d3d_device7_set_transform_state(type, (const float *)matrix);
 	return S_OK;
 }
 
-static HRESULT __stdcall
-s_d3ddevice7_gettransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD type, void *matrix) {
+static HRESULT __stdcall s_d3ddevice7_gettransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD type, void *matrix) {
 	if (!matrix)
 		return S_OK;
 
@@ -563,16 +511,13 @@ s_d3ddevice7_gettransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD type, v
 	return S_OK;
 }
 
-static HRESULT __stdcall
-s_d3ddevice7_setviewport(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp) {
+static HRESULT __stdcall s_d3ddevice7_setviewport(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp) {
 
 	if (!vp)
 		return S_OK;
 
 	const D3DVIEWPORT7 *v = (const D3DVIEWPORT7 *)vp;
-	s_d3d_device7_set_viewport(
-		(int)v->dwX, (int)v->dwY, (int)v->dwWidth, (int)v->dwHeight, v->dvMinZ, v->dvMaxZ
-	);
+	s_d3d_device7_set_viewport((int)v->dwX, (int)v->dwY, (int)v->dwWidth, (int)v->dwHeight, v->dvMinZ, v->dvMaxZ);
 
 	return S_OK;
 }
@@ -591,7 +536,7 @@ s_d3ddevice7_multiplytransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD ty
 		double rhs[DTTR_MAT4_ELEMS];
 		double result[DTTR_MAT4_ELEMS];
 		if (!s_d3d_device7_mat4_float_to_double(rhs, (const float *)matrix)) {
-			log_warn(DTTR_PREFIX_GRAPHICS "MultiplyTransform: rejected non-finite matrix input");
+			log_warn("MultiplyTransform: rejected non-finite matrix input");
 			return S_OK;
 		}
 		s_d3d_device7_mat4_multiply_d(result, matrix_d, rhs);
@@ -610,8 +555,7 @@ s_d3ddevice7_multiplytransform(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD ty
 	return S_OK;
 }
 
-static HRESULT __stdcall
-s_d3ddevice7_getviewport(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp) {
+static HRESULT __stdcall s_d3ddevice7_getviewport(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp) {
 
 	if (!vp)
 		return S_OK;
@@ -629,23 +573,12 @@ s_d3ddevice7_getviewport(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp) {
 
 DTTR_COM_NOOP_HRESULT(s_d3ddevice7_setmaterial, DTTR_Graphics_COM_Direct3DDevice7 *self, void *mat)
 
-DTTR_COM_STUB_MEMSET(
-	s_d3ddevice7_getmaterial,
-	DTTR_SIZEOF_D3DMATERIAL7,
-	void,
-	DTTR_Graphics_COM_Direct3DDevice7 *self
-)
+DTTR_COM_STUB_MEMSET(s_d3ddevice7_getmaterial, DTTR_SIZEOF_D3DMATERIAL7, void, DTTR_Graphics_COM_Direct3DDevice7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_setlight, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, void *light
-)
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_setlight, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, void *light)
 
 DTTR_COM_STUB_MEMSET(
-	s_d3ddevice7_getlight,
-	DTTR_SIZEOF_D3DLIGHT7,
-	void,
-	DTTR_Graphics_COM_Direct3DDevice7 *self,
-	DWORD idx
+	s_d3ddevice7_getlight, DTTR_SIZEOF_D3DLIGHT7, void, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx
 )
 
 static HRESULT __stdcall
@@ -677,9 +610,7 @@ s_d3ddevice7_setrenderstate(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD state
 	return S_OK;
 }
 
-DTTR_COM_STUB_SET(
-	s_d3ddevice7_getrenderstate, DWORD, 0, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD state
-)
+DTTR_COM_STUB_SET(s_d3ddevice7_getrenderstate, DWORD, 0, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD state)
 
 DTTR_COM_NOOP_HRESULT(s_d3ddevice7_beginstateblock, DTTR_Graphics_COM_Direct3DDevice7 *self)
 
@@ -688,12 +619,7 @@ DTTR_COM_STUB_SET(s_d3ddevice7_endstateblock, DWORD, 1, DTTR_Graphics_COM_Direct
 DTTR_COM_NOOP_HRESULT(s_d3ddevice7_preload, DTTR_Graphics_COM_Direct3DDevice7 *self, void *tex)
 
 static HRESULT __stdcall s_d3ddevice7_drawprimitive(
-	DTTR_Graphics_COM_Direct3DDevice7 *self,
-	DWORD prim_type,
-	DWORD fvf,
-	void *vertices,
-	DWORD count,
-	DWORD flags
+	DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD prim_type, DWORD fvf, void *vertices, DWORD count, DWORD flags
 ) {
 
 	if (!vertices || count == 0)
@@ -845,15 +771,10 @@ DTTR_COM_NOOP_HRESULT(
 	DWORD flags
 )
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_setclipstatus, DTTR_Graphics_COM_Direct3DDevice7 *self, void *status
-)
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_setclipstatus, DTTR_Graphics_COM_Direct3DDevice7 *self, void *status)
 
 DTTR_COM_STUB_MEMSET(
-	s_d3ddevice7_getclipstatus,
-	DTTR_SIZEOF_D3DCLIPSTATUS,
-	void,
-	DTTR_Graphics_COM_Direct3DDevice7 *self
+	s_d3ddevice7_getclipstatus, DTTR_SIZEOF_D3DCLIPSTATUS, void, DTTR_Graphics_COM_Direct3DDevice7 *self
 )
 
 DTTR_COM_NOOP_HRESULT(
@@ -911,12 +832,9 @@ DTTR_COM_STUB_SET(
 	DWORD f
 )
 
-DTTR_COM_STUB_SET(
-	s_d3ddevice7_gettexture, void *, NULL, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage
-)
+DTTR_COM_STUB_SET(s_d3ddevice7_gettexture, void *, NULL, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage)
 
-static HRESULT __stdcall
-s_d3ddevice7_settexture(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, void *texture) {
+static HRESULT __stdcall s_d3ddevice7_settexture(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, void *texture) {
 
 	if (!texture) {
 		// Unbind texture
@@ -925,25 +843,18 @@ s_d3ddevice7_settexture(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, vo
 		return S_OK;
 	}
 
-	const DTTR_Graphics_COM_DirectDrawSurface7 *surf
-		= (const DTTR_Graphics_COM_DirectDrawSurface7 *)texture;
+	const DTTR_Graphics_COM_DirectDrawSurface7 *surf = (const DTTR_Graphics_COM_DirectDrawSurface7 *)texture;
 	s_d3d_device7_texture_bind(surf->m_dttr_texture);
 
 	return S_OK;
 }
 
 DTTR_COM_STUB_SET(
-	s_d3ddevice7_gettexturestagestate,
-	DWORD,
-	0,
-	DTTR_Graphics_COM_Direct3DDevice7 *self,
-	DWORD stage,
-	DWORD type
+	s_d3ddevice7_gettexturestagestate, DWORD, 0, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, DWORD type
 )
 
-static HRESULT __stdcall s_d3ddevice7_settexturestagestate(
-	DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, DWORD type, DWORD value
-) {
+static HRESULT __stdcall
+s_d3ddevice7_settexturestagestate(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, DWORD type, DWORD value) {
 
 	switch (type) {
 	case D3DTSS_COLOROP:
@@ -968,50 +879,27 @@ static HRESULT __stdcall s_d3ddevice7_settexturestagestate(
 
 DTTR_COM_STUB_SET(s_d3ddevice7_validatedevice, DWORD, 1, DTTR_Graphics_COM_Direct3DDevice7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_applystateblock, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block
-)
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_applystateblock, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block)
+
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_capturestateblock, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block)
+
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_deletestateblock, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block)
+
+DTTR_COM_STUB_SET(s_d3ddevice7_createstateblock, DWORD, 1, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD t)
 
 DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_capturestateblock, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block
+	s_d3ddevice7_load, DTTR_Graphics_COM_Direct3DDevice7 *self, void *dst, void *dstPt, void *src, void *srcR, DWORD f
 )
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_deletestateblock, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block
-)
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_lightenable, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, BOOL enable)
 
-DTTR_COM_STUB_SET(
-	s_d3ddevice7_createstateblock, DWORD, 1, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD t
-)
+DTTR_COM_STUB_SET(s_d3ddevice7_getlightenable, BOOL, FALSE, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx)
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_load,
-	DTTR_Graphics_COM_Direct3DDevice7 *self,
-	void *dst,
-	void *dstPt,
-	void *src,
-	void *srcR,
-	DWORD f
-)
+DTTR_COM_NOOP_HRESULT(s_d3ddevice7_setclipplane, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, float *plane)
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_lightenable, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, BOOL enable
-)
+DTTR_COM_STUB_MEMSET(s_d3ddevice7_getclipplane, 16, float, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx)
 
-DTTR_COM_STUB_SET(
-	s_d3ddevice7_getlightenable, BOOL, FALSE, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx
-)
-
-DTTR_COM_NOOP_HRESULT(
-	s_d3ddevice7_setclipplane, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, float *plane
-)
-
-DTTR_COM_STUB_MEMSET(
-	s_d3ddevice7_getclipplane, 16, float, DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx
-)
-
-static HRESULT __stdcall
-s_d3ddevice7_getinfo(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD id, void *info, DWORD sz) {
+static HRESULT __stdcall s_d3ddevice7_getinfo(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD id, void *info, DWORD sz) {
 
 	if (info && sz > 0)
 		memset(info, 0, sz);

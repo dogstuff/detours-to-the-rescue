@@ -9,8 +9,7 @@
 
 DTTR_Graphics_COM_Direct3D7 *g_dttr_directdraw7_d3d7;
 
-static HRESULT __stdcall
-s_ddraw7_queryinterface(DTTR_Graphics_COM_DirectDraw7 *self, void *riid, void **ppv) {
+static HRESULT __stdcall s_ddraw7_queryinterface(DTTR_Graphics_COM_DirectDraw7 *self, void *riid, void **ppv) {
 	if (!g_dttr_directdraw7_d3d7) {
 		g_dttr_directdraw7_d3d7 = dttr_graphics_com_create_direct3d7();
 	}
@@ -37,9 +36,8 @@ s_ddraw7_createclipper(DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, void **clip
 	return S_OK;
 }
 
-static HRESULT __stdcall s_ddraw7_createpalette(
-	DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, void *colors, void **pal, void *outer
-) {
+static HRESULT __stdcall
+s_ddraw7_createpalette(DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, void *colors, void **pal, void *outer) {
 	if (pal) {
 		*pal = NULL;
 	}
@@ -83,47 +81,31 @@ s_ddraw7_createsurface(DTTR_Graphics_COM_DirectDraw7 *self, void *desc, void **s
 	}
 
 	if (surf) {
-		DTTR_Graphics_COM_DirectDrawSurface7 *surface = dttr_graphics_com_create_directdrawsurface7(
-			width, height, bpp, r_mask, g_mask, b_mask, a_mask
-		);
+		DTTR_Graphics_COM_DirectDrawSurface7 *surface
+			= dttr_graphics_com_create_directdrawsurface7(width, height, bpp, r_mask, g_mask, b_mask, a_mask);
 		*surf = surface;
 	}
 
 	return S_OK;
 }
 
-DTTR_COM_STUB_SET(
-	s_ddraw7_duplicatesurface, void *, NULL, DTTR_Graphics_COM_DirectDraw7 *self, void *src
+DTTR_COM_STUB_SET(s_ddraw7_duplicatesurface, void *, NULL, DTTR_Graphics_COM_DirectDraw7 *self, void *src)
+
+DTTR_COM_NOOP_HRESULT(
+	s_ddraw7_enumdisplaymodes, DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, void *desc, void *ctx, void *cb
 )
 
 DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_enumdisplaymodes,
-	DTTR_Graphics_COM_DirectDraw7 *self,
-	DWORD f,
-	void *desc,
-	void *ctx,
-	void *cb
-)
-
-DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_enumsurfaces,
-	DTTR_Graphics_COM_DirectDraw7 *self,
-	DWORD f,
-	void *desc,
-	void *ctx,
-	void *cb
+	s_ddraw7_enumsurfaces, DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, void *desc, void *ctx, void *cb
 )
 
 DTTR_COM_NOOP_HRESULT(s_ddraw7_fliptogdisurface, DTTR_Graphics_COM_DirectDraw7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_getcaps, DTTR_Graphics_COM_DirectDraw7 *self, void *drvCaps, void *helCaps
-)
+DTTR_COM_NOOP_HRESULT(s_ddraw7_getcaps, DTTR_Graphics_COM_DirectDraw7 *self, void *drvCaps, void *helCaps)
 
 DTTR_COM_NOOP_HRESULT(s_ddraw7_getdisplaymode, DTTR_Graphics_COM_DirectDraw7 *self, void *desc)
 
-static HRESULT __stdcall
-s_ddraw7_getfourcccodes(DTTR_Graphics_COM_DirectDraw7 *self, DWORD *num, DWORD *codes) {
+static HRESULT __stdcall s_ddraw7_getfourcccodes(DTTR_Graphics_COM_DirectDraw7 *self, DWORD *num, DWORD *codes) {
 	if (num) {
 		*num = 0;
 	}
@@ -143,13 +125,10 @@ DTTR_COM_NOOP_HRESULT(s_ddraw7_initialize, DTTR_Graphics_COM_DirectDraw7 *self, 
 
 DTTR_COM_NOOP_HRESULT(s_ddraw7_restoredisplaymode, DTTR_Graphics_COM_DirectDraw7 *self)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_setcooperativelevel, DTTR_Graphics_COM_DirectDraw7 *self, HWND hwnd, DWORD flags
-)
+DTTR_COM_NOOP_HRESULT(s_ddraw7_setcooperativelevel, DTTR_Graphics_COM_DirectDraw7 *self, HWND hwnd, DWORD flags)
 
-static HRESULT __stdcall s_ddraw7_setdisplaymode(
-	DTTR_Graphics_COM_DirectDraw7 *self, DWORD w, DWORD h, DWORD bpp, DWORD hz, DWORD f
-) {
+static HRESULT __stdcall
+s_ddraw7_setdisplaymode(DTTR_Graphics_COM_DirectDraw7 *self, DWORD w, DWORD h, DWORD bpp, DWORD hz, DWORD f) {
 	if (!self || w == 0 || h == 0) {
 		return DDERR_INVALIDPARAMS;
 	}
@@ -163,7 +142,7 @@ static HRESULT __stdcall s_ddraw7_setdisplaymode(
 	}
 
 	log_info(
-		DTTR_PREFIX_GRAPHICS "SetDisplayMode request: %lux%lu %lu-bpp @ %luHz flags=0x%lx",
+		"SetDisplayMode request: %lux%lu %lu-bpp @ %luHz flags=0x%lx",
 		(unsigned long)w,
 		(unsigned long)h,
 		(unsigned long)bpp,
@@ -174,13 +153,10 @@ static HRESULT __stdcall s_ddraw7_setdisplaymode(
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_waitforverticalblank, DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, HANDLE evt
-)
+DTTR_COM_NOOP_HRESULT(s_ddraw7_waitforverticalblank, DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, HANDLE evt)
 
-static HRESULT __stdcall s_ddraw7_getavailablevidmem(
-	DTTR_Graphics_COM_DirectDraw7 *self, void *caps, DWORD *tot, DWORD *free
-) {
+static HRESULT __stdcall
+s_ddraw7_getavailablevidmem(DTTR_Graphics_COM_DirectDraw7 *self, void *caps, DWORD *tot, DWORD *free) {
 	if (tot) {
 		*tot = 128 * 1024 * 1024;
 	}
@@ -192,16 +168,13 @@ static HRESULT __stdcall s_ddraw7_getavailablevidmem(
 	return S_OK;
 }
 
-DTTR_COM_STUB_SET(
-	s_ddraw7_getsurfacefromdc, void *, NULL, DTTR_Graphics_COM_DirectDraw7 *self, HDC dc
-)
+DTTR_COM_STUB_SET(s_ddraw7_getsurfacefromdc, void *, NULL, DTTR_Graphics_COM_DirectDraw7 *self, HDC dc)
 
 DTTR_COM_NOOP_HRESULT(s_ddraw7_restoreallsurfaces, DTTR_Graphics_COM_DirectDraw7 *self)
 
 DTTR_COM_NOOP_HRESULT(s_ddraw7_testcooperativelevel, DTTR_Graphics_COM_DirectDraw7 *self)
 
-static HRESULT __stdcall
-s_ddraw7_getdeviceidentifier(DTTR_Graphics_COM_DirectDraw7 *self, void *id, DWORD f) {
+static HRESULT __stdcall s_ddraw7_getdeviceidentifier(DTTR_Graphics_COM_DirectDraw7 *self, void *id, DWORD f) {
 	if (id) {
 		memset(id, 0, DTTR_SIZEOF_DDDEVICEIDENTIFIER2);
 	}
@@ -209,13 +182,9 @@ s_ddraw7_getdeviceidentifier(DTTR_Graphics_COM_DirectDraw7 *self, void *id, DWOR
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_startmodetest, DTTR_Graphics_COM_DirectDraw7 *self, void *modes, DWORD n, DWORD f
-)
+DTTR_COM_NOOP_HRESULT(s_ddraw7_startmodetest, DTTR_Graphics_COM_DirectDraw7 *self, void *modes, DWORD n, DWORD f)
 
-DTTR_COM_NOOP_HRESULT(
-	s_ddraw7_evaluatemode, DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, DWORD *timeout
-)
+DTTR_COM_NOOP_HRESULT(s_ddraw7_evaluatemode, DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, DWORD *timeout)
 
 static DTTR_Graphics_COM_DirectDraw7_VT s_vtbl = {
 	.QueryInterface = s_ddraw7_queryinterface,
@@ -255,10 +224,7 @@ DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7(void) {
 	if (dd7) {
 		dd7->m_vtbl = &s_vtbl;
 		log_info(
-			DTTR_PREFIX_GRAPHICS "Created DDraw7 translator at %p, vtbl=%p, QueryInterface=%p",
-			dd7,
-			dd7->m_vtbl,
-			dd7->m_vtbl->QueryInterface
+			"Created DDraw7 translator at %p, vtbl=%p, QueryInterface=%p", dd7, dd7->m_vtbl, dd7->m_vtbl->QueryInterface
 		);
 	}
 	return dd7;

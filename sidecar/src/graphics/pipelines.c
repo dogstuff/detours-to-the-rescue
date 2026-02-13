@@ -106,8 +106,7 @@ static SDL_GPUComputePipeline *s_create_compute_pipeline(const S_GraphicsShaderB
 
 	if (!blob || !blob->code || blob->size == 0) {
 		SDL_SetError(
-			"No precompiled compute shader blob for %s format",
-			dttr_graphics_shader_format_name(state->m_shader_format)
+			"No precompiled compute shader blob for %s format", dttr_graphics_shader_format_name(state->m_shader_format)
 		);
 		return NULL;
 	}
@@ -129,8 +128,7 @@ static SDL_GPUComputePipeline *s_create_compute_pipeline(const S_GraphicsShaderB
 }
 
 // Releases a temporary vertex/fragment shader pair after pipeline creation
-static void
-s_release_shader_pair(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_GPUShader *frag) {
+static void s_release_shader_pair(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_GPUShader *frag) {
 	if (vert)
 		SDL_ReleaseGPUShader(state->m_device, vert);
 
@@ -139,8 +137,7 @@ s_release_shader_pair(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_GPUShad
 }
 
 // Builds all blend/depth graphics pipeline variants used by draw replay
-static bool
-s_create_graphics_pipelines(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_GPUShader *frag) {
+static bool s_create_graphics_pipelines(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_GPUShader *frag) {
 	const SDL_GPUVertexBufferDescription vbuf_desc = {
 		.slot = 0,
 		.pitch = DTTR_VERTEX_SIZE,
@@ -154,8 +151,7 @@ s_create_graphics_pipelines(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_G
 		{3, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, offsetof(DTTR_Vertex, u)},  // texcoord
 	};
 
-	const SDL_GPUTextureFormat swapchain_fmt
-		= SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
+	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
 
 	const SDL_GPUColorTargetDescription color_targets[3] = {
 		{.format = swapchain_fmt, .blend_state = {.enable_blend = false}},
@@ -224,15 +220,12 @@ s_create_graphics_pipelines(DTTR_BackendState *state, SDL_GPUShader *vert, SDL_G
 				};
 
 				const int idx = DTTR_PIPELINE_INDEX(bmode, dtest, dwrite);
-				state->m_pipelines[idx]
-					= SDL_CreateGPUGraphicsPipeline(state->m_device, &pipe_info);
+				state->m_pipelines[idx] = SDL_CreateGPUGraphicsPipeline(state->m_device, &pipe_info);
 
 				if (state->m_pipelines[idx])
 					continue;
 
-				log_error(
-					DTTR_PREFIX_GRAPHICS "Failed to create pipeline[%d]: %s", idx, SDL_GetError()
-				);
+				log_error("Failed to create pipeline[%d]: %s", idx, SDL_GetError());
 				return false;
 			}
 		}
@@ -249,7 +242,7 @@ static bool s_create_buf2tex_pipeline(DTTR_BackendState *state) {
 	if (state->m_buf2tex_pipeline)
 		return true;
 
-	log_error(DTTR_PREFIX_GRAPHICS "Failed to create buf2tex compute pipeline: %s", SDL_GetError());
+	log_error("Failed to create buf2tex compute pipeline: %s", SDL_GetError());
 	return false;
 }
 
@@ -261,7 +254,7 @@ bool dttr_graphics_create_pipelines(void) {
 	SDL_GPUShader *vert = s_create_shader(&vert_blob, SDL_GPU_SHADERSTAGE_VERTEX, 0);
 
 	if (!vert) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create vertex shader: %s", SDL_GetError());
+		log_error("Failed to create vertex shader: %s", SDL_GetError());
 		return false;
 	}
 
@@ -270,7 +263,7 @@ bool dttr_graphics_create_pipelines(void) {
 	SDL_GPUShader *frag = s_create_shader(&frag_blob, SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
 	if (!frag) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to create fragment shader: %s", SDL_GetError());
+		log_error("Failed to create fragment shader: %s", SDL_GetError());
 		s_release_shader_pair(state, vert, NULL);
 		return false;
 	}
