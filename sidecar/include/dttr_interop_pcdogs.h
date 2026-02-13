@@ -16,11 +16,7 @@ DTTR_INTEROP_VAR_SIG(
 )
 
 DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_game_initialized,
-	int,
-	"\x89\x35????\xC6\x44\x24?\x10",
-	"xx????xxx?x",
-	*(uint32_t *)(match + 2)
+	g_pcdogs_game_initialized, int, "\x89\x35????\xC6\x44\x24?\x10", "xx????xxx?x", *(uint32_t *)(match + 2)
 )
 
 DTTR_INTEROP_VAR_SIG(
@@ -40,55 +36,29 @@ DTTR_INTEROP_VAR_SIG(
 )
 
 DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_keyboard_mapping_buttons,
-	void *,
-	"\x8B\x15????\x50\x56",
-	"xx????xx",
-	*(uint32_t *)(match + 2)
+	g_pcdogs_keyboard_mapping_buttons, void *, "\x8B\x15????\x50\x56", "xx????xx", *(uint32_t *)(match + 2)
 )
 
 DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_keyboard_mapping_keys,
-	void *,
-	"\xA3????\xA1????\x8D\x14\x8D",
-	"x????x????xxx",
-	*(uint32_t *)(match + 1)
+	g_pcdogs_keyboard_mapping_keys, void *, "\xA3????\xA1????\x8D\x14\x8D", "x????x????xxx", *(uint32_t *)(match + 1)
 )
 
 DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_main_window_handle,
-	void *,
-	"\xA1????\x83\xC4\x08\x6A\x03",
-	"x????xxxxx",
-	*(uint32_t *)(match + 1)
+	g_pcdogs_main_window_handle, void *, "\xA1????\x83\xC4\x08\x6A\x03", "x????xxxxx", *(uint32_t *)(match + 1)
 )
 
-DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_main_window_handle2, void *, "\xA3????\xFF\xD7", "x????xx", *(uint32_t *)(match + 1)
-)
+DTTR_INTEROP_VAR_SIG(g_pcdogs_main_window_handle2, void *, "\xA3????\xFF\xD7", "x????xx", *(uint32_t *)(match + 1))
 
 DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_mapping_count,
-	uint32_t,
-	"\x8B\x0D????\x8B\x15????\x50",
-	"xx????xx????x",
-	*(uint32_t *)(match + 2)
+	g_pcdogs_mapping_count, uint32_t, "\x8B\x0D????\x8B\x15????\x50", "xx????xx????x", *(uint32_t *)(match + 2)
 )
 
-DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_rendering_enabled, int, "\x39\x35????\x74?\xE8", "xx????x?x", *(uint32_t *)(match + 2)
-)
+DTTR_INTEROP_VAR_SIG(g_pcdogs_rendering_enabled, int, "\x39\x35????\x74?\xE8", "xx????x?x", *(uint32_t *)(match + 2))
+
+DTTR_INTEROP_VAR_SIG(g_pcdogs_should_quit, int, "\x39\x35????\x75?\x39\x35", "xx????x?xx", *(uint32_t *)(match + 2))
 
 DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_should_quit, int, "\x39\x35????\x75?\x39\x35", "xx????x?xx", *(uint32_t *)(match + 2)
-)
-
-DTTR_INTEROP_VAR_SIG(
-	g_pcdogs_joystick_available,
-	uint8_t,
-	"\xA0????\x84\xC0\x0F\x84????\xA1",
-	"x????xxxx????x",
-	*(uint32_t *)(match + 1)
+	g_pcdogs_joystick_available, uint8_t, "\xA0????\x84\xC0\x0F\x84????\xA1", "x????xxxx????x", *(uint32_t *)(match + 1)
 )
 
 // Resolves cached addresses for global-variable wrappers
@@ -109,26 +79,12 @@ static void s_interop_pcdogs_globals_init(HMODULE mod) {
 
 // Sig matches function prologue directly
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
-	pcdogs_find_and_load_game_pak_file,
-	__cdecl,
-	"\x81\xEC\x10\x01\x00\x00\x57",
-	"xxxxxxx",
-	match,
-	void,
-	(void),
-	()
+	pcdogs_find_and_load_game_pak_file, __cdecl, "\x81\xEC\x10\x01\x00\x00\x57", "xxxxxxx", match, void, (void), ()
 )
 
 // Sig matches function prologue directly
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
-	pcdogs_initialize_game_engine,
-	__cdecl,
-	"\xE8????\x85\xC0\x75?\x32\xC0",
-	"x????xxx?xx",
-	match,
-	int,
-	(void),
-	()
+	pcdogs_initialize_game_engine, __cdecl, "\xE8????\x85\xC0\x75?\x32\xC0", "x????xxx?xx", match, int, (void), ()
 )
 
 // Sig matches function prologue directly
@@ -210,26 +166,12 @@ DTTR_INTEROP_WRAP_CACHED_CC_SIG(
 
 // Sig matches function prologue directly
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
-	pcdogs_take_screenshot,
-	__cdecl,
-	"\x81\xEC\x04\x01\x00\x00\x56",
-	"xxxxxxx",
-	match,
-	void,
-	(void),
-	()
+	pcdogs_take_screenshot, __cdecl, "\x81\xEC\x04\x01\x00\x00\x56", "xxxxxxx", match, void, (void), ()
 )
 
 // Sig matches function prologue directly
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
-	pcdogs_malloc,
-	__cdecl,
-	"\xFF\x35????\xFF\x74\x24",
-	"xx????xxx",
-	match,
-	void *,
-	(size_t size),
-	(size)
+	pcdogs_malloc, __cdecl, "\xFF\x35????\xFF\x74\x24", "xx????xxx", match, void *, (size_t size), (size)
 )
 
 static void s_interop_pcdogs_functions_init(DTTR_GameModule mod) {

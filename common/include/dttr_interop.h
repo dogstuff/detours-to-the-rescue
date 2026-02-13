@@ -9,9 +9,6 @@
 #include <psapi.h>
 #include <log.h>
 
-#define DTTR_PREFIX_HOOK    "[hook] "
-#define DTTR_PREFIX_INTEROP "[interop] "
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,7 +43,7 @@ static inline int dttr_interop_validate_resolve(
 	HMODULE mod, uintptr_t addr, const char *name
 ) {
 	if (!addr) {
-		log_error(DTTR_PREFIX_INTEROP "%s: resolved to NULL", name);
+		log_error("%s: resolved to NULL", name);
 		return 0;
 	}
 	MODULEINFO mi;
@@ -55,7 +52,7 @@ static inline int dttr_interop_validate_resolve(
 		const uintptr_t mod_end = mod_base + mi.SizeOfImage;
 		if (addr < mod_base || addr >= mod_end) {
 			log_error(
-				DTTR_PREFIX_INTEROP "%s: resolved to 0x%08X (outside module 0x%08X-0x%08X)",
+				"%s: resolved to 0x%08X (outside module 0x%08X-0x%08X)",
 				name, (unsigned)addr, (unsigned)mod_base, (unsigned)mod_end
 			);
 			return 0;
@@ -178,7 +175,7 @@ static inline int dttr_interop_validate_resolve(
 	do { \
 		hook##_install(mod); \
 		log_info( \
-			DTTR_PREFIX_HOOK "Applied HOOK_FUNC %s at 0x%08X", #hook, \
+			"Applied HOOK_FUNC %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
 	} while (0)
@@ -188,12 +185,12 @@ static inline int dttr_interop_validate_resolve(
 		hook##_install(mod); \
 		if (hook##_trampoline) { \
 			log_info( \
-				DTTR_PREFIX_HOOK "Applied HOOK_FUNC %s at 0x%08X", #hook, \
+				"Applied HOOK_FUNC %s at 0x%08X", #hook, \
 				(unsigned)hook##_site \
 			); \
 		} else { \
 			log_error( \
-				DTTR_PREFIX_HOOK "Failed to allocate trampoline for %s", #hook \
+				"Failed to allocate trampoline for %s", #hook \
 			); \
 		} \
 	} while (0)
@@ -202,7 +199,7 @@ static inline int dttr_interop_validate_resolve(
 	do { \
 		hook##_patch(mod); \
 		log_info( \
-			DTTR_PREFIX_HOOK "Applied PATCH_CALL %s at 0x%08X", #hook, \
+			"Applied PATCH_CALL %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
 	} while (0)
@@ -211,7 +208,7 @@ static inline int dttr_interop_validate_resolve(
 	do { \
 		hook##_patch(mod); \
 		log_info( \
-			DTTR_PREFIX_HOOK "Applied PATCH_PTR %s at 0x%08X", #hook, \
+			"Applied PATCH_PTR %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
 	} while (0)
@@ -219,7 +216,7 @@ static inline int dttr_interop_validate_resolve(
 #define DTTR_INTEROP_UNHOOK_LOG(hook) \
 	do { \
 		log_info( \
-			DTTR_PREFIX_HOOK "Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
+			"Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
 		); \
 		hook##_unpatch(); \
 	} while (0)

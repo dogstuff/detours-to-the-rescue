@@ -34,8 +34,7 @@ typedef struct {
 
 // Returns true when frame rendering is configured to use multisampled color
 static bool s_msaa_enabled(const DTTR_BackendState *state) {
-	return state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1
-		   && state->m_msaa_render_target != NULL;
+	return state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1 && state->m_msaa_render_target != NULL;
 }
 
 // Marks a reusable upload slot as available
@@ -119,8 +118,7 @@ static int s_acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) 
 }
 
 // Binds the shared frame vertex buffer to the current render pass when available
-static void
-s_bind_frame_vertex_buffer(const DTTR_BackendState *state, SDL_GPURenderPass *render_pass) {
+static void s_bind_frame_vertex_buffer(const DTTR_BackendState *state, SDL_GPURenderPass *render_pass) {
 	if (!render_pass)
 		return;
 
@@ -159,8 +157,7 @@ static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture
 	const SDL_GPUTextureCreateInfo tex_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
 		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER
-				 | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE
+		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE
 				 | SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
 		.width = st->m_width,
 		.height = st->m_height,
@@ -173,9 +170,8 @@ static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture
 
 // Detaches staged pixel payloads for upload, minimizing time spent holding the
 // shared texture mutex
-static int s_collect_pending_uploads(
-	DTTR_BackendState *state, S_GraphicsPendingUpload *pending_uploads, int max_uploads
-) {
+static int
+s_collect_pending_uploads(DTTR_BackendState *state, S_GraphicsPendingUpload *pending_uploads, int max_uploads) {
 	if (!state->m_texture_mutex)
 		return 0;
 
@@ -243,9 +239,7 @@ static int s_collect_pending_uploads(
 }
 
 // Uploads one pending pixel payload to a temporary storage buffer
-static void s_stage_upload_data(
-	DTTR_BackendState *state, SDL_GPUCopyPass *copy, S_GraphicsPendingUpload *upload
-) {
+static void s_stage_upload_data(DTTR_BackendState *state, SDL_GPUCopyPass *copy, S_GraphicsPendingUpload *upload) {
 	if (!upload || !upload->pixels || !upload->tex || upload->bytes == 0 || !copy) {
 		free(upload ? upload->pixels : NULL);
 
@@ -360,10 +354,10 @@ static void s_dispatch_pending_uploads(
 				(uint32_t)pending[p].height,
 			};
 			SDL_PushGPUComputeUniformData(cmd, 0, pc, sizeof(pc));
-			const uint32_t gx = (uint32_t)((pending[p].width + DTTR_COMPUTE_WORKGROUP_X - 1)
-										   / DTTR_COMPUTE_WORKGROUP_X);
-			const uint32_t gy = (uint32_t)((pending[p].height + DTTR_COMPUTE_WORKGROUP_Y - 1)
-										   / DTTR_COMPUTE_WORKGROUP_Y);
+			const uint32_t gx
+				= (uint32_t)((pending[p].width + DTTR_COMPUTE_WORKGROUP_X - 1) / DTTR_COMPUTE_WORKGROUP_X);
+			const uint32_t gy
+				= (uint32_t)((pending[p].height + DTTR_COMPUTE_WORKGROUP_Y - 1) / DTTR_COMPUTE_WORKGROUP_Y);
 			SDL_DispatchGPUCompute(comp, gx, gy, DTTR_COMPUTE_WORKGROUP_Z);
 			SDL_EndGPUComputePass(comp);
 		}
@@ -384,9 +378,8 @@ static void s_dispatch_pending_uploads(
 }
 
 // Releases temporary storage buffers used for one upload batch
-static void s_release_pending_upload_buffers(
-	DTTR_BackendState *state, const S_GraphicsPendingUpload *pending, int pending_count
-) {
+static void
+s_release_pending_upload_buffers(DTTR_BackendState *state, const S_GraphicsPendingUpload *pending, int pending_count) {
 	for (int p = 0; p < pending_count; p++) {
 		if (!pending[p].buf)
 			continue;
@@ -432,9 +425,7 @@ static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBu
 
 	uint32_t uploaded_texture_count = 0;
 	uint64_t uploaded_bytes = 0;
-	s_dispatch_pending_uploads(
-		state, cmd, pending, pending_count, &uploaded_texture_count, &uploaded_bytes
-	);
+	s_dispatch_pending_uploads(state, cmd, pending, pending_count, &uploaded_texture_count, &uploaded_bytes);
 	s_release_pending_upload_buffers(state, pending, pending_count);
 
 	state->m_perf_upload_textures_accum += uploaded_texture_count;
@@ -475,17 +466,15 @@ static void s_reset_replay_state(S_GraphicsReplayState *replay_state) {
 }
 
 // Opens a render pass configured for the recorded clear command
-static void s_begin_clear_pass(
-	DTTR_BackendState *state, const DTTR_BatchRecord *rec, S_GraphicsReplayState *replay_state
-) {
+static void
+s_begin_clear_pass(DTTR_BackendState *state, const DTTR_BatchRecord *rec, S_GraphicsReplayState *replay_state) {
 	s_end_render_pass_if_active(state);
 
 	const bool use_msaa = s_msaa_enabled(state);
 	const SDL_GPUColorTargetInfo color_target = {
 		.texture = use_msaa ? state->m_msaa_render_target : state->m_render_target,
 		.clear_color = rec->clear.color,
-		.load_op
-		= (rec->clear.flags & DTTR_CLEAR_COLOR) ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD,
+		.load_op = (rec->clear.flags & DTTR_CLEAR_COLOR) ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD,
 		.store_op = use_msaa ? SDL_GPU_STOREOP_RESOLVE_AND_STORE : SDL_GPU_STOREOP_STORE,
 		.resolve_texture = use_msaa ? state->m_render_target : NULL,
 		.resolve_mip_level = 0,
@@ -494,8 +483,7 @@ static void s_begin_clear_pass(
 	const SDL_GPUDepthStencilTargetInfo depth_target = {
 		.texture = state->m_depth_texture,
 		.clear_depth = rec->clear.depth,
-		.load_op
-		= (rec->clear.flags & DTTR_CLEAR_DEPTH) ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD,
+		.load_op = (rec->clear.flags & DTTR_CLEAR_DEPTH) ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD,
 		.store_op = SDL_GPU_STOREOP_DONT_CARE,
 	};
 
@@ -520,8 +508,7 @@ static void s_draw_batch_record(
 	if (!state->m_render_pass)
 		return;
 
-	const int pidx
-		= DTTR_PIPELINE_INDEX(rec->draw.blend_mode, rec->draw.depth_test, rec->draw.depth_write);
+	const int pidx = DTTR_PIPELINE_INDEX(rec->draw.blend_mode, rec->draw.depth_test, rec->draw.depth_write);
 	if (!replay_state || replay_state->last_pipeline_idx != pidx) {
 		SDL_BindGPUGraphicsPipeline(state->m_render_pass, state->m_pipelines[pidx]);
 
@@ -552,9 +539,7 @@ static void s_draw_batch_record(
 			replay_stats->sampler_bind_count++;
 	}
 
-	SDL_DrawGPUPrimitives(
-		state->m_render_pass, rec->draw.vertex_count, 1, rec->draw.first_vertex, 0
-	);
+	SDL_DrawGPUPrimitives(state->m_render_pass, rec->draw.vertex_count, 1, rec->draw.first_vertex, 0);
 
 	if (replay_stats)
 		replay_stats->draw_count++;
@@ -600,7 +585,7 @@ void dttr_graphics_begin_frame(void) {
 	state->m_cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
 
 	if (!state->m_cmd) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to acquire GPU command buffer");
+		log_error("Failed to acquire GPU command buffer");
 		return;
 	}
 
@@ -608,20 +593,15 @@ void dttr_graphics_begin_frame(void) {
 	s_upload_pending_textures(state, state->m_cmd);
 
 	SDL_WaitAndAcquireGPUSwapchainTexture(
-		state->m_cmd,
-		state->m_window,
-		&state->m_swapchain_tex,
-		&state->m_swapchain_width,
-		&state->m_swapchain_height
+		state->m_cmd, state->m_window, &state->m_swapchain_tex, &state->m_swapchain_width, &state->m_swapchain_height
 	);
 
 	state->m_batch_count = 0;
 	state->m_vertex_offset = 0;
-	state->m_transfer_mapped
-		= SDL_MapGPUTransferBuffer(state->m_device, state->m_transfer_buffer, true);
+	state->m_transfer_mapped = SDL_MapGPUTransferBuffer(state->m_device, state->m_transfer_buffer, true);
 
 	if (!state->m_transfer_mapped)
-		log_warn(DTTR_PREFIX_GRAPHICS "BeginFrame: MapGPUTransferBuffer failed");
+		log_warn("BeginFrame: MapGPUTransferBuffer failed");
 
 	state->m_frame_active = true;
 }
@@ -666,20 +646,16 @@ void dttr_graphics_end_frame(void) {
 	state->m_perf_sampler_binds_accum += replay_stats.sampler_bind_count;
 
 	if (state->m_swapchain_tex) {
-		const Uint32 swap_w
-			= (state->m_swapchain_width > 0) ? state->m_swapchain_width : (Uint32)state->m_width;
-		const Uint32 swap_h
-			= (state->m_swapchain_height > 0) ? state->m_swapchain_height : (Uint32)state->m_height;
+		const Uint32 swap_w = (state->m_swapchain_width > 0) ? state->m_swapchain_width : (Uint32)state->m_width;
+		const Uint32 swap_h = (state->m_swapchain_height > 0) ? state->m_swapchain_height : (Uint32)state->m_height;
 		Uint32 present_x = 0;
 		Uint32 present_y = 0;
 		Uint32 present_w = swap_w;
 		Uint32 present_h = swap_h;
 
-		const bool is_internal_method
-			= (g_dttr_config.m_scaling_method == DTTR_SCALING_METHOD_LOGICAL);
+		const bool is_internal_method = (g_dttr_config.m_scaling_method == DTTR_SCALING_METHOD_LOGICAL);
 		const bool is_stretch_fit = (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_STRETCH);
-		const bool is_integer_fit
-			= (!is_internal_method) && (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_INTEGER);
+		const bool is_integer_fit = (!is_internal_method) && (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_INTEGER);
 
 		if (!is_stretch_fit) {
 			const float sx = (float)swap_w / (float)state->m_width;
@@ -764,9 +740,7 @@ static bool s_ensure_video_texture(DTTR_BackendState *state, int width, int heig
 	return true;
 }
 
-bool dttr_graphics_present_video_frame_bgra(
-	const uint8_t *pixels, int width, int height, int stride
-) {
+bool dttr_graphics_present_video_frame_bgra(const uint8_t *pixels, int width, int height, int stride) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
 	if (!pixels || width <= 0 || height <= 0 || stride < (width * 4))
@@ -813,9 +787,7 @@ bool dttr_graphics_present_video_frame_bgra(
 	SDL_GPUTexture *swapchain_tex = NULL;
 	Uint32 swapchain_w = 0;
 	Uint32 swapchain_h = 0;
-	SDL_WaitAndAcquireGPUSwapchainTexture(
-		cmd, state->m_window, &swapchain_tex, &swapchain_w, &swapchain_h
-	);
+	SDL_WaitAndAcquireGPUSwapchainTexture(cmd, state->m_window, &swapchain_tex, &swapchain_w, &swapchain_h);
 
 	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
 

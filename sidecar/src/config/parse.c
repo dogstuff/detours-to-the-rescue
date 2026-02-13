@@ -6,10 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DTTR_PARSE_TOKEN(token, enum_value)                                                        \
-	if (strcmp(value, token) == 0) {                                                               \
-		*out_value = enum_value;                                                                   \
-		return true;                                                                               \
+#define DTTR_PARSE_TOKEN(token, enum_value)                                                                            \
+	if (strcmp(value, token) == 0) {                                                                                   \
+		*out_value = enum_value;                                                                                       \
+		return true;                                                                                                   \
 	}
 
 bool s_config_parse_bool(const char *value, bool *out_value) {
@@ -178,12 +178,8 @@ bool s_config_parse_gamepad_button(const char *value, int *out_value) {
 	DTTR_PARSE_TOKEN("left_paddle2", SDL_GAMEPAD_BUTTON_LEFT_PADDLE2);
 	DTTR_PARSE_TOKEN("touchpad", SDL_GAMEPAD_BUTTON_TOUCHPAD);
 
-	DTTR_PARSE_TOKEN(
-		"left_trigger", DTTR_GAMEPAD_MAPPING_TRIGGER_BASE + SDL_GAMEPAD_AXIS_LEFT_TRIGGER
-	);
-	DTTR_PARSE_TOKEN(
-		"right_trigger", DTTR_GAMEPAD_MAPPING_TRIGGER_BASE + SDL_GAMEPAD_AXIS_RIGHT_TRIGGER
-	);
+	DTTR_PARSE_TOKEN("left_trigger", DTTR_GAMEPAD_MAPPING_TRIGGER_BASE + SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+	DTTR_PARSE_TOKEN("right_trigger", DTTR_GAMEPAD_MAPPING_TRIGGER_BASE + SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
 	return false;
 }

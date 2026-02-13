@@ -37,8 +37,7 @@ static bool s_is_mapping_pressed(int mapping) {
 
 	if (mapping >= DTTR_GAMEPAD_MAPPING_TRIGGER_BASE) {
 		const int32_t value
-			= SDL_GetGamepadAxis(g_dttr_gamepad, mapping - DTTR_GAMEPAD_MAPPING_TRIGGER_BASE)
-			  / DTTR_DINPUT_AXIS_SCALE;
+			= SDL_GetGamepadAxis(g_dttr_gamepad, mapping - DTTR_GAMEPAD_MAPPING_TRIGGER_BASE) / DTTR_DINPUT_AXIS_SCALE;
 		return value > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
 	}
 
@@ -88,7 +87,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(S_DIJoyState));
 
 	if (!state) {
-		log_error(DTTR_PREFIX_INPUTS "Failed to allocate joystick poll state");
+		log_error("Failed to allocate joystick poll state");
 		return NULL;
 	}
 

@@ -1,7 +1,6 @@
 #ifndef DTTR_ERRORS_H
 #define DTTR_ERRORS_H
 
-#include <stdarg.h>
 #include <stdlib.h>
 
 #include <log.h>
@@ -12,16 +11,21 @@
 #define typeof __typeof__
 #endif
 
-static inline void s_raise_error(const char *error_message, ...) {
-	va_list args;
-	va_start(args, error_message);
+#define s_raise_error(error_message, ...) \
+	do { \
+		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
+		log_error("%s", _err_msg); \
+		sdsfree(_err_msg); \
+	} while (0)
 
-	sds message = sdscatvprintf(sdsempty(), error_message, args);
-	log_error("%s", message);
-	sdsfree(message);
-
-	va_end(args);
-}
+#define DTTR_FATAL(error_message, ...) \
+	do { \
+		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
+		log_error("%s", _err_msg); \
+		MessageBoxA(NULL, _err_msg, "DttR Error", MB_OK | MB_ICONERROR); \
+		sdsfree(_err_msg); \
+		exit(EXIT_FAILURE); \
+	} while (0)
 
 #define DTTR_UNWRAP_WINAPI() \
 	do { \
@@ -43,9 +47,7 @@ static inline void s_raise_error(const char *error_message, ...) {
 		if (message == NULL) { \
 			message = "unknown"; \
 		} \
-		s_raise_error("Win32 API Error 0x%X: %s", error_code, message); \
-		LocalFree(message); \
-		exit(error_code); \
+		DTTR_FATAL("Win32 API Error 0x%X: %s", error_code, message); \
 	} while (0)
 
 #define DTTR_UNWRAP_WINAPI_IF(result, is_error) \

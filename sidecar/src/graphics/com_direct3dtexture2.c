@@ -22,13 +22,9 @@ s_d3dtexture2_gethandle(DTTR_Graphics_COM_Direct3DTexture2 *self, void *device, 
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3dtexture2_palettechanged, DTTR_Graphics_COM_Direct3DTexture2 *self, DWORD start, DWORD count
-)
+DTTR_COM_NOOP_HRESULT(s_d3dtexture2_palettechanged, DTTR_Graphics_COM_Direct3DTexture2 *self, DWORD start, DWORD count)
 
-DTTR_COM_NOOP_HRESULT(
-	s_d3dtexture2_load, DTTR_Graphics_COM_Direct3DTexture2 *self, void *srcTexture
-)
+DTTR_COM_NOOP_HRESULT(s_d3dtexture2_load, DTTR_Graphics_COM_Direct3DTexture2 *self, void *srcTexture)
 
 static DTTR_Graphics_COM_Direct3DTexture2_VT s_vtbl = {
 	.QueryInterface = s_d3dtexture2_queryinterface,

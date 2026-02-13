@@ -27,8 +27,7 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 		return;
 	}
 
-	if (event->type != SDL_EVENT_WINDOW_RESIZED
-		&& event->type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+	if (event->type != SDL_EVENT_WINDOW_RESIZED && event->type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 		return;
 	}
 
@@ -46,42 +45,39 @@ static void s_tick_main_loop(void) {
 	SDL_Delay(10);
 }
 
-int32_t _stdcall dttr_hook_win_main_callback(
-	HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow
-) {
+int32_t _stdcall
+dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow) {
 	dttr_crashdump_init("dttr_sidecar");
 
 	FILE *const log_file = fopen("dttr_sidecar.log", "a+");
 
 	if (!log_file) {
-		s_raise_error(DTTR_PREFIX_INIT "Could not open log file dttr_sidecar.log");
+		s_raise_error("Could not open log file dttr_sidecar.log");
 	}
 
 	log_set_level(LOG_INFO);
 
-	log_info(DTTR_PREFIX_INIT "Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
+	log_info("Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
 
 	if (!dttr_config_load(DTTR_CONFIG_FILENAME)) {
-		log_error(DTTR_PREFIX_INIT "Configuration load failed - aborting");
+		log_error("Configuration load failed - aborting");
 		return 1;
 	}
 
 	log_add_fp(log_file, g_dttr_config.m_log_level);
-	log_info(
-		DTTR_PREFIX_INIT "File log level set to %s", log_level_string(g_dttr_config.m_log_level)
-	);
+	log_info("File log level set to %s", log_level_string(g_dttr_config.m_log_level));
 
 	const HWND hwnd = dttr_graphics_init();
 
 	if (hwnd == NULL) {
-		log_error(DTTR_PREFIX_GRAPHICS "Failed to initialize - aborting");
+		log_error("Failed to initialize - aborting");
 		return 1;
 	}
 
-	log_info(DTTR_PREFIX_INIT "Initializing game globals...");
+	log_info("Initializing game globals...");
 	s_interop_pcdogs_globals_init(g_dttr_pc_dogs_module);
 
-	log_info(DTTR_PREFIX_INIT "Initializing game functions...");
+	log_info("Initializing game functions...");
 	s_interop_pcdogs_functions_init(g_dttr_pc_dogs_module);
 
 	dttr_crt_hook_init(g_dttr_pc_dogs_module);
