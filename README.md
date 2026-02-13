@@ -71,30 +71,6 @@ task container-build
 
 ---
 
-## Known issues
-
-- [ ]
-- [ ] Intro movie playback is currently disabled pending adoption of LibVLC
-- [ ] Shimmering/precision issues are more apparent when using logical scaling at high resolutions
-- [ ] Some textures occasionally appear deep black any white
-- [ ] I forgot the rest but please tell me in the repo issues
-
----
-
-### TODO
-
-- [ ] Resolve game offsets using signature scanning (cross-version support)
-- [ ] Add a translator for MCI using LibVLC
-- [ ] Support configuring which controller to use
-- [ ] Properly support mid-game controller reconnections
-- [ ] Support installing DttR within a separate directory from `pcdogs.exe`
-- [ ] Support arbitrary controller axes as buttons
-- [ ] Add a translator for Miles Sound System (MSS) using SDL_mixer
-- [ ] Implement a more robust precision stabilization system
-- [ ] Other stuff I forgot about
-
----
-
 ## License
 
 See [LICENSE](LICENSE) for details.
