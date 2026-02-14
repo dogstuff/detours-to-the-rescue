@@ -169,13 +169,13 @@ bool s_config_parse_log_level(const char *value, int *out_value) {
 	return false;
 }
 
-bool s_config_parse_crashdump_type(const char *value, int *out_value) {
+bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_value) {
 	if (!value || !out_value) {
 		return false;
 	}
 
-	DTTR_PARSE_TOKEN("normal", 0);
-	DTTR_PARSE_TOKEN("full_memory", 1);
+	DTTR_PARSE_TOKEN("normal", DTTR_MINIDUMP_NORMAL);
+	DTTR_PARSE_TOKEN("full_memory", DTTR_MINIDUMP_FULL_MEMORY);
 
 	return false;
 }
@@ -238,9 +238,9 @@ const char *s_config_format_log_level(int level) {
 	}
 }
 
-const char *s_config_format_crashdump_type(int type) {
+const char *s_config_format_minidump_type(DTTR_MinidumpType type) {
 	switch (type) {
-	DTTR_FORMAT_TOKEN(1, "full_memory")
+	DTTR_FORMAT_TOKEN(DTTR_MINIDUMP_FULL_MEMORY, "full_memory")
 	default: return "normal";
 	}
 }
