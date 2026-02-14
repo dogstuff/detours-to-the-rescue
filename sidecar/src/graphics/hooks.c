@@ -45,7 +45,7 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 		}
 	}
 
-	log_info("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
+	log_debug("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
 	return S_OK;
 }
 
@@ -53,16 +53,16 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawenumerateexa
 HRESULT __stdcall
 dttr_graphics_hook_directdraw_enumerate_ex_a_callback(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags) {
-	log_info("DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x", lpCallback, lpContext, dwFlags);
+	log_debug("DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x", lpCallback, lpContext, dwFlags);
 
 	if (!lpCallback) {
-		log_info("DirectDrawEnumerateExA complete");
+		log_debug("DirectDrawEnumerateExA complete");
 		return S_OK;
 	}
 
 	lpCallback(NULL, "DTTR Virtual Display", "display", lpContext, NULL);
 
-	log_info("DirectDrawEnumerateExA complete");
+	log_debug("DirectDrawEnumerateExA complete");
 	return S_OK;
 }
 

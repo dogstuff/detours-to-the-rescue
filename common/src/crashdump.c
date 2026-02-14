@@ -136,7 +136,7 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 void dttr_crashdump_init(const char *const name) {
 	s_dump_name = name;
 	SetUnhandledExceptionFilter(s_unhandled_exception_filter);
-	log_info("Crash dump handler installed");
+	log_debug("Crash dump handler installed");
 }
 
 #else

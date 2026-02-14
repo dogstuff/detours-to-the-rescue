@@ -61,10 +61,10 @@ static inline int dttr_interop_validate_resolve(
 	return 1;
 }
 
-// Validates and logs a resolved address, expanding log_info at the call site for correct __FILE__ and __LINE__
+// Validates and logs a resolved address, expanding log_debug at the call site for correct __FILE__ and __LINE__
 #define INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, addr, name) \
 	(dttr_interop_validate_resolve(mod, addr, name) ? \
-		(log_info("Resolved %s at 0x%08X", name, (unsigned)(addr)), 1) : 0)
+		(log_debug("Resolved %s at 0x%08X", name, (unsigned)(addr)), 1) : 0)
 
 // Address resolution helpers used internally by the macros below
 // Resolves an E8 relative call at address p to its absolute target
@@ -206,7 +206,7 @@ static inline int dttr_interop_validate_resolve(
 #define DTTR_INTEROP_HOOK_FUNC_LOG(hook, mod) \
 	do { \
 		hook##_install(mod); \
-		log_info( \
+		log_debug( \
 			"Applied HOOK_FUNC %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
@@ -218,7 +218,7 @@ static inline int dttr_interop_validate_resolve(
 	do { \
 		hook##_install(mod); \
 		if (hook##_site) { \
-			log_info("Applied " type_name " %s at 0x%08X", #hook, (unsigned)hook##_site); \
+			log_debug("Applied " type_name " %s at 0x%08X", #hook, (unsigned)hook##_site); \
 		} else { \
 			log_warn("Skipped optional " type_name " %s (not found)", #hook); \
 		} \
@@ -232,7 +232,7 @@ static inline int dttr_interop_validate_resolve(
 	do { \
 		hook##_install(mod); \
 		if (hook##_trampoline) { \
-			log_info( \
+			log_debug( \
 				"Applied HOOK_FUNC %s at 0x%08X", #hook, \
 				(unsigned)hook##_site \
 			); \
@@ -247,7 +247,7 @@ static inline int dttr_interop_validate_resolve(
 	do { \
 		hook##_install(mod); \
 		if (hook##_trampoline) { \
-			log_info( \
+			log_debug( \
 				"Applied HOOK_FUNC %s at 0x%08X", #hook, \
 				(unsigned)hook##_site \
 			); \
@@ -261,7 +261,7 @@ static inline int dttr_interop_validate_resolve(
 #define DTTR_INTEROP_PATCH_CALL_LOG(hook, mod) \
 	do { \
 		hook##_patch(mod); \
-		log_info( \
+		log_debug( \
 			"Applied PATCH_CALL %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
@@ -270,7 +270,7 @@ static inline int dttr_interop_validate_resolve(
 #define DTTR_INTEROP_PATCH_PTR_LOG(hook, mod) \
 	do { \
 		hook##_patch(mod); \
-		log_info( \
+		log_debug( \
 			"Applied PATCH_PTR %s at 0x%08X", #hook, \
 			(unsigned)hook##_site \
 		); \
@@ -278,7 +278,7 @@ static inline int dttr_interop_validate_resolve(
 
 #define DTTR_INTEROP_UNHOOK_LOG(hook) \
 	do { \
-		log_info( \
+		log_debug( \
 			"Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
 		); \
 		hook##_unpatch(); \
@@ -287,7 +287,7 @@ static inline int dttr_interop_validate_resolve(
 #define DTTR_INTEROP_UNHOOK_OPTIONAL_LOG(hook) \
 	do { \
 		if (hook##_site) { \
-			log_info( \
+			log_debug( \
 				"Removed %s at 0x%08X", #hook, (unsigned)hook##_site \
 			); \
 			hook##_unpatch(); \

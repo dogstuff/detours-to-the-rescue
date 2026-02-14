@@ -36,7 +36,7 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		sdsfree(prompt);
 
 		if (choice == IDYES) {
-			log_info("chmod \"%s\" 0o%03o", path, minimum_needed_perms);
+			log_debug("chmod \"%s\" 0o%03o", path, minimum_needed_perms);
 			chmod(path, minimum_needed_perms);
 			result = dttr_crt_open_file_with_mode(path, mode, 0x40);
 			if (result)

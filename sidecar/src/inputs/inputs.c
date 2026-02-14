@@ -38,7 +38,7 @@ void dttr_inputs_late_init(void) {
 	}
 
 	g_pcdogs_joystick_available_set(1);
-	log_info("Joystick available flag set");
+	log_debug("Joystick available flag set");
 }
 
 void dttr_inputs_cleanup(void) {
