@@ -1,7 +1,7 @@
 #ifndef DTTR_CONFIG_INTERNAL_H
 #define DTTR_CONFIG_INTERNAL_H
 
-#include "dttr_sidecar.h"
+#include <dttr_config.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -35,10 +35,19 @@ bool s_config_parse_gamepad_button(const char *value, int *out_value);
 bool s_config_parse_gamepad_axis(const char *value, int *out_value);
 bool s_config_parse_log_level(const char *value, int *out_value);
 
+const char *s_config_format_bool(bool value);
+void s_config_format_int(int value, char *buf, size_t buf_size);
 const char *s_config_format_scaling_fit(DTTR_ScalingMode mode);
 const char *s_config_format_scaling_method(DTTR_ScalingMethod method);
 const char *s_config_format_precision_mode(DTTR_PrecisionMode mode);
 const char *s_config_format_graphics_api(DTTR_GraphicsApi api);
+const char *s_config_format_present_filter(SDL_GPUFilter filter);
+const char *s_config_format_log_level(int level);
+const char *s_config_format_gamepad_button(int button);
+const char *s_config_format_gamepad_axis(int axis);
+
+int s_config_schema_count(void);
+const S_ConfigFieldSpec *s_config_schema_get(int index);
 
 bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *key, const char *value);
 

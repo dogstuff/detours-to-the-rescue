@@ -11,12 +11,17 @@
 #define typeof __typeof__
 #endif
 
-#define DTTR_FATAL(error_message, ...) \
+#define DTTR_ERROR(error_message, ...) \
 	do { \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
 		log_error("%s", _err_msg); \
 		MessageBoxA(NULL, _err_msg, "DttR Error", MB_OK | MB_ICONERROR); \
 		sdsfree(_err_msg); \
+	} while (0)
+
+#define DTTR_FATAL(error_message, ...) \
+	do { \
+		DTTR_ERROR(error_message, ##__VA_ARGS__); \
 		exit(EXIT_FAILURE); \
 	} while (0)
 

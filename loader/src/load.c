@@ -88,7 +88,7 @@ static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t origi
 	*out_buffer = buffer;
 	memcpy(buffer, dttr_sidecar_shellcode, dttr_sidecar_shellcode_len);
 
-	const HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
+	HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
 	const uintptr_t load_library_a_address
 		= (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(kernel32, "LoadLibraryA"));
 
@@ -117,7 +117,7 @@ static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t origi
 	return out_size;
 }
 
-void dttr_loader_inject_sidecar(PROCESS_INFORMATION *child_info) {
+void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	CONTEXT child_thread_context = {0};
 	child_thread_context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
 	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(child_info->hThread, &child_thread_context));

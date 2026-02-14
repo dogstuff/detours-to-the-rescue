@@ -48,13 +48,16 @@ static void s_tick_main_loop(void) {
 int32_t _stdcall
 dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow) {
 	dttr_crashdump_init("dttr_sidecar");
+	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
 
-	FILE *const log_file = fopen("dttr_sidecar.log", "a+");
+	FILE *const log_file = fopen("dttr.log", "a+");
 	if (!log_file) {
-		DTTR_FATAL("Could not open log file dttr_sidecar.log");
+		DTTR_FATAL("Could not open log file dttr.log");
 	}
 
 	log_set_level(LOG_INFO);
+
+	log_info("Starting DttR sidecar");
 
 	log_info("Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
 
@@ -100,6 +103,8 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	g_pcdogs_game_initialized_set(1);
 	g_pcdogs_rendering_enabled_set(1);
 
+	log_info("Ready!");
+
 	while (g_pcdogs_should_quit_get() == 0) {
 		SDL_Event event;
 
@@ -110,10 +115,14 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 		s_tick_main_loop();
 	}
 
+	log_info("Cleaning up hooks");
+
 	dttr_other_hook_cleanup();
 	dttr_graphics_hook_cleanup();
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();
+
+	log_info("Exiting DttR sidecar");
 
 	return 0;
 }
