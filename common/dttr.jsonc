@@ -5,7 +5,7 @@
 
   // The type of minidump to write on crash.
   // Choices: normal, full_memory
-  "crashdump_type": "normal",
+  "minidump_type": "normal",
 
   "graphics": {
     // The GPU backend to use.

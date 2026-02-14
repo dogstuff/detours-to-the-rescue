@@ -84,9 +84,9 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 	},
 	{
 		.section = NULL,
-		.key = "crashdump_type",
-		.offset = offsetof(DTTR_Config, m_crashdump_type),
-		.value_type = S_CONFIG_CRASHDUMP_TYPE,
+		.key = "minidump_type",
+		.offset = offsetof(DTTR_Config, m_minidump_type),
+		.value_type = S_CONFIG_MINIDUMP_TYPE,
 	},
 };
 
@@ -210,13 +210,13 @@ static bool s_config_assign_log_level(char *field, const char *value) {
 	return true;
 }
 
-static bool s_config_assign_crashdump_type(char *field, const char *value) {
-	int parsed = 0;
-	if (!s_config_parse_crashdump_type(value, &parsed)) {
+static bool s_config_assign_minidump_type(char *field, const char *value) {
+	DTTR_MinidumpType parsed = DTTR_MINIDUMP_NORMAL;
+	if (!s_config_parse_minidump_type(value, &parsed)) {
 		return false;
 	}
 
-	*(int *)field = parsed;
+	*(DTTR_MinidumpType *)field = parsed;
 	return true;
 }
 
@@ -266,8 +266,8 @@ bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *
 	case S_CONFIG_LOG_LEVEL:
 		return s_config_assign_log_level(field, value);
 
-	case S_CONFIG_CRASHDUMP_TYPE:
-		return s_config_assign_crashdump_type(field, value);
+	case S_CONFIG_MINIDUMP_TYPE:
+		return s_config_assign_minidump_type(field, value);
 
 	default:
 		return false;

@@ -27,6 +27,11 @@ typedef enum {
 } DTTR_PrecisionMode;
 
 typedef enum {
+	DTTR_MINIDUMP_NORMAL = 0,
+	DTTR_MINIDUMP_FULL_MEMORY = 1,
+} DTTR_MinidumpType;
+
+typedef enum {
 	DTTR_GRAPHICS_API_AUTO = 0,
 	DTTR_GRAPHICS_API_VULKAN = 1,
 	DTTR_GRAPHICS_API_DIRECT3D12 = 2,
@@ -67,7 +72,7 @@ typedef enum {
 typedef struct {
 	// These are general settings loaded from the config file
 	int m_log_level;
-	int m_crashdump_type;
+	DTTR_MinidumpType m_minidump_type;
 	// These are graphics presentation settings loaded from the config file
 	DTTR_ScalingMode m_scaling_fit;
 	DTTR_ScalingMethod m_scaling_method;
