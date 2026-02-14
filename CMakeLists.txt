@@ -19,7 +19,7 @@ add_subdirectory(sidecar)
 add_subdirectory(loader)
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>")
-set(DTTR_DEFAULT_CONFIG_FILE "${CMAKE_SOURCE_DIR}/sidecar/dttr.jsonc")
+set(DTTR_DEFAULT_CONFIG_FILE "${CMAKE_SOURCE_DIR}/common/dttr.jsonc")
 
 add_custom_target(dttr_dist ALL
     DEPENDS dttr dttr_sidecar

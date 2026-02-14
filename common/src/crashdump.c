@@ -1,13 +1,52 @@
-#ifndef NDEBUG
-
-#include <windows.h>
+#include <dttr_crashdump.h>
 
 #include <dbghelp.h>
 
 #include <log.h>
 #include <sds.h>
 
-static const char *s_dump_name;
+sds dttr_crashdump_write(HANDLE process, DWORD pid, DWORD tid, EXCEPTION_POINTERS *exception_info) {
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	sds filename = sdscatprintf(
+		sdsempty(),
+		"dttr_crash_%04d%02d%02d_%02d%02d%02d.dmp",
+		st.wYear,
+		st.wMonth,
+		st.wDay,
+		st.wHour,
+		st.wMinute,
+		st.wSecond
+	);
+
+	HANDLE file = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE) {
+		log_error("Failed to create dump file %s", filename);
+		sdsfree(filename);
+		return NULL;
+	}
+
+	MINIDUMP_EXCEPTION_INFORMATION mei = {
+		.ThreadId = tid,
+		.ExceptionPointers = exception_info,
+		.ClientPointers = FALSE,
+	};
+
+	const BOOL success = MiniDumpWriteDump(process, pid, file, MiniDumpNormal, &mei, NULL, NULL);
+	CloseHandle(file);
+
+	if (!success) {
+		log_error("Failed to write crash dump to %s", filename);
+		sdsfree(filename);
+		return NULL;
+	}
+
+	log_info("Crash dump written to %s", filename);
+	return filename;
+}
+
+#ifndef NDEBUG
 
 static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 	HANDLE process = GetCurrentProcess();
@@ -63,69 +102,26 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 	SymCleanup(process);
 }
 
+#endif
+
 static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const exception_info) {
-	SYSTEMTIME st;
-	GetLocalTime(&st);
-
-	const sds filename = sdscatprintf(
-		sdsempty(),
-		"%s_crash_%04d%02d%02d_%02d%02d%02d.dmp",
-		s_dump_name,
-		st.wYear,
-		st.wMonth,
-		st.wDay,
-		st.wHour,
-		st.wMinute,
-		st.wSecond
+	const DWORD code = exception_info->ExceptionRecord->ExceptionCode;
+	sds filename = dttr_crashdump_write(
+		GetCurrentProcess(), GetCurrentProcessId(), GetCurrentThreadId(), exception_info
 	);
-
-	const HANDLE file
-		= CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (file == INVALID_HANDLE_VALUE) {
-		log_error("Failed to create dump file %s", filename);
-		sdsfree(filename);
-		return EXCEPTION_CONTINUE_SEARCH;
-	}
-
-	MINIDUMP_EXCEPTION_INFORMATION mei;
-	mei.ThreadId = GetCurrentThreadId();
-	mei.ExceptionPointers = exception_info;
-	mei.ClientPointers = FALSE;
-
-	const BOOL success = MiniDumpWriteDump(
-		GetCurrentProcess(), GetCurrentProcessId(), file, MiniDumpNormal, &mei, NULL, NULL
-	);
-
-	CloseHandle(file);
 
 	sds message;
-	if (success) {
-		log_error(
-			"Exception 0x%08lX; dump written to %s",
-			exception_info->ExceptionRecord->ExceptionCode,
-			filename
-		);
-		message = sdscatprintf(
-			sdsempty(),
-			"Exception 0x%08lX\n\nDump written to:\n%s",
-			exception_info->ExceptionRecord->ExceptionCode,
-			filename
-		);
+
+	if (filename) {
+		message = sdscatprintf(sdsempty(), "Exception 0x%08lX\n\nDump written to:\n%s", code, filename);
 	} else {
-		log_error(
-			"Exception 0x%08lX; failed to write dump",
-			exception_info->ExceptionRecord->ExceptionCode
-		);
-		message = sdscatprintf(
-			sdsempty(),
-			"Exception 0x%08lX\n\nFailed to write crash dump.",
-			exception_info->ExceptionRecord->ExceptionCode
-		);
+		message = sdscatprintf(sdsempty(), "Exception 0x%08lX\n\nFailed to write crash dump.", code);
 	}
 
+#ifndef NDEBUG
 	CONTEXT ctx_copy = *exception_info->ContextRecord;
 	s_append_stack_trace(&message, &ctx_copy);
+#endif
 
 	MessageBoxA(NULL, message, "crash jumpscare", MB_OK | MB_ICONERROR);
 	sdsfree(message);
@@ -134,15 +130,6 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 }
 
 void dttr_crashdump_init(const char *const name) {
-	s_dump_name = name;
 	SetUnhandledExceptionFilter(s_unhandled_exception_filter);
 	log_debug("Crash dump handler installed");
 }
-
-#else
-
-void dttr_crashdump_init(const char *name) {
-	(void)name;
-}
-
-#endif

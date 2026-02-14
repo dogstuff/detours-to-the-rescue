@@ -86,7 +86,14 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 
 static khash_t(dttr_config_lookup) *g_dttr_config_lookup = NULL;
 
-static int s_config_schema_count(void) { return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0])); }
+int s_config_schema_count(void) { return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0])); }
+
+const S_ConfigFieldSpec *s_config_schema_get(int index) {
+	if (index < 0 || index >= s_config_schema_count()) {
+		return NULL;
+	}
+	return &s_config_schema[index];
+}
 
 static void s_config_schema_init(void) {
 	if (g_dttr_config_lookup) {
