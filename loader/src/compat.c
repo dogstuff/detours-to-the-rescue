@@ -98,7 +98,7 @@ typedef VOID(NTAPI *s_pfn_rtl_init_unicode_string)(s_unicode_string *, PCWSTR);
 // This provides a portable way to override all Windows compatibility shims,
 // which lets us avoid some weird crashes (e.g., Intel iGPU crash).
 void dttr_compat_create_process(const WCHAR *image_name, sds shim_data, PROCESS_INFORMATION *child_info) {
-	log_info("Spawning game process: NtCreateUserProcess (%u bytes shim data)", (unsigned)sdslen(shim_data));
+	log_debug("Spawning game process: NtCreateUserProcess (%u bytes shim data)", (unsigned)sdslen(shim_data));
 
 	const HMODULE ntdll = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("ntdll.dll"));
 
@@ -136,8 +136,8 @@ void dttr_compat_create_process(const WCHAR *image_name, sds shim_data, PROCESS_
 	rtl_init_unicode_string(&us_cmd, image_name);
 	rtl_init_unicode_string(&us_cwd, cwd);
 
-	log_info("NT image path: %ls", nt_path);
-	log_info("Working directory: %ls", cwd);
+	log_debug("NT image path: %ls", nt_path);
+	log_debug("Working directory: %ls", cwd);
 
 	PVOID params = NULL;
 	NTSTATUS status = rtl_create_process_parameters_ex(
@@ -182,7 +182,7 @@ void dttr_compat_create_process(const WCHAR *image_name, sds shim_data, PROCESS_
 	child_info->hThread = thread;
 	child_info->dwProcessId = (DWORD)(ULONG_PTR)client_id.m_process;
 	child_info->dwThreadId = (DWORD)(ULONG_PTR)client_id.m_thread;
-	log_info("Process created: PID=%lu, TID=%lu", child_info->dwProcessId, child_info->dwThreadId);
+	log_debug("Process created: PID=%lu, TID=%lu", child_info->dwProcessId, child_info->dwThreadId);
 
 	CONTEXT ctx = {.ContextFlags = CONTEXT_INTEGER};
 	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(thread, &ctx));
@@ -199,7 +199,7 @@ void dttr_compat_create_process(const WCHAR *image_name, sds shim_data, PROCESS_
 		WriteProcessMemory(process, (LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET), &remote_shim, sizeof(PVOID), NULL)
 	);
 
-	log_info(
+	log_debug(
 		"Shim data (%u bytes) written to PEB->pShimData at 0x%08X", (unsigned)data_len, (unsigned)(uintptr_t)remote_shim
 	);
 }
@@ -317,11 +317,11 @@ static void s_author_sdb(HMODULE apphelp, WCHAR *out_path) {
 	sdb_end_list(pdb, ti_db);
 	sdb_close(pdb);
 
-	log_info("SDB authored to %ls", out_path);
+	log_debug("SDB authored to %ls", out_path);
 }
 
 sds dttr_compat_build_shim_data(const WCHAR *image_name) {
-	log_info("Building shim data via apphelp.dll");
+	log_debug("Building shim data via apphelp.dll");
 
 	char apphelp_path[MAX_PATH];
 	GetSystemDirectoryA(apphelp_path, MAX_PATH);
@@ -352,7 +352,7 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 		DTTR_FATAL("SdbGetMatchingExe found no matches for %ls", full_exe_path);
 	}
 
-	log_info("SDB query matched: %lu exe entries, %lu layer entries", query.m_exe_count, query.m_layer_count);
+	log_debug("SDB query matched: %lu exe entries, %lu layer entries", query.m_exe_count, query.m_layer_count);
 
 	PVOID packed = NULL;
 	DWORD packed_size = 0;
@@ -367,6 +367,6 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 	DeleteFileW(sdb_path);
 	FreeLibrary(apphelp);
 
-	log_info("Built shim data (%lu bytes)", (unsigned long)packed_size);
+	log_debug("Built shim data (%lu bytes)", (unsigned long)packed_size);
 	return result;
 }
