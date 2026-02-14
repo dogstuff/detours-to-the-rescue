@@ -82,6 +82,12 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 		.offset = offsetof(DTTR_Config, m_log_level),
 		.value_type = S_CONFIG_LOG_LEVEL,
 	},
+	{
+		.section = NULL,
+		.key = "crashdump_type",
+		.offset = offsetof(DTTR_Config, m_crashdump_type),
+		.value_type = S_CONFIG_CRASHDUMP_TYPE,
+	},
 };
 
 static khash_t(dttr_config_lookup) *g_dttr_config_lookup = NULL;
@@ -204,6 +210,16 @@ static bool s_config_assign_log_level(char *field, const char *value) {
 	return true;
 }
 
+static bool s_config_assign_crashdump_type(char *field, const char *value) {
+	int parsed = 0;
+	if (!s_config_parse_crashdump_type(value, &parsed)) {
+		return false;
+	}
+
+	*(int *)field = parsed;
+	return true;
+}
+
 static bool s_config_assign_int(char *field, const char *value) {
 	int parsed = 0;
 	if (!s_config_parse_int(value, &parsed)) {
@@ -249,6 +265,9 @@ bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *
 
 	case S_CONFIG_LOG_LEVEL:
 		return s_config_assign_log_level(field, value);
+
+	case S_CONFIG_CRASHDUMP_TYPE:
+		return s_config_assign_crashdump_type(field, value);
 
 	default:
 		return false;

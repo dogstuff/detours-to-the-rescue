@@ -1,3 +1,4 @@
+#include <dttr_config.h>
 #include <dttr_crashdump.h>
 
 #include <dbghelp.h>
@@ -33,7 +34,8 @@ sds dttr_crashdump_write(HANDLE process, DWORD pid, DWORD tid, EXCEPTION_POINTER
 		.ClientPointers = FALSE,
 	};
 
-	const BOOL success = MiniDumpWriteDump(process, pid, file, MiniDumpNormal, &mei, NULL, NULL);
+	const MINIDUMP_TYPE dump_type = (g_dttr_config.m_crashdump_type == 1) ? MiniDumpWithFullMemory : MiniDumpNormal;
+	const BOOL success = MiniDumpWriteDump(process, pid, file, dump_type, &mei, NULL, NULL);
 	CloseHandle(file);
 
 	if (!success) {

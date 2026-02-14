@@ -15,6 +15,7 @@ typedef enum {
 	S_CONFIG_INT = 5,
 	S_CONFIG_PRESENT_FILTER = 6,
 	S_CONFIG_LOG_LEVEL = 7,
+	S_CONFIG_CRASHDUMP_TYPE = 8,
 } S_ConfigValueType;
 
 typedef struct {
@@ -34,6 +35,7 @@ bool s_config_parse_present_filter(const char *value, SDL_GPUFilter *out_value);
 bool s_config_parse_gamepad_button(const char *value, int *out_value);
 bool s_config_parse_gamepad_axis(const char *value, int *out_value);
 bool s_config_parse_log_level(const char *value, int *out_value);
+bool s_config_parse_crashdump_type(const char *value, int *out_value);
 
 const char *s_config_format_bool(bool value);
 void s_config_format_int(int value, char *buf, size_t buf_size);
@@ -43,6 +45,7 @@ const char *s_config_format_precision_mode(DTTR_PrecisionMode mode);
 const char *s_config_format_graphics_api(DTTR_GraphicsApi api);
 const char *s_config_format_present_filter(SDL_GPUFilter filter);
 const char *s_config_format_log_level(int level);
+const char *s_config_format_crashdump_type(int type);
 const char *s_config_format_gamepad_button(int button);
 const char *s_config_format_gamepad_axis(int axis);
 
