@@ -39,6 +39,7 @@
 
 static const DTTR_Config s_default_config = {
 	.m_log_level = LOG_INFO,
+	.m_crashdump_type = 0,
 	.m_scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
 	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
 	.m_precision_mode = DTTR_PRECISION_MODE_STABILIZED,
@@ -55,23 +56,7 @@ static const DTTR_Config s_default_config = {
 	DTTR_GAMEPAD_AXIS_DEFAULTS,
 };
 
-DTTR_Config g_dttr_config = {
-	.m_log_level = LOG_INFO,
-	.m_scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
-	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
-	.m_precision_mode = DTTR_PRECISION_MODE_STABILIZED,
-	.m_graphics_api = DTTR_GRAPHICS_API_AUTO,
-	.m_present_filter = SDL_GPU_FILTER_LINEAR,
-	.m_window_width = WINDOW_WIDTH,
-	.m_window_height = WINDOW_HEIGHT,
-	.m_msaa_samples = 2,
-	.m_texture_upload_sync = false,
-	.m_generate_texture_mipmaps = true,
-	.m_fullscreen = false,
-	.m_gamepad_enabled = true,
-	DTTR_GAMEPAD_MAPPING_DEFAULTS,
-	DTTR_GAMEPAD_AXIS_DEFAULTS,
-};
+DTTR_Config g_dttr_config;
 
 void dttr_config_set_defaults(DTTR_Config *config) {
 	if (!config) {

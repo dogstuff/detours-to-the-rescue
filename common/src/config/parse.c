@@ -169,6 +169,17 @@ bool s_config_parse_log_level(const char *value, int *out_value) {
 	return false;
 }
 
+bool s_config_parse_crashdump_type(const char *value, int *out_value) {
+	if (!value || !out_value) {
+		return false;
+	}
+
+	DTTR_PARSE_TOKEN("normal", 0);
+	DTTR_PARSE_TOKEN("full_memory", 1);
+
+	return false;
+}
+
 #undef DTTR_PARSE_TOKEN
 
 #define DTTR_FORMAT_TOKEN(enum_value, token) case (enum_value): return (token);
@@ -224,6 +235,13 @@ const char *s_config_format_log_level(int level) {
 	DTTR_FORMAT_TOKEN(LOG_ERROR, "error")
 	DTTR_FORMAT_TOKEN(LOG_FATAL, "fatal")
 	default: return "info";
+	}
+}
+
+const char *s_config_format_crashdump_type(int type) {
+	switch (type) {
+	DTTR_FORMAT_TOKEN(1, "full_memory")
+	default: return "normal";
 	}
 }
 

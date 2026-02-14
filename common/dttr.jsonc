@@ -3,6 +3,10 @@
   // Choices: trace, debug, info, warn, error, fatal
   "log_level": "info",
 
+  // The type of minidump to write on crash.
+  // Choices: normal, full_memory
+  "crashdump_type": "normal",
+
   "graphics": {
     // The GPU backend to use.
     // Choices: auto, vulkan, direct3d12, metal
