@@ -1,17 +1,9 @@
-find_package(PkgConfig REQUIRED)
-set(PKG_CONFIG_USE_STATIC_LIBS OFF)
-pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
-
 set(DTTR_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/gen")
 set(DTTR_VLC_DIR "${CMAKE_SOURCE_DIR}/.toolchain/vlc")
 
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
     src/impl.c
-    src/config/defaults.c
-    src/config/parse.c
-    src/config/schema.c
-    src/config/io.c
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
@@ -53,14 +45,12 @@ target_link_libraries(dttr_sidecar PRIVATE
     kernel32
     psapi
 
-    PkgConfig::SDL3
     vlc
     sds
     klib
     xxhash
     log
     common
-    cjson
 )
 
 add_custom_command(TARGET dttr_sidecar POST_BUILD

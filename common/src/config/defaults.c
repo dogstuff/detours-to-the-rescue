@@ -1,4 +1,4 @@
-#include "dttr_sidecar.h"
+#include <dttr_config.h>
 #include "log.h"
 
 // clang-format off

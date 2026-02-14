@@ -10,5 +10,5 @@ target_include_directories(xxhash PUBLIC xxhash)
 add_library(sds STATIC sds/sds.c)
 target_include_directories(sds PUBLIC sds)
 
-add_library(cjson STATIC cjson/cJSON.c)
-target_include_directories(cjson PUBLIC cjson)
+add_library(yyjson STATIC yyjson/yyjson.c)
+target_include_directories(yyjson PUBLIC yyjson)
