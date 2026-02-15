@@ -175,7 +175,7 @@ bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_valu
 	}
 
 	DTTR_PARSE_TOKEN("normal", DTTR_MINIDUMP_NORMAL);
-	DTTR_PARSE_TOKEN("full_memory", DTTR_MINIDUMP_FULL_MEMORY);
+	DTTR_PARSE_TOKEN("detailed", DTTR_MINIDUMP_DETAILED);
 
 	return false;
 }
@@ -240,7 +240,7 @@ const char *s_config_format_log_level(int level) {
 
 const char *s_config_format_minidump_type(DTTR_MinidumpType type) {
 	switch (type) {
-	DTTR_FORMAT_TOKEN(DTTR_MINIDUMP_FULL_MEMORY, "full_memory")
+	DTTR_FORMAT_TOKEN(DTTR_MINIDUMP_DETAILED, "detailed")
 	default: return "normal";
 	}
 }
