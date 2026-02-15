@@ -28,7 +28,7 @@ typedef enum {
 
 typedef enum {
 	DTTR_MINIDUMP_NORMAL = 0,
-	DTTR_MINIDUMP_FULL_MEMORY = 1,
+	DTTR_MINIDUMP_DETAILED = 1,
 } DTTR_MinidumpType;
 
 typedef enum {

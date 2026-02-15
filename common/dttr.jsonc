@@ -4,7 +4,7 @@
   "log_level": "info",
 
   // The type of minidump to write on crash.
-  // Choices: normal, full_memory
+  // Choices: normal, detailed
   "minidump_type": "normal",
 
   "graphics": {
