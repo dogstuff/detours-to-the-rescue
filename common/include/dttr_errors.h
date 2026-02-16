@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 
+#include <SDL3/SDL.h>
 #include <log.h>
 #include <sds.h>
 #include <windows.h>
@@ -15,7 +16,7 @@
 	do { \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
 		log_error("%s", _err_msg); \
-		MessageBoxA(NULL, _err_msg, "DttR Error", MB_OK | MB_ICONERROR); \
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Non-Fatal Error", _err_msg, NULL); \
 		sdsfree(_err_msg); \
 	} while (0)
 

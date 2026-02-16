@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dttr_errors.h"
+
 static sds s_errors;
 
 static void s_errors_clear(void) {
@@ -31,9 +33,11 @@ static void s_errors_addf(const char *fmt, ...) {
 }
 
 static void s_errors_show(void) {
-	if (s_errors && sdslen(s_errors) > 0) {
-		MessageBoxA(NULL, s_errors, "DttR: Configuration Error", MB_OK | MB_ICONERROR);
+	if (!s_errors || sdslen(s_errors) < 1) {
+		return;
 	}
+
+	DTTR_FATAL("Configuration Error: %s", s_errors);
 }
 
 static const char *s_yyjson_value_as_string(yyjson_val *val, char *buf, size_t buf_size) {
@@ -429,9 +433,22 @@ static sds s_jsonc_replace_value(const char *text, size_t text_len, size_t offse
 	return result;
 }
 
-/// Wrap a string in JSON quotes, returning an sds.
+/// Wrap a string in JSON quotes with escape sequences, returning an sds.
 static sds s_sds_json_quoted(const char *str) {
-	return sdscatfmt(sdsempty(), "\"%s\"", str);
+	sds out = sdscatlen(sdsempty(), "\"", 1);
+
+	for (const char *p = str; *p; p++) {
+		switch (*p) {
+		case '\\': out = sdscat(out, "\\\\"); break;
+		case '"':  out = sdscat(out, "\\\""); break;
+		case '\n': out = sdscat(out, "\\n"); break;
+		case '\r': out = sdscat(out, "\\r"); break;
+		case '\t': out = sdscat(out, "\\t"); break;
+		default:   out = sdscatlen(out, p, 1); break;
+		}
+	}
+
+	return sdscatlen(out, "\"", 1);
 }
 
 /// Format a schema field's current value as a JSON token (sds, caller frees).
@@ -465,6 +482,12 @@ static sds s_config_format_json_value(const DTTR_Config *config, const S_ConfigF
 
 	case S_CONFIG_LOG_LEVEL:
 		return s_sds_json_quoted(s_config_format_log_level(*(const int *)field));
+
+	case S_CONFIG_MINIDUMP_TYPE:
+		return s_sds_json_quoted(s_config_format_minidump_type(*(const DTTR_MinidumpType *)field));
+
+	case S_CONFIG_STRING:
+		return s_sds_json_quoted(s_config_format_string(field));
 
 	default:
 		return sdsempty();

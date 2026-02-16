@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DTTR_PARSE_TOKEN(token, enum_value)                                                                            \
-	if (strcmp(value, token) == 0) {                                                                                   \
-		*out_value = enum_value;                                                                                       \
-		return true;                                                                                                   \
+#define DTTR_PARSE_TOKEN(token, enum_value) \
+	if (strcmp(value, token) == 0) { \
+		*out_value = enum_value; \
+		return true; \
 	}
 
 bool s_config_parse_bool(const char *value, bool *out_value) {
@@ -180,6 +180,16 @@ bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_valu
 	return false;
 }
 
+bool s_config_parse_string(const char *value, char *out_value, size_t out_size) {
+	if (!value || !out_value || out_size == 0) {
+		return false;
+	}
+
+	strncpy(out_value, value, out_size - 1);
+	out_value[out_size - 1] = '\0';
+	return true;
+}
+
 #undef DTTR_PARSE_TOKEN
 
 #define DTTR_FORMAT_TOKEN(enum_value, token) case (enum_value): return (token);
@@ -287,5 +297,7 @@ const char *s_config_format_gamepad_axis(int axis) {
 	default: return "none";
 	}
 }
+
+const char *s_config_format_string(const char *value) { return value; }
 
 #undef DTTR_FORMAT_TOKEN

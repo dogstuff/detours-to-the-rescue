@@ -22,15 +22,21 @@ int main(void) {
 
 	log_info("Starting DttR loader (log level: %s)", log_level_string(level));
 
-	sds shim_data = dttr_compat_build_shim_data(L"pcdogs.exe");
+	WCHAR exe_path[MAX_PATH];
+	dttr_loader_resolve_exe_path(exe_path, g_dttr_config.m_pcdogs_path);
+
+	char exe_path_narrow[MAX_PATH];
+	WideCharToMultiByte(CP_UTF8, 0, exe_path, -1, exe_path_narrow, MAX_PATH, NULL, NULL);
+
+	sds shim_data = dttr_compat_build_shim_data(exe_path);
 
 	PROCESS_INFORMATION child_info = {0};
-	dttr_compat_create_process(L"pcdogs.exe", shim_data, sdslen(shim_data), &child_info);
+	dttr_compat_create_process(exe_path, shim_data, sdslen(shim_data), &child_info);
 
 	sdsfree(shim_data);
 
 	dttr_loader_watchdog_attach(&child_info);
-	dttr_loader_inject_sidecar(&child_info);
+	dttr_loader_inject_sidecar(&child_info, exe_path_narrow);
 	dttr_loader_watchdog_wait(&child_info);
 
 	log_info("Exiting loader");
