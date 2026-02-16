@@ -171,6 +171,7 @@ static void s_interop_pcdogs_functions_init(DTTR_GameModule mod) {
 	pcdogs_is_key_pressed_init(mod);
 	pcdogs_reset_input_and_state_init(mod);
 	pcdogs_take_screenshot_init(mod);
+	pcdogs_malloc_init(mod);
 }
 
 #endif // DTTR_GAME_FUNCTIONS_H
