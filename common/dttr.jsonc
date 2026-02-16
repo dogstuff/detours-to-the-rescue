@@ -1,4 +1,7 @@
 {
+  // Path to the directory containing the original game files (pcdogs.exe, pcdogs.pkg).
+  "pcdogs_path": "",
+
   // The minimum log level to output.
   // Choices: trace, debug, info, warn, error, fatal
   "log_level": "info",

@@ -16,6 +16,7 @@ typedef enum {
 	S_CONFIG_PRESENT_FILTER = 6,
 	S_CONFIG_LOG_LEVEL = 7,
 	S_CONFIG_MINIDUMP_TYPE = 8,
+	S_CONFIG_STRING = 9,
 } S_ConfigValueType;
 
 typedef struct {
@@ -36,6 +37,7 @@ bool s_config_parse_gamepad_button(const char *value, int *out_value);
 bool s_config_parse_gamepad_axis(const char *value, int *out_value);
 bool s_config_parse_log_level(const char *value, int *out_value);
 bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_value);
+bool s_config_parse_string(const char *value, char *out_value, size_t out_size);
 
 const char *s_config_format_bool(bool value);
 void s_config_format_int(int value, char *buf, size_t buf_size);
@@ -48,6 +50,7 @@ const char *s_config_format_log_level(int level);
 const char *s_config_format_minidump_type(DTTR_MinidumpType type);
 const char *s_config_format_gamepad_button(int button);
 const char *s_config_format_gamepad_axis(int axis);
+const char *s_config_format_string(const char *value);
 
 int s_config_schema_count(void);
 const S_ConfigFieldSpec *s_config_schema_get(int index);

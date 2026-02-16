@@ -45,13 +45,17 @@ tasks:
       BIN_DIR:
         sh: mktemp -d
     cmds:
-      - bash ./scripts/build-asm.sh "{{ .ASM_DIR }}" "{{ .OUTPUT_FILE }}" "{{ .BIN_DIR }}"
+      - |
+        echo "Assembling {{ .ASM_DIR }} into {{ .OUTPUT_FILE }}" && \
+        bash ./scripts/build-asm.sh "{{ .ASM_DIR }}" "{{ .OUTPUT_FILE }}" "{{ .BIN_DIR }}"
 
   build-shaders:
     cmds:
       - cmd: 'echo "WARN: Skipping build-shaders on macOS because shadercross is unavailable. Consider using container builds instead."'
         platforms: [darwin]
-      - cmd: 'bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"'
+      - cmd: |
+          echo "Compiling shaders to {{ .SHADER_OUTPUT_DIR }}" && \
+          bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"'
         platforms: [linux, windows]
 
   container-build:
@@ -61,6 +65,7 @@ tasks:
 
   format:
     cmds:
+      - echo "Running formatter"
       - find ./loader ./sidecar -iname '*.h' -o -iname '*.c' | xargs clang-format -i
 
   generate-docs:

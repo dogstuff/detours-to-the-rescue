@@ -2,6 +2,7 @@
 #include "log.h"
 #include "sds.h"
 
+#include <SDL3/SDL.h>
 #include <sys/stat.h>
 #include <windows.h>
 
@@ -42,10 +43,25 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		perms
 	);
 
-	const int choice = MessageBoxA(NULL, prompt, "DttR: File Permission Error Jumpscare", MB_YESNO | MB_ICONWARNING);
+	const SDL_MessageBoxButtonData buttons[] = {
+		{SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "No"},
+		{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Yes"},
+	};
+
+	const SDL_MessageBoxData msgbox = {
+		.flags = SDL_MESSAGEBOX_WARNING,
+		.window = NULL,
+		.title = "DttR: File Permission Error Jumpscare",
+		.message = prompt,
+		.numbuttons = 2,
+		.buttons = buttons,
+	};
+
+	int button_id = 0;
+	SDL_ShowMessageBox(&msgbox, &button_id);
 	sdsfree(prompt);
 
-	if (choice == IDYES) {
+	if (button_id == 1) {
 		log_debug("chmod \"%s\" 0o%03o", path, perms);
 		chmod(path, perms);
 		result = dttr_crt_open_file_with_mode(path, mode, 0x40);
@@ -62,7 +78,7 @@ fallback:;
 		mode,
 		strerror(errno)
 	);
-	MessageBoxA(NULL, msg, "DttR: File Error", MB_OK | MB_ICONERROR);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
 	sdsfree(msg);
 
 	return dttr_crt_open_file_with_mode("NUL", mode, 0x40);

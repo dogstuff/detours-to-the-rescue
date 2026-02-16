@@ -117,7 +117,7 @@ static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t origi
 	return out_size;
 }
 
-void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
+void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info, const char *exe_path) {
 	CONTEXT child_thread_context = {0};
 	child_thread_context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
 	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(child_info->hThread, &child_thread_context));
@@ -125,7 +125,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	const uintptr_t image_base
 		= s_read_remote_image_base_from_thread_context(child_info->hProcess, &child_thread_context);
 
-	const uintptr_t original_entry = image_base + s_read_entry_point_rva_from_exe(TARGET_EXE_NAME);
+	const uintptr_t original_entry = image_base + s_read_entry_point_rva_from_exe(exe_path);
 
 	log_debug(
 		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)", (unsigned)original_entry, (unsigned)image_base
