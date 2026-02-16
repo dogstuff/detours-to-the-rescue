@@ -73,6 +73,7 @@ typedef struct {
 	// These are general settings loaded from the config file
 	int m_log_level;
 	DTTR_MinidumpType m_minidump_type;
+	char m_pcdogs_path[MAX_PATH];
 	// These are graphics presentation settings loaded from the config file
 	DTTR_ScalingMode m_scaling_fit;
 	DTTR_ScalingMethod m_scaling_method;

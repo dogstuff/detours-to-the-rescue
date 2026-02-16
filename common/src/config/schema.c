@@ -9,86 +9,30 @@
 
 KHASH_MAP_INIT_STR(dttr_config_lookup, int)
 
+// clang-format off
+#define S_FIELD(_section, _key, _field, _type) \
+	{ .section = (_section), .key = (_key), .offset = offsetof(DTTR_Config, _field), .value_type = (_type) }
+
+#define S_FIELD_TOP(_key, _field, _type) S_FIELD(NULL, _key, _field, _type)
+
 static const S_ConfigFieldSpec s_config_schema[] = {
-	{
-		.section = "graphics",
-		.key = "scaling_fit",
-		.offset = offsetof(DTTR_Config, m_scaling_fit),
-		.value_type = S_CONFIG_SCALING_FIT,
-	},
-	{
-		.section = "graphics",
-		.key = "scaling_method",
-		.offset = offsetof(DTTR_Config, m_scaling_method),
-		.value_type = S_CONFIG_SCALING_METHOD,
-	},
-	{
-		.section = "graphics",
-		.key = "precision_mode",
-		.offset = offsetof(DTTR_Config, m_precision_mode),
-		.value_type = S_CONFIG_PRECISION_MODE,
-	},
-	{
-		.section = "graphics",
-		.key = "graphics_api",
-		.offset = offsetof(DTTR_Config, m_graphics_api),
-		.value_type = S_CONFIG_GRAPHICS_API,
-	},
-	{
-		.section = "graphics",
-		.key = "present_scaling_algorithm",
-		.offset = offsetof(DTTR_Config, m_present_filter),
-		.value_type = S_CONFIG_PRESENT_FILTER,
-	},
-	{
-		.section = "graphics",
-		.key = "window_width",
-		.offset = offsetof(DTTR_Config, m_window_width),
-		.value_type = S_CONFIG_INT,
-	},
-	{
-		.section = "graphics",
-		.key = "window_height",
-		.offset = offsetof(DTTR_Config, m_window_height),
-		.value_type = S_CONFIG_INT,
-	},
-	{
-		.section = "graphics",
-		.key = "msaa_samples",
-		.offset = offsetof(DTTR_Config, m_msaa_samples),
-		.value_type = S_CONFIG_INT,
-	},
-	{
-		.section = "graphics",
-		.key = "texture_upload_sync",
-		.offset = offsetof(DTTR_Config, m_texture_upload_sync),
-		.value_type = S_CONFIG_BOOL,
-	},
-	{
-		.section = "graphics",
-		.key = "generate_texture_mipmaps",
-		.offset = offsetof(DTTR_Config, m_generate_texture_mipmaps),
-		.value_type = S_CONFIG_BOOL,
-	},
-	{
-		.section = "graphics",
-		.key = "fullscreen",
-		.offset = offsetof(DTTR_Config, m_fullscreen),
-		.value_type = S_CONFIG_BOOL,
-	},
-	{
-		.section = NULL,
-		.key = "log_level",
-		.offset = offsetof(DTTR_Config, m_log_level),
-		.value_type = S_CONFIG_LOG_LEVEL,
-	},
-	{
-		.section = NULL,
-		.key = "minidump_type",
-		.offset = offsetof(DTTR_Config, m_minidump_type),
-		.value_type = S_CONFIG_MINIDUMP_TYPE,
-	},
+	S_FIELD("graphics", "scaling_fit",                m_scaling_fit,              S_CONFIG_SCALING_FIT),
+	S_FIELD("graphics", "scaling_method",             m_scaling_method,           S_CONFIG_SCALING_METHOD),
+	S_FIELD("graphics", "precision_mode",             m_precision_mode,           S_CONFIG_PRECISION_MODE),
+	S_FIELD("graphics", "graphics_api",               m_graphics_api,             S_CONFIG_GRAPHICS_API),
+	S_FIELD("graphics", "present_scaling_algorithm",  m_present_filter,           S_CONFIG_PRESENT_FILTER),
+	S_FIELD("graphics", "window_width",               m_window_width,             S_CONFIG_INT),
+	S_FIELD("graphics", "window_height",              m_window_height,            S_CONFIG_INT),
+	S_FIELD("graphics", "msaa_samples",               m_msaa_samples,             S_CONFIG_INT),
+	S_FIELD("graphics", "texture_upload_sync",        m_texture_upload_sync,      S_CONFIG_BOOL),
+	S_FIELD("graphics", "generate_texture_mipmaps",   m_generate_texture_mipmaps, S_CONFIG_BOOL),
+	S_FIELD("graphics", "fullscreen",                 m_fullscreen,               S_CONFIG_BOOL),
+
+	S_FIELD_TOP("log_level",      m_log_level,      S_CONFIG_LOG_LEVEL),
+	S_FIELD_TOP("minidump_type",  m_minidump_type,  S_CONFIG_MINIDUMP_TYPE),
+	S_FIELD_TOP("pcdogs_path",    m_pcdogs_path,    S_CONFIG_STRING),
 };
+// clang-format on
 
 static khash_t(dttr_config_lookup) *g_dttr_config_lookup = NULL;
 
@@ -140,94 +84,28 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 	return spec;
 }
 
-static bool s_config_assign_bool(char *field, const char *value) {
-	bool parsed = false;
-	if (!s_config_parse_bool(value, &parsed)) {
-		return false;
+// clang-format off
+#define S_CONFIG_ASSIGN_FN(fn_name, type, default_val, parse_fn) \
+	static bool fn_name(char *field, const char *value) { \
+		type parsed = default_val; \
+		if (!parse_fn(value, &parsed)) { return false; } \
+		*(type *)field = parsed; \
+		return true; \
 	}
 
-	*(bool *)field = parsed;
-	return true;
-}
+S_CONFIG_ASSIGN_FN(s_config_assign_bool,           bool,              false,                       s_config_parse_bool)
+S_CONFIG_ASSIGN_FN(s_config_assign_scaling_fit,     DTTR_ScalingMode,  DTTR_SCALING_MODE_LETTERBOX, s_config_parse_scaling_fit)
+S_CONFIG_ASSIGN_FN(s_config_assign_scaling_method,  DTTR_ScalingMethod,DTTR_SCALING_METHOD_PRESENT, s_config_parse_scaling_method)
+S_CONFIG_ASSIGN_FN(s_config_assign_precision_mode,  DTTR_PrecisionMode,DTTR_PRECISION_MODE_STABILIZED, s_config_parse_precision_mode)
+S_CONFIG_ASSIGN_FN(s_config_assign_graphics_api,    DTTR_GraphicsApi,  DTTR_GRAPHICS_API_AUTO,      s_config_parse_graphics_api)
+S_CONFIG_ASSIGN_FN(s_config_assign_present_filter,  SDL_GPUFilter,     SDL_GPU_FILTER_LINEAR,       s_config_parse_present_filter)
+S_CONFIG_ASSIGN_FN(s_config_assign_log_level,       int,               LOG_INFO,                    s_config_parse_log_level)
+S_CONFIG_ASSIGN_FN(s_config_assign_minidump_type,   DTTR_MinidumpType, DTTR_MINIDUMP_NORMAL,        s_config_parse_minidump_type)
+S_CONFIG_ASSIGN_FN(s_config_assign_int,             int,               0,                           s_config_parse_int)
+// clang-format on
 
-static bool s_config_assign_scaling_fit(char *field, const char *value) {
-	DTTR_ScalingMode parsed = DTTR_SCALING_MODE_LETTERBOX;
-	if (!s_config_parse_scaling_fit(value, &parsed)) {
-		return false;
-	}
-
-	*(DTTR_ScalingMode *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_scaling_method(char *field, const char *value) {
-	DTTR_ScalingMethod parsed = DTTR_SCALING_METHOD_PRESENT;
-	if (!s_config_parse_scaling_method(value, &parsed)) {
-		return false;
-	}
-
-	*(DTTR_ScalingMethod *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_precision_mode(char *field, const char *value) {
-	DTTR_PrecisionMode parsed = DTTR_PRECISION_MODE_STABILIZED;
-	if (!s_config_parse_precision_mode(value, &parsed)) {
-		return false;
-	}
-
-	*(DTTR_PrecisionMode *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_graphics_api(char *field, const char *value) {
-	DTTR_GraphicsApi parsed = DTTR_GRAPHICS_API_AUTO;
-	if (!s_config_parse_graphics_api(value, &parsed)) {
-		return false;
-	}
-
-	*(DTTR_GraphicsApi *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_present_filter(char *field, const char *value) {
-	SDL_GPUFilter parsed = SDL_GPU_FILTER_LINEAR;
-	if (!s_config_parse_present_filter(value, &parsed)) {
-		return false;
-	}
-
-	*(SDL_GPUFilter *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_log_level(char *field, const char *value) {
-	int parsed = LOG_INFO;
-	if (!s_config_parse_log_level(value, &parsed)) {
-		return false;
-	}
-
-	*(int *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_minidump_type(char *field, const char *value) {
-	DTTR_MinidumpType parsed = DTTR_MINIDUMP_NORMAL;
-	if (!s_config_parse_minidump_type(value, &parsed)) {
-		return false;
-	}
-
-	*(DTTR_MinidumpType *)field = parsed;
-	return true;
-}
-
-static bool s_config_assign_int(char *field, const char *value) {
-	int parsed = 0;
-	if (!s_config_parse_int(value, &parsed)) {
-		return false;
-	}
-
-	*(int *)field = parsed;
-	return true;
+static bool s_config_assign_string(char *field, const char *value) {
+	return s_config_parse_string(value, field, sizeof(((DTTR_Config *)0)->m_pcdogs_path));
 }
 
 bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *key, const char *value) {
@@ -268,6 +146,9 @@ bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *
 
 	case S_CONFIG_MINIDUMP_TYPE:
 		return s_config_assign_minidump_type(field, value);
+
+	case S_CONFIG_STRING:
+		return s_config_assign_string(field, value);
 
 	default:
 		return false;

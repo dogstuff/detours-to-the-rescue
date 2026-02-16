@@ -127,7 +127,7 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 	s_append_stack_trace(&message, &ctx_copy);
 #endif
 
-	MessageBoxA(NULL, message, "crash jumpscare", MB_OK | MB_ICONERROR);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "crash jumpscare", message, NULL);
 	sdsfree(message);
 	sdsfree(filename);
 	return EXCEPTION_CONTINUE_SEARCH;

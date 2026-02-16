@@ -4,6 +4,7 @@
 #include "dttr_sidecar.h"
 #include "graphics/graphics_com_internal.h"
 #include "log.h"
+#include <sds.h>
 
 #include <SDL3/SDL.h>
 
@@ -13,6 +14,18 @@
 
 DTTR_GameModule g_dttr_pc_dogs_module;
 HINSTANCE g_dttr_sidecar_module;
+
+static sds s_get_loader_dir(void) {
+	char buf[MAX_PATH];
+	GetModuleFileNameA(g_dttr_sidecar_module, buf, sizeof(buf));
+
+	char *last_sep = strrchr(buf, '\\');
+	if (last_sep) {
+		last_sep[1] = '\0';
+	}
+
+	return sdsnew(buf);
+}
 
 static void s_handle_sdl_event(const SDL_Event *event) {
 	if (event->type == SDL_EVENT_QUIT) {
@@ -50,24 +63,27 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	dttr_crashdump_init("dttr_sidecar");
 	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
 
-	FILE *const log_file = fopen("dttr.log", "a+");
-	if (!log_file) {
-		DTTR_FATAL("Could not open log file dttr.log");
-	}
+	sds loader_dir = s_get_loader_dir();
+	sds log_path = sdscat(sdsdup(loader_dir), "dttr.log");
+	sds config_path = sdscat(sdsdup(loader_dir), DTTR_CONFIG_FILENAME);
+	sdsfree(loader_dir);
 
-	log_set_level(LOG_INFO);
+	FILE *const log_file = fopen(log_path, "a+");
+	if (!log_file) {
+		DTTR_FATAL("Could not open log file at %s", log_path);
+	}
 
 	log_info("Starting DttR sidecar");
+	log_info("Loading configuration file at %s...", config_path);
 
-	log_info("Loading configuration file at %s...", DTTR_CONFIG_FILENAME);
-
-	if (!dttr_config_load(DTTR_CONFIG_FILENAME)) {
-		log_error("Configuration load failed - aborting");
-		return 1;
+	if (!dttr_config_load(config_path)) {
+		DTTR_FATAL("Failed to load configuration file at %s", config_path);
 	}
 
-	log_add_fp(log_file, g_dttr_config.m_log_level);
-	log_info("File log level set to %s", log_level_string(g_dttr_config.m_log_level));
+	const int level = g_dttr_config.m_log_level;
+	log_set_level(level);
+	log_add_fp(log_file, level);
+	log_info("Log level set to %s", log_level_string(level));
 
 	HWND hwnd = dttr_graphics_init();
 
@@ -123,6 +139,9 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	dttr_graphics_cleanup();
 
 	log_info("Exiting DttR sidecar");
+	sdsfree(log_path);
+	sdsfree(config_path);
+	fclose(log_file);
 
 	return 0;
 }
