@@ -1,4 +1,5 @@
 #include "dttr_hooks.h"
+#include "dttr_sidecar.h"
 #include "log.h"
 #include "sds.h"
 
@@ -6,15 +7,73 @@
 #include <sys/stat.h>
 #include <windows.h>
 
+#define IS_READ_ONLY_MODE(m) ((m) && (m)[0] == 'r' && !strchr((m), '+'))
+
+static bool s_is_relative_path(const char *path) {
+	if (!path || !path[0])
+		return false;
+
+	// Absolute if it contains a drive letter like "C:\"
+	return path[1] != ':' || path[2] != '\\';
+}
+
+static bool s_redirect_saves_initialized = false;
+
+static void s_build_saves_dir(char *buf, size_t buf_size) {
+	if (s_is_relative_path(g_dttr_config.m_saves_path)) {
+		snprintf(buf, buf_size, "%s%s", g_dttr_loader_dir, g_dttr_config.m_saves_path);
+		return;
+	}
+
+	snprintf(buf, buf_size, "%s", g_dttr_config.m_saves_path);
+}
+
+static void s_ensure_save_dir(void) {
+	if (s_redirect_saves_initialized)
+		return;
+
+	s_redirect_saves_initialized = true;
+
+	char dir[MAX_PATH];
+
+	s_build_saves_dir(dir, sizeof(dir));
+	CreateDirectoryA(dir, NULL);
+
+	size_t len = strlen(dir);
+	snprintf(dir + len, sizeof(dir) - len, "\\%s", g_dttr_exe_hash);
+	CreateDirectoryA(dir, NULL);
+}
+
+static const char *s_redirect_path(const char *path, char *buf, size_t buf_size, const char *mode) {
+	if (!g_dttr_config.m_saves_path[0])
+		return path;
+
+	if (!s_is_relative_path(path))
+		return path;
+
+	s_ensure_save_dir();
+
+	char saves_dir[MAX_PATH];
+	s_build_saves_dir(saves_dir, sizeof(saves_dir));
+	snprintf(buf, buf_size, "%s\\%s\\%s", saves_dir, g_dttr_exe_hash, path);
+
+	if (IS_READ_ONLY_MODE(mode) && GetFileAttributesA(buf) == INVALID_FILE_ATTRIBUTES)
+		return path;
+
+	log_debug("Redirecting \"%s\" -> \"%s\"", path, buf);
+	return buf;
+}
+
 void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
+	char redirected[MAX_PATH];
+	path = s_redirect_path(path, redirected, sizeof(redirected), mode);
+
 	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
 	if (result)
 		return result;
 
 	// The game handles missing files and read-only failures correctly.
-	const bool is_read_only = mode && mode[0] == 'r' && !strchr(mode, '+');
-
-	if (is_read_only || errno == 0 || errno == ENOENT) {
+	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
 		log_error("File \"%s\" does not exist; passing to game.", path);
 		return result;
 	}

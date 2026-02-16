@@ -59,6 +59,10 @@ static const char *s_yyjson_value_as_string(yyjson_val *val, char *buf, size_t b
 		return buf;
 	}
 
+	if (yyjson_is_null(val)) {
+		return "";
+	}
+
 	return NULL;
 }
 

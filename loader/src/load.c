@@ -2,11 +2,12 @@
 #include <dttr_loader.h>
 #include <gen/asm.h>
 #include <log.h>
+#include <sds.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
 
-static const char *SIDECAR_DLL_PATH = "libdttr_sidecar.dll";
+static const char *SIDECAR_DLL_NAME = "libdttr_sidecar.dll";
 static const char *TARGET_EXE_NAME = "pcdogs.exe";
 
 static const uintptr_t PEB_IMAGE_BASE_OFFSET = 0x8;
@@ -131,9 +132,23 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info, const cha
 		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)", (unsigned)original_entry, (unsigned)image_base
 	);
 
+	char loader_path[MAX_PATH];
+	DTTR_UNWRAP_WINAPI_NONZERO(GetModuleFileNameA(NULL, loader_path, MAX_PATH));
+
+	char *const last_sep = strrchr(loader_path, '\\');
+	if (!last_sep) {
+		DTTR_FATAL("Could not resolve loader directory");
+	}
+
+	sds sidecar_dll_path
+		= sdscatprintf(sdsempty(), "%.*s\\%s", (int)(last_sep - loader_path), loader_path, SIDECAR_DLL_NAME);
+	log_debug("Sidecar DLL path: %s", sidecar_dll_path);
+
 	uint8_t *shellcode_buffer = NULL;
 	const uint32_t shellcode_buffer_len
-		= s_build_sidecar_shell_code(SIDECAR_DLL_PATH, original_entry, &shellcode_buffer);
+		= s_build_sidecar_shell_code(sidecar_dll_path, original_entry, &shellcode_buffer);
+
+	sdsfree(sidecar_dll_path);
 
 	log_debug("Allocating %u bytes in remote process", shellcode_buffer_len);
 
