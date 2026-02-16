@@ -30,7 +30,8 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 
 	S_FIELD_TOP("log_level",      m_log_level,      S_CONFIG_LOG_LEVEL),
 	S_FIELD_TOP("minidump_type",  m_minidump_type,  S_CONFIG_MINIDUMP_TYPE),
-	S_FIELD_TOP("pcdogs_path",    m_pcdogs_path,    S_CONFIG_STRING),
+	S_FIELD_TOP("pcdogs_path",       m_pcdogs_path,       S_CONFIG_STRING),
+	S_FIELD_TOP("saves_path",       m_saves_path,         S_CONFIG_STRING),
 };
 // clang-format on
 

@@ -11,9 +11,37 @@
 #include "dttr_errors.h"
 #include "dttr_hooks.h"
 #include "graphics/graphics_internal.h"
+#include <xxhash.h>
 
 DTTR_GameModule g_dttr_pc_dogs_module;
 HINSTANCE g_dttr_sidecar_module;
+char g_dttr_loader_dir[MAX_PATH];
+char g_dttr_exe_hash[17];
+
+static void s_compute_exe_hash(void) {
+	char exe_path[MAX_PATH];
+	GetModuleFileNameA(g_dttr_pc_dogs_module, exe_path, sizeof(exe_path));
+
+	HANDLE file = CreateFileA(exe_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+
+	if (file == INVALID_HANDLE_VALUE) {
+		log_error("Failed to open exe for hashing: %s", exe_path);
+		strcpy(g_dttr_exe_hash, "0000000000000000");
+		return;
+	}
+
+	DWORD file_size = GetFileSize(file, NULL);
+	void *buf = malloc(file_size);
+	DWORD bytes_read;
+
+	ReadFile(file, buf, file_size, &bytes_read, NULL);
+	CloseHandle(file);
+
+	XXH64_hash_t hash = XXH3_64bits(buf, bytes_read);
+	free(buf);
+
+	snprintf(g_dttr_exe_hash, sizeof(g_dttr_exe_hash), "%016llx", (unsigned long long)hash);
+}
 
 static sds s_get_loader_dir(void) {
 	char buf[MAX_PATH];
@@ -64,6 +92,11 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
 
 	sds loader_dir = s_get_loader_dir();
+	strncpy(g_dttr_loader_dir, loader_dir, MAX_PATH - 1);
+	g_dttr_loader_dir[MAX_PATH - 1] = '\0';
+
+	s_compute_exe_hash();
+
 	sds log_path = sdscat(sdsdup(loader_dir), "dttr.log");
 	sds config_path = sdscat(sdsdup(loader_dir), DTTR_CONFIG_FILENAME);
 	sdsfree(loader_dir);
