@@ -55,7 +55,7 @@ tasks:
         platforms: [darwin]
       - cmd: |
           echo "Compiling shaders to {{ .SHADER_OUTPUT_DIR }}" && \
-          bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"'
+          bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"
         platforms: [linux, windows]
 
   container-build:
