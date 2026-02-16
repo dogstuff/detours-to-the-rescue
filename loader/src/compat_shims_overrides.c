@@ -1,5 +1,9 @@
 /// Builds an in-memory SDB (shim database) and packs it into a binary blob
 /// that can be injected into a child process using PEB->m_shim_data.
+///
+/// This overrides any compatibility shims applied by shims, notably
+/// the EmulateHeap corruption issue that occurs on Intel Integrated
+/// Graphics.
 
 #include <dttr_errors.h>
 #include <dttr_loader.h>

@@ -40,6 +40,7 @@
 static const DTTR_Config s_default_config = {
 	.m_log_level = LOG_INFO,
 	.m_minidump_type = DTTR_MINIDUMP_NORMAL,
+	.m_saves_path = "./saves",
 	.m_scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
 	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
 	.m_precision_mode = DTTR_PRECISION_MODE_STABILIZED,
