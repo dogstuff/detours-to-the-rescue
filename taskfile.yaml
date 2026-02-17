@@ -18,6 +18,7 @@ tasks:
   build:
     deps:
       - build-asm
+      - build-compat
       - build-shaders
       - setup-build
     cmds:
@@ -48,6 +49,15 @@ tasks:
       - |
         echo "Assembling {{ .ASM_DIR }} into {{ .OUTPUT_FILE }}" && \
         bash ./scripts/build-asm.sh "{{ .ASM_DIR }}" "{{ .OUTPUT_FILE }}" "{{ .BIN_DIR }}"
+
+  build-compat:
+    vars:
+      INPUT_FILE: '{{ .ROOT_DIR }}/loader/compat/packed_sdb.bin'
+      OUTPUT_FILE: '{{ .ROOT_DIR }}/loader/include/gen/packed_sdb.h'
+    cmds:
+      - |
+        echo "Embedding {{ .INPUT_FILE }} into {{ .OUTPUT_FILE }}" && \
+        bash ./scripts/build-compat.sh "{{ .INPUT_FILE }}" "{{ .OUTPUT_FILE }}"
 
   build-shaders:
     cmds:

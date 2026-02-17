@@ -38,7 +38,9 @@ done
   echo
   find "$bin_dir" -maxdepth 1 -type f \( -name '*.spv' -o -name '*.dxil' -o -name '*.msl' \) | sort | while read -r bin; do
     symbol="$(basename "$bin" | tr '.' '_')"
-    xxd -i -n "$symbol" "$bin"
+    xxd -i -n "$symbol" "$bin" | sed -E \
+      -e 's/^unsigned char /const unsigned char /' \
+      -e 's/^unsigned int /const unsigned int /'
     echo
   done
   echo "#endif /* DTTR_GENERATED_SHADERS_H */"
