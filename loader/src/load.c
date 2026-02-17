@@ -11,9 +11,11 @@ static const char *SIDECAR_DLL_NAME = "libdttr_sidecar.dll";
 static const char *TARGET_EXE_NAME = "pcdogs.exe";
 
 static const uintptr_t PEB_IMAGE_BASE_OFFSET = 0x8;
-static const uintptr_t SHELLCODE_LOADLIB_OFFSET = 0x7;
-static const uintptr_t SHELLCODE_ENTRY_OFFSET = 0x10;
-static const uintptr_t SHELLCODE_EXITTHREAD_OFFSET = 0x18;
+static const uintptr_t SHELLCODE_SETDLLDIR_OFFSET = 0x08;
+static const uintptr_t SHELLCODE_DIRPATH_LEN_OFFSET = 0x11;
+static const uintptr_t SHELLCODE_LOADLIB_OFFSET = 0x17;
+static const uintptr_t SHELLCODE_ENTRY_OFFSET = 0x20;
+static const uintptr_t SHELLCODE_EXITTHREAD_OFFSET = 0x28;
 
 static void s_exit_with_file_error(
 	FILE *file,
@@ -90,18 +92,22 @@ static uintptr_t s_read_entry_point_rva_from_exe(const char *exe_name) {
 }
 
 static uint32_t s_build_sidecar_shell_code(
+	const char *dir_path,
 	const char *dll_path,
 	uintptr_t original_entry,
 	uint8_t **out_buffer
 ) {
 	log_debug(
-		"Building shellcode: dll=%s, original_entry=0x%08X",
+		"Building shellcode: dir=%s, dll=%s, original_entry=0x%08X",
+		dir_path,
 		dll_path,
 		(unsigned)original_entry
 	);
 
+	const uint32_t dir_path_len = strlen(dir_path);
 	const uint32_t dll_path_len = strlen(dll_path);
-	const uint32_t out_size = dttr_sidecar_shellcode_len + dll_path_len + 1;
+	const uint32_t out_size = dttr_sidecar_shellcode_len + dir_path_len + 1 + dll_path_len
+							  + 1;
 	uint8_t *const buffer = malloc(out_size);
 	if (!buffer) {
 		DTTR_FATAL("Could not allocate shellcode payload for %s", TARGET_EXE_NAME);
@@ -110,6 +116,10 @@ static uint32_t s_build_sidecar_shell_code(
 	memcpy(buffer, dttr_sidecar_shellcode, dttr_sidecar_shellcode_len);
 
 	HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
+	const uintptr_t set_dll_dir_a_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
+		GetProcAddress(kernel32, "SetDllDirectoryA")
+	);
+
 	const uintptr_t load_library_a_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
 		GetProcAddress(kernel32, "LoadLibraryA")
 	);
@@ -119,26 +129,31 @@ static uint32_t s_build_sidecar_shell_code(
 	);
 
 	log_debug(
-		"Resolved kernel32 APIs: LoadLibraryA=0x%08X, ExitThread=0x%08X",
+		"Resolved kernel32 APIs: SetDllDirectoryA=0x%08X, "
+		"LoadLibraryA=0x%08X, ExitThread=0x%08X",
+		(unsigned)set_dll_dir_a_address,
 		(unsigned)load_library_a_address,
 		(unsigned)exit_thread_address
 	);
 
+	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_SETDLLDIR_OFFSET) = set_dll_dir_a_address;
+	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_DIRPATH_LEN_OFFSET) = dir_path_len + 1;
 	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_LOADLIB_OFFSET) = load_library_a_address;
 	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_ENTRY_OFFSET) = original_entry;
 	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_EXITTHREAD_OFFSET) = exit_thread_address;
 
-	memcpy(
-		(void *)((uintptr_t)buffer + dttr_sidecar_shellcode_len),
-		dll_path,
-		dll_path_len
-	);
-	*(char *)((uintptr_t)buffer + out_size - 1) = '\0';
+	uint8_t *data = buffer + dttr_sidecar_shellcode_len;
+	memcpy(data, dir_path, dir_path_len);
+	data[dir_path_len] = '\0';
+	memcpy(data + dir_path_len + 1, dll_path, dll_path_len);
+	data[dir_path_len + 1 + dll_path_len] = '\0';
 
 	log_debug(
-		"Shellcode payload built (bytes=%u, shellcode=%u + dll_path=%u + 1)",
+		"Shellcode payload built (bytes=%u, shellcode=%u + "
+		"dir_path=%u + 1 + dll_path=%u + 1)",
 		out_size,
 		dttr_sidecar_shellcode_len,
+		dir_path_len,
 		dll_path_len
 	);
 
@@ -177,23 +192,31 @@ void dttr_loader_inject_sidecar(
 		DTTR_FATAL("Could not resolve loader directory");
 	}
 
+	sds sidecar_dir_path = sdscatprintf(
+		sdsempty(),
+		"%.*s",
+		(int)(last_sep - loader_path),
+		loader_path
+	);
+
 	sds sidecar_dll_path = sdscatprintf(
 		sdsempty(),
-		"%.*s\\%s",
-		(int)(last_sep - loader_path),
-		loader_path,
+		"%s\\%s",
+		sidecar_dir_path,
 		SIDECAR_DLL_NAME
 	);
 	log_debug("Sidecar DLL path: %s", sidecar_dll_path);
 
 	uint8_t *shellcode_buffer = NULL;
 	const uint32_t shellcode_buffer_len = s_build_sidecar_shell_code(
+		sidecar_dir_path,
 		sidecar_dll_path,
 		original_entry,
 		&shellcode_buffer
 	);
 
 	sdsfree(sidecar_dll_path);
+	sdsfree(sidecar_dir_path);
 
 	log_debug("Allocating %u bytes in remote process", shellcode_buffer_len);
 
