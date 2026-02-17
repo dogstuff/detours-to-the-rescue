@@ -45,7 +45,13 @@ int main(int argc, char *argv[]) {
 	log_info("Starting DttR loader (log level: %s)", log_level_string(level));
 
 	WCHAR exe_path[MAX_PATH];
-	dttr_loader_resolve_exe_path(exe_path, g_dttr_config.m_pcdogs_path);
+	if (!dttr_loader_resolve_exe_path(exe_path, g_dttr_config.m_pcdogs_path)) {
+		log_info("User exited without selecting a game path");
+		if (log_file) {
+			fclose(log_file);
+		}
+		return 0;
+	}
 
 	char exe_path_narrow[MAX_PATH];
 	WideCharToMultiByte(CP_UTF8, 0, exe_path, -1, exe_path_narrow, MAX_PATH, NULL, NULL);
