@@ -36,12 +36,18 @@ The generated internal documentation for this project can be found [here](https:
 ## Getting started
 
 1. Download the latest DttR build from the [release page](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases).
-2. Extract the archive to a folder of your choice. 
+2. Extract the archive to a folder of your choice.
 3. Run `dttr.exe`.
 4. Select the game installation directory containing `pcdogs.exe`.
 5. Profit.
 
 The included `dttr.jsonc` configuration file can be edited to modify video settings, gamepad input, etc.
+
+A specific configuration file can be used by passing it as an argument:
+
+```sh
+dttr.exe path/to/my_config.jsonc
+```
 
 ---
 

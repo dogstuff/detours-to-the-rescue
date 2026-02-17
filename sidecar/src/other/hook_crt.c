@@ -13,7 +13,7 @@ static bool s_is_relative_path(const char *path) {
 	if (!path || !path[0])
 		return false;
 
-	// Absolute if it contains a drive letter like "C:\"
+	// A path is absolute if it contains a drive letter like "C:\".
 	return path[1] != ':' || path[2] != '\\';
 }
 
