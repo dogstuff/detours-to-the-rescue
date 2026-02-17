@@ -61,6 +61,20 @@ static inline int dttr_interop_validate_resolve(
 	return 1;
 }
 
+// Relocates E8 (CALL rel32) and E9 (JMP rel32) instructions in a copied code buffer
+static inline void s_trampoline_relocate(uint8_t *buf, uintptr_t site, int n) {
+	for (int i = 0; i < n; i++) {
+		if ((buf[i] != 0xE8 && buf[i] != 0xE9) || i + 5 > n)
+			continue;
+
+		int32_t rel;
+		memcpy(&rel, buf + i + 1, 4);
+		rel += (int32_t)(site - (uintptr_t)buf);
+		memcpy(buf + i + 1, &rel, 4);
+		i += 4;
+	}
+}
+
 // Validates and logs a resolved address, expanding log_debug at the call site for correct __FILE__ and __LINE__
 #define INTERNAL_DTTR_INTEROP_VALIDATE_AND_LOG(mod, addr, name) \
 	(dttr_interop_validate_resolve(mod, addr, name) ? \
@@ -493,8 +507,9 @@ static inline int dttr_interop_validate_resolve(
 	DTTR_INTEROP_PATCH_JMP_SIG(name, sig, mask, expr, target) \
 	INTERNAL_DTTR_INTEROP_OPTIONAL_INSTALL_SIG(name, sig, mask)
 
-// Replace entire function with a JMP and allocate a trampoline for calling through to the original
-// Exposes name##_trampoline (uint8_t*) that the callback casts to the original function
+// Replace entire function with a JMP and allocate a trampoline for calling through to the original.
+// Copies `n` bytes (must land on an instruction boundary) and relocates any E8/E9 relative branches.
+// Exposes name##_trampoline (uint8_t*) that the callback casts to the original function.
 #ifdef DTTR_INTEROP_IMPLEMENT
 #define INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	uintptr_t name##_site = 0; \
@@ -507,19 +522,20 @@ static inline int dttr_interop_validate_resolve(
 	extern uint8_t *name##_trampoline;
 #endif
 
-#define INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, resolve, target) \
+#define INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, n, resolve, target) \
 	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_STORAGE(name) \
 	static inline void name##_install(HMODULE mod) { \
 		const uintptr_t site = (resolve); \
 		if (!dttr_interop_validate_resolve(mod, site, #name)) { return; } \
 		name##_trampoline = (uint8_t *)VirtualAlloc( \
-			NULL, 16, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE \
+			NULL, (n) + 5, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE \
 		); \
 		if (!name##_trampoline) { return; } \
-		memcpy(name##_trampoline, (void *)site, 5); \
-		name##_trampoline[5] = 0xE9; \
-		*(int32_t *)(name##_trampoline + 6) = \
-			(int32_t)((site + 5) - ((uintptr_t)name##_trampoline + 10)); \
+		memcpy(name##_trampoline, (void *)site, (n)); \
+		s_trampoline_relocate(name##_trampoline, site, (n)); \
+		name##_trampoline[(n)] = 0xE9; \
+		*(int32_t *)(name##_trampoline + (n) + 1) = \
+			(int32_t)((site + (n)) - ((uintptr_t)name##_trampoline + (n) + 5)); \
 		DWORD old; \
 		VirtualProtect((void *)site, 5, PAGE_EXECUTE_READWRITE, &old); \
 		memcpy(name##_orig, (void *)site, 5); \
@@ -542,16 +558,16 @@ static inline int dttr_interop_validate_resolve(
 		} \
 	}
 
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE(name, func_addr, target) \
-	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, func_addr), target)
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE(name, n, func_addr, target) \
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, n, INTERNAL_DTTR_INTEROP_RESOLVE_OFFSET(mod, func_addr), target)
 
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_SIG(name, sig, mask, expr, target) \
-	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_SIG(name, n, sig, mask, expr, target) \
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, n, INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr), target)
 
 // Like HOOK_FUNC_TRAMPOLINE_SIG but for optional hooks that may not exist in all game versions
 // _install silently returns if the signature is not found, avoiding log_error from validate_resolve
-#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_OPTIONAL_SIG(name, sig, mask, expr, target) \
-	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, \
+#define DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_OPTIONAL_SIG(name, n, sig, mask, expr, target) \
+	INTERNAL_DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_IMPL(name, n, \
 		(__extension__({ \
 			if (!dttr_interop_sigscan(mod, sig, mask)) return; \
 			INTERNAL_DTTR_INTEROP_RESOLVE_SIG(mod, sig, mask, expr); \

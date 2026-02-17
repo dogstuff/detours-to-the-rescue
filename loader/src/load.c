@@ -15,7 +15,11 @@ static const uintptr_t SHELLCODE_LOADLIB_OFFSET = 0x7;
 static const uintptr_t SHELLCODE_ENTRY_OFFSET = 0x10;
 static const uintptr_t SHELLCODE_EXITTHREAD_OFFSET = 0x18;
 
-static void s_exit_with_file_error(FILE *file, const char *error_message, const char *exe_name) {
+static void s_exit_with_file_error(
+	FILE *file,
+	const char *error_message,
+	const char *exe_name
+) {
 	if (file) {
 		fclose(file);
 	}
@@ -23,14 +27,22 @@ static void s_exit_with_file_error(FILE *file, const char *error_message, const 
 	DTTR_FATAL(error_message, exe_name);
 }
 
-static uintptr_t s_read_remote_image_base_from_thread_context(HANDLE process, const CONTEXT *thread_context) {
-	const uintptr_t peb_address = (uintptr_t)thread_context->Ebx; // EBX points to PEB when suspended
+static uintptr_t s_read_remote_image_base_from_thread_context(
+	HANDLE process,
+	const CONTEXT *thread_context
+) {
+	const uintptr_t peb_address = (uintptr_t)thread_context
+									  ->Ebx; // EBX points to PEB when suspended
 	uintptr_t image_base = 0;
 
 	log_debug("Reading image base from PEB at 0x%08X", (unsigned)peb_address);
 
 	DTTR_UNWRAP_WINAPI_NONZERO(ReadProcessMemory(
-		process, (LPCVOID)(peb_address + PEB_IMAGE_BASE_OFFSET), &image_base, sizeof(image_base), NULL
+		process,
+		(LPCVOID)(peb_address + PEB_IMAGE_BASE_OFFSET),
+		&image_base,
+		sizeof(image_base),
+		NULL
 	));
 
 	log_debug("Image base: 0x%08X", (unsigned)image_base);
@@ -77,8 +89,16 @@ static uintptr_t s_read_entry_point_rva_from_exe(const char *exe_name) {
 	return rva;
 }
 
-static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t original_entry, uint8_t **out_buffer) {
-	log_debug("Building shellcode: dll=%s, original_entry=0x%08X", dll_path, (unsigned)original_entry);
+static uint32_t s_build_sidecar_shell_code(
+	const char *dll_path,
+	uintptr_t original_entry,
+	uint8_t **out_buffer
+) {
+	log_debug(
+		"Building shellcode: dll=%s, original_entry=0x%08X",
+		dll_path,
+		(unsigned)original_entry
+	);
 
 	const uint32_t dll_path_len = strlen(dll_path);
 	const uint32_t out_size = dttr_sidecar_shellcode_len + dll_path_len + 1;
@@ -90,10 +110,13 @@ static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t origi
 	memcpy(buffer, dttr_sidecar_shellcode, dttr_sidecar_shellcode_len);
 
 	HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
-	const uintptr_t load_library_a_address
-		= (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(kernel32, "LoadLibraryA"));
+	const uintptr_t load_library_a_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
+		GetProcAddress(kernel32, "LoadLibraryA")
+	);
 
-	const uintptr_t exit_thread_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(kernel32, "ExitThread"));
+	const uintptr_t exit_thread_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
+		GetProcAddress(kernel32, "ExitThread")
+	);
 
 	log_debug(
 		"Resolved kernel32 APIs: LoadLibraryA=0x%08X, ExitThread=0x%08X",
@@ -105,7 +128,11 @@ static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t origi
 	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_ENTRY_OFFSET) = original_entry;
 	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_EXITTHREAD_OFFSET) = exit_thread_address;
 
-	memcpy((void *)((uintptr_t)buffer + dttr_sidecar_shellcode_len), dll_path, dll_path_len);
+	memcpy(
+		(void *)((uintptr_t)buffer + dttr_sidecar_shellcode_len),
+		dll_path,
+		dll_path_len
+	);
 	*(char *)((uintptr_t)buffer + out_size - 1) = '\0';
 
 	log_debug(
@@ -118,18 +145,28 @@ static uint32_t s_build_sidecar_shell_code(const char *dll_path, uintptr_t origi
 	return out_size;
 }
 
-void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info, const char *exe_path) {
+void dttr_loader_inject_sidecar(
+	const PROCESS_INFORMATION *child_info,
+	const char *exe_path
+) {
 	CONTEXT child_thread_context = {0};
 	child_thread_context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
-	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(child_info->hThread, &child_thread_context));
+	DTTR_UNWRAP_WINAPI_NONZERO(
+		GetThreadContext(child_info->hThread, &child_thread_context)
+	);
 
-	const uintptr_t image_base
-		= s_read_remote_image_base_from_thread_context(child_info->hProcess, &child_thread_context);
+	const uintptr_t image_base = s_read_remote_image_base_from_thread_context(
+		child_info->hProcess,
+		&child_thread_context
+	);
 
-	const uintptr_t original_entry = image_base + s_read_entry_point_rva_from_exe(exe_path);
+	const uintptr_t original_entry = image_base
+									 + s_read_entry_point_rva_from_exe(exe_path);
 
 	log_debug(
-		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)", (unsigned)original_entry, (unsigned)image_base
+		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)",
+		(unsigned)original_entry,
+		(unsigned)image_base
 	);
 
 	char loader_path[MAX_PATH];
@@ -140,40 +177,62 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info, const cha
 		DTTR_FATAL("Could not resolve loader directory");
 	}
 
-	sds sidecar_dll_path
-		= sdscatprintf(sdsempty(), "%.*s\\%s", (int)(last_sep - loader_path), loader_path, SIDECAR_DLL_NAME);
+	sds sidecar_dll_path = sdscatprintf(
+		sdsempty(),
+		"%.*s\\%s",
+		(int)(last_sep - loader_path),
+		loader_path,
+		SIDECAR_DLL_NAME
+	);
 	log_debug("Sidecar DLL path: %s", sidecar_dll_path);
 
 	uint8_t *shellcode_buffer = NULL;
-	const uint32_t shellcode_buffer_len
-		= s_build_sidecar_shell_code(sidecar_dll_path, original_entry, &shellcode_buffer);
+	const uint32_t shellcode_buffer_len = s_build_sidecar_shell_code(
+		sidecar_dll_path,
+		original_entry,
+		&shellcode_buffer
+	);
 
 	sdsfree(sidecar_dll_path);
 
 	log_debug("Allocating %u bytes in remote process", shellcode_buffer_len);
 
-	LPVOID payload_buffer = DTTR_UNWRAP_WINAPI_EXISTS(
-		VirtualAllocEx(child_info->hProcess, NULL, shellcode_buffer_len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)
-	);
+	LPVOID payload_buffer = DTTR_UNWRAP_WINAPI_EXISTS(VirtualAllocEx(
+		child_info->hProcess,
+		NULL,
+		shellcode_buffer_len,
+		MEM_COMMIT | MEM_RESERVE,
+		PAGE_READWRITE
+	));
 
 	log_debug("Remote allocation at 0x%08X", (unsigned)(uintptr_t)payload_buffer);
 
-	DTTR_UNWRAP_WINAPI_NONZERO(
-		WriteProcessMemory(child_info->hProcess, payload_buffer, shellcode_buffer, shellcode_buffer_len, NULL)
-	);
+	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
+		child_info->hProcess,
+		payload_buffer,
+		shellcode_buffer,
+		shellcode_buffer_len,
+		NULL
+	));
 	log_debug("Shellcode written to remote process");
 
 	DWORD old_protect;
 
-	DTTR_UNWRAP_WINAPI_NONZERO(
-		VirtualProtectEx(child_info->hProcess, payload_buffer, shellcode_buffer_len, PAGE_EXECUTE_READ, &old_protect)
-	);
+	DTTR_UNWRAP_WINAPI_NONZERO(VirtualProtectEx(
+		child_info->hProcess,
+		payload_buffer,
+		shellcode_buffer_len,
+		PAGE_EXECUTE_READ,
+		&old_protect
+	));
 	log_debug("Remote memory protection set to PAGE_EXECUTE_READ");
 
 	free(shellcode_buffer);
 
 	child_thread_context.Eip = (uintptr_t)payload_buffer;
-	DTTR_UNWRAP_WINAPI_NONZERO(SetThreadContext(child_info->hThread, &child_thread_context));
+	DTTR_UNWRAP_WINAPI_NONZERO(
+		SetThreadContext(child_info->hThread, &child_thread_context)
+	);
 	log_debug("Thread context updated: EIP=0x%08X", (unsigned)(uintptr_t)payload_buffer);
 
 	DTTR_UNWRAP_WINAPI_NONNEGATIVE(ResumeThread(child_info->hThread));

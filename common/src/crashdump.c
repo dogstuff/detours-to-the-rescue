@@ -6,13 +6,16 @@
 #include <log.h>
 #include <sds.h>
 
+static char s_dump_dir[MAX_PATH];
+
 sds dttr_crashdump_write(HANDLE process, DWORD pid, DWORD tid, EXCEPTION_POINTERS *exception_info) {
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 
 	sds filename = sdscatprintf(
 		sdsempty(),
-		"dttr_crash_%04d%02d%02d_%02d%02d%02d.dmp",
+		"%sdttr_crash_%04d%02d%02d_%02d%02d%02d.dmp",
+		s_dump_dir,
 		st.wYear,
 		st.wMonth,
 		st.wDay,
@@ -133,7 +136,9 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void dttr_crashdump_init(const char *const name) {
+void dttr_crashdump_init(const char *const dump_dir) {
+	strncpy(s_dump_dir, dump_dir, MAX_PATH - 1);
+	s_dump_dir[MAX_PATH - 1] = '\0';
 	SetUnhandledExceptionFilter(s_unhandled_exception_filter);
 	log_debug("Crash dump handler installed");
 }

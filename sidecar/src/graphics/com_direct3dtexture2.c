@@ -13,8 +13,11 @@ DTTR_COM_ADDREF(s_d3dtexture2_addref, DTTR_Graphics_COM_Direct3DTexture2)
 
 DTTR_COM_RELEASE(s_d3dtexture2_release, DTTR_Graphics_COM_Direct3DTexture2)
 
-static HRESULT __stdcall
-s_d3dtexture2_gethandle(DTTR_Graphics_COM_Direct3DTexture2 *self, void *device, DWORD *handle) {
+static HRESULT __stdcall s_d3dtexture2_gethandle(
+	DTTR_Graphics_COM_Direct3DTexture2 *self,
+	void *device,
+	DWORD *handle
+) {
 	if (handle) {
 		*handle = g_dttr_texture2_next_texture_handle++;
 	}
@@ -22,9 +25,18 @@ s_d3dtexture2_gethandle(DTTR_Graphics_COM_Direct3DTexture2 *self, void *device, 
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(s_d3dtexture2_palettechanged, DTTR_Graphics_COM_Direct3DTexture2 *self, DWORD start, DWORD count)
+DTTR_COM_NOOP_HRESULT(
+	s_d3dtexture2_palettechanged,
+	DTTR_Graphics_COM_Direct3DTexture2 *self,
+	DWORD start,
+	DWORD count
+)
 
-DTTR_COM_NOOP_HRESULT(s_d3dtexture2_load, DTTR_Graphics_COM_Direct3DTexture2 *self, void *srcTexture)
+DTTR_COM_NOOP_HRESULT(
+	s_d3dtexture2_load,
+	DTTR_Graphics_COM_Direct3DTexture2 *self,
+	void *srcTexture
+)
 
 static DTTR_Graphics_COM_Direct3DTexture2_VT s_vtbl = {
 	.QueryInterface = s_d3dtexture2_queryinterface,
@@ -35,9 +47,12 @@ static DTTR_Graphics_COM_Direct3DTexture2_VT s_vtbl = {
 	.Load = s_d3dtexture2_load,
 };
 
-DTTR_Graphics_COM_Direct3DTexture2 *
-dttr_graphics_com_create_direct3d_texture2(DTTR_Graphics_COM_DirectDrawSurface7 *surface) {
-	DTTR_Graphics_COM_Direct3DTexture2 *tex = malloc(sizeof(DTTR_Graphics_COM_Direct3DTexture2));
+DTTR_Graphics_COM_Direct3DTexture2 *dttr_graphics_com_create_direct3d_texture2(
+	DTTR_Graphics_COM_DirectDrawSurface7 *surface
+) {
+	DTTR_Graphics_COM_Direct3DTexture2 *tex = malloc(
+		sizeof(DTTR_Graphics_COM_Direct3DTexture2)
+	);
 
 	if (tex) {
 		tex->m_vtbl = &s_vtbl;

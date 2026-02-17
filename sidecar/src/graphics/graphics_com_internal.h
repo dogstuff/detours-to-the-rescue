@@ -70,34 +70,34 @@
 #define DTTR_D3DPT_TRIANGLESTRIP 5
 #define DTTR_D3DPT_TRIANGLEFAN 6
 
-#define DTTR_COM_NOOP_HRESULT(fn, ...)                                                                                 \
+#define DTTR_COM_NOOP_HRESULT(fn, ...)                                                   \
 	static HRESULT __stdcall fn(__VA_ARGS__) { return S_OK; }
 
-#define DTTR_COM_ADDREF(fn, type)                                                                                      \
+#define DTTR_COM_ADDREF(fn, type)                                                        \
 	static ULONG __stdcall fn(type *self) { return 1; }
 
-#define DTTR_COM_RELEASE(fn, type)                                                                                     \
+#define DTTR_COM_RELEASE(fn, type)                                                       \
 	static ULONG __stdcall fn(type *self) { return 0; }
 
-#define DTTR_COM_QI_SELF(fn, type)                                                                                     \
-	static HRESULT __stdcall fn(type *self, void *riid, void **ppv) {                                                  \
-		if (ppv)                                                                                                       \
-			*ppv = self;                                                                                               \
-		return S_OK;                                                                                                   \
+#define DTTR_COM_QI_SELF(fn, type)                                                       \
+	static HRESULT __stdcall fn(type *self, void *riid, void **ppv) {                    \
+		if (ppv)                                                                         \
+			*ppv = self;                                                                 \
+		return S_OK;                                                                     \
 	}
 
-#define DTTR_COM_STUB_SET(fn, out_type, val, ...)                                                                      \
-	static HRESULT __stdcall fn(__VA_ARGS__, out_type *out) {                                                          \
-		if (out)                                                                                                       \
-			*out = val;                                                                                                \
-		return S_OK;                                                                                                   \
+#define DTTR_COM_STUB_SET(fn, out_type, val, ...)                                        \
+	static HRESULT __stdcall fn(__VA_ARGS__, out_type *out) {                            \
+		if (out)                                                                         \
+			*out = val;                                                                  \
+		return S_OK;                                                                     \
 	}
 
-#define DTTR_COM_STUB_MEMSET(fn, size, buf_type, ...)                                                                  \
-	static HRESULT __stdcall fn(__VA_ARGS__, buf_type *buf) {                                                          \
-		if (buf)                                                                                                       \
-			memset(buf, 0, size);                                                                                      \
-		return S_OK;                                                                                                   \
+#define DTTR_COM_STUB_MEMSET(fn, size, buf_type, ...)                                    \
+	static HRESULT __stdcall fn(__VA_ARGS__, buf_type *buf) {                            \
+		if (buf)                                                                         \
+			memset(buf, 0, size);                                                        \
+		return S_OK;                                                                     \
 	}
 
 typedef struct DTTR_Graphics_COM_Direct3D7 DTTR_Graphics_COM_Direct3D7;
@@ -112,16 +112,37 @@ DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7(void);
 DTTR_Graphics_COM_Direct3DDevice7 *dttr_graphics_com_create_direct3ddevice7(void);
 
 typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
-	HRESULT(__stdcall *QueryInterface)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *riid, void **ppv);  // 0x00
-	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_Direct3DDevice7 *self);									  // 0x04
-	ULONG(__stdcall *Release)(DTTR_Graphics_COM_Direct3DDevice7 *self);									  // 0x08
-	HRESULT(__stdcall *GetCaps)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *caps);					  // 0x0C
-	HRESULT(__stdcall *EnumTextureFormats)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *cb, void *ctx); // 0x10
-	HRESULT(__stdcall *BeginScene)(DTTR_Graphics_COM_Direct3DDevice7 *self);							  // 0x14
-	HRESULT(__stdcall *EndScene)(DTTR_Graphics_COM_Direct3DDevice7 *self);								  // 0x18
-	HRESULT(__stdcall *GetDirect3D)(DTTR_Graphics_COM_Direct3DDevice7 *self, void **d3d);				  // 0x1C
-	HRESULT(__stdcall *SetRenderTarget)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *surf, DWORD f);	  // 0x20
-	HRESULT(__stdcall *GetRenderTarget)(DTTR_Graphics_COM_Direct3DDevice7 *self, void **surf);			  // 0x24
+	HRESULT(__stdcall *QueryInterface)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *riid,
+		void **ppv
+	);																	// 0x00
+	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_Direct3DDevice7 *self);	// 0x04
+	ULONG(__stdcall *Release)(DTTR_Graphics_COM_Direct3DDevice7 *self); // 0x08
+	HRESULT(__stdcall *GetCaps)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *caps
+	); // 0x0C
+	HRESULT(__stdcall *EnumTextureFormats)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *cb,
+		void *ctx
+	);																		 // 0x10
+	HRESULT(__stdcall *BeginScene)(DTTR_Graphics_COM_Direct3DDevice7 *self); // 0x14
+	HRESULT(__stdcall *EndScene)(DTTR_Graphics_COM_Direct3DDevice7 *self);	 // 0x18
+	HRESULT(__stdcall *GetDirect3D)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void **d3d
+	); // 0x1C
+	HRESULT(__stdcall *SetRenderTarget)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *surf,
+		DWORD f
+	); // 0x20
+	HRESULT(__stdcall *GetRenderTarget)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void **surf
+	); // 0x24
 	HRESULT(__stdcall *Clear)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
 		DWORD n,
@@ -130,21 +151,64 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 		DWORD col,
 		float z,
 		DWORD s
-	);																									   // 0x28
-	HRESULT(__stdcall *SetTransform)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD m_type, void *mat);	   // 0x2C
-	HRESULT(__stdcall *GetTransform)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD m_type, void *mat);	   // 0x30
-	HRESULT(__stdcall *SetViewport)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp);					   // 0x34
-	HRESULT(__stdcall *MultiplyTransform)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD m_type, void *m); // 0x38
-	HRESULT(__stdcall *GetViewport)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *vp);					   // 0x3C
-	HRESULT(__stdcall *SetMaterial)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *mat);				   // 0x40
-	HRESULT(__stdcall *GetMaterial)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *mat);				   // 0x44
-	HRESULT(__stdcall *SetLight)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, void *light);		   // 0x48
-	HRESULT(__stdcall *GetLight)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, void *light);		   // 0x4C
-	HRESULT(__stdcall *SetRenderState)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD state, DWORD val);   // 0x50
-	HRESULT(__stdcall *GetRenderState)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD state, DWORD *v);	   // 0x54
-	HRESULT(__stdcall *BeginStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self);						   // 0x58
-	HRESULT(__stdcall *EndStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD *block);			   // 0x5C
-	HRESULT(__stdcall *PreLoad)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *tex);					   // 0x60
+	); // 0x28
+	HRESULT(__stdcall *SetTransform)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD m_type,
+		void *mat
+	); // 0x2C
+	HRESULT(__stdcall *GetTransform)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD m_type,
+		void *mat
+	); // 0x30
+	HRESULT(__stdcall *SetViewport)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *vp
+	); // 0x34
+	HRESULT(__stdcall *MultiplyTransform)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD m_type,
+		void *m
+	); // 0x38
+	HRESULT(__stdcall *GetViewport)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *vp
+	); // 0x3C
+	HRESULT(__stdcall *SetMaterial)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *mat
+	); // 0x40
+	HRESULT(__stdcall *GetMaterial)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *mat
+	); // 0x44
+	HRESULT(__stdcall *SetLight)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD idx,
+		void *light
+	); // 0x48
+	HRESULT(__stdcall *GetLight)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD idx,
+		void *light
+	); // 0x4C
+	HRESULT(__stdcall *SetRenderState)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD state,
+		DWORD val
+	); // 0x50
+	HRESULT(__stdcall *GetRenderState)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD state,
+		DWORD *v
+	);																			  // 0x54
+	HRESULT(__stdcall *BeginStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self); // 0x58
+	HRESULT(__stdcall *EndStateBlock)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD *block
+	); // 0x5C
+	HRESULT(__stdcall *PreLoad)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *tex); // 0x60
 	HRESULT(__stdcall *DrawPrimitive)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
 		DWORD prim,
@@ -162,9 +226,15 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 		WORD *i,
 		DWORD in,
 		DWORD f
-	);																						  // 0x68
-	HRESULT(__stdcall *SetClipStatus)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *status); // 0x6C
-	HRESULT(__stdcall *GetClipStatus)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *status); // 0x70
+	); // 0x68
+	HRESULT(__stdcall *SetClipStatus)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *status
+	); // 0x6C
+	HRESULT(__stdcall *GetClipStatus)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *status
+	); // 0x70
 	HRESULT(__stdcall *DrawPrimitiveStrided)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
 		DWORD prim,
@@ -208,20 +278,50 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 		DWORD n,
 		DWORD f,
 		DWORD *res
-	);																								  // 0x84
-	HRESULT(__stdcall *GetTexture)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, void **tex); // 0x88
-	HRESULT(__stdcall *SetTexture)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stage, void *tex);  // 0x8C
+	); // 0x84
+	HRESULT(__stdcall *GetTexture)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD stage,
+		void **tex
+	); // 0x88
+	HRESULT(__stdcall *SetTexture)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD stage,
+		void *tex
+	); // 0x8C
 	HRESULT(__stdcall *GetTextureStageState)(
-		DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stg, DWORD t, DWORD *v
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD stg,
+		DWORD t,
+		DWORD *v
 	); // 0x90
 	HRESULT(__stdcall *SetTextureStageState)(
-		DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD stg, DWORD t, DWORD v
-	);																									// 0x94
-	HRESULT(__stdcall *ValidateDevice)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD *passes);			// 0x98
-	HRESULT(__stdcall *ApplyStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block);			// 0x9C
-	HRESULT(__stdcall *CaptureStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block);		// 0xA0
-	HRESULT(__stdcall *DeleteStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD block);			// 0xA4
-	HRESULT(__stdcall *CreateStateBlock)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD t, DWORD *blk); // 0xA8
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD stg,
+		DWORD t,
+		DWORD v
+	); // 0x94
+	HRESULT(__stdcall *ValidateDevice)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD *passes
+	); // 0x98
+	HRESULT(__stdcall *ApplyStateBlock)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD block
+	); // 0x9C
+	HRESULT(__stdcall *CaptureStateBlock)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD block
+	); // 0xA0
+	HRESULT(__stdcall *DeleteStateBlock)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD block
+	); // 0xA4
+	HRESULT(__stdcall *CreateStateBlock)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD t,
+		DWORD *blk
+	); // 0xA8
 	HRESULT(__stdcall *Load)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
 		void *dst,
@@ -229,13 +329,33 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 		void *src,
 		void *srcR,
 		DWORD f
-	);																									// 0xAC
-	HRESULT(__stdcall *LightEnable)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, BOOL enable);	// 0xB0
-	HRESULT(__stdcall *GetLightEnable)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, BOOL *en);	// 0xB4
-	HRESULT(__stdcall *SetClipPlane)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, float *plane); // 0xB8
-	HRESULT(__stdcall *GetClipPlane)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD idx, float *plane); // 0xBC
-	HRESULT(__stdcall *GetInfo)(DTTR_Graphics_COM_Direct3DDevice7 *self, DWORD id, void *info,
-								DWORD sz); // 0xC0
+	); // 0xAC
+	HRESULT(__stdcall *LightEnable)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD idx,
+		BOOL enable
+	); // 0xB0
+	HRESULT(__stdcall *GetLightEnable)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD idx,
+		BOOL *en
+	); // 0xB4
+	HRESULT(__stdcall *SetClipPlane)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD idx,
+		float *plane
+	); // 0xB8
+	HRESULT(__stdcall *GetClipPlane)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD idx,
+		float *plane
+	); // 0xBC
+	HRESULT(__stdcall *GetInfo)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		DWORD id,
+		void *info,
+		DWORD sz
+	); // 0xC0
 } DTTR_Graphics_COM_Direct3DDevice7_VT;
 
 typedef struct DTTR_Graphics_COM_Direct3DDevice7 {
@@ -243,12 +363,20 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7 {
 } DTTR_Graphics_COM_Direct3DDevice7;
 
 typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
-	HRESULT(__stdcall *QueryInterface)(DTTR_Graphics_COM_DirectDraw7 *self, void *riid, void **ppv); // 0x00
-	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_DirectDraw7 *self);									 // 0x04
-	ULONG(__stdcall *Release)(DTTR_Graphics_COM_DirectDraw7 *self);									 // 0x08
-	HRESULT(__stdcall *Compact)(DTTR_Graphics_COM_DirectDraw7 *self);								 // 0x0C
-	HRESULT(__stdcall *CreateClipper)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, void **clip,
-									  void *outer); // 0x10
+	HRESULT(__stdcall *QueryInterface)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *riid,
+		void **ppv
+	);																  // 0x00
+	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_DirectDraw7 *self);	  // 0x04
+	ULONG(__stdcall *Release)(DTTR_Graphics_COM_DirectDraw7 *self);	  // 0x08
+	HRESULT(__stdcall *Compact)(DTTR_Graphics_COM_DirectDraw7 *self); // 0x0C
+	HRESULT(__stdcall *CreateClipper)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD f,
+		void **clip,
+		void *outer
+	); // 0x10
 	HRESULT(__stdcall *CreatePalette)(
 		DTTR_Graphics_COM_DirectDraw7 *self,
 		DWORD f,
@@ -261,8 +389,12 @@ typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
 		void *desc,
 		void **surf,
 		void *outer
-	);																								  // 0x18
-	HRESULT(__stdcall *DuplicateSurface)(DTTR_Graphics_COM_DirectDraw7 *self, void *src, void **dst); // 0x1C
+	); // 0x18
+	HRESULT(__stdcall *DuplicateSurface)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *src,
+		void **dst
+	); // 0x1C
 	HRESULT(__stdcall *EnumDisplayModes)(
 		DTTR_Graphics_COM_DirectDraw7 *self,
 		DWORD f,
@@ -276,18 +408,45 @@ typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
 		void *desc,
 		void *ctx,
 		void *cb
-	);																								   // 0x24
-	HRESULT(__stdcall *FlipToGDISurface)(DTTR_Graphics_COM_DirectDraw7 *self);						   // 0x28
-	HRESULT(__stdcall *GetCaps)(DTTR_Graphics_COM_DirectDraw7 *self, void *drvCaps, void *helCaps);	   // 0x2C
-	HRESULT(__stdcall *GetDisplayMode)(DTTR_Graphics_COM_DirectDraw7 *self, void *desc);			   // 0x30
-	HRESULT(__stdcall *GetFourCCCodes)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD *num, DWORD *codes); // 0x34
-	HRESULT(__stdcall *GetGDISurface)(DTTR_Graphics_COM_DirectDraw7 *self, void **surf);			   // 0x38
-	HRESULT(__stdcall *GetMonitorFrequency)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD *freq);		   // 0x3C
-	HRESULT(__stdcall *GetScanLine)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD *line);				   // 0x40
-	HRESULT(__stdcall *GetVerticalBlankStatus)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD *inVB);	   // 0x44
-	HRESULT(__stdcall *Initialize)(DTTR_Graphics_COM_DirectDraw7 *self, void *guid);				   // 0x48
-	HRESULT(__stdcall *RestoreDisplayMode)(DTTR_Graphics_COM_DirectDraw7 *self);					   // 0x4C
-	HRESULT(__stdcall *SetCooperativeLevel)(DTTR_Graphics_COM_DirectDraw7 *self, HWND hwnd, DWORD f);  // 0x50
+	);																		   // 0x24
+	HRESULT(__stdcall *FlipToGDISurface)(DTTR_Graphics_COM_DirectDraw7 *self); // 0x28
+	HRESULT(__stdcall *GetCaps)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *drvCaps,
+		void *helCaps
+	); // 0x2C
+	HRESULT(__stdcall *GetDisplayMode)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *desc
+	); // 0x30
+	HRESULT(__stdcall *GetFourCCCodes)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD *num,
+		DWORD *codes
+	); // 0x34
+	HRESULT(__stdcall *GetGDISurface)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void **surf
+	); // 0x38
+	HRESULT(__stdcall *GetMonitorFrequency)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD *freq
+	); // 0x3C
+	HRESULT(__stdcall *GetScanLine)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD *line
+	); // 0x40
+	HRESULT(__stdcall *GetVerticalBlankStatus)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD *inVB
+	); // 0x44
+	HRESULT(__stdcall *Initialize)(DTTR_Graphics_COM_DirectDraw7 *self, void *guid); // 0x48
+	HRESULT(__stdcall *RestoreDisplayMode)(DTTR_Graphics_COM_DirectDraw7 *self); // 0x4C
+	HRESULT(__stdcall *SetCooperativeLevel)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		HWND hwnd,
+		DWORD f
+	); // 0x50
 	HRESULT(__stdcall *SetDisplayMode)(
 		DTTR_Graphics_COM_DirectDraw7 *self,
 		DWORD w,
@@ -295,20 +454,41 @@ typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
 		DWORD m_bpp,
 		DWORD hz,
 		DWORD f
-	);																									// 0x54
-	HRESULT(__stdcall *WaitForVerticalBlank)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, HANDLE evt); // 0x58
+	); // 0x54
+	HRESULT(__stdcall *WaitForVerticalBlank)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD f,
+		HANDLE evt
+	); // 0x58
 	HRESULT(__stdcall *GetAvailableVidMem)(
 		DTTR_Graphics_COM_DirectDraw7 *self,
 		void *caps,
 		DWORD *tot,
 		DWORD *free
-	);																									   // 0x5C
-	HRESULT(__stdcall *GetSurfaceFromDC)(DTTR_Graphics_COM_DirectDraw7 *self, HDC dc, void **surf);		   // 0x60
-	HRESULT(__stdcall *RestoreAllSurfaces)(DTTR_Graphics_COM_DirectDraw7 *self);						   // 0x64
-	HRESULT(__stdcall *TestCooperativeLevel)(DTTR_Graphics_COM_DirectDraw7 *self);						   // 0x68
-	HRESULT(__stdcall *GetDeviceIdentifier)(DTTR_Graphics_COM_DirectDraw7 *self, void *id, DWORD f);	   // 0x6C
-	HRESULT(__stdcall *StartModeTest)(DTTR_Graphics_COM_DirectDraw7 *self, void *modes, DWORD n, DWORD f); // 0x70
-	HRESULT(__stdcall *EvaluateMode)(DTTR_Graphics_COM_DirectDraw7 *self, DWORD f, DWORD *timeout);		   // 0x74
+	); // 0x5C
+	HRESULT(__stdcall *GetSurfaceFromDC)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		HDC dc,
+		void **surf
+	);																			   // 0x60
+	HRESULT(__stdcall *RestoreAllSurfaces)(DTTR_Graphics_COM_DirectDraw7 *self);   // 0x64
+	HRESULT(__stdcall *TestCooperativeLevel)(DTTR_Graphics_COM_DirectDraw7 *self); // 0x68
+	HRESULT(__stdcall *GetDeviceIdentifier)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *id,
+		DWORD f
+	); // 0x6C
+	HRESULT(__stdcall *StartModeTest)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *modes,
+		DWORD n,
+		DWORD f
+	); // 0x70
+	HRESULT(__stdcall *EvaluateMode)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		DWORD f,
+		DWORD *timeout
+	); // 0x74
 } DTTR_Graphics_COM_DirectDraw7_VT;
 
 typedef struct DTTR_Graphics_COM_DirectDraw7 {
@@ -316,13 +496,36 @@ typedef struct DTTR_Graphics_COM_DirectDraw7 {
 } DTTR_Graphics_COM_DirectDraw7;
 
 typedef struct DTTR_Graphics_COM_Direct3D7_VT {
-	HRESULT(__stdcall *QueryInterface)(DTTR_Graphics_COM_Direct3D7 *self, void *riid, void **ppv);
+	HRESULT(__stdcall *QueryInterface)(
+		DTTR_Graphics_COM_Direct3D7 *self,
+		void *riid,
+		void **ppv
+	);
 	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_Direct3D7 *self);
 	ULONG(__stdcall *Release)(DTTR_Graphics_COM_Direct3D7 *self);
-	HRESULT(__stdcall *EnumDevices)(DTTR_Graphics_COM_Direct3D7 *self, void *cb, void *ctx);
-	HRESULT(__stdcall *CreateDevice)(DTTR_Graphics_COM_Direct3D7 *self, void *guid, void *surf, void **dev);
-	HRESULT(__stdcall *CreateVertexBuffer)(DTTR_Graphics_COM_Direct3D7 *self, void *desc, void **vb, DWORD f);
-	HRESULT(__stdcall *EnumZBufferFormats)(DTTR_Graphics_COM_Direct3D7 *self, void *guid, void *cb, void *ctx);
+	HRESULT(__stdcall *EnumDevices)(
+		DTTR_Graphics_COM_Direct3D7 *self,
+		void *cb,
+		void *ctx
+	);
+	HRESULT(__stdcall *CreateDevice)(
+		DTTR_Graphics_COM_Direct3D7 *self,
+		void *guid,
+		void *surf,
+		void **dev
+	);
+	HRESULT(__stdcall *CreateVertexBuffer)(
+		DTTR_Graphics_COM_Direct3D7 *self,
+		void *desc,
+		void **vb,
+		DWORD f
+	);
+	HRESULT(__stdcall *EnumZBufferFormats)(
+		DTTR_Graphics_COM_Direct3D7 *self,
+		void *guid,
+		void *cb,
+		void *ctx
+	);
 	HRESULT(__stdcall *EvictManagedTextures)(DTTR_Graphics_COM_Direct3D7 *self);
 } DTTR_Graphics_COM_Direct3D7_VT;
 
@@ -334,11 +537,23 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7 DTTR_Graphics_COM_DirectDraw
 typedef struct DTTR_Graphics_COM_Direct3DTexture2 DTTR_Graphics_COM_Direct3DTexture2;
 
 typedef struct DTTR_Graphics_COM_Direct3DTexture2_VT {
-	HRESULT(__stdcall *QueryInterface)(DTTR_Graphics_COM_Direct3DTexture2 *self, void *riid, void **ppv);
+	HRESULT(__stdcall *QueryInterface)(
+		DTTR_Graphics_COM_Direct3DTexture2 *self,
+		void *riid,
+		void **ppv
+	);
 	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_Direct3DTexture2 *self);
 	ULONG(__stdcall *Release)(DTTR_Graphics_COM_Direct3DTexture2 *self);
-	HRESULT(__stdcall *GetHandle)(DTTR_Graphics_COM_Direct3DTexture2 *self, void *m_device, DWORD *handle);
-	HRESULT(__stdcall *PaletteChanged)(DTTR_Graphics_COM_Direct3DTexture2 *self, DWORD start, DWORD count);
+	HRESULT(__stdcall *GetHandle)(
+		DTTR_Graphics_COM_Direct3DTexture2 *self,
+		void *m_device,
+		DWORD *handle
+	);
+	HRESULT(__stdcall *PaletteChanged)(
+		DTTR_Graphics_COM_Direct3DTexture2 *self,
+		DWORD start,
+		DWORD count
+	);
 	HRESULT(__stdcall *Load)(DTTR_Graphics_COM_Direct3DTexture2 *self, void *srcTexture);
 } DTTR_Graphics_COM_Direct3DTexture2_VT;
 
@@ -348,11 +563,21 @@ typedef struct DTTR_Graphics_COM_Direct3DTexture2 {
 } DTTR_Graphics_COM_Direct3DTexture2;
 
 typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
-	HRESULT(__stdcall *QueryInterface)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *riid, void **ppv);
+	HRESULT(__stdcall *QueryInterface)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *riid,
+		void **ppv
+	);
 	ULONG(__stdcall *AddRef)(DTTR_Graphics_COM_DirectDrawSurface7 *self);
 	ULONG(__stdcall *Release)(DTTR_Graphics_COM_DirectDrawSurface7 *self);
-	HRESULT(__stdcall *AddAttachedSurface)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *surf);
-	HRESULT(__stdcall *AddOverlayDirtyRect)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect);
+	HRESULT(__stdcall *AddAttachedSurface)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *surf
+	);
+	HRESULT(__stdcall *AddOverlayDirtyRect)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *rect
+	);
 	HRESULT(__stdcall *Blt)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void *dstRect,
@@ -361,57 +586,180 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 		DWORD m_flags,
 		void *bltFx
 	);
-	HRESULT(__stdcall *BltBatch)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *batch, DWORD count, DWORD m_flags);
+	HRESULT(__stdcall *BltBatch)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *batch,
+		DWORD count,
+		DWORD m_flags
+	);
 	HRESULT(__stdcall *BltFast)(
-		DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD x, DWORD y, void *srcSurf, void *srcRect, DWORD m_flags
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD x,
+		DWORD y,
+		void *srcSurf,
+		void *srcRect,
+		DWORD m_flags
 	);
-	HRESULT(__stdcall *DeleteAttachedSurface)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags, void *surf);
-	HRESULT(__stdcall *EnumAttachedSurfaces)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *ctx, void *cb);
+	HRESULT(__stdcall *DeleteAttachedSurface)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags,
+		void *surf
+	);
+	HRESULT(__stdcall *EnumAttachedSurfaces)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *ctx,
+		void *cb
+	);
 	HRESULT(__stdcall *EnumOverlayZOrders)(
-		DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags, void *ctx, void *cb
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags,
+		void *ctx,
+		void *cb
 	);
-	HRESULT(__stdcall *Flip)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *target, DWORD m_flags);
-	HRESULT(__stdcall *GetAttachedSurface)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *caps, void **surf);
-	HRESULT(__stdcall *GetBltStatus)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags);
+	HRESULT(__stdcall *Flip)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *target,
+		DWORD m_flags
+	);
+	HRESULT(__stdcall *GetAttachedSurface)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *caps,
+		void **surf
+	);
+	HRESULT(__stdcall *GetBltStatus)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags
+	);
 	HRESULT(__stdcall *GetCaps)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *caps);
-	HRESULT(__stdcall *GetClipper)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void **clipper);
-	HRESULT(__stdcall *GetColorKey)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags, void *colorKey);
+	HRESULT(__stdcall *GetClipper)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void **clipper
+	);
+	HRESULT(__stdcall *GetColorKey)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags,
+		void *colorKey
+	);
 	HRESULT(__stdcall *GetDC)(DTTR_Graphics_COM_DirectDrawSurface7 *self, HDC *dc);
-	HRESULT(__stdcall *GetFlipStatus)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags);
-	HRESULT(__stdcall *GetOverlayPosition)(DTTR_Graphics_COM_DirectDrawSurface7 *self, LONG *x, LONG *y);
-	HRESULT(__stdcall *GetPalette)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void **palette);
-	HRESULT(__stdcall *GetPixelFormat)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *fmt);
-	HRESULT(__stdcall *GetSurfaceDesc)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *desc);
-	HRESULT(__stdcall *Initialize)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *dd, void *desc);
+	HRESULT(__stdcall *GetFlipStatus)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags
+	);
+	HRESULT(__stdcall *GetOverlayPosition)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		LONG *x,
+		LONG *y
+	);
+	HRESULT(__stdcall *GetPalette)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void **palette
+	);
+	HRESULT(__stdcall *GetPixelFormat)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *fmt
+	);
+	HRESULT(__stdcall *GetSurfaceDesc)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *desc
+	);
+	HRESULT(__stdcall *Initialize)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *dd,
+		void *desc
+	);
 	HRESULT(__stdcall *IsLost)(DTTR_Graphics_COM_DirectDrawSurface7 *self);
 	HRESULT(__stdcall *Lock)(
-		DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect, void *desc, DWORD m_flags, HANDLE event
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *rect,
+		void *desc,
+		DWORD m_flags,
+		HANDLE event
 	);
 	HRESULT(__stdcall *ReleaseDC)(DTTR_Graphics_COM_DirectDrawSurface7 *self, HDC dc);
 	HRESULT(__stdcall *Restore)(DTTR_Graphics_COM_DirectDrawSurface7 *self);
-	HRESULT(__stdcall *SetClipper)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *clipper);
-	HRESULT(__stdcall *SetColorKey)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags, void *colorKey);
-	HRESULT(__stdcall *SetOverlayPosition)(DTTR_Graphics_COM_DirectDrawSurface7 *self, LONG x, LONG y);
-	HRESULT(__stdcall *SetPalette)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *palette);
+	HRESULT(__stdcall *SetClipper)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *clipper
+	);
+	HRESULT(__stdcall *SetColorKey)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags,
+		void *colorKey
+	);
+	HRESULT(__stdcall *SetOverlayPosition)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		LONG x,
+		LONG y
+	);
+	HRESULT(__stdcall *SetPalette)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *palette
+	);
 	HRESULT(__stdcall *Unlock)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *rect);
 	HRESULT(__stdcall *UpdateOverlay)(
-		DTTR_Graphics_COM_DirectDrawSurface7 *self, void *srcRect, void *dstSurf, void *dstRect, DWORD m_flags, void *fx
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *srcRect,
+		void *dstSurf,
+		void *dstRect,
+		DWORD m_flags,
+		void *fx
 	);
-	HRESULT(__stdcall *UpdateOverlayDisplay)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags);
-	HRESULT(__stdcall *UpdateOverlayZOrder)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags, void *refSurf);
-	HRESULT(__stdcall *GetDDInterface)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void **dd);
-	HRESULT(__stdcall *PageLock)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags);
-	HRESULT(__stdcall *PageUnlock)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD m_flags);
-	HRESULT(__stdcall *SetSurfaceDesc)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *desc, DWORD m_flags);
+	HRESULT(__stdcall *UpdateOverlayDisplay)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags
+	);
+	HRESULT(__stdcall *UpdateOverlayZOrder)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags,
+		void *refSurf
+	);
+	HRESULT(__stdcall *GetDDInterface)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void **dd
+	);
+	HRESULT(__stdcall *PageLock)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags
+	);
+	HRESULT(__stdcall *PageUnlock)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD m_flags
+	);
+	HRESULT(__stdcall *SetSurfaceDesc)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *desc,
+		DWORD m_flags
+	);
 	HRESULT(__stdcall *SetPrivateData)(
-		DTTR_Graphics_COM_DirectDrawSurface7 *self, void *tag, void *data, DWORD size, DWORD m_flags
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *tag,
+		void *data,
+		DWORD size,
+		DWORD m_flags
 	);
-	HRESULT(__stdcall *GetPrivateData)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *tag, void *data, DWORD *size);
-	HRESULT(__stdcall *FreePrivateData)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *tag);
-	HRESULT(__stdcall *GetUniquenessValue)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD *value);
+	HRESULT(__stdcall *GetPrivateData)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *tag,
+		void *data,
+		DWORD *size
+	);
+	HRESULT(__stdcall *FreePrivateData)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		void *tag
+	);
+	HRESULT(__stdcall *GetUniquenessValue)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD *value
+	);
 	HRESULT(__stdcall *ChangeUniquenessValue)(DTTR_Graphics_COM_DirectDrawSurface7 *self);
-	HRESULT(__stdcall *SetPriority)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD priority);
-	HRESULT(__stdcall *GetPriority)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD *priority);
+	HRESULT(__stdcall *SetPriority)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD priority
+	);
+	HRESULT(__stdcall *GetPriority)(
+		DTTR_Graphics_COM_DirectDrawSurface7 *self,
+		DWORD *priority
+	);
 	HRESULT(__stdcall *SetLOD)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD lod);
 	HRESULT(__stdcall *GetLOD)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD *lod);
 } DTTR_Graphics_COM_DirectDrawSurface7_VT;
@@ -427,8 +775,8 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7 {
 	uint32_t m_r_mask, m_g_mask, m_b_mask, m_a_mask;
 	void *m_pixels;			  // Points to the game-writable pixel buffer in native format
 	uint32_t m_dttr_texture;  // Holds the GPU texture handle, or 0 if not created
-	uint32_t m_content_width; // Stores the actual content region width from Blt, or 0 for the full
-							  // surface
+	uint32_t m_content_width; // Stores the actual content region width from Blt, or 0 for
+							  // the full surface
 	uint32_t m_content_height;
 	bool m_locked;
 	bool m_dirty;
@@ -454,7 +802,8 @@ DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface
 );
 
 /// Creates an IDirect3DTexture2 translator bound to a surface translator
-DTTR_Graphics_COM_Direct3DTexture2 *
-dttr_graphics_com_create_direct3d_texture2(DTTR_Graphics_COM_DirectDrawSurface7 *m_surface);
+DTTR_Graphics_COM_Direct3DTexture2 *dttr_graphics_com_create_direct3d_texture2(
+	DTTR_Graphics_COM_DirectDrawSurface7 *m_surface
+);
 
 #endif // DTTR_D3D_COM_H
