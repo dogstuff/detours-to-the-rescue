@@ -32,6 +32,8 @@ static volatile bool s_browse_chosen;
 static void SDLCALL
 s_browse_callback(void *userdata, const char *const *filelist, int filter) {
 	if (!filelist || !filelist[0]) {
+		s_browse_result[0] = '\0';
+		s_browse_chosen = true;
 		return;
 	}
 
@@ -70,6 +72,10 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 	while (!s_browse_chosen) {
 		SDL_PumpEvents();
 		SDL_Delay(10);
+	}
+
+	if (!s_browse_result[0]) {
+		return false;
 	}
 
 	WCHAR wide_dir[MAX_PATH];
