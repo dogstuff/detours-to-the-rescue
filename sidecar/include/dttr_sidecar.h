@@ -12,10 +12,10 @@
 // Holds the loaded game module handle and shared configuration state
 extern DTTR_GameModule g_dttr_pc_dogs_module;
 
-// Directory containing the loader DLL, with trailing backslash
+// This stores the directory containing the loader DLL, with a trailing backslash.
 extern char g_dttr_loader_dir[MAX_PATH];
 
-// 16-char lowercase hex XXH3_64 hash of the game executable
+// This stores the 16-character lowercase hex XXH3_64 hash of the game executable.
 extern char g_dttr_exe_hash[17];
 
 /// Initializes the SDL graphics backend and returns the game window handle

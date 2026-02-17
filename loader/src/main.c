@@ -8,9 +8,20 @@
 
 static const char *LOG_FILE_NAME = "dttr.log";
 
-int main(void) {
+static char s_config_path_buf[MAX_PATH];
+const char *g_dttr_config_path = DTTR_CONFIG_FILENAME;
+
+int main(int argc, char *argv[]) {
 	dttr_crashdump_init("dttr_loader");
-	dttr_config_load(DTTR_CONFIG_FILENAME);
+
+	if (argc > 1) {
+		g_dttr_config_path = argv[1];
+	}
+
+	GetFullPathNameA(g_dttr_config_path, MAX_PATH, s_config_path_buf, NULL);
+	g_dttr_config_path = s_config_path_buf;
+
+	dttr_config_load(g_dttr_config_path);
 
 	const int level = g_dttr_config.m_log_level;
 	log_set_level(level);
@@ -27,6 +38,8 @@ int main(void) {
 
 	char exe_path_narrow[MAX_PATH];
 	WideCharToMultiByte(CP_UTF8, 0, exe_path, -1, exe_path_narrow, MAX_PATH, NULL, NULL);
+
+	SetEnvironmentVariableA("DTTR_CONFIG_PATH", g_dttr_config_path);
 
 	sds shim_data = dttr_compat_build_shim_data(exe_path);
 
