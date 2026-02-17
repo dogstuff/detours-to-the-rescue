@@ -2,9 +2,10 @@
 #include <dttr_crashdump.h>
 #include <dttr_loader.h>
 #include <log.h>
-#include <sds.h>
 #include <stdio.h>
 #include <windows.h>
+
+#include <gen/packed_sdb.h>
 
 static const char *LOG_FILE_NAME = "dttr.log";
 
@@ -51,12 +52,19 @@ int main(int argc, char *argv[]) {
 
 	SetEnvironmentVariableA("DTTR_CONFIG_PATH", g_dttr_config_path);
 
-	sds shim_data = dttr_compat_build_shim_data(exe_path);
-
+	/// Includes the packed and bundled in-memory compatibility SDB,
+	/// and injects it into the pcdogs.exe child process.
+	///
+	/// This overrides any compatibility shims applied by Windows, which
+	/// resolves the EmulateHeap corruption issue that occurs on Intel
+	/// integrated graphics.
 	PROCESS_INFORMATION child_info = {0};
-	dttr_compat_create_process(exe_path, shim_data, sdslen(shim_data), &child_info);
-
-	sdsfree(shim_data);
+	dttr_compat_create_process(
+		exe_path,
+		(const char *)g_packed_sdb,
+		g_packed_sdb_len,
+		&child_info
+	);
 
 	dttr_loader_watchdog_attach(&child_info);
 	dttr_loader_inject_sidecar(&child_info, exe_path_narrow);

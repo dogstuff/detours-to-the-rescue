@@ -22,7 +22,10 @@ for asm_file in "$asm_dir"/*.asm; do
     echo "#ifndef DTTR_GENERATED_ASM_H"
     echo "#define DTTR_GENERATED_ASM_H"
     echo
-    cat "$tmp_h"
+    sed -E \
+      -e 's/^unsigned char /const unsigned char /' \
+      -e 's/^unsigned int /const unsigned int /' \
+      "$tmp_h"
     echo
     echo "#endif /* DTTR_GENERATED_ASM_H */"
   } > "$output_file"
