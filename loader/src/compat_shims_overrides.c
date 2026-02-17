@@ -92,37 +92,37 @@ static void s_generate_sdb(HMODULE apphelp, WCHAR *out_path) {
 	const S_SDB_CreateDatabase sdb_create = S_RESOLVE(
 		apphelp,
 		S_SDB_CreateDatabase,
-		"SDB_CreateDatabase"
+		"SdbCreateDatabase"
 	);
 	const S_SDB_CloseDatabaseWrite sdb_close = S_RESOLVE(
 		apphelp,
 		S_SDB_CloseDatabaseWrite,
-		"SDB_CloseDatabaseWrite"
+		"SdbCloseDatabaseWrite"
 	);
 	const S_SDB_BeginWriteListTag sdb_begin_list = S_RESOLVE(
 		apphelp,
 		S_SDB_BeginWriteListTag,
-		"SDB_BeginWriteListTag"
+		"SdbBeginWriteListTag"
 	);
 	const S_SDB_EndWriteListTag sdb_end_list = S_RESOLVE(
 		apphelp,
 		S_SDB_EndWriteListTag,
-		"SDB_EndWriteListTag"
+		"SdbEndWriteListTag"
 	);
 	const S_SDB_WriteStringTag sdb_string = S_RESOLVE(
 		apphelp,
 		S_SDB_WriteStringTag,
-		"SDB_WriteStringTag"
+		"SdbWriteStringTag"
 	);
 	const S_SDB_WriteDwordTag sdb_dword = S_RESOLVE(
 		apphelp,
 		S_SDB_WriteDwordTag,
-		"SDB_WriteDWORDTag"
+		"SdbWriteDWORDTag"
 	);
 	const S_SDB_WriteBinaryTag sdb_binary = S_RESOLVE(
 		apphelp,
 		S_SDB_WriteBinaryTag,
-		"SDB_WriteBinaryTag"
+		"SdbWriteBinaryTag"
 	);
 
 	WCHAR tmp_dir[MAX_PATH];
@@ -184,25 +184,25 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 	const S_SDB_InitDatabase sdb_init = S_RESOLVE(
 		apphelp,
 		S_SDB_InitDatabase,
-		"SDB_InitDatabase"
+		"SdbInitDatabase"
 	);
 
 	const S_SDB_ReleaseDatabase sdb_release = S_RESOLVE(
 		apphelp,
 		S_SDB_ReleaseDatabase,
-		"SDB_ReleaseDatabase"
+		"SdbReleaseDatabase"
 	);
 
 	const S_SDB_GetMatchingExe sdb_match = S_RESOLVE(
 		apphelp,
 		S_SDB_GetMatchingExe,
-		"SDB_GetMatchingExe"
+		"SdbGetMatchingExe"
 	);
 
 	const S_SDB_PackAppCompatData sdb_pack = S_RESOLVE(
 		apphelp,
 		S_SDB_PackAppCompatData,
-		"SDB_PackAppCompatData"
+		"SdbPackAppCompatData"
 	);
 
 	S_Hsdb hsdb = sdb_init(HID_DOS_PATHS | HID_DATABASE_FULLPATH, sdb_path);
