@@ -362,10 +362,10 @@ static void s_surface_texture_release(DTTR_Texture tex) {
 		state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
 	}
 	if (st->m_gpu_tex && state->m_device) {
-		if (dttr_graphics_is_gpu_thread()) {
-			SDL_ReleaseGPUTexture(state->m_device, st->m_gpu_tex);
-		} else if (state->m_deferred_destroy_count < DTTR_MAX_DEFERRED_DESTROYS) {
+		if (state->m_deferred_destroy_count < DTTR_MAX_DEFERRED_DESTROYS) {
 			state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
+		} else {
+			log_warn("deferred destroy queue full, leaking GPU texture");
 		}
 	}
 	st->m_gpu_tex = NULL;
@@ -425,10 +425,10 @@ s_surface_texture_update_unique(DTTR_Texture tex, int width, int height, const v
 	memcpy(st->m_pixels, pixels, size);
 	if (st->m_width != width || st->m_height != height) {
 		if (st->m_gpu_tex && state->m_device) {
-			if (dttr_graphics_is_gpu_thread()) {
-				SDL_ReleaseGPUTexture(state->m_device, st->m_gpu_tex);
-			} else if (state->m_deferred_destroy_count < DTTR_MAX_DEFERRED_DESTROYS) {
+			if (state->m_deferred_destroy_count < DTTR_MAX_DEFERRED_DESTROYS) {
 				state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
+			} else {
+				log_warn("deferred destroy queue full, leaking GPU texture");
 			}
 		}
 		st->m_gpu_tex = NULL;
