@@ -6,20 +6,16 @@ TabWidth: 4
 ContinuationIndentWidth: 4
 ColumnLimit: 90
 
-# Only wrap when line exceeds ColumnLimit, then one arg per line
 BinPackArguments: false
 BinPackParameters: false
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 
-# Block indent style - closing paren/brace on its own line at block indent
 AlignAfterOpenBracket: BlockIndent
 Cpp11BracedListStyle: true
 
-# Keep wrapped assignment RHS from hanging under '='
 BreakBeforeBinaryOperators: All
 
-# Strongly discourage breaking after = in assignments
 PenaltyBreakAssignment: 1000
 PenaltyReturnTypeOnItsOwnLine: 10000
 PenaltyExcessCharacter: 100

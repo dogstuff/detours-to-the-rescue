@@ -23,11 +23,11 @@ variables:
       echo "Saving Nix store to cache..."
       mkdir -p .nix-cache/store
       nix-store --dump-db > .nix-cache/db.dump
-      cp -rn /nix/store/* .nix-cache/store/ 2>/dev/null || true
+      nix path-info --derivation --recursive .#devShells.x86_64-linux.default 2>/dev/null \
+        | xargs -I{} cp -rn {} .nix-cache/store/ 2>/dev/null || true
 
 stages:
   - build
-  - test
   - deploy
   - release
 
@@ -43,7 +43,7 @@ build:
   rules:
     - if: $CI_COMMIT_TAG
       when: never
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 build-release:
   extends: .nix-cache
@@ -57,14 +57,6 @@ build-release:
     expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
-
-generate-docs:
-  extends: .nix-cache
-  stage: test
-  script:
-    - nix develop --command task generate-docs
-  rules:
-    - if: $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
 
 pages:
   extends: .nix-cache
