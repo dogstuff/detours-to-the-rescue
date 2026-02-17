@@ -19,7 +19,8 @@ add_library(dttr_sidecar SHARED
     src/graphics/com_directdraw7.c
     src/graphics/com_directdrawsurface7.c
     src/other/hooks.c
-    src/other/hook_crt.c
+    src/other/hook_crt_open_file.c
+    src/other/hook_cleanup_level_assets.c
     src/other/hook_resolve_pcdogs_path.c
 )
 

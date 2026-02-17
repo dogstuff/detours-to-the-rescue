@@ -15,7 +15,11 @@ DTTR_COM_ADDREF(s_d3d7_addref, DTTR_Graphics_COM_Direct3D7)
 
 DTTR_COM_RELEASE(s_d3d7_release, DTTR_Graphics_COM_Direct3D7)
 
-static HRESULT __stdcall s_d3d7_enum_devices(DTTR_Graphics_COM_Direct3D7 *self, void *cb, void *ctx) {
+static HRESULT __stdcall s_d3d7_enum_devices(
+	DTTR_Graphics_COM_Direct3D7 *self,
+	void *cb,
+	void *ctx
+) {
 	const LPD3DENUMDEVICESCALLBACK7 callback = (LPD3DENUMDEVICESCALLBACK7)cb;
 
 	if (!callback) {
@@ -26,10 +30,11 @@ static HRESULT __stdcall s_d3d7_enum_devices(DTTR_Graphics_COM_Direct3D7 *self, 
 	D3DDEVICEDESC7 desc;
 	memset(&desc, 0, sizeof(desc));
 
-	desc.dwDevCaps = D3DDEVCAPS_FLOATTLVERTEX | D3DDEVCAPS_EXECUTEVIDEOMEMORY | D3DDEVCAPS_TLVERTEXVIDEOMEMORY
-					 | D3DDEVCAPS_TEXTUREVIDEOMEMORY | D3DDEVCAPS_DRAWPRIMTLVERTEX | D3DDEVCAPS_CANRENDERAFTERFLIP
-					 | D3DDEVCAPS_DRAWPRIMITIVES2 | D3DDEVCAPS_DRAWPRIMITIVES2EX | D3DDEVCAPS_HWTRANSFORMANDLIGHT
-					 | D3DDEVCAPS_HWRASTERIZATION;
+	desc.dwDevCaps = D3DDEVCAPS_FLOATTLVERTEX | D3DDEVCAPS_EXECUTEVIDEOMEMORY
+					 | D3DDEVCAPS_TLVERTEXVIDEOMEMORY | D3DDEVCAPS_TEXTUREVIDEOMEMORY
+					 | D3DDEVCAPS_DRAWPRIMTLVERTEX | D3DDEVCAPS_CANRENDERAFTERFLIP
+					 | D3DDEVCAPS_DRAWPRIMITIVES2 | D3DDEVCAPS_DRAWPRIMITIVES2EX
+					 | D3DDEVCAPS_HWTRANSFORMANDLIGHT | D3DDEVCAPS_HWRASTERIZATION;
 
 	desc.dwMinTextureWidth = 1;
 	desc.dwMinTextureHeight = 1;
@@ -57,7 +62,12 @@ static HRESULT __stdcall s_d3d7_enum_devices(DTTR_Graphics_COM_Direct3D7 *self, 
 	return S_OK;
 }
 
-static HRESULT __stdcall s_d3d7_createdevice(DTTR_Graphics_COM_Direct3D7 *self, void *guid, void *surf, void **dev) {
+static HRESULT __stdcall s_d3d7_createdevice(
+	DTTR_Graphics_COM_Direct3D7 *self,
+	void *guid,
+	void *surf,
+	void **dev
+) {
 
 	if (!g_dttr_direct3d7_device) {
 		g_dttr_direct3d7_device = dttr_graphics_com_create_direct3ddevice7();
@@ -70,8 +80,12 @@ static HRESULT __stdcall s_d3d7_createdevice(DTTR_Graphics_COM_Direct3D7 *self, 
 	return S_OK;
 }
 
-static HRESULT __stdcall
-s_d3d7_createvertexbuffer(DTTR_Graphics_COM_Direct3D7 *self, void *desc, void **vb, DWORD flags) {
+static HRESULT __stdcall s_d3d7_createvertexbuffer(
+	DTTR_Graphics_COM_Direct3D7 *self,
+	void *desc,
+	void **vb,
+	DWORD flags
+) {
 
 	if (vb) {
 		*vb = NULL;
@@ -80,7 +94,12 @@ s_d3d7_createvertexbuffer(DTTR_Graphics_COM_Direct3D7 *self, void *desc, void **
 	return S_OK;
 }
 
-static HRESULT __stdcall s_d3d7_enumzbufferformats(DTTR_Graphics_COM_Direct3D7 *self, void *guid, void *cb, void *ctx) {
+static HRESULT __stdcall s_d3d7_enumzbufferformats(
+	DTTR_Graphics_COM_Direct3D7 *self,
+	void *guid,
+	void *cb,
+	void *ctx
+) {
 	const LPD3DENUMPIXELFORMATSCALLBACK callback = (LPD3DENUMPIXELFORMATSCALLBACK)cb;
 
 	if (!callback) {

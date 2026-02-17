@@ -16,7 +16,7 @@
 	do { \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
 		log_error("%s", _err_msg); \
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Non-Fatal Error", _err_msg, NULL); \
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Error", _err_msg, NULL); \
 		sdsfree(_err_msg); \
 	} while (0)
 

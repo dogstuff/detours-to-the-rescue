@@ -25,13 +25,19 @@ void dttr_graphics_cleanup(void);
 
 extern SDL_Gamepad *g_dttr_gamepad;
 
-/// Installs input hooks and initializes input subsystem state
-void dttr_inputs_init(HMODULE module);
+/// Initializes SDL gamepad subsystem
+void dttr_inputs_init(void);
+
+/// Installs input hooks
+void dttr_inputs_hook_init(HMODULE module);
 
 /// Sets the joystick-available flag after game systems are initialized
 void dttr_inputs_late_init(void);
 
-/// Removes input hooks and releases input subsystem resources
+/// Removes input hooks
+void dttr_inputs_hook_cleanup(void);
+
+/// Releases input subsystem resources
 void dttr_inputs_cleanup(void);
 
 #endif

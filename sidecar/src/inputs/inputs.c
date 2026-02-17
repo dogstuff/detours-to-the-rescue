@@ -2,13 +2,13 @@
 #include <dttr_sidecar.h>
 #include <windows.h>
 
-#include "dttr_hooks.h"
+#include "dttr_hooks_inputs.h"
 #include "dttr_interop_pcdogs.h"
 #include "log.h"
 
 SDL_Gamepad *g_dttr_gamepad;
 
-void dttr_inputs_init(HMODULE module) {
+void dttr_inputs_init(void) {
 	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
 		log_error("SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
 	}
@@ -26,9 +26,10 @@ void dttr_inputs_init(HMODULE module) {
 	}
 
 	SDL_free(joysticks);
+}
 
+void dttr_inputs_hook_init(HMODULE module) {
 	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_inputs_hook_dinput_poll, module);
-
 	DTTR_INTEROP_PATCH_PTR_LOG(dttr_inputs_hook_get_async_key_state, module);
 }
 
@@ -38,14 +39,15 @@ void dttr_inputs_late_init(void) {
 	}
 
 	g_pcdogs_joystick_available_set(1);
-	log_debug("Joystick available flag set");
+	log_debug("Joystick is available");
+}
+
+void dttr_inputs_hook_cleanup(void) {
+	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_dinput_poll);
+	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_get_async_key_state);
 }
 
 void dttr_inputs_cleanup(void) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_dinput_poll);
-
-	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_get_async_key_state);
-
 	if (g_dttr_gamepad) {
 		SDL_CloseGamepad(g_dttr_gamepad);
 		g_dttr_gamepad = NULL;

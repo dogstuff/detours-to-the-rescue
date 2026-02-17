@@ -24,20 +24,25 @@ enum {
 	DTTR_DINPUT_BUTTON_COUNT = 13,
 };
 
-/// This is the DirectInput sentinel for a centered/neutral POV hat switch
+/// DirectInput sentinel for a centered/neutral POV hat switch
 #define DINPUT_POV_CENTERED 0xFFFFFFFF
+
 /// DirectInput uses this byte value to indicate a button is pressed
 #define DINPUT_BUTTON_PRESSED 0x80
 
-/// Triggers are encoded as axis indices offset by a base value and compared against a threshold
+/// Triggers are encoded as axis indices offset by a base value and compared against a
+/// threshold
 static bool s_is_mapping_pressed(int mapping) {
 	if (!g_dttr_gamepad) {
 		return false;
 	}
 
 	if (mapping >= DTTR_GAMEPAD_MAPPING_TRIGGER_BASE) {
-		const int32_t value
-			= SDL_GetGamepadAxis(g_dttr_gamepad, mapping - DTTR_GAMEPAD_MAPPING_TRIGGER_BASE) / DTTR_DINPUT_AXIS_SCALE;
+		const int32_t value = SDL_GetGamepadAxis(
+								  g_dttr_gamepad,
+								  mapping - DTTR_GAMEPAD_MAPPING_TRIGGER_BASE
+							  )
+							  / DTTR_DINPUT_AXIS_SCALE;
 		return value > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
 	}
 
@@ -51,7 +56,8 @@ static LONG s_read_axis(int axis_idx) {
 		return 0;
 	}
 
-	const LONG value = SDL_GetGamepadAxis(g_dttr_gamepad, sdl_axis) / DTTR_DINPUT_AXIS_SCALE;
+	const LONG value = SDL_GetGamepadAxis(g_dttr_gamepad, sdl_axis)
+					   / DTTR_DINPUT_AXIS_SCALE;
 	const LONG deadzone = g_dttr_config.m_gamepad_axis_deadzone[axis_idx];
 
 	return (value > -deadzone && value < deadzone) ? 0 : value;

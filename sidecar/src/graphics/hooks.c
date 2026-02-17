@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <windows.h>
 
-#include "dttr_hooks.h"
+#include "dttr_hooks_graphics.h"
 #include "dttr_interop_pcdogs.h"
 #include "dttr_sidecar.h"
 #include "graphics_com_internal.h"
@@ -25,7 +25,10 @@ static DTTR_Graphics_COM_DirectDraw7 *s_get_or_create_ddraw7(void) {
 // Returns our DDraw7 translator for DirectDrawCreateEx
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawcreateex
 HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
-	const void *guid, void **ddraw_out, const void *iid, const void *outer
+	const void *guid,
+	void **ddraw_out,
+	const void *iid,
+	const void *outer
 ) {
 	DTTR_Graphics_COM_DirectDraw7 *const ddraw7 = s_get_or_create_ddraw7();
 
@@ -38,7 +41,11 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 	if (ddraw_out) {
 		DWORD old;
 		if (!VirtualProtect(ddraw_out, sizeof(void *), PAGE_READWRITE, &old)) {
-			log_error("VirtualProtect failed for ddraw_out=%p error=%lu", ddraw_out, GetLastError());
+			log_error(
+				"VirtualProtect failed for ddraw_out=%p error=%lu",
+				ddraw_out,
+				GetLastError()
+			);
 		} else {
 			*ddraw_out = ddraw7;
 			VirtualProtect(ddraw_out, sizeof(void *), old, &old);
@@ -51,9 +58,17 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 
 // Calls the enumerate callback with our virtual display device
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawenumerateexa
-HRESULT __stdcall
-dttr_graphics_hook_directdraw_enumerate_ex_a_callback(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags) {
-	log_debug("DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x", lpCallback, lpContext, dwFlags);
+HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
+	LPDDENUMCALLBACKEXA lpCallback,
+	LPVOID lpContext,
+	DWORD dwFlags
+) {
+	log_debug(
+		"DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
+		lpCallback,
+		lpContext,
+		dwFlags
+	);
 
 	if (!lpCallback) {
 		log_debug("DirectDrawEnumerateExA complete");

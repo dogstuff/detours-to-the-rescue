@@ -12,7 +12,8 @@
 #include <string.h>
 #include <windows.h>
 
-#define S_RESOLVE(module, type, name) ((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
+#define S_RESOLVE(module, type, name)                                                    \
+	((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
 
 #define SDB_TAG_DATABASE 0x7001
 #define SDB_TAG_EXE 0x7007
@@ -60,8 +61,20 @@ typedef struct {
 
 typedef s_hsdb(WINAPI *s_pfn_sdb_init_database)(DWORD, LPCWSTR);
 typedef void(WINAPI *s_pfn_sdb_release_database)(s_hsdb);
-typedef BOOL(WINAPI *s_pfn_sdb_get_matching_exe)(s_hsdb, LPCWSTR, LPCWSTR, LPCWSTR, DWORD, s_sdb_query_result *);
-typedef BOOL(WINAPI *s_pfn_sdb_pack_app_compat_data)(s_hsdb, s_sdb_query_result *, PVOID *, DWORD *);
+typedef BOOL(WINAPI *s_pfn_sdb_get_matching_exe)(
+	s_hsdb,
+	LPCWSTR,
+	LPCWSTR,
+	LPCWSTR,
+	DWORD,
+	s_sdb_query_result *
+);
+typedef BOOL(WINAPI *s_pfn_sdb_pack_app_compat_data)(
+	s_hsdb,
+	s_sdb_query_result *,
+	PVOID *,
+	DWORD *
+);
 
 // clang-format off
 static const BYTE s_database_guid[16] = {
@@ -76,23 +89,49 @@ static const BYTE s_exe_guid[16] = {
 // clang-format on
 
 static void s_generate_sdb(HMODULE apphelp, WCHAR *out_path) {
-	const s_pfn_sdb_create_database sdb_create = S_RESOLVE(apphelp, s_pfn_sdb_create_database, "SdbCreateDatabase");
-	const s_pfn_sdb_close_database_write sdb_close
-		= S_RESOLVE(apphelp, s_pfn_sdb_close_database_write, "SdbCloseDatabaseWrite");
-	const s_pfn_sdb_begin_write_list_tag sdb_begin_list
-		= S_RESOLVE(apphelp, s_pfn_sdb_begin_write_list_tag, "SdbBeginWriteListTag");
-	const s_pfn_sdb_end_write_list_tag sdb_end_list
-		= S_RESOLVE(apphelp, s_pfn_sdb_end_write_list_tag, "SdbEndWriteListTag");
-	const s_pfn_sdb_write_string_tag sdb_string = S_RESOLVE(apphelp, s_pfn_sdb_write_string_tag, "SdbWriteStringTag");
-	const s_pfn_sdb_write_dword_tag sdb_dword = S_RESOLVE(apphelp, s_pfn_sdb_write_dword_tag, "SdbWriteDWORDTag");
-	const s_pfn_sdb_write_binary_tag sdb_binary = S_RESOLVE(apphelp, s_pfn_sdb_write_binary_tag, "SdbWriteBinaryTag");
+	const s_pfn_sdb_create_database sdb_create = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_create_database,
+		"SdbCreateDatabase"
+	);
+	const s_pfn_sdb_close_database_write sdb_close = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_close_database_write,
+		"SdbCloseDatabaseWrite"
+	);
+	const s_pfn_sdb_begin_write_list_tag sdb_begin_list = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_begin_write_list_tag,
+		"SdbBeginWriteListTag"
+	);
+	const s_pfn_sdb_end_write_list_tag sdb_end_list = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_end_write_list_tag,
+		"SdbEndWriteListTag"
+	);
+	const s_pfn_sdb_write_string_tag sdb_string = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_write_string_tag,
+		"SdbWriteStringTag"
+	);
+	const s_pfn_sdb_write_dword_tag sdb_dword = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_write_dword_tag,
+		"SdbWriteDWORDTag"
+	);
+	const s_pfn_sdb_write_binary_tag sdb_binary = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_write_binary_tag,
+		"SdbWriteBinaryTag"
+	);
 
 	WCHAR tmp_dir[MAX_PATH];
 	DTTR_UNWRAP_WINAPI_NONZERO(GetTempPathW(MAX_PATH, tmp_dir));
 
 	DTTR_UNWRAP_WINAPI_NONZERO(GetTempFileNameW(tmp_dir, L"sdb", 0, out_path));
 
-	// GetTempFileNameW creates the file, so remove it before SdbCreateDatabase recreates it.
+	// GetTempFileNameW creates the file, so remove it before SdbCreateDatabase recreates
+	// it.
 	DeleteFileW(out_path);
 
 	s_pdb pdb = sdb_create(out_path, 0);
@@ -142,13 +181,29 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 	WCHAR sdb_path[MAX_PATH];
 	s_generate_sdb(apphelp, sdb_path);
 
-	const s_pfn_sdb_init_database sdb_init = S_RESOLVE(apphelp, s_pfn_sdb_init_database, "SdbInitDatabase");
-	const s_pfn_sdb_release_database sdb_release = S_RESOLVE(apphelp, s_pfn_sdb_release_database, "SdbReleaseDatabase");
+	const s_pfn_sdb_init_database sdb_init = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_init_database,
+		"SdbInitDatabase"
+	);
 
-	const s_pfn_sdb_get_matching_exe sdb_match = S_RESOLVE(apphelp, s_pfn_sdb_get_matching_exe, "SdbGetMatchingExe");
+	const s_pfn_sdb_release_database sdb_release = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_release_database,
+		"SdbReleaseDatabase"
+	);
 
-	const s_pfn_sdb_pack_app_compat_data sdb_pack
-		= S_RESOLVE(apphelp, s_pfn_sdb_pack_app_compat_data, "SdbPackAppCompatData");
+	const s_pfn_sdb_get_matching_exe sdb_match = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_get_matching_exe,
+		"SdbGetMatchingExe"
+	);
+
+	const s_pfn_sdb_pack_app_compat_data sdb_pack = S_RESOLVE(
+		apphelp,
+		s_pfn_sdb_pack_app_compat_data,
+		"SdbPackAppCompatData"
+	);
 
 	s_hsdb hsdb = sdb_init(HID_DOS_PATHS | HID_DATABASE_FULLPATH, sdb_path);
 	if (!hsdb) {
@@ -156,14 +211,20 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 	}
 
 	WCHAR full_exe_path[MAX_PATH];
-	DTTR_UNWRAP_WINAPI_NONZERO(GetFullPathNameW(image_name, MAX_PATH, full_exe_path, NULL));
+	DTTR_UNWRAP_WINAPI_NONZERO(
+		GetFullPathNameW(image_name, MAX_PATH, full_exe_path, NULL)
+	);
 
 	s_sdb_query_result query = {0};
 	if (!sdb_match(hsdb, full_exe_path, NULL, NULL, 0, &query)) {
 		DTTR_FATAL("SdbGetMatchingExe found no matches for %ls", full_exe_path);
 	}
 
-	log_debug("SDB query matched: %lu exe entries, %lu layer entries", query.m_exe_count, query.m_layer_count);
+	log_debug(
+		"SDB query matched: %lu exe entries, %lu layer entries",
+		query.m_exe_count,
+		query.m_layer_count
+	);
 
 	PVOID packed = NULL;
 	DWORD packed_size = 0;

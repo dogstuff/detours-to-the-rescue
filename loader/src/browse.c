@@ -22,13 +22,15 @@ static bool s_try_path(WCHAR *out, const WCHAR *dir, const WCHAR *subpath) {
 }
 
 static bool s_try_dir(WCHAR *out, const WCHAR *dir) {
-	return s_try_path(out, dir, PCDOGS_EXE_NAME) || s_try_path(out, dir, PCDOGS_DISC_SUBPATH);
+	return s_try_path(out, dir, PCDOGS_EXE_NAME)
+		   || s_try_path(out, dir, PCDOGS_DISC_SUBPATH);
 }
 
 static char s_browse_result[MAX_PATH];
 static volatile bool s_browse_chosen;
 
-static void SDLCALL s_browse_callback(void *userdata, const char *const *filelist, int filter) {
+static void SDLCALL
+s_browse_callback(void *userdata, const char *const *filelist, int filter) {
 	if (!filelist || !filelist[0]) {
 		return;
 	}
@@ -48,7 +50,8 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 		.flags = SDL_MESSAGEBOX_INFORMATION,
 		.window = NULL,
 		.title = "DttR: Specify Game Directory",
-		.message = "Select the folder containing the 102 Dalmatians: Puppies to the Rescue files.\n"
+		.message = "Select the folder containing the 102 Dalmatians: Puppies to the "
+				   "Rescue files.\n"
 				   "This directory should contain a pcdogs.exe file.",
 		.numbuttons = 2,
 		.buttons = buttons,
@@ -74,14 +77,21 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 
 	if (!s_try_dir(out, wide_dir)) {
 		SDL_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR, "DttR: Game Not Found", "The selected folder does not contain pcdogs.exe.", NULL
+			SDL_MESSAGEBOX_ERROR,
+			"DttR: Game Not Found",
+			"The selected folder does not contain pcdogs.exe.",
+			NULL
 		);
 		return false;
 	}
 
 	log_info("Selected directory: %s", s_browse_result);
 
-	strncpy(g_dttr_config.m_pcdogs_path, s_browse_result, sizeof(g_dttr_config.m_pcdogs_path) - 1);
+	strncpy(
+		g_dttr_config.m_pcdogs_path,
+		s_browse_result,
+		sizeof(g_dttr_config.m_pcdogs_path) - 1
+	);
 	g_dttr_config.m_pcdogs_path[sizeof(g_dttr_config.m_pcdogs_path) - 1] = '\0';
 	dttr_config_save(g_dttr_config_path, &g_dttr_config);
 

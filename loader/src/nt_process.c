@@ -94,29 +94,48 @@ typedef NTSTATUS(NTAPI *s_pfn_rtl_create_process_parameters_ex)(
 typedef NTSTATUS(NTAPI *s_pfn_rtl_destroy_process_parameters)(PVOID);
 typedef VOID(NTAPI *s_pfn_rtl_init_unicode_string)(s_unicode_string *, PCWSTR);
 
-#define S_RESOLVE(module, type, name) ((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
+#define S_RESOLVE(module, type, name)                                                    \
+	((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
 
 // Creates a suspended process with the provided shim data using NT functions.
 // This provides a portable way to override all Windows compatibility shims,
 // which lets us avoid some weird crashes (e.g., Intel iGPU crash).
 void dttr_compat_create_process(
-	const WCHAR *image_name, const char *shim_data, size_t shim_data_len, PROCESS_INFORMATION *child_info
+	const WCHAR *image_name,
+	const char *shim_data,
+	size_t shim_data_len,
+	PROCESS_INFORMATION *child_info
 ) {
-	log_debug("Spawning game process: NtCreateUserProcess (%u bytes shim data)", (unsigned)shim_data_len);
+	log_debug(
+		"Spawning game process: NtCreateUserProcess (%u bytes shim data)",
+		(unsigned)shim_data_len
+	);
 
 	HMODULE ntdll = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("ntdll.dll"));
 
-	const s_pfn_nt_create_user_process nt_create_user_process
-		= S_RESOLVE(ntdll, s_pfn_nt_create_user_process, "NtCreateUserProcess");
+	const s_pfn_nt_create_user_process nt_create_user_process = S_RESOLVE(
+		ntdll,
+		s_pfn_nt_create_user_process,
+		"NtCreateUserProcess"
+	);
 
-	const s_pfn_rtl_create_process_parameters_ex rtl_create_process_parameters_ex
-		= S_RESOLVE(ntdll, s_pfn_rtl_create_process_parameters_ex, "RtlCreateProcessParametersEx");
+	const s_pfn_rtl_create_process_parameters_ex rtl_create_process_parameters_ex = S_RESOLVE(
+		ntdll,
+		s_pfn_rtl_create_process_parameters_ex,
+		"RtlCreateProcessParametersEx"
+	);
 
-	const s_pfn_rtl_destroy_process_parameters rtl_destroy_process_parameters
-		= S_RESOLVE(ntdll, s_pfn_rtl_destroy_process_parameters, "RtlDestroyProcessParameters");
+	const s_pfn_rtl_destroy_process_parameters rtl_destroy_process_parameters = S_RESOLVE(
+		ntdll,
+		s_pfn_rtl_destroy_process_parameters,
+		"RtlDestroyProcessParameters"
+	);
 
-	const s_pfn_rtl_init_unicode_string rtl_init_unicode_string
-		= S_RESOLVE(ntdll, s_pfn_rtl_init_unicode_string, "RtlInitUnicodeString");
+	const s_pfn_rtl_init_unicode_string rtl_init_unicode_string = S_RESOLVE(
+		ntdll,
+		s_pfn_rtl_init_unicode_string,
+		"RtlInitUnicodeString"
+	);
 
 	// Prepend \??\ to form an NT path.
 	WCHAR full_path[MAX_PATH];
@@ -145,7 +164,17 @@ void dttr_compat_create_process(
 
 	PVOID params = NULL;
 	NTSTATUS status = rtl_create_process_parameters_ex(
-		&params, &us_image, NULL, &us_cwd, &us_cmd, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROC_PARAMS_NORMALIZED
+		&params,
+		&us_image,
+		NULL,
+		&us_cwd,
+		&us_cmd,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		RTL_USER_PROC_PARAMS_NORMALIZED
 	);
 	if (!NT_SUCCESS(status)) {
 		DTTR_FATAL("RtlCreateProcessParametersEx failed: 0x%08lX", (unsigned long)status);
@@ -155,10 +184,14 @@ void dttr_compat_create_process(
 	s_ps_attribute_list attr_list = {0};
 
 	attr_list.m_total_length = sizeof(attr_list);
-	attr_list.m_attributes[0]
-		= (s_ps_attribute){PS_ATTRIBUTE_IMAGE_NAME, us_image.m_length, {.m_value_ptr = us_image.m_buffer}, NULL};
-	attr_list.m_attributes[1]
-		= (s_ps_attribute){PS_ATTRIBUTE_CLIENT_ID, sizeof(client_id), {.m_value_ptr = &client_id}, NULL};
+	attr_list.m_attributes[0] = (s_ps_attribute){PS_ATTRIBUTE_IMAGE_NAME,
+												 us_image.m_length,
+												 {.m_value_ptr = us_image.m_buffer},
+												 NULL};
+	attr_list.m_attributes[1] = (s_ps_attribute){PS_ATTRIBUTE_CLIENT_ID,
+												 sizeof(client_id),
+												 {.m_value_ptr = &client_id},
+												 NULL};
 
 	s_ps_create_info create_info = {0};
 	create_info.m_size = sizeof(create_info);
@@ -186,24 +219,39 @@ void dttr_compat_create_process(
 	child_info->hThread = thread;
 	child_info->dwProcessId = (DWORD)(ULONG_PTR)client_id.m_process;
 	child_info->dwThreadId = (DWORD)(ULONG_PTR)client_id.m_thread;
-	log_debug("Process created: PID=%lu, TID=%lu", child_info->dwProcessId, child_info->dwThreadId);
+	log_debug(
+		"Process created: PID=%lu, TID=%lu",
+		child_info->dwProcessId,
+		child_info->dwThreadId
+	);
 
 	CONTEXT ctx = {.ContextFlags = CONTEXT_INTEGER};
 	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(thread, &ctx));
-	const uintptr_t peb_addr = (uintptr_t)ctx.Ebx; // EBX holds PEB in suspended 32-bit process
+
+	// EBX holds PEB in suspended 32-bit process
+	const uintptr_t peb_addr = (uintptr_t)ctx.Ebx;
 
 	const SIZE_T data_len = shim_data_len;
 
-	LPVOID remote_shim
-		= DTTR_UNWRAP_WINAPI_EXISTS(VirtualAllocEx(process, NULL, data_len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
-
-	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(process, remote_shim, shim_data, data_len, NULL));
-
-	DTTR_UNWRAP_WINAPI_NONZERO(
-		WriteProcessMemory(process, (LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET), &remote_shim, sizeof(PVOID), NULL)
+	LPVOID remote_shim = DTTR_UNWRAP_WINAPI_EXISTS(
+		VirtualAllocEx(process, NULL, data_len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)
 	);
 
+	DTTR_UNWRAP_WINAPI_NONZERO(
+		WriteProcessMemory(process, remote_shim, shim_data, data_len, NULL)
+	);
+
+	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
+		process,
+		(LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET),
+		&remote_shim,
+		sizeof(PVOID),
+		NULL
+	));
+
 	log_debug(
-		"Shim data (%u bytes) written to PEB->pShimData at 0x%08X", (unsigned)data_len, (unsigned)(uintptr_t)remote_shim
+		"Shim data (%u bytes) written to PEB->pShimData at 0x%08X",
+		(unsigned)data_len,
+		(unsigned)(uintptr_t)remote_shim
 	);
 }

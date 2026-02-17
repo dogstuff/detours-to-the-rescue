@@ -23,7 +23,15 @@ static void s_compute_exe_hash(void) {
 	char exe_path[MAX_PATH];
 	GetModuleFileNameA(g_dttr_pc_dogs_module, exe_path, sizeof(exe_path));
 
-	HANDLE file = CreateFileA(exe_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+	HANDLE file = CreateFileA(
+		exe_path,
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
 
 	if (file == INVALID_HANDLE_VALUE) {
 		log_error("Failed to open exe for hashing: %s", exe_path);
@@ -41,7 +49,12 @@ static void s_compute_exe_hash(void) {
 	XXH64_hash_t hash = XXH3_64bits(buf, bytes_read);
 	free(buf);
 
-	snprintf(g_dttr_exe_hash, sizeof(g_dttr_exe_hash), "%016llx", (unsigned long long)hash);
+	snprintf(
+		g_dttr_exe_hash,
+		sizeof(g_dttr_exe_hash),
+		"%016llx",
+		(unsigned long long)hash
+	);
 }
 
 static sds s_get_loader_dir(void) {
@@ -64,12 +77,14 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 
 	if (event->type == SDL_EVENT_KEY_DOWN && event->key.scancode == SDL_SCANCODE_F11) {
 		SDL_Window *const window = g_dttr_backend.m_window;
-		const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+		const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN)
+								   != 0;
 		SDL_SetWindowFullscreen(window, !is_fullscreen);
 		return;
 	}
 
-	if (event->type != SDL_EVENT_WINDOW_RESIZED && event->type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+	if (event->type != SDL_EVENT_WINDOW_RESIZED
+		&& event->type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 		return;
 	}
 
@@ -87,14 +102,18 @@ static void s_tick_main_loop(void) {
 	SDL_Delay(10);
 }
 
-int32_t _stdcall
-dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow) {
-	dttr_crashdump_init("dttr_sidecar");
-	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
-
+int32_t _stdcall dttr_hook_win_main_callback(
+	HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int32_t nCmdShow
+) {
 	sds loader_dir = s_get_loader_dir();
 	strncpy(g_dttr_loader_dir, loader_dir, MAX_PATH - 1);
 	g_dttr_loader_dir[MAX_PATH - 1] = '\0';
+
+	dttr_crashdump_init(g_dttr_loader_dir);
+	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
 
 	s_compute_exe_hash();
 
@@ -135,7 +154,8 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	s_interop_pcdogs_functions_init(g_dttr_pc_dogs_module);
 
 	dttr_other_hook_init(g_dttr_pc_dogs_module);
-	dttr_inputs_init(g_dttr_pc_dogs_module);
+	dttr_inputs_init();
+	dttr_inputs_hook_init(g_dttr_pc_dogs_module);
 	dttr_graphics_hook_init(g_dttr_pc_dogs_module);
 
 	g_pcdogs_main_window_handle2_set(hwnd);
@@ -171,6 +191,7 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 
 	dttr_other_hook_cleanup();
 	dttr_graphics_hook_cleanup();
+	dttr_inputs_hook_cleanup();
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();
 

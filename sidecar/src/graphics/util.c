@@ -43,7 +43,8 @@ const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 
 // Returns the union of shader formats that this build embeds
 SDL_GPUShaderFormat dttr_graphics_requested_shader_formats(void) {
-	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL;
+	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL
+		   | SDL_GPU_SHADERFORMAT_MSL;
 }
 
 // Picks the best supported shader format from an availability bitmask
@@ -78,7 +79,10 @@ SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver) {
 }
 
 // Selects a driver-preferred shader format, then falls back to generic selection
-SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(const char *driver, SDL_GPUShaderFormat formats) {
+SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
+	const char *driver,
+	SDL_GPUShaderFormat formats
+) {
 	const SDL_GPUShaderFormat preferred = dttr_graphics_shader_format_for_driver(driver);
 
 	if ((preferred != SDL_GPU_SHADERFORMAT_INVALID) && (formats & preferred))
