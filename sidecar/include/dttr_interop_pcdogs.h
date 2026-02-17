@@ -158,6 +158,12 @@ static void s_interop_pcdogs_globals_init(HMODULE mod) {
 	g_pcdogs_rendering_enabled_init(mod);
 	g_pcdogs_should_quit_init(mod);
 	g_pcdogs_directory_init(mod);
+
+	g_pcdogs_level_asset_0_init(mod);
+	g_pcdogs_level_asset_1_init(mod);
+	g_pcdogs_level_asset_2_init(mod);
+	g_pcdogs_level_asset_3_init(mod);
+	g_pcdogs_level_asset_4_init(mod);
 }
 
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
@@ -294,12 +300,6 @@ static void s_interop_pcdogs_functions_init(DTTR_GameModule mod) {
 	pcdogs_reset_input_and_state_init(mod);
 	pcdogs_take_screenshot_init(mod);
 	pcdogs_malloc_init(mod);
-
-	g_pcdogs_level_asset_0_init(mod);
-	g_pcdogs_level_asset_1_init(mod);
-	g_pcdogs_level_asset_2_init(mod);
-	g_pcdogs_level_asset_3_init(mod);
-	g_pcdogs_level_asset_4_init(mod);
 }
 
 #endif // DTTR_GAME_FUNCTIONS_H
