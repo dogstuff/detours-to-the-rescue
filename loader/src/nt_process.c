@@ -20,21 +20,21 @@ typedef struct {
 	USHORT m_length;
 	USHORT m_max_length;
 	PWSTR m_buffer;
-} s_unicode_string;
+} S_UnicodeString;
 
 typedef struct {
 	ULONG m_length;
 	HANDLE m_root_directory;
-	s_unicode_string *m_object_name;
+	S_UnicodeString *m_object_name;
 	ULONG m_attributes;
 	PVOID m_security_descriptor;
 	PVOID m_security_qos;
-} s_object_attributes;
+} S_ObjectAttributes;
 
 typedef struct {
 	HANDLE m_process;
 	HANDLE m_thread;
-} s_client_id;
+} S_ClientId;
 
 typedef struct {
 	ULONG m_attribute;
@@ -44,12 +44,12 @@ typedef struct {
 		PVOID m_value_ptr;
 	};
 	PSIZE_T m_return_length;
-} s_ps_attribute;
+} S_Attribute;
 
 typedef struct {
 	SIZE_T m_total_length;
-	s_ps_attribute m_attributes[2];
-} s_ps_attribute_list;
+	S_Attribute m_attributes[2];
+} S_AttributeList;
 
 typedef struct {
 	SIZE_T m_size;
@@ -61,38 +61,38 @@ typedef struct {
 		} m_init_state;
 		UCHAR m_reserved[64]; // Covers largest kernel output union member
 	};
-} s_ps_create_info;
+} S_CreateInfo;
 
-typedef NTSTATUS(NTAPI *s_pfn_nt_create_user_process)(
+typedef NTSTATUS(NTAPI *S_NtCreateUserProcess)(
 	PHANDLE,
 	PHANDLE,
 	ACCESS_MASK,
 	ACCESS_MASK,
-	s_object_attributes *,
-	s_object_attributes *,
+	S_ObjectAttributes *,
+	S_ObjectAttributes *,
 	ULONG,
 	ULONG,
 	PVOID,
-	s_ps_create_info *,
-	s_ps_attribute_list *
+	S_CreateInfo *,
+	S_AttributeList *
 );
 
-typedef NTSTATUS(NTAPI *s_pfn_rtl_create_process_parameters_ex)(
+typedef NTSTATUS(NTAPI *S_RtlCreateProcessParametersEx)(
 	PVOID *,
-	s_unicode_string *,
-	s_unicode_string *,
-	s_unicode_string *,
-	s_unicode_string *,
+	S_UnicodeString *,
+	S_UnicodeString *,
+	S_UnicodeString *,
+	S_UnicodeString *,
 	PVOID,
-	s_unicode_string *,
-	s_unicode_string *,
-	s_unicode_string *,
-	s_unicode_string *,
+	S_UnicodeString *,
+	S_UnicodeString *,
+	S_UnicodeString *,
+	S_UnicodeString *,
 	ULONG
 );
 
-typedef NTSTATUS(NTAPI *s_pfn_rtl_destroy_process_parameters)(PVOID);
-typedef VOID(NTAPI *s_pfn_rtl_init_unicode_string)(s_unicode_string *, PCWSTR);
+typedef NTSTATUS(NTAPI *S_RtlDestroyProcessParameters)(PVOID);
+typedef VOID(NTAPI *S_RtlInitUnicodeString)(S_UnicodeString *, PCWSTR);
 
 #define S_RESOLVE(module, type, name)                                                    \
 	((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
@@ -113,27 +113,27 @@ void dttr_compat_create_process(
 
 	HMODULE ntdll = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("ntdll.dll"));
 
-	const s_pfn_nt_create_user_process nt_create_user_process = S_RESOLVE(
+	const S_NtCreateUserProcess nt_create_user_process = S_RESOLVE(
 		ntdll,
-		s_pfn_nt_create_user_process,
+		S_NtCreateUserProcess,
 		"NtCreateUserProcess"
 	);
 
-	const s_pfn_rtl_create_process_parameters_ex rtl_create_process_parameters_ex = S_RESOLVE(
+	const S_RtlCreateProcessParametersEx rtl_create_process_parameters_ex = S_RESOLVE(
 		ntdll,
-		s_pfn_rtl_create_process_parameters_ex,
+		S_RtlCreateProcessParametersEx,
 		"RtlCreateProcessParametersEx"
 	);
 
-	const s_pfn_rtl_destroy_process_parameters rtl_destroy_process_parameters = S_RESOLVE(
+	const S_RtlDestroyProcessParameters rtl_destroy_process_parameters = S_RESOLVE(
 		ntdll,
-		s_pfn_rtl_destroy_process_parameters,
+		S_RtlDestroyProcessParameters,
 		"RtlDestroyProcessParameters"
 	);
 
-	const s_pfn_rtl_init_unicode_string rtl_init_unicode_string = S_RESOLVE(
+	const S_RtlInitUnicodeString rtl_init_unicode_string = S_RESOLVE(
 		ntdll,
-		s_pfn_rtl_init_unicode_string,
+		S_RtlInitUnicodeString,
 		"RtlInitUnicodeString"
 	);
 
@@ -154,7 +154,7 @@ void dttr_compat_create_process(
 	if (last_sep)
 		*(last_sep + 1) = L'\0';
 
-	s_unicode_string us_image, us_cmd, us_cwd;
+	S_UnicodeString us_image, us_cmd, us_cwd;
 	rtl_init_unicode_string(&us_image, nt_path);
 	rtl_init_unicode_string(&us_cmd, image_name);
 	rtl_init_unicode_string(&us_cwd, cwd);
@@ -180,20 +180,20 @@ void dttr_compat_create_process(
 		DTTR_FATAL("RtlCreateProcessParametersEx failed: 0x%08lX", (unsigned long)status);
 	}
 
-	s_client_id client_id = {0};
-	s_ps_attribute_list attr_list = {0};
+	S_ClientId client_id = {0};
+	S_AttributeList attr_list = {0};
 
 	attr_list.m_total_length = sizeof(attr_list);
-	attr_list.m_attributes[0] = (s_ps_attribute){PS_ATTRIBUTE_IMAGE_NAME,
-												 us_image.m_length,
-												 {.m_value_ptr = us_image.m_buffer},
-												 NULL};
-	attr_list.m_attributes[1] = (s_ps_attribute){PS_ATTRIBUTE_CLIENT_ID,
-												 sizeof(client_id),
-												 {.m_value_ptr = &client_id},
-												 NULL};
+	attr_list.m_attributes[0] = (S_Attribute){PS_ATTRIBUTE_IMAGE_NAME,
+											  us_image.m_length,
+											  {.m_value_ptr = us_image.m_buffer},
+											  NULL};
+	attr_list.m_attributes[1] = (S_Attribute){PS_ATTRIBUTE_CLIENT_ID,
+											  sizeof(client_id),
+											  {.m_value_ptr = &client_id},
+											  NULL};
 
-	s_ps_create_info create_info = {0};
+	S_CreateInfo create_info = {0};
 	create_info.m_size = sizeof(create_info);
 
 	HANDLE process = NULL, thread = NULL;

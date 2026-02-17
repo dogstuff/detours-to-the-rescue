@@ -29,49 +29,49 @@
 
 #define SDB_MAX_EXES 16
 #define SDB_MAX_LAYERS 8
-#define SDB_MAX_SDBS 16
+#define SDB_MAX_SDB_S 16
 #define HID_DOS_PATHS 0x00000001
 #define HID_DATABASE_FULLPATH 0x00000002
 
-typedef PVOID s_pdb;
-typedef PVOID s_hsdb;
-typedef DWORD s_tagref;
+typedef PVOID S_Pdb;
+typedef PVOID S_Hsdb;
+typedef DWORD S_Tagref;
 
-typedef s_pdb(WINAPI *s_pfn_sdb_create_database)(LPCWSTR, int);
-typedef void(WINAPI *s_pfn_sdb_close_database_write)(s_pdb);
-typedef DWORD(WINAPI *s_pfn_sdb_begin_write_list_tag)(s_pdb, DWORD);
-typedef BOOL(WINAPI *s_pfn_sdb_end_write_list_tag)(s_pdb, DWORD);
-typedef BOOL(WINAPI *s_pfn_sdb_write_string_tag)(s_pdb, DWORD, LPCWSTR);
-typedef BOOL(WINAPI *s_pfn_sdb_write_dword_tag)(s_pdb, DWORD, DWORD);
-typedef BOOL(WINAPI *s_pfn_sdb_write_binary_tag)(s_pdb, DWORD, BYTE *, DWORD);
+typedef S_Pdb(WINAPI *S_SDB_CreateDatabase)(LPCWSTR, int);
+typedef void(WINAPI *S_SDB_CloseDatabaseWrite)(S_Pdb);
+typedef DWORD(WINAPI *S_SDB_BeginWriteListTag)(S_Pdb, DWORD);
+typedef BOOL(WINAPI *S_SDB_EndWriteListTag)(S_Pdb, DWORD);
+typedef BOOL(WINAPI *S_SDB_WriteStringTag)(S_Pdb, DWORD, LPCWSTR);
+typedef BOOL(WINAPI *S_SDB_WriteDwordTag)(S_Pdb, DWORD, DWORD);
+typedef BOOL(WINAPI *S_SDB_WriteBinaryTag)(S_Pdb, DWORD, BYTE *, DWORD);
 
 typedef struct {
-	s_tagref m_exes[SDB_MAX_EXES];
+	S_Tagref m_exes[SDB_MAX_EXES];
 	DWORD m_exe_flags[SDB_MAX_EXES];
-	s_tagref m_layers[SDB_MAX_LAYERS];
+	S_Tagref m_layers[SDB_MAX_LAYERS];
 	DWORD m_layer_flags;
-	s_tagref m_apphelp;
+	S_Tagref m_apphelp;
 	DWORD m_exe_count;
 	DWORD m_layer_count;
 	GUID m_guid_id;
 	DWORD m_flags;
 	DWORD m_custom_sdb_map;
-	GUID m_guid_db[SDB_MAX_SDBS];
-} s_sdb_query_result;
+	GUID m_guid_db[SDB_MAX_SDB_S];
+} S_SDB_QueryResult;
 
-typedef s_hsdb(WINAPI *s_pfn_sdb_init_database)(DWORD, LPCWSTR);
-typedef void(WINAPI *s_pfn_sdb_release_database)(s_hsdb);
-typedef BOOL(WINAPI *s_pfn_sdb_get_matching_exe)(
-	s_hsdb,
+typedef S_Hsdb(WINAPI *S_SDB_InitDatabase)(DWORD, LPCWSTR);
+typedef void(WINAPI *S_SDB_ReleaseDatabase)(S_Hsdb);
+typedef BOOL(WINAPI *S_SDB_GetMatchingExe)(
+	S_Hsdb,
 	LPCWSTR,
 	LPCWSTR,
 	LPCWSTR,
 	DWORD,
-	s_sdb_query_result *
+	S_SDB_QueryResult *
 );
-typedef BOOL(WINAPI *s_pfn_sdb_pack_app_compat_data)(
-	s_hsdb,
-	s_sdb_query_result *,
+typedef BOOL(WINAPI *S_SDB_PackAppCompatData)(
+	S_Hsdb,
+	S_SDB_QueryResult *,
 	PVOID *,
 	DWORD *
 );
@@ -89,40 +89,40 @@ static const BYTE s_exe_guid[16] = {
 // clang-format on
 
 static void s_generate_sdb(HMODULE apphelp, WCHAR *out_path) {
-	const s_pfn_sdb_create_database sdb_create = S_RESOLVE(
+	const S_SDB_CreateDatabase sdb_create = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_create_database,
-		"SdbCreateDatabase"
+		S_SDB_CreateDatabase,
+		"SDB_CreateDatabase"
 	);
-	const s_pfn_sdb_close_database_write sdb_close = S_RESOLVE(
+	const S_SDB_CloseDatabaseWrite sdb_close = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_close_database_write,
-		"SdbCloseDatabaseWrite"
+		S_SDB_CloseDatabaseWrite,
+		"SDB_CloseDatabaseWrite"
 	);
-	const s_pfn_sdb_begin_write_list_tag sdb_begin_list = S_RESOLVE(
+	const S_SDB_BeginWriteListTag sdb_begin_list = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_begin_write_list_tag,
-		"SdbBeginWriteListTag"
+		S_SDB_BeginWriteListTag,
+		"SDB_BeginWriteListTag"
 	);
-	const s_pfn_sdb_end_write_list_tag sdb_end_list = S_RESOLVE(
+	const S_SDB_EndWriteListTag sdb_end_list = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_end_write_list_tag,
-		"SdbEndWriteListTag"
+		S_SDB_EndWriteListTag,
+		"SDB_EndWriteListTag"
 	);
-	const s_pfn_sdb_write_string_tag sdb_string = S_RESOLVE(
+	const S_SDB_WriteStringTag sdb_string = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_write_string_tag,
-		"SdbWriteStringTag"
+		S_SDB_WriteStringTag,
+		"SDB_WriteStringTag"
 	);
-	const s_pfn_sdb_write_dword_tag sdb_dword = S_RESOLVE(
+	const S_SDB_WriteDwordTag sdb_dword = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_write_dword_tag,
-		"SdbWriteDWORDTag"
+		S_SDB_WriteDwordTag,
+		"SDB_WriteDWORDTag"
 	);
-	const s_pfn_sdb_write_binary_tag sdb_binary = S_RESOLVE(
+	const S_SDB_WriteBinaryTag sdb_binary = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_write_binary_tag,
-		"SdbWriteBinaryTag"
+		S_SDB_WriteBinaryTag,
+		"SDB_WriteBinaryTag"
 	);
 
 	WCHAR tmp_dir[MAX_PATH];
@@ -130,13 +130,13 @@ static void s_generate_sdb(HMODULE apphelp, WCHAR *out_path) {
 
 	DTTR_UNWRAP_WINAPI_NONZERO(GetTempFileNameW(tmp_dir, L"sdb", 0, out_path));
 
-	// GetTempFileNameW creates the file, so remove it before SdbCreateDatabase recreates
+	// GetTempFileNameW creates the file, so remove it before SDB_CreateDatabase recreates
 	// it.
 	DeleteFileW(out_path);
 
-	s_pdb pdb = sdb_create(out_path, 0);
+	S_Pdb pdb = sdb_create(out_path, 0);
 	if (!pdb) {
-		DTTR_FATAL("SdbCreateDatabase failed");
+		DTTR_FATAL("SDB_CreateDatabase failed");
 	}
 
 	const DWORD ti_db = sdb_begin_list(pdb, SDB_TAG_DATABASE);
@@ -181,33 +181,33 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 	WCHAR sdb_path[MAX_PATH];
 	s_generate_sdb(apphelp, sdb_path);
 
-	const s_pfn_sdb_init_database sdb_init = S_RESOLVE(
+	const S_SDB_InitDatabase sdb_init = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_init_database,
-		"SdbInitDatabase"
+		S_SDB_InitDatabase,
+		"SDB_InitDatabase"
 	);
 
-	const s_pfn_sdb_release_database sdb_release = S_RESOLVE(
+	const S_SDB_ReleaseDatabase sdb_release = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_release_database,
-		"SdbReleaseDatabase"
+		S_SDB_ReleaseDatabase,
+		"SDB_ReleaseDatabase"
 	);
 
-	const s_pfn_sdb_get_matching_exe sdb_match = S_RESOLVE(
+	const S_SDB_GetMatchingExe sdb_match = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_get_matching_exe,
-		"SdbGetMatchingExe"
+		S_SDB_GetMatchingExe,
+		"SDB_GetMatchingExe"
 	);
 
-	const s_pfn_sdb_pack_app_compat_data sdb_pack = S_RESOLVE(
+	const S_SDB_PackAppCompatData sdb_pack = S_RESOLVE(
 		apphelp,
-		s_pfn_sdb_pack_app_compat_data,
-		"SdbPackAppCompatData"
+		S_SDB_PackAppCompatData,
+		"SDB_PackAppCompatData"
 	);
 
-	s_hsdb hsdb = sdb_init(HID_DOS_PATHS | HID_DATABASE_FULLPATH, sdb_path);
+	S_Hsdb hsdb = sdb_init(HID_DOS_PATHS | HID_DATABASE_FULLPATH, sdb_path);
 	if (!hsdb) {
-		DTTR_FATAL("SdbInitDatabase failed for %ls", sdb_path);
+		DTTR_FATAL("SDB_InitDatabase failed for %ls", sdb_path);
 	}
 
 	WCHAR full_exe_path[MAX_PATH];
@@ -215,9 +215,9 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 		GetFullPathNameW(image_name, MAX_PATH, full_exe_path, NULL)
 	);
 
-	s_sdb_query_result query = {0};
+	S_SDB_QueryResult query = {0};
 	if (!sdb_match(hsdb, full_exe_path, NULL, NULL, 0, &query)) {
-		DTTR_FATAL("SdbGetMatchingExe found no matches for %ls", full_exe_path);
+		DTTR_FATAL("SDB_GetMatchingExe found no matches for %ls", full_exe_path);
 	}
 
 	log_debug(
@@ -229,7 +229,7 @@ sds dttr_compat_build_shim_data(const WCHAR *image_name) {
 	PVOID packed = NULL;
 	DWORD packed_size = 0;
 	if (!sdb_pack(hsdb, &query, &packed, &packed_size)) {
-		DTTR_FATAL("SdbPackAppCompatData failed");
+		DTTR_FATAL("SDB_PackAppCompatData failed");
 	}
 
 	sds result = sdsnewlen(packed, packed_size);
