@@ -9,11 +9,11 @@
 
   // The minimum log level to output.
   // Choices: trace, debug, info, warn, error, fatal
-  "log_level": "info",
+  "log_level": "$<IF:$<CONFIG:Debug>,debug,info>",
 
   // The type of minidump to write on crash.
   // Choices: normal, detailed
-  "minidump_type": "normal",
+  "minidump_type": "$<IF:$<CONFIG:Debug>,detailed,normal>",
 
   "graphics": {
     // The GPU backend to use.

@@ -12,3 +12,7 @@ add_library(common STATIC
 target_include_directories(common PUBLIC include)
 target_link_libraries(common PUBLIC PkgConfig::SDL3)
 target_link_libraries(common PRIVATE sds klib log dbghelp yyjson)
+target_compile_definitions(common PRIVATE
+    DTTR_DEFAULT_LOG_LEVEL=$<IF:$<CONFIG:Debug>,LOG_DEBUG,LOG_INFO>
+    DTTR_DEFAULT_MINIDUMP_TYPE=$<IF:$<CONFIG:Debug>,DTTR_MINIDUMP_DETAILED,DTTR_MINIDUMP_NORMAL>
+)

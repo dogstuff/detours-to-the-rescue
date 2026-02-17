@@ -19,7 +19,10 @@ add_subdirectory(sidecar)
 add_subdirectory(loader)
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>")
-set(DTTR_DEFAULT_CONFIG_FILE "${CMAKE_SOURCE_DIR}/common/dttr.jsonc")
+file(GENERATE
+    OUTPUT "${DTTR_DIST_DIR}/dttr.jsonc"
+    INPUT "${CMAKE_SOURCE_DIR}/common/dttr.jsonc"
+)
 
 add_custom_target(dttr_dist ALL
     DEPENDS dttr dttr_sidecar
@@ -29,6 +32,5 @@ add_custom_target(dttr_dist ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll" "${DTTR_DIST_DIR}/SDL3.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/libvlc.dll" "${DTTR_DIST_DIR}/libvlc.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/libvlccore.dll" "${DTTR_DIST_DIR}/libvlccore.dll"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${DTTR_DEFAULT_CONFIG_FILE}" "${DTTR_DIST_DIR}/dttr.jsonc"
     COMMENT "Bundling runtime artifacts into ${DTTR_DIST_DIR}"
 )
