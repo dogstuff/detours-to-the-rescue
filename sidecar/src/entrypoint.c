@@ -161,7 +161,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	g_pcdogs_main_window_handle2_set(hwnd);
 	g_pcdogs_main_window_handle_set(hwnd);
 
-	pcdogs_find_and_load_game_pak_file();
+	pcdogs_find_and_load_game_pkg_file();
 	pcdogs_initialize_game_engine();
 	pcdogs_initialize_graphics_subsystem(hwnd, NULL);
 	pcdogs_initialize_capabilities();

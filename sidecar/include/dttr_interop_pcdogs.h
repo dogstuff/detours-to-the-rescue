@@ -167,7 +167,7 @@ static void s_interop_pcdogs_globals_init(HMODULE mod) {
 }
 
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
-	pcdogs_find_and_load_game_pak_file,
+	pcdogs_find_and_load_game_pkg_file,
 	__cdecl,
 	"\x81\xEC\x10\x01\x00\x00\x57",
 	"xxxxxxx",
@@ -289,7 +289,7 @@ DTTR_INTEROP_WRAP_CACHED_CC_SIG(
 )
 
 static void s_interop_pcdogs_functions_init(DTTR_GameModule mod) {
-	pcdogs_find_and_load_game_pak_file_init(mod);
+	pcdogs_find_and_load_game_pkg_file_init(mod);
 	pcdogs_initialize_game_engine_init(mod);
 	pcdogs_initialize_graphics_subsystem_init(mod);
 	pcdogs_initialize_capabilities_init(mod);
