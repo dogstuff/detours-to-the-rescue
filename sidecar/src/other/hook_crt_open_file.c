@@ -1,4 +1,4 @@
-#include "dttr_hooks.h"
+#include "dttr_hooks_other.h"
 #include "dttr_sidecar.h"
 #include "log.h"
 #include "sds.h"
@@ -44,7 +44,12 @@ static void s_ensure_save_dir(void) {
 	CreateDirectoryA(dir, NULL);
 }
 
-static const char *s_redirect_path(const char *path, char *buf, size_t buf_size, const char *mode) {
+static const char *s_redirect_path(
+	const char *path,
+	char *buf,
+	size_t buf_size,
+	const char *mode
+) {
 	if (!g_dttr_config.m_saves_path[0])
 		return path;
 
@@ -64,37 +69,36 @@ static const char *s_redirect_path(const char *path, char *buf, size_t buf_size,
 	return buf;
 }
 
-void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
-	char redirected[MAX_PATH];
-	path = s_redirect_path(path, redirected, sizeof(redirected), mode);
+static void *s_open_file_fallback(const char *path, char *mode) {
+	sds msg = sdscatprintf(
+		sdsempty(),
+		"Failed to open \"%s\" (mode \"%s\"). This file will not be written.\n\n%s",
+		path,
+		mode,
+		strerror(errno)
+	);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
+	sdsfree(msg);
 
-	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
-	if (result)
-		return result;
+	return dttr_crt_open_file_with_mode("NUL", mode, 0x40);
+}
 
-	// The game handles missing files and read-only failures correctly.
-	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
-		log_error("File \"%s\" does not exist; passing to game.", path);
-		return result;
-	}
-
-	// Windows gives EBADF instead of EACCES when writing to a read-only file.
-	const bool wants_write = (mode && strchr(mode, 'w'));
-	const bool is_perm_error = (errno == EACCES || errno == EPERM || (errno == EBADF && wants_write));
-
-	if (!is_perm_error) {
-		log_error("Failed to open \"%s\" (mode \"%s\"): %s", path, mode, strerror(errno));
-		goto fallback;
-	}
-
-	log_error("Permission error opening \"%s\" (mode \"%s\"): %s", path, mode, strerror(errno));
-
+static void *s_try_fix_permissions(const char *path, char *mode) {
+	const bool wants_write = mode && strchr(mode, 'w');
 	const int perms = (strchr(mode, 'r') ? _S_IREAD : 0) | (wants_write ? _S_IWRITE : 0);
+
+	log_error(
+		"Permission error opening \"%s\" (mode \"%s\"): %s",
+		path,
+		mode,
+		strerror(errno)
+	);
 
 	sds prompt = sdscatprintf(
 		sdsempty(),
 		"Failed to open file \"%s\" (mode \"%s\"): %s\n\n"
-		"This is typically the result of a permissions issue, especially if you're using Wine.\n\n"
+		"This is typically the result of a permissions issue, especially if you're using "
+		"Wine.\n\n"
 		"Try granting permissions 0o%03o?",
 		path,
 		mode,
@@ -120,25 +124,50 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 	SDL_ShowMessageBox(&msgbox, &button_id);
 	sdsfree(prompt);
 
-	if (button_id == 1) {
-		log_debug("chmod \"%s\" 0o%03o", path, perms);
-		chmod(path, perms);
-		result = dttr_crt_open_file_with_mode(path, mode, 0x40);
-		if (result)
-			return result;
-		log_error("chmod didn't resolve permission error for \"%s\": %s", path, strerror(errno));
-	}
+	if (button_id != 1)
+		return NULL;
 
-fallback:;
-	sds msg = sdscatprintf(
-		sdsempty(),
-		"Failed to open \"%s\" (mode \"%s\"). This file will not be written.\n\n%s",
+	log_debug("chmod \"%s\" 0o%03o", path, perms);
+	chmod(path, perms);
+
+	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
+	if (result)
+		return result;
+
+	log_error(
+		"chmod didn't resolve permission error for \"%s\": %s",
 		path,
-		mode,
 		strerror(errno)
 	);
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
-	sdsfree(msg);
+	return NULL;
+}
 
-	return dttr_crt_open_file_with_mode("NUL", mode, 0x40);
+void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
+	char redirected[MAX_PATH];
+	path = s_redirect_path(path, redirected, sizeof(redirected), mode);
+
+	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
+	if (result)
+		return result;
+
+	// The game handles missing files and read-only failures correctly.
+	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
+		log_error("File \"%s\" does not exist; passing to game.", path);
+		return result;
+	}
+
+	// Windows gives EBADF instead of EACCES when writing to a read-only file.
+	const bool wants_write = mode && strchr(mode, 'w');
+	const bool is_perm_error
+		= (errno == EACCES || errno == EPERM || (errno == EBADF && wants_write));
+
+	if (is_perm_error) {
+		result = s_try_fix_permissions(path, mode);
+		if (result)
+			return result;
+	} else {
+		log_error("Failed to open \"%s\" (mode \"%s\"): %s", path, mode, strerror(errno));
+	}
+
+	return s_open_file_fallback(path, mode);
 }

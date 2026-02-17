@@ -11,8 +11,18 @@ static const char *LOG_FILE_NAME = "dttr.log";
 static char s_config_path_buf[MAX_PATH];
 const char *g_dttr_config_path = DTTR_CONFIG_FILENAME;
 
+static void s_get_exe_dir(char *buf, size_t buf_size) {
+	GetModuleFileNameA(NULL, buf, (DWORD)buf_size);
+	char *last_sep = strrchr(buf, '\\');
+	if (last_sep) {
+		last_sep[1] = '\0';
+	}
+}
+
 int main(int argc, char *argv[]) {
-	dttr_crashdump_init("dttr_loader");
+	char exe_dir[MAX_PATH];
+	s_get_exe_dir(exe_dir, sizeof(exe_dir));
+	dttr_crashdump_init(exe_dir);
 
 	if (argc > 1) {
 		g_dttr_config_path = argv[1];

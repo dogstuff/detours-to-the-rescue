@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <windows.h>
 
-#include "dttr_hooks.h"
+#include "dttr_hooks_graphics.h"
 #include "dttr_sidecar.h"
 #include "sds.h"
 
@@ -23,7 +23,11 @@ static void s_update_window_title(const DTTR_BackendState *state) {
 
 	sdsclear(s_window_title);
 	s_window_title = sdscatprintf(
-		s_window_title, "102 Dalmatians - DttR - " DTTR_VERSION " - %s - %dx%d", driver ? driver : "unknown", w, h
+		s_window_title,
+		"102 Dalmatians - DttR - " DTTR_VERSION " - %s - %dx%d",
+		driver ? driver : "unknown",
+		w,
+		h
 	);
 	SDL_SetWindowTitle(state->m_window, s_window_title);
 }
@@ -66,14 +70,26 @@ static int s_msaa_sample_count_to_int(SDL_GPUSampleCount value) {
 
 // Selects the runtime MSAA sample count based on config and GPU support
 static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
-	const SDL_GPUSampleCount requested = s_msaa_sample_count_from_config(g_dttr_config.m_msaa_samples);
+	const SDL_GPUSampleCount requested = s_msaa_sample_count_from_config(
+		g_dttr_config.m_msaa_samples
+	);
 	if (requested == SDL_GPU_SAMPLECOUNT_1)
 		return SDL_GPU_SAMPLECOUNT_1;
 
-	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(state->m_device, state->m_window);
-	const bool color_supported = SDL_GPUTextureSupportsSampleCount(state->m_device, swapchain_fmt, requested);
-	const bool depth_supported
-		= SDL_GPUTextureSupportsSampleCount(state->m_device, SDL_GPU_TEXTUREFORMAT_D32_FLOAT, requested);
+	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(
+		state->m_device,
+		state->m_window
+	);
+	const bool color_supported = SDL_GPUTextureSupportsSampleCount(
+		state->m_device,
+		swapchain_fmt,
+		requested
+	);
+	const bool depth_supported = SDL_GPUTextureSupportsSampleCount(
+		state->m_device,
+		SDL_GPU_TEXTUREFORMAT_D32_FLOAT,
+		requested
+	);
 
 	if (color_supported && depth_supported)
 		return requested;
@@ -87,7 +103,11 @@ static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
 }
 
 // Selects the actual render target resolution from current config/state
-static void s_select_render_resolution(const DTTR_BackendState *state, int *out_width, int *out_height) {
+static void s_select_render_resolution(
+	const DTTR_BackendState *state,
+	int *out_width,
+	int *out_height
+) {
 	int width = state->m_logical_width;
 	int height = state->m_logical_height;
 
@@ -97,7 +117,12 @@ static void s_select_render_resolution(const DTTR_BackendState *state, int *out_
 		int target_width = g_dttr_config.m_window_width;
 		int target_height = g_dttr_config.m_window_height;
 
-		if (state->m_window && SDL_GetWindowSizeInPixels(state->m_window, &window_px_width, &window_px_height)) {
+		if (state->m_window
+			&& SDL_GetWindowSizeInPixels(
+				state->m_window,
+				&window_px_width,
+				&window_px_height
+			)) {
 			if (window_px_width > target_width)
 				target_width = window_px_width;
 
@@ -140,7 +165,9 @@ static void s_refresh_render_resolution(DTTR_BackendState *state) {
 
 // Attempts to create and validate an SDL GPU device for one backend driver name
 static bool s_try_create_device_for_driver(
-	DTTR_BackendState *state, const SDL_GPUShaderFormat requested_formats, const char *driver
+	DTTR_BackendState *state,
+	const SDL_GPUShaderFormat requested_formats,
+	const char *driver
 ) {
 	state->m_device = SDL_CreateGPUDevice(requested_formats, false, driver);
 
@@ -156,7 +183,11 @@ static bool s_try_create_device_for_driver(
 	}
 
 	if (!SDL_ClaimWindowForGPUDevice(state->m_device, state->m_window)) {
-		log_warn("Failed to claim window for SDL GPU driver '%s': %s", driver ? driver : "default", SDL_GetError());
+		log_warn(
+			"Failed to claim window for SDL GPU driver '%s': %s",
+			driver ? driver : "default",
+			SDL_GetError()
+		);
 		SDL_DestroyGPUDevice(state->m_device);
 		state->m_device = NULL;
 		return false;
@@ -164,7 +195,10 @@ static bool s_try_create_device_for_driver(
 
 	const SDL_GPUShaderFormat available_formats = SDL_GetGPUShaderFormats(state->m_device);
 	const char *active_driver = SDL_GetGPUDeviceDriver(state->m_device);
-	state->m_shader_format = dttr_graphics_select_shader_format_for_driver(active_driver, available_formats);
+	state->m_shader_format = dttr_graphics_select_shader_format_for_driver(
+		active_driver,
+		available_formats
+	);
 
 	if (state->m_shader_format != SDL_GPU_SHADERFORMAT_INVALID)
 		return true;
@@ -198,7 +232,9 @@ static const char *s_graphics_api_driver_name(DTTR_GraphicsApi api) {
 // Tries supported backend drivers in order until one produces a usable GPU device
 static bool s_create_device(DTTR_BackendState *state) {
 	const SDL_GPUShaderFormat requested_formats = dttr_graphics_requested_shader_formats();
-	const char *const requested_driver = s_graphics_api_driver_name(g_dttr_config.m_graphics_api);
+	const char *const requested_driver = s_graphics_api_driver_name(
+		g_dttr_config.m_graphics_api
+	);
 
 	if (requested_driver) {
 		if (s_try_create_device_for_driver(state, requested_formats, requested_driver))
@@ -236,7 +272,9 @@ HWND dttr_graphics_init(void) {
 
 	if (state->m_initialized && state->m_window) {
 		const SDL_PropertiesID props = SDL_GetWindowProperties(state->m_window);
-		return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+		return (
+			HWND
+		)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 	}
 
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
@@ -257,8 +295,12 @@ HWND dttr_graphics_init(void) {
 	state->m_logical_height = WINDOW_HEIGHT;
 	s_select_render_resolution(state, &state->m_width, &state->m_height);
 
-	state->m_window
-		= SDL_CreateWindow("102 Dalmatians", initial_window_width, initial_window_height, SDL_WINDOW_RESIZABLE);
+	state->m_window = SDL_CreateWindow(
+		"102 Dalmatians",
+		initial_window_width,
+		initial_window_height,
+		SDL_WINDOW_RESIZABLE
+	);
 
 	if (!state->m_window) {
 		log_error("Window creation failed: %s", SDL_GetError());

@@ -26,16 +26,25 @@ static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excep
 	sds filename = dttr_crashdump_write(process, pid, tid, &ptrs);
 
 	if (filename) {
-		DTTR_ERROR("Game crashed (exception 0x%08lX). Crash dump written to %s.", exception_code, filename);
+		DTTR_ERROR(
+			"Game crashed (exception 0x%08lX). Crash dump written to %s.",
+			exception_code,
+			filename
+		);
 		sdsfree(filename);
 	} else {
-		DTTR_ERROR("Game crashed (exception 0x%08lX). Failed to write crash dump.", exception_code);
+		DTTR_ERROR(
+			"Game crashed (exception 0x%08lX). Failed to write crash dump.",
+			exception_code
+		);
 	}
 }
 
 void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	if (!DebugActiveProcess(child_info->dwProcessId)) {
-		log_warn("Could not attach debugger to child process; skipping early crash detection");
+		log_warn(
+			"Could not attach debugger to child process; skipping early crash detection"
+		);
 		return;
 	}
 
@@ -51,15 +60,25 @@ static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) 
 	char buf[sizeof(WATCHDOG_SENTINEL)];
 	SIZE_T bytes_read = 0;
 
-	if (!ReadProcessMemory(process, info->lpDebugStringData, buf, sizeof(buf), &bytes_read)) {
+	if (!ReadProcessMemory(
+			process,
+			info->lpDebugStringData,
+			buf,
+			sizeof(buf),
+			&bytes_read
+		)) {
 		return false;
 	}
 
-	return bytes_read >= sizeof(WATCHDOG_SENTINEL) && memcmp(buf, WATCHDOG_SENTINEL, sizeof(WATCHDOG_SENTINEL)) == 0;
+	return bytes_read >= sizeof(WATCHDOG_SENTINEL)
+		   && memcmp(buf, WATCHDOG_SENTINEL, sizeof(WATCHDOG_SENTINEL)) == 0;
 }
 
 void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
-	log_debug("Watching for early crash or ready sentinel (timeout=%dms)", WATCHDOG_TIMEOUT_MS);
+	log_debug(
+		"Watching for early crash or ready sentinel (timeout=%dms)",
+		WATCHDOG_TIMEOUT_MS
+	);
 
 	DEBUG_EVENT evt;
 	DWORD remaining = WATCHDOG_TIMEOUT_MS;
@@ -79,7 +98,12 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 			const DWORD code = evt.u.Exception.ExceptionRecord.ExceptionCode;
 
 			if (!evt.u.Exception.dwFirstChance) {
-				s_write_child_dump(child_info->hProcess, child_info->dwProcessId, evt.dwThreadId, code);
+				s_write_child_dump(
+					child_info->hProcess,
+					child_info->dwProcessId,
+					evt.dwThreadId,
+					code
+				);
 				done = true;
 			} else if (code != EXCEPTION_BREAKPOINT) {
 				continue_status = DBG_EXCEPTION_NOT_HANDLED;
