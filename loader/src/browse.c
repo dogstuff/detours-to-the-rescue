@@ -98,20 +98,18 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 	return true;
 }
 
-void dttr_loader_resolve_exe_path(WCHAR *out, const char *configured_dir) {
-	if (configured_dir && configured_dir[0]) {
-		WCHAR wide_dir[MAX_PATH];
-		MultiByteToWideChar(CP_UTF8, 0, configured_dir, -1, wide_dir, MAX_PATH);
-
-		if (s_try_dir(out, wide_dir)) {
-			log_info("Using configured PCDogs path: %s", configured_dir);
-			return;
-		}
+bool dttr_loader_resolve_exe_path(WCHAR *out, const char *configured_dir) {
+	if (!configured_dir || !configured_dir[0]) {
+		return s_prompt_browse_for_dir(out);
 	}
 
-	if (s_prompt_browse_for_dir(out)) {
-		return;
+	WCHAR wide_dir[MAX_PATH];
+	MultiByteToWideChar(CP_UTF8, 0, configured_dir, -1, wide_dir, MAX_PATH);
+
+	if (s_try_dir(out, wide_dir)) {
+		log_info("Using configured PCDogs path: %s", configured_dir);
+		return true;
 	}
 
-	wcscpy(out, PCDOGS_EXE_NAME);
+	return s_prompt_browse_for_dir(out);
 }
