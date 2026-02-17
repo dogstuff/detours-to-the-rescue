@@ -53,6 +53,7 @@ static const DTTR_Config s_default_config = {
 	.m_generate_texture_mipmaps = true,
 	.m_fullscreen = false,
 	.m_gamepad_enabled = true,
+	.m_gamepad_index = 0,
 	DTTR_GAMEPAD_MAPPING_DEFAULTS,
 	DTTR_GAMEPAD_AXIS_DEFAULTS,
 };

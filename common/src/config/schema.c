@@ -200,6 +200,17 @@ bool s_config_apply_gamepad_entry(DTTR_Config *config, const char *section, cons
 		return true;
 	}
 
+	if (strcmp(key, "index") == 0) {
+		int index = 0;
+
+		if (!s_config_parse_int(value, &index)) {
+			return false;
+		}
+
+		config->m_gamepad_index = index;
+		return true;
+	}
+
 	const int axis_index = s_gamepad_axis_key_to_index(key);
 	if (axis_index >= 0) {
 		int axis = DTTR_GAMEPAD_MAPPING_NONE;

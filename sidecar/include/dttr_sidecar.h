@@ -31,6 +31,9 @@ void dttr_inputs_init(void);
 /// Installs input hooks
 void dttr_inputs_hook_init(HMODULE module);
 
+/// Handles gamepad connection and disconnection events
+void dttr_inputs_handle_device_event(const SDL_Event *event);
+
 /// Sets the joystick-available flag after game systems are initialized
 void dttr_inputs_late_init(void);
 

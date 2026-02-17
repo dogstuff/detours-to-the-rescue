@@ -88,6 +88,7 @@ typedef struct {
 	bool m_generate_texture_mipmaps;
 	bool m_fullscreen;
 	bool m_gamepad_enabled;
+	int m_gamepad_index;
 	int m_gamepad_mappings[DTTR_GAMEPAD_MAPPING_COUNT];
 	int m_gamepad_axes[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 	int m_gamepad_axis_deadzone[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];

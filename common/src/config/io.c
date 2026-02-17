@@ -560,7 +560,7 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 	}
 
 	const int schema_count = s_config_schema_count();
-	const int max_r = schema_count + 1 + S_BUTTON_SLOTS_COUNT + DTTR_GAMEPAD_AXIS_MAPPING_COUNT * 2;
+	const int max_r = schema_count + 2 + S_BUTTON_SLOTS_COUNT + DTTR_GAMEPAD_AXIS_MAPPING_COUNT * 2;
 	S_Replacement *const replacements = calloc((size_t)max_r, sizeof(S_Replacement));
 	int n = 0;
 
@@ -591,6 +591,14 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 		const char *path[] = {"gamepad", "enabled"};
 		s_try_replace(replacements, &n, text, sdslen(text), path, 2,
 					  sdsnew(s_config_format_bool(config->m_gamepad_enabled)));
+	}
+
+	// Gamepad: index
+	{
+		const char *path[] = {"gamepad", "index"};
+		char buf[32];
+		s_config_format_int(config->m_gamepad_index, buf, sizeof(buf));
+		s_try_replace(replacements, &n, text, sdslen(text), path, 2, sdsnew(buf));
 	}
 
 	// Gamepad: axis mappings

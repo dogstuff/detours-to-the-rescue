@@ -75,6 +75,12 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 		return;
 	}
 
+	if (event->type == SDL_EVENT_GAMEPAD_ADDED
+		|| event->type == SDL_EVENT_GAMEPAD_REMOVED) {
+		dttr_inputs_handle_device_event(event);
+		return;
+	}
+
 	if (event->type == SDL_EVENT_KEY_DOWN && event->key.scancode == SDL_SCANCODE_F11) {
 		SDL_Window *const window = g_dttr_backend.m_window;
 		const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN)
