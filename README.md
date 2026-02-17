@@ -29,8 +29,6 @@ it aims to modify as little of the original game logic as possible.
 
 The generated internal documentation for this project can be found [here](https://dogstuff.gitlab.io/detours-to-the-rescue/).
 
-**NOTE: This project currently only supports the English version of the game. Support for other languages will be added soon.**
-
 ---
 
 ## Getting started
