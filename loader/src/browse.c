@@ -83,7 +83,7 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 
 	strncpy(g_dttr_config.m_pcdogs_path, s_browse_result, sizeof(g_dttr_config.m_pcdogs_path) - 1);
 	g_dttr_config.m_pcdogs_path[sizeof(g_dttr_config.m_pcdogs_path) - 1] = '\0';
-	dttr_config_save(DTTR_CONFIG_FILENAME, &g_dttr_config);
+	dttr_config_save(g_dttr_config_path, &g_dttr_config);
 
 	return true;
 }

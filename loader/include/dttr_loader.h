@@ -4,6 +4,9 @@
 #include <sds.h>
 #include <windows.h>
 
+/// Stores the path to the target configuration file.
+extern const char *g_dttr_config_path;
+
 void dttr_compat_create_process(
 	const WCHAR *image_name, const char *shim_data, size_t shim_data_len, PROCESS_INFORMATION *child_info
 );

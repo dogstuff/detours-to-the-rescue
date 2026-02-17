@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <windows.h>
 
 #include "dttr_crashdump.h"
@@ -98,8 +99,10 @@ dttr_hook_win_main_callback(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR 
 	s_compute_exe_hash();
 
 	sds log_path = sdscat(sdsdup(loader_dir), "dttr.log");
-	sds config_path = sdscat(sdsdup(loader_dir), DTTR_CONFIG_FILENAME);
 	sdsfree(loader_dir);
+
+	const char *config_env = getenv("DTTR_CONFIG_PATH");
+	sds config_path = sdsnew(config_env ? config_env : DTTR_CONFIG_FILENAME);
 
 	FILE *const log_file = fopen(log_path, "a+");
 	if (!log_file) {
