@@ -38,10 +38,12 @@ typedef enum {
 	DTTR_GRAPHICS_API_METAL = 3,
 } DTTR_GraphicsApi;
 
-#define DTTR_GAMEPAD_MAPPING_COUNT 19
 #define DTTR_GAMEPAD_MAPPING_NONE (-1)
-#define DTTR_GAMEPAD_MAPPING_TRIGGER_BASE 0x100
 #define DTTR_GAMEPAD_TRIGGER_THRESHOLD 300
+
+#define DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT (SDL_GAMEPAD_BUTTON_COUNT)
+#define DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT (SDL_GAMEPAD_BUTTON_COUNT + 1)
+#define DTTR_GAMEPAD_SOURCE_COUNT (SDL_GAMEPAD_BUTTON_COUNT + 2)
 
 #define DTTR_GAMEPAD_AXIS_MAPPING_COUNT 3
 #define DTTR_GAMEPAD_AXIS_IDX_STICK_X 0
@@ -89,7 +91,7 @@ typedef struct {
 	bool m_fullscreen;
 	bool m_gamepad_enabled;
 	int m_gamepad_index;
-	int m_gamepad_mappings[DTTR_GAMEPAD_MAPPING_COUNT];
+	int m_gamepad_button_map[DTTR_GAMEPAD_SOURCE_COUNT];
 	int m_gamepad_axes[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 	int m_gamepad_axis_deadzone[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 } DTTR_Config;

@@ -74,37 +74,42 @@
     "deadzone_stick_y": 700,
     "deadzone_camera_rz": 700,
 
-    // SDL gamepad to 102 Dalmatians "joystick" button mappings:
+    // SDL gamepad to PCDogs joypad mappings.
+    // Multiple SDL inputs can map to the same game action.
     //
-    // Keys: joy_up/down/left/right, joy_1 through joy_13
-    //
-    // Values: south, east, west, north, back, guide, start,
+    // Keys (SDL inputs): south, east, west, north, back, guide, start,
     //   left_stick_click, right_stick_click, left_shoulder, right_shoulder,
     //   dpad_up, dpad_down, dpad_left, dpad_right, misc1,
     //   right_paddle1, left_paddle1, right_paddle2, left_paddle2,
-    //   touchpad, left_trigger, right_trigger, none
+    //   touchpad, left_trigger, right_trigger
     //
-    // This configuration is for some bootleg Xbox 360 controller I found
-    // because I couldn't find my controller adapter.
+    // Values (PCDogs joypad):
+    //  up, down, left, right (direction overrides), pov_up, pov_down,
+    //  joy_1 through joy_13 (DInput buttons), none
     //
-    // This is just an example and can be reconfigured to match your controller.
     "buttons": {
-      "joy_up": "dpad_up",
-      "joy_down": "dpad_down",
-      "joy_left": "dpad_left",
-      "joy_right": "dpad_right",
+      // joy_1 is always used as the menu confirm button.
+      "south": "joy_1",
 
-      // joy_1 is used to confirm selections in menus.
-      "joy_1": "south",
-      // joy_2 is used to go back in menus.
-      "joy_2": "east",
-      "joy_3": "west",
-      "joy_4": "north",
-      "joy_5": "left_trigger",
-      "joy_6": "right_trigger",
+      // joy_2 is always used as the menu back button.
+      "east": "joy_2",
 
-      // joy_9 is always the start/pause button.
-      "joy_9": "start"
+      // joy_9 is always used as the start/pause button.
+      "start": "joy_9",
+
+      "west": "joy_3",
+      "north": "joy_4",
+      "left_shoulder": "joy_5",
+      "right_shoulder": "joy_6",
+      "back": "joy_7",
+
+      "dpad_up": "up",
+      "dpad_down": "down",
+      "dpad_left": "left",
+      "dpad_right": "right",
+
+      "left_trigger": "joy_5",
+      "right_trigger": "joy_6"
     }
   }
 }

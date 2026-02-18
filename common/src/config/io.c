@@ -66,50 +66,13 @@ static const char *s_yyjson_value_as_string(yyjson_val *val, char *buf, size_t b
 	return NULL;
 }
 
-static const struct {
-	const char *key;
-	int index;
-} s_button_slots[] = {
-	{"joy_up", PCDOGS_GAMEPAD_IDX_UP},
-	{"joy_down", PCDOGS_GAMEPAD_IDX_DOWN},
-	{"joy_left", PCDOGS_GAMEPAD_IDX_LEFT},
-	{"joy_right", PCDOGS_GAMEPAD_IDX_RIGHT},
-	{"joy_pov_up", PCDOGS_GAMEPAD_IDX_POV_UP},
-	{"joy_pov_down", PCDOGS_GAMEPAD_IDX_POV_DOWN},
-	{"joy_1", PCDOGS_GAMEPAD_IDX_BTN_0},
-	{"joy_2", PCDOGS_GAMEPAD_IDX_BTN_1},
-	{"joy_3", PCDOGS_GAMEPAD_IDX_BTN_2},
-	{"joy_4", PCDOGS_GAMEPAD_IDX_BTN_3},
-	{"joy_5", PCDOGS_GAMEPAD_IDX_BTN_4},
-	{"joy_6", PCDOGS_GAMEPAD_IDX_BTN_5},
-	{"joy_7", PCDOGS_GAMEPAD_IDX_BTN_6},
-	{"joy_8", PCDOGS_GAMEPAD_IDX_BTN_7},
-	{"joy_9", PCDOGS_GAMEPAD_IDX_BTN_8},
-	{"joy_10", PCDOGS_GAMEPAD_IDX_BTN_9},
-	{"joy_11", PCDOGS_GAMEPAD_IDX_BTN_10},
-	{"joy_12", PCDOGS_GAMEPAD_IDX_BTN_11},
-	{"joy_13", PCDOGS_GAMEPAD_IDX_BTN_12},
-};
-
-#define S_BUTTON_SLOTS_COUNT (int)(sizeof(s_button_slots) / sizeof(s_button_slots[0]))
-
-static int s_gamepad_button_key_to_index(const char *key) {
-	for (int i = 0; i < S_BUTTON_SLOTS_COUNT; i++) {
-		if (strcmp(key, s_button_slots[i].key) == 0) {
-			return s_button_slots[i].index;
-		}
-	}
-
-	return -1;
-}
-
 static void s_config_apply_buttons(DTTR_Config *config, yyjson_val *buttons) {
 	if (!yyjson_is_obj(buttons)) {
 		return;
 	}
 
-	for (int i = 0; i < DTTR_GAMEPAD_MAPPING_COUNT; i++) {
-		config->m_gamepad_mappings[i] = DTTR_GAMEPAD_MAPPING_NONE;
+	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
+		config->m_gamepad_button_map[i] = DTTR_GAMEPAD_MAPPING_NONE;
 	}
 
 	yyjson_obj_iter iter;
@@ -120,9 +83,9 @@ static void s_config_apply_buttons(DTTR_Config *config, yyjson_val *buttons) {
 		yyjson_val *val = yyjson_obj_iter_get_val(key);
 		const char *key_str = yyjson_get_str(key);
 
-		const int index = s_gamepad_button_key_to_index(key_str);
-		if (index < 0) {
-			s_errors_addf("gamepad.buttons.%s: unknown button slot", key_str);
+		int source = -1;
+		if (!s_config_parse_gamepad_source(key_str, &source)) {
+			s_errors_addf("gamepad.buttons.%s: unknown SDL input", key_str);
 			continue;
 		}
 
@@ -132,13 +95,13 @@ static void s_config_apply_buttons(DTTR_Config *config, yyjson_val *buttons) {
 			continue;
 		}
 
-		int button = DTTR_GAMEPAD_MAPPING_NONE;
-		if (!s_config_parse_gamepad_button(value, &button)) {
-			s_errors_addf("gamepad.buttons.%s: invalid button name \"%s\"", key_str, value);
-			return;
+		int action = DTTR_GAMEPAD_MAPPING_NONE;
+		if (!s_config_parse_game_action(value, &action)) {
+			s_errors_addf("gamepad.buttons.%s: invalid action \"%s\"", key_str, value);
+			continue;
 		}
 
-		config->m_gamepad_mappings[index] = button;
+		config->m_gamepad_button_map[source] = action;
 	}
 }
 
@@ -560,7 +523,8 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 	}
 
 	const int schema_count = s_config_schema_count();
-	const int max_r = schema_count + 2 + S_BUTTON_SLOTS_COUNT + DTTR_GAMEPAD_AXIS_MAPPING_COUNT * 2;
+	const int max_r = schema_count + 2 + DTTR_GAMEPAD_SOURCE_COUNT +
+					  DTTR_GAMEPAD_AXIS_MAPPING_COUNT * 2;
 	S_Replacement *const replacements = calloc((size_t)max_r, sizeof(S_Replacement));
 	int n = 0;
 
@@ -624,12 +588,17 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 		}
 	}
 
-	// Gamepad: button mappings
-	for (int i = 0; i < S_BUTTON_SLOTS_COUNT; i++) {
-		const char *path[] = {"gamepad", "buttons", s_button_slots[i].key};
-		const int mapping = config->m_gamepad_mappings[s_button_slots[i].index];
+	// Gamepad: button mappings (source -> action)
+	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
+		const char *source_name = s_config_format_gamepad_source(i);
+		if (!source_name) {
+			continue;
+		}
+
+		const char *path[] = {"gamepad", "buttons", source_name};
+		const int action = config->m_gamepad_button_map[i];
 		s_try_replace(replacements, &n, text, sdslen(text), path, 3,
-					  s_sds_json_quoted(s_config_format_gamepad_button(mapping)));
+					  s_sds_json_quoted(s_config_format_game_action(action)));
 	}
 
 	// Sort by descending offset and apply back-to-front

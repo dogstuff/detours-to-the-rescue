@@ -21,7 +21,6 @@ typedef struct {
 enum {
 	DTTR_DINPUT_AXIS_SCALE = 32,
 	DTTR_DINPUT_AXIS_FULL_DEFLECTION = 1000,
-	DTTR_DINPUT_BUTTON_COUNT = 13,
 };
 
 /// DirectInput sentinel for a centered/neutral POV hat switch
@@ -30,23 +29,21 @@ enum {
 /// DirectInput uses this byte value to indicate a button is pressed
 #define DINPUT_BUTTON_PRESSED 0x80
 
-/// Triggers are encoded as axis indices offset by a base value and compared against a
-/// threshold
-static bool s_is_mapping_pressed(int mapping) {
+static bool s_is_source_pressed(int source) {
 	if (!g_dttr_gamepad) {
 		return false;
 	}
 
-	if (mapping >= DTTR_GAMEPAD_MAPPING_TRIGGER_BASE) {
-		const int32_t value = SDL_GetGamepadAxis(
-								  g_dttr_gamepad,
-								  mapping - DTTR_GAMEPAD_MAPPING_TRIGGER_BASE
-							  )
-							  / DTTR_DINPUT_AXIS_SCALE;
-		return value > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
+	if (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT
+		|| source == DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT) {
+		const SDL_GamepadAxis axis = (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT)
+										 ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER
+										 : SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+		return SDL_GetGamepadAxis(g_dttr_gamepad, axis) / DTTR_DINPUT_AXIS_SCALE
+			   > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
 	}
 
-	return SDL_GetGamepadButton(g_dttr_gamepad, (SDL_GamepadButton)mapping);
+	return SDL_GetGamepadButton(g_dttr_gamepad, (SDL_GamepadButton)source);
 }
 
 static LONG s_read_axis(int axis_idx) {
@@ -61,30 +58,6 @@ static LONG s_read_axis(int axis_idx) {
 	const LONG deadzone = g_dttr_config.m_gamepad_axis_deadzone[axis_idx];
 
 	return (value > -deadzone && value < deadzone) ? 0 : value;
-}
-
-/// Slams the analog axis to full deflection when a digital direction button is held
-static void s_apply_direction_overrides(S_DIJoyState *state) {
-	static const struct {
-		int m_mapping_idx;
-		int m_sign;
-	} overrides[] = {
-		{PCDOGS_GAMEPAD_IDX_UP, -1},
-		{PCDOGS_GAMEPAD_IDX_DOWN, +1},
-		{PCDOGS_GAMEPAD_IDX_LEFT, -1},
-		{PCDOGS_GAMEPAD_IDX_RIGHT, +1},
-	};
-
-	for (int i = 0; i < (int)SDL_arraysize(overrides); i++) {
-		const int mapping = g_dttr_config.m_gamepad_mappings[overrides[i].m_mapping_idx];
-
-		if (mapping == DTTR_GAMEPAD_MAPPING_NONE || !s_is_mapping_pressed(mapping)) {
-			continue;
-		}
-
-		LONG *axis = (i < 2) ? &state->m_y : &state->m_x;
-		*axis = overrides[i].m_sign * DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
 }
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
@@ -111,14 +84,40 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	state->m_y = s_read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_Y);
 	state->m_rz = s_read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ);
 
-	s_apply_direction_overrides(state);
+	bool dir_up = false, dir_down = false;
+	bool dir_left = false, dir_right = false;
 
-	for (int i = 0; i < DTTR_DINPUT_BUTTON_COUNT; i++) {
-		const int mapping = g_dttr_config.m_gamepad_mappings[PCDOGS_GAMEPAD_IDX_BTN_0 + i];
+	for (int src = 0; src < DTTR_GAMEPAD_SOURCE_COUNT; src++) {
+		const int action = g_dttr_config.m_gamepad_button_map[src];
 
-		if (mapping != DTTR_GAMEPAD_MAPPING_NONE && s_is_mapping_pressed(mapping)) {
-			state->m_buttons[i] = DINPUT_BUTTON_PRESSED;
+		if (action == DTTR_GAMEPAD_MAPPING_NONE || !s_is_source_pressed(src)) {
+			continue;
 		}
+
+		if (action >= PCDOGS_GAMEPAD_IDX_BTN_0 && action <= PCDOGS_GAMEPAD_IDX_BTN_12) {
+			state->m_buttons[action - PCDOGS_GAMEPAD_IDX_BTN_0] = DINPUT_BUTTON_PRESSED;
+		} else if (action == PCDOGS_GAMEPAD_IDX_UP) {
+			dir_up = true;
+		} else if (action == PCDOGS_GAMEPAD_IDX_DOWN) {
+			dir_down = true;
+		} else if (action == PCDOGS_GAMEPAD_IDX_LEFT) {
+			dir_left = true;
+		} else if (action == PCDOGS_GAMEPAD_IDX_RIGHT) {
+			dir_right = true;
+		}
+	}
+
+	if (dir_up) {
+		state->m_y = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+	if (dir_down) {
+		state->m_y = +DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+	if (dir_left) {
+		state->m_x = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+	if (dir_right) {
+		state->m_x = +DTTR_DINPUT_AXIS_FULL_DEFLECTION;
 	}
 
 	return state;

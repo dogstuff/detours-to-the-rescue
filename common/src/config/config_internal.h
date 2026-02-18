@@ -33,7 +33,8 @@ bool s_config_parse_precision_mode(const char *value, DTTR_PrecisionMode *out_va
 bool s_config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value);
 bool s_config_parse_int(const char *value, int *out_value);
 bool s_config_parse_present_filter(const char *value, SDL_GPUFilter *out_value);
-bool s_config_parse_gamepad_button(const char *value, int *out_value);
+bool s_config_parse_gamepad_source(const char *value, int *out_value);
+bool s_config_parse_game_action(const char *value, int *out_value);
 bool s_config_parse_gamepad_axis(const char *value, int *out_value);
 bool s_config_parse_log_level(const char *value, int *out_value);
 bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_value);
@@ -48,7 +49,8 @@ const char *s_config_format_graphics_api(DTTR_GraphicsApi api);
 const char *s_config_format_present_filter(SDL_GPUFilter filter);
 const char *s_config_format_log_level(int level);
 const char *s_config_format_minidump_type(DTTR_MinidumpType type);
-const char *s_config_format_gamepad_button(int button);
+const char *s_config_format_gamepad_source(int source);
+const char *s_config_format_game_action(int action);
 const char *s_config_format_gamepad_axis(int axis);
 const char *s_config_format_string(const char *value);
 

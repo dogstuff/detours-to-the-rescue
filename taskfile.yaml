@@ -20,6 +20,7 @@ tasks:
       - build-asm
       - build-compat
       - build-shaders
+      - format
       - setup-build
     cmds:
       - cmake --build "{{ .BUILD_DIR }}" --config Debug
