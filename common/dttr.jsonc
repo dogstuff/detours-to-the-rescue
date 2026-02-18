@@ -5,7 +5,7 @@
   // Path for redirected game file (saves, logs) reads and writes, relative to the DttR directory.
   // Files are stored in subdirectories unique to the version of the game being run.
   // Set to null or "" to disable redirection.
-  "saves_path": "./saves",
+  "saves_path": "saves",
 
   // The minimum log level to output.
   // Choices: trace, debug, info, warn, error, fatal
