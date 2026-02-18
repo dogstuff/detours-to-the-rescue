@@ -139,11 +139,13 @@ void dttr_movies_tick(void) {
 	dttr_graphics_present_video_frame_bgra(s_buffer, s_buf_w, s_buf_h, stride);
 
 	const mpv_event *const ev = mpv_wait_event(s_mpv, 0);
-	if (ev->event_id != MPV_EVENT_END_FILE) {
-		return;
-	}
+	if (ev->event_id == MPV_EVENT_END_FILE) {
+		const mpv_event_end_file *eof = ev->data;
 
-	s_result = DTTR_MOVIE_ENDED;
+		if (eof->reason == MPV_END_FILE_REASON_EOF) {
+			s_result = DTTR_MOVIE_ENDED;
+		}
+	}
 }
 
 bool dttr_movies_handle_event(const SDL_Event *event) {
@@ -151,7 +153,7 @@ bool dttr_movies_handle_event(const SDL_Event *event) {
 		return false;
 	}
 
-	if (event->type == SDL_EVENT_KEY_DOWN) {
+	if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
 		if (event->key.scancode == SDL_SCANCODE_ESCAPE) {
 			s_result = DTTR_MOVIE_ESCAPE;
 			return true;
