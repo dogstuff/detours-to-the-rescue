@@ -20,7 +20,6 @@ void main() {
     v_texcoord = a_texcoord;
 
     if (u_is_2d > 0.5) {
-        // Pre-transformed vertices are converted to NDC with perspective-correct W.
         vec2 ndc = (a_position.xy / u_screen_size) * 2.0 - 1.0;
         ndc.y = -ndc.y;
         float w = 1.0 / a_rhw;

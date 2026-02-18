@@ -32,12 +32,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant Uniforms& _17 [[buff
         if (_17.u_is_2d > 0.5)
         {
             float2 tex_size = float2(int2(u_texture.get_width(), u_texture.get_height()));
-            float2 uv_px = uv * tex_size;
-            float2 fl = floor(uv_px + float2(0.5));
-            float2 fr = fract(uv_px + float2(0.5));
-            float2 aa = fwidth(uv_px) * 2.0;
-            fr = smoothstep(float2(0.5) - aa, float2(0.5) + aa, fr);
-            uv = ((fl + fr) - float2(0.5)) / tex_size;
+            uv = (floor(uv * tex_size) + float2(0.5)) / tex_size;
         }
         float4 tex_color = u_texture.sample(u_textureSmplr, uv);
         color *= tex_color;

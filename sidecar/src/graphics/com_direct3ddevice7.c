@@ -922,6 +922,20 @@ static HRESULT __stdcall s_d3ddevice7_drawprimitive(
 			g_dttr_device7_verts[i].u = g_dttr_device7_verts[i].v = 0.0f;
 		}
 	}
+
+	if (has_rhw) {
+		float max_rhw = 0.0f;
+		for (DWORD i = 0; i < count; i++) {
+			if (g_dttr_device7_verts[i].rhw > max_rhw)
+				max_rhw = g_dttr_device7_verts[i].rhw;
+		}
+		if (max_rhw > 0.0f) {
+			const float inv_max = 1.0f / max_rhw;
+			for (DWORD i = 0; i < count; i++)
+				g_dttr_device7_verts[i].rhw *= inv_max;
+		}
+	}
+
 	const DTTR_PrimitiveType type = s_d3d_device7_map_primitive_type(prim_type);
 	s_d3d_device7_record_draw(type, g_dttr_device7_verts, count, has_rhw, has_tex);
 	return S_OK;

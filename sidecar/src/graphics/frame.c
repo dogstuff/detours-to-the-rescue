@@ -458,6 +458,29 @@ static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBu
 	state->m_perf_upload_bytes_accum += uploaded_bytes;
 }
 
+static void s_set_default_viewport(const DTTR_BackendState *state) {
+	if (!state->m_render_pass)
+		return;
+
+	const SDL_GPUViewport viewport = {
+		.x = 0.0f,
+		.y = 0.0f,
+		.w = (float)state->m_width,
+		.h = (float)state->m_height,
+		.min_depth = 0.0f,
+		.max_depth = 1.0f,
+	};
+	SDL_SetGPUViewport(state->m_render_pass, &viewport);
+
+	const SDL_Rect scissor = {
+		.x = 0,
+		.y = 0,
+		.w = state->m_width,
+		.h = state->m_height,
+	};
+	SDL_SetGPUScissor(state->m_render_pass, &scissor);
+}
+
 // Opens a standard draw pass when no render pass is active
 static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
 	if (state->m_render_pass)
@@ -484,6 +507,7 @@ static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
 		&depth_target
 	);
 	s_bind_frame_vertex_buffer(state, state->m_render_pass);
+	s_set_default_viewport(state);
 	return state->m_render_pass != NULL;
 }
 
@@ -530,6 +554,7 @@ static void s_begin_clear_pass(
 		&depth_target
 	);
 	s_bind_frame_vertex_buffer(state, state->m_render_pass);
+	s_set_default_viewport(state);
 	s_reset_replay_state(replay_state);
 }
 
