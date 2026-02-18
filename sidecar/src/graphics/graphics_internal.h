@@ -93,7 +93,6 @@ typedef struct {
 } DTTR_UploadPoolSlot;
 
 #define DTTR_MAX_STAGED_TEXTURES 4096
-#define DTTR_MAX_DEFERRED_DESTROYS 256
 #define DTTR_UPLOAD_POOL_SIZE 256
 
 typedef struct {
@@ -211,7 +210,7 @@ typedef struct {
 	int m_staged_texture_count;
 	DTTR_IntVector m_pending_upload_indices;
 	SDL_Mutex *m_texture_mutex;
-	SDL_GPUTexture *m_deferred_destroys[DTTR_MAX_DEFERRED_DESTROYS];
+	SDL_GPUTexture *m_deferred_destroys[DTTR_MAX_STAGED_TEXTURES];
 	int m_deferred_destroy_count;
 	DTTR_UploadPoolSlot m_upload_pool[DTTR_UPLOAD_POOL_SIZE];
 

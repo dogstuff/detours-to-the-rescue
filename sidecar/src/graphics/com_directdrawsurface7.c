@@ -315,13 +315,25 @@ static DTTR_Texture s_surface_texture_create_or_retain(
 		return cached_tex;
 	}
 
-	if (state->m_staged_texture_count >= DTTR_MAX_STAGED_TEXTURES) {
-		SDL_UnlockMutex(state->m_texture_mutex);
-		log_error("Too many textures");
-		return DTTR_INVALID_TEXTURE;
-	}
+	int idx = -1;
+	for (int i = 0; i < state->m_staged_texture_count; i++) {
+		if (state->m_staged_textures[i].m_refcount != 0)
+			continue;
 
-	const int idx = state->m_staged_texture_count++;
+		if (state->m_staged_textures[i].m_gpu_tex != NULL)
+			continue;
+
+		idx = i;
+		break;
+	}
+	if (idx < 0) {
+		if (state->m_staged_texture_count >= DTTR_MAX_STAGED_TEXTURES) {
+			SDL_UnlockMutex(state->m_texture_mutex);
+			log_error("Too many textures");
+			return DTTR_INVALID_TEXTURE;
+		}
+		idx = state->m_staged_texture_count++;
+	}
 	DTTR_StagedTexture *st = &state->m_staged_textures[idx];
 	st->m_gpu_tex = NULL;
 	st->m_width = width;
@@ -333,10 +345,15 @@ static DTTR_Texture s_surface_texture_create_or_retain(
 	st->m_cache_key_valid = cache_key != 0;
 	st->m_cache_key = cache_key;
 
+	const bool is_new_slot = (idx == state->m_staged_texture_count - 1);
 	const uint32_t size = (uint32_t)width * (uint32_t)height * 4;
 	st->m_pixels = malloc(size);
 	if (!st->m_pixels) {
-		state->m_staged_texture_count--;
+		st->m_refcount = 0;
+		if (is_new_slot) {
+			state->m_staged_texture_count--;
+		}
+
 		SDL_UnlockMutex(state->m_texture_mutex);
 		return DTTR_INVALID_TEXTURE;
 	}
@@ -386,11 +403,7 @@ static void s_surface_texture_release(DTTR_Texture tex) {
 		state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
 	}
 	if (st->m_gpu_tex && state->m_device) {
-		if (state->m_deferred_destroy_count < DTTR_MAX_DEFERRED_DESTROYS) {
-			state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
-		} else {
-			log_warn("deferred destroy queue full, leaking GPU texture");
-		}
+		state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
 	}
 	st->m_gpu_tex = NULL;
 	free(st->m_pixels);
@@ -454,11 +467,7 @@ static bool s_surface_texture_update_unique(
 	memcpy(st->m_pixels, pixels, size);
 	if (st->m_width != width || st->m_height != height) {
 		if (st->m_gpu_tex && state->m_device) {
-			if (state->m_deferred_destroy_count < DTTR_MAX_DEFERRED_DESTROYS) {
-				state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
-			} else {
-				log_warn("deferred destroy queue full, leaking GPU texture");
-			}
+			state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
 		}
 		st->m_gpu_tex = NULL;
 	}
