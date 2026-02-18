@@ -31,6 +31,16 @@ The generated internal documentation for this project can be found [here](https:
 
 ---
 
+## Tested Game Versions
+
+All known retail PC releases of 102 Dalmatians: Puppies to the Rescue are supported:
+
+* English
+* French, German, Italian, Spanish, Dutch (European)
+* Norwegian, Danish, Swedish (Scandinavian)
+
+---
+
 ## Getting started
 
 1. Download the latest DttR build from the [release page](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases).
