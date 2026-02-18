@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <windows.h>
 
+#include "dttr_hooks_audio.h"
 #include "dttr_hooks_graphics.h"
 #include "dttr_hooks_inputs.h"
 #include "dttr_hooks_movies.h"

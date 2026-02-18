@@ -18,6 +18,7 @@ add_library(dttr_sidecar SHARED
     src/graphics/com_direct3dtexture2.c
     src/graphics/com_directdraw7.c
     src/graphics/com_directdrawsurface7.c
+    src/audio/hooks.c
     src/other/hooks.c
     src/other/hook_crt_open_file.c
     src/other/hook_cleanup_level_assets.c

@@ -103,6 +103,14 @@ DTTR_INTEROP_VAR_SIG(
 	*(uint32_t *)(match + 1)
 )
 
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_audio_digital_driver,
+	void *,
+	"\xA1????\x6A\x7F\x50\xFF\x15",
+	"x????xxxxx",
+	*(uint32_t *)(match + 1)
+)
+
 // clang-format off
 #define DTTR_MOVIE_PLAY_INTRO_SIG  "\x8B\x04\xB5????\x50\x68"
 #define DTTR_MOVIE_PLAY_INTRO_MASK "xxx????xx"
@@ -188,6 +196,8 @@ static void s_interop_pcdogs_globals_init(HMODULE mod) {
 
 	g_pcdogs_movie_file_names_init(mod);
 	g_pcdogs_movie_path_prefix_init(mod);
+
+	g_pcdogs_audio_digital_driver_init(mod);
 }
 
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(

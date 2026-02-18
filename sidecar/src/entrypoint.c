@@ -85,6 +85,12 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 		return;
 	}
 
+	if (event->type == SDL_EVENT_AUDIO_DEVICE_ADDED
+		|| event->type == SDL_EVENT_AUDIO_DEVICE_REMOVED) {
+		dttr_audio_handle_device_event(event);
+		return;
+	}
+
 	if (event->type == SDL_EVENT_KEY_DOWN && event->key.scancode == SDL_SCANCODE_F11) {
 		SDL_Window *const window = g_dttr_backend.m_window;
 		const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN)
@@ -199,6 +205,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_inputs_init();
 	dttr_inputs_hook_init(g_dttr_pc_dogs_module);
 	dttr_graphics_hook_init(g_dttr_pc_dogs_module);
+	dttr_audio_init(g_dttr_pc_dogs_module);
 	dttr_movies_init();
 	dttr_movies_hook_init(g_dttr_pc_dogs_module);
 
@@ -215,6 +222,11 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	pcdogs_initialize_window_handle(hwnd);
 	pcdogs_reset_input_and_state();
 	pcdogs_initialize_game_systems();
+
+	if (g_pcdogs_audio_digital_driver_get() == NULL) {
+		log_warn("No audio device available - audio disabled");
+	}
+
 	dttr_inputs_late_init();
 	g_pcdogs_should_quit_set(0);
 
@@ -237,6 +249,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 
 	dttr_movies_hook_cleanup();
 	dttr_movies_cleanup();
+	dttr_audio_cleanup();
 	dttr_other_hook_cleanup();
 	dttr_graphics_hook_cleanup();
 	dttr_inputs_hook_cleanup();
