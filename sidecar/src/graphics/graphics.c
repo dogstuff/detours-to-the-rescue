@@ -345,6 +345,7 @@ HWND dttr_graphics_init(void) {
 
 	state->m_texture_mutex = SDL_CreateMutex();
 	kv_init(state->m_pending_upload_indices);
+	kv_init(state->m_batch_records);
 	dttr_graphics_surface_texture_cache_reset();
 	state->m_clear_color = (SDL_FColor){0, 0, 0, 1};
 	state->m_depth_test = true;
@@ -457,8 +458,10 @@ void dttr_graphics_cleanup(void) {
 
 	dttr_graphics_surface_texture_cache_reset();
 	kv_destroy(state->m_pending_upload_indices);
+	kv_destroy(state->m_batch_records);
 
 	kv_init(state->m_pending_upload_indices);
+	kv_init(state->m_batch_records);
 
 	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
 	SDL_DestroyGPUDevice(state->m_device);

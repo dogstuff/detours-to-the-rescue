@@ -242,23 +242,22 @@ static void s_d3d_device7_record_clear(
 	if (!state->m_frame_active)
 		return;
 
-	if (state->m_batch_count >= DTTR_MAX_BATCH_RECORDS)
-		return;
-
-	DTTR_BatchRecord *rec = &state->m_batch_records[state->m_batch_count++];
-	rec->type = DTTR_BATCH_CLEAR;
-	rec->clear.flags = flags;
-	rec->clear.depth = depth;
+	DTTR_BatchRecord clear_rec = {0};
+	clear_rec.type = DTTR_BATCH_CLEAR;
+	clear_rec.clear.flags = flags;
+	clear_rec.clear.depth = depth;
 
 	if (flags & DTTR_CLEAR_COLOR) {
-		rec->clear.color.r = ((color >> 16) & 0xff) / 255.0f;
-		rec->clear.color.g = ((color >> 8) & 0xff) / 255.0f;
-		rec->clear.color.b = (color & 0xff) / 255.0f;
-		rec->clear.color.a = ((color >> 24) & 0xff) / 255.0f;
-		state->m_clear_color = rec->clear.color;
+		clear_rec.clear.color.r = ((color >> 16) & 0xff) / 255.0f;
+		clear_rec.clear.color.g = ((color >> 8) & 0xff) / 255.0f;
+		clear_rec.clear.color.b = (color & 0xff) / 255.0f;
+		clear_rec.clear.color.a = ((color >> 24) & 0xff) / 255.0f;
+		state->m_clear_color = clear_rec.clear.color;
 	} else {
-		rec->clear.color = state->m_clear_color;
+		clear_rec.clear.color = state->m_clear_color;
 	}
+
+	kv_push(DTTR_BatchRecord, state->m_batch_records, clear_rec);
 }
 
 /// Appends a draw record to the current frame batch
@@ -310,29 +309,24 @@ static void s_d3d_device7_record_draw(
 		);
 		return;
 	}
-	if (state->m_batch_count >= DTTR_MAX_BATCH_RECORDS) {
-		log_warn("DrawPrimitive: batch record limit reached (%u)", state->m_batch_count);
-		return;
-	}
-
 	memcpy(
 		(uint8_t *)state->m_transfer_mapped + state->m_vertex_offset * DTTR_VERTEX_SIZE,
 		verts,
 		count * DTTR_VERTEX_SIZE
 	);
 
-	DTTR_BatchRecord *rec = &state->m_batch_records[state->m_batch_count++];
-	rec->type = DTTR_BATCH_DRAW;
-	rec->draw.first_vertex = state->m_vertex_offset;
-	rec->draw.vertex_count = count;
-	rec->draw.blend_mode = DTTR_BLEND_OFF;
+	DTTR_BatchRecord draw_rec = {0};
+	draw_rec.type = DTTR_BATCH_DRAW;
+	draw_rec.draw.first_vertex = state->m_vertex_offset;
+	draw_rec.draw.vertex_count = count;
+	draw_rec.draw.blend_mode = DTTR_BLEND_OFF;
 	if (state->m_blend_enabled) {
-		rec->draw.blend_mode = (state->m_blend_dst == DTTR_BLEND_ONE)
-								   ? DTTR_BLEND_ADDITIVE
-								   : DTTR_BLEND_ALPHA;
+		draw_rec.draw.blend_mode = (state->m_blend_dst == DTTR_BLEND_ONE)
+									   ? DTTR_BLEND_ADDITIVE
+									   : DTTR_BLEND_ALPHA;
 	}
-	rec->draw.depth_test = state->m_depth_test;
-	rec->draw.depth_write = state->m_depth_write;
+	draw_rec.draw.depth_test = state->m_depth_test;
+	draw_rec.draw.depth_write = state->m_depth_write;
 
 	if (s_d3d_device7_use_stabilized_precision()) {
 		double mv[DTTR_MAT4_ELEMS];
@@ -340,26 +334,47 @@ static void s_d3d_device7_record_draw(
 		s_d3d_device7_compute_mv_stabilized(mv, state->m_view_d, state->m_model_d);
 
 		s_d3d_device7_mat4_multiply_d(mvp, state->m_proj_d, mv);
-		s_d3d_device7_mat4_double_to_float(rec->draw.uniforms.m_mvp, mvp, true);
+		s_d3d_device7_mat4_double_to_float(draw_rec.draw.uniforms.m_mvp, mvp, true);
 	} else {
 		float mv[DTTR_MAT4_ELEMS];
 		s_d3d_device7_mat4_multiply_f(mv, state->m_view, state->m_model);
-		s_d3d_device7_mat4_multiply_f(rec->draw.uniforms.m_mvp, state->m_proj, mv);
+		s_d3d_device7_mat4_multiply_f(draw_rec.draw.uniforms.m_mvp, state->m_proj, mv);
 	}
-	rec->draw.uniforms.m_screen_size[0] = (float)state->m_logical_width;
-	rec->draw.uniforms.m_screen_size[1] = (float)state->m_logical_height;
-	rec->draw.uniforms.m_is_2d = transformed
-									 ? (g_dttr_config.m_sprite_smooth ? 2.0f : 1.0f)
-									 : 0.0f;
-	rec->draw.uniforms.m_has_texture = textured ? 1.0f : 0.0f;
+	draw_rec.draw.uniforms.m_screen_size[0] = (float)state->m_logical_width;
+	draw_rec.draw.uniforms.m_screen_size[1] = (float)state->m_logical_height;
+	draw_rec.draw.uniforms.m_is_2d = transformed
+										 ? (g_dttr_config.m_sprite_smooth ? 2.0f : 1.0f)
+										 : 0.0f;
+	draw_rec.draw.uniforms.m_has_texture = textured ? 1.0f : 0.0f;
 
-	rec->draw.texture = (textured && state->m_bound_texture) ? state->m_bound_texture
-															 : state->m_dummy_texture;
+	draw_rec.draw.texture = (textured && state->m_bound_texture) ? state->m_bound_texture
+																 : state->m_dummy_texture;
 	const int cu = (state->m_addr_u == DTTR_TEXADDR_CLAMP) ? 1 : 0;
 	const int cv = (state->m_addr_v == DTTR_TEXADDR_CLAMP) ? 1 : 0;
-	rec->draw.sampler = state->m_samplers[cu * 2 + cv];
+	draw_rec.draw.sampler = state->m_samplers[cu * 2 + cv];
 
 	state->m_vertex_offset += count;
+
+	/* Merge into previous record if state matches and vertices are contiguous */
+	size_t n = kv_size(state->m_batch_records);
+	if (n > 0) {
+		DTTR_BatchRecord *prev = &kv_A(state->m_batch_records, n - 1);
+		if (prev->type == DTTR_BATCH_DRAW
+			&& prev->draw.first_vertex + prev->draw.vertex_count
+				   == draw_rec.draw.first_vertex
+			&& prev->draw.blend_mode == draw_rec.draw.blend_mode
+			&& prev->draw.depth_test == draw_rec.draw.depth_test
+			&& prev->draw.depth_write == draw_rec.draw.depth_write
+			&& prev->draw.texture == draw_rec.draw.texture
+			&& prev->draw.sampler == draw_rec.draw.sampler
+			&& memcmp(&prev->draw.uniforms, &draw_rec.draw.uniforms, sizeof(DTTR_Uniforms))
+				   == 0) {
+			prev->draw.vertex_count += draw_rec.draw.vertex_count;
+			return;
+		}
+	}
+
+	kv_push(DTTR_BatchRecord, state->m_batch_records, draw_rec);
 }
 
 // Lazily creates the GPU texture backing a staged texture slot

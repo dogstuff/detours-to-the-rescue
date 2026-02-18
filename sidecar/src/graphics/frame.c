@@ -544,7 +544,7 @@ static void s_begin_clear_pass(
 		.clear_depth = rec->clear.depth,
 		.load_op = (rec->clear.flags & DTTR_CLEAR_DEPTH) ? SDL_GPU_LOADOP_CLEAR
 														 : SDL_GPU_LOADOP_LOAD,
-		.store_op = SDL_GPU_STOREOP_DONT_CARE,
+		.store_op = SDL_GPU_STOREOP_STORE,
 	};
 
 	state->m_render_pass = SDL_BeginGPURenderPass(
@@ -635,15 +635,16 @@ static void s_draw_batch_record(
 static S_GraphicsReplayStats s_replay_batch_records(DTTR_BackendState *state) {
 	S_GraphicsReplayStats replay_stats = {0};
 
-	if (state->m_batch_count == 0)
+	if (kv_size(state->m_batch_records) == 0) {
 		return replay_stats;
+	}
 
 	S_GraphicsReplayState replay_state = {0};
 	s_reset_replay_state(&replay_state);
 	state->m_render_pass = NULL;
 
-	for (uint32_t i = 0; i < state->m_batch_count; i++) {
-		const DTTR_BatchRecord *rec = &state->m_batch_records[i];
+	for (size_t i = 0; i < kv_size(state->m_batch_records); i++) {
+		const DTTR_BatchRecord *rec = &kv_A(state->m_batch_records, i);
 
 		if (rec->type == DTTR_BATCH_CLEAR) {
 			s_begin_clear_pass(state, rec, &replay_state);
@@ -660,8 +661,9 @@ static S_GraphicsReplayStats s_replay_batch_records(DTTR_BackendState *state) {
 // Starts a frame, acquires command/swapchain resources, and maps the upload buffer
 void dttr_graphics_begin_frame(void) {
 	DTTR_BackendState *state = &g_dttr_backend;
-	if (state->m_frame_active)
+	if (state->m_frame_active) {
 		return;
+	}
 
 	if (!state->m_device || !state->m_window || !dttr_graphics_is_gpu_thread())
 		return;
@@ -686,7 +688,7 @@ void dttr_graphics_begin_frame(void) {
 		&state->m_swapchain_height
 	);
 
-	state->m_batch_count = 0;
+	state->m_batch_records.n = 0;
 	state->m_vertex_offset = 0;
 	state->m_transfer_mapped = SDL_MapGPUTransferBuffer(
 		state->m_device,
