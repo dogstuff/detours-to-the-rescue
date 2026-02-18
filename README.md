@@ -22,6 +22,7 @@ DttR implements purpose-built translators for the following outdated APIs:
 * DirectDraw7 & Direct3D7 -> Direct3D12, Vulkan, Metal (backed by SDL3GPU)
     * Optionally uses a bunch of graphics-related optimizations and improvements
 * DirectInput & WinAPI Inputs -> SDL3
+* Media Control Interface (MCI) -> libmpv2
 * More to come probably
 
 Because this project was created with the [102 Dalmatians Speedrunning Community](https://www.102.dog/) in mind,
