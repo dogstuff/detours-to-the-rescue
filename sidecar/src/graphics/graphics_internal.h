@@ -128,6 +128,8 @@ typedef struct {
 	};
 } DTTR_BatchRecord;
 
+typedef kvec_t(DTTR_BatchRecord) DTTR_BatchRecordVector;
+
 #define DTTR_BLEND_OFF 0
 #define DTTR_BLEND_ALPHA 1
 #define DTTR_BLEND_ADDITIVE 2
@@ -143,8 +145,7 @@ typedef struct {
 #define DTTR_MAT4_SIZE (sizeof(float) * 16)
 #define DTTR_VERTEX_ATTRIBUTE_COUNT 4
 
-#define DTTR_MAX_BATCH_RECORDS 2048
-#define DTTR_MAX_FRAME_VERTICES 65536
+#define DTTR_MAX_FRAME_VERTICES 262144
 #define DTTR_VERTEX_SIZE ((uint32_t)sizeof(DTTR_Vertex))
 
 typedef struct {
@@ -200,8 +201,7 @@ typedef struct {
 	double m_view_d[16];
 	double m_model_d[16];
 
-	DTTR_BatchRecord m_batch_records[DTTR_MAX_BATCH_RECORDS];
-	uint32_t m_batch_count;
+	DTTR_BatchRecordVector m_batch_records;
 	uint32_t m_vertex_offset;
 	void *m_transfer_mapped;
 	uint64_t m_frame_index;
