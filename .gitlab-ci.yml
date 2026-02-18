@@ -81,7 +81,7 @@ release:
     - >-
       curl -sf --header "JOB-TOKEN: ${CI_JOB_TOKEN}"
       "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests?state=merged&target_branch=${CI_DEFAULT_BRANCH}&updated_after=$(git log -1 --format=%aI $(git describe --tags --abbrev=0 HEAD^))&per_page=100"
-      | jq -r '.[] | "- \(.title) ([!\(.iid)](\(.web_url))) (@\(.author.username))"' > changelog.md
+      | jq -r '.[] | "- \(.title) - [!\(.iid)](\(.web_url)) @\(.author.username)"' > changelog.md
   needs:
     - job: build-release
       artifacts: true
