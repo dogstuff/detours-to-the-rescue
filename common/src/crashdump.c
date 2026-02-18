@@ -1,5 +1,6 @@
 #include <dttr_config.h>
 #include <dttr_crashdump.h>
+#include <dttr_errors.h>
 
 #include <dbghelp.h>
 
@@ -130,6 +131,7 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 	s_append_stack_trace(&message, &ctx_copy);
 #endif
 
+	message = sdscat(message, DTTR_REPORT_SUFFIX);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "crash jumpscare", message, NULL);
 	sdsfree(message);
 	sdsfree(filename);

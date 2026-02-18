@@ -27,14 +27,16 @@ static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excep
 
 	if (filename) {
 		DTTR_ERROR(
-			"Game crashed (exception 0x%08lX). Crash dump written to %s.",
+			"Game crashed (exception 0x%08lX). Crash dump written to "
+			"%s." DTTR_REPORT_SUFFIX,
 			exception_code,
 			filename
 		);
 		sdsfree(filename);
 	} else {
 		DTTR_ERROR(
-			"Game crashed (exception 0x%08lX). Failed to write crash dump.",
+			"Game crashed (exception 0x%08lX). Failed to write crash "
+			"dump." DTTR_REPORT_SUFFIX,
 			exception_code
 		);
 	}
@@ -122,7 +124,7 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 
 		case EXIT_PROCESS_DEBUG_EVENT:
 			DTTR_ERROR(
-				"Game exited unexpectedly within %ds (code %lu).",
+				"Game exited unexpectedly within %ds (code %lu)." DTTR_REPORT_SUFFIX,
 				WATCHDOG_TIMEOUT_MS / 1000,
 				evt.u.ExitProcess.dwExitCode
 			);

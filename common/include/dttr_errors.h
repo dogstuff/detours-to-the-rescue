@@ -20,9 +20,21 @@
 		sdsfree(_err_msg); \
 	} while (0)
 
+#define DTTR_REPORT_URL \
+	"https://gitlab.com/dogstuff/detours-to-the-rescue/-/issues/new?issuable_template=Crash%20Report"
+
+#define DTTR_REPORT_SUFFIX \
+	"\n\nIf this error is unexpected, please report it at:\n" DTTR_REPORT_URL
+
 #define DTTR_FATAL(error_message, ...) \
 	do { \
-		DTTR_ERROR(error_message, ##__VA_ARGS__); \
+		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__); \
+		_err_msg = sdscat(_err_msg, DTTR_REPORT_SUFFIX); \
+		log_error("%s", _err_msg); \
+		SDL_ShowSimpleMessageBox( \
+			SDL_MESSAGEBOX_ERROR, "DttR: Fatal Error", _err_msg, NULL \
+		); \
+		sdsfree(_err_msg); \
 		exit(EXIT_FAILURE); \
 	} while (0)
 
