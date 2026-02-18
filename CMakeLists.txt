@@ -30,7 +30,6 @@ add_custom_target(dttr_dist ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:dttr> "${DTTR_DIST_DIR}/dttr.exe"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:dttr_sidecar> "${DTTR_DIST_DIR}/libdttr_sidecar.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll" "${DTTR_DIST_DIR}/SDL3.dll"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/libvlc.dll" "${DTTR_DIST_DIR}/libvlc.dll"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/libvlccore.dll" "${DTTR_DIST_DIR}/libvlccore.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/libmpv-2.dll" "${DTTR_DIST_DIR}/libmpv-2.dll"
     COMMENT "Bundling runtime artifacts into ${DTTR_DIST_DIR}"
 )

@@ -7,6 +7,7 @@
 
 #include "dttr_hooks_graphics.h"
 #include "dttr_hooks_inputs.h"
+#include "dttr_hooks_movies.h"
 #include "dttr_hooks_other.h"
 
 /// Replaces the game's WinMain entry point with sidecar bootstrapping logic
@@ -23,6 +24,6 @@ DTTR_INTEROP_HOOK_FUNC_SIG(
 	"xxxxxxx",
 	match,
 	dttr_hook_win_main_callback
-)
+);
 
 #endif

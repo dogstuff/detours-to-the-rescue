@@ -381,6 +381,8 @@ void dttr_graphics_set_logical_resolution(int width, int height) {
 	s_refresh_render_resolution(state);
 }
 
+SDL_Window *dttr_graphics_get_window(void) { return g_dttr_backend.m_window; }
+
 // Refreshes render resolution after a runtime window size change event
 void dttr_graphics_handle_window_resize(int width, int height) {
 	if (width < DTTR_MIN_WINDOW_DIM || height < DTTR_MIN_WINDOW_DIM)

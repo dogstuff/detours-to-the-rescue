@@ -70,6 +70,10 @@ static sds s_get_loader_dir(void) {
 }
 
 static void s_handle_sdl_event(const SDL_Event *event) {
+	if (dttr_movies_handle_event(event)) {
+		return;
+	}
+
 	if (event->type == SDL_EVENT_QUIT) {
 		g_pcdogs_should_quit_set(1);
 		return;
@@ -98,6 +102,11 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 }
 
 static void s_tick_main_loop(void) {
+	if (dttr_movies_movie_is_playing()) {
+		dttr_movies_tick();
+		return;
+	}
+
 	if (g_pcdogs_rendering_enabled_get()) {
 		if (pcdogs_render_frame()) {
 			SDL_Delay(1);
@@ -106,6 +115,33 @@ static void s_tick_main_loop(void) {
 	}
 
 	SDL_Delay(10);
+}
+
+/// Replicates the WinMain intro playback logic because we override it in our WinMain.
+static void s_play_intro_movies(void) {
+	const char *const prefix = g_pcdogs_movie_path_prefix_ptr();
+	char **const names = g_pcdogs_movie_file_names_ptr();
+
+	for (int i = 0; i < 4; i++) {
+		sds path = sdscatprintf(sdsempty(), "%s%s", prefix, names[i]);
+		dttr_movies_start(path);
+		sdsfree(path);
+
+		while (dttr_movies_movie_is_playing()) {
+			SDL_Event event;
+			while (SDL_PollEvent(&event))
+				s_handle_sdl_event(&event);
+			s_tick_main_loop();
+		}
+
+		const DTTR_MovieResult ret = dttr_movies_stop();
+
+		if (ret == DTTR_MOVIE_QUIT)
+			g_pcdogs_should_quit_set(1);
+
+		if (ret != DTTR_MOVIE_ENDED)
+			break;
+	}
 }
 
 int32_t _stdcall dttr_hook_win_main_callback(
@@ -163,6 +199,8 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_inputs_init();
 	dttr_inputs_hook_init(g_dttr_pc_dogs_module);
 	dttr_graphics_hook_init(g_dttr_pc_dogs_module);
+	dttr_movies_init();
+	dttr_movies_hook_init(g_dttr_pc_dogs_module);
 
 	g_pcdogs_main_window_handle2_set(hwnd);
 	g_pcdogs_main_window_handle_set(hwnd);
@@ -171,6 +209,8 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	pcdogs_initialize_game_engine();
 	pcdogs_initialize_graphics_subsystem(hwnd, NULL);
 	pcdogs_initialize_capabilities();
+
+	s_play_intro_movies();
 
 	pcdogs_initialize_window_handle(hwnd);
 	pcdogs_reset_input_and_state();
@@ -195,6 +235,8 @@ int32_t _stdcall dttr_hook_win_main_callback(
 
 	log_info("Cleaning up hooks");
 
+	dttr_movies_hook_cleanup();
+	dttr_movies_cleanup();
 	dttr_other_hook_cleanup();
 	dttr_graphics_hook_cleanup();
 	dttr_inputs_hook_cleanup();

@@ -104,6 +104,27 @@ DTTR_INTEROP_VAR_SIG(
 )
 
 // clang-format off
+#define DTTR_MOVIE_PLAY_INTRO_SIG  "\x8B\x04\xB5????\x50\x68"
+#define DTTR_MOVIE_PLAY_INTRO_MASK "xxx????xx"
+// clang-format on
+
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_movie_file_names,
+	char *,
+	DTTR_MOVIE_PLAY_INTRO_SIG,
+	DTTR_MOVIE_PLAY_INTRO_MASK,
+	*(uint32_t *)(match + 3)
+)
+
+DTTR_INTEROP_VAR_SIG(
+	g_pcdogs_movie_path_prefix,
+	char,
+	DTTR_MOVIE_PLAY_INTRO_SIG,
+	DTTR_MOVIE_PLAY_INTRO_MASK,
+	*(uint32_t *)(match + 9)
+)
+
+// clang-format off
 #define DTTR_CLEANUP_LEVEL_ASSETS_SIG  "\x6A\x01\xE8????\xE8????\xA1????\x50\xE8????\x8B\x0D????\x51\xE8????\x8B\x15????\x52\xE8????\xA1????\x50\xE8????\x8B\x0D????\x51\xE8????\x83??"
 #define DTTR_CLEANUP_LEVEL_ASSETS_MASK "xxx????x????x????xx????xx????xx????xx????xx????x????xx????xx????xx??"
 // clang-format on
@@ -164,6 +185,9 @@ static void s_interop_pcdogs_globals_init(HMODULE mod) {
 	g_pcdogs_level_asset_2_init(mod);
 	g_pcdogs_level_asset_3_init(mod);
 	g_pcdogs_level_asset_4_init(mod);
+
+	g_pcdogs_movie_file_names_init(mod);
+	g_pcdogs_movie_path_prefix_init(mod);
 }
 
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(

@@ -11,17 +11,17 @@
         hash = "sha256-J6UOkXwaCoN+ZTp7nlmccjMWrgeNHpZP4MsCMTTMe/U=";
       };
 
-      vlc = pkgs: pkgs.stdenv.mkDerivation {
-        name = "vlc-3.0.23-win32-sdk";
+      mpv = pkgs: pkgs.stdenv.mkDerivation {
+        name = "libmpv-dev-i686";
         src = pkgs.fetchurl {
-          url = "https://download.videolan.org/pub/videolan/vlc/3.0.23/win32/vlc-3.0.23-win32.7z";
-          hash = "sha256-8Uj/Sc2sbAtrcBitfE5s0kyZvGwt6oJY2CaEJhpjkBc=";
+          url = "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-i686-20260201-git-40d2947.7z/download";
+          hash = "sha256-UOHLNYHEX2gwB2+MC/wh4yCaweJU0k3zgq6HAUGBdsA=";
         };
         nativeBuildInputs = [ pkgs.p7zip ];
         unpackPhase = "7z x $src";
         installPhase = ''
           mkdir -p $out
-          cp -r vlc-3.0.23/* $out/
+          cp -r * $out/
         '';
       };
 
@@ -39,7 +39,7 @@
 
       devShells = forEachSystem (pkgs: let
         s = sdl3 pkgs;
-        v = vlc pkgs;
+        m = mpv pkgs;
         mcfg = pkgs.pkgsCross.mingw32.windows.mcfgthreads;
       in {
         default = pkgs.mkShell {
@@ -67,7 +67,7 @@
             toolchain_dir="''${DTTR_TOOLCHAIN_DIR:-.toolchain}"
             mkdir -p "$toolchain_dir"
             ln -sfn "${s}" "$toolchain_dir/sdl3"
-            ln -sfn "${v}" "$toolchain_dir/vlc"
+            ln -sfn "${m}" "$toolchain_dir/mpv"
             for tool in gcc windres gcc-ar gcc-ranlib; do
               cat > "$toolchain_dir/i686-w64-mingw32-$tool" << EOF
             #!/usr/bin/env bash

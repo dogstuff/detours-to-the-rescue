@@ -20,11 +20,8 @@
 		sdsfree(_err_msg); \
 	} while (0)
 
-#define DTTR_REPORT_URL \
-	"https://gitlab.com/dogstuff/detours-to-the-rescue/-/issues/new?issuable_template=Crash%20Report"
-
 #define DTTR_REPORT_SUFFIX \
-	"\n\nIf this error is unexpected, please report it at:\n" DTTR_REPORT_URL
+	"\n\nIf this error is unexpected feel free to report is as an issue:\nhttps://gitlab.com/dogstuff/detours-to-the-rescue\n"
 
 #define DTTR_FATAL(error_message, ...) \
 	do { \
