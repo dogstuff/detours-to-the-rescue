@@ -26,6 +26,7 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("graphics", "msaa_samples",               m_msaa_samples,             S_CONFIG_INT),
 	S_FIELD("graphics", "texture_upload_sync",        m_texture_upload_sync,      S_CONFIG_BOOL),
 	S_FIELD("graphics", "generate_texture_mipmaps",   m_generate_texture_mipmaps, S_CONFIG_BOOL),
+	S_FIELD("graphics", "sprite_smooth",              m_sprite_smooth,            S_CONFIG_BOOL),
 	S_FIELD("graphics", "fullscreen",                 m_fullscreen,               S_CONFIG_BOOL),
 
 	S_FIELD_TOP("log_level",      m_log_level,      S_CONFIG_LOG_LEVEL),

@@ -23,6 +23,7 @@ static const DTTR_Config s_default_config = {
 	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
 	.m_precision_mode = DTTR_PRECISION_MODE_STABILIZED,
 	.m_graphics_api = DTTR_GRAPHICS_API_AUTO,
+	.m_sprite_smooth = true,
 	.m_present_filter = SDL_GPU_FILTER_LINEAR,
 	.m_window_width = WINDOW_WIDTH,
 	.m_window_height = WINDOW_HEIGHT,

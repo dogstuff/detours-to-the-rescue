@@ -43,6 +43,9 @@
     // Choices: nearest, linear
     "present_scaling_algorithm": "linear",
 
+    // Use smoothing for 2D sprites if true, else use nearest-neighbor.
+    "sprite_smooth": true,
+
     // Number of multisample anti-aliasing samples. Set to 1 to disable.
     "msaa_samples": 2,
 

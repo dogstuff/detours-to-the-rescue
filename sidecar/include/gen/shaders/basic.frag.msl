@@ -32,7 +32,21 @@ fragment main0_out main0(main0_in in [[stage_in]], constant Uniforms& _17 [[buff
         if (_17.u_is_2d > 0.5)
         {
             float2 tex_size = float2(int2(u_texture.get_width(), u_texture.get_height()));
-            uv = (floor(uv * tex_size) + float2(0.5)) / tex_size;
+            if (_17.u_is_2d < 1.5)
+            {
+                uv = (floor(uv * tex_size) + float2(0.5)) / tex_size;
+            }
+            else
+            {
+                if (_17.u_is_2d > 2.5)
+                {
+                    float2 pixel = uv * tex_size;
+                    float2 seam = floor(pixel + float2(0.5));
+                    float2 dudv = fwidth(pixel);
+                    pixel = seam + fast::clamp((pixel - seam) / dudv, float2(-0.5), float2(0.5));
+                    uv = pixel / tex_size;
+                }
+            }
         }
         float4 tex_color = u_texture.sample(u_textureSmplr, uv);
         color *= tex_color;

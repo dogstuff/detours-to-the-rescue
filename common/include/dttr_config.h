@@ -82,6 +82,7 @@ typedef struct {
 	DTTR_ScalingMethod m_scaling_method;
 	DTTR_PrecisionMode m_precision_mode;
 	DTTR_GraphicsApi m_graphics_api;
+	bool m_sprite_smooth;
 	SDL_GPUFilter m_present_filter;
 	int m_window_width;
 	int m_window_height;

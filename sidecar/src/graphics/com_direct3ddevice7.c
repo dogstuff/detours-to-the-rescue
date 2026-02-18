@@ -348,7 +348,9 @@ static void s_d3d_device7_record_draw(
 	}
 	rec->draw.uniforms.m_screen_size[0] = (float)state->m_logical_width;
 	rec->draw.uniforms.m_screen_size[1] = (float)state->m_logical_height;
-	rec->draw.uniforms.m_is_2d = transformed ? 1.0f : 0.0f;
+	rec->draw.uniforms.m_is_2d = transformed
+									 ? (g_dttr_config.m_sprite_smooth ? 2.0f : 1.0f)
+									 : 0.0f;
 	rec->draw.uniforms.m_has_texture = textured ? 1.0f : 0.0f;
 
 	rec->draw.texture = (textured && state->m_bound_texture) ? state->m_bound_texture
