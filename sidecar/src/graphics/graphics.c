@@ -160,6 +160,7 @@ static void s_refresh_render_resolution(DTTR_BackendState *state) {
 
 	if (!dttr_graphics_resize_render_textures(render_width, render_height)) {
 		log_warn("Failed to resize render textures to %dx%d", render_width, render_height);
+		return;
 	}
 }
 
@@ -336,12 +337,6 @@ HWND dttr_graphics_init(void) {
 	dttr_graphics_mat4_identity(state->m_proj);
 	dttr_graphics_mat4_identity(state->m_view);
 	dttr_graphics_mat4_identity(state->m_model);
-
-	for (int i = 0; i < 16; i++) {
-		state->m_proj_d[i] = (double)state->m_proj[i];
-		state->m_view_d[i] = (double)state->m_view[i];
-		state->m_model_d[i] = (double)state->m_model[i];
-	}
 
 	state->m_texture_mutex = SDL_CreateMutex();
 	kv_init(state->m_pending_upload_indices);

@@ -438,9 +438,6 @@ static sds s_config_format_json_value(const DTTR_Config *config, const S_ConfigF
 	case S_CONFIG_SCALING_METHOD:
 		return s_sds_json_quoted(s_config_format_scaling_method(*(const DTTR_ScalingMethod *)field));
 
-	case S_CONFIG_PRECISION_MODE:
-		return s_sds_json_quoted(s_config_format_precision_mode(*(const DTTR_PrecisionMode *)field));
-
 	case S_CONFIG_GRAPHICS_API:
 		return s_sds_json_quoted(s_config_format_graphics_api(*(const DTTR_GraphicsApi *)field));
 
@@ -455,6 +452,9 @@ static sds s_config_format_json_value(const DTTR_Config *config, const S_ConfigF
 
 	case S_CONFIG_STRING:
 		return s_sds_json_quoted(s_config_format_string(field));
+
+	case S_CONFIG_VERTEX_PRECISION:
+		return s_sds_json_quoted(s_config_format_vertex_precision(*(const DTTR_VertexPrecision *)field));
 
 	default:
 		return sdsempty();

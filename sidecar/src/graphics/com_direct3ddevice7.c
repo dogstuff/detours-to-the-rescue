@@ -12,7 +12,6 @@
 #define MAX_VERTICES 4096
 #define DTTR_MAT4_ELEMS 16
 #define DTTR_MAT4_BYTES (sizeof(float) * DTTR_MAT4_ELEMS)
-#define DTTR_MAT4_ZERO_EPSILON 1.0e-12
 DTTR_Vertex g_dttr_device7_verts[MAX_VERTICES];
 DTTR_Vertex g_dttr_device7_expanded_verts[DTTR_MAX_FRAME_VERTICES * 3];
 
@@ -33,87 +32,20 @@ static void s_d3d_device7_mat4_multiply_f(
 	memcpy(out, tmp, sizeof(tmp));
 }
 
-/// Multiplies two row-major 4x4 double matrices into `out`
-static void s_d3d_device7_mat4_multiply_d(
-	double *restrict out,
-	const double *restrict a,
-	const double *restrict b
-) {
-	double tmp[DTTR_MAT4_ELEMS];
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			tmp[i * 4 + j] = 0.0;
-			for (int k = 0; k < 4; k++)
-				tmp[i * 4 + j] += a[i * 4 + k] * b[k * 4 + j];
-		}
-	}
-	memcpy(out, tmp, sizeof(tmp));
-}
-
-/// Returns true when precision mode is configured to stabilized
-static bool s_d3d_device7_use_stabilized_precision(void) {
-	return g_dttr_config.m_precision_mode != DTTR_PRECISION_MODE_RAW;
-}
-
-/// Converts float matrix input to double and rejects non-finite values
-static bool s_d3d_device7_mat4_float_to_double(
-	double *restrict out,
-	const float *restrict in
-) {
-	if (!out || !in)
-		return false;
-
-	for (int i = 0; i < DTTR_MAT4_ELEMS; i++) {
-		if (!isfinite(in[i]))
-			return false;
-
-		out[i] = (double)in[i];
-	}
-
-	return true;
-}
-
-/// Converts a double matrix to float, optionally zeroing tiny values
-static void s_d3d_device7_mat4_double_to_float(
-	float *restrict out,
-	const double *restrict in,
-	bool stabilize
-) {
-	for (int i = 0; i < DTTR_MAT4_ELEMS; i++) {
-		double v = in[i];
-
-		if (!isfinite(v))
-			v = 0.0;
-
-		if (stabilize && fabs(v) < DTTR_MAT4_ZERO_EPSILON)
-			v = 0.0;
-
-		out[i] = (float)v;
-	}
-}
-
-/// Selects the backend transform matrix pair for a D3D transform state token
-static bool s_d3d_device7_get_transform_state(
-	DWORD type,
-	double **out_matrix_d,
-	float **out_matrix_f
-) {
+/// Selects the backend transform matrix for a D3D transform state token
+static bool s_d3d_device7_get_transform_state(DWORD type, float **out_matrix_f) {
 	DTTR_BackendState *state = &g_dttr_backend;
 	switch (type) {
 	case D3DTRANSFORMSTATE_WORLD:
-		*out_matrix_d = state->m_model_d;
 		*out_matrix_f = state->m_model;
 		return true;
 	case D3DTRANSFORMSTATE_VIEW:
-		*out_matrix_d = state->m_view_d;
 		*out_matrix_f = state->m_view;
 		return true;
 	case D3DTRANSFORMSTATE_PROJECTION:
-		*out_matrix_d = state->m_proj_d;
 		*out_matrix_f = state->m_proj;
 		return true;
 	default:
-		*out_matrix_d = NULL;
 		*out_matrix_f = NULL;
 		return false;
 	}
@@ -136,36 +68,25 @@ static const char *s_d3d_device7_transform_label(DWORD type) {
 }
 
 static void s_d3d_device7_set_transform_state(DWORD type, const float *m) {
-	double *matrix_d = NULL;
 	float *matrix_f = NULL;
 
 	if (!m)
 		return;
 
-	if (!s_d3d_device7_get_transform_state(type, &matrix_d, &matrix_f))
+	if (!s_d3d_device7_get_transform_state(type, &matrix_f))
 		return;
 
-	if (!s_d3d_device7_mat4_float_to_double(matrix_d, m)) {
-		log_warn(
-			"SetTransform(%s) rejected non-finite matrix input",
-			s_d3d_device7_transform_label(type)
-		);
-		return;
+	for (int i = 0; i < DTTR_MAT4_ELEMS; i++) {
+		if (!isfinite(m[i])) {
+			log_warn(
+				"SetTransform(%s) rejected non-finite matrix input",
+				s_d3d_device7_transform_label(type)
+			);
+			return;
+		}
 	}
 
-	s_d3d_device7_mat4_double_to_float(
-		matrix_f,
-		matrix_d,
-		s_d3d_device7_use_stabilized_precision()
-	);
-}
-
-static void s_d3d_device7_compute_mv_stabilized(
-	double *restrict out_mv,
-	const double *restrict view,
-	const double *restrict model
-) {
-	s_d3d_device7_mat4_multiply_d(out_mv, view, model);
+	memcpy(matrix_f, m, DTTR_MAT4_BYTES);
 }
 
 /// Expands a triangle strip into a triangle list
@@ -328,14 +249,7 @@ static void s_d3d_device7_record_draw(
 	draw_rec.draw.depth_test = state->m_depth_test;
 	draw_rec.draw.depth_write = state->m_depth_write;
 
-	if (s_d3d_device7_use_stabilized_precision()) {
-		double mv[DTTR_MAT4_ELEMS];
-		double mvp[DTTR_MAT4_ELEMS];
-		s_d3d_device7_compute_mv_stabilized(mv, state->m_view_d, state->m_model_d);
-
-		s_d3d_device7_mat4_multiply_d(mvp, state->m_proj_d, mv);
-		s_d3d_device7_mat4_double_to_float(draw_rec.draw.uniforms.m_mvp, mvp, true);
-	} else {
+	{
 		float mv[DTTR_MAT4_ELEMS];
 		s_d3d_device7_mat4_multiply_f(mv, state->m_view, state->m_model);
 		s_d3d_device7_mat4_multiply_f(draw_rec.draw.uniforms.m_mvp, state->m_proj, mv);
@@ -620,18 +534,13 @@ static HRESULT __stdcall s_d3ddevice7_gettransform(
 	if (!matrix)
 		return S_OK;
 
-	double *matrix_d = NULL;
 	float *matrix_f = NULL;
-	if (!s_d3d_device7_get_transform_state(type, &matrix_d, &matrix_f)) {
+	if (!s_d3d_device7_get_transform_state(type, &matrix_f)) {
 		memset(matrix, 0, DTTR_MAT4_BYTES);
 		return S_OK;
 	}
 
-	if (s_d3d_device7_use_stabilized_precision()) {
-		s_d3d_device7_mat4_double_to_float((float *)matrix, matrix_d, true);
-	} else {
-		memcpy(matrix, matrix_f, DTTR_MAT4_BYTES);
-	}
+	memcpy(matrix, matrix_f, DTTR_MAT4_BYTES);
 	return S_OK;
 }
 
@@ -664,31 +573,13 @@ static HRESULT __stdcall s_d3ddevice7_multiplytransform(
 	if (!matrix)
 		return S_OK;
 
-	double *matrix_d = NULL;
 	float *matrix_f = NULL;
-	if (!s_d3d_device7_get_transform_state(type, &matrix_d, &matrix_f))
+	if (!s_d3d_device7_get_transform_state(type, &matrix_f))
 		return S_OK;
 
-	if (s_d3d_device7_use_stabilized_precision()) {
-		double rhs[DTTR_MAT4_ELEMS];
-		double result[DTTR_MAT4_ELEMS];
-		if (!s_d3d_device7_mat4_float_to_double(rhs, (const float *)matrix)) {
-			log_warn("MultiplyTransform: rejected non-finite matrix input");
-			return S_OK;
-		}
-		s_d3d_device7_mat4_multiply_d(result, matrix_d, rhs);
-		memcpy(matrix_d, result, sizeof(result));
-		s_d3d_device7_mat4_double_to_float(matrix_f, matrix_d, true);
-		return S_OK;
-	}
-
-	{
-		float result[DTTR_MAT4_ELEMS];
-		s_d3d_device7_mat4_multiply_f(result, matrix_f, (const float *)matrix);
-		memcpy(matrix_f, result, sizeof(result));
-		for (int i = 0; i < DTTR_MAT4_ELEMS; i++)
-			matrix_d[i] = (double)matrix_f[i];
-	}
+	float result[DTTR_MAT4_ELEMS];
+	s_d3d_device7_mat4_multiply_f(result, matrix_f, (const float *)matrix);
+	memcpy(matrix_f, result, sizeof(result));
 	return S_OK;
 }
 

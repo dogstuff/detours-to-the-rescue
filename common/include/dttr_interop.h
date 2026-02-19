@@ -272,6 +272,25 @@ static inline void s_trampoline_relocate(uint8_t *buf, uintptr_t site, int n) {
 		} \
 	} while (0)
 
+#define DTTR_INTEROP_PATCH_BYTES_LOG(hook, mod, bytes) \
+	do { \
+		hook##_patch(mod, bytes); \
+		log_debug( \
+			"Applied PATCH_BYTES %s at 0x%08X", #hook, \
+			(unsigned)hook##_site \
+		); \
+	} while (0)
+
+#define DTTR_INTEROP_PATCH_BYTES_OPTIONAL_LOG(hook, mod, bytes) \
+	do { \
+		hook##_install(mod, bytes); \
+		if (hook##_site) { \
+			log_debug("Applied PATCH_BYTES %s at 0x%08X", #hook, (unsigned)hook##_site); \
+		} else { \
+			log_warn("Skipped optional PATCH_BYTES %s (not found)", #hook); \
+		} \
+	} while (0)
+
 #define DTTR_INTEROP_PATCH_CALL_LOG(hook, mod) \
 	do { \
 		hook##_patch(mod); \
