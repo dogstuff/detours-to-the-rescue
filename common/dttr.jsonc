@@ -36,12 +36,16 @@
     // - present: Applies scaling to finished frames, effectively preserving the game's native resolution.
     "scaling_method": "logical",
 
-    // Precision mode: raw, stabilized
-    "precision_mode": "stabilized",
-
     // The filtering algorithm used when scaling the rendered frame to the display.
     // Choices: nearest, linear
     "present_scaling_algorithm": "linear",
+
+    // How vertex coordinates are computed during 3D rendering.
+    // Choices: native, subpixel
+    //
+    // NOTE: Subpixel mode may make certain seams between polygons on the puppy models visible at higher resolutions..
+    // This is unfortunately a limitation of the models themselves.
+    "vertex_precision": "native",
 
     // Use smoothing for 2D sprites if true, else use nearest-neighbor.
     "sprite_smooth": true,

@@ -18,7 +18,6 @@ KHASH_MAP_INIT_STR(dttr_config_lookup, int)
 static const S_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("graphics", "scaling_fit",                m_scaling_fit,              S_CONFIG_SCALING_FIT),
 	S_FIELD("graphics", "scaling_method",             m_scaling_method,           S_CONFIG_SCALING_METHOD),
-	S_FIELD("graphics", "precision_mode",             m_precision_mode,           S_CONFIG_PRECISION_MODE),
 	S_FIELD("graphics", "graphics_api",               m_graphics_api,             S_CONFIG_GRAPHICS_API),
 	S_FIELD("graphics", "present_scaling_algorithm",  m_present_filter,           S_CONFIG_PRESENT_FILTER),
 	S_FIELD("graphics", "window_width",               m_window_width,             S_CONFIG_INT),
@@ -26,6 +25,7 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("graphics", "msaa_samples",               m_msaa_samples,             S_CONFIG_INT),
 	S_FIELD("graphics", "texture_upload_sync",        m_texture_upload_sync,      S_CONFIG_BOOL),
 	S_FIELD("graphics", "generate_texture_mipmaps",   m_generate_texture_mipmaps, S_CONFIG_BOOL),
+	S_FIELD("graphics", "vertex_precision",           m_vertex_precision,         S_CONFIG_VERTEX_PRECISION),
 	S_FIELD("graphics", "sprite_smooth",              m_sprite_smooth,            S_CONFIG_BOOL),
 	S_FIELD("graphics", "fullscreen",                 m_fullscreen,               S_CONFIG_BOOL),
 
@@ -98,12 +98,12 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 S_CONFIG_ASSIGN_FN(s_config_assign_bool,           bool,              false,                       s_config_parse_bool)
 S_CONFIG_ASSIGN_FN(s_config_assign_scaling_fit,     DTTR_ScalingMode,  DTTR_SCALING_MODE_LETTERBOX, s_config_parse_scaling_fit)
 S_CONFIG_ASSIGN_FN(s_config_assign_scaling_method,  DTTR_ScalingMethod,DTTR_SCALING_METHOD_PRESENT, s_config_parse_scaling_method)
-S_CONFIG_ASSIGN_FN(s_config_assign_precision_mode,  DTTR_PrecisionMode,DTTR_PRECISION_MODE_STABILIZED, s_config_parse_precision_mode)
 S_CONFIG_ASSIGN_FN(s_config_assign_graphics_api,    DTTR_GraphicsApi,  DTTR_GRAPHICS_API_AUTO,      s_config_parse_graphics_api)
 S_CONFIG_ASSIGN_FN(s_config_assign_present_filter,  SDL_GPUFilter,     SDL_GPU_FILTER_LINEAR,       s_config_parse_present_filter)
 S_CONFIG_ASSIGN_FN(s_config_assign_log_level,       int,               LOG_INFO,                    s_config_parse_log_level)
 S_CONFIG_ASSIGN_FN(s_config_assign_minidump_type,   DTTR_MinidumpType, DTTR_MINIDUMP_NORMAL,        s_config_parse_minidump_type)
 S_CONFIG_ASSIGN_FN(s_config_assign_int,             int,               0,                           s_config_parse_int)
+S_CONFIG_ASSIGN_FN(s_config_assign_vertex_precision, DTTR_VertexPrecision, DTTR_VERTEX_PRECISION_SUBPIXEL, s_config_parse_vertex_precision)
 // clang-format on
 
 static bool s_config_assign_string(char *field, const char *value) {
@@ -131,9 +131,6 @@ bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *
 	case S_CONFIG_SCALING_METHOD:
 		return s_config_assign_scaling_method(field, value);
 
-	case S_CONFIG_PRECISION_MODE:
-		return s_config_assign_precision_mode(field, value);
-
 	case S_CONFIG_GRAPHICS_API:
 		return s_config_assign_graphics_api(field, value);
 
@@ -151,6 +148,9 @@ bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *
 
 	case S_CONFIG_STRING:
 		return s_config_assign_string(field, value);
+
+	case S_CONFIG_VERTEX_PRECISION:
+		return s_config_assign_vertex_precision(field, value);
 
 	default:
 		return false;

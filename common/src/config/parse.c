@@ -47,17 +47,6 @@ bool s_config_parse_scaling_method(const char *value, DTTR_ScalingMethod *out_va
 	return false;
 }
 
-bool s_config_parse_precision_mode(const char *value, DTTR_PrecisionMode *out_value) {
-	if (!value || !out_value) {
-		return false;
-	}
-
-	DTTR_PARSE_TOKEN("raw", DTTR_PRECISION_MODE_RAW);
-	DTTR_PARSE_TOKEN("stabilized", DTTR_PRECISION_MODE_STABILIZED);
-
-	return false;
-}
-
 bool s_config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value) {
 	if (!value || !out_value) {
 		return false;
@@ -208,6 +197,17 @@ bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_valu
 	return false;
 }
 
+bool s_config_parse_vertex_precision(const char *value, DTTR_VertexPrecision *out_value) {
+	if (!value || !out_value) {
+		return false;
+	}
+
+	DTTR_PARSE_TOKEN("native", DTTR_VERTEX_PRECISION_NATIVE);
+	DTTR_PARSE_TOKEN("subpixel", DTTR_VERTEX_PRECISION_SUBPIXEL);
+
+	return false;
+}
+
 bool s_config_parse_string(const char *value, char *out_value, size_t out_size) {
 	if (!value || !out_value || out_size == 0) {
 		return false;
@@ -238,13 +238,6 @@ const char *s_config_format_scaling_method(DTTR_ScalingMethod method) {
 	switch (method) {
 	DTTR_FORMAT_TOKEN(DTTR_SCALING_METHOD_LOGICAL, "logical")
 	default: return "present";
-	}
-}
-
-const char *s_config_format_precision_mode(DTTR_PrecisionMode mode) {
-	switch (mode) {
-	DTTR_FORMAT_TOKEN(DTTR_PRECISION_MODE_RAW, "raw")
-	default: return "stabilized";
 	}
 }
 
@@ -348,6 +341,13 @@ const char *s_config_format_gamepad_axis(int axis) {
 	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, "axis_left_trigger")
 	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, "axis_right_trigger")
 	default: return "none";
+	}
+}
+
+const char *s_config_format_vertex_precision(DTTR_VertexPrecision precision) {
+	switch (precision) {
+	DTTR_FORMAT_TOKEN(DTTR_VERTEX_PRECISION_NATIVE, "native")
+	default: return "subpixel";
 	}
 }
 

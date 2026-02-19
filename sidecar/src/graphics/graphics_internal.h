@@ -197,10 +197,6 @@ typedef struct {
 	float m_proj[16];
 	float m_view[16];
 	float m_model[16];
-	double m_proj_d[16];
-	double m_view_d[16];
-	double m_model_d[16];
-
 	DTTR_BatchRecordVector m_batch_records;
 	uint32_t m_vertex_offset;
 	void *m_transfer_mapped;
