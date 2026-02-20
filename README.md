@@ -63,7 +63,7 @@ dttr.exe path/to/my_config.jsonc
 ## Components
 
 Components are optional, dynamically-loaded plugins that extend DttR without modifying core code. 
-They live in the  `components/` directory DttR subdirectory and are auto-discovered & loaded at runtime.
+They live in the  `{my_dttr_dir}/components/` and are auto-loaded at runtime.
 
 Components have access to the same hooking, patching, and scanning APIs as the core sidecar code.
 
