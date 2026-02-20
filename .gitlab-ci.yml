@@ -35,23 +35,10 @@ build:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && (cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug.zip Debug/)"
+    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug.zip Debug/ && zip -r ../../dttr-components-${CI_COMMIT_SHORT_SHA}-debug.zip Debug-components/"
   artifacts:
     paths:
       - dttr-*-debug.zip
-    expire_in: 2 weeks
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-
-build-components:
-  extends: .nix-cache
-  stage: build
-  script:
-    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_COMPONENTS=ON && (cd build/dist && zip -r ../../dttr-components-${CI_COMMIT_SHORT_SHA}-debug.zip Debug-components/)"
-  artifacts:
-    paths:
       - dttr-components-*-debug.zip
     expire_in: 2 weeks
   rules:
@@ -63,22 +50,11 @@ build-release:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug.zip Debug/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release.zip Release/"
+    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} && task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug.zip Debug/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release.zip Release/ && zip -r ../../dttr-components-${CI_COMMIT_TAG}-debug.zip Debug-components/ && zip -r ../../dttr-components-${CI_COMMIT_TAG}-release.zip Release-components/"
   artifacts:
     paths:
       - dttr-*-debug.zip
       - dttr-*-release.zip
-    expire_in: 2 weeks
-  rules:
-    - if: $CI_COMMIT_TAG
-
-build-release-components:
-  extends: .nix-cache
-  stage: build
-  script:
-    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-components-${CI_COMMIT_TAG}-debug.zip Debug-components/ && zip -r ../../dttr-components-${CI_COMMIT_TAG}-release.zip Release-components/"
-  artifacts:
-    paths:
       - dttr-components-*-debug.zip
       - dttr-components-*-release.zip
     expire_in: 2 weeks
@@ -115,8 +91,6 @@ release:
       fi
   needs:
     - job: build-release
-      artifacts: true
-    - job: build-release-components
       artifacts: true
   release:
     tag_name: $CI_COMMIT_TAG
