@@ -3,7 +3,7 @@
 
 #include "dttr_sidecar.h"
 #include <SDL3/SDL.h>
-#include <dttr_interop.h>
+#include <dttr_components.h>
 #include <kvec.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -283,9 +283,9 @@ void dttr_graphics_handle_window_resize(int width, int height);
 void dttr_graphics_surface_texture_cache_reset(void);
 
 #ifdef DTTR_COMPONENTS_ENABLED
-/// Creates the "COMPONENTS ENABLED" overlay texture
+/// Creates the "COMPONENTS ENABLED" overlay texture.
 bool dttr_components_overlay_create(DTTR_BackendState *state);
-/// Releases the "COMPONENTS ENABLED" overlay texture
+/// Releases the "COMPONENTS ENABLED" overlay texture.
 void dttr_components_overlay_destroy(DTTR_BackendState *state);
 #endif
 

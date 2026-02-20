@@ -6,6 +6,7 @@ target_include_directories(klib INTERFACE klib)
 
 add_library(xxhash STATIC xxhash/xxhash.c)
 target_include_directories(xxhash PUBLIC xxhash)
+target_compile_definitions(xxhash INTERFACE XXH_STATIC_LINKING_ONLY)
 
 add_library(sds STATIC sds/sds.c)
 target_include_directories(sds PUBLIC sds)

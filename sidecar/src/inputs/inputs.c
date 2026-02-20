@@ -35,9 +35,21 @@ void dttr_inputs_init(void) {
 	s_try_open_configured_gamepad();
 }
 
-void dttr_inputs_hook_init(const DTTR_ComponentContext *ctx) {
-	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_inputs_hook_dinput_poll, ctx);
-	DTTR_INTEROP_PATCH_PTR_LOG(dttr_inputs_hook_get_async_key_state, ctx);
+void dttr_inputs_hooks_init(const DTTR_ComponentContext *ctx) {
+	DTTR_INSTALL_JMP(
+		dttr_inputs_hook_dinput_poll,
+		ctx,
+		"\x56\x8B\x74\x24?\x56\x8B\x06",
+		"xxxx?xxx"
+	);
+
+	DTTR_INSTALL_POINTER(
+		dttr_inputs_hook_get_async_key_state,
+		ctx,
+		"\x8B\x1D????\x56\x33\xF6",
+		"xx????xxx",
+		*(uint32_t *)(match_ + 2)
+	);
 }
 
 void dttr_inputs_handle_device_event(const SDL_Event *event) {
@@ -67,9 +79,9 @@ void dttr_inputs_late_init(void) {
 	log_debug("Joystick is available");
 }
 
-void dttr_inputs_hook_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_dinput_poll, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_get_async_key_state, ctx);
+void dttr_inputs_hooks_cleanup(const DTTR_ComponentContext *ctx) {
+	DTTR_UNINSTALL(dttr_inputs_hook_dinput_poll, ctx);
+	DTTR_UNINSTALL(dttr_inputs_hook_get_async_key_state, ctx);
 }
 
 void dttr_inputs_cleanup(void) {

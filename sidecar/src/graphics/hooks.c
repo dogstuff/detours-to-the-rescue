@@ -34,7 +34,7 @@ static DTTR_Graphics_COM_DirectDraw7 *s_get_or_create_ddraw7(void) {
 
 // Returns our DDraw7 translator for DirectDrawCreateEx
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawcreateex
-HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
+HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 	const void *guid,
 	void **ddraw_out,
 	const void *iid,
@@ -68,7 +68,7 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_create_ex_callback(
 
 // Calls the enumerate callback with our virtual display device
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawenumerateexa
-HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
+HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 	LPDDENUMCALLBACKEXA lpCallback,
 	LPVOID lpContext,
 	DWORD dwFlags
@@ -92,7 +92,7 @@ HRESULT __stdcall dttr_graphics_hook_directdraw_enumerate_ex_a_callback(
 }
 
 // Initializes graphics and patches DirectDraw imports
-void dttr_graphics_hook_init(const DTTR_ComponentContext *ctx) {
+void dttr_graphics_hooks_init(const DTTR_ComponentContext *ctx) {
 	g_dttr_graphics_hook_hwnd = dttr_graphics_init();
 
 	if (!g_dttr_graphics_hook_hwnd) {
@@ -105,49 +105,164 @@ void dttr_graphics_hook_init(const DTTR_ComponentContext *ctx) {
 		return;
 	}
 
-	DTTR_INTEROP_PATCH_PTR_LOG(dttr_hook_directdraw_create_ex, ctx);
+	DTTR_INSTALL_POINTER(
+		dttr_hook_directdraw_create_ex,
+		ctx,
+		"\xE8????\x85\xC0\x7D?\x68????\x6A\x00\x50\xE8",
+		"x????xxx?x????xxxx",
+		DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))
+	);
 
-	DTTR_INTEROP_PATCH_PTR_LOG(dttr_hook_directdraw_enumerate_ex_a, ctx);
+	DTTR_INSTALL_POINTER(
+		dttr_hook_directdraw_enumerate_ex_a,
+		ctx,
+		"\xE8????\x8B\xF0\xA1",
+		"x????xxx",
+		DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))
+	);
 
 	if (g_dttr_config.m_vertex_precision == DTTR_VERTEX_PRECISION_SUBPIXEL) {
-		DTTR_INTEROP_PATCH_BYTES_LOG(
+		DTTR_INSTALL_BYTES(
 			dttr_hook_precision_fast_path,
 			ctx,
-			s_fast_path_patch
+			"\x83\xF8?\x7C?\xD9\x43?\xD8\x1D????\xDF\xE0\xF6\xC4\x41\x0F\x85????",
+			"xx?x?xx?xx????xxxxxx????",
+			19,
+			s_fast_path_patch,
+			6
 		);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_batch_limit_a, ctx, s_nop2);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_batch_limit_b, ctx, s_nop2);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_ftol_x, ctx, s_ftol_x_patch);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_mov_x, ctx, s_nop4);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_fstp2_x, ctx, s_nop2);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_fild_x, ctx, s_nop4);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_ftol_y, ctx, s_ftol_y_patch);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_mov_y, ctx, s_nop4);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_fstp2_y, ctx, s_nop3);
-		DTTR_INTEROP_PATCH_BYTES_LOG(dttr_hook_precision_fild_y, ctx, s_nop4);
-		DTTR_INTEROP_PATCH_BYTES_OPTIONAL_LOG(dttr_hook_render_quad_snap, ctx, s_ret);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_batch_limit_a,
+			ctx,
+			"\x8B\x08\xEB?\xA1????\x8B\x0D????\x3B\xC1",
+			"xxx?x????xx????xx",
+			17,
+			s_nop2,
+			2
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_batch_limit_b,
+			ctx,
+			"\x83\xC1\x14\x4E\x75?\xA1????\x8B\x0D????\x3B\xC1",
+			"xxxxx?x????xx????xx",
+			19,
+			s_nop2,
+			2
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_ftol_x,
+			ctx,
+			"\xDB\x44\x24\x30\xD9\x1F",
+			"xxxxxx",
+			-15,
+			s_ftol_x_patch,
+			5
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_mov_x,
+			ctx,
+			"\xDB\x44\x24\x30\xD9\x1F",
+			"xxxxxx",
+			-10,
+			s_nop4,
+			4
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_fstp2_x,
+			ctx,
+			"\x8D\xAE????\xDB\x44\x24\x30\xD9\x1F",
+			"xx????xxxxxx",
+			10,
+			s_nop2,
+			2
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_fild_x,
+			ctx,
+			"\x8D\xAE????\xDB\x44\x24\x30",
+			"xx????xxxx",
+			6,
+			s_nop4,
+			4
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_ftol_y,
+			ctx,
+			"\x8B\x54\x24\x18\x89\x44\x24\x30",
+			"xxxxxxxx",
+			-5,
+			s_ftol_y_patch,
+			5
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_mov_y,
+			ctx,
+			"\x8B\x54\x24\x18\x89\x44\x24\x30",
+			"xxxxxxxx",
+			4,
+			s_nop4,
+			4
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_fstp2_y,
+			ctx,
+			"\x83\xC0\x14\x50\x55\xD9\x5D\x00",
+			"xxxxxxxx",
+			5,
+			s_nop3,
+			3
+		);
+
+		DTTR_INSTALL_BYTES(
+			dttr_hook_precision_fild_y,
+			ctx,
+			"\x52\xDB\x44\x24\x34",
+			"xxxxx",
+			1,
+			s_nop4,
+			4
+		);
+
+		DTTR_INSTALL_BYTES_OPTIONAL(
+			dttr_hook_render_quad_snap,
+			ctx,
+			"\x53\x8b\x5c\x24\x14\x55\x33\xc9\x56\x57\x85\xdb",
+			"xxxxxxxxxxxx",
+			0,
+			s_ret,
+			1
+		);
 	}
 }
 
 // Removes hooks and releases translator state
-void dttr_graphics_hook_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_INTEROP_UNHOOK_OPTIONAL_LOG(dttr_hook_render_quad_snap, ctx);
+void dttr_graphics_hooks_cleanup(const DTTR_ComponentContext *ctx) {
+	DTTR_UNINSTALL(dttr_hook_render_quad_snap, ctx);
 
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_fast_path, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_batch_limit_a, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_batch_limit_b, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_fild_x, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_fstp2_x, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_mov_x, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_ftol_x, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_fild_y, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_fstp2_y, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_mov_y, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_precision_ftol_y, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_fast_path, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_batch_limit_a, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_batch_limit_b, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_fild_x, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_fstp2_x, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_mov_x, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_ftol_x, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_fild_y, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_fstp2_y, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_mov_y, ctx);
+	DTTR_UNINSTALL(dttr_hook_precision_ftol_y, ctx);
 
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_directdraw_create_ex, ctx);
+	DTTR_UNINSTALL(dttr_hook_directdraw_create_ex, ctx);
 
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_directdraw_enumerate_ex_a, ctx);
+	DTTR_UNINSTALL(dttr_hook_directdraw_enumerate_ex_a, ctx);
 
 	if (!g_dttr_graphics_hook_ddraw7) {
 		return;
