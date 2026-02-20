@@ -1,7 +1,7 @@
-#include "yyjson.h"
 #include "config_internal.h"
 #include "log.h"
 #include "sds.h"
+#include "yyjson.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -178,13 +178,23 @@ bool dttr_config_load(const char *filename) {
 	sdssetlen(buf, read_count);
 
 	yyjson_read_err err;
-	yyjson_doc *doc =
-		yyjson_read_opts(buf, read_count, YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS, NULL, &err);
+	yyjson_doc *doc = yyjson_read_opts(
+		buf,
+		read_count,
+		YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS,
+		NULL,
+		&err
+	);
 	sdsfree(buf);
 
 	if (!doc) {
 		log_error("JSON parse failed: %s at position %zu", err.msg, err.pos);
-		s_errors_addf("Failed to parse %s (%s at position %zu)", filename, err.msg, err.pos);
+		s_errors_addf(
+			"Failed to parse %s (%s at position %zu)",
+			filename,
+			err.msg,
+			err.pos
+		);
 		s_errors_show();
 		return false;
 	}
@@ -219,7 +229,13 @@ bool dttr_config_load(const char *filename) {
 			char num_buf[32];
 			const char *value = s_yyjson_value_as_string(val, num_buf, sizeof(num_buf));
 
-			if (value && !s_config_apply_gamepad_entry(&g_dttr_config, "gamepad", key_str, value)) {
+			if (value
+				&& !s_config_apply_gamepad_entry(
+					&g_dttr_config,
+					"gamepad",
+					key_str,
+					value
+				)) {
 				s_errors_addf("gamepad.%s: invalid value \"%s\"", key_str, value);
 			}
 		}
@@ -260,8 +276,14 @@ static size_t s_jsonc_skip_ws(const char *text, size_t text_len, size_t pos) {
 
 /// Find the byte span of a leaf value in JSONC text at the given key path.
 /// Does not support object/array values.
-static bool s_jsonc_find_value_span(const char *text, size_t text_len, const char *const *path, int path_depth,
-									size_t *out_offset, size_t *out_len) {
+static bool s_jsonc_find_value_span(
+	const char *text,
+	size_t text_len,
+	const char *const *path,
+	int path_depth,
+	size_t *out_offset,
+	size_t *out_len
+) {
 	int depth = 0;
 	int matched = 0;
 	bool expect_value = false;
@@ -301,7 +323,8 @@ static bool s_jsonc_find_value_span(const char *text, size_t text_len, const cha
 			const size_t key_len = i - str_start - 2;
 			const char *expected = path[matched];
 
-			if (key_len != strlen(expected) || memcmp(text + str_start + 1, expected, key_len) != 0) {
+			if (key_len != strlen(expected)
+				|| memcmp(text + str_start + 1, expected, key_len) != 0) {
 				i = j;
 				continue;
 			}
@@ -369,8 +392,8 @@ static bool s_jsonc_find_value_span(const char *text, size_t text_len, const cha
 		if (expect_value && !s_is_jsonc_ws(c) && c != ',') {
 			const size_t val_start = i;
 
-			while (i < text_len && text[i] != ',' && text[i] != '}' && text[i] != ']' && text[i] != '/' &&
-				   text[i] != '\n' && text[i] != '\r') {
+			while (i < text_len && text[i] != ',' && text[i] != '}' && text[i] != ']'
+				   && text[i] != '/' && text[i] != '\n' && text[i] != '\r') {
 				i++;
 			}
 
@@ -392,8 +415,13 @@ static bool s_jsonc_find_value_span(const char *text, size_t text_len, const cha
 }
 
 /// Replace a byte range in an sds string, returning a new sds.
-static sds s_jsonc_replace_value(const char *text, size_t text_len, size_t offset, size_t old_len,
-								 const char *new_value) {
+static sds s_jsonc_replace_value(
+	const char *text,
+	size_t text_len,
+	size_t offset,
+	size_t old_len,
+	const char *new_value
+) {
 	sds result = sdsnewlen(text, offset);
 	result = sdscat(result, new_value);
 	result = sdscatlen(result, text + offset + old_len, text_len - offset - old_len);
@@ -406,12 +434,24 @@ static sds s_sds_json_quoted(const char *str) {
 
 	for (const char *p = str; *p; p++) {
 		switch (*p) {
-		case '\\': out = sdscat(out, "\\\\"); break;
-		case '"':  out = sdscat(out, "\\\""); break;
-		case '\n': out = sdscat(out, "\\n"); break;
-		case '\r': out = sdscat(out, "\\r"); break;
-		case '\t': out = sdscat(out, "\\t"); break;
-		default:   out = sdscatlen(out, p, 1); break;
+		case '\\':
+			out = sdscat(out, "\\\\");
+			break;
+		case '"':
+			out = sdscat(out, "\\\"");
+			break;
+		case '\n':
+			out = sdscat(out, "\\n");
+			break;
+		case '\r':
+			out = sdscat(out, "\\r");
+			break;
+		case '\t':
+			out = sdscat(out, "\\t");
+			break;
+		default:
+			out = sdscatlen(out, p, 1);
+			break;
 		}
 	}
 
@@ -419,7 +459,10 @@ static sds s_sds_json_quoted(const char *str) {
 }
 
 /// Format a schema field's current value as a JSON token (sds, caller frees).
-static sds s_config_format_json_value(const DTTR_Config *config, const S_ConfigFieldSpec *spec) {
+static sds s_config_format_json_value(
+	const DTTR_Config *config,
+	const S_ConfigFieldSpec *spec
+) {
 	const char *field = ((const char *)config) + spec->offset;
 
 	switch (spec->value_type) {
@@ -433,28 +476,40 @@ static sds s_config_format_json_value(const DTTR_Config *config, const S_ConfigF
 	}
 
 	case S_CONFIG_SCALING_FIT:
-		return s_sds_json_quoted(s_config_format_scaling_fit(*(const DTTR_ScalingMode *)field));
+		return s_sds_json_quoted(
+			s_config_format_scaling_fit(*(const DTTR_ScalingMode *)field)
+		);
 
 	case S_CONFIG_SCALING_METHOD:
-		return s_sds_json_quoted(s_config_format_scaling_method(*(const DTTR_ScalingMethod *)field));
+		return s_sds_json_quoted(
+			s_config_format_scaling_method(*(const DTTR_ScalingMethod *)field)
+		);
 
 	case S_CONFIG_GRAPHICS_API:
-		return s_sds_json_quoted(s_config_format_graphics_api(*(const DTTR_GraphicsApi *)field));
+		return s_sds_json_quoted(
+			s_config_format_graphics_api(*(const DTTR_GraphicsApi *)field)
+		);
 
 	case S_CONFIG_PRESENT_FILTER:
-		return s_sds_json_quoted(s_config_format_present_filter(*(const SDL_GPUFilter *)field));
+		return s_sds_json_quoted(
+			s_config_format_present_filter(*(const SDL_GPUFilter *)field)
+		);
 
 	case S_CONFIG_LOG_LEVEL:
 		return s_sds_json_quoted(s_config_format_log_level(*(const int *)field));
 
 	case S_CONFIG_MINIDUMP_TYPE:
-		return s_sds_json_quoted(s_config_format_minidump_type(*(const DTTR_MinidumpType *)field));
+		return s_sds_json_quoted(
+			s_config_format_minidump_type(*(const DTTR_MinidumpType *)field)
+		);
 
 	case S_CONFIG_STRING:
 		return s_sds_json_quoted(s_config_format_string(field));
 
 	case S_CONFIG_VERTEX_PRECISION:
-		return s_sds_json_quoted(s_config_format_vertex_precision(*(const DTTR_VertexPrecision *)field));
+		return s_sds_json_quoted(
+			s_config_format_vertex_precision(*(const DTTR_VertexPrecision *)field)
+		);
 
 	default:
 		return sdsempty();
@@ -471,14 +526,23 @@ static int s_replacement_cmp_desc(const void *a, const void *b) {
 	const S_Replacement *ra = (const S_Replacement *)a;
 	const S_Replacement *rb = (const S_Replacement *)b;
 
-	if (ra->offset > rb->offset) return -1;
-	if (ra->offset < rb->offset) return 1;
+	if (ra->offset > rb->offset)
+		return -1;
+	if (ra->offset < rb->offset)
+		return 1;
 	return 0;
 }
 
 /// Find value at path and record a replacement. Frees new_value if key not found.
-static void s_try_replace(S_Replacement *r, int *n, const char *text, size_t text_len,
-						  const char *const *path, int path_depth, sds new_value) {
+static void s_try_replace(
+	S_Replacement *r,
+	int *n,
+	const char *text,
+	size_t text_len,
+	const char *const *path,
+	int path_depth,
+	sds new_value
+) {
 	size_t offset, len;
 
 	if (s_jsonc_find_value_span(text, text_len, path, path_depth, &offset, &len)) {
@@ -523,8 +587,8 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 	}
 
 	const int schema_count = s_config_schema_count();
-	const int max_r = schema_count + 2 + DTTR_GAMEPAD_SOURCE_COUNT +
-					  DTTR_GAMEPAD_AXIS_MAPPING_COUNT * 2;
+	const int max_r = schema_count + 2 + DTTR_GAMEPAD_SOURCE_COUNT
+					  + DTTR_GAMEPAD_AXIS_MAPPING_COUNT * 2;
 	S_Replacement *const replacements = calloc((size_t)max_r, sizeof(S_Replacement));
 	int n = 0;
 
@@ -547,14 +611,29 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 			depth = 1;
 		}
 
-		s_try_replace(replacements, &n, text, sdslen(text), path, depth, s_config_format_json_value(config, spec));
+		s_try_replace(
+			replacements,
+			&n,
+			text,
+			sdslen(text),
+			path,
+			depth,
+			s_config_format_json_value(config, spec)
+		);
 	}
 
 	// Gamepad: enabled flag
 	{
 		const char *path[] = {"gamepad", "enabled"};
-		s_try_replace(replacements, &n, text, sdslen(text), path, 2,
-					  sdsnew(s_config_format_bool(config->m_gamepad_enabled)));
+		s_try_replace(
+			replacements,
+			&n,
+			text,
+			sdslen(text),
+			path,
+			2,
+			sdsnew(s_config_format_bool(config->m_gamepad_enabled))
+		);
 	}
 
 	// Gamepad: index
@@ -567,18 +646,33 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 
 	// Gamepad: axis mappings
 	{
-		static const char *axis_keys[] = {"axis_stick_x", "axis_stick_y", "axis_camera_rz"};
+		static const char *axis_keys[] = {
+			"axis_stick_x",
+			"axis_stick_y",
+			"axis_camera_rz"
+		};
 
 		for (int i = 0; i < DTTR_GAMEPAD_AXIS_MAPPING_COUNT; i++) {
 			const char *path[] = {"gamepad", axis_keys[i]};
-			s_try_replace(replacements, &n, text, sdslen(text), path, 2,
-						  s_sds_json_quoted(s_config_format_gamepad_axis(config->m_gamepad_axes[i])));
+			s_try_replace(
+				replacements,
+				&n,
+				text,
+				sdslen(text),
+				path,
+				2,
+				s_sds_json_quoted(s_config_format_gamepad_axis(config->m_gamepad_axes[i]))
+			);
 		}
 	}
 
 	// Gamepad: deadzones
 	{
-		static const char *deadzone_keys[] = {"deadzone_stick_x", "deadzone_stick_y", "deadzone_camera_rz"};
+		static const char *deadzone_keys[] = {
+			"deadzone_stick_x",
+			"deadzone_stick_y",
+			"deadzone_camera_rz"
+		};
 
 		for (int i = 0; i < DTTR_GAMEPAD_AXIS_MAPPING_COUNT; i++) {
 			const char *path[] = {"gamepad", deadzone_keys[i]};
@@ -597,8 +691,15 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 
 		const char *path[] = {"gamepad", "buttons", source_name};
 		const int action = config->m_gamepad_button_map[i];
-		s_try_replace(replacements, &n, text, sdslen(text), path, 3,
-					  s_sds_json_quoted(s_config_format_game_action(action)));
+		s_try_replace(
+			replacements,
+			&n,
+			text,
+			sdslen(text),
+			path,
+			3,
+			s_sds_json_quoted(s_config_format_game_action(action))
+		);
 	}
 
 	// Sort by descending offset and apply back-to-front
@@ -606,7 +707,12 @@ bool dttr_config_save(const char *filename, const DTTR_Config *config) {
 
 	for (int i = 0; i < n; i++) {
 		sds new_text = s_jsonc_replace_value(
-			text, sdslen(text), replacements[i].offset, replacements[i].old_len, replacements[i].new_value);
+			text,
+			sdslen(text),
+			replacements[i].offset,
+			replacements[i].old_len,
+			replacements[i].new_value
+		);
 		sdsfree(text);
 		text = new_text;
 	}

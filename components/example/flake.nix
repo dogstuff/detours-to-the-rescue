@@ -6,17 +6,6 @@
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forEachSystem = f: nixpkgs.lib.genAttrs systems (s: f (import nixpkgs { system = s; }));
     in {
-      packages = forEachSystem (pkgs: {
-        shader-tools = pkgs.buildEnv {
-          name = "shader-tools";
-          paths = [
-            pkgs.sdl3-shadercross
-            pkgs.shaderc
-            pkgs.xxd
-          ];
-        };
-      });
-
       devShells = forEachSystem (pkgs: let
         sdl3 = pkgs.fetchzip {
           url = "https://github.com/libsdl-org/SDL/releases/download/release-3.2.8/SDL3-devel-3.2.8-mingw.tar.gz";
@@ -41,17 +30,9 @@
           packages = with pkgs; [
             go-task
             cmake
-            gnumake
             ninja
-            stb
             pkg-config
             clang-tools
-            nasm
-            perl
-            xxd
-            doxygen
-            curl
-            zip
             pkgsCross.mingw32.stdenv.cc
           ] ++ lib.optionals stdenv.hostPlatform.isLinux [
             sdl3-shadercross

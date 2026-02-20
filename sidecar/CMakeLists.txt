@@ -4,6 +4,7 @@ set(DTTR_MPV_DIR "${CMAKE_SOURCE_DIR}/.toolchain/mpv")
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
     src/impl.c
+    src/game_api.c
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
@@ -28,6 +29,7 @@ add_library(dttr_sidecar SHARED
 
 target_include_directories(dttr_sidecar PRIVATE
     include
+    "${CMAKE_SOURCE_DIR}/components/include"
     "${DTTR_SHADER_OUTPUT_DIR}"
     "${DTTR_MPV_DIR}/include"
 )
@@ -55,6 +57,14 @@ target_link_libraries(dttr_sidecar PRIVATE
     log
     common
 )
+
+if(DTTR_COMPONENTS)
+    target_sources(dttr_sidecar PRIVATE
+        src/components/components.c
+        src/graphics/overlay_components.c
+    )
+    target_compile_definitions(dttr_sidecar PRIVATE DTTR_COMPONENTS_ENABLED)
+endif()
 
 add_custom_command(TARGET dttr_sidecar POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

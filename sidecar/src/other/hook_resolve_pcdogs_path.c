@@ -9,7 +9,11 @@
 uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback(void) {
 	char *out_path = g_pcdogs_directory_ptr();
 
-	DWORD module_path_length = GetModuleFileNameA(g_dttr_pc_dogs_module, out_path, 0x104);
+	DWORD module_path_length = GetModuleFileNameA(
+		dttr_game_api_get_ctx()->m_game_module,
+		out_path,
+		0x104
+	);
 
 	if (module_path_length == 0) {
 		log_error(

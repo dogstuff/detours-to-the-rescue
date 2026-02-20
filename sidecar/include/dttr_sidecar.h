@@ -6,16 +6,19 @@
 #include <windows.h>
 
 #include <SDL3/SDL.h>
+#include <dttr_components.h>
 #include <dttr_config.h>
 #include <dttr_interop_pcdogs.h>
 
-// Holds the loaded game module handle and shared configuration state
-extern DTTR_GameModule g_dttr_pc_dogs_module;
+#include "game_api_internal.h"
 
-// This stores the directory containing the loader DLL, with a trailing backslash.
+// Handle to the injected sidecar DLL itself
+extern HINSTANCE g_dttr_sidecar_module;
+
+// Directory containing the loader DLL, with a trailing backslash.
 extern char g_dttr_loader_dir[MAX_PATH];
 
-// This stores the 16-character lowercase hex XXH3_64 hash of the game executable.
+// 16-character lowercase hex XXH3_64 hash of the game executable.
 extern char g_dttr_exe_hash[17];
 
 /// Initializes the SDL graphics backend and returns the game window handle
@@ -26,6 +29,9 @@ void dttr_graphics_cleanup(void);
 
 /// Returns the main game window
 SDL_Window *dttr_graphics_get_window(void);
+
+/// Returns the GPU device
+SDL_GPUDevice *dttr_graphics_get_device(void);
 
 /// Applies runtime window resize to rendering policy
 void dttr_graphics_handle_window_resize(int width, int height);
@@ -44,7 +50,7 @@ extern SDL_Gamepad *g_dttr_gamepad;
 void dttr_inputs_init(void);
 
 /// Installs input hooks
-void dttr_inputs_hook_init(HMODULE module);
+void dttr_inputs_hook_init(const DTTR_ComponentContext *ctx);
 
 /// Handles gamepad connection and disconnection events
 void dttr_inputs_handle_device_event(const SDL_Event *event);
@@ -53,7 +59,7 @@ void dttr_inputs_handle_device_event(const SDL_Event *event);
 void dttr_inputs_late_init(void);
 
 /// Removes input hooks
-void dttr_inputs_hook_cleanup(void);
+void dttr_inputs_hook_cleanup(const DTTR_ComponentContext *ctx);
 
 /// Releases input subsystem resources
 void dttr_inputs_cleanup(void);
@@ -69,10 +75,10 @@ typedef enum {
 void dttr_movies_init(void);
 
 /// Installs video playback hooks.
-void dttr_movies_hook_init(HMODULE mod);
+void dttr_movies_hook_init(const DTTR_ComponentContext *ctx);
 
 /// Removes video playback hooks.
-void dttr_movies_hook_cleanup(void);
+void dttr_movies_hook_cleanup(const DTTR_ComponentContext *ctx);
 
 /// Releases video playback subsystem resources.
 void dttr_movies_cleanup(void);

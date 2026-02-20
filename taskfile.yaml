@@ -10,6 +10,8 @@ vars:
     sh: git rev-parse --short HEAD
   DTTR_VERSION: '{{.DTTR_VERSION | default .GIT_SHORT_SHA}}'
 
+  DTTR_COMPONENTS: 'OFF'
+
   DOCKER: podman
   CONTAINER_IMAGE: dttr-toolchain
   CONTAINERFILE_BUILD: build.Containerfile
@@ -33,7 +35,7 @@ tasks:
 
   setup-build:
     cmds:
-      - cmake -G "Ninja Multi-Config" -B "{{ .BUILD_DIR }}" -DCMAKE_TOOLCHAIN_FILE="{{ .TOOLCHAIN_FILE }}" -DDTTR_VERSION="{{ .DTTR_VERSION }}"
+      - cmake -G "Ninja Multi-Config" -B "{{ .BUILD_DIR }}" -DCMAKE_TOOLCHAIN_FILE="{{ .TOOLCHAIN_FILE }}" -DDTTR_VERSION="{{ .DTTR_VERSION }}" -DDTTR_COMPONENTS={{ .DTTR_COMPONENTS }}
 
   clean:
     cmds:
@@ -72,12 +74,12 @@ tasks:
   container-build:
     cmds:
       - "{{ .DOCKER }} build -t {{ .CONTAINER_IMAGE }} -f {{ .CONTAINERFILE_BUILD }} {{ .ROOT_DIR }}"
-      - "{{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR }} -v {{ .ROOT_DIR }}:/workspace -w /workspace {{ .CONTAINER_IMAGE }} sh -lc 'rm -rf build-container && task build BUILD_DIR=build-container DTTR_VERSION={{ .DTTR_VERSION }}'"
+      - "{{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR }} -v {{ .ROOT_DIR }}:/workspace -w /workspace {{ .CONTAINER_IMAGE }} sh -lc 'rm -rf build-container && task build BUILD_DIR=build-container DTTR_VERSION={{ .DTTR_VERSION }} DTTR_COMPONENTS={{ .DTTR_COMPONENTS }}'"
 
   format:
     cmds:
       - echo "Running formatter"
-      - find ./loader ./sidecar -iname '*.h' -o -iname '*.c' | xargs clang-format -i
+      - find ./loader ./sidecar ./common ./components -iname '*.h' -o -iname '*.c' | xargs clang-format -i
 
   generate-docs:
     cmds:

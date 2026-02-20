@@ -19,7 +19,9 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	int32_t nCmdShow
 );
 
-DTTR_INTEROP_HOOK_FUNC_SIG(
+// Bootstrap hook installed in DllMain before the module context exists.
+// Uses the raw HMODULE variant that patches directly via VirtualProtect.
+DTTR_INTEROP_HOOK_FUNC_RAW_SIG(
 	dttr_hook_win_main,
 	"\x83\xEC\x40\x53\x8B\x5C\x24",
 	"xxxxxxx",

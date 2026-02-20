@@ -9,7 +9,12 @@
 
 static char s_dump_dir[MAX_PATH];
 
-sds dttr_crashdump_write(HANDLE process, DWORD pid, DWORD tid, EXCEPTION_POINTERS *exception_info) {
+sds dttr_crashdump_write(
+	HANDLE process,
+	DWORD pid,
+	DWORD tid,
+	EXCEPTION_POINTERS *exception_info
+) {
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 
@@ -25,7 +30,15 @@ sds dttr_crashdump_write(HANDLE process, DWORD pid, DWORD tid, EXCEPTION_POINTER
 		st.wSecond
 	);
 
-	HANDLE file = CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE file = CreateFileA(
+		filename,
+		GENERIC_WRITE,
+		0,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
 	if (file == INVALID_HANDLE_VALUE) {
 		log_error("Failed to create dump file %s", filename);
 		sdsfree(filename);
@@ -38,9 +51,11 @@ sds dttr_crashdump_write(HANDLE process, DWORD pid, DWORD tid, EXCEPTION_POINTER
 		.ClientPointers = FALSE,
 	};
 
-	const MINIDUMP_TYPE dump_type = (g_dttr_config.m_minidump_type == DTTR_MINIDUMP_DETAILED)
-		? (MiniDumpWithDataSegs | MiniDumpWithIndirectlyReferencedMemory)
-		: MiniDumpNormal;
+	const MINIDUMP_TYPE dump_type = (g_dttr_config.m_minidump_type
+									 == DTTR_MINIDUMP_DETAILED)
+										? (MiniDumpWithDataSegs
+										   | MiniDumpWithIndirectlyReferencedMemory)
+										: MiniDumpNormal;
 	const BOOL success = MiniDumpWriteDump(process, pid, file, dump_type, &mei, NULL, NULL);
 	CloseHandle(file);
 
@@ -74,7 +89,15 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 
 	for (int i = 0; i < 32; i++) {
 		if (!StackWalk(
-				IMAGE_FILE_MACHINE_I386, process, thread, &frame, ctx, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL
+				IMAGE_FILE_MACHINE_I386,
+				process,
+				thread,
+				&frame,
+				ctx,
+				NULL,
+				SymFunctionTableAccess,
+				SymGetModuleBase,
+				NULL
 			)) {
 			break;
 		}
@@ -104,7 +127,13 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 			continue;
 		}
 
-		*message = sdscatprintf(*message, "\n  %s!%s+0x%lX", mod_name, sym->Name, displacement);
+		*message = sdscatprintf(
+			*message,
+			"\n  %s!%s+0x%lX",
+			mod_name,
+			sym->Name,
+			displacement
+		);
 	}
 
 	SymCleanup(process);
@@ -115,15 +144,27 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const exception_info) {
 	const DWORD code = exception_info->ExceptionRecord->ExceptionCode;
 	sds filename = dttr_crashdump_write(
-		GetCurrentProcess(), GetCurrentProcessId(), GetCurrentThreadId(), exception_info
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		GetCurrentThreadId(),
+		exception_info
 	);
 
 	sds message;
 
 	if (filename) {
-		message = sdscatprintf(sdsempty(), "Exception 0x%08lX\n\nDump written to:\n%s", code, filename);
+		message = sdscatprintf(
+			sdsempty(),
+			"Exception 0x%08lX\n\nDump written to:\n%s",
+			code,
+			filename
+		);
 	} else {
-		message = sdscatprintf(sdsempty(), "Exception 0x%08lX\n\nFailed to write crash dump.", code);
+		message = sdscatprintf(
+			sdsempty(),
+			"Exception 0x%08lX\n\nFailed to write crash dump.",
+			code
+		);
 	}
 
 #ifndef NDEBUG

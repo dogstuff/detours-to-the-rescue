@@ -24,7 +24,11 @@ static void s_update_window_title(const DTTR_BackendState *state) {
 	sdsclear(s_window_title);
 	s_window_title = sdscatprintf(
 		s_window_title,
+#ifdef DTTR_COMPONENTS_ENABLED
+		"102 Dalmatians - DttR - Components - " DTTR_VERSION " - %s - %dx%d",
+#else
 		"102 Dalmatians - DttR - " DTTR_VERSION " - %s - %dx%d",
+#endif
 		driver ? driver : "unknown",
 		w,
 		h
@@ -266,8 +270,7 @@ static bool s_create_device(DTTR_BackendState *state) {
 	return false;
 }
 
-// Initializes SDL, window, device, and backend state for rendering and returns the
-// window handle
+// Initialize SDL, window, GPU device, and backend state; return the native window handle.
 HWND dttr_graphics_init(void) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
@@ -358,6 +361,10 @@ HWND dttr_graphics_init(void) {
 	state->m_initialized = true;
 	state->m_gpu_thread_id = SDL_GetCurrentThreadID();
 
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_overlay_create(state);
+#endif
+
 	const SDL_PropertiesID props = SDL_GetWindowProperties(state->m_window);
 	return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 }
@@ -379,6 +386,8 @@ void dttr_graphics_set_logical_resolution(int width, int height) {
 
 SDL_Window *dttr_graphics_get_window(void) { return g_dttr_backend.m_window; }
 
+SDL_GPUDevice *dttr_graphics_get_device(void) { return g_dttr_backend.m_device; }
+
 // Refreshes render resolution after a runtime window size change event
 void dttr_graphics_handle_window_resize(int width, int height) {
 	if (width < DTTR_MIN_WINDOW_DIM || height < DTTR_MIN_WINDOW_DIM)
@@ -390,7 +399,7 @@ void dttr_graphics_handle_window_resize(int width, int height) {
 
 // Releases GPU resources, destroys the SDL window/device pair, and shuts down SDL
 void dttr_graphics_cleanup(void) {
-	dttr_graphics_hook_cleanup();
+	dttr_graphics_hook_cleanup(dttr_game_api_get_ctx());
 
 	DTTR_BackendState *state = &g_dttr_backend;
 
@@ -403,6 +412,10 @@ void dttr_graphics_cleanup(void) {
 		if (state->m_samplers[i])
 			SDL_ReleaseGPUSampler(state->m_device, state->m_samplers[i]);
 	}
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_overlay_destroy(state);
+#endif
 
 	if (state->m_dummy_texture)
 		SDL_ReleaseGPUTexture(state->m_device, state->m_dummy_texture);

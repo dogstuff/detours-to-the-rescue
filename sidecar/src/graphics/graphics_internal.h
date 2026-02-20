@@ -224,6 +224,12 @@ typedef struct {
 
 	bool m_initialized;
 	bool m_frame_active;
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	SDL_GPUTexture *m_components_overlay_tex;
+	int m_components_overlay_w;
+	int m_components_overlay_h;
+#endif
 } DTTR_BackendState;
 
 extern DTTR_BackendState g_dttr_backend;
@@ -275,5 +281,12 @@ void dttr_graphics_handle_window_resize(int width, int height);
 
 /// Clears shared surface-texture cache state
 void dttr_graphics_surface_texture_cache_reset(void);
+
+#ifdef DTTR_COMPONENTS_ENABLED
+/// Creates the "COMPONENTS ENABLED" overlay texture
+bool dttr_components_overlay_create(DTTR_BackendState *state);
+/// Releases the "COMPONENTS ENABLED" overlay texture
+void dttr_components_overlay_destroy(DTTR_BackendState *state);
+#endif
 
 #endif

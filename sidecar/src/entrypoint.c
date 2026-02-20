@@ -14,14 +14,19 @@
 #include "graphics/graphics_internal.h"
 #include <xxhash.h>
 
-DTTR_GameModule g_dttr_pc_dogs_module;
+#ifdef DTTR_COMPONENTS_ENABLED
+#include "components/components_internal.h"
+#endif
+
 HINSTANCE g_dttr_sidecar_module;
 char g_dttr_loader_dir[MAX_PATH];
 char g_dttr_exe_hash[17];
 
+static HMODULE s_pc_dogs_module;
+
 static void s_compute_exe_hash(void) {
 	char exe_path[MAX_PATH];
-	GetModuleFileNameA(g_dttr_pc_dogs_module, exe_path, sizeof(exe_path));
+	GetModuleFileNameA(s_pc_dogs_module, exe_path, sizeof(exe_path));
 
 	HANDLE file = CreateFileA(
 		exe_path,
@@ -70,6 +75,12 @@ static sds s_get_loader_dir(void) {
 }
 
 static void s_handle_sdl_event(const SDL_Event *event) {
+#ifdef DTTR_COMPONENTS_ENABLED
+	if (dttr_components_handle_event(event)) {
+		return;
+	}
+#endif
+
 	if (dttr_movies_handle_event(event)) {
 		return;
 	}
@@ -117,10 +128,13 @@ static void s_tick_main_loop(void) {
 		if (pcdogs_render_frame()) {
 			SDL_Delay(1);
 		}
-		return;
+	} else {
+		SDL_Delay(10);
 	}
 
-	SDL_Delay(10);
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_tick();
+#endif
 }
 
 /// Replicates the WinMain intro playback logic because we override it in our WinMain.
@@ -188,6 +202,9 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	log_add_fp(log_file, level);
 	log_info("Log level set to %s", log_level_string(level));
 
+	dttr_game_api_init(s_pc_dogs_module, g_dttr_sidecar_module);
+	const DTTR_ComponentContext *ctx = dttr_game_api_get_ctx();
+
 	HWND hwnd = dttr_graphics_init();
 
 	if (hwnd == NULL) {
@@ -196,18 +213,22 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	}
 
 	log_info("Initializing game globals...");
-	s_interop_pcdogs_globals_init(g_dttr_pc_dogs_module);
+	s_interop_pcdogs_globals_init(ctx);
 
 	log_info("Initializing game functions...");
-	s_interop_pcdogs_functions_init(g_dttr_pc_dogs_module);
+	s_interop_pcdogs_functions_init(ctx);
 
-	dttr_other_hook_init(g_dttr_pc_dogs_module);
+	dttr_other_hook_init(ctx);
 	dttr_inputs_init();
-	dttr_inputs_hook_init(g_dttr_pc_dogs_module);
-	dttr_graphics_hook_init(g_dttr_pc_dogs_module);
-	dttr_audio_init(g_dttr_pc_dogs_module);
+	dttr_inputs_hook_init(ctx);
+	dttr_graphics_hook_init(ctx);
+	dttr_audio_init(ctx);
 	dttr_movies_init();
-	dttr_movies_hook_init(g_dttr_pc_dogs_module);
+	dttr_movies_hook_init(ctx);
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_init();
+#endif
 
 	g_pcdogs_main_window_handle2_set(hwnd);
 	g_pcdogs_main_window_handle_set(hwnd);
@@ -247,12 +268,16 @@ int32_t _stdcall dttr_hook_win_main_callback(
 
 	log_info("Cleaning up hooks");
 
-	dttr_movies_hook_cleanup();
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_cleanup();
+#endif
+
+	dttr_movies_hook_cleanup(ctx);
 	dttr_movies_cleanup();
-	dttr_audio_cleanup();
-	dttr_other_hook_cleanup();
-	dttr_graphics_hook_cleanup();
-	dttr_inputs_hook_cleanup();
+	dttr_audio_cleanup(ctx);
+	dttr_other_hook_cleanup(ctx);
+	dttr_graphics_hook_cleanup(ctx);
+	dttr_inputs_hook_cleanup(ctx);
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();
 
@@ -268,9 +293,9 @@ BOOL APIENTRY DllMain(HMODULE module, const DWORD reason_for_call, LPVOID reserv
 	if (reason_for_call == DLL_PROCESS_ATTACH) {
 		g_dttr_sidecar_module = module;
 
-		g_dttr_pc_dogs_module = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("pcdogs.exe"));
+		s_pc_dogs_module = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("pcdogs.exe"));
 
-		dttr_hook_win_main_install(g_dttr_pc_dogs_module);
+		dttr_hook_win_main_install(s_pc_dogs_module);
 	}
 
 	return TRUE;

@@ -69,10 +69,10 @@ DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_SIG(
 )
 
 /// Installs audio crash prevention hooks
-void dttr_audio_init(HMODULE mod);
+void dttr_audio_init(const DTTR_ComponentContext *ctx);
 
 /// Removes audio hooks and frees trampoline memory
-void dttr_audio_cleanup(void);
+void dttr_audio_cleanup(const DTTR_ComponentContext *ctx);
 
 /// Handles SDL audio device added/removed events for hot-plug
 void dttr_audio_handle_device_event(const SDL_Event *event);

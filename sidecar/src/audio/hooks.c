@@ -74,22 +74,22 @@ void dttr_audio_handle_device_event(const SDL_Event *event) {
 	}
 }
 
-void dttr_audio_init(HMODULE mod) {
+void dttr_audio_init(const DTTR_ComponentContext *ctx) {
 	if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
 		log_error("SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s", SDL_GetError());
 	}
 
-	pcdogs_audio_shutdown_system_init(mod);
+	pcdogs_audio_shutdown_system_init(ctx);
 
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_init_system, mod);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_stop_all_sounds, mod);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_init_level_audio, mod);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_stop_all_samples, mod);
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_init_system, ctx);
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_stop_all_sounds, ctx);
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_init_level_audio, ctx);
+	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_stop_all_samples, ctx);
 }
 
-void dttr_audio_cleanup(void) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_stop_all_samples);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_init_level_audio);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_stop_all_sounds);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_init_system);
+void dttr_audio_cleanup(const DTTR_ComponentContext *ctx) {
+	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_stop_all_samples, ctx);
+	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_init_level_audio, ctx);
+	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_stop_all_sounds, ctx);
+	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_init_system, ctx);
 }

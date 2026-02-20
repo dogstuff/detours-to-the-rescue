@@ -2,6 +2,10 @@
 #include "graphics_internal.h"
 #include "log.h"
 
+#ifdef DTTR_COMPONENTS_ENABLED
+#include "../components/components_internal.h"
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -263,15 +267,13 @@ static void s_stage_upload_data(
 	}
 
 	const SDL_GPUBufferCreateInfo sbuf_info = {
-		.usage = SDL_GPU_BUFFERUSAGE_COMPUTE_STORAGE_READ, // used as a temporary fallback
-														   // path
-		.size = upload->bytes, // used as a temporary fallback path
+		.usage = SDL_GPU_BUFFERUSAGE_COMPUTE_STORAGE_READ,
+		.size = upload->bytes,
 	};
 	SDL_GPUBuffer *pixel_buf = NULL;
 	SDL_GPUTransferBuffer *tbuf = NULL;
 	bool from_pool = false;
-	// Reusing pool slots is only safe when we block for GPU completion before slot reuse.
-	// In async mode, pool reuse can race outstanding GPU reads and corrupt uploads.
+	// Pool slot reuse requires GPU sync; async mode would race outstanding GPU reads.
 	int pool_slot = -1;
 
 	if (g_dttr_config.m_texture_upload_sync) {
@@ -711,6 +713,38 @@ void dttr_graphics_end_frame(void) {
 
 	state->m_frame_active = false;
 
+#ifdef DTTR_COMPONENTS_ENABLED
+	uint32_t overlay_first_vertex = 0;
+	bool overlay_ready = false;
+
+	if (state->m_transfer_mapped && state->m_components_overlay_tex
+		&& state->m_vertex_offset + 6 <= DTTR_MAX_FRAME_VERTICES) {
+		overlay_first_vertex = state->m_vertex_offset;
+
+		const float scale = (float)state->m_height / 320.0f;
+		const float ow = (float)state->m_components_overlay_w * scale;
+		const float oh = (float)state->m_components_overlay_h * scale;
+		const float margin = 4.0f * scale;
+		const float x0 = (float)state->m_width - ow - margin;
+		const float y0 = margin;
+		const float x1 = x0 + ow;
+		const float y1 = y0 + oh;
+		const float alpha = 0.15f;
+
+		DTTR_Vertex *verts = (DTTR_Vertex *)((uint8_t *)state->m_transfer_mapped
+											 + state->m_vertex_offset * DTTR_VERTEX_SIZE);
+		verts[0] = (DTTR_Vertex){x0, y0, 0, 1, 1, 1, 1, alpha, 0, 0};
+		verts[1] = (DTTR_Vertex){x1, y0, 0, 1, 1, 1, 1, alpha, 1, 0};
+		verts[2] = (DTTR_Vertex){x0, y1, 0, 1, 1, 1, 1, alpha, 0, 1};
+		verts[3] = (DTTR_Vertex){x0, y1, 0, 1, 1, 1, 1, alpha, 0, 1};
+		verts[4] = (DTTR_Vertex){x1, y0, 0, 1, 1, 1, 1, alpha, 1, 0};
+		verts[5] = (DTTR_Vertex){x1, y1, 0, 1, 1, 1, 1, alpha, 1, 1};
+
+		state->m_vertex_offset += 6;
+		overlay_ready = true;
+	}
+#endif
+
 	if (state->m_transfer_mapped) {
 		SDL_UnmapGPUTransferBuffer(state->m_device, state->m_transfer_buffer);
 		state->m_transfer_mapped = NULL;
@@ -740,6 +774,86 @@ void dttr_graphics_end_frame(void) {
 	state->m_perf_clears_accum += replay_stats.clear_count;
 	state->m_perf_pipeline_binds_accum += replay_stats.pipeline_bind_count;
 	state->m_perf_sampler_binds_accum += replay_stats.sampler_bind_count;
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_render(
+		state->m_cmd,
+		state->m_render_target,
+		(uint32_t)state->m_width,
+		(uint32_t)state->m_height
+	);
+
+	if (overlay_ready) {
+		const SDL_GPUColorTargetInfo overlay_color = {
+			.texture = state->m_render_target,
+			.load_op = SDL_GPU_LOADOP_LOAD,
+			.store_op = SDL_GPU_STOREOP_STORE,
+		};
+		SDL_GPURenderPass *overlay_pass = SDL_BeginGPURenderPass(
+			state->m_cmd,
+			&overlay_color,
+			1,
+			NULL
+		);
+
+		if (overlay_pass) {
+			const int pidx = DTTR_PIPELINE_INDEX(DTTR_BLEND_ALPHA, false, false);
+			SDL_BindGPUGraphicsPipeline(overlay_pass, state->m_pipelines[pidx]);
+
+			const SDL_GPUBufferBinding vbuf_binding = {
+				.buffer = state->m_vertex_buffer,
+			};
+			SDL_BindGPUVertexBuffers(overlay_pass, 0, &vbuf_binding, 1);
+
+			DTTR_Uniforms overlay_uniforms;
+			dttr_graphics_mat4_identity(overlay_uniforms.m_mvp);
+			overlay_uniforms.m_screen_size[0] = (float)state->m_width;
+			overlay_uniforms.m_screen_size[1] = (float)state->m_height;
+			overlay_uniforms.m_is_2d = 1.0f;
+			overlay_uniforms.m_has_texture = 1.0f;
+
+			SDL_PushGPUVertexUniformData(
+				state->m_cmd,
+				0,
+				&overlay_uniforms,
+				sizeof(overlay_uniforms)
+			);
+			SDL_PushGPUFragmentUniformData(
+				state->m_cmd,
+				0,
+				&overlay_uniforms,
+				sizeof(overlay_uniforms)
+			);
+
+			const SDL_GPUTextureSamplerBinding overlay_tex = {
+				.texture = state->m_components_overlay_tex,
+				.sampler = state->m_samplers[3],
+			};
+			SDL_BindGPUFragmentSamplers(overlay_pass, 0, &overlay_tex, 1);
+
+			const SDL_GPUViewport overlay_vp = {
+				.x = 0.0f,
+				.y = 0.0f,
+				.w = (float)state->m_width,
+				.h = (float)state->m_height,
+				.min_depth = 0.0f,
+				.max_depth = 1.0f,
+			};
+			SDL_SetGPUViewport(overlay_pass, &overlay_vp);
+
+			const SDL_Rect overlay_scissor = {
+				.x = 0,
+				.y = 0,
+				.w = state->m_width,
+				.h = state->m_height,
+			};
+			SDL_SetGPUScissor(overlay_pass, &overlay_scissor);
+
+			SDL_DrawGPUPrimitives(overlay_pass, 6, 1, overlay_first_vertex, 0);
+			SDL_EndGPURenderPass(overlay_pass);
+		}
+	}
+#endif
 
 	if (state->m_swapchain_tex) {
 		const Uint32 swap_w = (state->m_swapchain_width > 0) ? state->m_swapchain_width
