@@ -7,10 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DTTR_PARSE_TOKEN(token, enum_value) \
-	if (strcmp(value, token) == 0) { \
-		*out_value = enum_value; \
-		return true; \
+#define DTTR_PARSE_TOKEN(token, enum_value)                                              \
+	if (strcmp(value, token) == 0) {                                                     \
+		*out_value = enum_value;                                                         \
+		return true;                                                                     \
 	}
 
 bool s_config_parse_bool(const char *value, bool *out_value) {
@@ -220,134 +220,148 @@ bool s_config_parse_string(const char *value, char *out_value, size_t out_size) 
 
 #undef DTTR_PARSE_TOKEN
 
-#define DTTR_FORMAT_TOKEN(enum_value, token) case (enum_value): return (token);
+#define DTTR_FORMAT_TOKEN(enum_value, token)                                             \
+	case (enum_value):                                                                   \
+		return (token);
 
 const char *s_config_format_bool(bool value) { return value ? "true" : "false"; }
 
-void s_config_format_int(int value, char *buf, size_t buf_size) { snprintf(buf, buf_size, "%d", value); }
+void s_config_format_int(int value, char *buf, size_t buf_size) {
+	snprintf(buf, buf_size, "%d", value);
+}
 
 const char *s_config_format_scaling_fit(DTTR_ScalingMode mode) {
 	switch (mode) {
-	DTTR_FORMAT_TOKEN(DTTR_SCALING_MODE_STRETCH, "stretch")
-	DTTR_FORMAT_TOKEN(DTTR_SCALING_MODE_INTEGER, "integer")
-	default: return "letterbox";
+		DTTR_FORMAT_TOKEN(DTTR_SCALING_MODE_STRETCH, "stretch")
+		DTTR_FORMAT_TOKEN(DTTR_SCALING_MODE_INTEGER, "integer")
+	default:
+		return "letterbox";
 	}
 }
 
 const char *s_config_format_scaling_method(DTTR_ScalingMethod method) {
 	switch (method) {
-	DTTR_FORMAT_TOKEN(DTTR_SCALING_METHOD_LOGICAL, "logical")
-	default: return "present";
+		DTTR_FORMAT_TOKEN(DTTR_SCALING_METHOD_LOGICAL, "logical")
+	default:
+		return "present";
 	}
 }
 
 const char *s_config_format_graphics_api(DTTR_GraphicsApi api) {
 	switch (api) {
-	DTTR_FORMAT_TOKEN(DTTR_GRAPHICS_API_VULKAN, "vulkan")
-	DTTR_FORMAT_TOKEN(DTTR_GRAPHICS_API_DIRECT3D12, "direct3d12")
-	DTTR_FORMAT_TOKEN(DTTR_GRAPHICS_API_METAL, "metal")
-	default: return "auto";
+		DTTR_FORMAT_TOKEN(DTTR_GRAPHICS_API_VULKAN, "vulkan")
+		DTTR_FORMAT_TOKEN(DTTR_GRAPHICS_API_DIRECT3D12, "direct3d12")
+		DTTR_FORMAT_TOKEN(DTTR_GRAPHICS_API_METAL, "metal")
+	default:
+		return "auto";
 	}
 }
 
 const char *s_config_format_present_filter(SDL_GPUFilter filter) {
 	switch (filter) {
-	DTTR_FORMAT_TOKEN(SDL_GPU_FILTER_NEAREST, "nearest")
-	default: return "linear";
+		DTTR_FORMAT_TOKEN(SDL_GPU_FILTER_NEAREST, "nearest")
+	default:
+		return "linear";
 	}
 }
 
 const char *s_config_format_log_level(int level) {
 	switch (level) {
-	DTTR_FORMAT_TOKEN(LOG_TRACE, "trace")
-	DTTR_FORMAT_TOKEN(LOG_DEBUG, "debug")
-	DTTR_FORMAT_TOKEN(LOG_INFO, "info")
-	DTTR_FORMAT_TOKEN(LOG_WARN, "warn")
-	DTTR_FORMAT_TOKEN(LOG_ERROR, "error")
-	DTTR_FORMAT_TOKEN(LOG_FATAL, "fatal")
-	default: return "info";
+		DTTR_FORMAT_TOKEN(LOG_TRACE, "trace")
+		DTTR_FORMAT_TOKEN(LOG_DEBUG, "debug")
+		DTTR_FORMAT_TOKEN(LOG_INFO, "info")
+		DTTR_FORMAT_TOKEN(LOG_WARN, "warn")
+		DTTR_FORMAT_TOKEN(LOG_ERROR, "error")
+		DTTR_FORMAT_TOKEN(LOG_FATAL, "fatal")
+	default:
+		return "info";
 	}
 }
 
 const char *s_config_format_minidump_type(DTTR_MinidumpType type) {
 	switch (type) {
-	DTTR_FORMAT_TOKEN(DTTR_MINIDUMP_DETAILED, "detailed")
-	default: return "normal";
+		DTTR_FORMAT_TOKEN(DTTR_MINIDUMP_DETAILED, "detailed")
+	default:
+		return "normal";
 	}
 }
 
 const char *s_config_format_gamepad_source(int source) {
 	switch (source) {
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_SOUTH, "south")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_EAST, "east")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_WEST, "west")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_NORTH, "north")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_BACK, "back")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_GUIDE, "guide")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_START, "start")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_STICK, "left_stick_click")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_STICK, "right_stick_click")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "left_shoulder")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "right_shoulder")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_UP, "dpad_up")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_DOWN, "dpad_down")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_LEFT, "dpad_left")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "dpad_right")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_MISC1, "misc1")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1, "right_paddle1")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_PADDLE1, "left_paddle1")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2, "right_paddle2")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_PADDLE2, "left_paddle2")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_TOUCHPAD, "touchpad")
-	DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT, "left_trigger")
-	DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT, "right_trigger")
-	default: return NULL;
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_SOUTH, "south")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_EAST, "east")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_WEST, "west")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_NORTH, "north")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_BACK, "back")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_GUIDE, "guide")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_START, "start")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_STICK, "left_stick_click")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_STICK, "right_stick_click")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "left_shoulder")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "right_shoulder")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_UP, "dpad_up")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_DOWN, "dpad_down")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_LEFT, "dpad_left")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "dpad_right")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_MISC1, "misc1")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1, "right_paddle1")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_PADDLE1, "left_paddle1")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2, "right_paddle2")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_LEFT_PADDLE2, "left_paddle2")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_BUTTON_TOUCHPAD, "touchpad")
+		DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT, "left_trigger")
+		DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT, "right_trigger")
+	default:
+		return NULL;
 	}
 }
 
 const char *s_config_format_game_action(int action) {
 	switch (action) {
-	DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_MAPPING_NONE, "none")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_UP, "up")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_DOWN, "down")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_LEFT, "left")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_RIGHT, "right")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_POV_UP, "pov_up")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_POV_DOWN, "pov_down")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_0, "joy_1")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_1, "joy_2")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_2, "joy_3")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_3, "joy_4")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_4, "joy_5")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_5, "joy_6")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_6, "joy_7")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_7, "joy_8")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_8, "joy_9")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_9, "joy_10")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_10, "joy_11")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_11, "joy_12")
-	DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_12, "joy_13")
-	default: return "none";
+		DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_MAPPING_NONE, "none")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_UP, "up")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_DOWN, "down")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_LEFT, "left")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_RIGHT, "right")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_POV_UP, "pov_up")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_POV_DOWN, "pov_down")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_0, "joy_1")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_1, "joy_2")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_2, "joy_3")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_3, "joy_4")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_4, "joy_5")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_5, "joy_6")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_6, "joy_7")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_7, "joy_8")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_8, "joy_9")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_9, "joy_10")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_10, "joy_11")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_11, "joy_12")
+		DTTR_FORMAT_TOKEN(PCDOGS_GAMEPAD_IDX_BTN_12, "joy_13")
+	default:
+		return "none";
 	}
 }
 
 const char *s_config_format_gamepad_axis(int axis) {
 	switch (axis) {
-	DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_MAPPING_NONE, "none")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFTX, "axis_left_x")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFTY, "axis_left_y")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHTX, "axis_right_x")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHTY, "axis_right_y")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, "axis_left_trigger")
-	DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, "axis_right_trigger")
-	default: return "none";
+		DTTR_FORMAT_TOKEN(DTTR_GAMEPAD_MAPPING_NONE, "none")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFTX, "axis_left_x")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFTY, "axis_left_y")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHTX, "axis_right_x")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHTY, "axis_right_y")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_LEFT_TRIGGER, "axis_left_trigger")
+		DTTR_FORMAT_TOKEN(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, "axis_right_trigger")
+	default:
+		return "none";
 	}
 }
 
 const char *s_config_format_vertex_precision(DTTR_VertexPrecision precision) {
 	switch (precision) {
-	DTTR_FORMAT_TOKEN(DTTR_VERTEX_PRECISION_NATIVE, "native")
-	default: return "subpixel";
+		DTTR_FORMAT_TOKEN(DTTR_VERTEX_PRECISION_NATIVE, "native")
+	default:
+		return "subpixel";
 	}
 }
 

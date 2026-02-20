@@ -6,9 +6,9 @@
 #include <windows.h>
 
 /// Installs DirectDraw-related runtime hooks
-void dttr_graphics_hook_init(HMODULE module);
+void dttr_graphics_hook_init(const DTTR_ComponentContext *ctx);
 /// Removes DirectDraw-related runtime hooks and releases hook state
-void dttr_graphics_hook_cleanup(void);
+void dttr_graphics_hook_cleanup(const DTTR_ComponentContext *ctx);
 
 /// Intercepts DirectDrawCreateEx and returns the sidecar DirectDraw translator
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawcreateex

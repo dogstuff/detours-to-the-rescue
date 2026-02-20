@@ -1,5 +1,5 @@
-#include <dttr_config.h>
 #include "log.h"
+#include <dttr_config.h>
 
 // clang-format off
 #define DTTR_GAMEPAD_AXIS_DEFAULTS \

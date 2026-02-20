@@ -45,6 +45,20 @@ build:
       when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
+build-components:
+  extends: .nix-cache
+  stage: build
+  script:
+    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_COMPONENTS=ON && (cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug-components.zip Debug-components/)"
+  artifacts:
+    paths:
+      - dttr-*-debug-components.zip
+    expire_in: 2 weeks
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+
 build-release:
   extends: .nix-cache
   stage: build
@@ -54,6 +68,19 @@ build-release:
     paths:
       - dttr-*-debug.zip
       - dttr-*-release.zip
+    expire_in: 2 weeks
+  rules:
+    - if: $CI_COMMIT_TAG
+
+build-release-components:
+  extends: .nix-cache
+  stage: build
+  script:
+    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug-components.zip Debug-components/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release-components.zip Release-components/"
+  artifacts:
+    paths:
+      - dttr-*-debug-components.zip
+      - dttr-*-release-components.zip
     expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
@@ -83,6 +110,8 @@ release:
   needs:
     - job: build-release
       artifacts: true
+    - job: build-release-components
+      artifacts: true
   release:
     tag_name: $CI_COMMIT_TAG
     description: ./changelog.md
@@ -92,9 +121,15 @@ release:
           url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-release.zip"
         - name: "dttr-${CI_COMMIT_TAG}-debug.zip"
           url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-debug.zip"
+        - name: "dttr-${CI_COMMIT_TAG}-release-components.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-release-components.zip"
+        - name: "dttr-${CI_COMMIT_TAG}-debug-components.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-debug-components.zip"
   artifacts:
     paths:
       - dttr-*-release.zip
       - dttr-*-debug.zip
+      - dttr-*-release-components.zip
+      - dttr-*-debug-components.zip
   rules:
     - if: $CI_COMMIT_TAG

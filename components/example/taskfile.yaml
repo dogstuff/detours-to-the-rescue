@@ -1,0 +1,33 @@
+version: '3'
+
+vars:
+  BUILD_DIR: build
+  TOOLCHAIN_FILE: .toolchain/toolchain.cmake
+
+tasks:
+  build:
+    deps:
+      - setup-build
+    cmds:
+      - cmake --build "{{ .BUILD_DIR }}" --config Debug
+
+  build-release:
+    deps:
+      - build
+    cmds:
+      - cmake --build "{{ .BUILD_DIR }}" --config Release
+
+  setup-build:
+    cmds:
+      - >-
+        cmake -G "Ninja Multi-Config" -B "{{ .BUILD_DIR }}"
+        -DCMAKE_TOOLCHAIN_FILE="{{ .TOOLCHAIN_FILE }}"
+
+  clean:
+    cmds:
+      - rm -rf "{{ .BUILD_DIR }}"
+      - rm -rf .toolchain
+
+  format:
+    cmds:
+      - find . -iname '*.h' -o -iname '*.c' | xargs clang-format -i

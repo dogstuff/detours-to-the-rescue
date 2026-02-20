@@ -9,6 +9,8 @@ if(NOT DEFINED DTTR_VERSION)
     set(DTTR_VERSION "${PROJECT_VERSION}")
 endif()
 
+option(DTTR_COMPONENTS "Enable component loading system" OFF)
+
 if(NOT WIN32)
     message(FATAL_ERROR "Windows only. Use: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cross/i686-w64-mingw32.cmake")
 endif()
@@ -18,7 +20,13 @@ add_subdirectory(common)
 add_subdirectory(sidecar)
 add_subdirectory(loader)
 
-set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>")
+if(DTTR_COMPONENTS)
+    set(DTTR_DIST_SUFFIX "-components")
+else()
+    set(DTTR_DIST_SUFFIX "")
+endif()
+
+set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>${DTTR_DIST_SUFFIX}")
 file(GENERATE
     OUTPUT "${DTTR_DIST_DIR}/dttr.jsonc"
     INPUT "${CMAKE_SOURCE_DIR}/common/dttr.jsonc"
@@ -33,3 +41,9 @@ add_custom_target(dttr_dist ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/libmpv-2.dll" "${DTTR_DIST_DIR}/libmpv-2.dll"
     COMMENT "Bundling runtime artifacts into ${DTTR_DIST_DIR}"
 )
+
+if(DTTR_COMPONENTS)
+    add_custom_command(TARGET dttr_dist POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_DIR}/components"
+    )
+endif()

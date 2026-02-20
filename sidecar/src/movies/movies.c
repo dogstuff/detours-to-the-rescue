@@ -51,12 +51,12 @@ void dttr_movies_init(void) {
 	log_info("Successfully initialized mpv instance");
 }
 
-void dttr_movies_hook_init(HMODULE mod) {
-	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_movies_hook_movie_play_file, mod);
+void dttr_movies_hook_init(const DTTR_ComponentContext *ctx) {
+	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_movies_hook_movie_play_file, ctx);
 }
 
-void dttr_movies_hook_cleanup(void) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_movies_hook_movie_play_file);
+void dttr_movies_hook_cleanup(const DTTR_ComponentContext *ctx) {
+	DTTR_INTEROP_UNHOOK_LOG(dttr_movies_hook_movie_play_file, ctx);
 }
 
 void dttr_movies_cleanup(void) {

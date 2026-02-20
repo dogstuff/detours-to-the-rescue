@@ -3,8 +3,6 @@
 
 #include <dttr_interop.h>
 
-typedef HMODULE DTTR_GameModule;
-
 // These are game globals used by the sidecar runtime
 
 DTTR_INTEROP_VAR_SIG(
@@ -174,30 +172,30 @@ DTTR_INTEROP_VAR_SIG(
 )
 
 // Resolves cached addresses for global-variable wrappers
-static void s_interop_pcdogs_globals_init(HMODULE mod) {
-	g_pcdogs_ddraw_object_init(mod);
-	g_pcdogs_game_initialized_init(mod);
-	g_pcdogs_gamepad_button_flags_init(mod);
-	g_pcdogs_joystick_available_init(mod);
-	g_pcdogs_keyboard_mapping_buttons_init(mod);
-	g_pcdogs_keyboard_mapping_keys_init(mod);
-	g_pcdogs_main_window_handle_init(mod);
-	g_pcdogs_main_window_handle2_init(mod);
-	g_pcdogs_mapping_count_init(mod);
-	g_pcdogs_rendering_enabled_init(mod);
-	g_pcdogs_should_quit_init(mod);
-	g_pcdogs_directory_init(mod);
+static void s_interop_pcdogs_globals_init(const DTTR_ComponentContext *ctx) {
+	g_pcdogs_ddraw_object_init(ctx);
+	g_pcdogs_game_initialized_init(ctx);
+	g_pcdogs_gamepad_button_flags_init(ctx);
+	g_pcdogs_joystick_available_init(ctx);
+	g_pcdogs_keyboard_mapping_buttons_init(ctx);
+	g_pcdogs_keyboard_mapping_keys_init(ctx);
+	g_pcdogs_main_window_handle_init(ctx);
+	g_pcdogs_main_window_handle2_init(ctx);
+	g_pcdogs_mapping_count_init(ctx);
+	g_pcdogs_rendering_enabled_init(ctx);
+	g_pcdogs_should_quit_init(ctx);
+	g_pcdogs_directory_init(ctx);
 
-	g_pcdogs_level_asset_0_init(mod);
-	g_pcdogs_level_asset_1_init(mod);
-	g_pcdogs_level_asset_2_init(mod);
-	g_pcdogs_level_asset_3_init(mod);
-	g_pcdogs_level_asset_4_init(mod);
+	g_pcdogs_level_asset_0_init(ctx);
+	g_pcdogs_level_asset_1_init(ctx);
+	g_pcdogs_level_asset_2_init(ctx);
+	g_pcdogs_level_asset_3_init(ctx);
+	g_pcdogs_level_asset_4_init(ctx);
 
-	g_pcdogs_movie_file_names_init(mod);
-	g_pcdogs_movie_path_prefix_init(mod);
+	g_pcdogs_movie_file_names_init(ctx);
+	g_pcdogs_movie_path_prefix_init(ctx);
 
-	g_pcdogs_audio_digital_driver_init(mod);
+	g_pcdogs_audio_digital_driver_init(ctx);
 }
 
 DTTR_INTEROP_WRAP_CACHED_CC_SIG(
@@ -322,18 +320,18 @@ DTTR_INTEROP_WRAP_CACHED_CC_SIG(
 	(size)
 )
 
-static void s_interop_pcdogs_functions_init(DTTR_GameModule mod) {
-	pcdogs_find_and_load_game_pkg_file_init(mod);
-	pcdogs_initialize_game_engine_init(mod);
-	pcdogs_initialize_graphics_subsystem_init(mod);
-	pcdogs_initialize_capabilities_init(mod);
-	pcdogs_initialize_window_handle_init(mod);
-	pcdogs_initialize_game_systems_init(mod);
-	pcdogs_render_frame_init(mod);
-	pcdogs_is_key_pressed_init(mod);
-	pcdogs_reset_input_and_state_init(mod);
-	pcdogs_take_screenshot_init(mod);
-	pcdogs_malloc_init(mod);
+static void s_interop_pcdogs_functions_init(const DTTR_ComponentContext *ctx) {
+	pcdogs_find_and_load_game_pkg_file_init(ctx);
+	pcdogs_initialize_game_engine_init(ctx);
+	pcdogs_initialize_graphics_subsystem_init(ctx);
+	pcdogs_initialize_capabilities_init(ctx);
+	pcdogs_initialize_window_handle_init(ctx);
+	pcdogs_initialize_game_systems_init(ctx);
+	pcdogs_render_frame_init(ctx);
+	pcdogs_is_key_pressed_init(ctx);
+	pcdogs_reset_input_and_state_init(ctx);
+	pcdogs_take_screenshot_init(ctx);
+	pcdogs_malloc_init(ctx);
 }
 
 #endif // DTTR_GAME_FUNCTIONS_H

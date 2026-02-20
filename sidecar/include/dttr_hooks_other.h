@@ -62,9 +62,9 @@ DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_SIG(
 )
 
 /// Initializes miscellaneous hooks
-void dttr_other_hook_init(HMODULE mod);
+void dttr_other_hook_init(const DTTR_ComponentContext *ctx);
 
 /// Removes miscellaneous hooks and frees trampoline memory
-void dttr_other_hook_cleanup(void);
+void dttr_other_hook_cleanup(const DTTR_ComponentContext *ctx);
 
 #endif

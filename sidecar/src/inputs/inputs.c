@@ -35,9 +35,9 @@ void dttr_inputs_init(void) {
 	s_try_open_configured_gamepad();
 }
 
-void dttr_inputs_hook_init(HMODULE module) {
-	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_inputs_hook_dinput_poll, module);
-	DTTR_INTEROP_PATCH_PTR_LOG(dttr_inputs_hook_get_async_key_state, module);
+void dttr_inputs_hook_init(const DTTR_ComponentContext *ctx) {
+	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_inputs_hook_dinput_poll, ctx);
+	DTTR_INTEROP_PATCH_PTR_LOG(dttr_inputs_hook_get_async_key_state, ctx);
 }
 
 void dttr_inputs_handle_device_event(const SDL_Event *event) {
@@ -67,9 +67,9 @@ void dttr_inputs_late_init(void) {
 	log_debug("Joystick is available");
 }
 
-void dttr_inputs_hook_cleanup(void) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_dinput_poll);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_get_async_key_state);
+void dttr_inputs_hook_cleanup(const DTTR_ComponentContext *ctx) {
+	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_dinput_poll, ctx);
+	DTTR_INTEROP_UNHOOK_LOG(dttr_inputs_hook_get_async_key_state, ctx);
 }
 
 void dttr_inputs_cleanup(void) {

@@ -57,8 +57,18 @@ const char *s_config_format_vertex_precision(DTTR_VertexPrecision precision);
 int s_config_schema_count(void);
 const S_ConfigFieldSpec *s_config_schema_get(int index);
 
-bool s_config_apply_entry(DTTR_Config *config, const char *section, const char *key, const char *value);
+bool s_config_apply_entry(
+	DTTR_Config *config,
+	const char *section,
+	const char *key,
+	const char *value
+);
 
-bool s_config_apply_gamepad_entry(DTTR_Config *config, const char *section, const char *key, const char *value);
+bool s_config_apply_gamepad_entry(
+	DTTR_Config *config,
+	const char *section,
+	const char *key,
+	const char *value
+);
 
 #endif
