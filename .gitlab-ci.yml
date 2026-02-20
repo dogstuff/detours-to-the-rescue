@@ -49,10 +49,10 @@ build-components:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_COMPONENTS=ON && (cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug-components.zip Debug-components/)"
+    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_COMPONENTS=ON && (cd build/dist && zip -r ../../dttr-components-${CI_COMMIT_SHORT_SHA}-debug.zip Debug-components/)"
   artifacts:
     paths:
-      - dttr-*-debug-components.zip
+      - dttr-components-*-debug.zip
     expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
@@ -76,11 +76,11 @@ build-release-components:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug-components.zip Debug-components/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release-components.zip Release-components/"
+    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-components-${CI_COMMIT_TAG}-debug.zip Debug-components/ && zip -r ../../dttr-components-${CI_COMMIT_TAG}-release.zip Release-components/"
   artifacts:
     paths:
-      - dttr-*-debug-components.zip
-      - dttr-*-release-components.zip
+      - dttr-components-*-debug.zip
+      - dttr-components-*-release.zip
     expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
@@ -103,10 +103,16 @@ release:
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   variables:
     GIT_DEPTH: 0
+  before_script:
+    - apk add --no-cache git
   script:
     - |
-      PREV_TAG=$(git describe --tags --abbrev=0 HEAD^)
-      git log --first-parent --no-merges --format="- %s (%h)" "${PREV_TAG}..HEAD" > changelog.md
+      PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+      if [ -n "$PREV_TAG" ]; then
+        git log --first-parent --no-merges --format="- %s (%h)" "${PREV_TAG}..HEAD" > changelog.md
+      else
+        git log --first-parent --no-merges --format="- %s (%h)" > changelog.md
+      fi
   needs:
     - job: build-release
       artifacts: true
@@ -121,15 +127,15 @@ release:
           url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-release.zip"
         - name: "dttr-${CI_COMMIT_TAG}-debug.zip"
           url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-debug.zip"
-        - name: "dttr-${CI_COMMIT_TAG}-release-components.zip"
-          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-release-components.zip"
-        - name: "dttr-${CI_COMMIT_TAG}-debug-components.zip"
-          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-debug-components.zip"
+        - name: "dttr-components-${CI_COMMIT_TAG}-release.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-components-${CI_COMMIT_TAG}-release.zip"
+        - name: "dttr-components-${CI_COMMIT_TAG}-debug.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-components-${CI_COMMIT_TAG}-debug.zip"
   artifacts:
     paths:
       - dttr-*-release.zip
       - dttr-*-debug.zip
-      - dttr-*-release-components.zip
-      - dttr-*-debug-components.zip
+      - dttr-components-*-release.zip
+      - dttr-components-*-debug.zip
   rules:
     - if: $CI_COMMIT_TAG

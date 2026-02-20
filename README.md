@@ -60,6 +60,24 @@ dttr.exe path/to/my_config.jsonc
 
 ---
 
+## Components
+
+Components are optional, dynamically-loaded plugins that extend DttR without modifying core code. 
+They live in the  `components/` directory DttR subdirectory and are auto-discovered & loaded at runtime.
+
+Components have access to the same hooking, patching, and scanning APIs as the core sidecar code.
+
+### "Components" Builds
+
+The **normal build** (`dttr-vX.X.X-release.zip`) does not include the component loading system. This version is intended to run the visual game with as few modifications as possible.
+
+The **components build** (`dttr-components-vX.X.X-release.zip`) includes the component loading system and all components bundled with the game.
+This version is NOT allowed on the speedrun.com leaderboards and as such currently overlays a watermark.
+
+Components builds are provided as separate downloads for each release.
+
+---
+
 ## Compilation
 
 This project's build system relies on [Nix](https://github.com/NixOS/nix) for toolchain and dependency management.
