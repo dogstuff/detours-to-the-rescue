@@ -5,6 +5,7 @@ add_library(dttr_sidecar SHARED
     src/entrypoint.c
     src/impl.c
     src/game_api.c
+    src/hook_registry.c
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c

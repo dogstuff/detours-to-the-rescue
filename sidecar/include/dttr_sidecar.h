@@ -12,7 +12,7 @@
 
 #include "game_api_internal.h"
 
-// Handle to the injected sidecar DLL itself
+// Handle to the injected sidecar DLL itself.
 extern HINSTANCE g_dttr_sidecar_module;
 
 // Directory containing the loader DLL, with a trailing backslash.
@@ -30,7 +30,7 @@ void dttr_graphics_cleanup(void);
 /// Returns the main game window
 SDL_Window *dttr_graphics_get_window(void);
 
-/// Returns the GPU device
+/// Returns the GPU device.
 SDL_GPUDevice *dttr_graphics_get_device(void);
 
 /// Applies runtime window resize to rendering policy
@@ -50,7 +50,7 @@ extern SDL_Gamepad *g_dttr_gamepad;
 void dttr_inputs_init(void);
 
 /// Installs input hooks
-void dttr_inputs_hook_init(const DTTR_ComponentContext *ctx);
+void dttr_inputs_hooks_init(const DTTR_ComponentContext *ctx);
 
 /// Handles gamepad connection and disconnection events
 void dttr_inputs_handle_device_event(const SDL_Event *event);
@@ -59,7 +59,7 @@ void dttr_inputs_handle_device_event(const SDL_Event *event);
 void dttr_inputs_late_init(void);
 
 /// Removes input hooks
-void dttr_inputs_hook_cleanup(const DTTR_ComponentContext *ctx);
+void dttr_inputs_hooks_cleanup(const DTTR_ComponentContext *ctx);
 
 /// Releases input subsystem resources
 void dttr_inputs_cleanup(void);
@@ -75,10 +75,10 @@ typedef enum {
 void dttr_movies_init(void);
 
 /// Installs video playback hooks.
-void dttr_movies_hook_init(const DTTR_ComponentContext *ctx);
+void dttr_movies_hooks_init(const DTTR_ComponentContext *ctx);
 
 /// Removes video playback hooks.
-void dttr_movies_hook_cleanup(const DTTR_ComponentContext *ctx);
+void dttr_movies_hooks_cleanup(const DTTR_ComponentContext *ctx);
 
 /// Releases video playback subsystem resources.
 void dttr_movies_cleanup(void);

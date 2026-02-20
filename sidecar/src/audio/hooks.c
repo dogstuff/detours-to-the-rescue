@@ -79,17 +79,42 @@ void dttr_audio_init(const DTTR_ComponentContext *ctx) {
 		log_error("SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s", SDL_GetError());
 	}
 
-	pcdogs_audio_shutdown_system_init(ctx);
+	DTTR_INSTALL_TRAMPOLINE(
+		dttr_hook_audio_init_system,
+		ctx,
+		"\x81\xEC\x90???\x55\x56\x57\xFF\x15",
+		"xxx???xxxxx",
+		6
+	);
 
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_init_system, ctx);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_stop_all_sounds, ctx);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_init_level_audio, ctx);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_audio_stop_all_samples, ctx);
+	DTTR_INSTALL_TRAMPOLINE(
+		dttr_hook_audio_stop_all_sounds,
+		ctx,
+		"\xA1????\x6A?\x50\xFF\x15",
+		"x????x?xxx",
+		5
+	);
+
+	DTTR_INSTALL_TRAMPOLINE(
+		dttr_hook_audio_init_level_audio,
+		ctx,
+		"\xA1????\x6A\x7F\x50\xFF\x15",
+		"x????xxxxx",
+		5
+	);
+
+	DTTR_INSTALL_TRAMPOLINE(
+		dttr_hook_audio_stop_all_samples,
+		ctx,
+		"\x56\x57\x8B\x3D????\xBE",
+		"xxxx????x",
+		8
+	);
 }
 
 void dttr_audio_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_stop_all_samples, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_init_level_audio, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_stop_all_sounds, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_audio_init_system, ctx);
+	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_audio_stop_all_samples, ctx);
+	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_audio_init_level_audio, ctx);
+	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_audio_stop_all_sounds, ctx);
+	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_audio_init_system, ctx);
 }

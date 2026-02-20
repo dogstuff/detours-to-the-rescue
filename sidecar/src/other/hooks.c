@@ -2,16 +2,41 @@
 #include "dttr_interop_pcdogs.h"
 #include "log.h"
 
-void dttr_other_hook_init(const DTTR_ComponentContext *ctx) {
-	dttr_crt_open_file_with_mode_init(ctx);
+void dttr_other_hooks_init(const DTTR_ComponentContext *ctx) {
+	DTTR_RESOLVE(
+		dttr_crt_open_file_with_mode,
+		ctx,
+		"\xE8????\x85\xC0\x75?\xC3",
+		"x????xxx?x",
+		match
+	);
 
-	DTTR_INTEROP_HOOK_FUNC_LOG(dttr_crt_hook_open_file, ctx);
-	DTTR_INTEROP_HOOK_FUNC_OPTIONAL_LOG(dttr_hook_resolve_pcdogs_path, ctx);
-	DTTR_INTEROP_HOOK_FUNC_TRAMPOLINE_LOG(dttr_hook_cleanup_level_assets, ctx);
+	DTTR_INSTALL_JMP(
+		dttr_crt_hook_open_file,
+		ctx,
+		"\x6A\x40\xFF\x74\x24\x0C\xFF\x74\x24\x0C\xE8",
+		"xxxxxxxxxxx"
+	);
+
+	DTTR_INSTALL_JMP_OPTIONAL(
+		dttr_hook_resolve_pcdogs_path,
+		ctx,
+		"\x51\x8D\x44\x24?\x57",
+		"xxxx?x"
+	);
+
+	DTTR_INSTALL_TRAMPOLINE(
+		dttr_hook_cleanup_level_assets,
+		ctx,
+		"\x6A\x01\xE8????\xE8????\xA1????\x50\xE8????\x8B\x0D????\x51\xE8????\x8B\x15????"
+		"\x52\xE8????\xA1????\x50\xE8????\x8B\x0D????\x51\xE8????\x83??",
+		"xxx????x????x????xx????xx????xx????xx????xx????x????xx????xx????xx??",
+		7
+	);
 }
 
-void dttr_other_hook_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_INTEROP_UNHOOK_LOG(dttr_hook_cleanup_level_assets, ctx);
-	DTTR_INTEROP_UNHOOK_OPTIONAL_LOG(dttr_hook_resolve_pcdogs_path, ctx);
-	DTTR_INTEROP_UNHOOK_LOG(dttr_crt_hook_open_file, ctx);
+void dttr_other_hooks_cleanup(const DTTR_ComponentContext *ctx) {
+	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_cleanup_level_assets, ctx);
+	DTTR_UNINSTALL(dttr_hook_resolve_pcdogs_path, ctx);
+	DTTR_UNINSTALL(dttr_crt_hook_open_file, ctx);
 }

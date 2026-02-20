@@ -399,7 +399,7 @@ void dttr_graphics_handle_window_resize(int width, int height) {
 
 // Releases GPU resources, destroys the SDL window/device pair, and shuts down SDL
 void dttr_graphics_cleanup(void) {
-	dttr_graphics_hook_cleanup(dttr_game_api_get_ctx());
+	dttr_graphics_hooks_cleanup(dttr_game_api_get_ctx());
 
 	DTTR_BackendState *state = &g_dttr_backend;
 

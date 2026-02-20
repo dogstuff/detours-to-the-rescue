@@ -11,7 +11,9 @@
 
 #include "dttr_errors.h"
 #include "dttr_hooks.h"
+#include "game_api_internal.h"
 #include "graphics/graphics_internal.h"
+#include "hook_registry_internal.h"
 #include <xxhash.h>
 
 #ifdef DTTR_COMPONENTS_ENABLED
@@ -218,13 +220,13 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	log_info("Initializing game functions...");
 	s_interop_pcdogs_functions_init(ctx);
 
-	dttr_other_hook_init(ctx);
+	dttr_other_hooks_init(ctx);
 	dttr_inputs_init();
-	dttr_inputs_hook_init(ctx);
-	dttr_graphics_hook_init(ctx);
+	dttr_inputs_hooks_init(ctx);
+	dttr_graphics_hooks_init(ctx);
 	dttr_audio_init(ctx);
 	dttr_movies_init();
-	dttr_movies_hook_init(ctx);
+	dttr_movies_hooks_init(ctx);
 
 #ifdef DTTR_COMPONENTS_ENABLED
 	dttr_components_init();
@@ -272,14 +274,15 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_components_cleanup();
 #endif
 
-	dttr_movies_hook_cleanup(ctx);
+	dttr_movies_hooks_cleanup(ctx);
 	dttr_movies_cleanup();
 	dttr_audio_cleanup(ctx);
-	dttr_other_hook_cleanup(ctx);
-	dttr_graphics_hook_cleanup(ctx);
-	dttr_inputs_hook_cleanup(ctx);
+	dttr_other_hooks_cleanup(ctx);
+	dttr_graphics_hooks_cleanup(ctx);
+	dttr_inputs_hooks_cleanup(ctx);
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();
+	dttr_game_api_cleanup();
 
 	log_info("Exiting DttR sidecar");
 	sdsfree(log_path);
@@ -295,7 +298,22 @@ BOOL APIENTRY DllMain(HMODULE module, const DWORD reason_for_call, LPVOID reserv
 
 		s_pc_dogs_module = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("pcdogs.exe"));
 
-		dttr_hook_win_main_install(s_pc_dogs_module);
+		// Patches WinMain with an E9 JMP to bootstrap the sidecar.
+		{
+			uintptr_t site = dttr_hook_sigscan(
+				s_pc_dogs_module,
+				"\x83\xEC\x40\x53\x8B\x5C\x24",
+				"xxxxxxx"
+			);
+			if (site) {
+				dttr_hook_win_main_site = site;
+				uint8_t jmp[5] = {0xE9};
+				int32_t rel = (int32_t)((uintptr_t)dttr_hook_win_main_callback
+										- (site + 5));
+				memcpy(jmp + 1, &rel, 4);
+				dttr_hook_win_main_handle = dttr_hook_patch_bytes(site, jmp, 5);
+			}
+		}
 	}
 
 	return TRUE;
