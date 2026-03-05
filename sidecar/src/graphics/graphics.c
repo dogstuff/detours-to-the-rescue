@@ -198,6 +198,15 @@ static bool s_try_create_device_for_driver(
 		return false;
 	}
 
+	if (!SDL_SetGPUSwapchainParameters(
+			state->m_device,
+			state->m_window,
+			SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+			SDL_GPU_PRESENTMODE_IMMEDIATE
+		)) {
+		log_error("Failed to set swap chain parameters: %s", SDL_GetError());
+	}
+
 	const SDL_GPUShaderFormat available_formats = SDL_GetGPUShaderFormats(state->m_device);
 	const char *active_driver = SDL_GetGPUDeviceDriver(state->m_device);
 	state->m_shader_format = dttr_graphics_select_shader_format_for_driver(
