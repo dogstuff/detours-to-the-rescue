@@ -126,12 +126,8 @@ static void s_tick_main_loop(void) {
 		return;
 	}
 
-	if (g_pcdogs_rendering_enabled_get()) {
-		if (pcdogs_render_frame()) {
-			SDL_Delay(1);
-		}
-	} else {
-		SDL_Delay(10);
+	if (g_pcdogs_rendering_enabled_get() && pcdogs_render_frame()) {
+		SDL_DelayNS(1);
 	}
 
 #ifdef DTTR_COMPONENTS_ENABLED
