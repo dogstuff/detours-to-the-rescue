@@ -15,6 +15,8 @@ typedef struct DTTR_Hook {
 
 /// JMP hook with trampoline. *out_original receives a callable trampoline to the
 /// previous handler (or original prologue for the first hook at this address).
+/// prologue_size is a minimum byte count before alignment to instruction boundaries;
+/// pass 0 to use automatic minimum sizing (5-byte patch only).
 DTTR_Hook *dttr_hook_attach_function(
 	uintptr_t addr,
 	int prologue_size,

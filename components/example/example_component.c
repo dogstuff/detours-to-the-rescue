@@ -48,8 +48,8 @@ __declspec(dllexport) bool dttr_component_init(const DTTR_ComponentContext *ctx)
 	// DTTR_RESOLVE(pcdogs_example_var, ctx, "\xA1????\x85\xC0", "x????xx",
 	//     *(uint32_t *)(match + 1))
 
-	// Example: install a trampoline hook (prologue_size = 6).
-	// DTTR_INSTALL_TRAMPOLINE(hook_example, ctx, "\x55\x8B\xEC", "xxx", 6)
+	// Example: install a trampoline hook with automatic prologue sizing.
+	// DTTR_INSTALL_TRAMPOLINE_AUTO(hook_example, ctx, "\x55\x8B\xEC", "xxx")
 
 	return true;
 }

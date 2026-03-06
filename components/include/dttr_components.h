@@ -53,6 +53,7 @@ typedef struct DTTR_Hook DTTR_Hook;
 
 typedef DTTR_Hook *(*DTTR_HookFunctionFn)(
 	uintptr_t addr,
+	// Minimum prologue bytes before instruction-boundary alignment. Pass 0 for auto.
 	int prologue_size,
 	void *handler,
 	void **out_original
@@ -215,6 +216,12 @@ typedef void (*DTTR_ComponentRenderFn)(
 			log_error(#name ": signature not found");                                     \
 		}                                                                                 \
 	} while (0)
+
+// Scans for a signature and installs a trampoline hook with automatic prologue sizing.
+// The hook backend decodes instructions and copies the minimum whole-instruction prologue
+// needed to place the 5-byte JMP patch safely.
+#define DTTR_INSTALL_TRAMPOLINE_AUTO(name, ctx, sig, mask)                               \
+	DTTR_INSTALL_TRAMPOLINE(name, ctx, sig, mask, 0)
 
 // Scans for a signature and patches bytes at the match plus an offset.
 #define DTTR_INSTALL_BYTES(name, ctx, sig, mask, offset, bytes, size)                     \

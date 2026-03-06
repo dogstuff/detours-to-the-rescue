@@ -52,6 +52,7 @@ target_link_libraries(dttr_sidecar PRIVATE
     psapi
 
     mpv
+    Zydis
     sds
     klib
     xxhash
