@@ -13,7 +13,7 @@ cd "$bin_dir"
 for asm_file in "$asm_dir"/*.asm; do
   [ -e "$asm_file" ] || continue
   base="$(basename "${asm_file%.asm}")"
-  nasm --reproducible -O0 -f bin "$asm_file" -l "$base.lst" -o "$base"
+  nasm --reproducible -Ox -f bin "$asm_file" -l "$base.lst" -o "$base"
   tmp_h="$base.h.tmp"
   xxd -i "$base" > "$tmp_h"
 

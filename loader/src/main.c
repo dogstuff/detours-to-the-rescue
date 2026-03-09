@@ -3,6 +3,7 @@
 #include <dttr_loader.h>
 #include <log.h>
 #include <stdio.h>
+#include <string.h>
 #include <windows.h>
 
 #include <gen/packed_sdb.h>
@@ -20,7 +21,7 @@ static void s_get_exe_dir(char *buf, size_t buf_size) {
 	}
 }
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
 	char exe_dir[MAX_PATH];
 	s_get_exe_dir(exe_dir, sizeof(exe_dir));
 	dttr_crashdump_init(exe_dir);
@@ -53,9 +54,6 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
-	char exe_path_narrow[MAX_PATH];
-	WideCharToMultiByte(CP_UTF8, 0, exe_path, -1, exe_path_narrow, MAX_PATH, NULL, NULL);
-
 	SetEnvironmentVariableA("DTTR_CONFIG_PATH", g_dttr_config_path);
 
 	/// Includes the packed and bundled in-memory compatibility SDB,
@@ -73,7 +71,7 @@ int main(int argc, char *argv[]) {
 	);
 
 	dttr_loader_watchdog_attach(&child_info);
-	dttr_loader_inject_sidecar(&child_info, exe_path_narrow);
+	dttr_loader_inject_sidecar(&child_info);
 	dttr_loader_watchdog_wait(&child_info);
 
 	log_info("Exiting loader");

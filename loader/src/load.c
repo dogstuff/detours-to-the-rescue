@@ -1,32 +1,30 @@
+#include <dttr_bootstrap.h>
 #include <dttr_errors.h>
 #include <dttr_loader.h>
 #include <gen/asm.h>
 #include <log.h>
-#include <sds.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <windows.h>
 
 static const char *SIDECAR_DLL_NAME = "libdttr_sidecar.dll";
-static const char *TARGET_EXE_NAME = "pcdogs.exe";
 
 static const uintptr_t PEB_IMAGE_BASE_OFFSET = 0x8;
-static const uintptr_t SHELLCODE_SETDLLDIR_OFFSET = 0x08;
-static const uintptr_t SHELLCODE_DIRPATH_LEN_OFFSET = 0x11;
-static const uintptr_t SHELLCODE_LOADLIB_OFFSET = 0x17;
-static const uintptr_t SHELLCODE_ENTRY_OFFSET = 0x20;
-static const uintptr_t SHELLCODE_EXITTHREAD_OFFSET = 0x28;
 
-static void s_exit_with_file_error(
-	FILE *file,
-	const char *error_message,
-	const char *exe_name
+static void s_read_remote_bytes(
+	HANDLE process,
+	uintptr_t address,
+	void *out,
+	SIZE_T out_size,
+	const char *name
 ) {
-	if (file) {
-		fclose(file);
-	}
+	SIZE_T bytes_read = 0;
 
-	DTTR_FATAL(error_message, exe_name);
+	if (!ReadProcessMemory(process, (LPCVOID)address, out, out_size, &bytes_read)
+		|| bytes_read != out_size) {
+		DTTR_FATAL("Could not read %s from child process", name);
+	}
 }
 
 static uintptr_t s_read_remote_image_base_from_thread_context(
@@ -39,131 +37,149 @@ static uintptr_t s_read_remote_image_base_from_thread_context(
 
 	log_debug("Reading image base from PEB at 0x%08X", (unsigned)peb_address);
 
-	DTTR_UNWRAP_WINAPI_NONZERO(ReadProcessMemory(
+	s_read_remote_bytes(
 		process,
-		(LPCVOID)(peb_address + PEB_IMAGE_BASE_OFFSET),
+		peb_address + PEB_IMAGE_BASE_OFFSET,
 		&image_base,
 		sizeof(image_base),
-		NULL
-	));
+		"PEB image base"
+	);
 
 	log_debug("Image base: 0x%08X", (unsigned)image_base);
 
 	return image_base;
 }
 
-static uintptr_t s_read_entry_point_rva_from_exe(const char *exe_name) {
-	log_debug("Reading entry point RVA from %s", exe_name);
-
-	FILE *file = fopen(exe_name, "rb");
-	if (!file) {
-		s_exit_with_file_error(NULL, "Could not open %s", exe_name);
-	}
-
+static uintptr_t s_read_entry_point_rva_from_remote_image(
+	HANDLE process,
+	const uintptr_t image_base
+) {
 	IMAGE_DOS_HEADER dos = {0};
-	if (fread(&dos, sizeof(dos), 1, file) != 1) {
-		s_exit_with_file_error(file, "Could not read DOS header from %s", exe_name);
-	}
+	s_read_remote_bytes(process, image_base, &dos, sizeof(dos), "remote DOS header");
 
 	if (dos.e_magic != IMAGE_DOS_SIGNATURE) {
-		s_exit_with_file_error(file, "Invalid DOS header in %s", exe_name);
+		DTTR_FATAL("Invalid DOS header in child process image");
 	}
 
-	log_debug("DOS header valid; NT headers at offset 0x%lX", dos.e_lfanew);
-
-	if (fseek(file, dos.e_lfanew, SEEK_SET) != 0) {
-		s_exit_with_file_error(file, "Could not seek NT headers in %s", exe_name);
+	if (dos.e_lfanew <= 0) {
+		DTTR_FATAL("Invalid NT header offset in child process image");
 	}
+
+	const uintptr_t nt_headers_address = image_base + (uintptr_t)dos.e_lfanew;
+	log_debug(
+		"DOS header valid; remote NT headers at 0x%08X",
+		(unsigned)nt_headers_address
+	);
 
 	IMAGE_NT_HEADERS32 nt = {0};
-	if (fread(&nt, sizeof(nt), 1, file) != 1) {
-		s_exit_with_file_error(file, "Could not read NT headers from %s", exe_name);
-	}
+	s_read_remote_bytes(process, nt_headers_address, &nt, sizeof(nt), "remote NT headers");
 
 	if (nt.Signature != IMAGE_NT_SIGNATURE) {
-		s_exit_with_file_error(file, "Invalid NT header in %s", exe_name);
+		DTTR_FATAL("Invalid NT header in child process image");
 	}
 
-	fclose(file);
+	if (nt.OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+		DTTR_FATAL("Unsupported PE optional header in child process image");
+	}
 
 	const uintptr_t rva = (uintptr_t)nt.OptionalHeader.AddressOfEntryPoint;
 	log_debug("Entry point RVA: 0x%08X", (unsigned)rva);
 	return rva;
 }
 
-static uint32_t s_build_sidecar_shell_code(
-	const char *dir_path,
+static void s_resolve_loader_dir(char *out_dir, size_t out_dir_size) {
+	const DWORD loader_path_len = GetModuleFileNameA(NULL, out_dir, (DWORD)out_dir_size);
+	if (loader_path_len == 0 || loader_path_len >= out_dir_size) {
+		DTTR_FATAL("Could not resolve loader path");
+	}
+
+	char *const last_sep = strrchr(out_dir, '\\');
+	if (!last_sep) {
+		DTTR_FATAL("Could not resolve loader directory");
+	}
+
+	last_sep[1] = '\0';
+}
+
+static void s_resolve_sidecar_dll_path(char *out_path, size_t out_path_size) {
+	char loader_dir[MAX_PATH];
+	s_resolve_loader_dir(loader_dir, sizeof(loader_dir));
+
+	const int written = snprintf(
+		out_path,
+		out_path_size,
+		"%s%s",
+		loader_dir,
+		SIDECAR_DLL_NAME
+	);
+	if (written < 0 || (size_t)written >= out_path_size) {
+		DTTR_FATAL("Sidecar DLL path is too long");
+	}
+}
+
+static void s_initialize_shellcode_payload(
+	DTTR_LoaderShellcodePayload *out_payload,
 	const char *dll_path,
-	uintptr_t original_entry,
+	uintptr_t original_entry
+) {
+	static const WCHAR KERNEL32_NAME[] = L"kernel32.dll";
+
+	memset(out_payload, 0, sizeof(*out_payload));
+
+	const size_t dll_path_len = strlen(dll_path);
+	if (dll_path_len >= sizeof(out_payload->m_dll_path)) {
+		DTTR_FATAL("Sidecar DLL path is too long for shellcode buffer: %s", dll_path);
+	}
+
+	memcpy(out_payload->m_dll_path, dll_path, dll_path_len + 1);
+	memcpy(
+		out_payload->m_kernel32_name,
+		KERNEL32_NAME,
+		sizeof(out_payload->m_kernel32_name)
+	);
+	memcpy(
+		out_payload->m_loadlibraryex_name,
+		"LoadLibraryExA",
+		sizeof(out_payload->m_loadlibraryex_name)
+	);
+	memcpy(
+		out_payload->m_exitthread_name,
+		"ExitThread",
+		sizeof(out_payload->m_exitthread_name)
+	);
+	memcpy(
+		out_payload->m_getlasterror_name,
+		"GetLastError",
+		sizeof(out_payload->m_getlasterror_name)
+	);
+	out_payload->m_original_entry = (uint32_t)original_entry;
+}
+
+static uint32_t s_build_sidecar_shell_code(
+	const DTTR_LoaderShellcodePayload *payload,
 	uint8_t **out_buffer
 ) {
-	log_debug(
-		"Building shellcode: dir=%s, dll=%s, original_entry=0x%08X",
-		dir_path,
-		dll_path,
-		(unsigned)original_entry
-	);
-
-	const uint32_t dir_path_len = strlen(dir_path);
-	const uint32_t dll_path_len = strlen(dll_path);
-	const uint32_t out_size = dttr_sidecar_shellcode_len + dir_path_len + 1 + dll_path_len
-							  + 1;
+	const uint32_t out_size = dttr_sidecar_shellcode_len + sizeof(*payload);
 	uint8_t *const buffer = malloc(out_size);
 	if (!buffer) {
-		DTTR_FATAL("Could not allocate shellcode payload for %s", TARGET_EXE_NAME);
+		DTTR_FATAL("Could not allocate shellcode payload");
 	}
+
 	*out_buffer = buffer;
 	memcpy(buffer, dttr_sidecar_shellcode, dttr_sidecar_shellcode_len);
-
-	HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
-	const uintptr_t set_dll_dir_a_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
-		GetProcAddress(kernel32, "SetDllDirectoryA")
-	);
-
-	const uintptr_t load_library_a_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
-		GetProcAddress(kernel32, "LoadLibraryA")
-	);
-
-	const uintptr_t exit_thread_address = (uintptr_t)DTTR_UNWRAP_WINAPI_EXISTS(
-		GetProcAddress(kernel32, "ExitThread")
-	);
+	memcpy(buffer + dttr_sidecar_shellcode_len, payload, sizeof(*payload));
 
 	log_debug(
-		"Resolved kernel32 APIs: SetDllDirectoryA=0x%08X, "
-		"LoadLibraryA=0x%08X, ExitThread=0x%08X",
-		(unsigned)set_dll_dir_a_address,
-		(unsigned)load_library_a_address,
-		(unsigned)exit_thread_address
-	);
-
-	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_SETDLLDIR_OFFSET) = set_dll_dir_a_address;
-	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_DIRPATH_LEN_OFFSET) = dir_path_len + 1;
-	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_LOADLIB_OFFSET) = load_library_a_address;
-	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_ENTRY_OFFSET) = original_entry;
-	*(uintptr_t *)((uintptr_t)buffer + SHELLCODE_EXITTHREAD_OFFSET) = exit_thread_address;
-
-	uint8_t *data = buffer + dttr_sidecar_shellcode_len;
-	memcpy(data, dir_path, dir_path_len);
-	data[dir_path_len] = '\0';
-	memcpy(data + dir_path_len + 1, dll_path, dll_path_len);
-	data[dir_path_len + 1 + dll_path_len] = '\0';
-
-	log_debug(
-		"Shellcode payload built (bytes=%u, shellcode=%u + "
-		"dir_path=%u + 1 + dll_path=%u + 1)",
+		"Shellcode payload built (bytes=%u, shellcode=%u, payload=%u)",
 		out_size,
 		dttr_sidecar_shellcode_len,
-		dir_path_len,
-		dll_path_len
+		(unsigned)sizeof(*payload)
 	);
 
 	return out_size;
 }
 
-void dttr_loader_inject_sidecar(
-	const PROCESS_INFORMATION *child_info,
-	const char *exe_path
-) {
+void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	CONTEXT child_thread_context = {0};
 	child_thread_context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
 	DTTR_UNWRAP_WINAPI_NONZERO(
@@ -175,8 +191,11 @@ void dttr_loader_inject_sidecar(
 		&child_thread_context
 	);
 
-	const uintptr_t original_entry = image_base
-									 + s_read_entry_point_rva_from_exe(exe_path);
+	const uintptr_t entry_point_rva = s_read_entry_point_rva_from_remote_image(
+		child_info->hProcess,
+		image_base
+	);
+	const uintptr_t original_entry = image_base + entry_point_rva;
 
 	log_debug(
 		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)",
@@ -184,39 +203,18 @@ void dttr_loader_inject_sidecar(
 		(unsigned)image_base
 	);
 
-	char loader_path[MAX_PATH];
-	DTTR_UNWRAP_WINAPI_NONZERO(GetModuleFileNameA(NULL, loader_path, MAX_PATH));
-
-	char *const last_sep = strrchr(loader_path, '\\');
-	if (!last_sep) {
-		DTTR_FATAL("Could not resolve loader directory");
-	}
-
-	sds sidecar_dir_path = sdscatprintf(
-		sdsempty(),
-		"%.*s",
-		(int)(last_sep - loader_path),
-		loader_path
-	);
-
-	sds sidecar_dll_path = sdscatprintf(
-		sdsempty(),
-		"%s\\%s",
-		sidecar_dir_path,
-		SIDECAR_DLL_NAME
-	);
+	char sidecar_dll_path[MAX_PATH];
+	s_resolve_sidecar_dll_path(sidecar_dll_path, sizeof(sidecar_dll_path));
 	log_debug("Sidecar DLL path: %s", sidecar_dll_path);
+
+	DTTR_LoaderShellcodePayload payload = {0};
+	s_initialize_shellcode_payload(&payload, sidecar_dll_path, original_entry);
 
 	uint8_t *shellcode_buffer = NULL;
 	const uint32_t shellcode_buffer_len = s_build_sidecar_shell_code(
-		sidecar_dir_path,
-		sidecar_dll_path,
-		original_entry,
+		&payload,
 		&shellcode_buffer
 	);
-
-	sdsfree(sidecar_dll_path);
-	sdsfree(sidecar_dir_path);
 
 	log_debug("Allocating %u bytes in remote process", shellcode_buffer_len);
 
@@ -245,10 +243,10 @@ void dttr_loader_inject_sidecar(
 		child_info->hProcess,
 		payload_buffer,
 		shellcode_buffer_len,
-		PAGE_EXECUTE_READ,
+		PAGE_EXECUTE_READWRITE,
 		&old_protect
 	));
-	log_debug("Remote memory protection set to PAGE_EXECUTE_READ");
+	log_debug("Remote memory protection set to PAGE_EXECUTE_READWRITE");
 
 	free(shellcode_buffer);
 
@@ -259,6 +257,5 @@ void dttr_loader_inject_sidecar(
 	log_debug("Thread context updated: EIP=0x%08X", (unsigned)(uintptr_t)payload_buffer);
 
 	DTTR_UNWRAP_WINAPI_NONNEGATIVE(ResumeThread(child_info->hThread));
-
 	log_debug("Resumed thread; game process is running");
 }
