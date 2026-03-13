@@ -9,6 +9,39 @@
 #define WATCHDOG_TIMEOUT_MS 30000
 #define WATCHDOG_SENTINEL "DTTR_SIDECAR_ENTRYPOINT"
 
+static bool s_watchdog_attached = false;
+
+static bool s_should_disable_watchdog(void) {
+	typedef BOOL(WINAPI * S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
+
+	const HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
+	const S_IsWow64Process2 is_wow64_process2
+		= (S_IsWow64Process2)(kernel32 ? GetProcAddress(kernel32, "IsWow64Process2")
+									   : NULL);
+
+	if (is_wow64_process2) {
+		USHORT process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+		USHORT native_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+		if (is_wow64_process2(GetCurrentProcess(), &process_machine, &native_machine)) {
+			log_debug(
+				"Watchdog host machine detection: process=0x%04X native=0x%04X",
+				process_machine,
+				native_machine
+			);
+			return native_machine == IMAGE_FILE_MACHINE_ARM64;
+		}
+	}
+
+	SYSTEM_INFO system_info = {0};
+	GetNativeSystemInfo(&system_info);
+	log_debug(
+		"Watchdog fallback architecture detection: native_arch=0x%04X",
+		system_info.wProcessorArchitecture
+	);
+
+	return system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64;
+}
+
 static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD exception_code) {
 	HANDLE thread = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
 	if (!thread) {
@@ -43,6 +76,13 @@ static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excep
 }
 
 void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
+	s_watchdog_attached = false;
+
+	if (s_should_disable_watchdog()) {
+		log_warn("Skipping watchdog debugger on ARM64 host");
+		return;
+	}
+
 	if (!DebugActiveProcess(child_info->dwProcessId)) {
 		log_warn(
 			"Could not attach debugger to child process; skipping early crash detection"
@@ -50,6 +90,7 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 		return;
 	}
 
+	s_watchdog_attached = true;
 	log_debug("Watchdog attached to PID %lu", child_info->dwProcessId);
 }
 
@@ -77,6 +118,11 @@ static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) 
 }
 
 void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
+	if (!s_watchdog_attached) {
+		log_debug("Watchdog not attached; skipping early crash monitoring");
+		return;
+	}
+
 	log_debug(
 		"Watching for early crash or ready sentinel (timeout=%dms)",
 		WATCHDOG_TIMEOUT_MS
