@@ -9,22 +9,23 @@
 #define WATCHDOG_TIMEOUT_MS 30000
 #define WATCHDOG_SENTINEL "DTTR_SIDECAR_ENTRYPOINT"
 
+typedef BOOL(WINAPI * S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
+
 static bool s_watchdog_attached = false;
 
 static bool s_should_disable_watchdog(void) {
-	typedef BOOL(WINAPI * S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
-
 	const HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
-	const S_IsWow64Process2 is_wow64_process2
+	S_IsWow64Process2 is_wow64_process2_fn
 		= (S_IsWow64Process2)(kernel32 ? GetProcAddress(kernel32, "IsWow64Process2")
 									   : NULL);
 
-	if (is_wow64_process2) {
-		USHORT process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
-		USHORT native_machine = IMAGE_FILE_MACHINE_UNKNOWN;
-		if (is_wow64_process2(GetCurrentProcess(), &process_machine, &native_machine)) {
+	if (is_wow64_process2_fn) {
+		uint16_t process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+
+		uint16_t native_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+		if (is_wow64_process2_fn(GetCurrentProcess(), &process_machine, &native_machine)) {
 			log_debug(
-				"Watchdog host machine detection: process=0x%04X native=0x%04X",
+				"Watchdog host machine detection: process=0x%X native=0x%X",
 				process_machine,
 				native_machine
 			);
@@ -35,7 +36,7 @@ static bool s_should_disable_watchdog(void) {
 	SYSTEM_INFO system_info = {0};
 	GetNativeSystemInfo(&system_info);
 	log_debug(
-		"Watchdog fallback architecture detection: native_arch=0x%04X",
+		"Watchdog fallback architecture detection: native_arch=0x%X",
 		system_info.wProcessorArchitecture
 	);
 

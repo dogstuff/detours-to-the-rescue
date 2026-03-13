@@ -17,13 +17,7 @@ static void s_copy_string(char *dst, size_t dst_size, const char *src) {
 		return;
 	}
 
-	if (!src) {
-		dst[0] = '\0';
-		return;
-	}
-
-	strncpy(dst, src, dst_size - 1);
-	dst[dst_size - 1] = '\0';
+	snprintf(dst, dst_size, "%s", src ? src : "");
 }
 
 static bool s_init_dump_dir(void) {
