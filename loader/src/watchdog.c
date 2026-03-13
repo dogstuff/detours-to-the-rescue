@@ -80,7 +80,7 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	s_watchdog_attached = false;
 
 	if (s_should_disable_watchdog()) {
-		log_warn("Skipping watchdog debugger on ARM64 host");
+		log_warn("Skipping watchdog debugger because debugging is not available on this machine");
 		return;
 	}
 
