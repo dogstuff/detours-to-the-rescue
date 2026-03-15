@@ -26,11 +26,19 @@ typedef enum {
 	DTTR_MINIDUMP_DETAILED = 1,
 } DTTR_MinidumpType;
 
+#define DTTR_DRIVER_AUTO "auto"
+#define DTTR_DRIVER_VULKAN "vulkan"
+#define DTTR_DRIVER_DIRECT3D12 "direct3d12"
+#define DTTR_DRIVER_DIRECT3D12_SHORT "d3d12"
+#define DTTR_DRIVER_METAL "metal"
+#define DTTR_DRIVER_OPENGL "opengl"
+
 typedef enum {
 	DTTR_GRAPHICS_API_AUTO = 0,
 	DTTR_GRAPHICS_API_VULKAN = 1,
 	DTTR_GRAPHICS_API_DIRECT3D12 = 2,
 	DTTR_GRAPHICS_API_METAL = 3,
+	DTTR_GRAPHICS_API_OPENGL = 4,
 } DTTR_GraphicsApi;
 
 typedef enum {

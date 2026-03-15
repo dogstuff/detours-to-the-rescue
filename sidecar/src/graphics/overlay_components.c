@@ -2,10 +2,7 @@
 
 #include "graphics_internal.h"
 
-#include "log.h"
-
 #include <stdlib.h>
-#include <string.h>
 
 #define S_OVERLAY_W 59
 #define S_OVERLAY_H 12
@@ -24,7 +21,31 @@ static const uint8_t S_OVERLAY_BITMAP[] = {
 	0x41, 0x04, 0x40, 0x00, 0x00, 0x7D, 0x14, 0x5E, 0x7D, 0xF7, 0x80, 0x00,
 };
 
-bool dttr_components_overlay_create(DTTR_BackendState *state) {
+void dttr_components_overlay_build_vertices(
+	DTTR_Vertex *out,
+	int render_w,
+	int render_h,
+	int overlay_w,
+	int overlay_h
+) {
+	const float scale = render_h / 320.0f;
+	const float ow = overlay_w * scale;
+	const float oh = overlay_h * scale;
+	const float margin = 4.0f * scale;
+	const float alpha = 0.15f;
+	const float x0 = render_w - ow - margin;
+	const float x1 = x0 + ow;
+	const float y1 = margin + oh;
+
+	out[0] = (DTTR_Vertex){x0, margin, 0, 1, 1, 1, 1, alpha, 0, 0};
+	out[1] = (DTTR_Vertex){x1, margin, 0, 1, 1, 1, 1, alpha, 1, 0};
+	out[2] = (DTTR_Vertex){x0, y1, 0, 1, 1, 1, 1, alpha, 0, 1};
+	out[3] = (DTTR_Vertex){x0, y1, 0, 1, 1, 1, 1, alpha, 0, 1};
+	out[4] = (DTTR_Vertex){x1, margin, 0, 1, 1, 1, 1, alpha, 1, 0};
+	out[5] = (DTTR_Vertex){x1, y1, 0, 1, 1, 1, 1, alpha, 1, 1};
+}
+
+uint8_t *dttr_components_overlay_decode_bitmap(int *out_w, int *out_h) {
 	const int w = S_OVERLAY_W;
 	const int h = S_OVERLAY_H;
 	const uint32_t pixel_count = (uint32_t)(w * h);
@@ -32,7 +53,7 @@ bool dttr_components_overlay_create(DTTR_BackendState *state) {
 
 	uint8_t *rgba = (uint8_t *)malloc(byte_count);
 	if (!rgba)
-		return false;
+		return NULL;
 
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
@@ -48,90 +69,9 @@ bool dttr_components_overlay_create(DTTR_BackendState *state) {
 		}
 	}
 
-	const SDL_GPUTextureCreateInfo tex_info = {
-		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
-		.width = (uint32_t)w,
-		.height = (uint32_t)h,
-		.layer_count_or_depth = 1,
-		.num_levels = 1,
-		.sample_count = SDL_GPU_SAMPLECOUNT_1,
-	};
-	state->m_components_overlay_tex = SDL_CreateGPUTexture(state->m_device, &tex_info);
-
-	if (!state->m_components_overlay_tex) {
-		free(rgba);
-		return false;
-	}
-
-	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
-		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-		.size = byte_count,
-	};
-	SDL_GPUTransferBuffer *tbuf = SDL_CreateGPUTransferBuffer(state->m_device, &tbuf_info);
-
-	if (!tbuf) {
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-		free(rgba);
-		return false;
-	}
-
-	void *mapped = SDL_MapGPUTransferBuffer(state->m_device, tbuf, false);
-	if (!mapped) {
-		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-		free(rgba);
-		return false;
-	}
-
-	memcpy(mapped, rgba, byte_count);
-	SDL_UnmapGPUTransferBuffer(state->m_device, tbuf);
-	free(rgba);
-
-	SDL_GPUCommandBuffer *cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
-	if (!cmd) {
-		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-		return false;
-	}
-
-	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
-	if (copy) {
-		const SDL_GPUTextureTransferInfo src = {
-			.transfer_buffer = tbuf,
-			.pixels_per_row = (uint32_t)w,
-			.rows_per_layer = (uint32_t)h,
-		};
-		const SDL_GPUTextureRegion dst = {
-			.texture = state->m_components_overlay_tex,
-			.w = (uint32_t)w,
-			.h = (uint32_t)h,
-			.d = 1,
-		};
-		SDL_UploadToGPUTexture(copy, &src, &dst, false);
-		SDL_EndGPUCopyPass(copy);
-	}
-
-	SDL_SubmitGPUCommandBuffer(cmd);
-	SDL_WaitForGPUIdle(state->m_device);
-	SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-
-	state->m_components_overlay_w = w;
-	state->m_components_overlay_h = h;
-
-	log_info("Components overlay texture created (%dx%d)", w, h);
-	return true;
-}
-
-void dttr_components_overlay_destroy(DTTR_BackendState *state) {
-	if (state->m_components_overlay_tex) {
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-	}
+	*out_w = w;
+	*out_h = h;
+	return rgba;
 }
 
 #endif /* DTTR_COMPONENTS_ENABLED */

@@ -17,7 +17,7 @@
 
   "graphics": {
     // The GPU backend to use.
-    // Choices: auto, vulkan, direct3d12, metal
+    // Choices: auto, vulkan, direct3d12, metal, opengl
     "graphics_api": "auto",
 
     // The initial width of the game window in pixels.

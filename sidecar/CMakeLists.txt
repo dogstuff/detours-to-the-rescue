@@ -10,11 +10,12 @@ add_library(dttr_sidecar SHARED
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
     src/graphics/graphics.c
-    src/graphics/frame.c
-    src/graphics/resources.c
-    src/graphics/pipelines.c
     src/graphics/util.c
     src/graphics/hooks.c
+    src/graphics/backend_sdl3gpu.c
+    src/graphics/backend_sdl3gpu_pipelines.c
+    src/graphics/backend_sdl3gpu_resources.c
+    src/graphics/backend_opengl.c
     src/graphics/com_direct3d7.c
     src/graphics/com_direct3ddevice7.c
     src/graphics/com_direct3dtexture2.c
@@ -50,6 +51,7 @@ set_target_properties(mpv PROPERTIES
 target_link_libraries(dttr_sidecar PRIVATE
     kernel32
     psapi
+    opengl32
 
     mpv
     Zydis

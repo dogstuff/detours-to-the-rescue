@@ -191,9 +191,15 @@ static void s_d3d_device7_record_draw(
 ) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
-	if (!dttr_graphics_is_gpu_thread() || !state->m_cmd || !verts || count == 0)
+	if (!dttr_graphics_is_gpu_thread() || !verts || count == 0) {
 		return;
-	if (!state->m_device || !state->m_transfer_buffer || !state->m_vertex_buffer) {
+	}
+
+	if (state->m_backend_type == DTTR_BACKEND_SDL_GPU && !state->m_cmd) {
+		return;
+	}
+
+	if (!state->m_device && state->m_backend_type == DTTR_BACKEND_SDL_GPU) {
 		log_warn("DrawPrimitive: missing device/buffers");
 		return;
 	}
@@ -266,6 +272,10 @@ static void s_d3d_device7_record_draw(
 	const int cu = (state->m_addr_u == DTTR_TEXADDR_CLAMP) ? 1 : 0;
 	const int cv = (state->m_addr_v == DTTR_TEXADDR_CLAMP) ? 1 : 0;
 	draw_rec.draw.sampler = state->m_samplers[cu * 2 + cv];
+	draw_rec.draw.sampler_index = cu * 2 + cv;
+	draw_rec.draw.texture_index = (textured && state->m_bound_texture_handle)
+									  ? (uint32_t)(state->m_bound_texture_handle - 1)
+									  : UINT32_MAX;
 
 	state->m_vertex_offset += count;
 
@@ -281,6 +291,8 @@ static void s_d3d_device7_record_draw(
 			&& prev->draw.depth_write == draw_rec.draw.depth_write
 			&& prev->draw.texture == draw_rec.draw.texture
 			&& prev->draw.sampler == draw_rec.draw.sampler
+			&& prev->draw.texture_index == draw_rec.draw.texture_index
+			&& prev->draw.sampler_index == draw_rec.draw.sampler_index
 			&& memcmp(&prev->draw.uniforms, &draw_rec.draw.uniforms, sizeof(DTTR_Uniforms))
 				   == 0) {
 			prev->draw.vertex_count += draw_rec.draw.vertex_count;
@@ -345,7 +357,7 @@ static void s_d3d_device7_texture_bind(DTTR_Texture tex) {
 	SDL_LockMutex(state->m_texture_mutex);
 	DTTR_StagedTexture *st = &state->m_staged_textures[idx];
 	if (dttr_graphics_is_gpu_thread()) {
-		(void)s_d3d_device7_ensure_staged_texture(st);
+		s_d3d_device7_ensure_staged_texture(st);
 	}
 	state->m_bound_texture_handle = tex;
 	state->m_bound_texture = st->m_gpu_tex;

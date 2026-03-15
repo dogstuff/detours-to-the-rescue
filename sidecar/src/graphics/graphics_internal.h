@@ -102,6 +102,34 @@ typedef struct {
 	float m_has_texture;
 } DTTR_Uniforms;
 
+#define DTTR_DRIVER_DISPLAY_VULKAN "Vulkan"
+#define DTTR_DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
+#define DTTR_DRIVER_DISPLAY_METAL "Metal"
+#define DTTR_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
+
+typedef enum {
+	DTTR_BACKEND_SDL_GPU,
+	DTTR_BACKEND_OPENGL,
+} DTTR_BackendType;
+
+typedef struct DTTR_BackendState DTTR_BackendState;
+
+/// Backend-specific operations dispatched through function pointers
+typedef struct {
+	void (*begin_frame)(DTTR_BackendState *state);
+	void (*end_frame)(DTTR_BackendState *state);
+	bool (*present_video_frame_bgra)(
+		DTTR_BackendState *state,
+		const uint8_t *pixels,
+		int width,
+		int height,
+		int stride
+	);
+	bool (*resize)(DTTR_BackendState *state, int width, int height);
+	void (*cleanup)(DTTR_BackendState *state);
+	const char *(*get_driver_name)(const DTTR_BackendState *state);
+} DTTR_RendererVtbl;
+
 typedef enum { DTTR_BATCH_DRAW, DTTR_BATCH_CLEAR } DTTR_BatchRecordType;
 
 /// A recorded clear or draw command replayed during frame submission
@@ -115,6 +143,8 @@ typedef struct {
 			DTTR_Uniforms uniforms;
 			SDL_GPUTexture *texture;
 			SDL_GPUSampler *sampler;
+			uint32_t texture_index;
+			int sampler_index;
 			int blend_mode;
 			bool depth_test;
 			bool depth_write;
@@ -148,7 +178,7 @@ typedef kvec_t(DTTR_BatchRecord) DTTR_BatchRecordVector;
 #define DTTR_MAX_FRAME_VERTICES 262144
 #define DTTR_VERTEX_SIZE ((uint32_t)sizeof(DTTR_Vertex))
 
-typedef struct {
+struct DTTR_BackendState {
 	SDL_ThreadID m_gpu_thread_id;
 
 	SDL_Window *m_window;
@@ -222,6 +252,10 @@ typedef struct {
 	uint32_t m_perf_sampler_binds_accum;
 	uint32_t m_perf_frame_accum_count;
 
+	DTTR_BackendType m_backend_type;
+	const DTTR_RendererVtbl *m_renderer;
+	void *m_backend_data;
+
 	bool m_initialized;
 	bool m_frame_active;
 
@@ -230,7 +264,7 @@ typedef struct {
 	int m_components_overlay_w;
 	int m_components_overlay_h;
 #endif
-} DTTR_BackendState;
+};
 
 extern DTTR_BackendState g_dttr_backend;
 
@@ -268,12 +302,6 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 	SDL_GPUShaderFormat formats
 );
 
-/// Builds all graphics pipelines used by the renderer
-bool dttr_graphics_create_pipelines(void);
-/// Creates shared GPU resources used by the renderer
-bool dttr_graphics_create_resources(void);
-/// Recreates resolution-dependent render textures after updating target size
-bool dttr_graphics_resize_render_textures(int width, int height);
 /// Updates logical resolution and optionally render size based on scaling method
 void dttr_graphics_set_logical_resolution(int width, int height);
 /// Applies runtime window resize to rendering policy
@@ -282,11 +310,27 @@ void dttr_graphics_handle_window_resize(int width, int height);
 /// Clears shared surface-texture cache state
 void dttr_graphics_surface_texture_cache_reset(void);
 
+/// Initializes the SDL3 GPU backend (device, pipelines, resources)
+bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state);
+/// Initializes the OpenGL 3.3 backend (context, shaders, FBO, samplers)
+bool dttr_graphics_opengl_init(DTTR_BackendState *state);
+/// Queues an OpenGL texture for deferred deletion on the next frame
+void dttr_graphics_opengl_defer_texture_destroy(
+	DTTR_BackendState *state,
+	int texture_index
+);
+
 #ifdef DTTR_COMPONENTS_ENABLED
-/// Creates the "COMPONENTS ENABLED" overlay texture.
-bool dttr_components_overlay_create(DTTR_BackendState *state);
-/// Releases the "COMPONENTS ENABLED" overlay texture.
-void dttr_components_overlay_destroy(DTTR_BackendState *state);
+/// Decodes the overlay bitmap into an RGBA pixel buffer (caller must free).
+uint8_t *dttr_components_overlay_decode_bitmap(int *out_w, int *out_h);
+/// Builds 6 vertices for the overlay quad positioned in the top-right corner.
+void dttr_components_overlay_build_vertices(
+	DTTR_Vertex *out,
+	int render_w,
+	int render_h,
+	int overlay_w,
+	int overlay_h
+);
 #endif
 
 #endif
