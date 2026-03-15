@@ -12,14 +12,14 @@ incompatibilities made by the evil Microsoft de RectX7 (not joking)
 
 An all-in-one alternate entrypoint that seeks to make 102 Dalmatians: Puppies to the Rescue as portable and consistent as possible, including:
 
-* Support for modern graphics API (Direct3D12, Vulkan, Metal)
+* Support for modern graphics API (Direct3D12, Vulkan, OpenGL)
 * Native controller support
 * Stable support for windowed and fullscreen modes
 * Various other fixes for crashes and undesired behavior
 
 DttR implements purpose-built translators for the following outdated APIs:
 
-* DirectDraw7 & Direct3D7 -> Direct3D12, Vulkan, Metal (backed by SDL3GPU)
+* DirectDraw7 & Direct3D7 -> Direct3D12, Vulkan (SDL3 GPU), OpenGL (OpenGL 3.3)
     * Optionally uses a bunch of graphics-related optimizations and improvements
 * DirectInput & WinAPI Inputs -> SDL3
 * Media Control Interface (MCI) -> libmpv2

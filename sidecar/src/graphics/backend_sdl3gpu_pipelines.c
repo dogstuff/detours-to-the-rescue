@@ -32,8 +32,6 @@ static S_GraphicsShaderBlob s_get_basic_vert_blob(SDL_GPUShaderFormat format) {
 		return (S_GraphicsShaderBlob){basic_vert_spv, (size_t)basic_vert_spv_len};
 	case SDL_GPU_SHADERFORMAT_DXIL:
 		return (S_GraphicsShaderBlob){basic_vert_dxil, (size_t)basic_vert_dxil_len};
-	case SDL_GPU_SHADERFORMAT_MSL:
-		return (S_GraphicsShaderBlob){basic_vert_msl, (size_t)basic_vert_msl_len};
 	default:
 		return (S_GraphicsShaderBlob){NULL, 0};
 	}
@@ -46,8 +44,6 @@ static S_GraphicsShaderBlob s_get_basic_frag_blob(SDL_GPUShaderFormat format) {
 		return (S_GraphicsShaderBlob){basic_frag_spv, (size_t)basic_frag_spv_len};
 	case SDL_GPU_SHADERFORMAT_DXIL:
 		return (S_GraphicsShaderBlob){basic_frag_dxil, (size_t)basic_frag_dxil_len};
-	case SDL_GPU_SHADERFORMAT_MSL:
-		return (S_GraphicsShaderBlob){basic_frag_msl, (size_t)basic_frag_msl_len};
 	default:
 		return (S_GraphicsShaderBlob){NULL, 0};
 	}
@@ -67,8 +63,6 @@ static S_GraphicsShaderBlob s_get_buf2tex_comp_blob(SDL_GPUShaderFormat format) 
 			buf2tex_comp_dxil,
 			(size_t)buf2tex_comp_dxil_len,
 		};
-	case SDL_GPU_SHADERFORMAT_MSL:
-		return (S_GraphicsShaderBlob){buf2tex_comp_msl, (size_t)buf2tex_comp_msl_len};
 	default:
 		return (S_GraphicsShaderBlob){NULL, 0};
 	}

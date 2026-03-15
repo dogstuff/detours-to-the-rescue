@@ -28,7 +28,6 @@ find "$src_dir" -maxdepth 1 -type f -name '*.glsl' | sort | while read -r glsl; 
   spv="${bin_dir}/${stem}.spv"
   glslc -fshader-stage="$stage" -o "$spv" "$glsl"
   "$shadercross" -s SPIRV -d DXIL -t "$stage" -e main -o "${bin_dir}/${stem}.dxil" "$spv"
-  "$shadercross" -s SPIRV -d MSL  -t "$stage" -e main -o "${bin_dir}/${stem}.msl" "$spv"
 done
 
 {
@@ -36,7 +35,7 @@ done
   echo "#ifndef DTTR_GENERATED_SHADERS_H"
   echo "#define DTTR_GENERATED_SHADERS_H"
   echo
-  find "$bin_dir" -maxdepth 1 -type f \( -name '*.spv' -o -name '*.dxil' -o -name '*.msl' \) | sort | while read -r bin; do
+  find "$bin_dir" -maxdepth 1 -type f \( -name '*.spv' -o -name '*.dxil' \) | sort | while read -r bin; do
     symbol="$(basename "$bin" | tr '.' '_')"
     xxd -i -n "$symbol" "$bin" | sed -E \
       -e 's/^unsigned char /const unsigned char /' \

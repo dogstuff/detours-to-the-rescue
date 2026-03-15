@@ -30,8 +30,6 @@ const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 		return "SPIRV";
 	case SDL_GPU_SHADERFORMAT_DXIL:
 		return "DXIL";
-	case SDL_GPU_SHADERFORMAT_MSL:
-		return "MSL";
 	case SDL_GPU_SHADERFORMAT_METALLIB:
 		return "METALLIB";
 	case SDL_GPU_SHADERFORMAT_PRIVATE:
@@ -43,17 +41,13 @@ const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 
 // Returns the union of shader formats that this build embeds
 SDL_GPUShaderFormat dttr_graphics_requested_shader_formats(void) {
-	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL
-		   | SDL_GPU_SHADERFORMAT_MSL;
+	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL;
 }
 
 // Picks the best supported shader format from an availability bitmask
 SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat formats) {
 	if (formats & SDL_GPU_SHADERFORMAT_DXIL)
 		return SDL_GPU_SHADERFORMAT_DXIL;
-
-	if (formats & SDL_GPU_SHADERFORMAT_MSL)
-		return SDL_GPU_SHADERFORMAT_MSL;
 
 	if (formats & SDL_GPU_SHADERFORMAT_SPIRV)
 		return SDL_GPU_SHADERFORMAT_SPIRV;
