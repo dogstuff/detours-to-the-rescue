@@ -104,7 +104,6 @@ typedef struct {
 
 #define DTTR_DRIVER_DISPLAY_VULKAN "Vulkan"
 #define DTTR_DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
-#define DTTR_DRIVER_DISPLAY_METAL "Metal"
 #define DTTR_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
 
 typedef enum {

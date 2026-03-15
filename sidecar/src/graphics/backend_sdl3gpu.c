@@ -149,8 +149,6 @@ static const char *s_graphics_api_driver_name(DTTR_GraphicsApi api) {
 		return DTTR_DRIVER_VULKAN;
 	case DTTR_GRAPHICS_API_DIRECT3D12:
 		return DTTR_DRIVER_DIRECT3D12;
-	case DTTR_GRAPHICS_API_METAL:
-		return DTTR_DRIVER_METAL;
 	default:
 		return NULL;
 	}
@@ -180,7 +178,6 @@ static bool s_create_device(DTTR_BackendState *state) {
 	const char *const driver_candidates[] = {
 		DTTR_DRIVER_VULKAN,
 		DTTR_DRIVER_DIRECT3D12,
-		DTTR_DRIVER_METAL,
 		NULL, // Falls back to the SDL default driver selection.
 	};
 
@@ -194,7 +191,7 @@ static bool s_create_device(DTTR_BackendState *state) {
 		}
 	}
 
-	log_error("GPU device creation failed for all supported APIs (d3d12/metal/vulkan)");
+	log_error("GPU device creation failed for all supported APIs (d3d12/vulkan)");
 	return false;
 }
 

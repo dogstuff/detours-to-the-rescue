@@ -69,9 +69,6 @@ SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver) {
 	if (strcmp(driver, DTTR_DRIVER_DIRECT3D12) == 0)
 		return SDL_GPU_SHADERFORMAT_DXIL;
 
-	if (strcmp(driver, DTTR_DRIVER_METAL) == 0)
-		return SDL_GPU_SHADERFORMAT_MSL;
-
 	if (strcmp(driver, DTTR_DRIVER_VULKAN) == 0)
 		return SDL_GPU_SHADERFORMAT_SPIRV;
 
