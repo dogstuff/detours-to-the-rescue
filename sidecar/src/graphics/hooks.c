@@ -81,13 +81,11 @@ HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 	);
 
 	if (!lpCallback) {
-		log_debug("DirectDrawEnumerateExA complete");
 		return S_OK;
 	}
 
 	lpCallback(NULL, "DTTR Virtual Display", "display", lpContext, NULL);
 
-	log_debug("DirectDrawEnumerateExA complete");
 	return S_OK;
 }
 

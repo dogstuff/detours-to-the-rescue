@@ -61,8 +61,6 @@ static LONG s_read_axis(int axis_idx) {
 }
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
-	(void)device;
-
 	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(S_DIJoyState));
 
 	if (!state) {

@@ -1,10 +1,11 @@
+#include "backend_sdl3gpu_internal.h"
 #include "graphics_internal.h"
 
 #include "log.h"
 
 #include <stddef.h>
 
-#include "gen/shaders.h"
+#include "gen/sdl3gpu_shaders.h"
 
 // Holds shader bytecode pointer/size pairs for SDL pipeline creation
 typedef struct {
@@ -269,7 +270,7 @@ static bool s_create_buf2tex_pipeline(DTTR_BackendState *state) {
 }
 
 // Creates all graphics and compute pipelines required by the backend
-bool dttr_graphics_create_pipelines(void) {
+bool dttr_graphics_sdl3gpu_create_pipelines(void) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
 	const S_GraphicsShaderBlob vert_blob = s_get_basic_vert_blob(state->m_shader_format);

@@ -9,7 +9,7 @@
 #define WATCHDOG_TIMEOUT_MS 30000
 #define WATCHDOG_SENTINEL "DTTR_SIDECAR_ENTRYPOINT"
 
-typedef BOOL(WINAPI * S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
+typedef BOOL(WINAPI *S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
 
 static bool s_watchdog_attached = false;
 
@@ -80,7 +80,10 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	s_watchdog_attached = false;
 
 	if (s_should_disable_watchdog()) {
-		log_warn("Skipping watchdog debugger because debugging is not available on this machine");
+		log_warn(
+			"Skipping watchdog debugger because debugging is not available on this "
+			"machine"
+		);
 		return;
 	}
 

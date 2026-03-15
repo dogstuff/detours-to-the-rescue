@@ -1,3 +1,4 @@
+#include "backend_sdl3gpu_internal.h"
 #include "graphics_internal.h"
 
 #include "log.h"
@@ -192,7 +193,7 @@ static void s_upload_dummy_white_pixel(DTTR_BackendState *state) {
 }
 
 // Creates persistent GPU buffers, samplers, and textures required for rendering
-bool dttr_graphics_create_resources(void) {
+bool dttr_graphics_sdl3gpu_create_resources(void) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
 	s_create_frame_buffers(state);
@@ -233,7 +234,7 @@ bool dttr_graphics_create_resources(void) {
 }
 
 // Recreates render-target and depth textures to match a new resolution
-bool dttr_graphics_resize_render_textures(int width, int height) {
+bool dttr_graphics_sdl3gpu_resize_render_textures(int width, int height) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
 	if (!state->m_device || !state->m_window || width <= 0 || height <= 0)

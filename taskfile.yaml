@@ -64,12 +64,15 @@ tasks:
 
   build-shaders:
     cmds:
-      - cmd: 'echo "WARN: Skipping build-shaders on macOS because shadercross is unavailable. Consider using container builds instead."'
+      - cmd: 'echo "WARN: Skipping SDL3 GPU shaders on macOS because shadercross is unavailable. Consider using container builds instead."'
         platforms: [darwin]
       - cmd: |
-          echo "Compiling shaders to {{ .SHADER_OUTPUT_DIR }}" && \
+          echo "Compiling SDL3 GPU shaders to {{ .SHADER_OUTPUT_DIR }}" && \
           bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"
         platforms: [linux, windows]
+      - cmd: |
+          echo "Generating OpenGL shaders to {{ .SHADER_OUTPUT_DIR }}" && \
+          bash ./scripts/build-opengl-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"
 
   container-build:
     cmds:

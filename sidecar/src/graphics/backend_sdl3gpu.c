@@ -1,6 +1,10 @@
-#include "dttr_sidecar.h"
+#include "backend_sdl3gpu_internal.h"
 #include "graphics_internal.h"
+
 #include "log.h"
+
+#include <dttr_config.h>
+#include <dttr_sidecar.h>
 
 #ifdef DTTR_COMPONENTS_ENABLED
 #include "../components/components_internal.h"
@@ -9,6 +13,393 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
+static const DTTR_RendererVtbl s_renderer;
+
+// Converts config integer sample count into SDL GPU sample-count enum
+static SDL_GPUSampleCount s_msaa_sample_count_from_config(int value) {
+	switch (value) {
+	case 2:
+		return SDL_GPU_SAMPLECOUNT_2;
+	case 4:
+		return SDL_GPU_SAMPLECOUNT_4;
+	case 8:
+		return SDL_GPU_SAMPLECOUNT_8;
+	default:
+		return SDL_GPU_SAMPLECOUNT_1;
+	}
+}
+
+// Returns readable integer form for logging a sample-count enum
+static int s_msaa_sample_count_to_int(SDL_GPUSampleCount value) {
+	switch (value) {
+	case SDL_GPU_SAMPLECOUNT_2:
+		return 2;
+	case SDL_GPU_SAMPLECOUNT_4:
+		return 4;
+	case SDL_GPU_SAMPLECOUNT_8:
+		return 8;
+	default:
+		return 1;
+	}
+}
+
+// Selects the runtime MSAA sample count based on config and GPU support
+static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
+	const SDL_GPUSampleCount requested = s_msaa_sample_count_from_config(
+		g_dttr_config.m_msaa_samples
+	);
+	if (requested == SDL_GPU_SAMPLECOUNT_1) {
+		return SDL_GPU_SAMPLECOUNT_1;
+	}
+
+	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(
+		state->m_device,
+		state->m_window
+	);
+	const bool color_supported = SDL_GPUTextureSupportsSampleCount(
+		state->m_device,
+		swapchain_fmt,
+		requested
+	);
+	const bool depth_supported = SDL_GPUTextureSupportsSampleCount(
+		state->m_device,
+		SDL_GPU_TEXTUREFORMAT_D32_FLOAT,
+		requested
+	);
+
+	if (color_supported && depth_supported) {
+		return requested;
+	}
+
+	log_warn(
+		"Requested MSAA x%d is unsupported on this device/format. "
+		"Falling back to x1.",
+		s_msaa_sample_count_to_int(requested)
+	);
+	return SDL_GPU_SAMPLECOUNT_1;
+}
+
+// Attempts to create and validate an SDL GPU device for one backend driver name
+static bool s_try_create_device_for_driver(
+	DTTR_BackendState *state,
+	const SDL_GPUShaderFormat requested_formats,
+	const char *driver
+) {
+	state->m_device = SDL_CreateGPUDevice(requested_formats, false, driver);
+
+	if (!state->m_device) {
+		log_warn(
+			"Failed to create SDL GPU device for driver '%s' "
+			"(requested_formats=0x%x): %s",
+			driver ? driver : "default",
+			(unsigned int)requested_formats,
+			SDL_GetError()
+		);
+		return false;
+	}
+
+	if (!SDL_ClaimWindowForGPUDevice(state->m_device, state->m_window)) {
+		log_warn(
+			"Failed to claim window for SDL GPU driver '%s': %s",
+			driver ? driver : "default",
+			SDL_GetError()
+		);
+		SDL_DestroyGPUDevice(state->m_device);
+		state->m_device = NULL;
+		return false;
+	}
+
+	if (!SDL_SetGPUSwapchainParameters(
+			state->m_device,
+			state->m_window,
+			SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+			SDL_GPU_PRESENTMODE_IMMEDIATE
+		)) {
+		log_error("Failed to set swap chain parameters: %s", SDL_GetError());
+	}
+
+	const SDL_GPUShaderFormat available_formats = SDL_GetGPUShaderFormats(state->m_device);
+	const char *active_driver = SDL_GetGPUDeviceDriver(state->m_device);
+	state->m_shader_format = dttr_graphics_select_shader_format_for_driver(
+		active_driver,
+		available_formats
+	);
+
+	if (state->m_shader_format != SDL_GPU_SHADERFORMAT_INVALID) {
+		return true;
+	}
+
+	log_warn(
+		"SDL GPU driver '%s' does not support required shader format. Available "
+		"mask=0x%x",
+		active_driver ? active_driver : "unknown",
+		(unsigned int)available_formats
+	);
+	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
+	SDL_DestroyGPUDevice(state->m_device);
+	state->m_device = NULL;
+	return false;
+}
+
+// Maps config graphics API mode to SDL GPU driver name (NULL means auto-select)
+static const char *s_graphics_api_driver_name(DTTR_GraphicsApi api) {
+	switch (api) {
+	case DTTR_GRAPHICS_API_VULKAN:
+		return DTTR_DRIVER_VULKAN;
+	case DTTR_GRAPHICS_API_DIRECT3D12:
+		return DTTR_DRIVER_DIRECT3D12;
+	case DTTR_GRAPHICS_API_METAL:
+		return DTTR_DRIVER_METAL;
+	default:
+		return NULL;
+	}
+}
+
+// Tries supported backend drivers in order until one produces a usable GPU device
+static bool s_create_device(DTTR_BackendState *state) {
+	const SDL_GPUShaderFormat requested_formats = dttr_graphics_requested_shader_formats();
+	const char *const requested_driver = s_graphics_api_driver_name(
+		g_dttr_config.m_graphics_api
+	);
+
+	if (requested_driver) {
+		if (s_try_create_device_for_driver(state, requested_formats, requested_driver)) {
+			return true;
+		}
+
+		log_error(
+			"GPU device creation failed for configured graphics_api='%s'; no fallback "
+			"APIs "
+			"will be attempted",
+			requested_driver
+		);
+		return false;
+	}
+
+	const char *const driver_candidates[] = {
+		DTTR_DRIVER_VULKAN,
+		DTTR_DRIVER_DIRECT3D12,
+		DTTR_DRIVER_METAL,
+		NULL, // Falls back to the SDL default driver selection.
+	};
+
+	for (size_t i = 0; i < SDL_arraysize(driver_candidates); i++) {
+		if (s_try_create_device_for_driver(
+				state,
+				requested_formats,
+				driver_candidates[i]
+			)) {
+			return true;
+		}
+	}
+
+	log_error("GPU device creation failed for all supported APIs (d3d12/metal/vulkan)");
+	return false;
+}
+
+#ifdef DTTR_COMPONENTS_ENABLED
+static void s_create_components_overlay(DTTR_BackendState *state) {
+	int w = 0, h = 0;
+	uint8_t *pixels = dttr_components_overlay_decode_bitmap(&w, &h);
+
+	if (!pixels) {
+		return;
+	}
+
+	const uint32_t byte_count = (uint32_t)(w * h) * 4;
+
+	const SDL_GPUTextureCreateInfo tex_info = {
+		.type = SDL_GPU_TEXTURETYPE_2D,
+		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
+		.width = (uint32_t)w,
+		.height = (uint32_t)h,
+		.layer_count_or_depth = 1,
+		.num_levels = 1,
+		.sample_count = SDL_GPU_SAMPLECOUNT_1,
+	};
+	state->m_components_overlay_tex = SDL_CreateGPUTexture(state->m_device, &tex_info);
+
+	if (!state->m_components_overlay_tex) {
+		free(pixels);
+		return;
+	}
+
+	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
+		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+		.size = byte_count,
+	};
+	SDL_GPUTransferBuffer *tbuf = SDL_CreateGPUTransferBuffer(state->m_device, &tbuf_info);
+
+	if (!tbuf) {
+		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
+		state->m_components_overlay_tex = NULL;
+		free(pixels);
+		return;
+	}
+
+	void *mapped = SDL_MapGPUTransferBuffer(state->m_device, tbuf, false);
+
+	if (!mapped) {
+		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
+		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
+		state->m_components_overlay_tex = NULL;
+		free(pixels);
+		return;
+	}
+
+	memcpy(mapped, pixels, byte_count);
+	SDL_UnmapGPUTransferBuffer(state->m_device, tbuf);
+	free(pixels);
+
+	SDL_GPUCommandBuffer *cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
+
+	if (!cmd) {
+		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
+		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
+		state->m_components_overlay_tex = NULL;
+		return;
+	}
+
+	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+
+	if (copy) {
+		const SDL_GPUTextureTransferInfo src = {
+			.transfer_buffer = tbuf,
+			.pixels_per_row = (uint32_t)w,
+			.rows_per_layer = (uint32_t)h,
+		};
+		const SDL_GPUTextureRegion dst = {
+			.texture = state->m_components_overlay_tex,
+			.w = (uint32_t)w,
+			.h = (uint32_t)h,
+			.d = 1,
+		};
+		SDL_UploadToGPUTexture(copy, &src, &dst, false);
+		SDL_EndGPUCopyPass(copy);
+	}
+
+	SDL_SubmitGPUCommandBuffer(cmd);
+	SDL_WaitForGPUIdle(state->m_device);
+	SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
+
+	state->m_components_overlay_w = w;
+	state->m_components_overlay_h = h;
+	log_info("Components overlay texture created (%dx%d)", w, h);
+}
+#endif
+
+bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
+	if (!s_create_device(state)) {
+		return false;
+	}
+
+	state->m_backend_type = DTTR_BACKEND_SDL_GPU;
+	state->m_renderer = &s_renderer;
+
+	state->m_msaa_sample_count = s_select_msaa_sample_count(state);
+	log_info(
+		"MSAA requested: x%d, effective: x%d",
+		g_dttr_config.m_msaa_samples,
+		s_msaa_sample_count_to_int(state->m_msaa_sample_count)
+	);
+
+	log_info(
+		"SDL GPU initialized with %s (shaders: %s)",
+		SDL_GetGPUDeviceDriver(state->m_device),
+		dttr_graphics_shader_format_name(state->m_shader_format)
+	);
+
+	if (!dttr_graphics_sdl3gpu_create_pipelines()
+		|| !dttr_graphics_sdl3gpu_create_resources()) {
+		log_error("Failed to create GPU resources");
+		SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
+		SDL_DestroyGPUDevice(state->m_device);
+		state->m_device = NULL;
+		return false;
+	}
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	s_create_components_overlay(state);
+#endif
+
+	return true;
+}
+
+static void s_cleanup(DTTR_BackendState *state) {
+	if (!state->m_device) {
+		return;
+	}
+
+	for (int i = 0; i < DTTR_SAMPLER_COUNT; i++) {
+		if (state->m_samplers[i]) {
+			SDL_ReleaseGPUSampler(state->m_device, state->m_samplers[i]);
+		}
+	}
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	if (state->m_components_overlay_tex) {
+		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
+		state->m_components_overlay_tex = NULL;
+	}
+#endif
+
+	if (state->m_dummy_texture) {
+		SDL_ReleaseGPUTexture(state->m_device, state->m_dummy_texture);
+	}
+
+	if (state->m_depth_texture) {
+		SDL_ReleaseGPUTexture(state->m_device, state->m_depth_texture);
+	}
+
+	if (state->m_msaa_render_target) {
+		SDL_ReleaseGPUTexture(state->m_device, state->m_msaa_render_target);
+	}
+
+	if (state->m_render_target) {
+		SDL_ReleaseGPUTexture(state->m_device, state->m_render_target);
+	}
+
+	if (state->m_transfer_buffer) {
+		SDL_ReleaseGPUTransferBuffer(state->m_device, state->m_transfer_buffer);
+	}
+
+	if (state->m_vertex_buffer) {
+		SDL_ReleaseGPUBuffer(state->m_device, state->m_vertex_buffer);
+	}
+
+	for (int i = 0; i < DTTR_UPLOAD_POOL_SIZE; i++) {
+		DTTR_UploadPoolSlot *slot = &state->m_upload_pool[i];
+
+		if (slot->m_transfer_buffer) {
+			SDL_ReleaseGPUTransferBuffer(state->m_device, slot->m_transfer_buffer);
+			slot->m_transfer_buffer = NULL;
+		}
+
+		if (slot->m_storage_buffer) {
+			SDL_ReleaseGPUBuffer(state->m_device, slot->m_storage_buffer);
+			slot->m_storage_buffer = NULL;
+		}
+
+		slot->m_capacity = 0;
+		slot->m_in_use = false;
+	}
+
+	for (int i = 0; i < DTTR_PIPELINE_COUNT; i++) {
+		if (state->m_pipelines[i]) {
+			SDL_ReleaseGPUGraphicsPipeline(state->m_device, state->m_pipelines[i]);
+		}
+	}
+
+	if (state->m_buf2tex_pipeline) {
+		SDL_ReleaseGPUComputePipeline(state->m_device, state->m_buf2tex_pipeline);
+	}
+
+	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
+	SDL_DestroyGPUDevice(state->m_device);
+	state->m_device = NULL;
+}
 
 // Tracks one temporary storage buffer upload destined for a staged texture
 typedef struct {
@@ -44,24 +435,28 @@ static bool s_msaa_enabled(const DTTR_BackendState *state) {
 
 // Marks a reusable upload slot as available
 static void s_release_upload_pool_slot(DTTR_BackendState *state, int pool_slot) {
-	if (!state || pool_slot < 0 || pool_slot >= DTTR_UPLOAD_POOL_SIZE)
+	if (!state || pool_slot < 0 || pool_slot >= DTTR_UPLOAD_POOL_SIZE) {
 		return;
+	}
 
 	state->m_upload_pool[pool_slot].m_in_use = false;
 }
 
 // Acquires or grows one reusable upload slot that can fit `bytes`
 static int s_acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) {
-	if (!state || !state->m_device || bytes == 0)
+	if (!state || !state->m_device || bytes == 0) {
 		return -1;
+	}
 
 	int free_slot = -1;
 	int grow_slot = -1;
 
 	for (int i = 0; i < DTTR_UPLOAD_POOL_SIZE; i++) {
 		DTTR_UploadPoolSlot *slot = &state->m_upload_pool[i];
-		if (slot->m_in_use)
+
+		if (slot->m_in_use) {
 			continue;
+		}
 
 		if (slot->m_storage_buffer && slot->m_transfer_buffer
 			&& slot->m_capacity >= bytes) {
@@ -69,16 +464,20 @@ static int s_acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) 
 			return i;
 		}
 
-		if (free_slot < 0)
+		if (free_slot < 0) {
 			free_slot = i;
+		}
 
-		if (slot->m_storage_buffer && slot->m_transfer_buffer)
+		if (slot->m_storage_buffer && slot->m_transfer_buffer) {
 			grow_slot = i;
+		}
 	}
 
 	const int slot_index = (grow_slot >= 0) ? grow_slot : free_slot;
-	if (slot_index < 0)
+
+	if (slot_index < 0) {
 		return -1;
+	}
 
 	DTTR_UploadPoolSlot *slot = &state->m_upload_pool[slot_index];
 
@@ -128,8 +527,9 @@ static void s_bind_frame_vertex_buffer(
 	const DTTR_BackendState *state,
 	SDL_GPURenderPass *render_pass
 ) {
-	if (!render_pass)
+	if (!render_pass) {
 		return;
+	}
 
 	const SDL_GPUBufferBinding vbuf_binding = {
 		.buffer = state->m_vertex_buffer,
@@ -139,8 +539,9 @@ static void s_bind_frame_vertex_buffer(
 
 // Ends the active render pass and clears the pass pointer
 static void s_end_render_pass_if_active(DTTR_BackendState *state) {
-	if (!state->m_render_pass)
+	if (!state->m_render_pass) {
 		return;
+	}
 
 	SDL_EndGPURenderPass(state->m_render_pass);
 	state->m_render_pass = NULL;
@@ -160,8 +561,9 @@ static void s_release_deferred_texture_destroys(DTTR_BackendState *state) {
 
 // Lazily creates the GPU texture backing a staged texture slot
 static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st) {
-	if (st->m_gpu_tex)
+	if (st->m_gpu_tex) {
 		return true;
+	}
 
 	const SDL_GPUTextureCreateInfo tex_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
@@ -185,8 +587,9 @@ static int s_collect_pending_uploads(
 	S_GraphicsPendingUpload *pending_uploads,
 	int max_uploads
 ) {
-	if (!state->m_texture_mutex)
+	if (!state->m_texture_mutex) {
 		return 0;
+	}
 
 	int pending_count = 0;
 	SDL_LockMutex(state->m_texture_mutex);
@@ -196,8 +599,9 @@ static int s_collect_pending_uploads(
 	for (size_t q = 0; q < queued_count; q++) {
 		const int idx = kv_A(state->m_pending_upload_indices, q);
 
-		if (idx < 0 || idx >= state->m_staged_texture_count)
+		if (idx < 0 || idx >= state->m_staged_texture_count) {
 			continue;
+		}
 
 		DTTR_StagedTexture *st = &state->m_staged_textures[idx];
 
@@ -260,8 +664,9 @@ static void s_stage_upload_data(
 	if (!upload || !upload->pixels || !upload->tex || upload->bytes == 0 || !copy) {
 		free(upload ? upload->pixels : NULL);
 
-		if (upload)
+		if (upload) {
 			upload->pixels = NULL;
+		}
 
 		return;
 	}
@@ -273,7 +678,7 @@ static void s_stage_upload_data(
 	SDL_GPUBuffer *pixel_buf = NULL;
 	SDL_GPUTransferBuffer *tbuf = NULL;
 	bool from_pool = false;
-	// Pool slot reuse requires GPU sync; async mode would race outstanding GPU reads.
+	// Pool slot reuse requires GPU sync because async mode would race outstanding reads.
 	int pool_slot = -1;
 
 	if (g_dttr_config.m_texture_upload_sync) {
@@ -334,8 +739,9 @@ static void s_stage_upload_data(
 	};
 	SDL_UploadToGPUBuffer(copy, &src, &dst, false);
 
-	if (!from_pool)
+	if (!from_pool) {
 		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
+	}
 
 	upload->buf = pixel_buf;
 	upload->from_pool = from_pool;
@@ -354,8 +760,9 @@ static void s_dispatch_pending_uploads(
 	uint64_t *uploaded_bytes
 ) {
 	for (int p = 0; p < pending_count; p++) {
-		if (!pending[p].buf || !pending[p].tex)
+		if (!pending[p].buf || !pending[p].tex) {
 			continue;
+		}
 
 		const SDL_GPUStorageTextureReadWriteBinding tex_bind = {
 			.texture = pending[p].tex,
@@ -387,11 +794,13 @@ static void s_dispatch_pending_uploads(
 			state->m_perf_mips_skipped_accum++;
 		}
 
-		if (uploaded_texture_count)
+		if (uploaded_texture_count) {
 			(*uploaded_texture_count)++;
+		}
 
-		if (uploaded_bytes)
+		if (uploaded_bytes) {
 			(*uploaded_bytes) += pending[p].bytes;
+		}
 	}
 }
 
@@ -402,8 +811,9 @@ static void s_release_pending_upload_buffers(
 	int pending_count
 ) {
 	for (int p = 0; p < pending_count; p++) {
-		if (!pending[p].buf)
+		if (!pending[p].buf) {
 			continue;
+		}
 
 		if (pending[p].from_pool) {
 			s_release_upload_pool_slot(state, pending[p].pool_slot);
@@ -415,14 +825,16 @@ static void s_release_pending_upload_buffers(
 
 // Flushes all pending staged textures to GPU textures
 static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBuffer *cmd) {
-	if (!cmd)
+	if (!cmd) {
 		return;
+	}
 
 	S_GraphicsPendingUpload pending[DTTR_MAX_STAGED_TEXTURES] = {0};
 	const int pending_count = s_collect_pending_uploads(state, pending, 0);
 
-	if (pending_count == 0)
+	if (pending_count == 0) {
 		return;
+	}
 
 	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
 
@@ -437,12 +849,14 @@ static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBu
 	int prepared_count = 0;
 
 	for (int i = 0; i < pending_count; i++) {
-		if (pending[i].buf)
+		if (pending[i].buf) {
 			prepared_count++;
+		}
 	}
 
-	if (prepared_count == 0)
+	if (prepared_count == 0) {
 		return;
+	}
 
 	uint32_t uploaded_texture_count = 0;
 	uint64_t uploaded_bytes = 0;
@@ -461,8 +875,9 @@ static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBu
 }
 
 static void s_set_default_viewport(const DTTR_BackendState *state) {
-	if (!state->m_render_pass)
+	if (!state->m_render_pass) {
 		return;
+	}
 
 	const SDL_GPUViewport viewport = {
 		.x = 0.0f,
@@ -485,8 +900,9 @@ static void s_set_default_viewport(const DTTR_BackendState *state) {
 
 // Opens a standard draw pass when no render pass is active
 static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
-	if (state->m_render_pass)
+	if (state->m_render_pass) {
 		return false;
+	}
 
 	const bool use_msaa = s_msaa_enabled(state);
 	const SDL_GPUColorTargetInfo color_target = {
@@ -514,8 +930,9 @@ static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
 }
 
 static void s_reset_replay_state(S_GraphicsReplayState *replay_state) {
-	if (!replay_state)
+	if (!replay_state) {
 		return;
+	}
 
 	replay_state->last_pipeline_idx = -1;
 	replay_state->last_texture = NULL;
@@ -573,22 +990,26 @@ static void s_draw_batch_record(
 		s_reset_replay_state(replay_state);
 	}
 
-	if (!state->m_render_pass)
+	if (!state->m_render_pass) {
 		return;
+	}
 
 	const int pidx = DTTR_PIPELINE_INDEX(
 		rec->draw.blend_mode,
 		rec->draw.depth_test,
 		rec->draw.depth_write
 	);
+
 	if (!replay_state || replay_state->last_pipeline_idx != pidx) {
 		SDL_BindGPUGraphicsPipeline(state->m_render_pass, state->m_pipelines[pidx]);
 
-		if (replay_state)
+		if (replay_state) {
 			replay_state->last_pipeline_idx = pidx;
+		}
 
-		if (replay_stats)
+		if (replay_stats) {
 			replay_stats->pipeline_bind_count++;
+		}
 	}
 
 	SDL_PushGPUVertexUniformData(
@@ -617,8 +1038,9 @@ static void s_draw_batch_record(
 			replay_state->last_sampler = rec->draw.sampler;
 		}
 
-		if (replay_stats)
+		if (replay_stats) {
 			replay_stats->sampler_bind_count++;
+		}
 	}
 
 	SDL_DrawGPUPrimitives(
@@ -629,8 +1051,9 @@ static void s_draw_batch_record(
 		0
 	);
 
-	if (replay_stats)
+	if (replay_stats) {
 		replay_stats->draw_count++;
+	}
 }
 
 // Replays all recorded batch operations for the frame
@@ -661,14 +1084,10 @@ static S_GraphicsReplayStats s_replay_batch_records(DTTR_BackendState *state) {
 }
 
 // Starts a frame, acquires command/swapchain resources, and maps the upload buffer
-void dttr_graphics_begin_frame(void) {
-	DTTR_BackendState *state = &g_dttr_backend;
-	if (state->m_frame_active) {
+static void s_begin_frame(DTTR_BackendState *state) {
+	if (!state->m_device || !state->m_window || !dttr_graphics_is_gpu_thread()) {
 		return;
 	}
-
-	if (!state->m_device || !state->m_window || !dttr_graphics_is_gpu_thread())
-		return;
 
 	state->m_frame_index++;
 
@@ -698,19 +1117,15 @@ void dttr_graphics_begin_frame(void) {
 		true
 	);
 
-	if (!state->m_transfer_mapped)
+	if (!state->m_transfer_mapped) {
 		log_warn("BeginFrame: MapGPUTransferBuffer failed");
+	}
 
 	state->m_frame_active = true;
 }
 
 // Finalizes GPU uploads and batch replay, then submits the frame command buffer
-void dttr_graphics_end_frame(void) {
-	DTTR_BackendState *state = &g_dttr_backend;
-
-	if (!state->m_frame_active)
-		return;
-
+static void s_end_frame(DTTR_BackendState *state) {
 	state->m_frame_active = false;
 
 #ifdef DTTR_COMPONENTS_ENABLED
@@ -721,24 +1136,15 @@ void dttr_graphics_end_frame(void) {
 		&& state->m_vertex_offset + 6 <= DTTR_MAX_FRAME_VERTICES) {
 		overlay_first_vertex = state->m_vertex_offset;
 
-		const float scale = (float)state->m_height / 320.0f;
-		const float ow = (float)state->m_components_overlay_w * scale;
-		const float oh = (float)state->m_components_overlay_h * scale;
-		const float margin = 4.0f * scale;
-		const float x0 = (float)state->m_width - ow - margin;
-		const float y0 = margin;
-		const float x1 = x0 + ow;
-		const float y1 = y0 + oh;
-		const float alpha = 0.15f;
-
 		DTTR_Vertex *verts = (DTTR_Vertex *)((uint8_t *)state->m_transfer_mapped
 											 + state->m_vertex_offset * DTTR_VERTEX_SIZE);
-		verts[0] = (DTTR_Vertex){x0, y0, 0, 1, 1, 1, 1, alpha, 0, 0};
-		verts[1] = (DTTR_Vertex){x1, y0, 0, 1, 1, 1, 1, alpha, 1, 0};
-		verts[2] = (DTTR_Vertex){x0, y1, 0, 1, 1, 1, 1, alpha, 0, 1};
-		verts[3] = (DTTR_Vertex){x0, y1, 0, 1, 1, 1, 1, alpha, 0, 1};
-		verts[4] = (DTTR_Vertex){x1, y0, 0, 1, 1, 1, 1, alpha, 1, 0};
-		verts[5] = (DTTR_Vertex){x1, y1, 0, 1, 1, 1, 1, alpha, 1, 1};
+		dttr_components_overlay_build_vertices(
+			verts,
+			state->m_width,
+			state->m_height,
+			state->m_components_overlay_w,
+			state->m_components_overlay_h
+		);
 
 		state->m_vertex_offset += 6;
 		overlay_ready = true;
@@ -750,8 +1156,9 @@ void dttr_graphics_end_frame(void) {
 		state->m_transfer_mapped = NULL;
 	}
 
-	if (!state->m_cmd)
+	if (!state->m_cmd) {
 		return;
+	}
 
 	if (state->m_vertex_offset > 0) {
 		SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(state->m_cmd);
@@ -867,8 +1274,10 @@ void dttr_graphics_end_frame(void) {
 
 		const bool is_internal_method
 			= (g_dttr_config.m_scaling_method == DTTR_SCALING_METHOD_LOGICAL);
+
 		const bool is_stretch_fit
 			= (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_STRETCH);
+
 		const bool is_integer_fit = (!is_internal_method)
 									&& (g_dttr_config.m_scaling_fit
 										== DTTR_SCALING_MODE_INTEGER);
@@ -877,17 +1286,21 @@ void dttr_graphics_end_frame(void) {
 			const float sx = (float)swap_w / (float)state->m_width;
 			const float sy = (float)swap_h / (float)state->m_height;
 			float scale = SDL_min(sx, sy);
+
 			if (is_integer_fit && scale >= 1.0f) {
 				scale = floorf(scale);
 			}
 
 			present_w = (Uint32)((float)state->m_width * scale);
 			present_h = (Uint32)((float)state->m_height * scale);
-			if (present_w == 0)
-				present_w = 1;
 
-			if (present_h == 0)
+			if (present_w == 0) {
+				present_w = 1;
+			}
+
+			if (present_h == 0) {
 				present_h = 1;
+			}
 
 			present_w = SDL_min(present_w, swap_w);
 			present_h = SDL_min(present_h, swap_h);
@@ -929,8 +1342,9 @@ void dttr_graphics_end_frame(void) {
 // Ensures the dedicated video texture exists and matches the decoded frame size
 static bool s_ensure_video_texture(DTTR_BackendState *state, int width, int height) {
 	if (state->m_video_texture && state->m_video_width == width
-		&& state->m_video_height == height)
+		&& state->m_video_height == height) {
 		return true;
+	}
 
 	if (state->m_video_texture) {
 		SDL_ReleaseGPUTexture(state->m_device, state->m_video_texture);
@@ -949,35 +1363,34 @@ static bool s_ensure_video_texture(DTTR_BackendState *state, int width, int heig
 	};
 	state->m_video_texture = SDL_CreateGPUTexture(state->m_device, &tex_info);
 
-	if (!state->m_video_texture)
+	if (!state->m_video_texture) {
 		return false;
+	}
 
 	state->m_video_width = width;
 	state->m_video_height = height;
 	return true;
 }
 
-bool dttr_graphics_present_video_frame_bgra(
+static bool s_present_video_frame_bgra(
+	DTTR_BackendState *state,
 	const uint8_t *pixels,
 	int width,
 	int height,
 	int stride
 ) {
-	DTTR_BackendState *state = &g_dttr_backend;
-
-	if (!pixels || width <= 0 || height <= 0 || stride < (width * 4))
-		return false;
-
-	if (!state->m_device || !state->m_window || !dttr_graphics_is_gpu_thread())
-		return false;
-
-	if (state->m_frame_active) {
-		// This path assumes ownership of the command buffer lifecycle
+	if (!state->m_device || !state->m_window || !dttr_graphics_is_gpu_thread()) {
 		return false;
 	}
 
-	if (!s_ensure_video_texture(state, width, height))
+	if (state->m_frame_active) {
+		// Video presentation assumes sole ownership of the command buffer.
 		return false;
+	}
+
+	if (!s_ensure_video_texture(state, width, height)) {
+		return false;
+	}
 
 	const Uint32 upload_size = (Uint32)(stride * height);
 	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
@@ -986,8 +1399,9 @@ bool dttr_graphics_present_video_frame_bgra(
 	};
 	SDL_GPUTransferBuffer *tbuf = SDL_CreateGPUTransferBuffer(state->m_device, &tbuf_info);
 
-	if (!tbuf)
+	if (!tbuf) {
 		return false;
+	}
 
 	void *mapped = SDL_MapGPUTransferBuffer(state->m_device, tbuf, false);
 
@@ -1053,11 +1467,13 @@ bool dttr_graphics_present_video_frame_bgra(
 		dst_w = (Uint32)((float)width * scale);
 		dst_h = (Uint32)((float)height * scale);
 
-		if (dst_w == 0)
+		if (dst_w == 0) {
 			dst_w = 1;
+		}
 
-		if (dst_h == 0)
+		if (dst_h == 0) {
 			dst_h = 1;
+		}
 
 		dst_x = (swapchain_w - dst_w) / 2;
 		dst_y = (swapchain_h - dst_h) / 2;
@@ -1096,3 +1512,20 @@ bool dttr_graphics_present_video_frame_bgra(
 	SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
 	return true;
 }
+
+static bool s_resize(DTTR_BackendState *state, int width, int height) {
+	return dttr_graphics_sdl3gpu_resize_render_textures(width, height);
+}
+
+static const char *s_get_driver_name(const DTTR_BackendState *state) {
+	return SDL_GetGPUDeviceDriver(state->m_device);
+}
+
+static const DTTR_RendererVtbl s_renderer = {
+	.begin_frame = s_begin_frame,
+	.end_frame = s_end_frame,
+	.present_video_frame_bgra = s_present_video_frame_bgra,
+	.resize = s_resize,
+	.cleanup = s_cleanup,
+	.get_driver_name = s_get_driver_name,
+};

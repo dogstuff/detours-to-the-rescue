@@ -4,8 +4,8 @@ set -euo pipefail
 
 out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-sidecar/include/gen}}}"
 bin_dir="${out_dir}/shaders"
-src_dir="sidecar/shaders"
-header="${out_dir}/shaders.h"
+src_dir="sidecar/shaders/sdl3gpu"
+header="${out_dir}/sdl3gpu_shaders.h"
 shadercross="$(command -v shadercross || command -v sdl_shadercross || true)"
 
 [ -d "$src_dir" ] || { echo "Missing shader source dir: $src_dir" >&2; exit 1; }
