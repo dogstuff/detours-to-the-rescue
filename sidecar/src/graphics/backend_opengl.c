@@ -408,6 +408,8 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 			GL_UNSIGNED_BYTE,
 			overlay_pixels
 		);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		free(overlay_pixels);
 
 		state->m_components_overlay_w = ow;
@@ -742,7 +744,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, gl->m_overlay_texture);
 		glUniform1i(gl->m_loc_texture, 0);
-		glBindSampler(0, gl->m_gl_samplers[3]);
+		glBindSampler(0, 0);
 
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);
