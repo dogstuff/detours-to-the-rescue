@@ -1,8 +1,8 @@
+#include "config_internal.h"
 #include "log.h"
 #include <dttr_config.h>
 
-// clang-format off
-#define DTTR_GAMEPAD_AXIS_DEFAULTS \
+#define DTTR_GAMEPAD_AXIS_DEFAULTS                                                       \
 	.m_gamepad_axes = { \
 		[DTTR_GAMEPAD_AXIS_IDX_STICK_X]  = SDL_GAMEPAD_AXIS_LEFTX, \
 		[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]  = SDL_GAMEPAD_AXIS_LEFTY, \
@@ -13,7 +13,6 @@
 		[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]  = 700, \
 		[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = 700, \
 	}
-// clang-format on
 
 static const DTTR_Config s_default_config = {
 	.m_log_level = DTTR_DEFAULT_LOG_LEVEL,
@@ -38,27 +37,29 @@ static const DTTR_Config s_default_config = {
 
 DTTR_Config g_dttr_config;
 
-// clang-format off
 static void s_set_default_button_map(int *map) {
 	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
 		map[i] = DTTR_GAMEPAD_MAPPING_NONE;
 	}
 
-	map[SDL_GAMEPAD_BUTTON_SOUTH]          = PCDOGS_GAMEPAD_IDX_BTN_0;
-	map[SDL_GAMEPAD_BUTTON_EAST]           = PCDOGS_GAMEPAD_IDX_BTN_1;
-	map[SDL_GAMEPAD_BUTTON_WEST]           = PCDOGS_GAMEPAD_IDX_BTN_2;
-	map[SDL_GAMEPAD_BUTTON_NORTH]          = PCDOGS_GAMEPAD_IDX_BTN_3;
-	map[SDL_GAMEPAD_BUTTON_LEFT_SHOULDER]  = PCDOGS_GAMEPAD_IDX_BTN_4;
+	map[SDL_GAMEPAD_BUTTON_SOUTH] = PCDOGS_GAMEPAD_IDX_BTN_0;
+	map[SDL_GAMEPAD_BUTTON_EAST] = PCDOGS_GAMEPAD_IDX_BTN_1;
+	map[SDL_GAMEPAD_BUTTON_WEST] = PCDOGS_GAMEPAD_IDX_BTN_2;
+	map[SDL_GAMEPAD_BUTTON_NORTH] = PCDOGS_GAMEPAD_IDX_BTN_3;
+	map[SDL_GAMEPAD_BUTTON_LEFT_SHOULDER] = PCDOGS_GAMEPAD_IDX_BTN_4;
 	map[SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER] = PCDOGS_GAMEPAD_IDX_BTN_5;
-	map[SDL_GAMEPAD_BUTTON_BACK]           = PCDOGS_GAMEPAD_IDX_BTN_6;
-	map[SDL_GAMEPAD_BUTTON_LEFT_STICK]     = PCDOGS_GAMEPAD_IDX_BTN_7;
-	map[SDL_GAMEPAD_BUTTON_START]          = PCDOGS_GAMEPAD_IDX_BTN_8;
-	map[SDL_GAMEPAD_BUTTON_RIGHT_STICK]    = PCDOGS_GAMEPAD_IDX_BTN_9;
-	map[SDL_GAMEPAD_BUTTON_GUIDE]          = PCDOGS_GAMEPAD_IDX_BTN_10;
-	map[SDL_GAMEPAD_BUTTON_DPAD_UP]        = PCDOGS_GAMEPAD_IDX_BTN_11;
-	map[SDL_GAMEPAD_BUTTON_DPAD_LEFT]      = PCDOGS_GAMEPAD_IDX_BTN_12;
+	map[SDL_GAMEPAD_BUTTON_BACK] = PCDOGS_GAMEPAD_IDX_BTN_6;
+	map[SDL_GAMEPAD_BUTTON_LEFT_STICK] = PCDOGS_GAMEPAD_IDX_BTN_7;
+	map[SDL_GAMEPAD_BUTTON_START] = PCDOGS_GAMEPAD_IDX_BTN_8;
+	map[SDL_GAMEPAD_BUTTON_RIGHT_STICK] = PCDOGS_GAMEPAD_IDX_BTN_9;
+	map[SDL_GAMEPAD_BUTTON_GUIDE] = PCDOGS_GAMEPAD_IDX_BTN_10;
+	map[SDL_GAMEPAD_BUTTON_DPAD_UP] = PCDOGS_GAMEPAD_IDX_BTN_11;
+	map[SDL_GAMEPAD_BUTTON_DPAD_LEFT] = PCDOGS_GAMEPAD_IDX_BTN_12;
 }
-// clang-format on
+
+const char *dttr_config_graphics_api_name(DTTR_GraphicsApi api) {
+	return s_config_format_graphics_api(api);
+}
 
 void dttr_config_set_defaults(DTTR_Config *config) {
 	if (!config) {

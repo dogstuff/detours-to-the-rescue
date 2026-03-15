@@ -2,7 +2,6 @@
 
 #include "log.h"
 
-#include <dttr_errors.h>
 #include <stddef.h>
 #include <windows.h>
 
@@ -18,12 +17,10 @@ typedef struct {
 	bool (*m_init)(DTTR_BackendState *state);
 } S_BackendCandidate;
 
-// clang-format off
 static const S_BackendCandidate s_backend_candidates[] = {
-	{ 0,                 dttr_graphics_sdl3gpu_init },
-	{ SDL_WINDOW_OPENGL, dttr_graphics_opengl_init  },
+	{0, dttr_graphics_sdl3gpu_init},
+	{SDL_WINDOW_OPENGL, dttr_graphics_opengl_init},
 };
-// clang-format on
 
 #define S_IDX_SDL_GPU 0
 #define S_IDX_OPENGL 1
@@ -222,7 +219,26 @@ HWND dttr_graphics_init(void) {
 		return s_get_hwnd(state->m_window);
 	}
 
-	DTTR_FATAL("All graphics backends failed to initialize");
+	{
+		sds msg;
+		if (g_dttr_config.m_graphics_api == DTTR_GRAPHICS_API_AUTO) {
+			msg = sdsnew("All graphics backends failed to initialize");
+		} else {
+			msg = sdscatprintf(
+				sdsempty(),
+				"Graphics backend '%s' failed to initialize. "
+				"It may not be supported on this system.",
+				dttr_config_graphics_api_name(g_dttr_config.m_graphics_api)
+			);
+		}
+
+		log_error("%s", msg);
+
+		// We don't use SDL_ShowSimpleMessage here because
+		// it doesn't wanna work here?? (idk bro)
+		MessageBoxA(NULL, msg, "DttR: Error", MB_OK | MB_ICONERROR);
+		sdsfree(msg);
+	}
 
 	if (state->m_window) {
 		SDL_DestroyWindow(state->m_window);
