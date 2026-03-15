@@ -291,8 +291,8 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 
 	SDL_GL_SetSwapInterval(0);
 
-	if (!s_load_functions()) {
-		log_error("Failed to load OpenGL 3.3 functions");
+	if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress)) {
+		log_error("Failed to load OpenGL functions via glad");
 		SDL_GL_DestroyContext(gl->m_gl_context);
 		free(gl);
 		return false;

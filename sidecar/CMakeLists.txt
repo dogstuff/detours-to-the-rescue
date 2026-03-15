@@ -51,9 +51,9 @@ set_target_properties(mpv PROPERTIES
 target_link_libraries(dttr_sidecar PRIVATE
     kernel32
     psapi
-    opengl32
 
     mpv
+    glad
     Zydis
     sds
     klib
