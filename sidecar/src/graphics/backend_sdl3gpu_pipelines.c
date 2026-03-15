@@ -7,6 +7,10 @@
 
 #include "gen/sdl3gpu_shaders.h"
 
+#define S_COMPUTE_WORKGROUP_X 16
+#define S_COMPUTE_WORKGROUP_Y 16
+#define S_COMPUTE_WORKGROUP_Z 1
+
 // Holds shader bytecode pointer/size pairs for SDL pipeline creation
 typedef struct {
 	const Uint8 *code;
@@ -120,9 +124,9 @@ static SDL_GPUComputePipeline *s_create_compute_pipeline(
 		.num_readonly_storage_buffers = 1,
 		.num_readwrite_storage_textures = 1,
 		.num_uniform_buffers = 1,
-		.threadcount_x = DTTR_COMPUTE_WORKGROUP_X,
-		.threadcount_y = DTTR_COMPUTE_WORKGROUP_Y,
-		.threadcount_z = DTTR_COMPUTE_WORKGROUP_Z,
+		.threadcount_x = S_COMPUTE_WORKGROUP_X,
+		.threadcount_y = S_COMPUTE_WORKGROUP_Y,
+		.threadcount_z = S_COMPUTE_WORKGROUP_Z,
 	};
 
 	return SDL_CreateGPUComputePipeline(state->m_device, &info);

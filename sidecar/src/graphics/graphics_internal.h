@@ -84,9 +84,8 @@ typedef struct {
 	uint64_t m_cache_key;
 } DTTR_StagedTexture;
 
-/// One reusable upload slot holding a paired storage and transfer buffer
+/// One reusable upload slot holding a transfer buffer for texture uploads
 typedef struct {
-	SDL_GPUBuffer *m_storage_buffer;
 	SDL_GPUTransferBuffer *m_transfer_buffer;
 	uint32_t m_capacity;
 	bool m_in_use;
@@ -101,10 +100,6 @@ typedef struct {
 	float m_is_2d;
 	float m_has_texture;
 } DTTR_Uniforms;
-
-#define DTTR_DRIVER_DISPLAY_VULKAN "Vulkan"
-#define DTTR_DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
-#define DTTR_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
 
 typedef enum {
 	DTTR_BACKEND_SDL_GPU,
@@ -165,10 +160,6 @@ typedef kvec_t(DTTR_BatchRecord) DTTR_BatchRecordVector;
 #define DTTR_BLEND_ADDITIVE 2
 #define DTTR_PIPELINE_COUNT 12
 #define DTTR_PIPELINE_INDEX(bmode, dtest, dwrite) ((bmode) * 4 + (dtest) * 2 + (dwrite))
-
-#define DTTR_COMPUTE_WORKGROUP_X 16
-#define DTTR_COMPUTE_WORKGROUP_Y 16
-#define DTTR_COMPUTE_WORKGROUP_Z 1
 
 #define DTTR_SAMPLER_COUNT 4
 #define DTTR_MAX_ANISOTROPY 16.0f

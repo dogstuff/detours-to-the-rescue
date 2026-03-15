@@ -3,6 +3,8 @@
 
 #include "backend_opengl_internal.h"
 #include "graphics_internal.h"
+
+#define S_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
 #include "log.h"
 
 #include <dttr_config.h>
@@ -257,17 +259,6 @@ static void s_defer_texture_destroy(DTTR_BackendState *state, int texture_index)
 	}
 
 	gl->m_gl_textures[texture_index] = 0;
-}
-
-static GLenum s_blend_factor(int dttr_blend) {
-	switch (dttr_blend) {
-	case DTTR_BLEND_ALPHA:
-		return GL_SRC_ALPHA;
-	case DTTR_BLEND_ADDITIVE:
-		return GL_ONE;
-	default:
-		return GL_ZERO;
-	}
 }
 
 bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
@@ -1011,7 +1002,7 @@ static void s_cleanup(DTTR_BackendState *state) {
 }
 
 static const char *s_get_driver_name(const DTTR_BackendState *state) {
-	return DTTR_DRIVER_DISPLAY_OPENGL;
+	return S_DRIVER_DISPLAY_OPENGL;
 }
 
 static const DTTR_RendererVtbl s_renderer = {

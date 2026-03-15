@@ -311,10 +311,8 @@ static bool s_d3d_device7_ensure_staged_texture(DTTR_StagedTexture *st) {
 
 	const SDL_GPUTextureCreateInfo tex_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER
-				 | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE
-				 | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
+		.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
 		.width = st->m_width,
 		.height = st->m_height,
 		.layer_count_or_depth = 1,

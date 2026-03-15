@@ -94,9 +94,8 @@ static void s_create_render_textures(DTTR_BackendState *state) {
 static void s_create_dummy_texture(DTTR_BackendState *state) {
 	const SDL_GPUTextureCreateInfo dummy_tex_info = {
 		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER
-				 | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_SIMULTANEOUS_READ_WRITE,
+		.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
+		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
 		.width = 1,
 		.height = 1,
 		.layer_count_or_depth = 1,
@@ -105,76 +104,10 @@ static void s_create_dummy_texture(DTTR_BackendState *state) {
 	state->m_dummy_texture = SDL_CreateGPUTexture(state->m_device, &dummy_tex_info);
 }
 
-// Uploads a single white pixel into the dummy texture via the compute path
-static void s_upload_dummy_pixel_to_texture(
-	const DTTR_BackendState *state,
-	SDL_GPUBuffer *pixel_buf,
-	SDL_GPUTransferBuffer *tbuf
-) {
+// Uploads a single white pixel directly into the dummy texture
+static void s_upload_dummy_white_pixel(DTTR_BackendState *state) {
 	const uint32_t white_pixel = 0xFFFFFFFF;
 	const uint32_t buf_size = sizeof(white_pixel);
-
-	void *mapped = SDL_MapGPUTransferBuffer(state->m_device, tbuf, false);
-
-	if (!mapped)
-		return;
-
-	memcpy(mapped, &white_pixel, buf_size);
-	SDL_UnmapGPUTransferBuffer(state->m_device, tbuf);
-
-	SDL_GPUCommandBuffer *cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
-
-	if (!cmd)
-		return;
-
-	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
-
-	if (copy) {
-		const SDL_GPUTransferBufferLocation src = {
-			.transfer_buffer = tbuf,
-		};
-		const SDL_GPUBufferRegion dst = {
-			.buffer = pixel_buf,
-			.size = buf_size,
-		};
-		SDL_UploadToGPUBuffer(copy, &src, &dst, false);
-		SDL_EndGPUCopyPass(copy);
-	}
-
-	SDL_GPUComputePass *comp = SDL_BeginGPUComputePass(
-		cmd,
-		&(SDL_GPUStorageTextureReadWriteBinding){
-			.texture = state->m_dummy_texture,
-		},
-		1,
-		NULL,
-		0
-	);
-
-	if (comp) {
-		SDL_BindGPUComputePipeline(comp, state->m_buf2tex_pipeline);
-		SDL_BindGPUComputeStorageBuffers(comp, 0, &pixel_buf, 1);
-		const uint32_t pc[2] = {1, 1}; // width, height
-		SDL_PushGPUComputeUniformData(cmd, 0, pc, sizeof(pc));
-		SDL_DispatchGPUCompute(comp, 1, 1, 1);
-		SDL_EndGPUComputePass(comp);
-	}
-
-	SDL_SubmitGPUCommandBuffer(cmd);
-}
-
-// Allocates temporary upload buffers and seeds the fallback dummy texture
-static void s_upload_dummy_white_pixel(DTTR_BackendState *state) {
-	const uint32_t buf_size = sizeof(uint32_t);
-
-	const SDL_GPUBufferCreateInfo sbuf_info = {
-		.usage = SDL_GPU_BUFFERUSAGE_COMPUTE_STORAGE_READ,
-		.size = buf_size,
-	};
-	SDL_GPUBuffer *pixel_buf = SDL_CreateGPUBuffer(state->m_device, &sbuf_info);
-
-	if (!pixel_buf)
-		return;
 
 	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
 		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
@@ -183,13 +116,45 @@ static void s_upload_dummy_white_pixel(DTTR_BackendState *state) {
 	SDL_GPUTransferBuffer *tbuf = SDL_CreateGPUTransferBuffer(state->m_device, &tbuf_info);
 
 	if (!tbuf) {
-		SDL_ReleaseGPUBuffer(state->m_device, pixel_buf);
 		return;
 	}
 
-	s_upload_dummy_pixel_to_texture(state, pixel_buf, tbuf);
+	void *mapped = SDL_MapGPUTransferBuffer(state->m_device, tbuf, false);
+
+	if (!mapped) {
+		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
+		return;
+	}
+
+	memcpy(mapped, &white_pixel, buf_size);
+	SDL_UnmapGPUTransferBuffer(state->m_device, tbuf);
+
+	SDL_GPUCommandBuffer *cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
+
+	if (!cmd) {
+		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
+		return;
+	}
+
+	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
+
+	if (copy) {
+		const SDL_GPUTextureTransferInfo src = {
+			.transfer_buffer = tbuf,
+			.pixels_per_row = 1,
+		};
+		const SDL_GPUTextureRegion dst = {
+			.texture = state->m_dummy_texture,
+			.w = 1,
+			.h = 1,
+			.d = 1,
+		};
+		SDL_UploadToGPUTexture(copy, &src, &dst, false);
+		SDL_EndGPUCopyPass(copy);
+	}
+
+	SDL_SubmitGPUCommandBuffer(cmd);
 	SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-	SDL_ReleaseGPUBuffer(state->m_device, pixel_buf);
 }
 
 // Creates persistent GPU buffers, samplers, and textures required for rendering
@@ -228,7 +193,6 @@ bool dttr_graphics_sdl3gpu_create_resources(void) {
 		return false;
 	}
 
-	// initialize the 1x1 fallback texture via compute shader
 	s_upload_dummy_white_pixel(state);
 	return true;
 }
