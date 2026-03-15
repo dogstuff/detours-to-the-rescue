@@ -402,12 +402,7 @@ static void s_surface_texture_release(DTTR_Texture tex) {
 		state->m_bound_texture = NULL;
 		state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
 	}
-	if (st->m_gpu_tex && state->m_device) {
-		state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
-	}
-	if (state->m_backend_type == DTTR_BACKEND_OPENGL) {
-		dttr_graphics_opengl_defer_texture_destroy(state, idx);
-	}
+	state->m_renderer->defer_texture_destroy(state, idx);
 	st->m_gpu_tex = NULL;
 	free(st->m_pixels);
 	st->m_pixels = NULL;
@@ -469,12 +464,7 @@ static bool s_surface_texture_update_unique(
 	st->m_pixels = resized;
 	memcpy(st->m_pixels, pixels, size);
 	if (st->m_width != width || st->m_height != height) {
-		if (st->m_gpu_tex && state->m_device) {
-			state->m_deferred_destroys[state->m_deferred_destroy_count++] = st->m_gpu_tex;
-		}
-		if (state->m_backend_type == DTTR_BACKEND_OPENGL) {
-			dttr_graphics_opengl_defer_texture_destroy(state, idx);
-		}
+		state->m_renderer->defer_texture_destroy(state, idx);
 		st->m_gpu_tex = NULL;
 	}
 	st->m_width = width;

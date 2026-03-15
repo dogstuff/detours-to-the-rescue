@@ -127,6 +127,7 @@ typedef struct {
 	bool (*resize)(DTTR_BackendState *state, int width, int height);
 	void (*cleanup)(DTTR_BackendState *state);
 	const char *(*get_driver_name)(const DTTR_BackendState *state);
+	void (*defer_texture_destroy)(DTTR_BackendState *state, int texture_index);
 } DTTR_RendererVtbl;
 
 typedef enum { DTTR_BATCH_DRAW, DTTR_BATCH_CLEAR } DTTR_BatchRecordType;
@@ -235,8 +236,6 @@ struct DTTR_BackendState {
 	int m_staged_texture_count;
 	DTTR_IntVector m_pending_upload_indices;
 	SDL_Mutex *m_texture_mutex;
-	SDL_GPUTexture *m_deferred_destroys[DTTR_MAX_STAGED_TEXTURES];
-	int m_deferred_destroy_count;
 	DTTR_UploadPoolSlot m_upload_pool[DTTR_UPLOAD_POOL_SIZE];
 
 	uint64_t m_perf_frame_start_ns;
@@ -313,11 +312,6 @@ void dttr_graphics_surface_texture_cache_reset(void);
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state);
 /// Initializes the OpenGL 3.3 backend (context, shaders, FBO, samplers)
 bool dttr_graphics_opengl_init(DTTR_BackendState *state);
-/// Queues an OpenGL texture for deferred deletion on the next frame
-void dttr_graphics_opengl_defer_texture_destroy(
-	DTTR_BackendState *state,
-	int texture_index
-);
 
 #ifdef DTTR_COMPONENTS_ENABLED
 /// Decodes the overlay bitmap into an RGBA pixel buffer (caller must free).

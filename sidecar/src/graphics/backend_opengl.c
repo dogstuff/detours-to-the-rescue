@@ -240,10 +240,7 @@ static void s_release_deferred_gl_destroys(
 	SDL_UnlockMutex(state->m_texture_mutex);
 }
 
-void dttr_graphics_opengl_defer_texture_destroy(
-	DTTR_BackendState *state,
-	int texture_index
-) {
+static void s_defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
 
 	if (!gl || texture_index < 0 || texture_index >= DTTR_MAX_STAGED_TEXTURES) {
@@ -1024,4 +1021,5 @@ static const DTTR_RendererVtbl s_renderer = {
 	.resize = s_resize_fbo,
 	.cleanup = s_cleanup,
 	.get_driver_name = s_get_driver_name,
+	.defer_texture_destroy = s_defer_texture_destroy,
 };

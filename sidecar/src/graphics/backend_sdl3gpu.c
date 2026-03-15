@@ -292,6 +292,14 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 		return false;
 	}
 
+	S_SDL3GPUBackendData *bd = calloc(1, sizeof(S_SDL3GPUBackendData));
+	if (!bd) {
+		SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
+		SDL_DestroyGPUDevice(state->m_device);
+		state->m_device = NULL;
+		return false;
+	}
+	state->m_backend_data = bd;
 	state->m_backend_type = DTTR_BACKEND_SDL_GPU;
 	state->m_renderer = &s_renderer;
 
@@ -396,6 +404,8 @@ static void s_cleanup(DTTR_BackendState *state) {
 	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
 	SDL_DestroyGPUDevice(state->m_device);
 	state->m_device = NULL;
+	free(state->m_backend_data);
+	state->m_backend_data = NULL;
 }
 
 // Tracks one temporary storage buffer upload destined for a staged texture
@@ -546,14 +556,32 @@ static void s_end_render_pass_if_active(DTTR_BackendState *state) {
 
 // Releases textures deferred for destruction on the GPU thread
 static void s_release_deferred_texture_destroys(DTTR_BackendState *state) {
-	SDL_LockMutex(state->m_texture_mutex);
-
-	for (int i = 0; i < state->m_deferred_destroy_count; i++) {
-		SDL_ReleaseGPUTexture(state->m_device, state->m_deferred_destroys[i]);
+	S_SDL3GPUBackendData *bd = (S_SDL3GPUBackendData *)state->m_backend_data;
+	if (!bd) {
+		return;
 	}
 
-	state->m_deferred_destroy_count = 0;
+	SDL_LockMutex(state->m_texture_mutex);
+
+	for (int i = 0; i < bd->m_deferred_destroy_count; i++) {
+		SDL_ReleaseGPUTexture(state->m_device, bd->m_deferred_destroys[i]);
+	}
+
+	bd->m_deferred_destroy_count = 0;
 	SDL_UnlockMutex(state->m_texture_mutex);
+}
+
+// Queues an SDL GPU texture for deferred deletion on the next frame
+static void s_defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
+	S_SDL3GPUBackendData *bd = (S_SDL3GPUBackendData *)state->m_backend_data;
+	if (!bd || texture_index < 0 || texture_index >= DTTR_MAX_STAGED_TEXTURES) {
+		return;
+	}
+
+	DTTR_StagedTexture *st = &state->m_staged_textures[texture_index];
+	if (st->m_gpu_tex && state->m_device) {
+		bd->m_deferred_destroys[bd->m_deferred_destroy_count++] = st->m_gpu_tex;
+	}
 }
 
 // Lazily creates the GPU texture backing a staged texture slot
@@ -1525,4 +1553,5 @@ static const DTTR_RendererVtbl s_renderer = {
 	.resize = s_resize,
 	.cleanup = s_cleanup,
 	.get_driver_name = s_get_driver_name,
+	.defer_texture_destroy = s_defer_texture_destroy,
 };

@@ -203,65 +203,65 @@ static PFNGLBLENDEQUATIONPROC glBlendEquation;
 static PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
 static PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC glRenderbufferStorageMultisample;
 
-#define S_LOAD(name)                                                                     \
+#define S_OPENGL_LOAD(name)                                                              \
 	name = (typeof(name))SDL_GL_GetProcAddress(#name);                                   \
 	if (!name) {                                                                         \
 		return false;                                                                    \
 	}
 
 static bool s_load_functions(void) {
-	S_LOAD(glGenVertexArrays);
-	S_LOAD(glDeleteVertexArrays);
-	S_LOAD(glBindVertexArray);
-	S_LOAD(glGenBuffers);
-	S_LOAD(glDeleteBuffers);
-	S_LOAD(glBindBuffer);
-	S_LOAD(glBufferData);
-	S_LOAD(glBufferSubData);
-	S_LOAD(glCreateShader);
-	S_LOAD(glDeleteShader);
-	S_LOAD(glShaderSource);
-	S_LOAD(glCompileShader);
-	S_LOAD(glGetShaderiv);
-	S_LOAD(glGetShaderInfoLog);
-	S_LOAD(glCreateProgram);
-	S_LOAD(glDeleteProgram);
-	S_LOAD(glAttachShader);
-	S_LOAD(glLinkProgram);
-	S_LOAD(glGetProgramiv);
-	S_LOAD(glGetProgramInfoLog);
-	S_LOAD(glUseProgram);
-	S_LOAD(glGetUniformLocation);
-	S_LOAD(glUniform1i);
-	S_LOAD(glUniform1f);
-	S_LOAD(glUniform2f);
-	S_LOAD(glUniformMatrix4fv);
-	S_LOAD(glVertexAttribPointer);
-	S_LOAD(glEnableVertexAttribArray);
-	S_LOAD(glGenFramebuffers);
-	S_LOAD(glDeleteFramebuffers);
-	S_LOAD(glBindFramebuffer);
-	S_LOAD(glFramebufferTexture2D);
-	S_LOAD(glFramebufferRenderbuffer);
-	S_LOAD(glCheckFramebufferStatus);
-	S_LOAD(glGenRenderbuffers);
-	S_LOAD(glDeleteRenderbuffers);
-	S_LOAD(glBindRenderbuffer);
-	S_LOAD(glRenderbufferStorage);
-	S_LOAD(glBlitFramebuffer);
-	S_LOAD(glActiveTexture);
-	S_LOAD(glGenSamplers);
-	S_LOAD(glDeleteSamplers);
-	S_LOAD(glBindSampler);
-	S_LOAD(glSamplerParameteri);
-	S_LOAD(glBlendFuncSeparate);
-	S_LOAD(glBlendEquation);
-	S_LOAD(glGenerateMipmap);
-	S_LOAD(glRenderbufferStorageMultisample);
+	S_OPENGL_LOAD(glGenVertexArrays);
+	S_OPENGL_LOAD(glDeleteVertexArrays);
+	S_OPENGL_LOAD(glBindVertexArray);
+	S_OPENGL_LOAD(glGenBuffers);
+	S_OPENGL_LOAD(glDeleteBuffers);
+	S_OPENGL_LOAD(glBindBuffer);
+	S_OPENGL_LOAD(glBufferData);
+	S_OPENGL_LOAD(glBufferSubData);
+	S_OPENGL_LOAD(glCreateShader);
+	S_OPENGL_LOAD(glDeleteShader);
+	S_OPENGL_LOAD(glShaderSource);
+	S_OPENGL_LOAD(glCompileShader);
+	S_OPENGL_LOAD(glGetShaderiv);
+	S_OPENGL_LOAD(glGetShaderInfoLog);
+	S_OPENGL_LOAD(glCreateProgram);
+	S_OPENGL_LOAD(glDeleteProgram);
+	S_OPENGL_LOAD(glAttachShader);
+	S_OPENGL_LOAD(glLinkProgram);
+	S_OPENGL_LOAD(glGetProgramiv);
+	S_OPENGL_LOAD(glGetProgramInfoLog);
+	S_OPENGL_LOAD(glUseProgram);
+	S_OPENGL_LOAD(glGetUniformLocation);
+	S_OPENGL_LOAD(glUniform1i);
+	S_OPENGL_LOAD(glUniform1f);
+	S_OPENGL_LOAD(glUniform2f);
+	S_OPENGL_LOAD(glUniformMatrix4fv);
+	S_OPENGL_LOAD(glVertexAttribPointer);
+	S_OPENGL_LOAD(glEnableVertexAttribArray);
+	S_OPENGL_LOAD(glGenFramebuffers);
+	S_OPENGL_LOAD(glDeleteFramebuffers);
+	S_OPENGL_LOAD(glBindFramebuffer);
+	S_OPENGL_LOAD(glFramebufferTexture2D);
+	S_OPENGL_LOAD(glFramebufferRenderbuffer);
+	S_OPENGL_LOAD(glCheckFramebufferStatus);
+	S_OPENGL_LOAD(glGenRenderbuffers);
+	S_OPENGL_LOAD(glDeleteRenderbuffers);
+	S_OPENGL_LOAD(glBindRenderbuffer);
+	S_OPENGL_LOAD(glRenderbufferStorage);
+	S_OPENGL_LOAD(glBlitFramebuffer);
+	S_OPENGL_LOAD(glActiveTexture);
+	S_OPENGL_LOAD(glGenSamplers);
+	S_OPENGL_LOAD(glDeleteSamplers);
+	S_OPENGL_LOAD(glBindSampler);
+	S_OPENGL_LOAD(glSamplerParameteri);
+	S_OPENGL_LOAD(glBlendFuncSeparate);
+	S_OPENGL_LOAD(glBlendEquation);
+	S_OPENGL_LOAD(glGenerateMipmap);
+	S_OPENGL_LOAD(glRenderbufferStorageMultisample);
 	return true;
 }
 
-#undef S_LOAD
+#undef S_OPENGL_LOAD
 
 typedef struct {
 	SDL_GLContext m_gl_context;
