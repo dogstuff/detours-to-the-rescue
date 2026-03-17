@@ -287,6 +287,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	sdsfree(config_path);
 	fclose(log_file);
 
+	ExitProcess(0);
 	return 0;
 }
 

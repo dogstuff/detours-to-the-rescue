@@ -176,6 +176,7 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "crash jumpscare", message, NULL);
 	sdsfree(message);
 	sdsfree(filename);
+	ExitProcess(1);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
