@@ -1077,7 +1077,7 @@ static void s_begin_frame(DTTR_BackendState *state) {
 
 	s_release_deferred_texture_destroys(state);
 
-	if (!SDL_AcquireGPUSwapchainTexture(
+	if (!SDL_WaitAndAcquireGPUSwapchainTexture(
 			state->m_cmd,
 			state->m_window,
 			&state->m_swapchain_tex,
@@ -1417,7 +1417,7 @@ static bool s_present_video_frame_bgra(
 	SDL_GPUTexture *swapchain_tex = NULL;
 	Uint32 swapchain_w = 0;
 	Uint32 swapchain_h = 0;
-	SDL_AcquireGPUSwapchainTexture(
+	SDL_WaitAndAcquireGPUSwapchainTexture(
 		cmd,
 		state->m_window,
 		&swapchain_tex,
