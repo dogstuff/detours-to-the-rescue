@@ -113,11 +113,23 @@ static bool s_try_create_device_for_driver(
 		return false;
 	}
 
+	const bool immediate_ok = SDL_WindowSupportsGPUPresentMode(
+		state->m_device,
+		state->m_window,
+		SDL_GPU_PRESENTMODE_IMMEDIATE
+	);
+	if (!immediate_ok) {
+		log_warn(
+			"IMMEDIATE present mode unsupported for '%s', falling back to VSYNC",
+			driver ? driver : "default"
+		);
+	}
+
 	if (!SDL_SetGPUSwapchainParameters(
 			state->m_device,
 			state->m_window,
 			SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-			SDL_GPU_PRESENTMODE_IMMEDIATE
+			immediate_ok ? SDL_GPU_PRESENTMODE_IMMEDIATE : SDL_GPU_PRESENTMODE_VSYNC
 		)) {
 		log_error("Failed to set swap chain parameters: %s", SDL_GetError());
 	}
@@ -573,7 +585,18 @@ static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture
 		.num_levels = dttr_graphics_calc_mip_levels(st->m_width, st->m_height),
 	};
 	st->m_gpu_tex = SDL_CreateGPUTexture(state->m_device, &tex_info);
-	return st->m_gpu_tex != NULL;
+
+	if (!st->m_gpu_tex) {
+		log_warn(
+			"Failed to create GPU texture %dx%d: %s",
+			st->m_width,
+			st->m_height,
+			SDL_GetError()
+		);
+		return false;
+	}
+
+	return true;
 }
 
 // Uploads one pending pixel payload directly to a GPU texture via transfer buffer
@@ -872,9 +895,15 @@ static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
 		1,
 		&depth_target
 	);
+
+	if (!state->m_render_pass) {
+		log_warn("Failed to begin render pass");
+		return false;
+	}
+
 	s_bind_frame_vertex_buffer(state, state->m_render_pass);
 	s_set_default_viewport(state);
-	return state->m_render_pass != NULL;
+	return true;
 }
 
 static void s_reset_replay_state(S_GraphicsReplayState *replay_state) {
@@ -1047,15 +1076,29 @@ static void s_begin_frame(DTTR_BackendState *state) {
 	}
 
 	s_release_deferred_texture_destroys(state);
-	s_upload_pending_textures(state, state->m_cmd);
 
-	SDL_WaitAndAcquireGPUSwapchainTexture(
-		state->m_cmd,
-		state->m_window,
-		&state->m_swapchain_tex,
-		&state->m_swapchain_width,
-		&state->m_swapchain_height
-	);
+	if (!SDL_AcquireGPUSwapchainTexture(
+			state->m_cmd,
+			state->m_window,
+			&state->m_swapchain_tex,
+			&state->m_swapchain_width,
+			&state->m_swapchain_height
+		)) {
+		log_warn("Failed to acquire swapchain texture: %s", SDL_GetError());
+		SDL_CancelGPUCommandBuffer(state->m_cmd);
+		state->m_cmd = NULL;
+		return;
+	}
+
+	// No swapchain image available, skip this frame.
+	if (!state->m_swapchain_tex) {
+		SDL_CancelGPUCommandBuffer(state->m_cmd);
+		state->m_cmd = NULL;
+		return;
+	}
+
+	// Textures must be uploaded after swapchain acquire for Vulkan.
+	s_upload_pending_textures(state, state->m_cmd);
 
 	state->m_batch_records.n = 0;
 	state->m_vertex_offset = 0;
@@ -1139,10 +1182,13 @@ static void s_end_frame(DTTR_BackendState *state) {
 	);
 
 	if (overlay_ready) {
+		const bool use_msaa = s_msaa_enabled(state);
 		const SDL_GPUColorTargetInfo overlay_color = {
-			.texture = state->m_render_target,
+			.texture = use_msaa ? state->m_msaa_render_target : state->m_render_target,
 			.load_op = SDL_GPU_LOADOP_LOAD,
-			.store_op = SDL_GPU_STOREOP_STORE,
+			.store_op = use_msaa ? SDL_GPU_STOREOP_RESOLVE_AND_STORE
+								 : SDL_GPU_STOREOP_STORE,
+			.resolve_texture = use_msaa ? state->m_render_target : NULL,
 		};
 		SDL_GPURenderPass *overlay_pass = SDL_BeginGPURenderPass(
 			state->m_cmd,
@@ -1371,7 +1417,7 @@ static bool s_present_video_frame_bgra(
 	SDL_GPUTexture *swapchain_tex = NULL;
 	Uint32 swapchain_w = 0;
 	Uint32 swapchain_h = 0;
-	SDL_WaitAndAcquireGPUSwapchainTexture(
+	SDL_AcquireGPUSwapchainTexture(
 		cmd,
 		state->m_window,
 		&swapchain_tex,
