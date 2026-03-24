@@ -84,6 +84,8 @@ void dttr_components_init(void) {
 		mod->m_event = (DTTR_ComponentEventFn)
 			GetProcAddress(handle, "dttr_component_event");
 		mod->m_info = (DTTR_ComponentInfoFn)GetProcAddress(handle, "dttr_component_info");
+		mod->m_render_game = (DTTR_ComponentRenderGameFn)
+			GetProcAddress(handle, "dttr_component_render_game");
 		mod->m_render = (DTTR_ComponentRenderFn)
 			GetProcAddress(handle, "dttr_component_render");
 
@@ -105,7 +107,6 @@ void dttr_components_init(void) {
 			.m_game_module = base_ctx->m_game_module,
 			.m_sidecar_module = base_ctx->m_sidecar_module,
 			.m_window = dttr_graphics_get_window(),
-			.m_gpu_device = dttr_graphics_get_device(),
 			.m_loader_dir = g_dttr_loader_dir,
 			.m_exe_hash = g_dttr_exe_hash,
 			.m_config = base_ctx->m_config,
@@ -137,15 +138,27 @@ void dttr_components_tick(void) {
 	}
 }
 
-void dttr_components_render(
-	SDL_GPUCommandBuffer *cmd,
-	SDL_GPUTexture *render_target,
-	uint32_t width,
-	uint32_t height
-) {
+bool dttr_components_has_render_game(void) {
+	for (int i = 0; i < s_loaded_component_count; i++) {
+		if (s_loaded_components[i].m_render_game) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void dttr_components_render_game(const DTTR_RenderGameContext *ctx) {
+	for (int i = 0; i < s_loaded_component_count; i++) {
+		if (s_loaded_components[i].m_render_game) {
+			s_loaded_components[i].m_render_game(ctx);
+		}
+	}
+}
+
+void dttr_components_render(const DTTR_RenderContext *ctx) {
 	for (int i = 0; i < s_loaded_component_count; i++) {
 		if (s_loaded_components[i].m_render) {
-			s_loaded_components[i].m_render(cmd, render_target, width, height);
+			s_loaded_components[i].m_render(ctx);
 		}
 	}
 }

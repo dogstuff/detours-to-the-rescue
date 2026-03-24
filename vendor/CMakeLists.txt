@@ -30,3 +30,8 @@ set(ZYDIS_MINIMAL_MODE ON CACHE BOOL "" FORCE)
 add_subdirectory(zydis)
 
 add_subdirectory(glad)
+
+if(DTTR_COMPONENTS)
+    enable_language(CXX)
+    add_subdirectory(cimgui)
+endif()

@@ -11,6 +11,7 @@
 
 #ifdef DTTR_COMPONENTS_ENABLED
 #include "../components/components_internal.h"
+#include "imgui_overlay_internal.h"
 #endif
 
 #include <math.h>
@@ -210,98 +211,6 @@ static bool s_create_device(DTTR_BackendState *state) {
 	return false;
 }
 
-#ifdef DTTR_COMPONENTS_ENABLED
-static void s_create_components_overlay(DTTR_BackendState *state) {
-	int w = 0, h = 0;
-	uint8_t *pixels = dttr_components_overlay_decode_bitmap(&w, &h);
-
-	if (!pixels) {
-		return;
-	}
-
-	const uint32_t byte_count = (uint32_t)(w * h) * 4;
-
-	const SDL_GPUTextureCreateInfo tex_info = {
-		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
-		.width = (uint32_t)w,
-		.height = (uint32_t)h,
-		.layer_count_or_depth = 1,
-		.num_levels = 1,
-		.sample_count = SDL_GPU_SAMPLECOUNT_1,
-	};
-	state->m_components_overlay_tex = SDL_CreateGPUTexture(state->m_device, &tex_info);
-
-	if (!state->m_components_overlay_tex) {
-		free(pixels);
-		return;
-	}
-
-	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
-		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-		.size = byte_count,
-	};
-	SDL_GPUTransferBuffer *tbuf = SDL_CreateGPUTransferBuffer(state->m_device, &tbuf_info);
-
-	if (!tbuf) {
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-		free(pixels);
-		return;
-	}
-
-	void *mapped = SDL_MapGPUTransferBuffer(state->m_device, tbuf, false);
-
-	if (!mapped) {
-		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-		free(pixels);
-		return;
-	}
-
-	memcpy(mapped, pixels, byte_count);
-	SDL_UnmapGPUTransferBuffer(state->m_device, tbuf);
-	free(pixels);
-
-	SDL_GPUCommandBuffer *cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
-
-	if (!cmd) {
-		SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-		return;
-	}
-
-	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
-
-	if (copy) {
-		const SDL_GPUTextureTransferInfo src = {
-			.transfer_buffer = tbuf,
-			.pixels_per_row = (uint32_t)w,
-			.rows_per_layer = (uint32_t)h,
-		};
-		const SDL_GPUTextureRegion dst = {
-			.texture = state->m_components_overlay_tex,
-			.w = (uint32_t)w,
-			.h = (uint32_t)h,
-			.d = 1,
-		};
-		SDL_UploadToGPUTexture(copy, &src, &dst, false);
-		SDL_EndGPUCopyPass(copy);
-	}
-
-	SDL_SubmitGPUCommandBuffer(cmd);
-	SDL_WaitForGPUIdle(state->m_device);
-	SDL_ReleaseGPUTransferBuffer(state->m_device, tbuf);
-
-	state->m_components_overlay_w = w;
-	state->m_components_overlay_h = h;
-	log_info("Components overlay texture created (%dx%d)", w, h);
-}
-#endif
-
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	if (!s_create_device(state)) {
 		return false;
@@ -340,10 +249,6 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 		return false;
 	}
 
-#ifdef DTTR_COMPONENTS_ENABLED
-	s_create_components_overlay(state);
-#endif
-
 	return true;
 }
 
@@ -357,13 +262,6 @@ static void s_cleanup(DTTR_BackendState *state) {
 			SDL_ReleaseGPUSampler(state->m_device, state->m_samplers[i]);
 		}
 	}
-
-#ifdef DTTR_COMPONENTS_ENABLED
-	if (state->m_components_overlay_tex) {
-		SDL_ReleaseGPUTexture(state->m_device, state->m_components_overlay_tex);
-		state->m_components_overlay_tex = NULL;
-	}
-#endif
 
 	if (state->m_dummy_texture) {
 		SDL_ReleaseGPUTexture(state->m_device, state->m_dummy_texture);
@@ -1119,29 +1017,6 @@ static void s_begin_frame(DTTR_BackendState *state) {
 static void s_end_frame(DTTR_BackendState *state) {
 	state->m_frame_active = false;
 
-#ifdef DTTR_COMPONENTS_ENABLED
-	uint32_t overlay_first_vertex = 0;
-	bool overlay_ready = false;
-
-	if (state->m_transfer_mapped && state->m_components_overlay_tex
-		&& state->m_vertex_offset + 6 <= DTTR_MAX_FRAME_VERTICES) {
-		overlay_first_vertex = state->m_vertex_offset;
-
-		DTTR_Vertex *verts = (DTTR_Vertex *)((uint8_t *)state->m_transfer_mapped
-											 + state->m_vertex_offset * DTTR_VERTEX_SIZE);
-		dttr_components_overlay_build_vertices(
-			verts,
-			state->m_width,
-			state->m_height,
-			state->m_components_overlay_w,
-			state->m_components_overlay_h
-		);
-
-		state->m_vertex_offset += 6;
-		overlay_ready = true;
-	}
-#endif
-
 	if (state->m_transfer_mapped) {
 		SDL_UnmapGPUTransferBuffer(state->m_device, state->m_transfer_buffer);
 		state->m_transfer_mapped = NULL;
@@ -1174,86 +1049,12 @@ static void s_end_frame(DTTR_BackendState *state) {
 	state->m_perf_sampler_binds_accum += replay_stats.sampler_bind_count;
 
 #ifdef DTTR_COMPONENTS_ENABLED
-	dttr_components_render(
+	dttr_imgui_render_game_sdl3gpu(
 		state->m_cmd,
 		state->m_render_target,
 		(uint32_t)state->m_width,
 		(uint32_t)state->m_height
 	);
-
-	if (overlay_ready) {
-		const bool use_msaa = s_msaa_enabled(state);
-		const SDL_GPUColorTargetInfo overlay_color = {
-			.texture = use_msaa ? state->m_msaa_render_target : state->m_render_target,
-			.load_op = SDL_GPU_LOADOP_LOAD,
-			.store_op = use_msaa ? SDL_GPU_STOREOP_RESOLVE_AND_STORE
-								 : SDL_GPU_STOREOP_STORE,
-			.resolve_texture = use_msaa ? state->m_render_target : NULL,
-		};
-		SDL_GPURenderPass *overlay_pass = SDL_BeginGPURenderPass(
-			state->m_cmd,
-			&overlay_color,
-			1,
-			NULL
-		);
-
-		if (overlay_pass) {
-			const int pidx = DTTR_PIPELINE_INDEX(DTTR_BLEND_ALPHA, false, false);
-			SDL_BindGPUGraphicsPipeline(overlay_pass, state->m_pipelines[pidx]);
-
-			const SDL_GPUBufferBinding vbuf_binding = {
-				.buffer = state->m_vertex_buffer,
-			};
-			SDL_BindGPUVertexBuffers(overlay_pass, 0, &vbuf_binding, 1);
-
-			DTTR_Uniforms overlay_uniforms;
-			dttr_graphics_mat4_identity(overlay_uniforms.m_mvp);
-			overlay_uniforms.m_screen_size[0] = (float)state->m_width;
-			overlay_uniforms.m_screen_size[1] = (float)state->m_height;
-			overlay_uniforms.m_is_2d = 1.0f;
-			overlay_uniforms.m_has_texture = 1.0f;
-
-			SDL_PushGPUVertexUniformData(
-				state->m_cmd,
-				0,
-				&overlay_uniforms,
-				sizeof(overlay_uniforms)
-			);
-			SDL_PushGPUFragmentUniformData(
-				state->m_cmd,
-				0,
-				&overlay_uniforms,
-				sizeof(overlay_uniforms)
-			);
-
-			const SDL_GPUTextureSamplerBinding overlay_tex = {
-				.texture = state->m_components_overlay_tex,
-				.sampler = state->m_samplers[3],
-			};
-			SDL_BindGPUFragmentSamplers(overlay_pass, 0, &overlay_tex, 1);
-
-			const SDL_GPUViewport overlay_vp = {
-				.x = 0.0f,
-				.y = 0.0f,
-				.w = (float)state->m_width,
-				.h = (float)state->m_height,
-				.min_depth = 0.0f,
-				.max_depth = 1.0f,
-			};
-			SDL_SetGPUViewport(overlay_pass, &overlay_vp);
-
-			const SDL_Rect overlay_scissor = {
-				.x = 0,
-				.y = 0,
-				.w = state->m_width,
-				.h = state->m_height,
-			};
-			SDL_SetGPUScissor(overlay_pass, &overlay_scissor);
-
-			SDL_DrawGPUPrimitives(overlay_pass, 6, 1, overlay_first_vertex, 0);
-			SDL_EndGPURenderPass(overlay_pass);
-		}
-	}
 #endif
 
 	if (state->m_swapchain_tex) {
@@ -1322,6 +1123,19 @@ static void s_end_frame(DTTR_BackendState *state) {
 			.filter = g_dttr_config.m_present_filter,
 		};
 		SDL_BlitGPUTexture(state->m_cmd, &blit);
+
+#ifdef DTTR_COMPONENTS_ENABLED
+		dttr_imgui_render_sdl3gpu(
+			state->m_cmd,
+			state->m_swapchain_tex,
+			swap_w,
+			swap_h,
+			present_x,
+			present_y,
+			present_w,
+			present_h
+		);
+#endif
 	}
 
 	SDL_SubmitGPUCommandBuffer(state->m_cmd);

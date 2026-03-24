@@ -24,7 +24,6 @@ void dttr_game_api_init(HMODULE game_module, HMODULE sidecar_module) {
 	s_ctx.m_game_module = game_module;
 	s_ctx.m_sidecar_module = sidecar_module;
 	s_ctx.m_window = NULL;
-	s_ctx.m_gpu_device = NULL;
 	s_ctx.m_loader_dir = g_dttr_loader_dir;
 	s_ctx.m_exe_hash = g_dttr_exe_hash;
 	s_ctx.m_config = &g_dttr_config;

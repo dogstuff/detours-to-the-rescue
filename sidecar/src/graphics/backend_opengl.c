@@ -8,6 +8,12 @@
 #include "log.h"
 
 #include <dttr_config.h>
+
+#ifdef DTTR_COMPONENTS_ENABLED
+#include "../components/components_internal.h"
+#include "imgui_overlay_internal.h"
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -378,34 +384,6 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	state->m_backend_type = DTTR_BACKEND_OPENGL;
 	state->m_renderer = &s_renderer;
 
-#ifdef DTTR_COMPONENTS_ENABLED
-	int ow = 0, oh = 0;
-	uint8_t *overlay_pixels = dttr_components_overlay_decode_bitmap(&ow, &oh);
-
-	if (overlay_pixels) {
-		glGenTextures(1, &gl->m_overlay_texture);
-		glBindTexture(GL_TEXTURE_2D, gl->m_overlay_texture);
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_RGBA8,
-			ow,
-			oh,
-			0,
-			GL_RGBA,
-			GL_UNSIGNED_BYTE,
-			overlay_pixels
-		);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		free(overlay_pixels);
-
-		state->m_components_overlay_w = ow;
-		state->m_components_overlay_h = oh;
-		log_info("Components overlay texture created (%dx%d)", ow, oh);
-	}
-#endif
-
 	log_info(
 		"OpenGL 3.3 backend initialized (vendor: %s, renderer: %s)",
 		glGetString(GL_VENDOR),
@@ -706,51 +684,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 	}
 
 #ifdef DTTR_COMPONENTS_ENABLED
-	if (gl->m_overlay_texture) {
-		DTTR_Vertex overlay_verts[6];
-		dttr_components_overlay_build_vertices(
-			overlay_verts,
-			state->m_width,
-			state->m_height,
-			state->m_components_overlay_w,
-			state->m_components_overlay_h
-		);
-
-		const GLuint overlay_fbo = (gl->m_msaa_samples > 0) ? gl->m_msaa_fbo : gl->m_fbo;
-		glBindFramebuffer(GL_FRAMEBUFFER, overlay_fbo);
-		glViewport(0, 0, gl->m_fbo_width, gl->m_fbo_height);
-		glUseProgram(gl->m_program);
-		glBindVertexArray(gl->m_vao);
-
-		float identity[16];
-		dttr_graphics_mat4_identity(identity);
-		glUniformMatrix4fv(gl->m_loc_mvp, 1, GL_FALSE, identity);
-		glUniform2f(gl->m_loc_screen_size, (float)state->m_width, (float)state->m_height);
-		glUniform1f(gl->m_loc_is_2d, 1.0f);
-		glUniform1f(gl->m_loc_has_texture, 1.0f);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gl->m_overlay_texture);
-		glUniform1i(gl->m_loc_texture, 0);
-		glBindSampler(0, 0);
-
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFuncSeparate(
-			GL_SRC_ALPHA,
-			GL_ONE_MINUS_SRC_ALPHA,
-			GL_SRC_ALPHA,
-			GL_ONE_MINUS_SRC_ALPHA
-		);
-		glDisable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
-
-		glBindBuffer(GL_ARRAY_BUFFER, gl->m_vbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(overlay_verts), overlay_verts);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glDisable(GL_BLEND);
-	}
+	dttr_imgui_render_game_opengl();
 #endif
 
 	// Resolve MSAA FBO to the non-MSAA FBO.
@@ -819,6 +753,16 @@ static void s_end_frame(DTTR_BackendState *state) {
 		GL_COLOR_BUFFER_BIT,
 		blit_filter
 	);
+
+#ifdef DTTR_COMPONENTS_ENABLED
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	dttr_imgui_render_opengl(
+		(uint32_t)present_x,
+		(uint32_t)present_y,
+		(uint32_t)present_w,
+		(uint32_t)present_h
+	);
+#endif
 
 	SDL_GL_SwapWindow(state->m_window);
 }
@@ -987,12 +931,6 @@ static void s_cleanup(DTTR_BackendState *state) {
 	if (gl->m_video_texture) {
 		glDeleteTextures(1, &gl->m_video_texture);
 	}
-
-#ifdef DTTR_COMPONENTS_ENABLED
-	if (gl->m_overlay_texture) {
-		glDeleteTextures(1, &gl->m_overlay_texture);
-	}
-#endif
 
 	free(gl->m_vertex_staging);
 
