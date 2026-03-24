@@ -247,12 +247,6 @@ struct DTTR_BackendState {
 
 	bool m_initialized;
 	bool m_frame_active;
-
-#ifdef DTTR_COMPONENTS_ENABLED
-	SDL_GPUTexture *m_components_overlay_tex;
-	int m_components_overlay_w;
-	int m_components_overlay_h;
-#endif
 };
 
 extern DTTR_BackendState g_dttr_backend;
@@ -303,18 +297,5 @@ void dttr_graphics_surface_texture_cache_reset(void);
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state);
 /// Initializes the OpenGL 3.3 backend (context, shaders, FBO, samplers)
 bool dttr_graphics_opengl_init(DTTR_BackendState *state);
-
-#ifdef DTTR_COMPONENTS_ENABLED
-/// Decodes the overlay bitmap into an RGBA pixel buffer (caller must free).
-uint8_t *dttr_components_overlay_decode_bitmap(int *out_w, int *out_h);
-/// Builds 6 vertices for the overlay quad positioned in the top-right corner.
-void dttr_components_overlay_build_vertices(
-	DTTR_Vertex *out,
-	int render_w,
-	int render_h,
-	int overlay_w,
-	int overlay_h
-);
-#endif
 
 #endif

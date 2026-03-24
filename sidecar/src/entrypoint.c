@@ -18,6 +18,7 @@
 
 #ifdef DTTR_COMPONENTS_ENABLED
 #include "components/components_internal.h"
+#include "graphics/imgui_overlay_internal.h"
 #endif
 
 HINSTANCE g_dttr_sidecar_module;
@@ -78,6 +79,8 @@ static sds s_get_loader_dir(void) {
 
 static void s_handle_sdl_event(const SDL_Event *event) {
 #ifdef DTTR_COMPONENTS_ENABLED
+	dttr_imgui_process_event(event);
+
 	if (dttr_components_handle_event(event)) {
 		return;
 	}
@@ -227,6 +230,11 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_movies_hooks_init(ctx);
 
 #ifdef DTTR_COMPONENTS_ENABLED
+	dttr_imgui_init(
+		dttr_graphics_get_window(),
+		dttr_graphics_get_device(),
+		g_dttr_backend.m_backend_type
+	);
 	dttr_components_init();
 #endif
 
@@ -270,6 +278,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 
 #ifdef DTTR_COMPONENTS_ENABLED
 	dttr_components_cleanup();
+	dttr_imgui_cleanup();
 #endif
 
 	dttr_movies_hooks_cleanup(ctx);

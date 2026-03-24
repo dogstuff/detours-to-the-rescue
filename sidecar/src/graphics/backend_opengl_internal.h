@@ -37,9 +37,6 @@ typedef struct {
 	int m_msaa_samples;
 	GLuint m_pending_mipmap_textures[DTTR_MAX_STAGED_TEXTURES];
 	int m_pending_mipmap_count;
-#ifdef DTTR_COMPONENTS_ENABLED
-	GLuint m_overlay_texture;
-#endif
 } S_OpenglBackendData;
 
 #endif /* DTTR_BACKEND_OPENGL_INTERNAL_H */

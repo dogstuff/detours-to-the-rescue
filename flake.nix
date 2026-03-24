@@ -64,7 +64,7 @@
             ln -sfn "${sdl3}" "$toolchain_dir/sdl3"
             ln -sfn "${mpv}" "$toolchain_dir/mpv"
 
-            for tool in gcc windres gcc-ar gcc-ranlib; do
+            for tool in gcc g++ windres gcc-ar gcc-ranlib; do
               cat > "$toolchain_dir/i686-w64-mingw32-$tool" <<WRAPPER
             #!/usr/bin/env bash
             exec $(which i686-w64-mingw32-$tool) "\$@"
@@ -86,6 +86,7 @@
             set(CMAKE_SYSTEM_NAME Windows)
             set(CMAKE_SYSTEM_PROCESSOR i686)
             set(CMAKE_C_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc")
+            set(CMAKE_CXX_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-g++")
             set(CMAKE_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
             set(CMAKE_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
             set(CMAKE_C_COMPILER_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
@@ -95,7 +96,7 @@
             set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
             set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
             link_directories("${mcfg}/lib")
-            add_link_options(-static-libgcc)
+            add_link_options(-static-libgcc -static-libstdc++)
             set(CMAKE_CROSSCOMPILING_EMULATOR wine)
             CMAKE
           '';

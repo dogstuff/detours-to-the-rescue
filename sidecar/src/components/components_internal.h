@@ -9,12 +9,9 @@
 
 void dttr_components_init(void);
 void dttr_components_tick(void);
-void dttr_components_render(
-	SDL_GPUCommandBuffer *cmd,
-	SDL_GPUTexture *render_target,
-	uint32_t width,
-	uint32_t height
-);
+bool dttr_components_has_render_game(void);
+void dttr_components_render_game(const DTTR_RenderGameContext *ctx);
+void dttr_components_render(const DTTR_RenderContext *ctx);
 bool dttr_components_handle_event(const SDL_Event *event);
 void dttr_components_cleanup(void);
 
@@ -28,6 +25,7 @@ typedef struct {
 	DTTR_ComponentTickFn m_tick;
 	DTTR_ComponentEventFn m_event;
 	DTTR_ComponentInfoFn m_info;
+	DTTR_ComponentRenderGameFn m_render_game;
 	DTTR_ComponentRenderFn m_render;
 	bool m_initialized;
 } S_LoadedComponent;

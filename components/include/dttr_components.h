@@ -5,26 +5,21 @@
 ///
 /// Required exports:
 ///
-///   bool  dttr_component_init(const DTTR_ComponentContext *ctx)
+///   bool dttr_component_init(const DTTR_ComponentContext *ctx)
 ///
-///   void  dttr_component_cleanup(void)
+///   void dttr_component_cleanup(void)
 ///
 /// Optional exports:
 ///
 ///   const DTTR_ComponentInfo *dttr_component_info(void)
 ///
-///   void  dttr_component_tick(void)
+///   void dttr_component_tick(void)
 ///
-///   bool  dttr_component_event(const SDL_Event *event)
+///   bool dttr_component_event(const SDL_Event *event)
 ///
-///   void  dttr_component_render(
-///		SDL_GPUCommandBuffer *cmd,
-///     SDL_GPUTexture *render_target,
-///     uint32_t width,
-///     uint32_t height
-///   )
+///   void dttr_component_render_game(const DTTR_RenderGameContext *ctx)
 ///
-/// See example_component.c for a minimal template.
+///   void dttr_component_render(const DTTR_RenderContext *ctx)
 
 #ifndef DTTR_COMPONENTS_H
 #define DTTR_COMPONENTS_H
@@ -32,12 +27,32 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
+#else
+// Minimal stand-ins so the header parses on non-Windows hosts (e.g. clangd on
+// macOS/Linux).  These are never used at runtime -- components are always
+// compiled with a Windows cross-compiler.
+typedef void *HMODULE;
+typedef void *HINSTANCE;
+typedef int BOOL;
+typedef unsigned long DWORD;
+typedef void *LPVOID;
+#define WINAPI
+#define TRUE 1
+#define FALSE 0
+#endif
 
-#include <SDL3/SDL.h>
+#include <cimgui.h>
 
-/// Check this against ctx->m_api_version in dttr_component_init to reject incompatible
-/// hosts.
+// Forward declarations for components that do not include SDL3/SDL.h.
+#ifndef SDL_h_
+typedef struct SDL_Window SDL_Window;
+typedef union SDL_Event SDL_Event;
+#endif
+
+// Reject incompatible hosts by comparing ctx->m_api_version against this value.
 #define DTTR_COMPONENT_API_VERSION 2
 
 typedef void (*DTTR_LogFn)(int level, const char *file, int line, const char *fmt, ...);
@@ -79,7 +94,6 @@ typedef struct {
 	HMODULE m_game_module;
 	HMODULE m_sidecar_module;
 	SDL_Window *m_window;
-	SDL_GPUDevice *m_gpu_device;
 	const char *m_loader_dir;
 	const char *m_exe_hash;
 	const void *m_config;
@@ -103,12 +117,27 @@ typedef bool (*DTTR_ComponentEventFn)(const SDL_Event *event);
 
 typedef const DTTR_ComponentInfo *(*DTTR_ComponentInfoFn)(void);
 
-typedef void (*DTTR_ComponentRenderFn)(
-	SDL_GPUCommandBuffer *cmd,
-	SDL_GPUTexture *render_target,
-	uint32_t width,
-	uint32_t height
-);
+/// Context passed to the render_game callback at game resolution.
+typedef struct {
+	uint32_t m_width;
+	uint32_t m_height;
+	float m_scale;
+} DTTR_RenderGameContext;
+
+/// Context passed to the render callback at window resolution.
+typedef struct {
+	uint32_t m_window_w;
+	uint32_t m_window_h;
+	uint32_t m_game_x;
+	uint32_t m_game_y;
+	uint32_t m_game_w;
+	uint32_t m_game_h;
+	float m_scale;
+} DTTR_RenderContext;
+
+typedef void (*DTTR_ComponentRenderGameFn)(const DTTR_RenderGameContext *ctx);
+
+typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 
 // Interop storage macros (gated on DTTR_INTEROP_IMPLEMENT)
 
@@ -303,5 +332,53 @@ typedef void (*DTTR_ComponentRenderFn)(
 #define DTTR_LOG_WARN(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_WARN, __VA_ARGS__)
 #define DTTR_LOG_ERROR(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_ERROR, __VA_ARGS__)
 #define DTTR_LOG_FATAL(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_FATAL, __VA_ARGS__)
+
+// Component export macros.
+//
+//   DTTR_COMPONENT_INFO("My Plugin", "1.0.0", "Author")
+//   DTTR_COMPONENT_INIT { return true; }
+//   DTTR_COMPONENT_CLEANUP { }
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define DTTR_EXPORT __declspec(dllexport)
+#else
+#define DTTR_EXPORT __attribute__((visibility("default")))
+#endif
+
+#define DTTR_COMPONENT_INFO(name, version, author)                                       \
+	static const DTTR_ComponentInfo s_dttr_component_info_ = {                           \
+		.m_name = name,                                                                  \
+		.m_version = version,                                                            \
+		.m_author = author,                                                              \
+	};                                                                                   \
+	DTTR_EXPORT const DTTR_ComponentInfo *dttr_component_info(void) {                    \
+		return &s_dttr_component_info_;                                                  \
+	}
+
+// Checks API version and delegates to the component body.
+#define DTTR_COMPONENT_INIT                                                              \
+	static bool s_dttr_component_init_(const DTTR_ComponentContext *);                   \
+	DTTR_EXPORT bool dttr_component_init(const DTTR_ComponentContext *ctx) {             \
+		if (ctx->m_api_version < DTTR_COMPONENT_API_VERSION) {                           \
+			return false;                                                                \
+		}                                                                                \
+		return s_dttr_component_init_(ctx);                                              \
+	}                                                                                    \
+	static bool s_dttr_component_init_(const DTTR_ComponentContext *ctx)
+
+#define DTTR_COMPONENT_CLEANUP DTTR_EXPORT void dttr_component_cleanup(void)
+
+#define DTTR_COMPONENT_TICK DTTR_EXPORT void dttr_component_tick(void)
+
+// Return true to consume the event.
+#define DTTR_COMPONENT_EVENT DTTR_EXPORT bool dttr_component_event(const SDL_Event *event)
+
+// Renders at game resolution, letterboxed and scaled with the game image.
+#define DTTR_COMPONENT_RENDER_GAME                                                       \
+	DTTR_EXPORT void dttr_component_render_game(const DTTR_RenderGameContext *ctx)
+
+// Renders at full window resolution, above letterbox bars.
+#define DTTR_COMPONENT_RENDER                                                            \
+	DTTR_EXPORT void dttr_component_render(const DTTR_RenderContext *ctx)
 
 #endif /* DTTR_COMPONENTS_H */

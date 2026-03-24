@@ -45,5 +45,9 @@ add_custom_target(dttr_dist ALL
 if(DTTR_COMPONENTS)
     add_custom_command(TARGET dttr_dist POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_DIR}/components"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_DIR}/include"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/components/include/dttr_components.h"
+            "${DTTR_DIST_DIR}/include/dttr_components.h"
     )
 endif()
