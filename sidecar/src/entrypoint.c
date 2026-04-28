@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 
 #include "dttr_crashdump.h"
@@ -27,6 +29,10 @@ char g_dttr_exe_hash[17];
 
 static HMODULE s_pc_dogs_module;
 
+static void s_set_default_exe_hash(void) {
+	memcpy(g_dttr_exe_hash, "0000000000000000", sizeof(g_dttr_exe_hash));
+}
+
 static void s_compute_exe_hash(void) {
 	char exe_path[MAX_PATH];
 	GetModuleFileNameA(s_pc_dogs_module, exe_path, sizeof(exe_path));
@@ -43,15 +49,35 @@ static void s_compute_exe_hash(void) {
 
 	if (file == INVALID_HANDLE_VALUE) {
 		log_error("Failed to open exe for hashing: %s", exe_path);
-		strcpy(g_dttr_exe_hash, "0000000000000000");
+		s_set_default_exe_hash();
 		return;
 	}
 
 	DWORD file_size = GetFileSize(file, NULL);
-	void *buf = malloc(file_size);
-	DWORD bytes_read;
+	if (file_size == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
+		log_error("Failed to get exe size for hashing: %s", exe_path);
+		CloseHandle(file);
+		s_set_default_exe_hash();
+		return;
+	}
 
-	ReadFile(file, buf, file_size, &bytes_read, NULL);
+	void *buf = malloc(file_size);
+	if (file_size != 0 && !buf) {
+		log_error("Failed to allocate %lu bytes for exe hashing", file_size);
+		CloseHandle(file);
+		s_set_default_exe_hash();
+		return;
+	}
+
+	DWORD bytes_read = 0;
+	if (!ReadFile(file, buf, file_size, &bytes_read, NULL)) {
+		log_error("Failed to read exe for hashing: %s", exe_path);
+		CloseHandle(file);
+		free(buf);
+		s_set_default_exe_hash();
+		return;
+	}
+
 	CloseHandle(file);
 
 	XXH64_hash_t hash = XXH3_64bits(buf, bytes_read);
@@ -123,6 +149,31 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 	dttr_graphics_handle_window_resize(event->window.data1, event->window.data2);
 }
 
+static void s_poll_sdl_events(void) {
+	SDL_Event event;
+
+	while (SDL_PollEvent(&event)) {
+		s_handle_sdl_event(&event);
+	}
+}
+
+static void s_cleanup_runtime(const DTTR_ComponentContext *ctx) {
+#ifdef DTTR_COMPONENTS_ENABLED
+	dttr_components_cleanup();
+	dttr_imgui_cleanup();
+#endif
+
+	dttr_movies_hooks_cleanup(ctx);
+	dttr_movies_cleanup();
+	dttr_audio_cleanup(ctx);
+	dttr_other_hooks_cleanup(ctx);
+	dttr_graphics_hooks_cleanup(ctx);
+	dttr_inputs_hooks_cleanup(ctx);
+	dttr_inputs_cleanup();
+	dttr_graphics_cleanup();
+	dttr_game_api_cleanup();
+}
+
 static void s_tick_main_loop(void) {
 	if (dttr_movies_movie_is_playing()) {
 		dttr_movies_tick();
@@ -151,9 +202,7 @@ static void s_play_intro_movies(void) {
 		sdsfree(path);
 
 		while (dttr_movies_movie_is_playing()) {
-			SDL_Event event;
-			while (SDL_PollEvent(&event))
-				s_handle_sdl_event(&event);
+			s_poll_sdl_events();
 			s_tick_main_loop();
 		}
 
@@ -265,31 +314,12 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	log_info("Ready!");
 
 	while (g_pcdogs_should_quit_get() == 0) {
-		SDL_Event event;
-
-		while (SDL_PollEvent(&event)) {
-			s_handle_sdl_event(&event);
-		}
-
+		s_poll_sdl_events();
 		s_tick_main_loop();
 	}
 
 	log_info("Cleaning up hooks");
-
-#ifdef DTTR_COMPONENTS_ENABLED
-	dttr_components_cleanup();
-	dttr_imgui_cleanup();
-#endif
-
-	dttr_movies_hooks_cleanup(ctx);
-	dttr_movies_cleanup();
-	dttr_audio_cleanup(ctx);
-	dttr_other_hooks_cleanup(ctx);
-	dttr_graphics_hooks_cleanup(ctx);
-	dttr_inputs_hooks_cleanup(ctx);
-	dttr_inputs_cleanup();
-	dttr_graphics_cleanup();
-	dttr_game_api_cleanup();
+	s_cleanup_runtime(ctx);
 
 	log_info("Exiting DttR sidecar");
 	sdsfree(log_path);

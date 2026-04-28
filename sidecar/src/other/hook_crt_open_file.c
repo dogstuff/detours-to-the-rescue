@@ -10,12 +10,14 @@
 #define IS_READ_ONLY_MODE(m) ((m) && (m)[0] == 'r' && !strchr((m), '+'))
 
 static bool s_is_relative_path(const char *path) {
-	if (!path || !path[0])
+	if (!path || !path[0]) {
 		return false;
+	}
 
-	// A path is absolute if it contains a drive letter like "C:\".
-	return path[1] != ':' || path[2] != '\\';
+	return strlen(path) < 3 || path[1] != ':' || path[2] != '\\';
 }
+
+static bool s_mode_wants_write(const char *mode) { return mode && strchr(mode, 'w'); }
 
 static bool s_redirect_saves_initialized = false;
 
@@ -28,19 +30,25 @@ static void s_build_saves_dir(char *buf, size_t buf_size) {
 	snprintf(buf, buf_size, "%s", g_dttr_config.m_saves_path);
 }
 
+static void s_build_save_slot_dir(char *buf, size_t buf_size) {
+	s_build_saves_dir(buf, buf_size);
+
+	size_t len = strlen(buf);
+	snprintf(buf + len, buf_size - len, "\\%s", g_dttr_exe_hash);
+}
+
 static void s_ensure_save_dir(void) {
-	if (s_redirect_saves_initialized)
+	if (s_redirect_saves_initialized) {
 		return;
+	}
 
 	s_redirect_saves_initialized = true;
 
 	char dir[MAX_PATH];
-
 	s_build_saves_dir(dir, sizeof(dir));
 	CreateDirectoryA(dir, NULL);
 
-	size_t len = strlen(dir);
-	snprintf(dir + len, sizeof(dir) - len, "\\%s", g_dttr_exe_hash);
+	s_build_save_slot_dir(dir, sizeof(dir));
 	CreateDirectoryA(dir, NULL);
 }
 
@@ -50,20 +58,23 @@ static const char *s_redirect_path(
 	size_t buf_size,
 	const char *mode
 ) {
-	if (!g_dttr_config.m_saves_path[0])
+	if (!g_dttr_config.m_saves_path[0]) {
 		return path;
+	}
 
-	if (!s_is_relative_path(path))
+	if (!s_is_relative_path(path)) {
 		return path;
+	}
 
 	s_ensure_save_dir();
 
-	char saves_dir[MAX_PATH];
-	s_build_saves_dir(saves_dir, sizeof(saves_dir));
-	snprintf(buf, buf_size, "%s\\%s\\%s", saves_dir, g_dttr_exe_hash, path);
+	s_build_save_slot_dir(buf, buf_size);
+	size_t len = strlen(buf);
+	snprintf(buf + len, buf_size - len, "\\%s", path);
 
-	if (IS_READ_ONLY_MODE(mode) && GetFileAttributesA(buf) == INVALID_FILE_ATTRIBUTES)
+	if (IS_READ_ONLY_MODE(mode) && GetFileAttributesA(buf) == INVALID_FILE_ATTRIBUTES) {
 		return path;
+	}
 
 	log_debug("Redirecting \"%s\" -> \"%s\"", path, buf);
 	return buf;
@@ -84,8 +95,9 @@ static void *s_open_file_fallback(const char *path, char *mode) {
 }
 
 static void *s_try_fix_permissions(const char *path, char *mode) {
-	const bool wants_write = mode && strchr(mode, 'w');
-	const int perms = (strchr(mode, 'r') ? _S_IREAD : 0) | (wants_write ? _S_IWRITE : 0);
+	const bool wants_write = s_mode_wants_write(mode);
+	const int perms = ((mode && strchr(mode, 'r')) ? _S_IREAD : 0)
+					  | (wants_write ? _S_IWRITE : 0);
 
 	log_error(
 		"Permission error opening \"%s\" (mode \"%s\"): %s",
@@ -147,8 +159,9 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 	path = s_redirect_path(path, redirected, sizeof(redirected), mode);
 
 	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
-	if (result)
+	if (result) {
 		return result;
+	}
 
 	// The game handles missing files and read-only failures correctly.
 	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
@@ -157,7 +170,7 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 	}
 
 	// Windows gives EBADF instead of EACCES when writing to a read-only file.
-	const bool wants_write = mode && strchr(mode, 'w');
+	const bool wants_write = s_mode_wants_write(mode);
 	const bool is_perm_error
 		= (errno == EACCES || errno == EPERM || (errno == EBADF && wants_write));
 

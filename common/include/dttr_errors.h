@@ -21,7 +21,7 @@
 	} while (0)
 
 #define DTTR_REPORT_SUFFIX                                                               \
-	"\n\nIf this error is unexpected feel free to report is as an "                      \
+	"\n\nIf this error is unexpected feel free to report it as an "                      \
 	"issue:\nhttps://gitlab.com/dogstuff/detours-to-the-rescue\n"
 
 #define DTTR_FATAL(error_message, ...)                                                   \

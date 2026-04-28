@@ -22,6 +22,13 @@ static const DTTR_RendererVtbl s_renderer;
 
 #include "gen/opengl_shaders.h"
 
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+} S_OpenglPresentRect;
+
 static GLuint s_compile_shader(GLenum type, const char *source) {
 	GLuint shader = glCreateShader(type);
 	glShaderSource(shader, 1, &source, NULL);
@@ -129,6 +136,23 @@ static bool s_create_fbo(S_OpenglBackendData *gl, int width, int height) {
 	gl->m_fbo_width = width;
 	gl->m_fbo_height = height;
 	return true;
+}
+
+static void s_destroy_fbo(S_OpenglBackendData *gl) {
+	if (gl->m_fbo) {
+		glDeleteFramebuffers(1, &gl->m_fbo);
+		gl->m_fbo = 0;
+	}
+
+	if (gl->m_fbo_color_tex) {
+		glDeleteTextures(1, &gl->m_fbo_color_tex);
+		gl->m_fbo_color_tex = 0;
+	}
+
+	if (gl->m_fbo_depth_rbo) {
+		glDeleteRenderbuffers(1, &gl->m_fbo_depth_rbo);
+		gl->m_fbo_depth_rbo = 0;
+	}
 }
 
 static void s_create_samplers(S_OpenglBackendData *gl) {
@@ -404,17 +428,7 @@ static bool s_resize_fbo(DTTR_BackendState *state, int width, int height) {
 		return true;
 	}
 
-	if (gl->m_fbo_color_tex) {
-		glDeleteTextures(1, &gl->m_fbo_color_tex);
-	}
-
-	if (gl->m_fbo_depth_rbo) {
-		glDeleteRenderbuffers(1, &gl->m_fbo_depth_rbo);
-	}
-
-	if (gl->m_fbo) {
-		glDeleteFramebuffers(1, &gl->m_fbo);
-	}
+	s_destroy_fbo(gl);
 
 	if (!s_create_fbo(gl, width, height)) {
 		log_error("Failed to recreate OpenGL FBO at %dx%d", width, height);
@@ -510,6 +524,63 @@ static void s_upload_pending_textures_gl(
 	}
 
 	gl->m_pending_mipmap_count = 0;
+}
+
+static S_OpenglPresentRect s_compute_present_rect(
+	int dst_w,
+	int dst_h,
+	int src_w,
+	int src_h,
+	float fallback_scale
+) {
+	const float sx = (float)dst_w / (float)src_w;
+	const float sy = (float)dst_h / (float)src_h;
+	float scale = sx < sy ? sx : sy;
+
+	if (scale < 0.001f) {
+		scale = fallback_scale;
+	}
+
+	const int present_w = (int)((float)src_w * scale);
+	const int present_h = (int)((float)src_h * scale);
+
+	return (S_OpenglPresentRect){
+		.x = (dst_w - present_w) / 2,
+		.y = (dst_h - present_h) / 2,
+		.w = present_w,
+		.h = present_h,
+	};
+}
+
+static void s_upload_video_texture(
+	S_OpenglBackendData *gl,
+	const uint8_t *pixels,
+	int width,
+	int height
+) {
+	const bool resized = gl->m_video_width != width || gl->m_video_height != height;
+
+	glBindTexture(GL_TEXTURE_2D, gl->m_video_texture);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGBA8,
+		width,
+		height,
+		0,
+		GL_BGRA,
+		GL_UNSIGNED_BYTE,
+		pixels
+	);
+
+	if (!resized) {
+		return;
+	}
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	gl->m_video_width = width;
+	gl->m_video_height = height;
 }
 
 static void s_begin_frame(DTTR_BackendState *state) {
@@ -667,7 +738,6 @@ static void s_end_frame(DTTR_BackendState *state) {
 	state->m_frame_active = false;
 	state->m_transfer_mapped = NULL;
 
-	// Upload staged vertices to the GPU buffer.
 	if (state->m_vertex_offset > 0) {
 		glBindBuffer(GL_ARRAY_BUFFER, gl->m_vbo);
 		glBufferSubData(
@@ -678,7 +748,6 @@ static void s_end_frame(DTTR_BackendState *state) {
 		);
 	}
 
-	// Replay all recorded draw and clear commands into the FBO.
 	if (kv_size(state->m_batch_records) > 0) {
 		s_replay_batch_records_gl(state, gl);
 	}
@@ -687,7 +756,6 @@ static void s_end_frame(DTTR_BackendState *state) {
 	dttr_imgui_render_game_opengl();
 #endif
 
-	// Resolve MSAA FBO to the non-MSAA FBO.
 	if (gl->m_msaa_samples > 0) {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->m_msaa_fbo);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gl->m_fbo);
@@ -705,7 +773,6 @@ static void s_end_frame(DTTR_BackendState *state) {
 		);
 	}
 
-	// Blit the FBO to the default framebuffer with letterbox scaling.
 	int window_w = 0, window_h = 0;
 	SDL_GetWindowSizeInPixels(state->m_window, &window_w, &window_h);
 
@@ -717,23 +784,17 @@ static void s_end_frame(DTTR_BackendState *state) {
 		window_h = state->m_height;
 	}
 
-	const float sx = (float)window_w / (float)gl->m_fbo_width;
-	const float sy = (float)window_h / (float)gl->m_fbo_height;
-	float scale = sx < sy ? sx : sy;
-
-	if (scale < 0.001f) {
-		scale = 1.0f;
-	}
-
-	const int present_w = (int)((float)gl->m_fbo_width * scale);
-	const int present_h = (int)((float)gl->m_fbo_height * scale);
-	const int present_x = (window_w - present_w) / 2;
-	const int present_y = (window_h - present_h) / 2;
+	const S_OpenglPresentRect present = s_compute_present_rect(
+		window_w,
+		window_h,
+		gl->m_fbo_width,
+		gl->m_fbo_height,
+		1.0f
+	);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->m_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-	// Clear the default framebuffer for letterbox bars.
 	glViewport(0, 0, window_w, window_h);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -746,10 +807,10 @@ static void s_end_frame(DTTR_BackendState *state) {
 		0,
 		gl->m_fbo_width,
 		gl->m_fbo_height,
-		present_x,
-		present_y,
-		present_x + present_w,
-		present_y + present_h,
+		present.x,
+		present.y,
+		present.x + present.w,
+		present.y + present.h,
 		GL_COLOR_BUFFER_BIT,
 		blit_filter
 	);
@@ -757,10 +818,10 @@ static void s_end_frame(DTTR_BackendState *state) {
 #ifdef DTTR_COMPONENTS_ENABLED
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	dttr_imgui_render_opengl(
-		(uint32_t)present_x,
-		(uint32_t)present_y,
-		(uint32_t)present_w,
-		(uint32_t)present_h
+		(uint32_t)present.x,
+		(uint32_t)present.y,
+		(uint32_t)present.w,
+		(uint32_t)present.h
 	);
 #endif
 
@@ -788,39 +849,8 @@ static bool s_present_video_frame_bgra(
 		glGenTextures(1, &gl->m_video_texture);
 	}
 
-	if (gl->m_video_width != width || gl->m_video_height != height) {
-		glBindTexture(GL_TEXTURE_2D, gl->m_video_texture);
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_RGBA8,
-			width,
-			height,
-			0,
-			GL_BGRA,
-			GL_UNSIGNED_BYTE,
-			pixels
-		);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		gl->m_video_width = width;
-		gl->m_video_height = height;
-	} else {
-		glBindTexture(GL_TEXTURE_2D, gl->m_video_texture);
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_RGBA8,
-			width,
-			height,
-			0,
-			GL_BGRA,
-			GL_UNSIGNED_BYTE,
-			pixels
-		);
-	}
+	s_upload_video_texture(gl, pixels, width, height);
 
-	// Render a fullscreen quad to the default framebuffer.
 	int window_w = 0, window_h = 0;
 	SDL_GetWindowSizeInPixels(state->m_window, &window_w, &window_h);
 
@@ -839,18 +869,18 @@ static bool s_present_video_frame_bgra(
 	glUseProgram(gl->m_program);
 	glBindVertexArray(gl->m_vao);
 
-	// Compute letterbox dimensions.
-	const float sx = (float)window_w / (float)width;
-	const float sy = (float)window_h / (float)height;
-	float scale = sx < sy ? sx : sy;
-	const int present_w = (int)((float)width * scale);
-	const int present_h = (int)((float)height * scale);
-	const float x0 = (float)(window_w - present_w) / 2.0f;
-	const float y0 = (float)(window_h - present_h) / 2.0f;
-	const float x1 = x0 + (float)present_w;
-	const float y1 = y0 + (float)present_h;
+	const S_OpenglPresentRect present = s_compute_present_rect(
+		window_w,
+		window_h,
+		width,
+		height,
+		0.0f
+	);
+	const float x0 = (float)present.x;
+	const float y0 = (float)present.y;
+	const float x1 = (float)(present.x + present.w);
+	const float y1 = (float)(present.y + present.h);
 
-	// Configure uniforms for 2D quad rendering.
 	float identity[16];
 	dttr_graphics_mat4_identity(identity);
 	glUniformMatrix4fv(gl->m_loc_mvp, 1, GL_FALSE, identity);
@@ -901,18 +931,7 @@ static void s_cleanup(DTTR_BackendState *state) {
 	}
 
 	s_destroy_msaa_fbo(gl);
-
-	if (gl->m_fbo) {
-		glDeleteFramebuffers(1, &gl->m_fbo);
-	}
-
-	if (gl->m_fbo_color_tex) {
-		glDeleteTextures(1, &gl->m_fbo_color_tex);
-	}
-
-	if (gl->m_fbo_depth_rbo) {
-		glDeleteRenderbuffers(1, &gl->m_fbo_depth_rbo);
-	}
+	s_destroy_fbo(gl);
 
 	s_release_deferred_gl_destroys(state, gl);
 

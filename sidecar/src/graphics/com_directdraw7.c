@@ -7,19 +7,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-DTTR_Graphics_COM_Direct3D7 *g_dttr_directdraw7_d3d7;
+static DTTR_Graphics_COM_Direct3D7 *s_ddraw7_d3d7;
+
+static DTTR_Graphics_COM_Direct3D7 *s_ddraw7_get_direct3d(void) {
+	if (!s_ddraw7_d3d7) {
+		s_ddraw7_d3d7 = dttr_graphics_com_create_direct3d7();
+	}
+
+	return s_ddraw7_d3d7;
+}
 
 static HRESULT __stdcall s_ddraw7_queryinterface(
 	DTTR_Graphics_COM_DirectDraw7 *self,
 	void *riid,
 	void **ppv
 ) {
-	if (!g_dttr_directdraw7_d3d7) {
-		g_dttr_directdraw7_d3d7 = dttr_graphics_com_create_direct3d7();
-	}
+	DTTR_Graphics_COM_Direct3D7 *direct3d = s_ddraw7_get_direct3d();
 
 	if (ppv) {
-		*ppv = g_dttr_directdraw7_d3d7;
+		*ppv = direct3d;
 	}
 
 	return S_OK;
@@ -98,17 +104,15 @@ static HRESULT __stdcall s_ddraw7_createsurface(
 	}
 
 	if (surf) {
-		DTTR_Graphics_COM_DirectDrawSurface7 *surface
-			= dttr_graphics_com_create_directdrawsurface7(
-				width,
-				height,
-				bpp,
-				r_mask,
-				g_mask,
-				b_mask,
-				a_mask
-			);
-		*surf = surface;
+		*surf = dttr_graphics_com_create_directdrawsurface7(
+			width,
+			height,
+			bpp,
+			r_mask,
+			g_mask,
+			b_mask,
+			a_mask
+		);
 	}
 
 	return S_OK;

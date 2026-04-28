@@ -105,13 +105,16 @@ typedef struct {
 
 extern DTTR_Config g_dttr_config;
 
-/// Resets a config object to built-in defaults
+/// Returns the config token for a graphics API selection.
 const char *dttr_config_graphics_api_name(DTTR_GraphicsApi api);
 
+/// Resets a config object to built-in defaults.
 void dttr_config_set_defaults(DTTR_Config *config);
-/// Loads config values from a JSON file into the global config object
+
+/// Loads config values from a JSONC file into the global config object.
 bool dttr_config_load(const char *filename);
-/// Saves config values back to a JSONC file, preserving comments and formatting
+
+/// Saves config values back to a JSONC file, preserving comments and formatting.
 bool dttr_config_save(const char *filename, const DTTR_Config *config);
 
 #define DTTR_CONFIG_FILENAME "dttr.jsonc"

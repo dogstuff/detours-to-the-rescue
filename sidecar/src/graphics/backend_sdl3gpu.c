@@ -20,6 +20,13 @@
 
 static const DTTR_RendererVtbl s_renderer;
 
+typedef struct {
+	Uint32 x;
+	Uint32 y;
+	Uint32 w;
+	Uint32 h;
+} S_GraphicsPresentRect;
+
 // Converts config integer sample count into SDL GPU sample-count enum
 static SDL_GPUSampleCount s_msaa_sample_count_from_config(int value) {
 	switch (value) {
@@ -84,7 +91,24 @@ static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
 	return SDL_GPU_SAMPLECOUNT_1;
 }
 
-// Attempts to create and validate an SDL GPU device for one backend driver name
+static void s_destroy_device(DTTR_BackendState *state) {
+	if (!state->m_device) {
+		return;
+	}
+
+	SDL_DestroyGPUDevice(state->m_device);
+	state->m_device = NULL;
+}
+
+static void s_release_window_device(DTTR_BackendState *state) {
+	if (!state->m_device) {
+		return;
+	}
+
+	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
+	s_destroy_device(state);
+}
+
 static bool s_try_create_device_for_driver(
 	DTTR_BackendState *state,
 	const SDL_GPUShaderFormat requested_formats,
@@ -109,8 +133,7 @@ static bool s_try_create_device_for_driver(
 			driver ? driver : "default",
 			SDL_GetError()
 		);
-		SDL_DestroyGPUDevice(state->m_device);
-		state->m_device = NULL;
+		s_destroy_device(state);
 		return false;
 	}
 
@@ -152,9 +175,7 @@ static bool s_try_create_device_for_driver(
 		active_driver ? active_driver : "unknown",
 		(unsigned int)available_formats
 	);
-	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
-	SDL_DestroyGPUDevice(state->m_device);
-	state->m_device = NULL;
+	s_release_window_device(state);
 	return false;
 }
 
@@ -218,9 +239,7 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 
 	S_SDL3GPUBackendData *bd = calloc(1, sizeof(S_SDL3GPUBackendData));
 	if (!bd) {
-		SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
-		SDL_DestroyGPUDevice(state->m_device);
-		state->m_device = NULL;
+		s_release_window_device(state);
 		return false;
 	}
 	state->m_backend_data = bd;
@@ -243,9 +262,7 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	if (!dttr_graphics_sdl3gpu_create_pipelines()
 		|| !dttr_graphics_sdl3gpu_create_resources()) {
 		log_error("Failed to create GPU resources");
-		SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
-		SDL_DestroyGPUDevice(state->m_device);
-		state->m_device = NULL;
+		s_release_window_device(state);
 		return false;
 	}
 
@@ -309,9 +326,7 @@ static void s_cleanup(DTTR_BackendState *state) {
 		SDL_ReleaseGPUComputePipeline(state->m_device, state->m_buf2tex_pipeline);
 	}
 
-	SDL_ReleaseWindowFromGPUDevice(state->m_device, state->m_window);
-	SDL_DestroyGPUDevice(state->m_device);
-	state->m_device = NULL;
+	s_release_window_device(state);
 	free(state->m_backend_data);
 	state->m_backend_data = NULL;
 }
@@ -743,6 +758,51 @@ static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBu
 	state->m_perf_upload_bytes_accum += uploaded_bytes;
 }
 
+static S_GraphicsPresentRect s_compute_present_rect(
+	Uint32 dst_w,
+	Uint32 dst_h,
+	int src_w,
+	int src_h,
+	bool stretch,
+	bool integer_fit
+) {
+	S_GraphicsPresentRect rect = {
+		.x = 0,
+		.y = 0,
+		.w = dst_w,
+		.h = dst_h,
+	};
+
+	if (stretch) {
+		return rect;
+	}
+
+	const float sx = (float)dst_w / (float)src_w;
+	const float sy = (float)dst_h / (float)src_h;
+	float scale = SDL_min(sx, sy);
+
+	if (integer_fit && scale >= 1.0f) {
+		scale = floorf(scale);
+	}
+
+	rect.w = (Uint32)((float)src_w * scale);
+	rect.h = (Uint32)((float)src_h * scale);
+
+	if (rect.w == 0) {
+		rect.w = 1;
+	}
+
+	if (rect.h == 0) {
+		rect.h = 1;
+	}
+
+	rect.w = SDL_min(rect.w, dst_w);
+	rect.h = SDL_min(rect.h, dst_h);
+	rect.x = (dst_w - rect.w) / 2;
+	rect.y = (dst_h - rect.h) / 2;
+	return rect;
+}
+
 static void s_set_default_viewport(const DTTR_BackendState *state) {
 	if (!state->m_render_pass) {
 		return;
@@ -1062,46 +1122,17 @@ static void s_end_frame(DTTR_BackendState *state) {
 															 : (Uint32)state->m_width;
 		const Uint32 swap_h = (state->m_swapchain_height > 0) ? state->m_swapchain_height
 															  : (Uint32)state->m_height;
-		Uint32 present_x = 0;
-		Uint32 present_y = 0;
-		Uint32 present_w = swap_w;
-		Uint32 present_h = swap_h;
-
 		const bool is_internal_method
 			= (g_dttr_config.m_scaling_method == DTTR_SCALING_METHOD_LOGICAL);
-
-		const bool is_stretch_fit
-			= (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_STRETCH);
-
-		const bool is_integer_fit = (!is_internal_method)
-									&& (g_dttr_config.m_scaling_fit
-										== DTTR_SCALING_MODE_INTEGER);
-
-		if (!is_stretch_fit) {
-			const float sx = (float)swap_w / (float)state->m_width;
-			const float sy = (float)swap_h / (float)state->m_height;
-			float scale = SDL_min(sx, sy);
-
-			if (is_integer_fit && scale >= 1.0f) {
-				scale = floorf(scale);
-			}
-
-			present_w = (Uint32)((float)state->m_width * scale);
-			present_h = (Uint32)((float)state->m_height * scale);
-
-			if (present_w == 0) {
-				present_w = 1;
-			}
-
-			if (present_h == 0) {
-				present_h = 1;
-			}
-
-			present_w = SDL_min(present_w, swap_w);
-			present_h = SDL_min(present_h, swap_h);
-			present_x = (swap_w - present_w) / 2;
-			present_y = (swap_h - present_h) / 2;
-		}
+		const S_GraphicsPresentRect present = s_compute_present_rect(
+			swap_w,
+			swap_h,
+			state->m_width,
+			state->m_height,
+			g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_STRETCH,
+			(!is_internal_method)
+				&& (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_INTEGER)
+		);
 
 		const SDL_GPUBlitInfo blit = {
 			.source =
@@ -1110,16 +1141,16 @@ static void s_end_frame(DTTR_BackendState *state) {
 					.w = state->m_width,
 					.h = state->m_height,
 				},
-			.destination =
-				{
-					.texture = state->m_swapchain_tex,
-					.x = present_x,
-					.y = present_y,
-					.w = present_w,
-					.h = present_h,
-				},
-			.clear_color = {0.0f, 0.0f, 0.0f, 1.0f},
-			.load_op = SDL_GPU_LOADOP_CLEAR,
+				.destination =
+					{
+						.texture = state->m_swapchain_tex,
+						.x = present.x,
+						.y = present.y,
+						.w = present.w,
+						.h = present.h,
+					},
+				.clear_color = {0.0f, 0.0f, 0.0f, 1.0f},
+				.load_op = SDL_GPU_LOADOP_CLEAR,
 			.filter = g_dttr_config.m_present_filter,
 		};
 		SDL_BlitGPUTexture(state->m_cmd, &blit);
@@ -1130,10 +1161,10 @@ static void s_end_frame(DTTR_BackendState *state) {
 			state->m_swapchain_tex,
 			swap_w,
 			swap_h,
-			present_x,
-			present_y,
-			present_w,
-			present_h
+			present.x,
+			present.y,
+			present.w,
+			present.h
 		);
 #endif
 	}
@@ -1264,27 +1295,14 @@ static bool s_present_video_frame_bgra(
 	}
 
 	if (swapchain_tex) {
-		Uint32 dst_w = swapchain_w;
-		Uint32 dst_h = swapchain_h;
-		Uint32 dst_x = 0;
-		Uint32 dst_y = 0;
-
-		const float sx = (float)swapchain_w / (float)width;
-		const float sy = (float)swapchain_h / (float)height;
-		const float scale = SDL_min(sx, sy);
-		dst_w = (Uint32)((float)width * scale);
-		dst_h = (Uint32)((float)height * scale);
-
-		if (dst_w == 0) {
-			dst_w = 1;
-		}
-
-		if (dst_h == 0) {
-			dst_h = 1;
-		}
-
-		dst_x = (swapchain_w - dst_w) / 2;
-		dst_y = (swapchain_h - dst_h) / 2;
+		const S_GraphicsPresentRect present = s_compute_present_rect(
+			swapchain_w,
+			swapchain_h,
+			width,
+			height,
+			false,
+			false
+		);
 
 		const SDL_GPUBlitInfo blit = {
 			.source =
@@ -1302,10 +1320,10 @@ static bool s_present_video_frame_bgra(
 					.texture = swapchain_tex,
 					.mip_level = 0,
 					.layer_or_depth_plane = 0,
-					.x = dst_x,
-					.y = dst_y,
-					.w = dst_w,
-					.h = dst_h,
+					.x = present.x,
+					.y = present.y,
+					.w = present.w,
+					.h = present.h,
 				},
 			.load_op = SDL_GPU_LOADOP_CLEAR,
 			.clear_color = (SDL_FColor){0.0f, 0.0f, 0.0f, 1.0f},

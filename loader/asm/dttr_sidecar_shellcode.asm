@@ -45,7 +45,7 @@ endstruc
     jmp payload_entry_ref
 
 loader_entry:
-    ; Pop ESI = payload
+    ; ESI = payload
     pop esi
     push esi
     pushfd
@@ -55,43 +55,40 @@ loader_entry:
     mov eax, [fs:PEB_OFFSET]
     mov eax, [eax + PEB_LDR_OFFSET]
 
-    ; Get first entry of InLoadOrderModuleList
+    ; Head of InLoadOrderModuleList
     lea edi, [eax + LDR_INLOADORDERMODULELIST_OFFSET]
     mov eax, [edi]
 
 .scan_next_module:
-    ; If the node is equal to the head, kernel32.dll wasn't found
+    ; Reached the list head again: kernel32.dll was not found.
     cmp eax, edi
     je .kernel32_not_found
 
-    ; Load the module's full dll name
+    ; Current module name
     mov edx, [eax + LDR_DATA_TABLE_ENTRY_BASEDLLNAME_BUFFER_OFFSET]
 
-    ; Skip if null
+    ; Skip null entries
     test edx, edx
     jz .advance_module
 
-    ; Compare current name to kernel32.dll (case insensitive)
+    ; Compare against kernel32.dll
     push eax
     lea ecx, [esi + DTTR_LoaderShellcodePayload.m_kernel32_name]
     call strcmpi_wide_ascii
     pop ebx
-    ; If the names match, we found kernel32.dll yay
+    ; Match found
     test eax, eax
     jnz .found_kernel32
     mov eax, ebx
 
 .advance_module:
-    ; Advance to the next module in InLoadOrderModuleList
     mov eax, [eax]
     jmp .scan_next_module
 
 .found_kernel32:
-
     mov ebx, [ebx + LDR_DATA_TABLE_ENTRY_DLLBASE_OFFSET]  ; DllBase
     mov byte [esi + DTTR_LoaderShellcodePayload.m_status], DTTR_LOADER_SHELLCODE_STATUS_KERNEL32_READY
 
-    ; Resolve the imports needed to load the sidecar and terminate the thread gracefully.
     ; Resolve LoadLibraryEx(...)
     lea edx, [esi + DTTR_LoaderShellcodePayload.m_loadlibraryex_name]
     call resolve_module_export
@@ -123,11 +120,9 @@ loader_entry:
     call edi
     mov [esi + DTTR_LoaderShellcodePayload.m_module], eax
 
-    ; Continue loading if result was valid
     test eax, eax
     jnz .loaded
 
-    ; Otherwise GetLastError() (WinAPI)
     mov byte [esi + DTTR_LoaderShellcodePayload.m_status], DTTR_LOADER_SHELLCODE_STATUS_LOADLIBRARY_FAILED
     call ebp
     mov [esi + DTTR_LoaderShellcodePayload.m_last_error], eax
@@ -166,7 +161,7 @@ loader_entry:
 
     int3
 
-; Returns whether strings pointed to by EDX and ECX are equal (case-insensitve)
+; Return nonzero when the strings in EDX and ECX match case-insensitively.
 strcmpi_wide_ascii:
 
 .next_char:
@@ -202,19 +197,18 @@ strcmpi_wide_ascii:
     mov eax, 1
     ret
 
-; Get the absolute address of the symbol at
+; Resolve the ASCII export name in EDX against the module base in EBX.
 resolve_module_export:
 
     push esi
     push edi
     push ebp
 
-    ; Read RVAs and compute effective addresses
     ; EAX = PE header
     mov eax, [ebx + PE_DOS_E_LFANEW_OFFSET]
     add eax, ebx
 
-    ; EAX = &IMAGE_EXPORT_DIRECTORY
+    ; EAX = IMAGE_EXPORT_DIRECTORY
     mov eax, [eax + PE_EXPORT_DIRECTORY_RVA_OFFSET]
     add eax, ebx
 

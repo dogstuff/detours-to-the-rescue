@@ -1,20 +1,21 @@
-version: '3'
+version: "3"
 
 vars:
-  BUILD_DIR: build
-  TOOLCHAIN_DIR: .toolchain
-  TOOLCHAIN_FILE: .toolchain/toolchain.cmake
-  SHADER_OUTPUT_DIR: sidecar/include/gen
+  BUILD_DIR: "build"
+  TOOLCHAIN_DIR: ".toolchain"
+  TOOLCHAIN_FILE: ".toolchain/toolchain.cmake"
+  SHADER_OUTPUT_DIR: "sidecar/include/gen"
 
   GIT_SHORT_SHA:
     sh: git rev-parse --short HEAD
-  DTTR_VERSION: '{{.DTTR_VERSION | default .GIT_SHORT_SHA}}'
 
-  DTTR_COMPONENTS: 'OFF'
+  DTTR_VERSION: "{{.DTTR_VERSION | default .GIT_SHORT_SHA}}"
+
+  DTTR_COMPONENTS: "OFF"
 
   DOCKER: podman
   CONTAINER_IMAGE: dttr-toolchain
-  CONTAINERFILE_BUILD: build.Containerfile
+  CONTAINERFILE_BUILD: "build.Containerfile"
 
 tasks:
   build:
@@ -25,64 +26,77 @@ tasks:
       - format
       - setup-build
     cmds:
-      - cmake --build "{{ .BUILD_DIR }}" --config Debug
+      - cmake --build {{ .BUILD_DIR | quote }} --config Debug
 
   build-release:
     deps:
       - build
     cmds:
-      - cmake --build "{{ .BUILD_DIR }}" --config Release
+      - cmake --build {{ .BUILD_DIR | quote }} --config Release
 
   setup-build:
     cmds:
-      - cmake -G "Ninja Multi-Config" -B "{{ .BUILD_DIR }}" -DCMAKE_TOOLCHAIN_FILE="{{ .TOOLCHAIN_FILE }}" -DDTTR_VERSION="{{ .DTTR_VERSION }}" -DDTTR_COMPONENTS={{ .DTTR_COMPONENTS }}
+      - >-
+        cmake -G "Ninja Multi-Config" -B {{ .BUILD_DIR | quote }}
+        -DCMAKE_TOOLCHAIN_FILE={{ .TOOLCHAIN_FILE | quote }}
+        -DDTTR_VERSION="{{ .DTTR_VERSION }}"
+        -DDTTR_COMPONENTS={{ .DTTR_COMPONENTS }}
 
   clean:
     cmds:
-      - rm -rf "{{ .BUILD_DIR }}"
-      - rm -rf "{{ .TOOLCHAIN_DIR }}"
+      - rm -rf {{ .BUILD_DIR | quote }}
+      - rm -rf {{ .TOOLCHAIN_DIR | quote }}
 
   build-asm:
     vars:
-      ASM_DIR: '{{ .ROOT_DIR }}/loader/asm'
-      OUTPUT_FILE: '{{ .ROOT_DIR }}/loader/include/gen/asm.h'
+      ASM_DIR: "{{ .ROOT_DIR }}/loader/asm"
+      OUTPUT_FILE: "{{ .ROOT_DIR }}/loader/include/gen/asm.h"
       BIN_DIR:
         sh: mktemp -d
     cmds:
       - |
-        echo "Assembling {{ .ASM_DIR }} into {{ .OUTPUT_FILE }}" && \
-        bash ./scripts/build-asm.sh "{{ .ASM_DIR }}" "{{ .OUTPUT_FILE }}" "{{ .BIN_DIR }}"
+        echo "Assembling {{ .ASM_DIR | quote }} into {{ .OUTPUT_FILE | quote }}" && \
+        bash ./scripts/build-asm.sh {{ .ASM_DIR | quote }} {{ .OUTPUT_FILE | quote }} {{ .BIN_DIR | quote }}
 
   build-compat:
     vars:
-      INPUT_FILE: '{{ .ROOT_DIR }}/loader/compat/packed_sdb.bin'
-      OUTPUT_FILE: '{{ .ROOT_DIR }}/loader/include/gen/packed_sdb.h'
+      INPUT_FILE: "{{ .ROOT_DIR }}/loader/compat/packed_sdb.bin"
+      OUTPUT_FILE: "{{ .ROOT_DIR }}/loader/include/gen/packed_sdb.h"
     cmds:
       - |
-        echo "Embedding {{ .INPUT_FILE }} into {{ .OUTPUT_FILE }}" && \
-        bash ./scripts/build-compat.sh "{{ .INPUT_FILE }}" "{{ .OUTPUT_FILE }}"
+        echo "Embedding {{ .INPUT_FILE | quote }} into {{ .OUTPUT_FILE | quote }}" && \
+        bash ./scripts/build-compat.sh {{ .INPUT_FILE | quote }} {{ .OUTPUT_FILE | quote }}
 
   build-shaders:
     cmds:
       - cmd: 'echo "WARN: Skipping SDL3 GPU shaders on macOS because shadercross is unavailable. Consider using container builds instead."'
         platforms: [darwin]
       - cmd: |
-          echo "Compiling SDL3 GPU shaders to {{ .SHADER_OUTPUT_DIR }}" && \
-          bash ./scripts/build-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"
+          echo "Compiling SDL3 GPU shaders to {{ .SHADER_OUTPUT_DIR | quote }}" && \
+          bash ./scripts/build-shaders.sh {{ .SHADER_OUTPUT_DIR | quote }}
         platforms: [linux, windows]
       - cmd: |
-          echo "Generating OpenGL shaders to {{ .SHADER_OUTPUT_DIR }}" && \
-          bash ./scripts/build-opengl-shaders.sh "{{ .SHADER_OUTPUT_DIR }}"
+          echo "Generating OpenGL shaders to {{ .SHADER_OUTPUT_DIR | quote }}" && \
+          bash ./scripts/build-opengl-shaders.sh {{ .SHADER_OUTPUT_DIR | quote }}
 
   container-build:
     cmds:
-      - "{{ .DOCKER }} build -t {{ .CONTAINER_IMAGE }} -f {{ .CONTAINERFILE_BUILD }} {{ .ROOT_DIR }}"
-      - "{{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR }} -v {{ .ROOT_DIR }}:/workspace -w /workspace {{ .CONTAINER_IMAGE }} sh -lc 'rm -rf build-container && task build BUILD_DIR=build-container DTTR_VERSION={{ .DTTR_VERSION }} DTTR_COMPONENTS={{ .DTTR_COMPONENTS }}'"
+      - >-
+        {{ .DOCKER }} build -t "{{ .CONTAINER_IMAGE }}" -f {{ .CONTAINERFILE_BUILD | quote }}
+        {{ .ROOT_DIR | quote }}
+      - >-
+        {{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR | quote }}
+        -v {{ .ROOT_DIR | quote }}:/workspace -w /workspace "{{ .CONTAINER_IMAGE }}" sh -lc
+        'rm -rf "build-container" && task build "BUILD_DIR=build-container"
+        "DTTR_VERSION={{ .DTTR_VERSION }}" DTTR_COMPONENTS={{ .DTTR_COMPONENTS }}'
 
   format:
     cmds:
       - echo "Running formatter"
-      - find ./loader ./sidecar ./common ./components -iname '*.h' -o -iname '*.c' | xargs clang-format -i
+      - |
+        find ./loader ./sidecar ./common ./components \
+          -path '*/include/gen/*' -prune -o \
+          \( -iname '*.h' -o -iname '*.c' \) -print | xargs clang-format -i
 
   generate-docs:
     cmds:

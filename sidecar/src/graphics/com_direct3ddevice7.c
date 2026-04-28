@@ -12,8 +12,8 @@
 #define MAX_VERTICES 4096
 #define DTTR_MAT4_ELEMS 16
 #define DTTR_MAT4_BYTES (sizeof(float) * DTTR_MAT4_ELEMS)
-DTTR_Vertex g_dttr_device7_verts[MAX_VERTICES];
-DTTR_Vertex g_dttr_device7_expanded_verts[DTTR_MAX_FRAME_VERTICES * 3];
+static DTTR_Vertex s_d3d_device7_verts[MAX_VERTICES];
+static DTTR_Vertex s_d3d_device7_expanded_verts[DTTR_MAX_FRAME_VERTICES * 3];
 
 /// Multiplies two row-major 4x4 float matrices into `out`
 static void s_d3d_device7_mat4_multiply_f(
@@ -181,6 +181,27 @@ static void s_d3d_device7_record_clear(
 	kv_push(DTTR_BatchRecord, state->m_batch_records, clear_rec);
 }
 
+static uint32_t s_d3d_device7_expand_primitive(
+	DTTR_PrimitiveType *type,
+	const DTTR_Vertex **verts,
+	uint32_t count
+) {
+	switch (*type) {
+	case DTTR_PRIM_TRIANGLESTRIP:
+		count = s_d3d_device7_expand_strip(*verts, count, s_d3d_device7_expanded_verts);
+		*verts = s_d3d_device7_expanded_verts;
+		*type = DTTR_PRIM_TRIANGLELIST;
+		return count;
+	case DTTR_PRIM_TRIANGLEFAN:
+		count = s_d3d_device7_expand_fan(*verts, count, s_d3d_device7_expanded_verts);
+		*verts = s_d3d_device7_expanded_verts;
+		*type = DTTR_PRIM_TRIANGLELIST;
+		return count;
+	default:
+		return count;
+	}
+}
+
 /// Appends a draw record to the current frame batch
 static void s_d3d_device7_record_draw(
 	DTTR_PrimitiveType type,
@@ -206,23 +227,9 @@ static void s_d3d_device7_record_draw(
 	if (count > DTTR_MAX_FRAME_VERTICES)
 		count = DTTR_MAX_FRAME_VERTICES;
 
-	switch (type) {
-	case DTTR_PRIM_TRIANGLESTRIP:
-		count = s_d3d_device7_expand_strip(verts, count, g_dttr_device7_expanded_verts);
-		verts = g_dttr_device7_expanded_verts;
-		type = DTTR_PRIM_TRIANGLELIST;
-		if (count == 0)
-			return;
-		break;
-	case DTTR_PRIM_TRIANGLEFAN:
-		count = s_d3d_device7_expand_fan(verts, count, g_dttr_device7_expanded_verts);
-		verts = g_dttr_device7_expanded_verts;
-		type = DTTR_PRIM_TRIANGLELIST;
-		if (count == 0)
-			return;
-		break;
-	default:
-		break;
+	count = s_d3d_device7_expand_primitive(&type, &verts, count);
+	if (count == 0) {
+		return;
 	}
 
 	if (!state->m_transfer_mapped)
@@ -322,6 +329,11 @@ static bool s_d3d_device7_ensure_staged_texture(DTTR_StagedTexture *st) {
 	return st->m_gpu_tex != NULL;
 }
 
+static void s_d3d_device7_clear_bound_texture(DTTR_BackendState *state) {
+	state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
+	state->m_bound_texture = NULL;
+}
+
 /// Binds an internal texture handle for subsequent draw records
 static void s_d3d_device7_texture_bind(DTTR_Texture tex) {
 	DTTR_BackendState *state = &g_dttr_backend;
@@ -330,8 +342,7 @@ static void s_d3d_device7_texture_bind(DTTR_Texture tex) {
 			&& !state->m_bound_texture) {
 			return;
 		}
-		state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
-		state->m_bound_texture = NULL;
+		s_d3d_device7_clear_bound_texture(state);
 		return;
 	}
 
@@ -341,14 +352,12 @@ static void s_d3d_device7_texture_bind(DTTR_Texture tex) {
 
 	const int idx = (int)tex - 1;
 	if (idx < 0 || idx >= state->m_staged_texture_count) {
-		state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
-		state->m_bound_texture = NULL;
+		s_d3d_device7_clear_bound_texture(state);
 		return;
 	}
 
 	if (!state->m_texture_mutex) {
-		state->m_bound_texture_handle = DTTR_INVALID_TEXTURE;
-		state->m_bound_texture = NULL;
+		s_d3d_device7_clear_bound_texture(state);
 		return;
 	}
 
@@ -476,7 +485,7 @@ static HRESULT __stdcall s_d3ddevice7_enumtextureformats(
 		.dwRGBAlphaBitMask = 0,
 	};
 
-	hr = callback(&fmt_rgb565, ctx);
+	callback(&fmt_rgb565, ctx);
 
 	return S_OK;
 }
@@ -811,51 +820,51 @@ static HRESULT __stdcall s_d3ddevice7_drawprimitive(
 			}
 		}
 
-		g_dttr_device7_verts[i].x = out_x;
-		g_dttr_device7_verts[i].y = out_y;
-		g_dttr_device7_verts[i].z = out_z;
+		s_d3d_device7_verts[i].x = out_x;
+		s_d3d_device7_verts[i].y = out_y;
+		s_d3d_device7_verts[i].z = out_z;
 		float rhw = has_rhw ? v[3] : 1.0f;
 		if (!isfinite(rhw) || rhw <= 0.0f)
 			rhw = 1.0f;
-		g_dttr_device7_verts[i].rhw = rhw;
+		s_d3d_device7_verts[i].rhw = rhw;
 
 		if (has_diffuse) {
 			const DWORD c = *(const DWORD *)(src + i * stride + diffuse_off);
-			g_dttr_device7_verts[i].a = ((c >> 24) & 0xFF) / 255.0f;
-			g_dttr_device7_verts[i].r = ((c >> 16) & 0xFF) / 255.0f;
-			g_dttr_device7_verts[i].g = ((c >> 8) & 0xFF) / 255.0f;
-			g_dttr_device7_verts[i].b = (c & 0xFF) / 255.0f;
+			s_d3d_device7_verts[i].a = ((c >> 24) & 0xFF) / 255.0f;
+			s_d3d_device7_verts[i].r = ((c >> 16) & 0xFF) / 255.0f;
+			s_d3d_device7_verts[i].g = ((c >> 8) & 0xFF) / 255.0f;
+			s_d3d_device7_verts[i].b = (c & 0xFF) / 255.0f;
 		} else {
-			g_dttr_device7_verts[i].a = 1.0f;
-			g_dttr_device7_verts[i].r = 1.0f;
-			g_dttr_device7_verts[i].g = 1.0f;
-			g_dttr_device7_verts[i].b = 1.0f;
+			s_d3d_device7_verts[i].a = 1.0f;
+			s_d3d_device7_verts[i].r = 1.0f;
+			s_d3d_device7_verts[i].g = 1.0f;
+			s_d3d_device7_verts[i].b = 1.0f;
 		}
 
 		if (has_tex) {
 			const float *tc = (const float *)(src + i * stride + tex_off);
-			g_dttr_device7_verts[i].u = tc[0];
-			g_dttr_device7_verts[i].v = tc[1];
+			s_d3d_device7_verts[i].u = tc[0];
+			s_d3d_device7_verts[i].v = tc[1];
 		} else {
-			g_dttr_device7_verts[i].u = g_dttr_device7_verts[i].v = 0.0f;
+			s_d3d_device7_verts[i].u = s_d3d_device7_verts[i].v = 0.0f;
 		}
 	}
 
 	if (has_rhw) {
 		float max_rhw = 0.0f;
 		for (DWORD i = 0; i < count; i++) {
-			if (g_dttr_device7_verts[i].rhw > max_rhw)
-				max_rhw = g_dttr_device7_verts[i].rhw;
+			if (s_d3d_device7_verts[i].rhw > max_rhw)
+				max_rhw = s_d3d_device7_verts[i].rhw;
 		}
 		if (max_rhw > 0.0f) {
 			const float inv_max = 1.0f / max_rhw;
 			for (DWORD i = 0; i < count; i++)
-				g_dttr_device7_verts[i].rhw *= inv_max;
+				s_d3d_device7_verts[i].rhw *= inv_max;
 		}
 	}
 
 	const DTTR_PrimitiveType type = s_d3d_device7_map_primitive_type(prim_type);
-	s_d3d_device7_record_draw(type, g_dttr_device7_verts, count, has_rhw, has_tex);
+	s_d3d_device7_record_draw(type, s_d3d_device7_verts, count, has_rhw, has_tex);
 	return S_OK;
 }
 

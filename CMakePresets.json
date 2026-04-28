@@ -9,7 +9,7 @@
     {
       "name": "mingw32-nix",
       "displayName": "MinGW32 (Nix)",
-      "description": "Cross-compile for Windows using nix-provided mingw32 toolchain",
+      "description": "Cross-compile for Windows with the Nix-provided MinGW32 toolchain",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "toolchainFile": "${sourceDir}/.toolchain/toolchain.cmake",

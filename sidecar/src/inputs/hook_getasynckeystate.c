@@ -3,8 +3,7 @@
 #include <stdint.h>
 #include <windows.h>
 
-/// GetAsyncKeyState returns this value with the high bit set to indicate the key is
-/// currently held down
+/// High bit returned by GetAsyncKeyState when the key is held down.
 #define GETASYNCKEYSTATE_KEY_PRESSED 0x8000
 
 static const SDL_Scancode s_vk_to_scancode[256] = {

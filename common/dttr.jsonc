@@ -2,7 +2,7 @@
   // Path to the directory containing the original game files (pcdogs.exe, pcdogs.pkg).
   "pcdogs_path": "",
 
-  // Path for redirected game file (saves, logs) reads and writes, relative to the DttR directory.
+  // Path for redirected saves/logs reads and writes, relative to the DttR directory.
   // Files are stored in subdirectories unique to the version of the game being run.
   // Set to null or "" to disable redirection.
   "saves_path": "saves",
@@ -43,7 +43,7 @@
     // How vertex coordinates are computed during 3D rendering.
     // Choices: native, subpixel
     //
-    // NOTE: Subpixel mode may make certain seams between polygons on the puppy models visible at higher resolutions..
+    // NOTE: Subpixel mode may make certain seams between polygons on the puppy models visible at higher resolutions.
     // This is unfortunately a limitation of the models themselves.
     "vertex_precision": "native",
 

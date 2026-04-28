@@ -19,6 +19,13 @@ static int s_buf_w = 0;
 static int s_buf_h = 0;
 static DTTR_MovieResult s_result = DTTR_MOVIE_ENDED;
 
+static void s_reset_video_buffer(void) {
+	free(s_buffer);
+	s_buffer = NULL;
+	s_buf_w = 0;
+	s_buf_h = 0;
+}
+
 void dttr_movies_init(void) {
 	s_mpv = mpv_create();
 	if (!s_mpv) {
@@ -99,10 +106,7 @@ void dttr_movies_start(const char *path) {
 	sdsfree(abs_path);
 
 	s_result = DTTR_MOVIE_PLAYING;
-	free(s_buffer);
-	s_buffer = NULL;
-	s_buf_w = 0;
-	s_buf_h = 0;
+	s_reset_video_buffer();
 }
 
 void dttr_movies_tick(void) {
@@ -144,12 +148,13 @@ void dttr_movies_tick(void) {
 	dttr_graphics_present_video_frame_bgra(s_buffer, s_buf_w, s_buf_h, stride);
 
 	const mpv_event *const ev = mpv_wait_event(s_mpv, 0);
-	if (ev->event_id == MPV_EVENT_END_FILE) {
-		const mpv_event_end_file *eof = ev->data;
+	if (ev->event_id != MPV_EVENT_END_FILE) {
+		return;
+	}
 
-		if (eof->reason == MPV_END_FILE_REASON_EOF) {
-			s_result = DTTR_MOVIE_ENDED;
-		}
+	const mpv_event_end_file *eof = ev->data;
+	if (eof->reason == MPV_END_FILE_REASON_EOF) {
+		s_result = DTTR_MOVIE_ENDED;
 	}
 }
 
@@ -197,10 +202,7 @@ DTTR_MovieResult dttr_movies_stop(void) {
 			;
 	}
 
-	free(s_buffer);
-	s_buffer = NULL;
-	s_buf_w = 0;
-	s_buf_h = 0;
+	s_reset_video_buffer();
 
 	log_info("Stopped movie with result %d", s_result);
 	return s_result;
@@ -208,8 +210,7 @@ DTTR_MovieResult dttr_movies_stop(void) {
 
 bool dttr_movies_movie_is_playing(void) { return s_result == DTTR_MOVIE_PLAYING; }
 
-// This function likely isn't called directly by the game outside
-// the overridden WinMain, but might as well cover our bases :)
+// This likely is not called outside the overridden WinMain, but keep the hook safe.
 int32_t __cdecl dttr_movies_hook_movie_play_file_callback(
 	const char *path,
 	const int32_t use_alt_rect

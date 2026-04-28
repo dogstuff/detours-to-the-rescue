@@ -1,7 +1,7 @@
-.git
-build
-.toolchain
-.direnv
-.venv
 .cache
+.direnv
+.git
+.toolchain
+.venv
+build
 results
