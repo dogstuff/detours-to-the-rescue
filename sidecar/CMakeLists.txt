@@ -1,3 +1,8 @@
+if(NOT TARGET PkgConfig::SDL3)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
+endif()
+
 set(DTTR_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/gen")
 set(DTTR_FFMPEG_DIR "${CMAKE_SOURCE_DIR}/.toolchain/ffmpeg")
 set(DTTR_FFMPEG_LIBS avformat avcodec avutil swscale swresample)
@@ -59,6 +64,7 @@ target_link_libraries(dttr_sidecar PRIVATE
     kernel32
     psapi
 
+    PkgConfig::SDL3
     ${DTTR_FFMPEG_TARGETS}
     glad
     Zydis

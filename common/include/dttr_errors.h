@@ -3,10 +3,11 @@
 
 #include <stdlib.h>
 
-#include <SDL3/SDL.h>
 #include <log.h>
 #include <sds.h>
 #include <windows.h>
+
+#include "dttr_sdl.h"
 
 #ifndef typeof
 #define typeof __typeof__
@@ -16,7 +17,12 @@
 	do {                                                                                 \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__);           \
 		log_error("%s", _err_msg);                                                       \
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Error", _err_msg, NULL);   \
+		dttr_sdl_show_simple_message_box(                                                \
+			SDL_MESSAGEBOX_ERROR,                                                        \
+			"DttR: Error",                                                               \
+			_err_msg,                                                                    \
+			NULL                                                                         \
+		);                                                                               \
 		sdsfree(_err_msg);                                                               \
 	} while (0)
 
@@ -29,7 +35,7 @@
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__);           \
 		_err_msg = sdscat(_err_msg, DTTR_REPORT_SUFFIX);                                 \
 		log_error("%s", _err_msg);                                                       \
-		SDL_ShowSimpleMessageBox(                                                        \
+		dttr_sdl_show_simple_message_box(                                                \
 			SDL_MESSAGEBOX_ERROR,                                                        \
 			"DttR: Fatal Error",                                                         \
 			_err_msg,                                                                    \

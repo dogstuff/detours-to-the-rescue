@@ -8,7 +8,7 @@
 #include <string.h>
 #include <windows.h>
 
-static const char *SIDECAR_DLL_NAME = "libdttr_sidecar.dll";
+static const char *SIDECAR_DLL_RELATIVE_PATH = "modules\\libdttr_sidecar.dll";
 
 static const uintptr_t PEB_IMAGE_BASE_OFFSET = 0x8;
 
@@ -110,7 +110,7 @@ static void s_resolve_sidecar_dll_path(char *out_path, size_t out_path_size) {
 		out_path_size,
 		"%s%s",
 		loader_dir,
-		SIDECAR_DLL_NAME
+		SIDECAR_DLL_RELATIVE_PATH
 	);
 	if (written < 0 || (size_t)written >= out_path_size) {
 		DTTR_FATAL("Sidecar DLL path is too long");

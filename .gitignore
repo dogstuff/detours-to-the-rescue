@@ -1,7 +1,7 @@
 .cache
 .direnv
 .toolchain
-build*
+build*/
 cmake-build-*
 compile_commands.json
 docs

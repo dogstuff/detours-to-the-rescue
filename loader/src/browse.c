@@ -1,5 +1,6 @@
 #include <dttr_config.h>
 #include <dttr_loader.h>
+#include <dttr_sdl.h>
 #include <log.h>
 
 #include <SDL3/SDL.h>
@@ -65,18 +66,18 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 	};
 
 	int button_id = 0;
-	SDL_ShowMessageBox(&msgbox, &button_id);
+	dttr_sdl_show_message_box(&msgbox, &button_id);
 
 	if (button_id != 1) {
 		return false;
 	}
 
 	s_browse_chosen = false;
-	SDL_ShowOpenFolderDialog(s_browse_callback, NULL, NULL, NULL, false);
+	dttr_sdl_show_open_folder_dialog(s_browse_callback, NULL, NULL, NULL, false);
 
 	while (!s_browse_chosen) {
-		SDL_PumpEvents();
-		SDL_Delay(10);
+		dttr_sdl_pump_events();
+		dttr_sdl_delay(10);
 	}
 
 	if (!s_browse_result[0]) {
@@ -87,7 +88,7 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 	s_utf8_to_wide_dir(wide_dir, s_browse_result);
 
 	if (!s_try_dir(out, wide_dir)) {
-		SDL_ShowSimpleMessageBox(
+		dttr_sdl_show_simple_message_box(
 			SDL_MESSAGEBOX_ERROR,
 			"DttR: Game Not Found",
 			"The selected folder does not contain pcdogs.exe.",
