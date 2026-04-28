@@ -86,7 +86,7 @@ tasks:
         {{ .ROOT_DIR | quote }}
       - >-
         {{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR | quote }}
-        -v {{ .ROOT_DIR | quote }}:/workspace -w /workspace "{{ .CONTAINER_IMAGE }}" sh -lc
+        -v {{ printf "%s:/workspace" .ROOT_DIR | quote }} -w /workspace "{{ .CONTAINER_IMAGE }}" sh -lc
         'rm -rf "build-container" && task build "BUILD_DIR=build-container"
         "DTTR_VERSION={{ .DTTR_VERSION }}" DTTR_COMPONENTS={{ .DTTR_COMPONENTS }}'
 

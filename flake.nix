@@ -85,25 +85,25 @@
               #!/usr/bin/env bash
               set -e
               base_pkgconfig="${sdl3}/i686-w64-mingw32/lib/pkgconfig"
-              export PKG_CONFIG_LIBDIR="''${base_pkgconfig}"
+              export PKG_CONFIG_LIBDIR="\''${base_pkgconfig}"
               exec "$(which pkg-config)" "\$@"
               WRAPPER
               chmod +x "$toolchain_dir/i686-w64-mingw32-pkg-config"
 
               cat > "$toolchain_dir/toolchain.cmake" <<CMAKE
-              get_filename_component(TOOLCHAIN_DIR "''${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+              get_filename_component(TOOLCHAIN_DIR "\''${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
               set(CMAKE_SYSTEM_NAME Windows)
               set(CMAKE_SYSTEM_PROCESSOR i686)
-              set(CMAKE_C_COMPILER "''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc")
-              set(CMAKE_CXX_COMPILER "''${TOOLCHAIN_DIR}/i686-w64-mingw32-g++")
-              set(CMAKE_AR "''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
-              set(CMAKE_RANLIB "''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
-              set(CMAKE_C_COMPILER_AR "''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
-              set(CMAKE_C_COMPILER_RANLIB "''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
-              set(CMAKE_RC_COMPILER "''${TOOLCHAIN_DIR}/i686-w64-mingw32-windres")
+              set(CMAKE_C_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc")
+              set(CMAKE_CXX_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-g++")
+              set(CMAKE_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
+              set(CMAKE_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
+              set(CMAKE_C_COMPILER_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
+              set(CMAKE_C_COMPILER_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
+              set(CMAKE_RC_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-windres")
               set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
               set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-              set(PKG_CONFIG_EXECUTABLE "''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
+              set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
               link_directories("${mcfg}/lib")
               add_link_options(-static-libgcc -static-libstdc++)
               set(CMAKE_CROSSCOMPILING_EMULATOR wine)
