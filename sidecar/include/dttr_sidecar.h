@@ -71,7 +71,7 @@ typedef enum {
 	DTTR_MOVIE_QUIT = 3,
 } DTTR_MovieResult;
 
-/// Initializes the video playback subsystem (creates mpv instance).
+/// Initializes the video playback subsystem.
 void dttr_movies_init(void);
 
 /// Installs video playback hooks.
@@ -83,17 +83,17 @@ void dttr_movies_hooks_cleanup(const DTTR_ComponentContext *ctx);
 /// Releases video playback subsystem resources.
 void dttr_movies_cleanup(void);
 
-/// Begins async playback of the movie at the given path.
+/// Starts movie playback for the given path.
 void dttr_movies_start(const char *path);
 
-/// Renders one frame (or EOF).
+/// Advances movie playback.
 void dttr_movies_tick(void);
 
 /// Handles input events for movie playback.
 /// Returns whether an event was consumed.
 bool dttr_movies_handle_event(const SDL_Event *event);
 
-/// Stops playback, drains mpv events, and returns DTTR_MovieResult.
+/// Stops playback and returns DTTR_MovieResult.
 DTTR_MovieResult dttr_movies_stop(void);
 
 /// Returns true if a movie is currently playing.

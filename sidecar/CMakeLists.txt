@@ -1,5 +1,8 @@
 set(DTTR_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/gen")
-set(DTTR_MPV_DIR "${CMAKE_SOURCE_DIR}/.toolchain/mpv")
+set(DTTR_FFMPEG_DIR "${CMAKE_SOURCE_DIR}/.toolchain/ffmpeg")
+set(DTTR_FFMPEG_LIBS avformat avcodec avutil swscale swresample)
+file(GLOB DTTR_FFMPEG_RUNTIME_DLLS "${DTTR_FFMPEG_DIR}/bin/*.dll")
+set(DTTR_FFMPEG_RUNTIME_DLLS ${DTTR_FFMPEG_RUNTIME_DLLS} PARENT_SCOPE)
 
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
@@ -33,7 +36,7 @@ target_include_directories(dttr_sidecar PRIVATE
     include
     "${CMAKE_SOURCE_DIR}/components/include"
     "${DTTR_SHADER_OUTPUT_DIR}"
-    "${DTTR_MPV_DIR}/include"
+    "${DTTR_FFMPEG_DIR}/include"
 )
 
 target_link_options(dttr_sidecar PRIVATE -static)
@@ -42,17 +45,21 @@ target_compile_definitions(dttr_sidecar PRIVATE
     DTTR_VERSION="${DTTR_VERSION}"
 )
 
-add_library(mpv SHARED IMPORTED)
-set_target_properties(mpv PROPERTIES
-    IMPORTED_IMPLIB "${DTTR_MPV_DIR}/libmpv.dll.a"
-    IMPORTED_LOCATION "${DTTR_MPV_DIR}/libmpv-2.dll"
-)
+set(DTTR_FFMPEG_TARGETS "")
+foreach(DTTR_FFMPEG_LIB IN LISTS DTTR_FFMPEG_LIBS)
+    set(DTTR_FFMPEG_TARGET "ffmpeg_${DTTR_FFMPEG_LIB}")
+    add_library(${DTTR_FFMPEG_TARGET} SHARED IMPORTED)
+    set_target_properties(${DTTR_FFMPEG_TARGET} PROPERTIES
+        IMPORTED_IMPLIB "${DTTR_FFMPEG_DIR}/lib/lib${DTTR_FFMPEG_LIB}.dll.a"
+    )
+    list(APPEND DTTR_FFMPEG_TARGETS ${DTTR_FFMPEG_TARGET})
+endforeach()
 
 target_link_libraries(dttr_sidecar PRIVATE
     kernel32
     psapi
 
-    mpv
+    ${DTTR_FFMPEG_TARGETS}
     glad
     Zydis
     sds
@@ -73,10 +80,11 @@ if(DTTR_COMPONENTS)
 endif()
 
 add_custom_command(TARGET dttr_sidecar POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_FILE_DIR:dttr_sidecar>/libmpv-2.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/.toolchain/sdl3/i686-w64-mingw32/bin/SDL3.dll"
         "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${DTTR_MPV_DIR}/libmpv-2.dll"
-        "$<TARGET_FILE_DIR:dttr_sidecar>/libmpv-2.dll"
+        ${DTTR_FFMPEG_RUNTIME_DLLS}
+        "$<TARGET_FILE_DIR:dttr_sidecar>"
 )

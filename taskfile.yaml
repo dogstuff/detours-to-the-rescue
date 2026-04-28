@@ -85,10 +85,15 @@ tasks:
         {{ .DOCKER }} build -t "{{ .CONTAINER_IMAGE }}" -f {{ .CONTAINERFILE_BUILD | quote }}
         {{ .ROOT_DIR | quote }}
       - >-
-        {{ .DOCKER }} run --rm -it -e DTTR_TOOLCHAIN_DIR={{ .TOOLCHAIN_DIR | quote }}
-        -v {{ printf "%s:/workspace" .ROOT_DIR | quote }} -w /workspace "{{ .CONTAINER_IMAGE }}" sh -lc
-        'rm -rf "build-container" && task build "BUILD_DIR=build-container"
-        "DTTR_VERSION={{ .DTTR_VERSION }}" DTTR_COMPONENTS={{ .DTTR_COMPONENTS }}'
+        bash ./scripts/container-build.sh
+        {{ .ROOT_DIR | quote }}
+        {{ .DOCKER | quote }}
+        {{ .CONTAINER_IMAGE | quote }}
+        {{ .TOOLCHAIN_DIR | quote }}
+        "build-container"
+        "{{ .DTTR_VERSION }}"
+        "{{ .GIT_SHORT_SHA }}"
+        {{ .DTTR_COMPONENTS }}
 
   format:
     cmds:

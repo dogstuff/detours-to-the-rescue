@@ -29,17 +29,58 @@
             url = "https://github.com/libsdl-org/SDL/releases/download/release-3.2.8/SDL3-devel-3.2.8-mingw.tar.gz";
             hash = "sha256-J6UOkXwaCoN+ZTp7nlmccjMWrgeNHpZP4MsCMTTMe/U=";
           };
-          mpv = pkgs.stdenv.mkDerivation {
-            name = "libmpv-dev-i686";
-            src = pkgs.fetchurl {
-              url = "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-i686-20260201-git-40d2947.7z/download";
-              hash = "sha256-UOHLNYHEX2gwB2+MC/wh4yCaweJU0k3zgq6HAUGBdsA=";
-            };
-            nativeBuildInputs = [ pkgs.p7zip ];
-            unpackPhase = "7z x $src";
-            installPhase = ''
-              mkdir -p $out
-              cp -r * $out/
+          ffmpegFlags = [
+            "--target-os=mingw32"
+            "--arch=x86"
+            "--enable-cross-compile"
+            "--disable-everything"
+            "--disable-autodetect"
+            "--disable-programs"
+            "--disable-doc"
+            "--disable-debug"
+            "--disable-network"
+            "--disable-avdevice"
+            "--disable-avfilter"
+            "--enable-small"
+            "--disable-static"
+            "--enable-shared"
+            "--enable-avcodec"
+            "--enable-avformat"
+            "--enable-avutil"
+            "--enable-swresample"
+            "--enable-swscale"
+            "--enable-protocol=file"
+            "--enable-demuxer=rpl"
+            "--enable-decoder=escape124"
+            "--enable-decoder=escape130"
+            "--enable-decoder=pcm_s16le"
+            "--enable-decoder=pcm_s8"
+            "--enable-decoder=pcm_u8"
+            "--enable-decoder=pcm_vidc"
+            "--enable-decoder=adpcm_ima_ea_sead"
+          ];
+          ffmpegFlagsText = pkgs.lib.concatStringsSep " \\\n                " ffmpegFlags;
+          ffmpeg = pkgs.pkgsCross.mingw32.stdenv.mkDerivation {
+            pname = "ffmpeg-rpl-i686";
+            version = pkgs.ffmpeg-headless.version;
+            src = pkgs.ffmpeg-headless.src;
+            nativeBuildInputs = [ pkgs.nasm pkgs.perl ];
+            configurePhase = ''
+              runHook preConfigure
+              cross_bin=${pkgs.pkgsCross.mingw32.stdenv.cc}/bin/${pkgs.pkgsCross.mingw32.stdenv.cc.targetPrefix}
+              ./configure \
+                --prefix=$out \
+                --cross-prefix=''${cross_bin} \
+                --cc=''${cross_bin}gcc \
+                --cxx=''${cross_bin}g++ \
+                --ar=''${cross_bin}ar \
+                --ranlib=''${cross_bin}ranlib \
+                --windres=''${cross_bin}windres \
+                --nm=''${cross_bin}nm \
+                --strip=''${cross_bin}strip \
+                --host-cc=${pkgs.stdenv.cc}/bin/cc \
+                ${ffmpegFlagsText}
+              runHook postConfigure
             '';
           };
           mcfg = pkgs.pkgsCross.mingw32.windows.mcfgthreads;
@@ -71,14 +112,19 @@
               toolchain_dir="''${DTTR_TOOLCHAIN_DIR:-.toolchain}"
               mkdir -p "$toolchain_dir"
               ln -sfn "${sdl3}" "$toolchain_dir/sdl3"
-              ln -sfn "${mpv}" "$toolchain_dir/mpv"
+              ln -sfn "${ffmpeg}" "$toolchain_dir/ffmpeg"
 
-              for tool in gcc g++ windres gcc-ar gcc-ranlib; do
+              write_tool_wrapper() {
+                tool="$1"
                 cat > "$toolchain_dir/i686-w64-mingw32-$tool" <<WRAPPER
               #!/usr/bin/env bash
               exec $(which i686-w64-mingw32-$tool) "\$@"
               WRAPPER
                 chmod +x "$toolchain_dir/i686-w64-mingw32-$tool"
+              }
+
+              for tool in gcc g++ windres gcc-ar gcc-ranlib; do
+                write_tool_wrapper "$tool"
               done
 
               cat > "$toolchain_dir/i686-w64-mingw32-pkg-config" <<WRAPPER
