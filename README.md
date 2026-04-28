@@ -55,10 +55,10 @@ dttr.exe path/to/my_config.jsonc
 
 ---
 
-## Components
+## Modding
 
 > [!WARNING]
-> The components API is experimental. It is incomplete and breaking changes may be made without warning.
+> The components/modding API is experimental. It is incomplete and breaking changes may be made without warning.
 
 Components are optional, dynamically loaded plugins that extend DttR without modifying core code.
 They live in `{my_dttr_dir}/components/` and load automatically at runtime.
