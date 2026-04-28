@@ -28,6 +28,7 @@ if(DTTR_MODDING)
 endif()
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>${DTTR_DIST_SUFFIX}")
+set(DTTR_DIST_MODULES_DIR "${DTTR_DIST_DIR}/modules")
 file(GENERATE
     OUTPUT "${DTTR_DIST_DIR}/dttr.jsonc"
     INPUT "${CMAKE_SOURCE_DIR}/common/dttr.jsonc"
@@ -35,12 +36,13 @@ file(GENERATE
 
 add_custom_target(dttr_dist ALL
     DEPENDS dttr dttr_sidecar
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E rm -f "${DTTR_DIST_DIR}/libmpv-2.dll"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_MODULES_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E rm -f "${DTTR_DIST_DIR}/*.dll"
+    COMMAND ${CMAKE_COMMAND} -E rm -f "${DTTR_DIST_MODULES_DIR}/libmpv-2.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:dttr> "${DTTR_DIST_DIR}/dttr.exe"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:dttr_sidecar> "${DTTR_DIST_DIR}/libdttr_sidecar.dll"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll" "${DTTR_DIST_DIR}/SDL3.dll"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DTTR_FFMPEG_RUNTIME_DLLS} "${DTTR_DIST_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:dttr_sidecar> "${DTTR_DIST_MODULES_DIR}/libdttr_sidecar.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll" "${DTTR_DIST_MODULES_DIR}/SDL3.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DTTR_FFMPEG_RUNTIME_DLLS} "${DTTR_DIST_MODULES_DIR}"
     COMMENT "Bundling runtime artifacts into ${DTTR_DIST_DIR}"
 )
 

@@ -4,14 +4,20 @@ pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 
 add_library(common STATIC
     src/crashdump.c
+    src/sdl.c
     src/config/defaults.c
     src/config/parse.c
     src/config/schema.c
     src/config/io.c
 )
-target_include_directories(common PUBLIC include)
+target_include_directories(common PUBLIC
+    include
+    ${SDL3_INCLUDE_DIRS}
+)
+target_compile_options(common PUBLIC
+    ${SDL3_CFLAGS_OTHER}
+)
 target_link_libraries(common
-    PUBLIC PkgConfig::SDL3
     PRIVATE sds klib log dbghelp yyjson
 )
 target_compile_definitions(common PRIVATE

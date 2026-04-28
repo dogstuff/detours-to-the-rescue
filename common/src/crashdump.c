@@ -173,7 +173,12 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 #endif
 
 	message = sdscat(message, DTTR_REPORT_SUFFIX);
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "crash jumpscare", message, NULL);
+	dttr_sdl_show_simple_message_box(
+		SDL_MESSAGEBOX_ERROR,
+		"crash jumpscare",
+		message,
+		NULL
+	);
 	sdsfree(message);
 	sdsfree(filename);
 	ExitProcess(1);

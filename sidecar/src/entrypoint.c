@@ -91,16 +91,30 @@ static void s_compute_exe_hash(void) {
 	);
 }
 
-static sds s_get_loader_dir(void) {
-	char buf[MAX_PATH];
-	GetModuleFileNameA(g_dttr_sidecar_module, buf, sizeof(buf));
-
-	char *last_sep = strrchr(buf, '\\');
-	if (last_sep) {
-		last_sep[1] = '\0';
+static bool s_pop_path_component(char *path) {
+	char *const last_sep = strrchr(path, '\\');
+	if (!last_sep) {
+		return false;
 	}
 
-	return sdsnew(buf);
+	last_sep[0] = '\0';
+	return true;
+}
+
+static sds s_get_loader_dir(void) {
+	char module_path[MAX_PATH];
+	GetModuleFileNameA(g_dttr_sidecar_module, module_path, sizeof(module_path));
+
+	if (!s_pop_path_component(module_path)) {
+		return sdsnew(module_path);
+	}
+
+	char *const module_dir = strrchr(module_path, '\\');
+	if (module_dir && _stricmp(module_dir + 1, "modules") == 0) {
+		module_dir[0] = '\0';
+	}
+
+	return sdscat(sdsnew(module_path), "\\");
 }
 
 static void s_handle_sdl_event(const SDL_Event *event) {
