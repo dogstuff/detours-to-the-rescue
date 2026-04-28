@@ -39,7 +39,7 @@ All known retail PC releases of 102 Dalmatians: Puppies to the Rescue are suppor
 
 ---
 
-## Getting started
+## Getting Started
 
 1. Download the latest DttR build from the [release page](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases).
 2. Extract the archive to a folder of your choice.
@@ -59,16 +59,19 @@ dttr.exe path/to/my_config.jsonc
 
 ## Components
 
+> [!WARNING]
+> The components API is currently experimental, meaning it is incomplete and breaking changes will likely be made without warning. 
+
 Components are optional, dynamically loaded plugins that extend DttR without modifying core code.
 They live in `{my_dttr_dir}/components/` and load automatically at runtime.
 
 Components have access to the same hooking, patching, and scanning APIs as the core sidecar code.
 
-### Components Builds
+### Modding Builds
 
 The **normal build** (`dttr-vX.X.X-release.zip`) does not include the component loading system. This version is intended to run the visual game with as few modifications as possible.
 
-The **components build** (`dttr-components-vX.X.X-release.zip`) includes the component loading system and all bundled components.
+The **modding build** (`dttr-modding-vX.X.X-release.zip`) includes the component loading system and all bundled components.
 This version is **not** allowed on the speedrun.com leaderboards and currently overlays a watermark.
 
 Each release provides both build variants as separate downloads.
@@ -81,7 +84,7 @@ This project's build system relies on [Nix](https://github.com/NixOS/nix) for to
 
 Sorry, Windows users; you can figure this out on your own.
 
-### Nix flake
+### Nix Flake
 
 ```sh
 nix develop
@@ -91,7 +94,7 @@ task build
 
 This pulls in the cross-compiler, SDL3, VLC, NASM, and the remaining build dependencies automatically.
 
-### Container build
+### Container Build
 
 Build the project inside a container:
 

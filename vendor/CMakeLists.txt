@@ -31,7 +31,7 @@ add_subdirectory(zydis)
 
 add_subdirectory(glad)
 
-if(DTTR_COMPONENTS)
+if(DTTR_MODDING)
     enable_language(CXX)
     add_subdirectory(cimgui)
 endif()

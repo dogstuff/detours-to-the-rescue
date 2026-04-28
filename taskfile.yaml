@@ -11,7 +11,7 @@ vars:
 
   DTTR_VERSION: "{{.DTTR_VERSION | default .GIT_SHORT_SHA}}"
 
-  DTTR_COMPONENTS: "OFF"
+  DTTR_MODDING: "OFF"
 
   DOCKER: podman
   CONTAINER_IMAGE: dttr-toolchain
@@ -40,7 +40,7 @@ tasks:
         cmake -G "Ninja Multi-Config" -B {{ .BUILD_DIR | quote }}
         -DCMAKE_TOOLCHAIN_FILE={{ .TOOLCHAIN_FILE | quote }}
         -DDTTR_VERSION="{{ .DTTR_VERSION }}"
-        -DDTTR_COMPONENTS={{ .DTTR_COMPONENTS }}
+        -DDTTR_MODDING={{ .DTTR_MODDING }}
 
   clean:
     cmds:
@@ -93,7 +93,7 @@ tasks:
         "build-container"
         "{{ .DTTR_VERSION }}"
         "{{ .GIT_SHORT_SHA }}"
-        {{ .DTTR_COMPONENTS }}
+        {{ .DTTR_MODDING }}
 
   format:
     cmds:

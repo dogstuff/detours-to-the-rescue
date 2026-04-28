@@ -18,7 +18,7 @@
 #include "hook_registry_internal.h"
 #include <xxhash.h>
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 #include "components/components_internal.h"
 #include "graphics/imgui_overlay_internal.h"
 #endif
@@ -104,7 +104,7 @@ static sds s_get_loader_dir(void) {
 }
 
 static void s_handle_sdl_event(const SDL_Event *event) {
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	dttr_imgui_process_event(event);
 
 	if (dttr_components_handle_event(event)) {
@@ -158,7 +158,7 @@ static void s_poll_sdl_events(void) {
 }
 
 static void s_cleanup_runtime(const DTTR_ComponentContext *ctx) {
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	dttr_components_cleanup();
 	dttr_imgui_cleanup();
 #endif
@@ -186,7 +186,7 @@ static void s_tick_main_loop(void) {
 		pcdogs_render_frame();
 	}
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	dttr_components_tick();
 #endif
 }
@@ -278,7 +278,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_movies_init();
 	dttr_movies_hooks_init(ctx);
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	dttr_imgui_init(
 		dttr_graphics_get_window(),
 		dttr_graphics_get_device(),

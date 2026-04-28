@@ -15,7 +15,7 @@
       "toolchainFile": "${sourceDir}/.toolchain/toolchain.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "DTTR_COMPONENTS": "ON"
+        "DTTR_MODDING": "ON"
       }
     }
   ],

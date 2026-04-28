@@ -9,7 +9,7 @@
 
 #include <dttr_config.h>
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 #include "../components/components_internal.h"
 #include "imgui_overlay_internal.h"
 #endif
@@ -752,7 +752,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 		s_replay_batch_records_gl(state, gl);
 	}
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	dttr_imgui_render_game_opengl();
 #endif
 
@@ -815,7 +815,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 		blit_filter
 	);
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	dttr_imgui_render_opengl(
 		(uint32_t)present.x,

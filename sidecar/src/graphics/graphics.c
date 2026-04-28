@@ -46,8 +46,8 @@ static void s_update_window_title(const DTTR_BackendState *state) {
 	sdsclear(s_window_title);
 	s_window_title = sdscatprintf(
 		s_window_title,
-#ifdef DTTR_COMPONENTS_ENABLED
-		"102 Dalmatians - DttR - Components - " DTTR_VERSION " - %s - %dx%d",
+#ifdef DTTR_MODDING_ENABLED
+		"102 Dalmatians - DttR - Modding - " DTTR_VERSION " - %s - %dx%d",
 #else
 		"102 Dalmatians - DttR - " DTTR_VERSION " - %s - %dx%d",
 #endif

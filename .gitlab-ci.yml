@@ -37,11 +37,11 @@ build:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug.zip Debug/ && zip -r ../../dttr-components-${CI_COMMIT_SHORT_SHA}-debug.zip Debug-components/"
+    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_MODDING=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug.zip Debug/ && zip -r ../../dttr-modding-${CI_COMMIT_SHORT_SHA}-debug.zip Debug-modding/"
   artifacts:
     paths:
       - dttr-*-debug.zip
-      - dttr-components-*-debug.zip
+      - dttr-modding-*-debug.zip
     expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
@@ -52,13 +52,13 @@ build-release:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} && task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_COMPONENTS=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug.zip Debug/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release.zip Release/ && zip -r ../../dttr-components-${CI_COMMIT_TAG}-debug.zip Debug-components/ && zip -r ../../dttr-components-${CI_COMMIT_TAG}-release.zip Release-components/"
+    - nix develop --command bash -c "task build-release DTTR_VERSION=${CI_COMMIT_TAG} && task build-release DTTR_VERSION=${CI_COMMIT_TAG} DTTR_MODDING=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_TAG}-debug.zip Debug/ && zip -r ../../dttr-${CI_COMMIT_TAG}-release.zip Release/ && zip -r ../../dttr-modding-${CI_COMMIT_TAG}-debug.zip Debug-modding/ && zip -r ../../dttr-modding-${CI_COMMIT_TAG}-release.zip Release-modding/"
   artifacts:
     paths:
       - dttr-*-debug.zip
       - dttr-*-release.zip
-      - dttr-components-*-debug.zip
-      - dttr-components-*-release.zip
+      - dttr-modding-*-debug.zip
+      - dttr-modding-*-release.zip
     expire_in: 2 weeks
   rules:
     - if: $CI_COMMIT_TAG
@@ -103,15 +103,15 @@ release:
           url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-release.zip"
         - name: "dttr-${CI_COMMIT_TAG}-debug.zip"
           url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-${CI_COMMIT_TAG}-debug.zip"
-        - name: "dttr-components-${CI_COMMIT_TAG}-release.zip"
-          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-components-${CI_COMMIT_TAG}-release.zip"
-        - name: "dttr-components-${CI_COMMIT_TAG}-debug.zip"
-          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-components-${CI_COMMIT_TAG}-debug.zip"
+        - name: "dttr-modding-${CI_COMMIT_TAG}-release.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-modding-${CI_COMMIT_TAG}-release.zip"
+        - name: "dttr-modding-${CI_COMMIT_TAG}-debug.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/dttr-modding-${CI_COMMIT_TAG}-debug.zip"
   artifacts:
     paths:
       - dttr-*-release.zip
       - dttr-*-debug.zip
-      - dttr-components-*-release.zip
-      - dttr-components-*-debug.zip
+      - dttr-modding-*-release.zip
+      - dttr-modding-*-debug.zip
   rules:
     - if: $CI_COMMIT_TAG

@@ -9,7 +9,7 @@ if(NOT DEFINED DTTR_VERSION)
     set(DTTR_VERSION "${PROJECT_VERSION}")
 endif()
 
-option(DTTR_COMPONENTS "Enable component loading system" OFF)
+option(DTTR_MODDING "Enable modding build with component loading system" OFF)
 
 if(NOT WIN32)
     message(FATAL_ERROR
@@ -23,8 +23,8 @@ add_subdirectory(sidecar)
 add_subdirectory(loader)
 
 set(DTTR_DIST_SUFFIX "")
-if(DTTR_COMPONENTS)
-    set(DTTR_DIST_SUFFIX "-components")
+if(DTTR_MODDING)
+    set(DTTR_DIST_SUFFIX "-modding")
 endif()
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>${DTTR_DIST_SUFFIX}")
@@ -44,7 +44,7 @@ add_custom_target(dttr_dist ALL
     COMMENT "Bundling runtime artifacts into ${DTTR_DIST_DIR}"
 )
 
-if(DTTR_COMPONENTS)
+if(DTTR_MODDING)
     add_custom_command(TARGET dttr_dist POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_DIR}/components"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_DIR}/include"

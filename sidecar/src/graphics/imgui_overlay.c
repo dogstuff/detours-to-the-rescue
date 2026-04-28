@@ -1,4 +1,4 @@
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 
 #include "../components/components_internal.h"
 #include "imgui_overlay_internal.h"
@@ -262,4 +262,4 @@ void dttr_imgui_render_opengl(
 	));
 }
 
-#endif /* DTTR_COMPONENTS_ENABLED */
+#endif /* DTTR_MODDING_ENABLED */

@@ -69,12 +69,12 @@ target_link_libraries(dttr_sidecar PRIVATE
     common
 )
 
-if(DTTR_COMPONENTS)
+if(DTTR_MODDING)
     target_sources(dttr_sidecar PRIVATE
         src/components/components.c
         src/graphics/imgui_overlay.c
     )
-    target_compile_definitions(dttr_sidecar PRIVATE DTTR_COMPONENTS_ENABLED)
+    target_compile_definitions(dttr_sidecar PRIVATE DTTR_MODDING_ENABLED)
     target_link_libraries(dttr_sidecar PRIVATE cimgui_static stdc++)
     target_link_options(dttr_sidecar PRIVATE -Wl,--export-all-symbols)
 endif()

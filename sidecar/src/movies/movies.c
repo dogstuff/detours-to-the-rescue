@@ -252,7 +252,7 @@ static bool s_open_movie(const char *path) {
 static double s_video_pts_seconds(const int64_t pts) {
 	if (pts == AV_NOPTS_VALUE) {
 		return s_movie.has_timing_origin ? s_movie.last_video_pts + s_movie.frame_duration
-									 : 0.0;
+										 : 0.0;
 	}
 
 	const AVStream *stream = s_movie.format->streams[s_movie.video_stream];

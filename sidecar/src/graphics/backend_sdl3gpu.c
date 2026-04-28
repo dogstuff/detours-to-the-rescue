@@ -9,7 +9,7 @@
 #include <dttr_config.h>
 #include <dttr_sidecar.h>
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 #include "../components/components_internal.h"
 #include "imgui_overlay_internal.h"
 #endif
@@ -1108,7 +1108,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 	state->m_perf_pipeline_binds_accum += replay_stats.pipeline_bind_count;
 	state->m_perf_sampler_binds_accum += replay_stats.sampler_bind_count;
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 	dttr_imgui_render_game_sdl3gpu(
 		state->m_cmd,
 		state->m_render_target,
@@ -1155,7 +1155,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 		};
 		SDL_BlitGPUTexture(state->m_cmd, &blit);
 
-#ifdef DTTR_COMPONENTS_ENABLED
+#ifdef DTTR_MODDING_ENABLED
 		dttr_imgui_render_sdl3gpu(
 			state->m_cmd,
 			state->m_swapchain_tex,
