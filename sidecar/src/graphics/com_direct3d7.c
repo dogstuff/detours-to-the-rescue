@@ -3,11 +3,18 @@
 
 #define INITGUID
 #include "graphics_com_internal.h"
-#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 
-DTTR_Graphics_COM_Direct3DDevice7 *g_dttr_direct3d7_device;
+static DTTR_Graphics_COM_Direct3DDevice7 *s_d3d7_device;
+
+static DTTR_Graphics_COM_Direct3DDevice7 *s_d3d7_get_device(void) {
+	if (!s_d3d7_device) {
+		s_d3d7_device = dttr_graphics_com_create_direct3ddevice7();
+	}
+
+	return s_d3d7_device;
+}
 
 DTTR_COM_QI_SELF(s_d3d7_query_interface, DTTR_Graphics_COM_Direct3D7)
 
@@ -68,13 +75,10 @@ static HRESULT __stdcall s_d3d7_createdevice(
 	void *surf,
 	void **dev
 ) {
-
-	if (!g_dttr_direct3d7_device) {
-		g_dttr_direct3d7_device = dttr_graphics_com_create_direct3ddevice7();
-	}
+	DTTR_Graphics_COM_Direct3DDevice7 *device = s_d3d7_get_device();
 
 	if (dev) {
-		*dev = g_dttr_direct3d7_device;
+		*dev = device;
 	}
 
 	return S_OK;
@@ -86,7 +90,6 @@ static HRESULT __stdcall s_d3d7_createvertexbuffer(
 	void **vb,
 	DWORD flags
 ) {
-
 	if (vb) {
 		*vb = NULL;
 	}

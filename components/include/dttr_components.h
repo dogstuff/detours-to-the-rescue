@@ -1,7 +1,7 @@
 /// DttR component API.
 ///
-/// A component is a shared library (.dll) placed in the DttR `components/` directory
-/// that is discovered and loaded during the sidecar startup process.
+/// Components are shared libraries (.dll) placed in the DttR `components/`
+/// directory and loaded during sidecar startup.
 ///
 /// Required exports:
 ///
@@ -31,9 +31,8 @@
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 #else
-// Minimal stand-ins so the header parses on non-Windows hosts (e.g. clangd on
-// macOS/Linux).  These are never used at runtime -- components are always
-// compiled with a Windows cross-compiler.
+// Minimal stand-ins so the header parses on non-Windows hosts. Components still
+// build only with the Windows cross-compiler.
 typedef void *HMODULE;
 typedef void *HINSTANCE;
 typedef int BOOL;
@@ -43,8 +42,6 @@ typedef void *LPVOID;
 #define TRUE 1
 #define FALSE 0
 #endif
-
-#include <cimgui.h>
 
 // Forward declarations for components that do not include SDL3/SDL.h.
 #ifndef SDL_h_

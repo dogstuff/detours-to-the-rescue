@@ -56,12 +56,7 @@ int main(const int argc, char *argv[]) {
 
 	SetEnvironmentVariableA("DTTR_CONFIG_PATH", g_dttr_config_path);
 
-	/// Includes the packed and bundled in-memory compatibility SDB,
-	/// and injects it into the pcdogs.exe child process.
-	///
-	/// This overrides any compatibility shims applied by Windows, which
-	/// resolves the EmulateHeap corruption issue that occurs on Intel
-	/// integrated graphics.
+	// Override Windows compatibility shims before the sidecar starts.
 	PROCESS_INFORMATION child_info = {0};
 	dttr_compat_create_process(
 		exe_path,

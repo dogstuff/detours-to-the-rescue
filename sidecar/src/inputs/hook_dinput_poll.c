@@ -29,6 +29,35 @@ enum {
 /// DirectInput uses this byte value to indicate a button is pressed
 #define DINPUT_BUTTON_PRESSED 0x80
 
+static void s_init_poll_state(S_DIJoyState *state) {
+	memset(state, 0, sizeof(*state));
+
+	for (int i = 0; i < 4; i++) {
+		state->m_pov[i] = DINPUT_POV_CENTERED;
+	}
+}
+
+static void s_apply_direction_state(
+	S_DIJoyState *state,
+	bool dir_up,
+	bool dir_down,
+	bool dir_left,
+	bool dir_right
+) {
+	if (dir_up) {
+		state->m_y = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+	if (dir_down) {
+		state->m_y = DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+	if (dir_left) {
+		state->m_x = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+	if (dir_right) {
+		state->m_x = DTTR_DINPUT_AXIS_FULL_DEFLECTION;
+	}
+}
+
 static bool s_is_source_pressed(int source) {
 	if (!g_dttr_gamepad) {
 		return false;
@@ -61,18 +90,14 @@ static LONG s_read_axis(int axis_idx) {
 }
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
-	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(S_DIJoyState));
+	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(*state));
 
 	if (!state) {
 		log_error("Failed to allocate joystick poll state");
 		return NULL;
 	}
 
-	memset(state, 0, sizeof(S_DIJoyState));
-
-	for (int i = 0; i < 4; i++) {
-		state->m_pov[i] = DINPUT_POV_CENTERED;
-	}
+	s_init_poll_state(state);
 
 	if (!g_dttr_gamepad || !g_dttr_config.m_gamepad_enabled) {
 		return state;
@@ -105,18 +130,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 		}
 	}
 
-	if (dir_up) {
-		state->m_y = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
-	if (dir_down) {
-		state->m_y = +DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
-	if (dir_left) {
-		state->m_x = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
-	if (dir_right) {
-		state->m_x = +DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
+	s_apply_direction_state(state, dir_up, dir_down, dir_left, dir_right);
 
 	return state;
 }

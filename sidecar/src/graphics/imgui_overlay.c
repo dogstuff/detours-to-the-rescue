@@ -57,8 +57,11 @@ void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType
 }
 
 void dttr_imgui_cleanup(void) {
-	s_backend_type == DTTR_BACKEND_SDL_GPU ? cImGui_ImplSDLGPU3_Shutdown()
-										   : ImGui_ImplOpenGL3_Shutdown();
+	if (s_backend_type == DTTR_BACKEND_SDL_GPU) {
+		cImGui_ImplSDLGPU3_Shutdown();
+	} else {
+		ImGui_ImplOpenGL3_Shutdown();
+	}
 
 	ImGui_ImplSDL3_Shutdown();
 	igDestroyContext(NULL);
@@ -80,8 +83,11 @@ static void s_flush_buffered_events(void) {
 }
 
 static void s_backend_new_frame(void) {
-	s_backend_type == DTTR_BACKEND_SDL_GPU ? cImGui_ImplSDLGPU3_NewFrame()
-										   : ImGui_ImplOpenGL3_NewFrame();
+	if (s_backend_type == DTTR_BACKEND_SDL_GPU) {
+		cImGui_ImplSDLGPU3_NewFrame();
+	} else {
+		ImGui_ImplOpenGL3_NewFrame();
+	}
 }
 
 static void s_new_frame(void) {

@@ -32,8 +32,18 @@ static DTTR_Graphics_COM_DirectDraw7 *s_get_or_create_ddraw7(void) {
 	return g_dttr_graphics_hook_ddraw7;
 }
 
-// Returns our DDraw7 translator for DirectDrawCreateEx
-// https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawcreateex
+static void s_store_pointer(void **slot, void *value) {
+	DWORD old = 0;
+
+	if (!VirtualProtect(slot, sizeof(*slot), PAGE_READWRITE, &old)) {
+		log_error("VirtualProtect failed for slot=%p error=%lu", slot, GetLastError());
+		return;
+	}
+
+	*slot = value;
+	VirtualProtect(slot, sizeof(*slot), old, &old);
+}
+
 HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 	const void *guid,
 	void **ddraw_out,
@@ -49,17 +59,7 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 	g_pcdogs_ddraw_object_set(ddraw7);
 
 	if (ddraw_out) {
-		DWORD old;
-		if (!VirtualProtect(ddraw_out, sizeof(void *), PAGE_READWRITE, &old)) {
-			log_error(
-				"VirtualProtect failed for ddraw_out=%p error=%lu",
-				ddraw_out,
-				GetLastError()
-			);
-		} else {
-			*ddraw_out = ddraw7;
-			VirtualProtect(ddraw_out, sizeof(void *), old, &old);
-		}
+		s_store_pointer(ddraw_out, ddraw7);
 	}
 
 	log_debug("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);

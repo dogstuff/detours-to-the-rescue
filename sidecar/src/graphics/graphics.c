@@ -27,6 +27,11 @@ static const S_BackendCandidate s_backend_candidates[] = {
 
 static sds s_window_title = NULL;
 
+typedef struct {
+	int start;
+	int end;
+} S_BackendRange;
+
 static void s_update_window_title(const DTTR_BackendState *state) {
 	int w = 0, h = 0;
 	SDL_GetWindowSizeInPixels(state->m_window, &w, &h);
@@ -155,6 +160,26 @@ static HWND s_get_hwnd(SDL_Window *window) {
 	return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 }
 
+static void s_destroy_window(DTTR_BackendState *state) {
+	if (!state->m_window) {
+		return;
+	}
+
+	SDL_DestroyWindow(state->m_window);
+	state->m_window = NULL;
+}
+
+static S_BackendRange s_select_backend_range(DTTR_GraphicsApi api) {
+	switch (api) {
+	case DTTR_GRAPHICS_API_OPENGL:
+		return (S_BackendRange){S_IDX_OPENGL, S_IDX_OPENGL};
+	case DTTR_GRAPHICS_API_AUTO:
+		return (S_BackendRange){S_IDX_SDL_GPU, S_BACKEND_COUNT - 1};
+	default:
+		return (S_BackendRange){S_IDX_SDL_GPU, S_IDX_SDL_GPU};
+	}
+}
+
 HWND dttr_graphics_init(void) {
 	DTTR_BackendState *state = &g_dttr_backend;
 
@@ -174,25 +199,12 @@ HWND dttr_graphics_init(void) {
 	state->m_logical_height = WINDOW_HEIGHT;
 	s_select_render_resolution(state, &state->m_width, &state->m_height);
 
-	int start = S_IDX_SDL_GPU;
-	int end = S_IDX_SDL_GPU;
+	const S_BackendRange backend_range = s_select_backend_range(
+		g_dttr_config.m_graphics_api
+	);
 
-	switch (g_dttr_config.m_graphics_api) {
-	case DTTR_GRAPHICS_API_OPENGL:
-		start = end = S_IDX_OPENGL;
-		break;
-	case DTTR_GRAPHICS_API_AUTO:
-		end = S_BACKEND_COUNT - 1;
-		break;
-	default:
-		break;
-	}
-
-	for (int i = start; i <= end; i++) {
-		if (state->m_window) {
-			SDL_DestroyWindow(state->m_window);
-			state->m_window = NULL;
-		}
+	for (int i = backend_range.start; i <= backend_range.end; i++) {
+		s_destroy_window(state);
 
 		state->m_window = SDL_CreateWindow(
 			"102 Dalmatians",
@@ -233,17 +245,11 @@ HWND dttr_graphics_init(void) {
 		}
 
 		log_error("%s", msg);
-
-		// We don't use SDL_ShowSimpleMessage here because
-		// it doesn't wanna work here?? (idk bro)
 		MessageBoxA(NULL, msg, "DttR: Error", MB_OK | MB_ICONERROR);
 		sdsfree(msg);
 	}
 
-	if (state->m_window) {
-		SDL_DestroyWindow(state->m_window);
-		state->m_window = NULL;
-	}
+	s_destroy_window(state);
 
 	return NULL;
 }
@@ -317,7 +323,10 @@ void dttr_graphics_cleanup(void) {
 
 	DTTR_BackendState *state = &g_dttr_backend;
 
-	state->m_renderer->cleanup(state);
+	if (state->m_renderer) {
+		state->m_renderer->cleanup(state);
+		state->m_renderer = NULL;
+	}
 
 	if (state->m_texture_mutex) {
 		SDL_DestroyMutex(state->m_texture_mutex);
@@ -330,9 +339,7 @@ void dttr_graphics_cleanup(void) {
 	kv_init(state->m_pending_upload_indices);
 	kv_init(state->m_batch_records);
 
-	if (state->m_window) {
-		SDL_DestroyWindow(state->m_window);
-	}
+	s_destroy_window(state);
 
 	SDL_Quit();
 }

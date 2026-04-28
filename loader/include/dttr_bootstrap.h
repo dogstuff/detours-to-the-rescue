@@ -62,15 +62,15 @@ enum {
 };
 
 typedef struct {
-	// Sidecar DLL path (absolute)
+	// Absolute sidecar DLL path
 	char m_dll_path[MAX_PATH]; // 0x0
 
-	// Various diagnostics
+	// Diagnostics
 	uint32_t m_status;	   // 0x104
 	uint32_t m_module;	   // 0x108
 	uint32_t m_last_error; // 0x10C
 
-	// Restore original entrypoint
+	// Original game entrypoint
 	uint32_t m_original_entry; // 0x110
 
 	// Embedded kernel32.dll as UTF-16LE
@@ -81,7 +81,7 @@ typedef struct {
 	char m_exitthread_name[sizeof("ExitThread")];		 // 0x13D
 	char m_getlasterror_name[sizeof("GetLastError")];	 // 0x148
 
-	// Sidecar-resolved ExitThread pointer used after the original entry returns
+	// Sidecar-resolved ExitThread pointer used after the entrypoint returns
 	uint32_t m_exitthread; // 0x158
 } DTTR_LoaderShellcodePayload;
 

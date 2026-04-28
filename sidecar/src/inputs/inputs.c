@@ -27,6 +27,15 @@ static void s_try_open_configured_gamepad(void) {
 	SDL_free(joysticks);
 }
 
+static void s_close_gamepad(void) {
+	if (!g_dttr_gamepad) {
+		return;
+	}
+
+	SDL_CloseGamepad(g_dttr_gamepad);
+	g_dttr_gamepad = NULL;
+}
+
 void dttr_inputs_init(void) {
 	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
 		log_error("SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
@@ -64,8 +73,7 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 	if (event->type == SDL_EVENT_GAMEPAD_REMOVED && g_dttr_gamepad
 		&& SDL_GetGamepadID(g_dttr_gamepad) == event->gdevice.which) {
 		log_info("Gamepad disconnected: %s", SDL_GetGamepadName(g_dttr_gamepad));
-		SDL_CloseGamepad(g_dttr_gamepad);
-		g_dttr_gamepad = NULL;
+		s_close_gamepad();
 		g_pcdogs_joystick_available_set(0);
 	}
 }
@@ -84,9 +92,4 @@ void dttr_inputs_hooks_cleanup(const DTTR_ComponentContext *ctx) {
 	DTTR_UNINSTALL(dttr_inputs_hook_get_async_key_state, ctx);
 }
 
-void dttr_inputs_cleanup(void) {
-	if (g_dttr_gamepad) {
-		SDL_CloseGamepad(g_dttr_gamepad);
-		g_dttr_gamepad = NULL;
-	}
-}
+void dttr_inputs_cleanup(void) { s_close_gamepad(); }

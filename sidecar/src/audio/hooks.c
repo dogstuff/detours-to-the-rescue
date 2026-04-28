@@ -4,11 +4,21 @@
 
 #include <SDL3/SDL.h>
 
+typedef void(__cdecl *DTTR_AudioTrampoline)(void);
+
 static bool s_has_playback_devices(void) {
 	int count = 0;
 	SDL_AudioDeviceID *devices = SDL_GetAudioPlaybackDevices(&count);
 	SDL_free(devices);
 	return count > 0;
+}
+
+static bool s_has_audio_driver(void) {
+	return g_pcdogs_audio_digital_driver_get() != NULL;
+}
+
+static void s_run_audio_trampoline(void *trampoline) {
+	((DTTR_AudioTrampoline)trampoline)();
 }
 
 void __cdecl dttr_hook_audio_init_system_callback(void) {
@@ -17,36 +27,36 @@ void __cdecl dttr_hook_audio_init_system_callback(void) {
 		return;
 	}
 
-	((void(__cdecl *)(void))dttr_hook_audio_init_system_trampoline)();
+	s_run_audio_trampoline(dttr_hook_audio_init_system_trampoline);
 }
 
 void __cdecl dttr_hook_audio_stop_all_sounds_callback(void) {
-	if (g_pcdogs_audio_digital_driver_get() == NULL) {
+	if (!s_has_audio_driver()) {
 		return;
 	}
 
-	((void(__cdecl *)(void))dttr_hook_audio_stop_all_sounds_trampoline)();
+	s_run_audio_trampoline(dttr_hook_audio_stop_all_sounds_trampoline);
 }
 
 void __cdecl dttr_hook_audio_init_level_audio_callback(void) {
-	if (g_pcdogs_audio_digital_driver_get() == NULL) {
+	if (!s_has_audio_driver()) {
 		return;
 	}
 
-	((void(__cdecl *)(void))dttr_hook_audio_init_level_audio_trampoline)();
+	s_run_audio_trampoline(dttr_hook_audio_init_level_audio_trampoline);
 }
 
 void __cdecl dttr_hook_audio_stop_all_samples_callback(void) {
-	if (g_pcdogs_audio_digital_driver_get() == NULL) {
+	if (!s_has_audio_driver()) {
 		return;
 	}
 
-	((void(__cdecl *)(void))dttr_hook_audio_stop_all_samples_trampoline)();
+	s_run_audio_trampoline(dttr_hook_audio_stop_all_samples_trampoline);
 }
 
 void dttr_audio_handle_device_event(const SDL_Event *event) {
 	if (event->type == SDL_EVENT_AUDIO_DEVICE_REMOVED) {
-		if (g_pcdogs_audio_digital_driver_get() == NULL) {
+		if (!s_has_audio_driver()) {
 			return;
 		}
 
@@ -56,21 +66,20 @@ void dttr_audio_handle_device_event(const SDL_Event *event) {
 
 		log_warn("Audio device removed, shutting down audio subsystem");
 		pcdogs_audio_shutdown_system();
+		return;
 	}
 
-	if (event->type == SDL_EVENT_AUDIO_DEVICE_ADDED) {
-		if (g_pcdogs_audio_digital_driver_get() != NULL) {
-			return;
-		}
+	if (event->type != SDL_EVENT_AUDIO_DEVICE_ADDED || s_has_audio_driver()) {
+		return;
+	}
 
-		log_info("Audio device connected, reinitializing audio");
-		dttr_hook_audio_init_system_callback();
+	log_info("Audio device connected, reinitializing audio");
+	dttr_hook_audio_init_system_callback();
 
-		if (g_pcdogs_audio_digital_driver_get() != NULL) {
-			log_info("Audio reinitialized successfully");
-		} else {
-			log_warn("Audio reinitialization failed");
-		}
+	if (s_has_audio_driver()) {
+		log_info("Audio reinitialized successfully");
+	} else {
+		log_warn("Audio reinitialization failed");
 	}
 }
 

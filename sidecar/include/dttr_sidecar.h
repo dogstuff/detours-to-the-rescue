@@ -12,7 +12,7 @@
 
 #include "game_api_internal.h"
 
-// Handle to the injected sidecar DLL itself.
+// Handle to the injected sidecar DLL.
 extern HINSTANCE g_dttr_sidecar_module;
 
 // Directory containing the loader DLL, with a trailing backslash.
@@ -21,22 +21,22 @@ extern char g_dttr_loader_dir[MAX_PATH];
 // 16-character lowercase hex XXH3_64 hash of the game executable.
 extern char g_dttr_exe_hash[17];
 
-/// Initializes the SDL graphics backend and returns the game window handle
+/// Initializes the graphics backend and returns the game window handle.
 HWND dttr_graphics_init(void);
 
-/// Releases all graphics resources and shuts down the SDL graphics backend
+/// Releases all graphics resources and shuts down the graphics backend.
 void dttr_graphics_cleanup(void);
 
-/// Returns the main game window
+/// Returns the main game window.
 SDL_Window *dttr_graphics_get_window(void);
 
 /// Returns the GPU device.
 SDL_GPUDevice *dttr_graphics_get_device(void);
 
-/// Applies runtime window resize to rendering policy
+/// Applies runtime window resize to rendering policy.
 void dttr_graphics_handle_window_resize(int width, int height);
 
-/// Uploads and presents one BGRA video frame directly to the swapchain
+/// Uploads and presents one BGRA video frame directly to the swapchain.
 bool dttr_graphics_present_video_frame_bgra(
 	const uint8_t *pixels,
 	int width,
@@ -46,22 +46,22 @@ bool dttr_graphics_present_video_frame_bgra(
 
 extern SDL_Gamepad *g_dttr_gamepad;
 
-/// Initializes SDL gamepad subsystem
+/// Initializes the SDL gamepad subsystem.
 void dttr_inputs_init(void);
 
-/// Installs input hooks
+/// Installs input hooks.
 void dttr_inputs_hooks_init(const DTTR_ComponentContext *ctx);
 
-/// Handles gamepad connection and disconnection events
+/// Handles gamepad connection and disconnection events.
 void dttr_inputs_handle_device_event(const SDL_Event *event);
 
-/// Sets the joystick-available flag after game systems are initialized
+/// Sets the joystick-available flag after game systems are initialized.
 void dttr_inputs_late_init(void);
 
-/// Removes input hooks
+/// Removes input hooks.
 void dttr_inputs_hooks_cleanup(const DTTR_ComponentContext *ctx);
 
-/// Releases input subsystem resources
+/// Releases input subsystem resources.
 void dttr_inputs_cleanup(void);
 
 typedef enum {
@@ -99,4 +99,4 @@ DTTR_MovieResult dttr_movies_stop(void);
 /// Returns true if a movie is currently playing.
 bool dttr_movies_movie_is_playing(void);
 
-#endif
+#endif /* DTTR_SIDECAR_H */

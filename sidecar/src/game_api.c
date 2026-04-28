@@ -20,15 +20,17 @@ static const DTTR_ComponentGameAPI s_game_api = {
 static DTTR_ComponentContext s_ctx;
 
 void dttr_game_api_init(HMODULE game_module, HMODULE sidecar_module) {
-	s_ctx.m_api_version = DTTR_COMPONENT_API_VERSION;
-	s_ctx.m_game_module = game_module;
-	s_ctx.m_sidecar_module = sidecar_module;
-	s_ctx.m_window = NULL;
-	s_ctx.m_loader_dir = g_dttr_loader_dir;
-	s_ctx.m_exe_hash = g_dttr_exe_hash;
-	s_ctx.m_config = &g_dttr_config;
-	s_ctx.m_api = &s_api;
-	s_ctx.m_game_api = &s_game_api;
+	s_ctx = (DTTR_ComponentContext){
+		.m_api_version = DTTR_COMPONENT_API_VERSION,
+		.m_game_module = game_module,
+		.m_sidecar_module = sidecar_module,
+		.m_window = NULL,
+		.m_loader_dir = g_dttr_loader_dir,
+		.m_exe_hash = g_dttr_exe_hash,
+		.m_config = &g_dttr_config,
+		.m_api = &s_api,
+		.m_game_api = &s_game_api,
+	};
 }
 
 void dttr_game_api_cleanup(void) { dttr_hook_cleanup_all(); }

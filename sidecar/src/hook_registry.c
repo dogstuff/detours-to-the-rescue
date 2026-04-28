@@ -437,6 +437,19 @@ typedef kvec_t(DTTR_Hook *) S_HookVec;
 
 static S_HookVec s_hooks;
 
+static void s_hook_destroy(DTTR_Hook *hook) {
+	if (!hook) {
+		return;
+	}
+
+	if (hook->m_trampoline) {
+		VirtualFree(hook->m_trampoline, 0, MEM_RELEASE);
+	}
+
+	free(hook->m_original);
+	free(hook);
+}
+
 static void s_check_overlap(uintptr_t addr, size_t size) {
 	const uintptr_t end = addr + size;
 
@@ -623,15 +636,27 @@ DTTR_Hook *dttr_hook_patch_bytes(uintptr_t addr, const uint8_t *bytes, size_t si
 	s_check_overlap(addr, size);
 
 	DTTR_Hook *hook = (DTTR_Hook *)calloc(1, sizeof(DTTR_Hook));
+	if (!hook) {
+		log_error("hook_patch_bytes: hook alloc failed for 0x%08X", (unsigned)addr);
+		return NULL;
+	}
+
 	hook->m_addr = addr;
 	hook->m_size = size;
 	hook->m_original = (uint8_t *)malloc(size);
+	if (!hook->m_original) {
+		log_error(
+			"hook_patch_bytes: original-bytes alloc failed for 0x%08X",
+			(unsigned)addr
+		);
+		free(hook);
+		return NULL;
+	}
 
 	DWORD old_protect;
 	if (!VirtualProtect((void *)addr, size, PAGE_EXECUTE_READWRITE, &old_protect)) {
 		log_error("hook_patch_bytes: VirtualProtect failed for 0x%08X", (unsigned)addr);
-		free(hook->m_original);
-		free(hook);
+		s_hook_destroy(hook);
 		return NULL;
 	}
 
@@ -650,12 +675,6 @@ void dttr_hook_detach(DTTR_Hook *hook) {
 
 	s_write_bytes(hook->m_addr, hook->m_original, hook->m_size);
 
-	if (hook->m_trampoline) {
-		VirtualFree(hook->m_trampoline, 0, MEM_RELEASE);
-	}
-
-	free(hook->m_original);
-
 	for (size_t i = 0; i < kv_size(s_hooks); i++) {
 		if (kv_A(s_hooks, i) == hook) {
 			kv_A(s_hooks, i) = kv_A(s_hooks, kv_size(s_hooks) - 1);
@@ -664,20 +683,14 @@ void dttr_hook_detach(DTTR_Hook *hook) {
 		}
 	}
 
-	free(hook);
+	s_hook_destroy(hook);
 }
 
 void dttr_hook_cleanup_all(void) {
 	for (size_t i = kv_size(s_hooks); i > 0; i--) {
 		DTTR_Hook *hook = kv_A(s_hooks, i - 1);
 		s_write_bytes(hook->m_addr, hook->m_original, hook->m_size);
-
-		if (hook->m_trampoline) {
-			VirtualFree(hook->m_trampoline, 0, MEM_RELEASE);
-		}
-
-		free(hook->m_original);
-		free(hook);
+		s_hook_destroy(hook);
 	}
 
 	kv_destroy(s_hooks);

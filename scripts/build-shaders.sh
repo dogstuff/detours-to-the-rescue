@@ -5,7 +5,7 @@ set -euo pipefail
 out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-sidecar/include/gen}}}"
 bin_dir="${out_dir}/shaders"
 src_dir="sidecar/shaders/sdl3gpu"
-header="${out_dir}/sdl3gpu_shaders.h"
+header_path="${out_dir}/sdl3gpu_shaders.h"
 shadercross="$(command -v shadercross || command -v sdl_shadercross || true)"
 
 [ -d "$src_dir" ] || { echo "Missing shader source dir: $src_dir" >&2; exit 1; }
@@ -14,16 +14,24 @@ shadercross="$(command -v shadercross || command -v sdl_shadercross || true)"
 rm -rf "$bin_dir"
 mkdir -p "$bin_dir"
 
-find "$src_dir" -maxdepth 1 -type f -name '*.spv' -exec cp -f {} "$bin_dir/" \;
-
-find "$src_dir" -maxdepth 1 -type f -name '*.glsl' | sort | while read -r glsl; do
-  stem="$(basename "$glsl" .glsl)"
-  case "$stem" in
-    *.vert) stage=vertex ;;
-    *.frag) stage=fragment ;;
-    *.comp) stage=compute ;;
-    *) continue ;;
+shader_stage_for_stem() {
+  case "$1" in
+    *.vert) printf '%s\n' vertex ;;
+    *.frag) printf '%s\n' fragment ;;
+    *.comp) printf '%s\n' compute ;;
+    *) return 1 ;;
   esac
+}
+
+for spv in "$src_dir"/*.spv; do
+  [ -f "$spv" ] || continue
+  cp -f "$spv" "$bin_dir/"
+done
+
+for glsl in "$src_dir"/*.glsl; do
+  [ -f "$glsl" ] || continue
+  stem="$(basename "$glsl" .glsl)"
+  stage="$(shader_stage_for_stem "$stem")" || continue
 
   spv="${bin_dir}/${stem}.spv"
   glslc -fshader-stage="$stage" -o "$spv" "$glsl"
@@ -43,4 +51,4 @@ done
     echo
   done
   echo "#endif /* DTTR_GENERATED_SHADERS_H */"
-} > "$header"
+} > "$header_path"

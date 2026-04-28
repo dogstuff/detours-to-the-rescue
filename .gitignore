@@ -1,10 +1,10 @@
+.cache
 .direnv
 .toolchain
-compile_commands.json
-test.bin
-cmake-build-*
 build*
-!scripts/*
-.cache
+cmake-build-*
+compile_commands.json
 docs
 public
+test.bin
+!scripts/*

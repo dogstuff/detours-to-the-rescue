@@ -129,6 +129,21 @@ static uint64_t s_surface_texture_cache_key(
 	return XXH3_64bits(&seed, sizeof(seed));
 }
 
+static void s_surface_fill_pixelformat(
+	const DTTR_Graphics_COM_DirectDrawSurface7 *self,
+	DDPIXELFORMAT *pf
+) {
+	memset(pf, 0, sizeof(*pf));
+	pf->dwSize = sizeof(*pf);
+	pf->dwFlags = DDPF_RGB | (self->m_a_mask ? DDPF_ALPHAPIXELS : 0);
+	pf->dwFourCC = 0;
+	pf->dwRGBBitCount = self->m_bpp;
+	pf->dwRBitMask = self->m_r_mask;
+	pf->dwGBitMask = self->m_g_mask;
+	pf->dwBBitMask = self->m_b_mask;
+	pf->dwRGBAlphaBitMask = self->m_a_mask;
+}
+
 /// Converts ARGB4444 surface pixels to BGRA8888 pixels
 static void s_surface_convert_argb4444_to_bgra8888(
 	const uint16_t *restrict src,
@@ -613,9 +628,7 @@ static HRESULT __stdcall s_ddrawsurface7_queryinterface(
 }
 
 static ULONG __stdcall s_ddrawsurface7_addref(DTTR_Graphics_COM_DirectDrawSurface7 *self) {
-	ULONG rc = ++self->m_refcount;
-
-	return rc;
+	return ++self->m_refcount;
 }
 
 static ULONG __stdcall s_ddrawsurface7_release(
@@ -623,25 +636,27 @@ static ULONG __stdcall s_ddrawsurface7_release(
 ) {
 	ULONG rc = --self->m_refcount;
 
-	if (rc == 0) {
-
-		if (self->m_dttr_texture) {
-			s_surface_texture_release(self->m_dttr_texture);
-			self->m_dttr_texture = 0;
-		}
-		if (self->m_back_buffer) {
-			self->m_back_buffer->m_vtbl->Release(self->m_back_buffer);
-			self->m_back_buffer = NULL;
-		}
-		free(self->m_pixels);
-		self->m_pixels = NULL;
-		free(self->m_convert_rgba);
-		self->m_convert_rgba = NULL;
-		self->m_convert_rgba_capacity = 0;
-		free(self->m_texture);
-		self->m_texture = NULL;
-		free(self);
+	if (rc != 0) {
+		return rc;
 	}
+
+	if (self->m_dttr_texture) {
+		s_surface_texture_release(self->m_dttr_texture);
+		self->m_dttr_texture = 0;
+	}
+	if (self->m_back_buffer) {
+		self->m_back_buffer->m_vtbl->Release(self->m_back_buffer);
+		self->m_back_buffer = NULL;
+	}
+	free(self->m_pixels);
+	self->m_pixels = NULL;
+	free(self->m_convert_rgba);
+	self->m_convert_rgba = NULL;
+	self->m_convert_rgba_capacity = 0;
+	free(self->m_texture);
+	self->m_texture = NULL;
+	free(self);
+
 	return rc;
 }
 
@@ -925,15 +940,7 @@ static HRESULT __stdcall s_ddrawsurface7_getpixelformat(
 		return S_OK;
 
 	DDPIXELFORMAT *pf = (DDPIXELFORMAT *)fmt;
-	memset(pf, 0, sizeof(DDPIXELFORMAT));
-	pf->dwSize = sizeof(DDPIXELFORMAT);
-	pf->dwFlags = DDPF_RGB | (self->m_a_mask ? DDPF_ALPHAPIXELS : 0);
-	pf->dwFourCC = 0;
-	pf->dwRGBBitCount = self->m_bpp;
-	pf->dwRBitMask = self->m_r_mask;
-	pf->dwGBitMask = self->m_g_mask;
-	pf->dwBBitMask = self->m_b_mask;
-	pf->dwRGBAlphaBitMask = self->m_a_mask;
+	s_surface_fill_pixelformat(self, pf);
 
 	return S_OK;
 }
@@ -947,15 +954,7 @@ static void s_surface_fill_desc(
 	d->dwHeight = self->m_height;
 	d->dwWidth = self->m_width;
 	d->lPitch = self->m_pitch;
-
-	d->ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-	d->ddpfPixelFormat.dwFlags = DDPF_RGB | (self->m_a_mask ? DDPF_ALPHAPIXELS : 0);
-	d->ddpfPixelFormat.dwFourCC = 0;
-	d->ddpfPixelFormat.dwRGBBitCount = self->m_bpp;
-	d->ddpfPixelFormat.dwRBitMask = self->m_r_mask;
-	d->ddpfPixelFormat.dwGBitMask = self->m_g_mask;
-	d->ddpfPixelFormat.dwBBitMask = self->m_b_mask;
-	d->ddpfPixelFormat.dwRGBAlphaBitMask = self->m_a_mask;
+	s_surface_fill_pixelformat(self, &d->ddpfPixelFormat);
 }
 
 static HRESULT __stdcall s_ddrawsurface7_getsurfacedesc(

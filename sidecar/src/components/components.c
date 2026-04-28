@@ -11,6 +11,39 @@
 static S_LoadedComponent s_loaded_components[S_COMPONENTS_MAX];
 static int s_loaded_component_count = 0;
 
+static DTTR_ComponentContext s_component_context(const DTTR_ComponentContext *base_ctx) {
+	return (DTTR_ComponentContext){
+		.m_api_version = base_ctx->m_api_version,
+		.m_game_module = base_ctx->m_game_module,
+		.m_sidecar_module = base_ctx->m_sidecar_module,
+		.m_window = dttr_graphics_get_window(),
+		.m_loader_dir = g_dttr_loader_dir,
+		.m_exe_hash = g_dttr_exe_hash,
+		.m_config = base_ctx->m_config,
+		.m_api = base_ctx->m_api,
+		.m_game_api = base_ctx->m_game_api,
+	};
+}
+
+static void s_log_component_info(const char *filename, DTTR_ComponentInfoFn info_fn) {
+	if (!info_fn) {
+		return;
+	}
+
+	const DTTR_ComponentInfo *info = info_fn();
+	if (!info) {
+		return;
+	}
+
+	log_info(
+		"Component: %s v%s by %s (%s)",
+		info->m_name ? info->m_name : "unknown",
+		info->m_version ? info->m_version : "?",
+		info->m_author ? info->m_author : "unknown",
+		filename
+	);
+}
+
 void dttr_components_init(void) {
 	log_info("Loading components...");
 
@@ -89,30 +122,9 @@ void dttr_components_init(void) {
 		mod->m_render = (DTTR_ComponentRenderFn)
 			GetProcAddress(handle, "dttr_component_render");
 
-		if (mod->m_info) {
-			const DTTR_ComponentInfo *info = mod->m_info();
-			if (info) {
-				log_info(
-					"Component: %s v%s by %s (%s)",
-					info->m_name ? info->m_name : "unknown",
-					info->m_version ? info->m_version : "?",
-					info->m_author ? info->m_author : "unknown",
-					find_data.cFileName
-				);
-			}
-		}
+		s_log_component_info(find_data.cFileName, mod->m_info);
 
-		DTTR_ComponentContext ctx = {
-			.m_api_version = base_ctx->m_api_version,
-			.m_game_module = base_ctx->m_game_module,
-			.m_sidecar_module = base_ctx->m_sidecar_module,
-			.m_window = dttr_graphics_get_window(),
-			.m_loader_dir = g_dttr_loader_dir,
-			.m_exe_hash = g_dttr_exe_hash,
-			.m_config = base_ctx->m_config,
-			.m_api = base_ctx->m_api,
-			.m_game_api = base_ctx->m_game_api,
-		};
+		const DTTR_ComponentContext ctx = s_component_context(base_ctx);
 
 		if (!mod->m_init(&ctx)) {
 			log_warn("Component %s init failed - skipping", mod->m_filename);

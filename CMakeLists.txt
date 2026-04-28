@@ -12,7 +12,9 @@ endif()
 option(DTTR_COMPONENTS "Enable component loading system" OFF)
 
 if(NOT WIN32)
-    message(FATAL_ERROR "Windows only. Use: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cross/i686-w64-mingw32.cmake")
+    message(FATAL_ERROR
+        "Windows only. Use: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cross/i686-w64-mingw32.cmake"
+    )
 endif()
 
 add_subdirectory(vendor)
@@ -20,10 +22,9 @@ add_subdirectory(common)
 add_subdirectory(sidecar)
 add_subdirectory(loader)
 
+set(DTTR_DIST_SUFFIX "")
 if(DTTR_COMPONENTS)
     set(DTTR_DIST_SUFFIX "-components")
-else()
-    set(DTTR_DIST_SUFFIX "")
 endif()
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>${DTTR_DIST_SUFFIX}")

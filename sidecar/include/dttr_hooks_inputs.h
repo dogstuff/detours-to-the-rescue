@@ -3,13 +3,13 @@
 
 #include <dttr_components.h>
 
-/// Replaces DirectInput joystick polling with SDL gamepad state
+/// Replaces DirectInput joystick polling with SDL gamepad state.
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device);
 
 DTTR_HOOK(dttr_inputs_hook_dinput_poll)
 
 /// Replaces GetAsyncKeyState with SDL keyboard state.
-/// As a bonus, this restricts keyboard into to the SDL window.
+/// This also limits keyboard input to the SDL window.
 SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey);
 
 DTTR_HOOK(dttr_inputs_hook_get_async_key_state)

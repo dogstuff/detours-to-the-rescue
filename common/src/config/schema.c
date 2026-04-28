@@ -38,6 +38,23 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 
 static khash_t(dttr_config_lookup) *g_dttr_config_lookup = NULL;
 
+typedef struct {
+	const char *key;
+	int index;
+} S_ConfigKeyIndex;
+
+static const S_ConfigKeyIndex s_gamepad_axis_keys[] = {
+	{"axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
+	{"axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
+	{"axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+};
+
+static const S_ConfigKeyIndex s_gamepad_deadzone_keys[] = {
+	{"deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
+	{"deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
+	{"deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+};
+
 int s_config_schema_count(void) {
 	return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0]));
 }
@@ -74,6 +91,10 @@ static void s_config_schema_init(void) {
 	}
 }
 
+static bool s_config_sections_match(const char *lhs, const char *rhs) {
+	return lhs == rhs || (lhs && rhs && strcmp(lhs, rhs) == 0);
+}
+
 static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const char *key) {
 	s_config_schema_init();
 	if (!g_dttr_config_lookup) {
@@ -87,8 +108,7 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 
 	const S_ConfigFieldSpec *const spec = &s_config_schema
 											  [kh_value(g_dttr_config_lookup, it)];
-	if (section != spec->section
-		&& (!section || !spec->section || strcmp(spec->section, section) != 0)) {
+	if (!s_config_sections_match(spec->section, section)) {
 		return NULL;
 	}
 
@@ -171,29 +191,17 @@ bool s_config_apply_entry(
 	}
 }
 
-static int s_gamepad_axis_key_to_index(const char *key) {
-	if (strcmp(key, "axis_stick_x") == 0) {
-		return DTTR_GAMEPAD_AXIS_IDX_STICK_X;
+static int s_config_lookup_index(
+	const S_ConfigKeyIndex *entries,
+	size_t entry_count,
+	const char *key
+) {
+	for (size_t i = 0; i < entry_count; i++) {
+		if (strcmp(entries[i].key, key) == 0) {
+			return entries[i].index;
+		}
 	}
-	if (strcmp(key, "axis_stick_y") == 0) {
-		return DTTR_GAMEPAD_AXIS_IDX_STICK_Y;
-	}
-	if (strcmp(key, "axis_camera_rz") == 0) {
-		return DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ;
-	}
-	return -1;
-}
 
-static int s_gamepad_deadzone_key_to_index(const char *key) {
-	if (strcmp(key, "deadzone_stick_x") == 0) {
-		return DTTR_GAMEPAD_AXIS_IDX_STICK_X;
-	}
-	if (strcmp(key, "deadzone_stick_y") == 0) {
-		return DTTR_GAMEPAD_AXIS_IDX_STICK_Y;
-	}
-	if (strcmp(key, "deadzone_camera_rz") == 0) {
-		return DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ;
-	}
 	return -1;
 }
 
@@ -231,7 +239,11 @@ bool s_config_apply_gamepad_entry(
 		return true;
 	}
 
-	const int axis_index = s_gamepad_axis_key_to_index(key);
+	const int axis_index = s_config_lookup_index(
+		s_gamepad_axis_keys,
+		sizeof(s_gamepad_axis_keys) / sizeof(s_gamepad_axis_keys[0]),
+		key
+	);
 	if (axis_index >= 0) {
 		int axis = DTTR_GAMEPAD_MAPPING_NONE;
 		if (!s_config_parse_gamepad_axis(value, &axis)) {
@@ -242,7 +254,11 @@ bool s_config_apply_gamepad_entry(
 		return true;
 	}
 
-	const int deadzone_index = s_gamepad_deadzone_key_to_index(key);
+	const int deadzone_index = s_config_lookup_index(
+		s_gamepad_deadzone_keys,
+		sizeof(s_gamepad_deadzone_keys) / sizeof(s_gamepad_deadzone_keys[0]),
+		key
+	);
 	if (deadzone_index >= 0) {
 		int deadzone = 0;
 		if (!s_config_parse_int(value, &deadzone)) {

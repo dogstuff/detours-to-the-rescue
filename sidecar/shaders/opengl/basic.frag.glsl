@@ -21,15 +21,14 @@ void main() {
             if (u_is_2d > 1.5) {
                 vec2 pixel = uv * tex_size;
                 vec2 seam = floor(pixel + 0.5);
-                vec2 dudv = fwidth(pixel);
-                uv = (seam + clamp((pixel - seam) / dudv, -0.5, 0.5)) / tex_size;
+                vec2 pixel_span = fwidth(pixel);
+                uv = (seam + clamp((pixel - seam) / pixel_span, -0.5, 0.5)) / tex_size;
             } else {
                 uv = (floor(uv * tex_size) + 0.5) / tex_size;
             }
         }
 
-        vec4 tex_color = texture(u_texture, uv);
-        color *= tex_color;
+        color *= texture(u_texture, uv);
     }
 
     frag_color = color;

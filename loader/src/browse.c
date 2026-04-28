@@ -8,6 +8,11 @@
 static const WCHAR *PCDOGS_EXE_NAME = L"pcdogs.exe";
 static const WCHAR *PCDOGS_DISC_SUBPATH = L"Setup\\102Dalms\\pcdogs.exe";
 
+static void s_utf8_to_wide_dir(WCHAR *out, const char *dir) {
+	MultiByteToWideChar(CP_UTF8, 0, dir, -1, out, MAX_PATH);
+	out[MAX_PATH - 1] = L'\0';
+}
+
 static bool s_try_path(WCHAR *out, const WCHAR *dir, const WCHAR *subpath) {
 	WCHAR candidate[MAX_PATH];
 	_snwprintf(candidate, MAX_PATH, L"%s\\%s", dir, subpath);
@@ -79,7 +84,7 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 	}
 
 	WCHAR wide_dir[MAX_PATH];
-	MultiByteToWideChar(CP_UTF8, 0, s_browse_result, -1, wide_dir, MAX_PATH);
+	s_utf8_to_wide_dir(wide_dir, s_browse_result);
 
 	if (!s_try_dir(out, wide_dir)) {
 		SDL_ShowSimpleMessageBox(
@@ -110,7 +115,7 @@ bool dttr_loader_resolve_exe_path(WCHAR *out, const char *configured_dir) {
 	}
 
 	WCHAR wide_dir[MAX_PATH];
-	MultiByteToWideChar(CP_UTF8, 0, configured_dir, -1, wide_dir, MAX_PATH);
+	s_utf8_to_wide_dir(wide_dir, configured_dir);
 
 	if (s_try_dir(out, wide_dir)) {
 		log_info("Using configured PCDogs path: %s", configured_dir);

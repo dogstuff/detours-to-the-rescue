@@ -22,8 +22,8 @@ void main() {
     if (u_is_2d > 0.5) {
         vec2 ndc = (a_position.xy / u_screen_size) * 2.0 - 1.0;
         ndc.y = -ndc.y;
-        float w = 1.0 / a_rhw;
-        gl_Position = vec4(ndc * w, a_position.z * w, w);
+        float inv_rhw = 1.0 / a_rhw;
+        gl_Position = vec4(ndc * inv_rhw, a_position.z * inv_rhw, inv_rhw);
     } else {
         gl_Position = u_mvp * vec4(a_position, 1.0);
     }

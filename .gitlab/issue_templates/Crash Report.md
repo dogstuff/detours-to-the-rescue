@@ -1,13 +1,13 @@
-<!-- For privacy reasons, do not upload any minidump files (.dmp) to this issue. -->
+<!-- For privacy reasons, do not upload minidump files (.dmp) to this issue. -->
 
-**Crash Details**
-<!-- Paste the error message and any additional context here -->
+**Crash details**
+<!-- Paste the error message and any extra context here. -->
 
-**Steps to Reproduce**
+**Steps to reproduce**
 <!-- What were you doing when the crash occurred? -->
 1.
 
-**System Info**
+**System info**
 - OS:
 - CPU:
 - GPU:

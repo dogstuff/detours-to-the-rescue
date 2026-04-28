@@ -31,8 +31,8 @@ static uintptr_t s_read_remote_image_base_from_thread_context(
 	HANDLE process,
 	const CONTEXT *thread_context
 ) {
-	const uintptr_t peb_address = (uintptr_t)thread_context
-									  ->Ebx; // EBX points to PEB when suspended
+	// EBX points to the suspended PEB.
+	const uintptr_t peb_address = (uintptr_t)thread_context->Ebx;
 	uintptr_t image_base = 0;
 
 	log_debug("Reading image base from PEB at 0x%08X", (unsigned)peb_address);
@@ -155,7 +155,7 @@ static void s_initialize_shellcode_payload(
 	out_payload->m_original_entry = (uint32_t)original_entry;
 }
 
-static uint32_t s_build_sidecar_shell_code(
+static uint32_t s_build_sidecar_shellcode(
 	const DTTR_LoaderShellcodePayload *payload,
 	uint8_t **out_buffer
 ) {
@@ -211,7 +211,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	s_initialize_shellcode_payload(&payload, sidecar_dll_path, original_entry);
 
 	uint8_t *shellcode_buffer = NULL;
-	const uint32_t shellcode_buffer_len = s_build_sidecar_shell_code(
+	const uint32_t shellcode_buffer_len = s_build_sidecar_shellcode(
 		&payload,
 		&shellcode_buffer
 	);

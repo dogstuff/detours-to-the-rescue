@@ -2,10 +2,9 @@
 // https://archive.org/details/dx7sdk-7001
 
 #include "graphics_com_internal.h"
-#include "log.h"
 #include <stdlib.h>
 
-DWORD g_dttr_texture2_next_texture_handle = 1;
+static DWORD s_d3dtexture2_next_texture_handle = 1;
 
 DTTR_COM_QI_SELF(s_d3dtexture2_queryinterface, DTTR_Graphics_COM_Direct3DTexture2)
 
@@ -19,7 +18,7 @@ static HRESULT __stdcall s_d3dtexture2_gethandle(
 	DWORD *handle
 ) {
 	if (handle) {
-		*handle = g_dttr_texture2_next_texture_handle++;
+		*handle = s_d3dtexture2_next_texture_handle++;
 	}
 
 	return S_OK;

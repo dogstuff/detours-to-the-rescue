@@ -97,6 +97,31 @@ typedef VOID(NTAPI *S_RtlInitUnicodeString)(S_UnicodeString *, PCWSTR);
 #define S_RESOLVE(module, type, name)                                                    \
 	((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
 
+static void s_resolve_nt_path_and_cwd(
+	WCHAR *nt_path,
+	size_t nt_path_size,
+	WCHAR *cwd,
+	size_t cwd_size,
+	const WCHAR *image_name
+) {
+	WCHAR full_path[MAX_PATH];
+	DTTR_UNWRAP_WINAPI_NONZERO(GetFullPathNameW(image_name, MAX_PATH, full_path, NULL));
+
+	const size_t full_path_len = wcslen(full_path);
+	if (full_path_len + 5 > nt_path_size || full_path_len + 1 > cwd_size) {
+		DTTR_FATAL("Game path is too long");
+	}
+
+	memcpy(nt_path, L"\\??\\", 4 * sizeof(WCHAR));
+	memcpy(nt_path + 4, full_path, (full_path_len + 1) * sizeof(WCHAR));
+
+	memcpy(cwd, full_path, (full_path_len + 1) * sizeof(WCHAR));
+	WCHAR *const last_sep = wcsrchr(cwd, L'\\');
+	if (last_sep) {
+		last_sep[1] = L'\0';
+	}
+}
+
 // Creates a suspended process with the provided shim data using NT functions.
 // This provides a portable way to override all Windows compatibility shims,
 // which lets us avoid some weird crashes (e.g., Intel iGPU crash).
@@ -137,22 +162,15 @@ void dttr_compat_create_process(
 		"RtlInitUnicodeString"
 	);
 
-	// Prepend \??\ to form an NT path.
-	WCHAR full_path[MAX_PATH];
-	DTTR_UNWRAP_WINAPI_NONZERO(GetFullPathNameW(image_name, MAX_PATH, full_path, NULL));
-
 	WCHAR nt_path[MAX_PATH + 8];
-	memcpy(nt_path, L"\\??\\", 4 * sizeof(WCHAR));
-	DWORD len = 0;
-	while (full_path[len])
-		len++;
-	memcpy(nt_path + 4, full_path, (len + 1) * sizeof(WCHAR));
-
 	WCHAR cwd[MAX_PATH];
-	memcpy(cwd, full_path, (len + 1) * sizeof(WCHAR));
-	WCHAR *const last_sep = wcsrchr(cwd, L'\\');
-	if (last_sep)
-		*(last_sep + 1) = L'\0';
+	s_resolve_nt_path_and_cwd(
+		nt_path,
+		sizeof(nt_path) / sizeof(nt_path[0]),
+		cwd,
+		sizeof(cwd) / sizeof(cwd[0]),
+		image_name
+	);
 
 	S_UnicodeString us_image, us_cmd, us_cwd;
 	rtl_init_unicode_string(&us_image, nt_path);

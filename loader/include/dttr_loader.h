@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <windows.h>
 
-/// Stores the path to the target configuration file.
 extern const char *g_dttr_config_path;
 
 void dttr_compat_create_process(

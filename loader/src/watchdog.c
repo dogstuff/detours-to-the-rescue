@@ -98,7 +98,7 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	log_debug("Watchdog attached to PID %lu", child_info->dwProcessId);
 }
 
-/// Reads a debug string from the child process and checks if it matches the sentinel.
+// Return true when the child emits the watchdog ready sentinel.
 static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) {
 	if (info->fUnicode || info->nDebugStringLength < sizeof(WATCHDOG_SENTINEL)) {
 		return false;
