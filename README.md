@@ -1,6 +1,6 @@
-# 102 Patches: Detours to the Rescue
+# 102 Patches: Detours to the Rescue (DttR)
 
-DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue** that makes PC release more portable, stable, and consistent on modern systems.
+An alternate entrypoint for **102 Dalmatians: Puppies to the Rescue** that makes PC release more portable, stable, and consistent on modern systems.
 
 ![DttR preview](static/preview.png)
 
