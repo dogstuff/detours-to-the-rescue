@@ -4,8 +4,6 @@ DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue** th
 
 ![DttR preview](static/preview.png)
 
-Internal documentation is available [here](https://dogstuff.gitlab.io/detours-to-the-rescue/).
-
 ---
 
 ## Features
@@ -86,6 +84,8 @@ This project's build system relies on [Nix](https://github.com/NixOS/nix) for to
 
 Sorry, Windows users; you can figure this out on your own.
 
+Internal documentation is available [here](https://dogstuff.gitlab.io/detours-to-the-rescue/).
+
 ### Nix Flake
 
 ```sh
@@ -94,7 +94,7 @@ task build
 # Output: build/dist/
 ```
 
-This pulls in the cross-compiler, SDL3, VLC, NASM, and the remaining build dependencies automatically.
+This pulls in the cross-compiler, SDL3, FFmpeg, NASM, and the remaining build dependencies automatically.
 
 ### Container Build
 
