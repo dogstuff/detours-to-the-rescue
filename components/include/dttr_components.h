@@ -31,8 +31,8 @@
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 #else
-// Minimal stand-ins so the header parses on non-Windows hosts. Components still
-// build only with the Windows cross-compiler.
+// Parse-only stand-ins for non-Windows hosts. Components still build with the
+// Windows cross-compiler.
 typedef void *HMODULE;
 typedef void *HINSTANCE;
 typedef int BOOL;
@@ -136,7 +136,7 @@ typedef void (*DTTR_ComponentRenderGameFn)(const DTTR_RenderGameContext *ctx);
 
 typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 
-// Interop storage macros (gated on DTTR_INTEROP_IMPLEMENT)
+// Interop storage macros (gated on DTTR_INTEROP_IMPLEMENT).
 
 #ifdef DTTR_INTEROP_IMPLEMENT
 #define DTTR_STORAGE(type, name) type name = 0;
@@ -144,30 +144,30 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 #define DTTR_STORAGE(type, name) extern type name;
 #endif
 
-// Stores a hook site address and registry handle.
+// Track a hook site address and registry handle.
 #define DTTR_HOOK(name)                                                                  \
 	DTTR_STORAGE(uintptr_t, name##_site)                                                 \
 	DTTR_STORAGE(DTTR_Hook *, name##_handle)
 
-// Stores a hook site, handle, and trampoline pointer.
+// Track a hook site, handle, and trampoline pointer.
 #define DTTR_TRAMPOLINE_HOOK(name)                                                       \
 	DTTR_HOOK(name)                                                                      \
 	DTTR_STORAGE(uint8_t *, name##_trampoline)
 
-// Stores a function address with a typedef and inline call wrapper.
+// Track a function address with a typedef and inline call wrapper.
 #define DTTR_FUNC(name, cc, ret, params, args)                                           \
 	typedef ret(cc *name##_fn_t) params;                                                 \
 	DTTR_STORAGE(uintptr_t, name##_addr)                                                 \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
-// Stores a variable address with typed ptr/get/set accessors.
+// Track a variable address with typed ptr/get/set accessors.
 #define DTTR_VAR(name, type)                                                             \
 	DTTR_STORAGE(uintptr_t, name##_addr)                                                 \
 	static inline type *name##_ptr(void) { return (type *)name##_addr; }                 \
 	static inline type name##_get(void) { return *(type *)name##_addr; }                 \
 	static inline void name##_set(type val) { *(type *)name##_addr = val; }
 
-// Detaches a hook and clears its tracking variables.
+// Unhook and clear tracked state.
 #define DTTR_UNINSTALL(name, ctx)                                                        \
 	do {                                                                                 \
 		if (name##_handle) {                                                             \
@@ -177,7 +177,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                \
 	} while (0)
 
-// Detaches a trampoline hook and clears its tracking variables.
+// Unhook and clear tracked trampoline state.
 #define DTTR_TRAMPOLINE_UNINSTALL(name, ctx)                                             \
 	do {                                                                                 \
 		if (name##_handle) {                                                             \
@@ -262,20 +262,33 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
+// Installs a pointer hook at a known site.
+#define DTTR_INSTALL_POINTER_AT(name, ctx, site, new_value)                              \
+	do {                                                                                 \
+		if (!name##_handle) {                                                            \
+			name##_site = (uintptr_t)(site);                                             \
+			void *unused_original_ = NULL;                                               \
+			name##_handle = (ctx)->m_game_api->m_hook_pointer(                           \
+				name##_site,                                                             \
+				(void *)(new_value),                                                     \
+				&unused_original_                                                        \
+			);                                                                           \
+			if (name##_handle) {                                                         \
+				log_debug("Installed " #name " at 0x%08X", (unsigned)name##_site);       \
+			} else {                                                                     \
+				log_error(#name ": hook_pointer failed");                                \
+				name##_site = 0;                                                         \
+			}                                                                            \
+		}                                                                                \
+	} while (0)
+
 // Scans for a signature, computes the hook site from the match, and installs a pointer
 // hook. The site_expr parameter is evaluated with match_ in scope.
 #define DTTR_INSTALL_POINTER(name, ctx, sig, mask, site_expr)                             \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
 		if (match_) {                                                                     \
-			name##_site = (uintptr_t)(site_expr);                                         \
-			void *orig_ = NULL;                                                           \
-			name##_handle = (ctx)->m_game_api->m_hook_pointer(                            \
-				name##_site,                                                              \
-				(void *)(name##_callback),                                                \
-				&orig_                                                                    \
-			);                                                                            \
-			log_debug("Installed " #name " at 0x%08X", (unsigned)name##_site);            \
+			DTTR_INSTALL_POINTER_AT(name, ctx, site_expr, name##_callback);               \
 		} else {                                                                          \
 			log_error(#name ": signature not found");                                     \
 		}                                                                                 \

@@ -96,6 +96,9 @@ typedef struct {
 	bool m_texture_upload_sync;
 	bool m_generate_texture_mipmaps;
 	bool m_fullscreen;
+	bool m_mss_sdl_enabled;
+	float m_mss_sample_gain;
+	float m_mss_sample_preemphasis;
 	bool m_gamepad_enabled;
 	int m_gamepad_index;
 	int m_gamepad_button_map[DTTR_GAMEPAD_SOURCE_COUNT];

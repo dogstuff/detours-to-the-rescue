@@ -38,7 +38,24 @@ build:
   extends: .nix-cache
   stage: build
   script:
-    - nix develop --command bash -c "task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} && task build DTTR_VERSION=${CI_COMMIT_TAG:-dev} DTTR_MODDING=ON && cd build/dist && zip -r ../../dttr-${CI_COMMIT_SHORT_SHA}-debug.zip Debug/ && zip -r ../../dttr-modding-${CI_COMMIT_SHORT_SHA}-debug.zip Debug-modding/"
+    - |
+      nix develop --command bash -c '
+        set -euo pipefail
+
+        version="${CI_COMMIT_TAG:-dev}"
+        task build DTTR_VERSION="${version}"
+        task build DTTR_VERSION="${version}" DTTR_MODDING=ON
+        ctest --test-dir build -C Debug --output-on-failure
+
+        for archive_spec in \
+          "dttr-${CI_COMMIT_SHORT_SHA}-debug.zip:Debug" \
+          "dttr-modding-${CI_COMMIT_SHORT_SHA}-debug.zip:Debug-modding"
+        do
+          archive="${archive_spec%%:*}"
+          dist_name="${archive_spec#*:}"
+          (cd build/dist && zip -r "../../${archive}" "${dist_name}/")
+        done
+      '
   artifacts:
     paths:
       - dttr-*-debug.zip
@@ -60,20 +77,19 @@ build-release:
         task build-release DTTR_VERSION="${CI_COMMIT_TAG}"
         task build-release DTTR_VERSION="${CI_COMMIT_TAG}" DTTR_MODDING=ON
 
-        (
-          cd build/dist
-          zip -r "../../dttr-${CI_COMMIT_TAG}-debug.zip" Debug/
-          zip -r "../../dttr-${CI_COMMIT_TAG}-release.zip" Release/
-          zip -r "../../dttr-modding-${CI_COMMIT_TAG}-debug.zip" Debug-modding/
-          zip -r "../../dttr-modding-${CI_COMMIT_TAG}-release.zip" Release-modding/
-        )
+        for config in Debug Release; do
+          ctest --test-dir build -C "${config}" --output-on-failure
+        done
 
-        for archive in \
-          "dttr-${CI_COMMIT_TAG}-debug.zip" \
-          "dttr-${CI_COMMIT_TAG}-release.zip" \
-          "dttr-modding-${CI_COMMIT_TAG}-debug.zip" \
-          "dttr-modding-${CI_COMMIT_TAG}-release.zip"
+        for archive_spec in \
+          "dttr-${CI_COMMIT_TAG}-debug.zip:Debug" \
+          "dttr-${CI_COMMIT_TAG}-release.zip:Release" \
+          "dttr-modding-${CI_COMMIT_TAG}-debug.zip:Debug-modding" \
+          "dttr-modding-${CI_COMMIT_TAG}-release.zip:Release-modding"
         do
+          archive="${archive_spec%%:*}"
+          dist_name="${archive_spec#*:}"
+          (cd build/dist && zip -r "../../${archive}" "${dist_name}/")
           curl --fail --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "${archive}" "${PACKAGE_REGISTRY_URL}/${archive}"
         done
       '
@@ -109,9 +125,9 @@ release:
     - apk add --no-cache git
   script:
     - |
-      PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
-      if [ -n "$PREV_TAG" ]; then
-        git log --first-parent --no-merges --format="- %s (%h)" "${PREV_TAG}..HEAD" > changelog.md
+      prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+      if [ -n "$prev_tag" ]; then
+        git log --first-parent --no-merges --format="- %s (%h)" "${prev_tag}..HEAD" > changelog.md
       else
         git log --first-parent --no-merges --format="- %s (%h)" > changelog.md
       fi
