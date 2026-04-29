@@ -29,6 +29,10 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("graphics", "sprite_smooth",              m_sprite_smooth,            S_CONFIG_BOOL),
 	S_FIELD("graphics", "fullscreen",                 m_fullscreen,               S_CONFIG_BOOL),
 
+	S_FIELD("audio", "mss_sdl_enabled",        m_mss_sdl_enabled,        S_CONFIG_BOOL),
+	S_FIELD("audio", "mss_sample_gain",        m_mss_sample_gain,        S_CONFIG_FLOAT),
+	S_FIELD("audio", "mss_sample_preemphasis", m_mss_sample_preemphasis, S_CONFIG_FLOAT),
+
 	S_FIELD_TOP("log_level",      m_log_level,      S_CONFIG_LOG_LEVEL),
 	S_FIELD_TOP("minidump_type",  m_minidump_type,  S_CONFIG_MINIDUMP_TYPE),
 	S_FIELD_TOP("pcdogs_path",       m_pcdogs_path,       S_CONFIG_STRING),
@@ -132,6 +136,7 @@ S_CONFIG_ASSIGN_FN(s_config_assign_present_filter,  SDL_GPUFilter,     SDL_GPU_F
 S_CONFIG_ASSIGN_FN(s_config_assign_log_level,       int,               LOG_INFO,                    s_config_parse_log_level)
 S_CONFIG_ASSIGN_FN(s_config_assign_minidump_type,   DTTR_MinidumpType, DTTR_MINIDUMP_NORMAL,        s_config_parse_minidump_type)
 S_CONFIG_ASSIGN_FN(s_config_assign_int,             int,               0,                           s_config_parse_int)
+S_CONFIG_ASSIGN_FN(s_config_assign_float,           float,             0.0f,                        s_config_parse_float)
 S_CONFIG_ASSIGN_FN(s_config_assign_vertex_precision, DTTR_VertexPrecision, DTTR_VERTEX_PRECISION_SUBPIXEL, s_config_parse_vertex_precision)
 // clang-format on
 
@@ -170,6 +175,9 @@ bool s_config_apply_entry(
 
 	case S_CONFIG_INT:
 		return s_config_assign_int(field, value);
+
+	case S_CONFIG_FLOAT:
+		return s_config_assign_float(field, value);
 
 	case S_CONFIG_PRESENT_FILTER:
 		return s_config_assign_present_filter(field, value);

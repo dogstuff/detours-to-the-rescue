@@ -50,12 +50,12 @@ static const char *s_yyjson_value_as_string(yyjson_val *val, char *buf, size_t b
 	}
 
 	if (yyjson_is_int(val)) {
-		snprintf(buf, buf_size, "%d", (int)yyjson_get_int(val));
+		s_config_format_int((int)yyjson_get_int(val), buf, buf_size);
 		return buf;
 	}
 
 	if (yyjson_is_real(val)) {
-		snprintf(buf, buf_size, "%d", (int)yyjson_get_real(val));
+		s_config_format_float((float)yyjson_get_real(val), buf, buf_size);
 		return buf;
 	}
 
@@ -201,9 +201,9 @@ bool dttr_config_load(const char *filename) {
 
 	yyjson_val *root = yyjson_doc_get_root(doc);
 
-	// Schema-driven fields (top-level scalars + graphics section)
 	s_apply_section(root, NULL);
 	s_apply_section(yyjson_obj_get(root, "graphics"), "graphics");
+	s_apply_section(yyjson_obj_get(root, "audio"), "audio");
 
 	// Gamepad section (mix of schema + custom handling)
 	yyjson_val *gamepad = yyjson_obj_get(root, "gamepad");
@@ -472,6 +472,12 @@ static sds s_config_format_json_value(
 	case S_CONFIG_INT: {
 		char buf[32];
 		s_config_format_int(*(const int *)field, buf, sizeof(buf));
+		return sdsnew(buf);
+	}
+
+	case S_CONFIG_FLOAT: {
+		char buf[32];
+		s_config_format_float(*(const float *)field, buf, sizeof(buf));
 		return sdsnew(buf);
 	}
 

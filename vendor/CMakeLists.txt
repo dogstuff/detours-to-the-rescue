@@ -14,6 +14,9 @@ target_include_directories(sds PUBLIC sds)
 add_library(yyjson STATIC yyjson/yyjson.c)
 target_include_directories(yyjson PUBLIC yyjson)
 
+add_library(dr_wav INTERFACE)
+target_include_directories(dr_wav INTERFACE dr_libs)
+
 # Use Zydis only as a lightweight decoder dependency for hook prologue relocation.
 set(ZYDIS_BUILD_SHARED_LIB OFF CACHE BOOL "" FORCE)
 set(ZYDIS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)

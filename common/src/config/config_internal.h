@@ -12,11 +12,12 @@ typedef enum {
 	S_CONFIG_SCALING_METHOD = 2,
 	S_CONFIG_GRAPHICS_API = 3,
 	S_CONFIG_INT = 4,
-	S_CONFIG_PRESENT_FILTER = 5,
-	S_CONFIG_LOG_LEVEL = 6,
-	S_CONFIG_MINIDUMP_TYPE = 7,
-	S_CONFIG_STRING = 8,
-	S_CONFIG_VERTEX_PRECISION = 9,
+	S_CONFIG_FLOAT = 5,
+	S_CONFIG_PRESENT_FILTER = 6,
+	S_CONFIG_LOG_LEVEL = 7,
+	S_CONFIG_MINIDUMP_TYPE = 8,
+	S_CONFIG_STRING = 9,
+	S_CONFIG_VERTEX_PRECISION = 10,
 } S_ConfigValueType;
 
 typedef struct {
@@ -31,6 +32,7 @@ bool s_config_parse_scaling_fit(const char *value, DTTR_ScalingMode *out_value);
 bool s_config_parse_scaling_method(const char *value, DTTR_ScalingMethod *out_value);
 bool s_config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value);
 bool s_config_parse_int(const char *value, int *out_value);
+bool s_config_parse_float(const char *value, float *out_value);
 bool s_config_parse_present_filter(const char *value, SDL_GPUFilter *out_value);
 bool s_config_parse_gamepad_source(const char *value, int *out_value);
 bool s_config_parse_game_action(const char *value, int *out_value);
@@ -42,6 +44,7 @@ bool s_config_parse_vertex_precision(const char *value, DTTR_VertexPrecision *ou
 
 const char *s_config_format_bool(bool value);
 void s_config_format_int(int value, char *buf, size_t buf_size);
+void s_config_format_float(float value, char *buf, size_t buf_size);
 const char *s_config_format_scaling_fit(DTTR_ScalingMode mode);
 const char *s_config_format_scaling_method(DTTR_ScalingMethod method);
 const char *s_config_format_graphics_api(DTTR_GraphicsApi api);

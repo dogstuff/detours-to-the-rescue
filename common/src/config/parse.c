@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,6 +81,23 @@ bool s_config_parse_int(const char *value, int *out_value) {
 	}
 
 	*out_value = (int)parsed;
+	return true;
+}
+
+bool s_config_parse_float(const char *value, float *out_value) {
+	if (!value || !out_value) {
+		return false;
+	}
+
+	char *end = NULL;
+	errno = 0;
+
+	const float parsed = strtof(value, &end);
+	if (errno != 0 || !end || *end != '\0' || !isfinite(parsed)) {
+		return false;
+	}
+
+	*out_value = parsed;
 	return true;
 }
 
@@ -228,6 +246,10 @@ const char *s_config_format_bool(bool value) { return value ? "true" : "false"; 
 
 void s_config_format_int(int value, char *buf, size_t buf_size) {
 	snprintf(buf, buf_size, "%d", value);
+}
+
+void s_config_format_float(float value, char *buf, size_t buf_size) {
+	snprintf(buf, buf_size, "%.9g", value);
 }
 
 const char *s_config_format_scaling_fit(DTTR_ScalingMode mode) {

@@ -1,6 +1,9 @@
+find_package(PkgConfig REQUIRED)
 if(NOT TARGET PkgConfig::SDL3)
-    find_package(PkgConfig REQUIRED)
     pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
+endif()
+if(NOT TARGET PkgConfig::SDL3_MIXER)
+    pkg_check_modules(SDL3_MIXER REQUIRED IMPORTED_TARGET sdl3-mixer)
 endif()
 
 set(DTTR_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/gen")
@@ -8,6 +11,15 @@ set(DTTR_FFMPEG_DIR "${CMAKE_SOURCE_DIR}/.toolchain/ffmpeg")
 set(DTTR_FFMPEG_LIBS avformat avcodec avutil swscale swresample)
 file(GLOB DTTR_FFMPEG_RUNTIME_DLLS "${DTTR_FFMPEG_DIR}/bin/*.dll")
 set(DTTR_FFMPEG_RUNTIME_DLLS ${DTTR_FFMPEG_RUNTIME_DLLS} PARENT_SCOPE)
+
+set(DTTR_MSS_SOURCES
+    src/audio/mss_core.c
+    src/audio/mss_sample.c
+    src/audio/mss_stream.c
+    src/audio/mss_track.c
+    src/audio/mss_wave.c
+    src/audio/mss_sdl.c
+)
 
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
@@ -30,6 +42,7 @@ add_library(dttr_sidecar SHARED
     src/graphics/com_directdraw7.c
     src/graphics/com_directdrawsurface7.c
     src/audio/hooks.c
+    ${DTTR_MSS_SOURCES}
     src/other/hooks.c
     src/other/hook_crt_open_file.c
     src/other/hook_cleanup_level_assets.c
@@ -65,12 +78,14 @@ target_link_libraries(dttr_sidecar PRIVATE
     psapi
 
     PkgConfig::SDL3
+    PkgConfig::SDL3_MIXER
     ${DTTR_FFMPEG_TARGETS}
     glad
     Zydis
     sds
     klib
     xxhash
+    dr_wav
     log
     common
 )
@@ -89,7 +104,8 @@ add_custom_command(TARGET dttr_sidecar POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_FILE_DIR:dttr_sidecar>/libmpv-2.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/.toolchain/sdl3/i686-w64-mingw32/bin/SDL3.dll"
-        "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll"
+        "${CMAKE_SOURCE_DIR}/.toolchain/sdl3_mixer/i686-w64-mingw32/bin/SDL3_mixer.dll"
+        "$<TARGET_FILE_DIR:dttr_sidecar>"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${DTTR_FFMPEG_RUNTIME_DLLS}
         "$<TARGET_FILE_DIR:dttr_sidecar>"
