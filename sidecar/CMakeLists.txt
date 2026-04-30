@@ -50,6 +50,7 @@ add_library(dttr_sidecar SHARED
     ${DTTR_MSS_SOURCES}
 
     src/game/hooks.c
+    src/game/game_data_source.c
     src/game/hook_crt_open_file.c
     src/game/hook_cleanup_level_assets.c
     src/game/hook_resolve_pcdogs_path.c
@@ -59,6 +60,7 @@ add_library(dttr_sidecar SHARED
 
 target_include_directories(dttr_sidecar PRIVATE
     include
+    src
     "${CMAKE_SOURCE_DIR}/components/include"
     "${DTTR_SHADER_OUTPUT_DIR}"
     "${DTTR_FFMPEG_DIR}/include"

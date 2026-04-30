@@ -5,7 +5,7 @@
 
 #include "dttr_crashdump.h"
 #include "dttr_sidecar.h"
-#include "graphics/graphics_com_internal.h"
+#include "graphics/graphics_com_private.h"
 #include <dttr_log.h>
 #include <sds.h>
 
@@ -13,14 +13,15 @@
 
 #include "dttr_errors.h"
 #include "dttr_hooks.h"
-#include "game_api_internal.h"
-#include "graphics/graphics_internal.h"
-#include "hook_registry_internal.h"
+#include "game/game_data_source_private.h"
+#include "game_api_private.h"
+#include "graphics/graphics_private.h"
+#include "hook_registry_private.h"
 #include <xxhash.h>
 
 #ifdef DTTR_MODDING_ENABLED
-#include "components/components_internal.h"
-#include "graphics/imgui_overlay_internal.h"
+#include "components/components_private.h"
+#include "graphics/imgui_overlay_private.h"
 #endif
 
 HINSTANCE g_dttr_sidecar_module;
@@ -172,6 +173,7 @@ static void s_poll_sdl_events(void) {
 }
 
 static void s_cleanup_runtime(const DTTR_ComponentContext *ctx) {
+	dttr_game_data_source_cleanup();
 #ifdef DTTR_MODDING_ENABLED
 	dttr_components_cleanup();
 	dttr_imgui_cleanup();
@@ -267,6 +269,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_log_set_level(level);
 	dttr_log_add_fp(log_file, level);
 	DTTR_LOG_INFO("Log level set to %s", log_level_string(level));
+	dttr_game_data_source_init();
 
 	dttr_game_api_init(s_pc_dogs_module, g_dttr_sidecar_module);
 	const DTTR_ComponentContext *ctx = dttr_game_api_get_ctx();

@@ -1,5 +1,6 @@
 #include "dttr_hooks_game.h"
 #include "dttr_sidecar.h"
+#include "game/game_data_source_private.h"
 #include "sds.h"
 #include <dttr_log.h>
 
@@ -154,6 +155,27 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	return NULL;
 }
 
+static void *s_try_open_read_path(const char *path, char *mode) {
+	char resolved[MAX_PATH];
+
+	if (dttr_game_data_source_resolve_existing_read_path(
+			path,
+			resolved,
+			sizeof(resolved)
+		)) {
+		DTTR_LOG_DEBUG("Resolved case-insensitive read \"%s\" -> \"%s\"", path, resolved);
+		return dttr_crt_open_file_with_mode(resolved, mode, 0x40);
+	}
+
+	char cached[MAX_PATH];
+	if (!dttr_game_data_source_resolve_read_path(path, cached, sizeof(cached))) {
+		return NULL;
+	}
+
+	DTTR_LOG_DEBUG("Resolved ISO-backed read \"%s\" -> \"%s\"", path, cached);
+	return dttr_crt_open_file_with_mode(cached, mode, 0x40);
+}
+
 void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 	char redirected[MAX_PATH];
 	path = s_redirect_path(path, redirected, sizeof(redirected), mode);
@@ -165,6 +187,12 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 
 	// The game handles missing files and read-only failures correctly.
 	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
+		if (IS_READ_ONLY_MODE(mode)) {
+			result = s_try_open_read_path(path, mode);
+			if (result) {
+				return result;
+			}
+		}
 		DTTR_LOG_ERROR("File \"%s\" does not exist; passing to game.", path);
 		return result;
 	}

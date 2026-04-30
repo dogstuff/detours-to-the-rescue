@@ -1,5 +1,5 @@
-#include "backend_sdl3gpu_internal.h"
-#include "graphics_internal.h"
+#include "backend_sdl3gpu_private.h"
+#include "graphics_private.h"
 
 #include <dttr_log.h>
 
@@ -10,8 +10,8 @@
 #define S_DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
 
 #ifdef DTTR_MODDING_ENABLED
-#include "../components/components_internal.h"
-#include "imgui_overlay_internal.h"
+#include "../components/components_private.h"
+#include "imgui_overlay_private.h"
 #endif
 
 #include <math.h>

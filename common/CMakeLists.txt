@@ -6,6 +6,7 @@ add_library(common STATIC
     src/log.c
     src/crashdump.c
     src/sdl.c
+    src/iso/iso.c
     src/config/defaults.c
     src/config/parse.c
     src/config/schema.c
@@ -20,7 +21,7 @@ target_compile_options(common PUBLIC
 )
 target_link_libraries(common
     PUBLIC log
-    PRIVATE sds klib dbghelp yyjson
+    PRIVATE sds klib dbghelp yyjson physfs-static
 )
 target_compile_definitions(common PRIVATE
     DTTR_DEFAULT_LOG_LEVEL=$<IF:$<CONFIG:Debug>,LOG_DEBUG,LOG_INFO>

@@ -1,4 +1,4 @@
-#include "graphics_internal.h"
+#include "graphics_private.h"
 
 #include <dttr_log.h>
 
@@ -7,6 +7,7 @@
 
 #include "dttr_hooks_graphics.h"
 #include "dttr_sidecar.h"
+#include "game_api_private.h"
 #include "sds.h"
 
 #define DTTR_MIN_WINDOW_DIM 64

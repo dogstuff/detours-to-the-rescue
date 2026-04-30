@@ -1,6 +1,7 @@
 add_executable(dttr
     src/main.c
     src/browse.c
+    src/paths.c
     src/nt_process.c
     src/load.c
     src/watchdog.c
@@ -19,6 +20,7 @@ target_link_libraries(dttr PRIVATE
     opengl32
     dbghelp
     sds
+    xxhash
     log
     common
 )

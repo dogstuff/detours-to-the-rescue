@@ -10,8 +10,6 @@
 #include <dttr_config.h>
 #include <dttr_interop_pcdogs.h>
 
-#include "game_api_internal.h"
-
 // Handle to the injected sidecar DLL.
 extern HINSTANCE g_dttr_sidecar_module;
 

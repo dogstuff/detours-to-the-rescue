@@ -1,5 +1,6 @@
-#include "components_internal.h"
+#include "components_private.h"
 #include "dttr_sidecar.h"
+#include "game_api_private.h"
 
 #include <dttr_log.h>
 

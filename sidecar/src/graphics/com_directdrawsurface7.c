@@ -1,8 +1,8 @@
 // Implements the IDirectDrawSurface7 COM translator
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nn-ddraw-idirectdrawsurface7
 
-#include "graphics_com_internal.h"
-#include "graphics_internal.h"
+#include "graphics_com_private.h"
+#include "graphics_private.h"
 #include <dttr_log.h>
 #include <khash.h>
 #include <stdlib.h>

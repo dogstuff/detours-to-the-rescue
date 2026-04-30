@@ -1,6 +1,7 @@
 #include "dttr_hooks_game.h"
 #include "dttr_interop_pcdogs.h"
 #include "dttr_sidecar.h"
+#include "game_api_private.h"
 
 #include <dttr_log.h>
 #include <windows.h>

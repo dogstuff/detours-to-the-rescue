@@ -19,7 +19,16 @@ void dttr_sdl_show_open_folder_dialog(
 	const char *default_location,
 	bool allow_many
 );
+void dttr_sdl_show_open_file_dialog(
+	SDL_DialogFileCallback callback,
+	void *userdata,
+	SDL_Window *window,
+	const SDL_DialogFileFilter *filters,
+	int nfilters,
+	const char *default_location,
+	bool allow_many
+);
 void dttr_sdl_pump_events(void);
 void dttr_sdl_delay(Uint32 ms);
 
-#endif // DTTR_SDL_H
+#endif /* DTTR_SDL_H */

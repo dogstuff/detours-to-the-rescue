@@ -2,7 +2,7 @@
 // https://archive.org/details/dx7sdk-7001
 
 #define INITGUID
-#include "graphics_com_internal.h"
+#include "graphics_com_private.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -1,6 +1,6 @@
 #include "dttr_hooks_audio.h"
 #include "dttr_interop_pcdogs.h"
-#include "mss_internal.h"
+#include "mss_private.h"
 #include <dttr_log.h>
 
 #include <SDL3/SDL.h>

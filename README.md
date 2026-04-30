@@ -38,7 +38,7 @@ The following PC releases of **102 Dalmatians: Puppies to the Rescue** are suppo
 1. Download the latest DttR build from the [release page](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases).
 2. Extract the archive to a folder of your choice.
 3. Run `dttr.exe`.
-4. Select the game installation directory that contains `pcdogs.exe`.
+4. Select a game directory containing `pcdogs.exe`, or the original game ISO.
 5. Profit.
 
 ---

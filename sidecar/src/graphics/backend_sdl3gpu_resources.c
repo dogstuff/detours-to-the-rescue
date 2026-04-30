@@ -1,5 +1,5 @@
-#include "backend_sdl3gpu_internal.h"
-#include "graphics_internal.h"
+#include "backend_sdl3gpu_private.h"
+#include "graphics_private.h"
 
 #include <dttr_log.h>
 
