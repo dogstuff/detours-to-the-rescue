@@ -1,6 +1,6 @@
 #include "graphics_internal.h"
 
-#include "log.h"
+#include <dttr_log.h>
 
 #include <stddef.h>
 #include <windows.h>
@@ -122,7 +122,7 @@ static void s_refresh_render_resolution(DTTR_BackendState *state) {
 	}
 
 	if (!state->m_renderer->resize(state, rw, rh)) {
-		log_warn("Failed to resize render targets to %dx%d", rw, rh);
+		DTTR_LOG_WARN("Failed to resize render targets to %dx%d", rw, rh);
 	}
 }
 
@@ -188,7 +188,7 @@ HWND dttr_graphics_init(void) {
 	}
 
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
-		log_error("SDL_Init failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("SDL_Init failed: %s", SDL_GetError());
 		return NULL;
 	}
 
@@ -244,7 +244,7 @@ HWND dttr_graphics_init(void) {
 			);
 		}
 
-		log_error("%s", msg);
+		DTTR_LOG_ERROR("%s", msg);
 		MessageBoxA(NULL, msg, "DttR: Error", MB_OK | MB_ICONERROR);
 		sdsfree(msg);
 	}

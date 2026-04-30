@@ -1,6 +1,6 @@
 #include <dttr_sdl.h>
 
-#include <log.h>
+#include <dttr_log.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
@@ -58,13 +58,13 @@ static bool s_load_sdl(void) {
 
 	char path[MAX_PATH];
 	if (!s_resolve_sdl_dll_path(path, sizeof(path))) {
-		log_error("Could not resolve SDL3.dll path");
+		DTTR_LOG_ERROR("Could not resolve SDL3.dll path");
 		return false;
 	}
 
 	const HMODULE module = LoadLibraryA(path);
 	if (!module) {
-		log_error("Could not load SDL3.dll");
+		DTTR_LOG_ERROR("Could not load SDL3.dll");
 		return false;
 	}
 

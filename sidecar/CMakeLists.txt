@@ -1,4 +1,5 @@
 find_package(PkgConfig REQUIRED)
+
 if(NOT TARGET PkgConfig::SDL3)
     pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 endif()
@@ -9,16 +10,17 @@ endif()
 set(DTTR_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/gen")
 set(DTTR_FFMPEG_DIR "${CMAKE_SOURCE_DIR}/.toolchain/ffmpeg")
 set(DTTR_FFMPEG_LIBS avformat avcodec avutil swscale swresample)
+
 file(GLOB DTTR_FFMPEG_RUNTIME_DLLS "${DTTR_FFMPEG_DIR}/bin/*.dll")
 set(DTTR_FFMPEG_RUNTIME_DLLS ${DTTR_FFMPEG_RUNTIME_DLLS} PARENT_SCOPE)
 
 set(DTTR_MSS_SOURCES
     src/audio/mss_core.c
     src/audio/mss_sample.c
+    src/audio/mss_sdl.c
     src/audio/mss_stream.c
     src/audio/mss_track.c
     src/audio/mss_wave.c
-    src/audio/mss_sdl.c
 )
 
 add_library(dttr_sidecar SHARED
@@ -26,9 +28,21 @@ add_library(dttr_sidecar SHARED
     src/impl.c
     src/game_api.c
     src/hook_registry.c
+    src/platform/imports.c
+    src/platform/hook_ddraw.c
+    src/platform/hook_dinput.c
+    src/platform/hook_gdi32.c
+    src/platform/hook_kernel32.c
+    src/platform/hook_mss32.c
+    src/platform/hook_user32.c
+    src/platform/hook_winmm.c
+    src/platform/hook_winplay.c
+    src/platform/hook_winstr.c
+
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
+
     src/graphics/graphics.c
     src/graphics/util.c
     src/graphics/hooks.c
@@ -41,12 +55,15 @@ add_library(dttr_sidecar SHARED
     src/graphics/com_direct3dtexture2.c
     src/graphics/com_directdraw7.c
     src/graphics/com_directdrawsurface7.c
+
     src/audio/hooks.c
     ${DTTR_MSS_SOURCES}
-    src/other/hooks.c
-    src/other/hook_crt_open_file.c
-    src/other/hook_cleanup_level_assets.c
-    src/other/hook_resolve_pcdogs_path.c
+
+    src/game/hooks.c
+    src/game/hook_crt_open_file.c
+    src/game/hook_cleanup_level_assets.c
+    src/game/hook_resolve_pcdogs_path.c
+
     src/movies/movies.c
 )
 

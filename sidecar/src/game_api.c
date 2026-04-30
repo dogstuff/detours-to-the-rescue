@@ -3,10 +3,12 @@
 #include "dttr_sidecar.h"
 #include "hook_registry_internal.h"
 #include <dttr_components.h>
-#include <log.h>
+#include <dttr_log.h>
 
 static const DTTR_ComponentAPI s_api = {
-	.m_log = log_log,
+	.m_log = dttr_log,
+	.m_log_is_enabled = dttr_log_is_enabled,
+	.m_log_unchecked = dttr_log_unchecked,
 };
 
 static const DTTR_ComponentGameAPI s_game_api = {

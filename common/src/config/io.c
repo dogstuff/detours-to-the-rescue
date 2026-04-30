@@ -1,7 +1,7 @@
 #include "config_internal.h"
-#include "log.h"
 #include "sds.h"
 #include "yyjson.h"
+#include <dttr_log.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -40,6 +40,19 @@ static void s_errors_show(void) {
 	DTTR_FATAL("Configuration Error: %s", s_errors);
 }
 
+static void s_errors_add_invalid_value(
+	const char *section,
+	const char *key,
+	const char *value
+) {
+	if (section) {
+		s_errors_addf("%s.%s: invalid value \"%s\"", section, key, value);
+		return;
+	}
+
+	s_errors_addf("%s: invalid value \"%s\"", key, value);
+}
+
 static const char *s_yyjson_value_as_string(yyjson_val *val, char *buf, size_t buf_size) {
 	if (yyjson_is_str(val)) {
 		return yyjson_get_str(val);
@@ -71,10 +84,7 @@ static void s_config_apply_buttons(DTTR_Config *config, yyjson_val *buttons) {
 		return;
 	}
 
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
-		config->m_gamepad_button_map[i] = DTTR_GAMEPAD_MAPPING_NONE;
-	}
-
+	s_config_clear_button_map(config->m_gamepad_button_map);
 	yyjson_obj_iter iter;
 	yyjson_obj_iter_init(buttons, &iter);
 	yyjson_val *key;
@@ -130,11 +140,7 @@ static void s_apply_section(yyjson_val *obj, const char *section) {
 			continue;
 		}
 
-		if (section) {
-			s_errors_addf("%s.%s: invalid value \"%s\"", section, key_str, value);
-		} else {
-			s_errors_addf("%s: invalid value \"%s\"", key_str, value);
-		}
+		s_errors_add_invalid_value(section, key_str, value);
 	}
 }
 
@@ -142,7 +148,7 @@ bool dttr_config_load(const char *filename) {
 	s_errors_clear();
 
 	if (!filename || !filename[0]) {
-		log_error("Load failed: empty filename");
+		DTTR_LOG_ERROR("Load failed: empty filename");
 		dttr_config_set_defaults(&g_dttr_config);
 		return false;
 	}
@@ -151,7 +157,7 @@ bool dttr_config_load(const char *filename) {
 
 	FILE *f = fopen(filename, "rb");
 	if (!f) {
-		log_warn("File '%s' not found. Using defaults.", filename);
+		DTTR_LOG_WARN("File '%s' not found. Using defaults.", filename);
 		return true;
 	}
 
@@ -161,14 +167,14 @@ bool dttr_config_load(const char *filename) {
 
 	if (file_size <= 0) {
 		fclose(f);
-		log_warn("File '%s' is empty. Using defaults.", filename);
+		DTTR_LOG_WARN("File '%s' is empty. Using defaults.", filename);
 		return true;
 	}
 
 	sds buf = sdsnewlen(SDS_NOINIT, (size_t)file_size);
 	if (!buf) {
 		fclose(f);
-		log_error("Load failed: out of memory");
+		DTTR_LOG_ERROR("Load failed: out of memory");
 		return false;
 	}
 
@@ -188,7 +194,7 @@ bool dttr_config_load(const char *filename) {
 	sdsfree(buf);
 
 	if (!doc) {
-		log_error("JSON parse failed: %s at position %zu", err.msg, err.pos);
+		DTTR_LOG_ERROR("JSON parse failed: %s at position %zu", err.msg, err.pos);
 		s_errors_addf(
 			"Failed to parse %s (%s at position %zu)",
 			filename,
@@ -236,7 +242,7 @@ bool dttr_config_load(const char *filename) {
 					key_str,
 					value
 				)) {
-				s_errors_addf("gamepad.%s: invalid value \"%s\"", key_str, value);
+				s_errors_add_invalid_value("gamepad", key_str, value);
 			}
 		}
 	}

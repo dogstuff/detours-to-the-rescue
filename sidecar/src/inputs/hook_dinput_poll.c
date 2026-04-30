@@ -4,7 +4,7 @@
 #include <string.h>
 #include <windows.h>
 
-#include "log.h"
+#include <dttr_log.h>
 
 typedef struct {
 	LONG m_x;
@@ -93,7 +93,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	S_DIJoyState *state = (S_DIJoyState *)pcdogs_malloc(sizeof(*state));
 
 	if (!state) {
-		log_error("Failed to allocate joystick poll state");
+		DTTR_LOG_ERROR("Failed to allocate joystick poll state");
 		return NULL;
 	}
 
@@ -119,14 +119,24 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 
 		if (action >= PCDOGS_GAMEPAD_IDX_BTN_0 && action <= PCDOGS_GAMEPAD_IDX_BTN_12) {
 			state->m_buttons[action - PCDOGS_GAMEPAD_IDX_BTN_0] = DINPUT_BUTTON_PRESSED;
-		} else if (action == PCDOGS_GAMEPAD_IDX_UP) {
+			continue;
+		}
+
+		switch (action) {
+		case PCDOGS_GAMEPAD_IDX_UP:
 			dir_up = true;
-		} else if (action == PCDOGS_GAMEPAD_IDX_DOWN) {
+			break;
+		case PCDOGS_GAMEPAD_IDX_DOWN:
 			dir_down = true;
-		} else if (action == PCDOGS_GAMEPAD_IDX_LEFT) {
+			break;
+		case PCDOGS_GAMEPAD_IDX_LEFT:
 			dir_left = true;
-		} else if (action == PCDOGS_GAMEPAD_IDX_RIGHT) {
+			break;
+		case PCDOGS_GAMEPAD_IDX_RIGHT:
 			dir_right = true;
+			break;
+		default:
+			break;
 		}
 	}
 

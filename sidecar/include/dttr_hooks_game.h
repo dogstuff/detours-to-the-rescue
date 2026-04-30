@@ -1,5 +1,5 @@
-#ifndef DTTR_HOOKS_OTHER_H
-#define DTTR_HOOKS_OTHER_H
+#ifndef DTTR_HOOKS_GAME_H
+#define DTTR_HOOKS_GAME_H
 
 #include <dttr_components.h>
 
@@ -30,9 +30,9 @@ void __cdecl dttr_hook_cleanup_level_assets_callback(void);
 DTTR_TRAMPOLINE_HOOK(dttr_hook_cleanup_level_assets)
 
 /// Initializes miscellaneous hooks.
-void dttr_other_hooks_init(const DTTR_ComponentContext *ctx);
+void dttr_game_hooks_init(const DTTR_ComponentContext *ctx);
 
 /// Removes miscellaneous hooks and frees trampoline memory.
-void dttr_other_hooks_cleanup(const DTTR_ComponentContext *ctx);
+void dttr_game_hooks_cleanup(const DTTR_ComponentContext *ctx);
 
 #endif

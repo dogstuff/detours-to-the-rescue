@@ -1,7 +1,7 @@
 #include <dttr_config.h>
 #include <dttr_loader.h>
+#include <dttr_log.h>
 #include <dttr_sdl.h>
-#include <log.h>
 
 #include <SDL3/SDL.h>
 #include <windows.h>
@@ -37,6 +37,9 @@ static volatile bool s_browse_chosen;
 
 static void SDLCALL
 s_browse_callback(void *userdata, const char *const *filelist, int filter) {
+	(void)userdata;
+	(void)filter;
+
 	if (!filelist || !filelist[0]) {
 		s_browse_result[0] = '\0';
 		s_browse_chosen = true;
@@ -97,7 +100,7 @@ static bool s_prompt_browse_for_dir(WCHAR *out) {
 		return false;
 	}
 
-	log_info("Selected directory: %s", s_browse_result);
+	DTTR_LOG_INFO("Selected directory: %s", s_browse_result);
 
 	strncpy(
 		g_dttr_config.m_pcdogs_path,
@@ -119,7 +122,7 @@ bool dttr_loader_resolve_exe_path(WCHAR *out, const char *configured_dir) {
 	s_utf8_to_wide_dir(wide_dir, configured_dir);
 
 	if (s_try_dir(out, wide_dir)) {
-		log_info("Using configured PCDogs path: %s", configured_dir);
+		DTTR_LOG_INFO("Using configured PCDogs path: %s", configured_dir);
 		return true;
 	}
 

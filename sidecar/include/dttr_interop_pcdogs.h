@@ -3,7 +3,7 @@
 
 #include <dttr_components.h>
 
-#include "log.h"
+#include <dttr_log.h>
 
 // Game globals
 
@@ -143,17 +143,17 @@ static void s_interop_pcdogs_globals_init(const DTTR_ComponentContext *ctx) {
 		);
 		if (match) {
 			g_pcdogs_movie_file_names_addr = *(uint32_t *)(match + 3);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_movie_file_names at 0x%08X",
 				(unsigned)g_pcdogs_movie_file_names_addr
 			);
 			g_pcdogs_movie_path_prefix_addr = *(uint32_t *)(match + 9);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_movie_path_prefix at 0x%08X",
 				(unsigned)g_pcdogs_movie_path_prefix_addr
 			);
 		} else {
-			log_error(
+			DTTR_LOG_ERROR(
 				"g_pcdogs_movie_file_names / g_pcdogs_movie_path_prefix:"
 				" resolved to NULL"
 			);
@@ -169,32 +169,32 @@ static void s_interop_pcdogs_globals_init(const DTTR_ComponentContext *ctx) {
 		);
 		if (match) {
 			g_pcdogs_level_asset_0_addr = *(uint32_t *)(match + 13);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_level_asset_0 at 0x%08X",
 				(unsigned)g_pcdogs_level_asset_0_addr
 			);
 			g_pcdogs_level_asset_1_addr = *(uint32_t *)(match + 25);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_level_asset_1 at 0x%08X",
 				(unsigned)g_pcdogs_level_asset_1_addr
 			);
 			g_pcdogs_level_asset_2_addr = *(uint32_t *)(match + 37);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_level_asset_2 at 0x%08X",
 				(unsigned)g_pcdogs_level_asset_2_addr
 			);
 			g_pcdogs_level_asset_3_addr = *(uint32_t *)(match + 48);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_level_asset_3 at 0x%08X",
 				(unsigned)g_pcdogs_level_asset_3_addr
 			);
 			g_pcdogs_level_asset_4_addr = *(uint32_t *)(match + 60);
-			log_debug(
+			DTTR_LOG_DEBUG(
 				"Resolved g_pcdogs_level_asset_4 at 0x%08X",
 				(unsigned)g_pcdogs_level_asset_4_addr
 			);
 		} else {
-			log_error("g_pcdogs_level_asset_*: resolved to NULL");
+			DTTR_LOG_ERROR("g_pcdogs_level_asset_*: resolved to NULL");
 		}
 	}
 }

@@ -1,10 +1,9 @@
-#include "dttr_hooks_other.h"
+#include "dttr_hooks_game.h"
 #include "dttr_interop_pcdogs.h"
-#include "log.h"
-
-#include <windows.h>
-
 #include "dttr_sidecar.h"
+
+#include <dttr_log.h>
+#include <windows.h>
 
 uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback(void) {
 	char *out_path = g_pcdogs_directory_ptr();
@@ -16,7 +15,7 @@ uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback(void) {
 	);
 
 	if (module_path_length == 0) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"GetModuleFileNameA failed (error %lu), falling back to current directory",
 			GetLastError()
 		);

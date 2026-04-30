@@ -1,7 +1,7 @@
 #include <dttr_crashdump.h>
 #include <dttr_errors.h>
 #include <dttr_loader.h>
-#include <log.h>
+#include <dttr_log.h>
 #include <stdbool.h>
 #include <string.h>
 #include <windows.h>
@@ -15,16 +15,16 @@ static bool s_watchdog_attached = false;
 
 static bool s_should_disable_watchdog(void) {
 	const HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
-	S_IsWow64Process2 is_wow64_process2_fn
+	const S_IsWow64Process2 is_wow64_process2
 		= (S_IsWow64Process2)(kernel32 ? GetProcAddress(kernel32, "IsWow64Process2")
 									   : NULL);
 
-	if (is_wow64_process2_fn) {
+	if (is_wow64_process2) {
 		uint16_t process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
 
 		uint16_t native_machine = IMAGE_FILE_MACHINE_UNKNOWN;
-		if (is_wow64_process2_fn(GetCurrentProcess(), &process_machine, &native_machine)) {
-			log_debug(
+		if (is_wow64_process2(GetCurrentProcess(), &process_machine, &native_machine)) {
+			DTTR_LOG_DEBUG(
 				"Watchdog host machine detection: process=0x%X native=0x%X",
 				process_machine,
 				native_machine
@@ -35,7 +35,7 @@ static bool s_should_disable_watchdog(void) {
 
 	SYSTEM_INFO system_info = {0};
 	GetNativeSystemInfo(&system_info);
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Watchdog fallback architecture detection: native_arch=0x%X",
 		system_info.wProcessorArchitecture
 	);
@@ -50,12 +50,15 @@ static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excep
 		return;
 	}
 
-	CONTEXT ctx = {.ContextFlags = CONTEXT_ALL};
-	GetThreadContext(thread, &ctx);
+	CONTEXT thread_context = {.ContextFlags = CONTEXT_ALL};
+	GetThreadContext(thread, &thread_context);
 	CloseHandle(thread);
 
 	EXCEPTION_RECORD fake_record = {.ExceptionCode = exception_code};
-	EXCEPTION_POINTERS ptrs = {.ExceptionRecord = &fake_record, .ContextRecord = &ctx};
+	EXCEPTION_POINTERS ptrs = {
+		.ExceptionRecord = &fake_record,
+		.ContextRecord = &thread_context,
+	};
 
 	sds filename = dttr_crashdump_write(process, pid, tid, &ptrs);
 
@@ -80,7 +83,7 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	s_watchdog_attached = false;
 
 	if (s_should_disable_watchdog()) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"Skipping watchdog debugger because debugging is not available on this "
 			"machine"
 		);
@@ -88,14 +91,14 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	}
 
 	if (!DebugActiveProcess(child_info->dwProcessId)) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"Could not attach debugger to child process; skipping early crash detection"
 		);
 		return;
 	}
 
 	s_watchdog_attached = true;
-	log_debug("Watchdog attached to PID %lu", child_info->dwProcessId);
+	DTTR_LOG_DEBUG("Watchdog attached to PID %lu", child_info->dwProcessId);
 }
 
 // Return true when the child emits the watchdog ready sentinel.
@@ -123,11 +126,11 @@ static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) 
 
 void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 	if (!s_watchdog_attached) {
-		log_debug("Watchdog not attached; skipping early crash monitoring");
+		DTTR_LOG_DEBUG("Watchdog not attached; skipping early crash monitoring");
 		return;
 	}
 
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Watching for early crash or ready sentinel (timeout=%dms)",
 		WATCHDOG_TIMEOUT_MS
 	);
@@ -166,7 +169,7 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 
 		case OUTPUT_DEBUG_STRING_EVENT:
 			if (s_is_sentinel(child_info->hProcess, &evt.u.DebugString)) {
-				log_info("Sidecar confirmed entrypoint entered!");
+				DTTR_LOG_INFO("Sidecar confirmed entrypoint entered!");
 				done = true;
 			}
 
@@ -196,5 +199,5 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 	}
 
 	DebugActiveProcessStop(child_info->dwProcessId);
-	log_debug("Watchdog detached");
+	DTTR_LOG_DEBUG("Watchdog detached");
 }

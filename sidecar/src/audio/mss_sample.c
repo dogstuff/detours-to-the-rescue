@@ -1,6 +1,6 @@
 #include "mss_internal.h"
 
-#include "log.h"
+#include <dttr_log.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
@@ -58,7 +58,7 @@ static void s_apply_rate(S_MssSample *sample) {
 	}
 
 	if (!MIX_SetTrackFrequencyRatio(sample->track, ratio)) {
-		log_error("MIX_SetTrackFrequencyRatio failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MIX_SetTrackFrequencyRatio failed: %s", SDL_GetError());
 	}
 }
 
@@ -199,13 +199,13 @@ static bool s_load_sample_audio_from_memory(
 ) {
 	SDL_IOStream *io = SDL_IOFromConstMem(file_image, size);
 	if (!io) {
-		log_error("SDL_IOFromConstMem failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("SDL_IOFromConstMem failed: %s", SDL_GetError());
 		return false;
 	}
 
 	sample->audio = MIX_LoadAudio_IO(dttr_mss_core_mixer(), io, true, true);
 	if (!sample->audio) {
-		log_error("MIX_LoadAudio_IO sample failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MIX_LoadAudio_IO sample failed: %s", SDL_GetError());
 		return false;
 	}
 
@@ -320,7 +320,7 @@ static bool s_render_sample_audio(S_MssSample *sample) {
 	);
 	free(converted);
 	if (!audio) {
-		log_error("MSS sample render load failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MSS sample render load failed: %s", SDL_GetError());
 		return false;
 	}
 
@@ -367,10 +367,10 @@ void dttr_mss_sample_apply_master_gain(void) {
 void dttr_mss_sdl_stop_all_samples(void) { dttr_mss_sample_stop_all(); }
 
 void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
-	log_trace("MSS AIL_allocate_sample_handle(driver=%p)", driver);
+	DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle(driver=%p)", driver);
 
 	if (!dttr_mss_core_ensure_mixer()) {
-		log_trace("MSS AIL_allocate_sample_handle -> NULL (mixer unavailable)");
+		DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle -> NULL (mixer unavailable)");
 		return NULL;
 	}
 
@@ -381,11 +381,11 @@ void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
 
 		S_MssSample *sample = &s_samples[i];
 		s_reset_sample_slot(sample);
-		log_trace("MSS AIL_allocate_sample_handle -> sample[%d]=%p", i, sample);
+		DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle -> sample[%d]=%p", i, sample);
 		return sample;
 	}
 
-	log_trace("MSS AIL_allocate_sample_handle -> NULL (pool exhausted)");
+	DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle -> NULL (pool exhausted)");
 
 	return NULL;
 }
@@ -396,7 +396,7 @@ void __stdcall dttr_mss_ail_release_sample_handle(void *sample_ptr) {
 		return;
 	}
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_release_sample_handle(sample[%d]=%p)",
 		s_sample_slot(sample),
 		sample
@@ -412,7 +412,7 @@ void __stdcall dttr_mss_ail_init_sample(void *sample_ptr) {
 		return;
 	}
 
-	log_trace("MSS AIL_init_sample(sample[%d]=%p)", s_sample_slot(sample), sample);
+	DTTR_LOG_TRACE("MSS AIL_init_sample(sample[%d]=%p)", s_sample_slot(sample), sample);
 
 	s_free_sample_audio(sample);
 	s_reset_sample_defaults(sample);
@@ -424,7 +424,7 @@ int __stdcall dttr_mss_ail_set_sample_file(
 	int block
 ) {
 	if (!s_is_sample(sample_ptr) || !file_image || !dttr_mss_core_ensure_mixer()) {
-		log_trace(
+		DTTR_LOG_TRACE(
 			"MSS AIL_set_sample_file(sample=%p, file=%p, block=%d) -> 0 (invalid)",
 			sample_ptr,
 			file_image,
@@ -435,7 +435,7 @@ int __stdcall dttr_mss_ail_set_sample_file(
 
 	S_MssSample *sample = sample_ptr;
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_set_sample_file(sample[%d]=%p, file=%p, block=%d)",
 		s_sample_slot(sample),
 		sample,
@@ -447,17 +447,17 @@ int __stdcall dttr_mss_ail_set_sample_file(
 
 	const size_t size = dttr_mss_wave_riff_size(file_image);
 	if (block > 0 && size > (size_t)block) {
-		log_error("AIL_set_sample_file received truncated WAVE data");
+		DTTR_LOG_ERROR("AIL_set_sample_file received truncated WAVE data");
 		return 0;
 	}
 
 	S_WaveInfo wave = {0};
 	if (!size || !dttr_mss_wave_parse(file_image, &wave)) {
-		log_error("AIL_set_sample_file received non-WAVE data");
+		DTTR_LOG_ERROR("AIL_set_sample_file received non-WAVE data");
 		return 0;
 	}
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_set_sample_file sample[%d] RIFF size=%zu format=%u channels=%u rate=%u "
 		"bits=%u data=%zu",
 		s_sample_slot(sample),
@@ -471,7 +471,7 @@ int __stdcall dttr_mss_ail_set_sample_file(
 
 	sample->track = MIX_CreateTrack(dttr_mss_core_mixer());
 	if (!sample->track) {
-		log_error("MIX_CreateTrack sample failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MIX_CreateTrack sample failed: %s", SDL_GetError());
 		s_free_sample_audio(sample);
 		return 0;
 	}
@@ -490,13 +490,13 @@ int __stdcall dttr_mss_ail_set_sample_file(
 	}
 
 	if (!sample->audio && !sample->pcm_frames) {
-		log_error("MSS sample load failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MSS sample load failed: %s", SDL_GetError());
 		s_free_sample_audio(sample);
 		return 0;
 	}
 
 	s_apply_sample_track(sample);
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_set_sample_file sample[%d] -> 1 track=%p audio=%p pcm_frames=%zu "
 		"base_rate=%d current_rate=%d",
 		s_sample_slot(sample),
@@ -515,7 +515,7 @@ void __stdcall dttr_mss_ail_start_sample(void *sample_ptr) {
 		return;
 	}
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_start_sample(sample[%d]=%p status=%d loops=%d volume=%d pan=%d rate=%d "
 		"track=%p audio=%p)",
 		s_sample_slot(sample),
@@ -531,12 +531,12 @@ void __stdcall dttr_mss_ail_start_sample(void *sample_ptr) {
 
 	if (sample->pcm_frames && sample->track && !sample->audio
 		&& !s_render_sample_audio(sample)) {
-		log_error("MSS sample render failed before start");
+		DTTR_LOG_ERROR("MSS sample render failed before start");
 		return;
 	}
 
 	if (!sample->track || !sample->audio) {
-		log_trace(
+		DTTR_LOG_TRACE(
 			"MSS AIL_start_sample sample[%d] skipped missing track/audio",
 			s_sample_slot(sample)
 		);
@@ -548,7 +548,7 @@ void __stdcall dttr_mss_ail_start_sample(void *sample_ptr) {
 	sample->status = S_AIL_STATUS_PLAYING;
 	const int sdl_loops = dttr_mss_loops_to_sdl(sample->loops);
 	dttr_mss_track_play(sample->track, sdl_loops);
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_start_sample sample[%d] played sdl_loops=%d",
 		s_sample_slot(sample),
 		sdl_loops
@@ -561,7 +561,7 @@ void __stdcall dttr_mss_ail_stop_sample(void *sample_ptr) {
 		return;
 	}
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_stop_sample(sample[%d]=%p status=%d track=%p)",
 		s_sample_slot(sample),
 		sample,
@@ -633,7 +633,7 @@ void __stdcall dttr_mss_ail_set_sample_playback_rate(void *sample_ptr, int rate)
 
 		sample->paused_by_rate = true;
 		sample->status = S_AIL_STATUS_PLAYING;
-		log_trace(
+		DTTR_LOG_TRACE(
 			"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d) "
 			"paused sample",
 			s_sample_slot(sample),
@@ -657,7 +657,7 @@ void __stdcall dttr_mss_ail_set_sample_playback_rate(void *sample_ptr, int rate)
 	}
 
 	sample->paused_by_rate = false;
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d current=%d "
 		"base=%d resumed=%d)",
 		s_sample_slot(sample),

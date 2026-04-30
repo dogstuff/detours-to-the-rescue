@@ -1,10 +1,9 @@
 #include <SDL3/SDL.h>
 #include <dttr_sidecar.h>
-#include <windows.h>
 
 #include "dttr_hooks_inputs.h"
 #include "dttr_interop_pcdogs.h"
-#include "log.h"
+#include <dttr_log.h>
 
 SDL_Gamepad *g_dttr_gamepad;
 
@@ -16,12 +15,12 @@ static void s_try_open_configured_gamepad(void) {
 	if (joysticks && index < count) {
 		g_dttr_gamepad = SDL_OpenGamepad(joysticks[index]);
 		if (g_dttr_gamepad) {
-			log_info("Gamepad connected: %s", SDL_GetGamepadName(g_dttr_gamepad));
+			DTTR_LOG_INFO("Gamepad connected: %s", SDL_GetGamepadName(g_dttr_gamepad));
 		} else {
-			log_error("Failed to open gamepad: %s", SDL_GetError());
+			DTTR_LOG_ERROR("Failed to open gamepad: %s", SDL_GetError());
 		}
 	} else if (count > 0) {
-		log_warn("Gamepad index %d out of range (%d connected)", index, count);
+		DTTR_LOG_WARN("Gamepad index %d out of range (%d connected)", index, count);
 	}
 
 	SDL_free(joysticks);
@@ -38,7 +37,7 @@ static void s_close_gamepad(void) {
 
 void dttr_inputs_init(void) {
 	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
-		log_error("SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
 	}
 
 	s_try_open_configured_gamepad();
@@ -62,19 +61,28 @@ void dttr_inputs_hooks_init(const DTTR_ComponentContext *ctx) {
 }
 
 void dttr_inputs_handle_device_event(const SDL_Event *event) {
-	if (event->type == SDL_EVENT_GAMEPAD_ADDED && !g_dttr_gamepad) {
+	switch (event->type) {
+	case SDL_EVENT_GAMEPAD_ADDED:
+		if (g_dttr_gamepad) {
+			return;
+		}
+
 		s_try_open_configured_gamepad();
 		if (g_dttr_gamepad && g_pcdogs_game_initialized_get() == 1) {
 			g_pcdogs_joystick_available_set(1);
 		}
 		return;
-	}
+	case SDL_EVENT_GAMEPAD_REMOVED:
+		if (!g_dttr_gamepad || SDL_GetGamepadID(g_dttr_gamepad) != event->gdevice.which) {
+			return;
+		}
 
-	if (event->type == SDL_EVENT_GAMEPAD_REMOVED && g_dttr_gamepad
-		&& SDL_GetGamepadID(g_dttr_gamepad) == event->gdevice.which) {
-		log_info("Gamepad disconnected: %s", SDL_GetGamepadName(g_dttr_gamepad));
+		DTTR_LOG_INFO("Gamepad disconnected: %s", SDL_GetGamepadName(g_dttr_gamepad));
 		s_close_gamepad();
 		g_pcdogs_joystick_available_set(0);
+		return;
+	default:
+		return;
 	}
 }
 
@@ -84,7 +92,7 @@ void dttr_inputs_late_init(void) {
 	}
 
 	g_pcdogs_joystick_available_set(1);
-	log_debug("Joystick is available");
+	DTTR_LOG_DEBUG("Joystick is available");
 }
 
 void dttr_inputs_hooks_cleanup(const DTTR_ComponentContext *ctx) {

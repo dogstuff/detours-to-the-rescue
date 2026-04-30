@@ -1,8 +1,8 @@
 #include <dttr_bootstrap.h>
 #include <dttr_errors.h>
 #include <dttr_loader.h>
+#include <dttr_log.h>
 #include <gen/asm.h>
-#include <log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +35,7 @@ static uintptr_t s_read_remote_image_base_from_thread_context(
 	const uintptr_t peb_address = (uintptr_t)thread_context->Ebx;
 	uintptr_t image_base = 0;
 
-	log_debug("Reading image base from PEB at 0x%08X", (unsigned)peb_address);
+	DTTR_LOG_DEBUG("Reading image base from PEB at 0x%08X", (unsigned)peb_address);
 
 	s_read_remote_bytes(
 		process,
@@ -45,7 +45,7 @@ static uintptr_t s_read_remote_image_base_from_thread_context(
 		"PEB image base"
 	);
 
-	log_debug("Image base: 0x%08X", (unsigned)image_base);
+	DTTR_LOG_DEBUG("Image base: 0x%08X", (unsigned)image_base);
 
 	return image_base;
 }
@@ -66,7 +66,7 @@ static uintptr_t s_read_entry_point_rva_from_remote_image(
 	}
 
 	const uintptr_t nt_headers_address = image_base + (uintptr_t)dos.e_lfanew;
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"DOS header valid; remote NT headers at 0x%08X",
 		(unsigned)nt_headers_address
 	);
@@ -83,7 +83,7 @@ static uintptr_t s_read_entry_point_rva_from_remote_image(
 	}
 
 	const uintptr_t rva = (uintptr_t)nt.OptionalHeader.AddressOfEntryPoint;
-	log_debug("Entry point RVA: 0x%08X", (unsigned)rva);
+	DTTR_LOG_DEBUG("Entry point RVA: 0x%08X", (unsigned)rva);
 	return rva;
 }
 
@@ -169,7 +169,7 @@ static uint32_t s_build_sidecar_shellcode(
 	memcpy(buffer, dttr_sidecar_shellcode, dttr_sidecar_shellcode_len);
 	memcpy(buffer + dttr_sidecar_shellcode_len, payload, sizeof(*payload));
 
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Shellcode payload built (bytes=%u, shellcode=%u, payload=%u)",
 		out_size,
 		dttr_sidecar_shellcode_len,
@@ -197,7 +197,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	);
 	const uintptr_t original_entry = image_base + entry_point_rva;
 
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)",
 		(unsigned)original_entry,
 		(unsigned)image_base
@@ -205,7 +205,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 
 	char sidecar_dll_path[MAX_PATH];
 	s_resolve_sidecar_dll_path(sidecar_dll_path, sizeof(sidecar_dll_path));
-	log_debug("Sidecar DLL path: %s", sidecar_dll_path);
+	DTTR_LOG_DEBUG("Sidecar DLL path: %s", sidecar_dll_path);
 
 	DTTR_LoaderShellcodePayload payload = {0};
 	s_initialize_shellcode_payload(&payload, sidecar_dll_path, original_entry);
@@ -216,7 +216,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 		&shellcode_buffer
 	);
 
-	log_debug("Allocating %u bytes in remote process", shellcode_buffer_len);
+	DTTR_LOG_DEBUG("Allocating %u bytes in remote process", shellcode_buffer_len);
 
 	LPVOID payload_buffer = DTTR_UNWRAP_WINAPI_EXISTS(VirtualAllocEx(
 		child_info->hProcess,
@@ -226,7 +226,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 		PAGE_READWRITE
 	));
 
-	log_debug("Remote allocation at 0x%08X", (unsigned)(uintptr_t)payload_buffer);
+	DTTR_LOG_DEBUG("Remote allocation at 0x%08X", (unsigned)(uintptr_t)payload_buffer);
 
 	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
 		child_info->hProcess,
@@ -235,7 +235,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 		shellcode_buffer_len,
 		NULL
 	));
-	log_debug("Shellcode written to remote process");
+	DTTR_LOG_DEBUG("Shellcode written to remote process");
 
 	DWORD old_protect;
 
@@ -246,7 +246,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 		PAGE_EXECUTE_READWRITE,
 		&old_protect
 	));
-	log_debug("Remote memory protection set to PAGE_EXECUTE_READWRITE");
+	DTTR_LOG_DEBUG("Remote memory protection set to PAGE_EXECUTE_READWRITE");
 
 	free(shellcode_buffer);
 
@@ -254,8 +254,11 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	DTTR_UNWRAP_WINAPI_NONZERO(
 		SetThreadContext(child_info->hThread, &child_thread_context)
 	);
-	log_debug("Thread context updated: EIP=0x%08X", (unsigned)(uintptr_t)payload_buffer);
+	DTTR_LOG_DEBUG(
+		"Thread context updated: EIP=0x%08X",
+		(unsigned)(uintptr_t)payload_buffer
+	);
 
 	DTTR_UNWRAP_WINAPI_NONNEGATIVE(ResumeThread(child_info->hThread));
-	log_debug("Resumed thread; game process is running");
+	DTTR_LOG_DEBUG("Resumed thread; game process is running");
 }

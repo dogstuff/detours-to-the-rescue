@@ -1,6 +1,6 @@
 #include "mss_internal.h"
 
-#include "log.h"
+#include <dttr_log.h>
 
 #include <dttr_config.h>
 
@@ -96,7 +96,7 @@ bool dttr_mss_core_ensure_mix_initialized(void) {
 	}
 
 	if (!MIX_Init()) {
-		log_error("MIX_Init failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MIX_Init failed: %s", SDL_GetError());
 		return false;
 	}
 
@@ -121,7 +121,7 @@ bool dttr_mss_core_ensure_mixer(void) {
 	const SDL_AudioSpec *desired = s_has_desired_spec ? &s_desired_spec : &fallback;
 	s_mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, desired);
 	if (!s_mixer) {
-		log_error("MIX_CreateMixerDevice failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MIX_CreateMixerDevice failed: %s", SDL_GetError());
 		return false;
 	}
 
@@ -132,7 +132,7 @@ bool dttr_mss_core_ensure_mixer(void) {
 	}
 
 	s_mixer_spec = actual;
-	log_info(
+	DTTR_LOG_INFO(
 		"MSS mixer opened: format=0x%04X channels=%d freq=%d",
 		(unsigned)actual.format,
 		actual.channels,

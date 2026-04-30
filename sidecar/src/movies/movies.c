@@ -1,7 +1,7 @@
 #include "dttr_hooks_movies.h"
 
 #include "dttr_sidecar.h"
-#include "log.h"
+#include <dttr_log.h>
 #include <sds.h>
 
 #include <SDL3/SDL.h>
@@ -107,26 +107,33 @@ static void s_close_movie(void) {
 static AVCodecContext *s_open_codec(const AVStream *stream) {
 	const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
 	if (!codec) {
-		log_error("Missing movie decoder for codec id %d", stream->codecpar->codec_id);
+		DTTR_LOG_ERROR(
+			"Missing movie decoder for codec id %d",
+			stream->codecpar->codec_id
+		);
 		return NULL;
 	}
 
 	AVCodecContext *ctx = avcodec_alloc_context3(codec);
 	if (!ctx) {
-		log_error("Failed to allocate movie decoder context");
+		DTTR_LOG_ERROR("Failed to allocate movie decoder context");
 		return NULL;
 	}
 
 	int err = avcodec_parameters_to_context(ctx, stream->codecpar);
 	if (err < 0) {
-		log_error("Failed to configure movie decoder: %s", s_av_error(err));
+		DTTR_LOG_ERROR("Failed to configure movie decoder: %s", s_av_error(err));
 		avcodec_free_context(&ctx);
 		return NULL;
 	}
 
 	err = avcodec_open2(ctx, codec, NULL);
 	if (err < 0) {
-		log_error("Failed to open movie decoder %s: %s", codec->name, s_av_error(err));
+		DTTR_LOG_ERROR(
+			"Failed to open movie decoder %s: %s",
+			codec->name,
+			s_av_error(err)
+		);
 		avcodec_free_context(&ctx);
 		return NULL;
 	}
@@ -156,13 +163,16 @@ static bool s_prepare_audio(void) {
 	av_channel_layout_uninit(&out_layout);
 
 	if (err < 0 || !s_movie.swr) {
-		log_error("Failed to allocate movie audio resampler: %s", s_av_error(err));
+		DTTR_LOG_ERROR("Failed to allocate movie audio resampler: %s", s_av_error(err));
 		return false;
 	}
 
 	const int init_err = swr_init(s_movie.swr);
 	if (init_err < 0) {
-		log_error("Failed to initialize movie audio resampler: %s", s_av_error(init_err));
+		DTTR_LOG_ERROR(
+			"Failed to initialize movie audio resampler: %s",
+			s_av_error(init_err)
+		);
 		return false;
 	}
 
@@ -178,7 +188,7 @@ static bool s_prepare_audio(void) {
 		NULL
 	);
 	if (!s_movie.audio_stream) {
-		log_error("Failed to open movie audio stream: %s", SDL_GetError());
+		DTTR_LOG_ERROR("Failed to open movie audio stream: %s", SDL_GetError());
 		return false;
 	}
 
@@ -189,13 +199,13 @@ static bool s_prepare_audio(void) {
 static bool s_open_movie(const char *path) {
 	int err = avformat_open_input(&s_movie.format, path, NULL, NULL);
 	if (err < 0) {
-		log_error("Failed to open movie %s: %s", path, s_av_error(err));
+		DTTR_LOG_ERROR("Failed to open movie %s: %s", path, s_av_error(err));
 		return false;
 	}
 
 	err = avformat_find_stream_info(s_movie.format, NULL);
 	if (err < 0) {
-		log_error("Failed to read movie stream info: %s", s_av_error(err));
+		DTTR_LOG_ERROR("Failed to read movie stream info: %s", s_av_error(err));
 		return false;
 	}
 
@@ -208,7 +218,7 @@ static bool s_open_movie(const char *path) {
 		0
 	);
 	if (s_movie.video_stream < 0) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"Movie has no playable video stream: %s",
 			s_av_error(s_movie.video_stream)
 		);
@@ -293,7 +303,7 @@ static bool s_queue_video_frame(const AVFrame *frame) {
 	if (w != s_movie.buf_w || h != s_movie.buf_h || stride != s_movie.buf_stride) {
 		uint8_t *new_buffer = realloc(s_movie.buffer, size);
 		if (!new_buffer) {
-			log_error("Failed to allocate %zu bytes for movie frame", size);
+			DTTR_LOG_ERROR("Failed to allocate %zu bytes for movie frame", size);
 			return false;
 		}
 
@@ -301,7 +311,7 @@ static bool s_queue_video_frame(const AVFrame *frame) {
 		s_movie.buf_w = w;
 		s_movie.buf_h = h;
 		s_movie.buf_stride = stride;
-		log_debug("Video Format: %dx%d", s_movie.buf_w, s_movie.buf_h);
+		DTTR_LOG_DEBUG("Video Format: %dx%d", s_movie.buf_w, s_movie.buf_h);
 	}
 
 	s_movie.sws = sws_getCachedContext(
@@ -318,7 +328,7 @@ static bool s_queue_video_frame(const AVFrame *frame) {
 		NULL
 	);
 	if (!s_movie.sws) {
-		log_error("Failed to create movie video converter");
+		DTTR_LOG_ERROR("Failed to create movie video converter");
 		return false;
 	}
 
@@ -362,7 +372,7 @@ static bool s_queue_audio_frame(const AVFrame *frame) {
 
 	uint8_t *out = av_malloc((size_t)out_size);
 	if (!out) {
-		log_error("Failed to allocate movie audio buffer");
+		DTTR_LOG_ERROR("Failed to allocate movie audio buffer");
 		return false;
 	}
 
@@ -375,7 +385,7 @@ static bool s_queue_audio_frame(const AVFrame *frame) {
 		frame->nb_samples
 	);
 	if (converted < 0) {
-		log_error("Failed to convert movie audio: %s", s_av_error(converted));
+		DTTR_LOG_ERROR("Failed to convert movie audio: %s", s_av_error(converted));
 		av_free(out);
 		return false;
 	}
@@ -410,7 +420,7 @@ static bool s_receive_video_frame(void) {
 			return false;
 		}
 		if (err < 0) {
-			log_error("Failed to decode movie video: %s", s_av_error(err));
+			DTTR_LOG_ERROR("Failed to decode movie video: %s", s_av_error(err));
 			s_movie.result = DTTR_MOVIE_ENDED;
 			return false;
 		}
@@ -435,7 +445,7 @@ static void s_receive_audio_frames(void) {
 			return;
 		}
 		if (err < 0) {
-			log_warn("Failed to decode movie audio: %s", s_av_error(err));
+			DTTR_LOG_WARN("Failed to decode movie audio: %s", s_av_error(err));
 			return;
 		}
 
@@ -469,7 +479,7 @@ static bool s_drain_eof(void) {
 		}
 
 		if (queued > 0) {
-			log_warn("Movie audio drain timed out with %d bytes queued", queued);
+			DTTR_LOG_WARN("Movie audio drain timed out with %d bytes queued", queued);
 		}
 	}
 
@@ -489,7 +499,7 @@ static void s_send_packet(void) {
 
 		const int err = avcodec_send_packet(s_movie.video_codec, s_packet);
 		if (err < 0 && err != AVERROR(EAGAIN)) {
-			log_error("Failed to submit movie video packet: %s", s_av_error(err));
+			DTTR_LOG_ERROR("Failed to submit movie video packet: %s", s_av_error(err));
 			s_movie.result = DTTR_MOVIE_ENDED;
 		}
 		return;
@@ -501,7 +511,7 @@ static void s_send_packet(void) {
 
 	const int err = avcodec_send_packet(s_movie.audio_codec, s_packet);
 	if (err < 0 && err != AVERROR(EAGAIN)) {
-		log_warn("Failed to submit movie audio packet: %s", s_av_error(err));
+		DTTR_LOG_WARN("Failed to submit movie audio packet: %s", s_av_error(err));
 	}
 }
 
@@ -526,7 +536,7 @@ static bool s_decode_until_video_frame(void) {
 			continue;
 		}
 		if (err < 0) {
-			log_error("Failed to read movie packet: %s", s_av_error(err));
+			DTTR_LOG_ERROR("Failed to read movie packet: %s", s_av_error(err));
 			s_movie.result = DTTR_MOVIE_ENDED;
 			return false;
 		}
@@ -543,7 +553,7 @@ void dttr_movies_init(void) {
 	s_audio_frame = av_frame_alloc();
 	s_packet = av_packet_alloc();
 	if (!s_video_frame || !s_audio_frame || !s_packet) {
-		log_error("Failed to allocate movie playback state");
+		DTTR_LOG_ERROR("Failed to allocate movie playback state");
 	}
 }
 
@@ -565,12 +575,12 @@ void dttr_movies_cleanup(void) {
 	av_packet_free(&s_packet);
 	av_frame_free(&s_audio_frame);
 	av_frame_free(&s_video_frame);
-	log_info("Released movie playback state");
+	DTTR_LOG_INFO("Released movie playback state");
 }
 
 void dttr_movies_start(const char *path) {
 	if (!s_video_frame || !s_audio_frame || !s_packet) {
-		log_error("Missing movie playback state");
+		DTTR_LOG_ERROR("Missing movie playback state");
 		s_movie.result = DTTR_MOVIE_ENDED;
 		return;
 	}
@@ -578,7 +588,7 @@ void dttr_movies_start(const char *path) {
 	s_close_movie();
 
 	sds abs_path = sdscatprintf(sdsempty(), "%s\\%s", g_pcdogs_directory_ptr(), path);
-	log_info("Playing movie %s", abs_path);
+	DTTR_LOG_INFO("Playing movie %s", abs_path);
 
 	if (!s_open_movie(abs_path)) {
 		sdsfree(abs_path);
@@ -657,7 +667,7 @@ bool dttr_movies_handle_event(const SDL_Event *event) {
 DTTR_MovieResult dttr_movies_stop(void) {
 	const DTTR_MovieResult result = s_movie.result;
 	s_close_movie();
-	log_info("Stopped movie with result %d", result);
+	DTTR_LOG_INFO("Stopped movie with result %d", result);
 	return result;
 }
 

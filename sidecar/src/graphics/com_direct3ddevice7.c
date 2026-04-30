@@ -4,7 +4,7 @@
 #include "dttr_sidecar.h"
 #include "graphics_com_internal.h"
 #include "graphics_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,7 +78,7 @@ static void s_d3d_device7_set_transform_state(DWORD type, const float *m) {
 
 	for (int i = 0; i < DTTR_MAT4_ELEMS; i++) {
 		if (!isfinite(m[i])) {
-			log_warn(
+			DTTR_LOG_WARN(
 				"SetTransform(%s) rejected non-finite matrix input",
 				s_d3d_device7_transform_label(type)
 			);
@@ -221,7 +221,7 @@ static void s_d3d_device7_record_draw(
 	}
 
 	if (!state->m_device && state->m_backend_type == DTTR_BACKEND_SDL_GPU) {
-		log_warn("DrawPrimitive: missing device/buffers");
+		DTTR_LOG_WARN("DrawPrimitive: missing device/buffers");
 		return;
 	}
 	if (count > DTTR_MAX_FRAME_VERTICES)
@@ -235,7 +235,7 @@ static void s_d3d_device7_record_draw(
 	if (!state->m_transfer_mapped)
 		return;
 	if (state->m_vertex_offset + count > DTTR_MAX_FRAME_VERTICES) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"DrawPrimitive: frame vertex limit reached (%u + %u > %u)",
 			state->m_vertex_offset,
 			count,

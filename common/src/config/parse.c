@@ -1,5 +1,5 @@
 #include "config_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 
 #include <errno.h>
 #include <limits.h>
