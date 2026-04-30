@@ -1,7 +1,6 @@
 #include "game/game_data_source_private.h"
 
 #include <dttr_iso.h>
-#include <dttr_log.h>
 
 #include <sds.h>
 
@@ -20,8 +19,6 @@
 
 typedef struct {
 	bool m_is_iso;
-	DTTR_IsoImage m_iso;
-	char m_iso_path[DTTR_ISO_MAX_PATH];
 	char m_cache_root[DTTR_ISO_MAX_PATH];
 	char m_game_root[DTTR_ISO_MAX_PATH];
 } S_GameDataSource;
@@ -55,6 +52,21 @@ static const char *s_skip_path_separators(const char *path) {
 	return path;
 }
 
+static size_t s_segment_len(const char *path) {
+	size_t len = 0;
+
+	while (path[len] && !s_is_path_sep(path[len])) {
+		len++;
+	}
+
+	return len;
+}
+
+static bool s_is_relative_segment(const char *segment, size_t segment_len) {
+	return segment_len == 0 || (segment_len == 1 && segment[0] == '.')
+		   || (segment_len == 2 && segment[0] == '.' && segment[1] == '.');
+}
+
 static bool s_ascii_ieq_n(const char *lhs, const char *rhs, size_t n) {
 	for (size_t i = 0; i < n; i++) {
 		if (s_ascii_lower(lhs[i]) != s_ascii_lower(rhs[i])) {
@@ -68,17 +80,11 @@ static bool s_copy_env(char *out, size_t out_size, const char *name) {
 	return s_copy_string(out, out_size, getenv(name));
 }
 
-void dttr_game_data_source_cleanup(void) {
-	if (s_source.m_is_iso) {
-		dttr_iso_close(&s_source.m_iso);
-	}
-	memset(&s_source, 0, sizeof(s_source));
-}
+void dttr_game_data_source_cleanup(void) { memset(&s_source, 0, sizeof(s_source)); }
 
 void dttr_game_data_source_init(void) {
 	dttr_game_data_source_cleanup();
-	if (!s_copy_env(s_source.m_iso_path, sizeof(s_source.m_iso_path), "DTTR_ISO_PATH")
-		|| !s_copy_env(
+	if (!s_copy_env(
 			s_source.m_cache_root,
 			sizeof(s_source.m_cache_root),
 			"DTTR_ISO_CACHE_ROOT"
@@ -92,13 +98,7 @@ void dttr_game_data_source_init(void) {
 		return;
 	}
 
-	if (!dttr_iso_open(&s_source.m_iso, s_source.m_iso_path)) {
-		DTTR_LOG_ERROR("Could not open direct ISO data source: %s", s_source.m_iso_path);
-		memset(&s_source, 0, sizeof(s_source));
-		return;
-	}
 	s_source.m_is_iso = true;
-	DTTR_LOG_INFO("Direct ISO data source enabled: %s", s_source.m_iso_path);
 }
 
 static bool s_is_absolute_path(const char *path) {
@@ -266,12 +266,8 @@ bool dttr_game_data_source_resolve_existing_read_path(
 	bool ok = true;
 	while (*rest) {
 		const char *segment = rest;
-		size_t segment_len = 0;
-		while (segment[segment_len] && !s_is_path_sep(segment[segment_len])) {
-			segment_len++;
-		}
-		if (segment_len == 0 || (segment_len == 1 && segment[0] == '.')
-			|| (segment_len == 2 && segment[0] == '.' && segment[1] == '.')) {
+		size_t segment_len = s_segment_len(segment);
+		if (s_is_relative_segment(segment, segment_len)) {
 			ok = false;
 			break;
 		}
@@ -299,7 +295,7 @@ bool dttr_game_data_source_resolve_existing_read_path(
 	return ok;
 }
 
-static const char *s_find_data_segment(const char *path) {
+static const char *s_find_cached_segment(const char *path) {
 	if (!path) {
 		return NULL;
 	}
@@ -309,37 +305,44 @@ static const char *s_find_data_segment(const char *path) {
 			continue;
 		}
 
-		if (p[0] == '\0' || p[1] == '\0' || p[2] == '\0' || p[3] == '\0') {
-			return NULL;
+		const size_t segment_len = strcspn(p, "\\/");
+		if (segment_len == 4 && s_ascii_ieq_n(p, "data", 4)) {
+			return p;
 		}
 
-		if (s_ascii_ieq_n(p, "data", 4) && s_is_path_sep(p[4])) {
+		if (segment_len == 10 && s_ascii_ieq_n(p, "pcdogs.pkg", 10)) {
 			return p;
 		}
 	}
 	return NULL;
 }
 
-static bool s_append_game_path(const char *relative, char *out, size_t out_size) {
-	if (!relative || !relative[0]) {
+static bool s_is_clean_relative_path(const char *path) {
+	const char *p = s_skip_path_separators(path);
+	if (!*p) {
 		return false;
 	}
-	relative = s_skip_path_separators(relative);
-	if (!*relative || strstr(relative, "..")) {
-		return false;
+
+	while (*p) {
+		const size_t segment_len = s_segment_len(p);
+		if (s_is_relative_segment(p, segment_len)) {
+			return false;
+		}
+
+		p = s_skip_path_separators(p + segment_len);
 	}
-	const int written = snprintf(out, out_size, "%s/%s", s_source.m_game_root, relative);
-	return written > 0 && (size_t)written < out_size;
+
+	return true;
 }
 
-static bool s_extract(const char *iso_path, char *out_path, size_t out_path_size) {
-	return dttr_iso_extract_file(
-		&s_source.m_iso,
-		iso_path,
-		s_source.m_cache_root,
-		out_path,
-		out_path_size
-	);
+static bool s_append_game_path(const char *relative, char *out, size_t out_size) {
+	if (!relative || !s_is_clean_relative_path(relative)) {
+		return false;
+	}
+
+	relative = s_skip_path_separators(relative);
+	const int written = snprintf(out, out_size, "%s/%s", s_source.m_game_root, relative);
+	return written > 0 && (size_t)written < out_size;
 }
 
 bool dttr_game_data_source_resolve_read_path(
@@ -353,7 +356,7 @@ bool dttr_game_data_source_resolve_read_path(
 
 	const char *relative = path;
 	if (s_is_any_absolute_path(path)) {
-		relative = s_find_data_segment(path);
+		relative = s_find_cached_segment(path);
 		if (!relative) {
 			return false;
 		}
@@ -364,9 +367,11 @@ bool dttr_game_data_source_resolve_read_path(
 		return false;
 	}
 
-	if (!s_extract(iso_path, out_path, out_path_size)) {
-		DTTR_LOG_ERROR("Could not extract ISO game data path: %s", iso_path);
-		return false;
-	}
-	return true;
+	return dttr_iso_cache_path_for_file(
+			   s_source.m_cache_root,
+			   iso_path,
+			   out_path,
+			   out_path_size
+		   )
+		   && s_path_exact_exists(out_path);
 }

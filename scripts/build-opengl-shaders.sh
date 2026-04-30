@@ -6,7 +6,10 @@ out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-sidecar/include/gen}}}"
 src_dir="sidecar/shaders/opengl"
 header_path="${out_dir}/opengl_shaders.h"
 
-[ -d "$src_dir" ] || { echo "Missing OpenGL shader source dir: $src_dir" >&2; exit 1; }
+if [ ! -d "$src_dir" ]; then
+  echo "Missing OpenGL shader source dir: $src_dir" >&2
+  exit 1
+fi
 
 mkdir -p "$out_dir"
 

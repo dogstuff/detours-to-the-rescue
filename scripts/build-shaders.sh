@@ -8,8 +8,15 @@ src_dir="sidecar/shaders/sdl3gpu"
 header_path="${out_dir}/sdl3gpu_shaders.h"
 shadercross="$(command -v shadercross || command -v sdl_shadercross || true)"
 
-[ -d "$src_dir" ] || { echo "Missing shader source dir: $src_dir" >&2; exit 1; }
-[ -n "$shadercross" ] || { echo "Missing shadercross/sdl_shadercross" >&2; exit 1; }
+if [ ! -d "$src_dir" ]; then
+  echo "Missing shader source dir: $src_dir" >&2
+  exit 1
+fi
+
+if [ -z "$shadercross" ]; then
+  echo "Missing shadercross/sdl_shadercross" >&2
+  exit 1
+fi
 
 rm -rf "$bin_dir"
 mkdir -p "$bin_dir"

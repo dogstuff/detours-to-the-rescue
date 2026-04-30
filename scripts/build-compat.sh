@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-[ "$#" -eq 2 ] || { echo "Usage: $0 <input_bin> <output_header>" >&2; exit 1; }
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <input_bin> <output_header>" >&2
+  exit 1
+fi
 
 input_file="$1"
 output_dir="$(mkdir -p "$(dirname "$2")"; cd "$(dirname "$2")" && pwd)"

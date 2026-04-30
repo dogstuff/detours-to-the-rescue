@@ -1,5 +1,5 @@
 {
-  // Installed game directory or original game ISO.
+  // The extracted/installed game directory or original game ISO.
   "pcdogs_path": "",
 
   // Path for redirected saves/logs reads and writes, relative to the DttR directory.

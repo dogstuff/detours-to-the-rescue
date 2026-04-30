@@ -5,8 +5,7 @@
 #include <windows.h>
 
 typedef struct {
-	bool m_is_direct;
-	char m_iso_path[MAX_PATH];
+	bool m_is_iso;
 	char m_cache_root[MAX_PATH];
 	char m_game_root[MAX_PATH];
 } DTTR_LoaderIsoContext;

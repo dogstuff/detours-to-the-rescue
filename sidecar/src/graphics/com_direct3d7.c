@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const DWORD D3D7_MAX_TEXTURE_REPEAT = 1u << 15;
+
 static DTTR_Graphics_COM_Direct3DDevice7 *s_d3d7_device;
 
 static DTTR_Graphics_COM_Direct3DDevice7 *s_d3d7_get_device(void) {
@@ -47,7 +49,7 @@ static HRESULT __stdcall s_d3d7_enum_devices(
 	desc.dwMinTextureHeight = 1;
 	desc.dwMaxTextureWidth = 4096;
 	desc.dwMaxTextureHeight = 4096;
-	desc.dwMaxTextureRepeat = 32768;
+	desc.dwMaxTextureRepeat = D3D7_MAX_TEXTURE_REPEAT;
 	desc.dwMaxTextureAspectRatio = 4096;
 	desc.dwMaxAnisotropy = 16;
 
