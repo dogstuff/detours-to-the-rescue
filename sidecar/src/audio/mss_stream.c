@@ -1,5 +1,6 @@
 #include "dttr_interop_pcdogs.h"
-#include "mss_internal.h"
+#include "game/game_data_source_private.h"
+#include "mss_private.h"
 
 #include <dttr_log.h>
 
@@ -156,6 +157,33 @@ void dttr_mss_stream_apply_master_gain(void) {
 	}
 }
 
+static sds s_resolve_game_relative_stream_path(const char *relative) {
+	sds requested = sdscatprintf(sdsempty(), "%s\\%s", g_pcdogs_directory_ptr(), relative);
+	char case_resolved[MAX_PATH];
+	const char *resolved = NULL;
+	if (dttr_game_data_source_resolve_existing_read_path(
+			requested,
+			case_resolved,
+			sizeof(case_resolved)
+		)) {
+		resolved = case_resolved;
+	}
+
+	char cached[MAX_PATH];
+	if (!resolved
+		&& dttr_game_data_source_resolve_read_path(relative, cached, sizeof(cached))) {
+		resolved = cached;
+	}
+
+	if (!resolved) {
+		return requested;
+	}
+
+	sds out = sdsnew(resolved);
+	sdsfree(requested);
+	return out;
+}
+
 static sds s_resolve_stream_path(const char *path) {
 	if (!path) {
 		return sdsempty();
@@ -192,7 +220,7 @@ static sds s_resolve_stream_path(const char *path) {
 	sds resolved = sdsnew(path);
 	if (found_game_relative) {
 		sdsfree(resolved);
-		resolved = sdscatprintf(sdsempty(), "%s\\%s", g_pcdogs_directory_ptr(), relative);
+		resolved = s_resolve_game_relative_stream_path(relative);
 	}
 	for (char *p = resolved; *p; p++) {
 		if (*p == '/') {

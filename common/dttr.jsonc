@@ -1,5 +1,5 @@
 {
-  // Path to the directory containing the original game files (pcdogs.exe, pcdogs.pkg).
+  // Installed game directory or original game ISO.
   "pcdogs_path": "",
 
   // Path for redirected saves/logs reads and writes, relative to the DttR directory.
@@ -60,7 +60,7 @@
     "generate_texture_mipmaps": true,
 
     // Whether to start the game in fullscreen mode. Press F11 to toggle at runtime.
-    "fullscreen": false
+    "fullscreen": false,
   },
   "audio": {
     // Use the SDL3_mixer MSS32 shim.
@@ -68,7 +68,7 @@
 
     // MSS sample gain and preemphasis.
     "mss_sample_gain": 1.0,
-    "mss_sample_preemphasis": 0.0
+    "mss_sample_preemphasis": 0.0,
   },
   "gamepad": {
     // Whether to enable gamepad input. Set to false to disable all gamepad support.
@@ -124,7 +124,7 @@
       "dpad_right": "right",
 
       "left_trigger": "joy_5",
-      "right_trigger": "joy_6"
-    }
-  }
+      "right_trigger": "joy_6",
+    },
+  },
 }

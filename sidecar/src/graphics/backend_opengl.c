@@ -1,8 +1,8 @@
 // OpenGL 3.3 fallback backend for environments where SDL GPU is unavailable.
 // (e.g. Parallels on Darwin ARM64)
 
-#include "backend_opengl_internal.h"
-#include "graphics_internal.h"
+#include "backend_opengl_private.h"
+#include "graphics_private.h"
 
 #include <dttr_log.h>
 
@@ -11,8 +11,8 @@
 #define S_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
 
 #ifdef DTTR_MODDING_ENABLED
-#include "../components/components_internal.h"
-#include "imgui_overlay_internal.h"
+#include "../components/components_private.h"
+#include "imgui_overlay_private.h"
 #endif
 
 #include <math.h>

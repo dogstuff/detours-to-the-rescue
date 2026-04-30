@@ -45,8 +45,14 @@ int main(const int argc, char *argv[]) {
 
 	DTTR_LOG_INFO("Starting DttR loader (log level: %s)", log_level_string(log_level));
 
+	DTTR_LoaderIsoContext iso_context = {0};
+
 	WCHAR exe_path[MAX_PATH];
-	if (!dttr_loader_resolve_exe_path(exe_path, g_dttr_config.m_pcdogs_path)) {
+	if (!dttr_loader_resolve_exe_path(
+			exe_path,
+			g_dttr_config.m_pcdogs_path,
+			&iso_context
+		)) {
 		DTTR_LOG_INFO("User exited without selecting a game path");
 		if (log_file) {
 			fclose(log_file);
@@ -55,6 +61,11 @@ int main(const int argc, char *argv[]) {
 	}
 
 	SetEnvironmentVariableA("DTTR_CONFIG_PATH", g_dttr_config_path);
+	if (iso_context.m_is_direct) {
+		SetEnvironmentVariableA("DTTR_ISO_PATH", iso_context.m_iso_path);
+		SetEnvironmentVariableA("DTTR_ISO_CACHE_ROOT", iso_context.m_cache_root);
+		SetEnvironmentVariableA("DTTR_ISO_GAME_ROOT", iso_context.m_game_root);
+	}
 
 	// Override Windows compatibility shims before the sidecar starts.
 	PROCESS_INFORMATION child_info = {0};
@@ -68,7 +79,6 @@ int main(const int argc, char *argv[]) {
 	dttr_loader_watchdog_attach(&child_info);
 	dttr_loader_inject_sidecar(&child_info);
 	dttr_loader_watchdog_wait(&child_info);
-
 	DTTR_LOG_INFO("Exiting loader");
 
 	CloseHandle(child_info.hThread);

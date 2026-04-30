@@ -1,8 +1,8 @@
 // IDirectDraw7 COM translator that handles the DDraw7 interface and creates D3D7
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nn-ddraw-idirectdraw7
 
-#include "graphics_com_internal.h"
-#include "graphics_internal.h"
+#include "graphics_com_private.h"
+#include "graphics_private.h"
 #include <dttr_log.h>
 #include <stdlib.h>
 #include <string.h>

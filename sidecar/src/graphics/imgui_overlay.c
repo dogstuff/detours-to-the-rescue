@@ -1,7 +1,7 @@
 #ifdef DTTR_MODDING_ENABLED
 
-#include "../components/components_internal.h"
-#include "imgui_overlay_internal.h"
+#include "../components/components_private.h"
+#include "imgui_overlay_private.h"
 
 #include <cimgui.h>
 #include <cimgui_impl.h>

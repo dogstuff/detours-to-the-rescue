@@ -8,8 +8,8 @@
 #include "dttr_hooks_graphics.h"
 #include "dttr_interop_pcdogs.h"
 #include "dttr_sidecar.h"
-#include "graphics_com_internal.h"
-#include "graphics_internal.h"
+#include "graphics_com_private.h"
+#include "graphics_private.h"
 #include <dttr_log.h>
 
 DTTR_Graphics_COM_DirectDraw7 *g_dttr_graphics_hook_ddraw7;

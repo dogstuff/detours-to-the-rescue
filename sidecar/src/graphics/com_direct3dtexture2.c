@@ -1,7 +1,7 @@
 // Implements the IDirect3DTexture2 COM translator
 // https://archive.org/details/dx7sdk-7001
 
-#include "graphics_com_internal.h"
+#include "graphics_com_private.h"
 #include <stdlib.h>
 
 static DWORD s_d3dtexture2_next_texture_handle = 1;

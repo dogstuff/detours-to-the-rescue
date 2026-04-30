@@ -19,6 +19,15 @@ typedef void (*S_ShowOpenFolderDialog)(
 	const char *default_location,
 	bool allow_many
 );
+typedef void (*S_ShowOpenFileDialog)(
+	SDL_DialogFileCallback callback,
+	void *userdata,
+	SDL_Window *window,
+	const SDL_DialogFileFilter *filters,
+	int nfilters,
+	const char *default_location,
+	bool allow_many
+);
 typedef void (*S_PumpEvents)(void);
 typedef void (*S_Delay)(Uint32 ms);
 
@@ -28,6 +37,7 @@ static bool s_load_attempted;
 static S_ShowSimpleMessageBox s_show_simple_message_box;
 static S_ShowMessageBox s_show_message_box;
 static S_ShowOpenFolderDialog s_show_open_folder_dialog;
+static S_ShowOpenFileDialog s_show_open_file_dialog;
 static S_PumpEvents s_pump_events;
 static S_Delay s_delay;
 
@@ -79,11 +89,16 @@ static bool s_load_sdl(void) {
 		S_ShowOpenFolderDialog,
 		"SDL_ShowOpenFolderDialog"
 	);
+	s_show_open_file_dialog = S_RESOLVE(
+		module,
+		S_ShowOpenFileDialog,
+		"SDL_ShowOpenFileDialog"
+	);
 	s_pump_events = S_RESOLVE(module, S_PumpEvents, "SDL_PumpEvents");
 	s_delay = S_RESOLVE(module, S_Delay, "SDL_Delay");
 
 	return s_show_simple_message_box && s_show_message_box && s_show_open_folder_dialog
-		   && s_pump_events && s_delay;
+		   && s_show_open_file_dialog && s_pump_events && s_delay;
 }
 
 bool dttr_sdl_show_simple_message_box(
@@ -121,6 +136,31 @@ void dttr_sdl_show_open_folder_dialog(
 	}
 
 	s_show_open_folder_dialog(callback, userdata, window, default_location, allow_many);
+}
+
+void dttr_sdl_show_open_file_dialog(
+	SDL_DialogFileCallback callback,
+	void *userdata,
+	SDL_Window *window,
+	const SDL_DialogFileFilter *filters,
+	int nfilters,
+	const char *default_location,
+	bool allow_many
+) {
+	if (!s_load_sdl()) {
+		callback(userdata, NULL, -1);
+		return;
+	}
+
+	s_show_open_file_dialog(
+		callback,
+		userdata,
+		window,
+		filters,
+		nfilters,
+		default_location,
+		allow_many
+	);
 }
 
 void dttr_sdl_pump_events(void) {

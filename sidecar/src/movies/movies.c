@@ -1,6 +1,7 @@
 #include "dttr_hooks_movies.h"
 
 #include "dttr_sidecar.h"
+#include "game/game_data_source_private.h"
 #include <dttr_log.h>
 #include <sds.h>
 
@@ -578,6 +579,46 @@ void dttr_movies_cleanup(void) {
 	DTTR_LOG_INFO("Released movie playback state");
 }
 
+static sds s_resolve_movie_path(const char *path) {
+	sds requested_path = sdscatprintf(
+		sdsempty(),
+		"%s\\%s",
+		g_pcdogs_directory_ptr(),
+		path
+	);
+
+	char resolved[MAX_PATH];
+	const char *movie_path = NULL;
+
+	if (dttr_game_data_source_resolve_existing_read_path(
+			requested_path,
+			resolved,
+			sizeof(resolved)
+		)) {
+		movie_path = resolved;
+	}
+
+	char cached[MAX_PATH];
+	if (!movie_path) {
+		const bool got_cached = dttr_game_data_source_resolve_read_path(
+			path,
+			cached,
+			sizeof(cached)
+		);
+		if (got_cached) {
+			movie_path = cached;
+		}
+	}
+
+	if (!movie_path) {
+		return requested_path;
+	}
+
+	sds out = sdsnew(movie_path);
+	sdsfree(requested_path);
+	return out;
+}
+
 void dttr_movies_start(const char *path) {
 	if (!s_video_frame || !s_audio_frame || !s_packet) {
 		DTTR_LOG_ERROR("Missing movie playback state");
@@ -587,7 +628,7 @@ void dttr_movies_start(const char *path) {
 
 	s_close_movie();
 
-	sds abs_path = sdscatprintf(sdsempty(), "%s\\%s", g_pcdogs_directory_ptr(), path);
+	sds abs_path = s_resolve_movie_path(path);
 	DTTR_LOG_INFO("Playing movie %s", abs_path);
 
 	if (!s_open_movie(abs_path)) {

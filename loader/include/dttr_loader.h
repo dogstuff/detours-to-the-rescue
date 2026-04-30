@@ -4,6 +4,13 @@
 #include <stdbool.h>
 #include <windows.h>
 
+typedef struct {
+	bool m_is_direct;
+	char m_iso_path[MAX_PATH];
+	char m_cache_root[MAX_PATH];
+	char m_game_root[MAX_PATH];
+} DTTR_LoaderIsoContext;
+
 extern const char *g_dttr_config_path;
 
 void dttr_compat_create_process(
@@ -13,7 +20,11 @@ void dttr_compat_create_process(
 	PROCESS_INFORMATION *child_info
 );
 void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info);
-bool dttr_loader_resolve_exe_path(WCHAR *out, const char *configured_dir);
+bool dttr_loader_resolve_exe_path(
+	WCHAR *out,
+	const char *configured_path,
+	DTTR_LoaderIsoContext *iso_context
+);
 void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info);
 void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info);
 

@@ -2,8 +2,8 @@
 // https://archive.org/details/dx7sdk-7001
 
 #include "dttr_sidecar.h"
-#include "graphics_com_internal.h"
-#include "graphics_internal.h"
+#include "graphics_com_private.h"
+#include "graphics_private.h"
 #include <dttr_log.h>
 #include <math.h>
 #include <stdlib.h>

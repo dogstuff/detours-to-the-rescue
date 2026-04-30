@@ -1,4 +1,4 @@
-#include "hook_registry_internal.h"
+#include "hook_registry_private.h"
 
 #include <dttr_log.h>
 

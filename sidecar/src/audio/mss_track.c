@@ -1,4 +1,4 @@
-#include "mss_internal.h"
+#include "mss_private.h"
 
 #include <SDL3/SDL.h>
 
