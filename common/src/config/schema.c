@@ -52,17 +52,27 @@ typedef struct {
 	int index;
 } S_ConfigKeyIndex;
 
+#define S_CONFIG_GAMEPAD_AXIS_KEYS(X)                                                    \
+	X("axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                     \
+	X("axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                     \
+	X("axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+
+#define S_CONFIG_GAMEPAD_DEADZONE_KEYS(X)                                                \
+	X("deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                 \
+	X("deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                 \
+	X("deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+
+#define S_CONFIG_KEY_INDEX(key_name, key_index) {key_name, key_index},
+
 static const S_ConfigKeyIndex s_gamepad_axis_keys[] = {
-	{"axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
-	{"axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
-	{"axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+	S_CONFIG_GAMEPAD_AXIS_KEYS(S_CONFIG_KEY_INDEX)
 };
 
 static const S_ConfigKeyIndex s_gamepad_deadzone_keys[] = {
-	{"deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
-	{"deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
-	{"deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+	S_CONFIG_GAMEPAD_DEADZONE_KEYS(S_CONFIG_KEY_INDEX)
 };
+
+#undef S_CONFIG_KEY_INDEX
 
 int s_config_schema_count(void) {
 	return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0]));
@@ -124,26 +134,59 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 	return spec;
 }
 
-// clang-format off
-#define S_CONFIG_ASSIGN_FN(fn_name, type, default_val, parse_fn) \
-	static bool fn_name(char *field, const char *value) { \
-		type parsed = default_val; \
-		if (!parse_fn(value, &parsed)) { return false; } \
-		*(type *)field = parsed; \
-		return true; \
+#define S_CONFIG_ASSIGN_TYPES(X)                                                         \
+	X(S_CONFIG_BOOL, bool, false, s_config_parse_bool, s_config_assign_bool)             \
+	X(S_CONFIG_SCALING_FIT,                                                              \
+	  DTTR_ScalingMode,                                                                  \
+	  DTTR_SCALING_MODE_LETTERBOX,                                                       \
+	  s_config_parse_scaling_fit,                                                        \
+	  s_config_assign_scaling_fit)                                                       \
+	X(S_CONFIG_SCALING_METHOD,                                                           \
+	  DTTR_ScalingMethod,                                                                \
+	  DTTR_SCALING_METHOD_PRESENT,                                                       \
+	  s_config_parse_scaling_method,                                                     \
+	  s_config_assign_scaling_method)                                                    \
+	X(S_CONFIG_GRAPHICS_API,                                                             \
+	  DTTR_GraphicsApi,                                                                  \
+	  DTTR_GRAPHICS_API_AUTO,                                                            \
+	  s_config_parse_graphics_api,                                                       \
+	  s_config_assign_graphics_api)                                                      \
+	X(S_CONFIG_INT, int, 0, s_config_parse_int, s_config_assign_int)                     \
+	X(S_CONFIG_FLOAT, float, 0.0f, s_config_parse_float, s_config_assign_float)          \
+	X(S_CONFIG_PRESENT_FILTER,                                                           \
+	  SDL_GPUFilter,                                                                     \
+	  SDL_GPU_FILTER_LINEAR,                                                             \
+	  s_config_parse_present_filter,                                                     \
+	  s_config_assign_present_filter)                                                    \
+	X(S_CONFIG_LOG_LEVEL,                                                                \
+	  int,                                                                               \
+	  LOG_INFO,                                                                          \
+	  s_config_parse_log_level,                                                          \
+	  s_config_assign_log_level)                                                         \
+	X(S_CONFIG_MINIDUMP_TYPE,                                                            \
+	  DTTR_MinidumpType,                                                                 \
+	  DTTR_MINIDUMP_NORMAL,                                                              \
+	  s_config_parse_minidump_type,                                                      \
+	  s_config_assign_minidump_type)                                                     \
+	X(S_CONFIG_VERTEX_PRECISION,                                                         \
+	  DTTR_VertexPrecision,                                                              \
+	  DTTR_VERTEX_PRECISION_SUBPIXEL,                                                    \
+	  s_config_parse_vertex_precision,                                                   \
+	  s_config_assign_vertex_precision)
+
+#define S_CONFIG_ASSIGN_FN(value_type, type, default_val, parse_fn, fn_name)             \
+	static bool fn_name(char *field, const char *value) {                                \
+		type parsed = default_val;                                                       \
+		if (!parse_fn(value, &parsed)) {                                                 \
+			return false;                                                                \
+		}                                                                                \
+		*(type *)field = parsed;                                                         \
+		return true;                                                                     \
 	}
 
-S_CONFIG_ASSIGN_FN(s_config_assign_bool,           bool,              false,                       s_config_parse_bool)
-S_CONFIG_ASSIGN_FN(s_config_assign_scaling_fit,     DTTR_ScalingMode,  DTTR_SCALING_MODE_LETTERBOX, s_config_parse_scaling_fit)
-S_CONFIG_ASSIGN_FN(s_config_assign_scaling_method,  DTTR_ScalingMethod,DTTR_SCALING_METHOD_PRESENT, s_config_parse_scaling_method)
-S_CONFIG_ASSIGN_FN(s_config_assign_graphics_api,    DTTR_GraphicsApi,  DTTR_GRAPHICS_API_AUTO,      s_config_parse_graphics_api)
-S_CONFIG_ASSIGN_FN(s_config_assign_present_filter,  SDL_GPUFilter,     SDL_GPU_FILTER_LINEAR,       s_config_parse_present_filter)
-S_CONFIG_ASSIGN_FN(s_config_assign_log_level,       int,               LOG_INFO,                    s_config_parse_log_level)
-S_CONFIG_ASSIGN_FN(s_config_assign_minidump_type,   DTTR_MinidumpType, DTTR_MINIDUMP_NORMAL,        s_config_parse_minidump_type)
-S_CONFIG_ASSIGN_FN(s_config_assign_int,             int,               0,                           s_config_parse_int)
-S_CONFIG_ASSIGN_FN(s_config_assign_float,           float,             0.0f,                        s_config_parse_float)
-S_CONFIG_ASSIGN_FN(s_config_assign_vertex_precision, DTTR_VertexPrecision, DTTR_VERTEX_PRECISION_SUBPIXEL, s_config_parse_vertex_precision)
-// clang-format on
+S_CONFIG_ASSIGN_TYPES(S_CONFIG_ASSIGN_FN)
+
+#undef S_CONFIG_ASSIGN_FN
 
 static bool s_config_assign_string(char *field, const char *value) {
 	return s_config_parse_string(value, field, sizeof(((DTTR_Config *)0)->m_pcdogs_path));
@@ -165,43 +208,20 @@ bool s_config_apply_entry(
 	}
 
 	char *const field = ((char *)config) + spec->offset;
+#define S_CONFIG_ASSIGN_CASE(value_type, type, default_val, parse_fn, fn_name)           \
+	case value_type:                                                                     \
+		return fn_name(field, value);
+
 	switch (spec->value_type) {
-	case S_CONFIG_BOOL:
-		return s_config_assign_bool(field, value);
-
-	case S_CONFIG_SCALING_FIT:
-		return s_config_assign_scaling_fit(field, value);
-
-	case S_CONFIG_SCALING_METHOD:
-		return s_config_assign_scaling_method(field, value);
-
-	case S_CONFIG_GRAPHICS_API:
-		return s_config_assign_graphics_api(field, value);
-
-	case S_CONFIG_INT:
-		return s_config_assign_int(field, value);
-
-	case S_CONFIG_FLOAT:
-		return s_config_assign_float(field, value);
-
-	case S_CONFIG_PRESENT_FILTER:
-		return s_config_assign_present_filter(field, value);
-
-	case S_CONFIG_LOG_LEVEL:
-		return s_config_assign_log_level(field, value);
-
-	case S_CONFIG_MINIDUMP_TYPE:
-		return s_config_assign_minidump_type(field, value);
-
+		S_CONFIG_ASSIGN_TYPES(S_CONFIG_ASSIGN_CASE)
 	case S_CONFIG_STRING:
 		return s_config_assign_string(field, value);
-
-	case S_CONFIG_VERTEX_PRECISION:
-		return s_config_assign_vertex_precision(field, value);
 
 	default:
 		return false;
 	}
+
+#undef S_CONFIG_ASSIGN_CASE
 }
 
 static int s_config_lookup_index(

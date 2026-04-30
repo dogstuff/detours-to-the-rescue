@@ -42,4 +42,24 @@ void dttr_platform_hooks_cleanup_module(
 	size_t spec_count
 );
 
+#define DTTR_IMPORT_TRACE_DECL_ENTRY(prefix, import_ident, import_name, import_log_name) \
+	DTTR_IMPORT_HOOK_DECL(prefix, import_ident, import_log_name)
+#define DTTR_IMPORT_WARN_DECL_ENTRY(prefix, import_ident, import_name, import_log_name)  \
+	DTTR_IMPORT_HOOK_WARN_DECL(prefix, import_ident, import_log_name)
+#define DTTR_IMPORT_SKIP_DECL_ENTRY(prefix, import_ident, import_name, import_log_name)
+
+#define DTTR_IMPORT_TRACE_SPEC_ENTRY(prefix, import_ident, import_name, import_log_name) \
+	DTTR_IMPORT_HOOK_SPEC(prefix, import_ident, import_name),
+#define DTTR_IMPORT_WARN_SPEC_ENTRY(prefix, import_ident, import_name, import_log_name)  \
+	DTTR_IMPORT_HOOK_SPEC(prefix, import_ident, import_name),
+#define DTTR_IMPORT_SKIP_SPEC_ENTRY(prefix, import_ident, import_name, import_log_name)  \
+	DTTR_IMPORT_SHOULD_NOT_CALL_SPEC(import_name),
+
+#define DTTR_IMPORT_ENTRY_DECL(kind, prefix, import_ident, import_name, import_log_name) \
+	DTTR_IMPORT_##kind##_DECL_ENTRY(prefix, import_ident, import_name, import_log_name)
+#define DTTR_IMPORT_ENTRY_SPEC(kind, prefix, import_ident, import_name, import_log_name) \
+	DTTR_IMPORT_##kind##_SPEC_ENTRY(prefix, import_ident, import_name, import_log_name)
+
+#define DTTR_IMPORT_ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
+
 #endif /* DTTR_IMPORTS_INTERNAL_H */
