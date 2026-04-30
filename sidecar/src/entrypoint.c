@@ -16,7 +16,6 @@
 #include "game_api_internal.h"
 #include "graphics/graphics_internal.h"
 #include "hook_registry_internal.h"
-#include "platform/imports_internal.h"
 #include <xxhash.h>
 
 #ifdef DTTR_MODDING_ENABLED
@@ -186,7 +185,6 @@ static void s_cleanup_runtime(const DTTR_ComponentContext *ctx) {
 	dttr_inputs_hooks_cleanup(ctx);
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();
-	dttr_platform_hooks_cleanup(ctx);
 	dttr_game_api_cleanup();
 }
 
@@ -286,7 +284,6 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	DTTR_LOG_INFO("Initializing game functions...");
 	s_interop_pcdogs_functions_init(ctx);
 
-	dttr_platform_hooks_init(ctx);
 	dttr_game_hooks_init(ctx);
 	dttr_inputs_init();
 	dttr_inputs_hooks_init(ctx);

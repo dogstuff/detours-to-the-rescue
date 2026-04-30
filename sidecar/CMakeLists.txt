@@ -28,16 +28,6 @@ add_library(dttr_sidecar SHARED
     src/impl.c
     src/game_api.c
     src/hook_registry.c
-    src/platform/imports.c
-    src/platform/hook_ddraw.c
-    src/platform/hook_dinput.c
-    src/platform/hook_gdi32.c
-    src/platform/hook_kernel32.c
-    src/platform/hook_mss32.c
-    src/platform/hook_user32.c
-    src/platform/hook_winmm.c
-    src/platform/hook_winplay.c
-    src/platform/hook_winstr.c
 
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
