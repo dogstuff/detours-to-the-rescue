@@ -25,6 +25,11 @@ bool dttr_iso_extract_file(
 	char *out_path,
 	size_t out_path_size
 );
+bool dttr_iso_extract_tree(
+	DTTR_IsoImage *iso,
+	const char *iso_relative_path,
+	const char *cache_root
+);
 const char *dttr_iso_last_error(void);
 void dttr_iso_close(DTTR_IsoImage *iso);
 

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-[ "$#" -eq 8 ] || { echo "Usage: $0 <root> <docker> <image> <toolchain_dir> <build_dir> <version> <short_sha> <modding>" >&2; exit 1; }
+if [ "$#" -ne 8 ]; then
+  echo "Usage: $0 <root> <docker> <image> <toolchain_dir> <build_dir> <version> <short_sha> <modding>" >&2
+  exit 1
+fi
 
 root=$1
 docker=$2

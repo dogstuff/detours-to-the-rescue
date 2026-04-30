@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-[ "$#" -eq 3 ] || { echo "Usage: $0 <asm_dir> <output_file> <bin_dir>" >&2; exit 1; }
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 <asm_dir> <output_file> <bin_dir>" >&2
+  exit 1
+fi
 
 asm_dir="$(cd "$1" && pwd)"
 output_dir="$(mkdir -p "$(dirname "$2")"; cd "$(dirname "$2")" && pwd)"

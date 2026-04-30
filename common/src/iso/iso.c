@@ -83,6 +83,30 @@ static bool s_ascii_ieq_n(const char *lhs, const char *rhs, size_t n) {
 	return true;
 }
 
+static bool s_is_iso_version_suffix(const char *suffix) {
+	if (!suffix || suffix[0] != ';' || !suffix[1]) {
+		return false;
+	}
+
+	for (const char *ch = suffix + 1; *ch; ch++) {
+		if (*ch < '0' || *ch > '9') {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static size_t s_strip_iso_version_suffix_len(const char *segment, size_t segment_len) {
+	for (size_t i = segment_len; i > 1; i--) {
+		if (segment[i - 1] == ';' && s_is_iso_version_suffix(segment + i - 1)) {
+			return i - 1;
+		}
+	}
+
+	return segment_len;
+}
+
 static bool s_copy_sds(char *out, size_t out_size, sds value) {
 	if (!value || sdslen(value) >= out_size) {
 		return false;
@@ -103,6 +127,7 @@ static bool s_sdscat_char(sds *out, char ch) {
 }
 
 static bool s_sdscat_lower_segment(sds *out, const char *segment, size_t segment_len) {
+	segment_len = s_strip_iso_version_suffix_len(segment, segment_len);
 	for (size_t i = 0; i < segment_len; i++) {
 		const char ch = s_ascii_lower(segment[i]);
 		if (!s_sdscat_char(out, ch)) {
@@ -110,16 +135,6 @@ static bool s_sdscat_lower_segment(sds *out, const char *segment, size_t segment
 		}
 	}
 
-	return true;
-}
-
-static bool s_sdscat_segment(sds *out, const char *segment) {
-	sds next = sdscat(*out, segment);
-	if (!next) {
-		return false;
-	}
-
-	*out = next;
 	return true;
 }
 
@@ -237,7 +252,10 @@ static bool s_name_matches_segment(
 	const char *segment,
 	size_t segment_len
 ) {
-	return strlen(name) == segment_len && s_ascii_ieq_n(name, segment, segment_len);
+	const size_t name_len = strlen(name);
+	return (name_len == segment_len
+			|| (name_len > segment_len && s_is_iso_version_suffix(name + segment_len)))
+		   && s_ascii_ieq_n(name, segment, segment_len);
 }
 
 static bool s_find_case_match(
@@ -305,10 +323,12 @@ static bool s_resolve_iso_path_case(
 			break;
 		}
 
-		if (!s_sdscat_segment(&path, match)) {
+		sds next = sdscat(path, match);
+		if (!next) {
 			ok = false;
 			break;
 		}
+		path = next;
 
 		wrote_segment = true;
 
@@ -368,6 +388,26 @@ static bool s_file_has_size(const char *path, size_t size) {
 	fclose(file);
 
 	return matches;
+}
+
+static sds s_child_iso_path(const char *parent, const char *entry) {
+	sds child = sdsnew(parent);
+	if (!child) {
+		return NULL;
+	}
+
+	if (sdslen(child) > 0 && !s_sdscat_char(&child, '/')) {
+		sdsfree(child);
+		return NULL;
+	}
+
+	sds next = sdscat(child, entry);
+	if (!next) {
+		sdsfree(child);
+		return NULL;
+	}
+
+	return next;
 }
 
 bool dttr_iso_extract_file(
@@ -449,6 +489,73 @@ bool dttr_iso_extract_file(
 	fclose(out);
 	PHYSFS_close(in);
 	return true;
+}
+
+static bool s_extract_tree_path(
+	DTTR_IsoImage *iso,
+	const char *physfs_path,
+	const char *cache_root
+) {
+	char **entries = PHYSFS_enumerateFiles(physfs_path);
+	if (!entries) {
+		s_set_physfs_error("PHYSFS_enumerateFiles failed");
+		return false;
+	}
+
+	bool ok = true;
+	for (char **entry = entries; ok && *entry; entry++) {
+		sds child = s_child_iso_path(physfs_path, *entry);
+		if (!child) {
+			s_set_error("could not build ISO tree path");
+			ok = false;
+			break;
+		}
+
+		PHYSFS_Stat stat;
+		if (!PHYSFS_stat(child, &stat)) {
+			s_set_physfs_error("PHYSFS_stat failed");
+			ok = false;
+		} else if (stat.filetype == PHYSFS_FILETYPE_DIRECTORY) {
+			ok = s_extract_tree_path(iso, child, cache_root);
+		} else if (stat.filetype == PHYSFS_FILETYPE_REGULAR) {
+			char out_path[DTTR_ISO_MAX_PATH];
+			ok = dttr_iso_extract_file(iso, child, cache_root, out_path, sizeof(out_path));
+		}
+
+		sdsfree(child);
+	}
+
+	PHYSFS_freeList(entries);
+	return ok;
+}
+
+bool dttr_iso_extract_tree(
+	DTTR_IsoImage *iso,
+	const char *iso_relative_path,
+	const char *cache_root
+) {
+	if (!iso || !iso->m_open) {
+		s_set_error("ISO is not open");
+		return false;
+	}
+
+	char physfs_path[DTTR_ISO_MAX_PATH];
+	if (!s_resolve_iso_path_case(iso_relative_path, physfs_path, sizeof(physfs_path))) {
+		s_set_error("directory not found in ISO");
+		return false;
+	}
+
+	PHYSFS_Stat stat;
+	if (!PHYSFS_stat(physfs_path, &stat)) {
+		s_set_physfs_error("PHYSFS_stat failed");
+		return false;
+	}
+	if (stat.filetype != PHYSFS_FILETYPE_DIRECTORY) {
+		s_set_error("ISO path is not a directory");
+		return false;
+	}
+
+	return s_extract_tree_path(iso, physfs_path, cache_root);
 }
 
 void dttr_iso_close(DTTR_IsoImage *iso) {

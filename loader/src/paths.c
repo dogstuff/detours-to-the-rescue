@@ -15,21 +15,8 @@ static const wchar_t *const S_GAME_SUBPATHS[] = {
 static const wchar_t S_ISO_SUFFIX[] = L".iso";
 static const char *S_ISO_GAME_ROOT = "Setup/102Dalms";
 static const char *S_ISO_GAME_EXE_PATH = "Setup/102Dalms/pcdogs.exe";
-static const char *const S_ISO_SUPPORT_FILES[] = {
-	"Setup/102Dalms/mss32.dll",
-	"Setup/102Dalms/winstr.dll",
-	"Setup/102Dalms/winplay.dll",
-	"Setup/102Dalms/dec130.dll",
-	"Setup/102Dalms/edec.dll",
-	"Setup/102Dalms/winsdec.dll",
-	"Setup/102Dalms/mp3dec.asi",
-	"Setup/102Dalms/d2hlnk32.dll",
-	"Setup/102Dalms/d2htls32.dll",
-	"Setup/102Dalms/mfc30.dll",
-	"Setup/102Dalms/msvcrt20.dll",
-	"Setup/102Dalms/remove.dll",
-};
-
+static const char *S_ISO_GAME_PKG_PATH = "Setup/102Dalms/pcdogs.pkg";
+static const char *S_ISO_GAME_DATA_PATH = "Setup/102Dalms/data";
 static wchar_t s_ascii_lower_w(wchar_t ch) {
 	if (ch >= L'A' && ch <= L'Z') {
 		return (wchar_t)(ch - L'A' + L'a');
@@ -80,28 +67,19 @@ const char *dttr_loader_iso_game_root(void) { return S_ISO_GAME_ROOT; }
 
 const char *dttr_loader_iso_game_exe_path(void) { return S_ISO_GAME_EXE_PATH; }
 
-size_t dttr_loader_iso_support_file_count(void) {
-	return sizeof(S_ISO_SUPPORT_FILES) / sizeof(S_ISO_SUPPORT_FILES[0]);
-}
+const char *dttr_loader_iso_game_pkg_path(void) { return S_ISO_GAME_PKG_PATH; }
 
-const char *dttr_loader_iso_support_file_at(size_t index) {
-	if (index >= dttr_loader_iso_support_file_count()) {
-		return NULL;
-	}
-	return S_ISO_SUPPORT_FILES[index];
-}
+const char *dttr_loader_iso_game_data_path(void) { return S_ISO_GAME_DATA_PATH; }
 
 static uint64_t s_hash_path(const char *path) {
-	const size_t path_len = strlen(path);
-	sds normalized = sdsnewlen(SDS_NOINIT, path_len);
+	sds normalized = sdsnew(path);
 	if (!normalized) {
 		return 0;
 	}
 
-	for (size_t i = 0; i < path_len; i++) {
-		normalized[i] = s_normalized_path_char(path[i]);
+	for (char *ch = normalized; *ch; ch++) {
+		*ch = s_normalized_path_char(*ch);
 	}
-	sdssetlen(normalized, path_len);
 
 	const XXH64_hash_t hash = XXH3_64bits(normalized, sdslen(normalized));
 	sdsfree(normalized);

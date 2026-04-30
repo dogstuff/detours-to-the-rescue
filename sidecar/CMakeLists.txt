@@ -3,6 +3,7 @@ find_package(PkgConfig REQUIRED)
 if(NOT TARGET PkgConfig::SDL3)
     pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 endif()
+
 if(NOT TARGET PkgConfig::SDL3_MIXER)
     pkg_check_modules(SDL3_MIXER REQUIRED IMPORTED_TARGET sdl3-mixer)
 endif()
@@ -72,14 +73,17 @@ target_compile_definitions(dttr_sidecar PRIVATE
     DTTR_VERSION="${DTTR_VERSION}"
 )
 
-set(DTTR_FFMPEG_TARGETS "")
-foreach(DTTR_FFMPEG_LIB IN LISTS DTTR_FFMPEG_LIBS)
-    set(DTTR_FFMPEG_TARGET "ffmpeg_${DTTR_FFMPEG_LIB}")
+set(DTTR_FFMPEG_TARGETS ${DTTR_FFMPEG_LIBS})
+list(TRANSFORM DTTR_FFMPEG_TARGETS PREPEND "ffmpeg_")
+
+foreach(DTTR_FFMPEG_LIB DTTR_FFMPEG_TARGET IN ZIP_LISTS
+    DTTR_FFMPEG_LIBS
+    DTTR_FFMPEG_TARGETS
+)
     add_library(${DTTR_FFMPEG_TARGET} SHARED IMPORTED)
     set_target_properties(${DTTR_FFMPEG_TARGET} PROPERTIES
         IMPORTED_IMPLIB "${DTTR_FFMPEG_DIR}/lib/lib${DTTR_FFMPEG_LIB}.dll.a"
     )
-    list(APPEND DTTR_FFMPEG_TARGETS ${DTTR_FFMPEG_TARGET})
 endforeach()
 
 target_link_libraries(dttr_sidecar PRIVATE
@@ -104,6 +108,7 @@ if(DTTR_MODDING)
         src/components/components.c
         src/graphics/imgui_overlay.c
     )
+
     target_compile_definitions(dttr_sidecar PRIVATE DTTR_MODDING_ENABLED)
     target_link_libraries(dttr_sidecar PRIVATE cimgui_static stdc++)
     target_link_options(dttr_sidecar PRIVATE -Wl,--export-all-symbols)

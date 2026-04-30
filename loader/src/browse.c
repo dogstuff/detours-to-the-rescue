@@ -71,21 +71,47 @@ static bool s_extract_iso_file(
 	return false;
 }
 
-static bool s_extract_iso_support_files(DTTR_IsoImage *iso, const char *cache_root) {
-	for (size_t i = 0; i < dttr_loader_iso_support_file_count(); i++) {
-		char support_path[MAX_PATH];
-		const char *support_file = dttr_loader_iso_support_file_at(i);
-		if (!s_extract_iso_file(
-				iso,
-				cache_root,
-				support_file,
-				support_path,
-				sizeof(support_path)
-			)) {
-			return false;
-		}
+static bool s_extract_iso_tree(
+	DTTR_IsoImage *iso,
+	const char *cache_root,
+	const char *iso_path
+) {
+	if (dttr_iso_extract_tree(iso, iso_path, cache_root)) {
+		return true;
 	}
-	return true;
+
+	DTTR_LOG_ERROR("Could not extract %s (%s)", iso_path, dttr_iso_last_error());
+	return false;
+}
+
+static bool s_extract_iso_game_cache(
+	DTTR_IsoImage *iso,
+	const char *cache_root,
+	char *exe_path,
+	size_t exe_path_size
+) {
+	if (!s_extract_iso_file(
+			iso,
+			cache_root,
+			dttr_loader_iso_game_exe_path(),
+			exe_path,
+			exe_path_size
+		)) {
+		return false;
+	}
+
+	char pkg_path[MAX_PATH];
+	if (!s_extract_iso_file(
+			iso,
+			cache_root,
+			dttr_loader_iso_game_pkg_path(),
+			pkg_path,
+			sizeof(pkg_path)
+		)) {
+		return false;
+	}
+
+	return s_extract_iso_tree(iso, cache_root, dttr_loader_iso_game_data_path());
 }
 
 static bool s_resolve_iso_direct(
@@ -123,10 +149,9 @@ static bool s_resolve_iso_direct(
 	}
 
 	char exe_path[MAX_PATH];
-	if (!s_extract_iso_file(
+	if (!s_extract_iso_game_cache(
 			&iso,
 			iso_context->m_cache_root,
-			dttr_loader_iso_game_exe_path(),
 			exe_path,
 			sizeof(exe_path)
 		)) {
@@ -134,19 +159,14 @@ static bool s_resolve_iso_direct(
 		goto done;
 	}
 
-	if (!s_extract_iso_support_files(&iso, iso_context->m_cache_root)) {
-		goto done;
-	}
-
 	s_utf8_to_wide_path(out, exe_path);
-	iso_context->m_is_direct = true;
-	s_copy_path(iso_context->m_iso_path, sizeof(iso_context->m_iso_path), full_iso_path);
+	iso_context->m_is_iso = true;
 	s_copy_path(
 		iso_context->m_game_root,
 		sizeof(iso_context->m_game_root),
 		dttr_loader_iso_game_root()
 	);
-	DTTR_LOG_INFO("Extracted ISO executable to %s", exe_path);
+	DTTR_LOG_INFO("Cached ISO game files under %s", iso_context->m_cache_root);
 	ok = true;
 
 done:
@@ -238,10 +258,8 @@ static bool s_prompt_browse_for_path(WCHAR *out, DTTR_LoaderIsoContext *iso_cont
 		.flags = SDL_MESSAGEBOX_INFORMATION,
 		.window = NULL,
 		.title = "DttR: Specify Game Files",
-		.message = "Select either the folder containing the 102 Dalmatians: Puppies "
-				   "to the Rescue files, the original game disc, or an ISO image.\n\n"
-				   "Installed folders should contain pcdogs.exe. Disc roots and ISO "
-				   "images should contain Setup\\102Dalms\\pcdogs.exe.",
+		.message = "Select either a directory containing the 102 Dalmatians: Puppies "
+				   "to the Rescue files, the original game disc, or an ISO image.",
 		.numbuttons = 3,
 		.buttons = buttons,
 	};

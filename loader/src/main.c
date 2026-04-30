@@ -10,6 +10,8 @@
 
 static const char *LOG_FILE_NAME = "dttr.log";
 
+enum { PATH_ENV_BUFFER_SIZE = 1u << 15 };
+
 static char s_config_path_buf[MAX_PATH];
 const char *g_dttr_config_path = DTTR_CONFIG_FILENAME;
 
@@ -21,9 +23,64 @@ static void s_get_exe_dir(char *buf, size_t buf_size) {
 	}
 }
 
+static bool s_set_env(const char *name, const char *value) {
+	if (SetEnvironmentVariableA(name, value)) {
+		return true;
+	}
+
+	DTTR_LOG_ERROR("Could not set %s", name);
+	return false;
+}
+
+static void s_prepend_modules_to_path(void) {
+	char old_path[PATH_ENV_BUFFER_SIZE] = "";
+
+	const DWORD old_len = GetEnvironmentVariableA("PATH", old_path, sizeof(old_path));
+	if (old_len >= sizeof(old_path)) {
+		DTTR_LOG_ERROR("PATH is too long to prepend DttR modules directory");
+		return;
+	}
+
+	char modules_dir[MAX_PATH];
+	s_get_exe_dir(modules_dir, sizeof(modules_dir));
+
+	const size_t dir_len = strlen(modules_dir);
+	const int modules_len = snprintf(
+		modules_dir + dir_len,
+		sizeof(modules_dir) - dir_len,
+		"modules"
+	);
+	if (modules_len <= 0 || (size_t)modules_len >= sizeof(modules_dir) - dir_len) {
+		DTTR_LOG_ERROR("Could not resolve DttR modules directory for PATH");
+		return;
+	}
+
+	char new_path[PATH_ENV_BUFFER_SIZE];
+	const int written = old_len > 0
+							? snprintf(
+								  new_path,
+								  sizeof(new_path),
+								  "%s;%s",
+								  modules_dir,
+								  old_path
+							  )
+							: snprintf(new_path, sizeof(new_path), "%s", modules_dir);
+	if (written <= 0 || (size_t)written >= sizeof(new_path)) {
+		DTTR_LOG_ERROR("PATH is too long after prepending DttR modules directory");
+		return;
+	}
+
+	if (!s_set_env("PATH", new_path)) {
+		return;
+	}
+
+	DTTR_LOG_DEBUG("Prepended DttR modules directory to PATH: %s", modules_dir);
+}
+
 int main(const int argc, char *argv[]) {
 	char exe_dir[MAX_PATH];
 	s_get_exe_dir(exe_dir, sizeof(exe_dir));
+
 	dttr_crashdump_init(exe_dir);
 
 	if (argc > 1) {
@@ -60,11 +117,11 @@ int main(const int argc, char *argv[]) {
 		return 0;
 	}
 
-	SetEnvironmentVariableA("DTTR_CONFIG_PATH", g_dttr_config_path);
-	if (iso_context.m_is_direct) {
-		SetEnvironmentVariableA("DTTR_ISO_PATH", iso_context.m_iso_path);
-		SetEnvironmentVariableA("DTTR_ISO_CACHE_ROOT", iso_context.m_cache_root);
-		SetEnvironmentVariableA("DTTR_ISO_GAME_ROOT", iso_context.m_game_root);
+	s_set_env("DTTR_CONFIG_PATH", g_dttr_config_path);
+	s_prepend_modules_to_path();
+	if (iso_context.m_is_iso) {
+		s_set_env("DTTR_ISO_CACHE_ROOT", iso_context.m_cache_root);
+		s_set_env("DTTR_ISO_GAME_ROOT", iso_context.m_game_root);
 	}
 
 	// Override Windows compatibility shims before the sidecar starts.
