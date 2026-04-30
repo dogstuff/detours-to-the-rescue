@@ -4,10 +4,11 @@
 #include "backend_opengl_internal.h"
 #include "graphics_internal.h"
 
-#define S_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
-#include "log.h"
+#include <dttr_log.h>
 
 #include <dttr_config.h>
+
+#define S_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
 
 #ifdef DTTR_MODDING_ENABLED
 #include "../components/components_internal.h"
@@ -40,7 +41,7 @@ static GLuint s_compile_shader(GLenum type, const char *source) {
 	if (!status) {
 		char info[512];
 		glGetShaderInfoLog(shader, sizeof(info), NULL, info);
-		log_error(
+		DTTR_LOG_ERROR(
 			"GL shader compile failed (%s): %s",
 			type == GL_VERTEX_SHADER ? "vert" : "frag",
 			info
@@ -80,7 +81,7 @@ static GLuint s_create_program(void) {
 	if (!status) {
 		char info[512];
 		glGetProgramInfoLog(program, sizeof(info), NULL, info);
-		log_error("GL program link failed: %s", info);
+		DTTR_LOG_ERROR("GL program link failed: %s", info);
 		glDeleteProgram(program);
 		return 0;
 	}
@@ -129,7 +130,7 @@ static bool s_create_fbo(S_OpenglBackendData *gl, int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
-		log_error("GL framebuffer incomplete: 0x%x", fb_status);
+		DTTR_LOG_ERROR("GL framebuffer incomplete: 0x%x", fb_status);
 		return false;
 	}
 
@@ -224,7 +225,7 @@ static bool s_create_msaa_fbo(S_OpenglBackendData *gl, int w, int h, int samples
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	if (fb_status != GL_FRAMEBUFFER_COMPLETE) {
-		log_error("GL MSAA framebuffer incomplete: 0x%x", fb_status);
+		DTTR_LOG_ERROR("GL MSAA framebuffer incomplete: 0x%x", fb_status);
 		return false;
 	}
 
@@ -307,13 +308,13 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	gl->m_gl_context = SDL_GL_CreateContext(state->m_window);
 
 	if (!gl->m_gl_context) {
-		log_error("SDL_GL_CreateContext failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("SDL_GL_CreateContext failed: %s", SDL_GetError());
 		free(gl);
 		return false;
 	}
 
 	if (!SDL_GL_MakeCurrent(state->m_window, gl->m_gl_context)) {
-		log_error("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
 		SDL_GL_DestroyContext(gl->m_gl_context);
 		free(gl);
 		return false;
@@ -322,7 +323,7 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	SDL_GL_SetSwapInterval(0);
 
 	if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress)) {
-		log_error("Failed to load OpenGL functions via glad");
+		DTTR_LOG_ERROR("Failed to load OpenGL functions via glad");
 		SDL_GL_DestroyContext(gl->m_gl_context);
 		free(gl);
 		return false;
@@ -381,9 +382,9 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	int msaa = s_select_gl_msaa_samples();
 	if (msaa > 0) {
 		if (s_create_msaa_fbo(gl, state->m_width, state->m_height, msaa)) {
-			log_info("OpenGL MSAA enabled (%dx samples)", msaa);
+			DTTR_LOG_INFO("OpenGL MSAA enabled (%dx samples)", msaa);
 		} else {
-			log_warn("OpenGL MSAA %dx failed, falling back to no MSAA", msaa);
+			DTTR_LOG_WARN("OpenGL MSAA %dx failed, falling back to no MSAA", msaa);
 			s_destroy_msaa_fbo(gl);
 		}
 	}
@@ -398,7 +399,7 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	gl->m_vertex_staging = malloc((size_t)DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE);
 
 	if (!gl->m_vertex_staging) {
-		log_error("Failed to allocate OpenGL vertex staging buffer");
+		DTTR_LOG_ERROR("Failed to allocate OpenGL vertex staging buffer");
 		SDL_GL_DestroyContext(gl->m_gl_context);
 		free(gl);
 		return false;
@@ -408,7 +409,7 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	state->m_backend_type = DTTR_BACKEND_OPENGL;
 	state->m_renderer = &s_renderer;
 
-	log_info(
+	DTTR_LOG_INFO(
 		"OpenGL 3.3 backend initialized (vendor: %s, renderer: %s)",
 		glGetString(GL_VENDOR),
 		glGetString(GL_RENDERER)
@@ -431,7 +432,7 @@ static bool s_resize_fbo(DTTR_BackendState *state, int width, int height) {
 	s_destroy_fbo(gl);
 
 	if (!s_create_fbo(gl, width, height)) {
-		log_error("Failed to recreate OpenGL FBO at %dx%d", width, height);
+		DTTR_LOG_ERROR("Failed to recreate OpenGL FBO at %dx%d", width, height);
 		return false;
 	}
 
@@ -440,14 +441,14 @@ static bool s_resize_fbo(DTTR_BackendState *state, int width, int height) {
 		s_destroy_msaa_fbo(gl);
 
 		if (!s_create_msaa_fbo(gl, width, height, prev_samples)) {
-			log_warn("MSAA FBO resize failed, disabling MSAA");
+			DTTR_LOG_WARN("MSAA FBO resize failed, disabling MSAA");
 		}
 	}
 
 	state->m_width = width;
 	state->m_height = height;
 
-	log_info("GL FBO resized to %dx%d", width, height);
+	DTTR_LOG_INFO("GL FBO resized to %dx%d", width, height);
 	return true;
 }
 

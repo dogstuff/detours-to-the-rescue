@@ -3,7 +3,7 @@
 
 #include "graphics_com_internal.h"
 #include "graphics_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -220,7 +220,7 @@ static HRESULT __stdcall s_ddraw7_setdisplaymode(
 		hz = 60;
 	}
 
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"SetDisplayMode request: %lux%lu %lu-bpp @ %luHz flags=0x%lx",
 		(unsigned long)w,
 		(unsigned long)h,
@@ -332,7 +332,7 @@ DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7(void) {
 	DTTR_Graphics_COM_DirectDraw7 *dd7 = malloc(sizeof(DTTR_Graphics_COM_DirectDraw7));
 	if (dd7) {
 		dd7->m_vtbl = &s_vtbl;
-		log_debug(
+		DTTR_LOG_DEBUG(
 			"Created DDraw7 translator at %p, vtbl=%p, QueryInterface=%p",
 			dd7,
 			dd7->m_vtbl,

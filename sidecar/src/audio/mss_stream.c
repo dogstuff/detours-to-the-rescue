@@ -1,7 +1,7 @@
+#include "dttr_interop_pcdogs.h"
 #include "mss_internal.h"
 
-#include "dttr_interop_pcdogs.h"
-#include "log.h"
+#include <dttr_log.h>
 
 #include <sds.h>
 
@@ -203,14 +203,14 @@ static sds s_resolve_stream_path(const char *path) {
 }
 
 void *__stdcall dttr_mss_ail_open_stream(void *driver, const char *path, int stream_mem) {
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_open_stream(driver=%p, path=\"%s\", stream_mem=%d)",
 		driver,
 		path ? path : "(null)",
 		stream_mem
 	);
 	if (!path || !dttr_mss_core_ensure_mixer()) {
-		log_trace("MSS AIL_open_stream -> NULL (invalid path or mixer unavailable)");
+		DTTR_LOG_TRACE("MSS AIL_open_stream -> NULL (invalid path or mixer unavailable)");
 		return NULL;
 	}
 
@@ -222,12 +222,12 @@ void *__stdcall dttr_mss_ail_open_stream(void *driver, const char *path, int str
 	s_reset_stream_defaults(stream);
 
 	sds open_path = s_resolve_stream_path(path);
-	log_trace("MSS AIL_open_stream resolved path=\"%s\"", open_path);
+	DTTR_LOG_TRACE("MSS AIL_open_stream resolved path=\"%s\"", open_path);
 
 	stream->audio = MIX_LoadAudio(dttr_mss_core_mixer(), open_path, false);
 
 	if (!stream->audio) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"MIX_LoadAudio stream failed for %s resolved as %s: %s",
 			path,
 			open_path,
@@ -242,7 +242,7 @@ void *__stdcall dttr_mss_ail_open_stream(void *driver, const char *path, int str
 
 	stream->track = MIX_CreateTrack(dttr_mss_core_mixer());
 	if (!stream->track) {
-		log_error("MIX_CreateTrack stream failed: %s", SDL_GetError());
+		DTTR_LOG_ERROR("MIX_CreateTrack stream failed: %s", SDL_GetError());
 		s_destroy_stream_objects(stream);
 		free(stream);
 		return NULL;
@@ -250,7 +250,7 @@ void *__stdcall dttr_mss_ail_open_stream(void *driver, const char *path, int str
 
 	s_apply_stream_track(stream);
 	s_link_stream(stream);
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_open_stream -> stream[%d]=%p track=%p audio=%p",
 		s_stream_slot(stream),
 		stream,
@@ -266,7 +266,7 @@ void __stdcall dttr_mss_ail_close_stream(void *stream_ptr) {
 		return;
 	}
 
-	log_trace("MSS AIL_close_stream(stream[%d]=%p)", s_stream_slot(stream), stream);
+	DTTR_LOG_TRACE("MSS AIL_close_stream(stream[%d]=%p)", s_stream_slot(stream), stream);
 	s_destroy_stream(stream);
 }
 
@@ -276,7 +276,7 @@ void __stdcall dttr_mss_ail_start_stream(void *stream_ptr) {
 		return;
 	}
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_start_stream(stream[%d]=%p status=%d loops=%d volume=%d)",
 		s_stream_slot(stream),
 		stream,
@@ -288,7 +288,7 @@ void __stdcall dttr_mss_ail_start_stream(void *stream_ptr) {
 	stream->status = S_AIL_STATUS_PLAYING;
 	const int sdl_loops = dttr_mss_loops_to_sdl(stream->loops);
 	dttr_mss_track_play(stream->track, sdl_loops);
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_start_stream stream[%d] played sdl_loops=%d",
 		s_stream_slot(stream),
 		sdl_loops

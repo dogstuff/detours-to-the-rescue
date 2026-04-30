@@ -6,7 +6,7 @@
 #include "dttr_crashdump.h"
 #include "dttr_sidecar.h"
 #include "graphics/graphics_com_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 #include <sds.h>
 
 #include <SDL3/SDL.h>
@@ -16,6 +16,7 @@
 #include "game_api_internal.h"
 #include "graphics/graphics_internal.h"
 #include "hook_registry_internal.h"
+#include "platform/imports_internal.h"
 #include <xxhash.h>
 
 #ifdef DTTR_MODDING_ENABLED
@@ -48,14 +49,14 @@ static void s_compute_exe_hash(void) {
 	);
 
 	if (file == INVALID_HANDLE_VALUE) {
-		log_error("Failed to open exe for hashing: %s", exe_path);
+		DTTR_LOG_ERROR("Failed to open exe for hashing: %s", exe_path);
 		s_set_default_exe_hash();
 		return;
 	}
 
 	DWORD file_size = GetFileSize(file, NULL);
 	if (file_size == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
-		log_error("Failed to get exe size for hashing: %s", exe_path);
+		DTTR_LOG_ERROR("Failed to get exe size for hashing: %s", exe_path);
 		CloseHandle(file);
 		s_set_default_exe_hash();
 		return;
@@ -63,7 +64,7 @@ static void s_compute_exe_hash(void) {
 
 	void *buf = malloc(file_size);
 	if (file_size != 0 && !buf) {
-		log_error("Failed to allocate %lu bytes for exe hashing", file_size);
+		DTTR_LOG_ERROR("Failed to allocate %lu bytes for exe hashing", file_size);
 		CloseHandle(file);
 		s_set_default_exe_hash();
 		return;
@@ -71,7 +72,7 @@ static void s_compute_exe_hash(void) {
 
 	DWORD bytes_read = 0;
 	if (!ReadFile(file, buf, file_size, &bytes_read, NULL)) {
-		log_error("Failed to read exe for hashing: %s", exe_path);
+		DTTR_LOG_ERROR("Failed to read exe for hashing: %s", exe_path);
 		CloseHandle(file);
 		free(buf);
 		s_set_default_exe_hash();
@@ -180,11 +181,12 @@ static void s_cleanup_runtime(const DTTR_ComponentContext *ctx) {
 	dttr_movies_hooks_cleanup(ctx);
 	dttr_movies_cleanup();
 	dttr_audio_cleanup(ctx);
-	dttr_other_hooks_cleanup(ctx);
+	dttr_game_hooks_cleanup(ctx);
 	dttr_graphics_hooks_cleanup(ctx);
 	dttr_inputs_hooks_cleanup(ctx);
 	dttr_inputs_cleanup();
 	dttr_graphics_cleanup();
+	dttr_platform_hooks_cleanup(ctx);
 	dttr_game_api_cleanup();
 }
 
@@ -256,17 +258,17 @@ int32_t _stdcall dttr_hook_win_main_callback(
 		DTTR_FATAL("Could not open log file at %s", log_path);
 	}
 
-	log_info("Starting DttR sidecar");
-	log_info("Loading configuration file at %s...", config_path);
+	DTTR_LOG_INFO("Starting DttR sidecar");
+	DTTR_LOG_INFO("Loading configuration file at %s...", config_path);
 
 	if (!dttr_config_load(config_path)) {
 		DTTR_FATAL("Failed to load configuration file at %s", config_path);
 	}
 
 	const int level = g_dttr_config.m_log_level;
-	log_set_level(level);
-	log_add_fp(log_file, level);
-	log_info("Log level set to %s", log_level_string(level));
+	dttr_log_set_level(level);
+	dttr_log_add_fp(log_file, level);
+	DTTR_LOG_INFO("Log level set to %s", log_level_string(level));
 
 	dttr_game_api_init(s_pc_dogs_module, g_dttr_sidecar_module);
 	const DTTR_ComponentContext *ctx = dttr_game_api_get_ctx();
@@ -274,17 +276,18 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	HWND hwnd = dttr_graphics_init();
 
 	if (hwnd == NULL) {
-		log_error("Failed to initialize - aborting");
+		DTTR_LOG_ERROR("Failed to initialize - aborting");
 		return 1;
 	}
 
-	log_info("Initializing game globals...");
+	DTTR_LOG_INFO("Initializing game globals...");
 	s_interop_pcdogs_globals_init(ctx);
 
-	log_info("Initializing game functions...");
+	DTTR_LOG_INFO("Initializing game functions...");
 	s_interop_pcdogs_functions_init(ctx);
 
-	dttr_other_hooks_init(ctx);
+	dttr_platform_hooks_init(ctx);
+	dttr_game_hooks_init(ctx);
 	dttr_inputs_init();
 	dttr_inputs_hooks_init(ctx);
 	dttr_graphics_hooks_init(ctx);
@@ -316,7 +319,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	pcdogs_initialize_game_systems();
 
 	if (g_pcdogs_audio_digital_driver_get() == NULL) {
-		log_warn("No audio device available - audio disabled");
+		DTTR_LOG_WARN("No audio device available - audio disabled");
 	}
 
 	dttr_inputs_late_init();
@@ -325,17 +328,17 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	g_pcdogs_game_initialized_set(1);
 	g_pcdogs_rendering_enabled_set(1);
 
-	log_info("Ready!");
+	DTTR_LOG_INFO("Ready!");
 
 	while (g_pcdogs_should_quit_get() == 0) {
 		s_poll_sdl_events();
 		s_tick_main_loop();
 	}
 
-	log_info("Cleaning up hooks");
+	DTTR_LOG_INFO("Cleaning up hooks");
 	s_cleanup_runtime(ctx);
 
-	log_info("Exiting DttR sidecar");
+	DTTR_LOG_INFO("Exiting DttR sidecar");
 	sdsfree(log_path);
 	sdsfree(config_path);
 	fclose(log_file);

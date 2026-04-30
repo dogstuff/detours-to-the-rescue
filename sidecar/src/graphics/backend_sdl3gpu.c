@@ -1,13 +1,13 @@
 #include "backend_sdl3gpu_internal.h"
 #include "graphics_internal.h"
 
-#define S_DRIVER_DISPLAY_VULKAN "Vulkan"
-#define S_DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
-
-#include "log.h"
+#include <dttr_log.h>
 
 #include <dttr_config.h>
 #include <dttr_sidecar.h>
+
+#define S_DRIVER_DISPLAY_VULKAN "Vulkan"
+#define S_DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
 
 #ifdef DTTR_MODDING_ENABLED
 #include "../components/components_internal.h"
@@ -83,7 +83,7 @@ static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
 		return requested;
 	}
 
-	log_warn(
+	DTTR_LOG_WARN(
 		"Requested MSAA x%d is unsupported on this device/format. "
 		"Falling back to x1.",
 		s_msaa_sample_count_to_int(requested)
@@ -117,7 +117,7 @@ static bool s_try_create_device_for_driver(
 	state->m_device = SDL_CreateGPUDevice(requested_formats, false, driver);
 
 	if (!state->m_device) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"Failed to create SDL GPU device for driver '%s' "
 			"(requested_formats=0x%x): %s",
 			driver ? driver : "default",
@@ -128,7 +128,7 @@ static bool s_try_create_device_for_driver(
 	}
 
 	if (!SDL_ClaimWindowForGPUDevice(state->m_device, state->m_window)) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"Failed to claim window for SDL GPU driver '%s': %s",
 			driver ? driver : "default",
 			SDL_GetError()
@@ -143,7 +143,7 @@ static bool s_try_create_device_for_driver(
 		SDL_GPU_PRESENTMODE_IMMEDIATE
 	);
 	if (!immediate_ok) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"IMMEDIATE present mode unsupported for '%s', falling back to VSYNC",
 			driver ? driver : "default"
 		);
@@ -155,7 +155,7 @@ static bool s_try_create_device_for_driver(
 			SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
 			immediate_ok ? SDL_GPU_PRESENTMODE_IMMEDIATE : SDL_GPU_PRESENTMODE_VSYNC
 		)) {
-		log_error("Failed to set swap chain parameters: %s", SDL_GetError());
+		DTTR_LOG_ERROR("Failed to set swap chain parameters: %s", SDL_GetError());
 	}
 
 	const SDL_GPUShaderFormat available_formats = SDL_GetGPUShaderFormats(state->m_device);
@@ -169,7 +169,7 @@ static bool s_try_create_device_for_driver(
 		return true;
 	}
 
-	log_warn(
+	DTTR_LOG_WARN(
 		"SDL GPU driver '%s' does not support required shader format. Available "
 		"mask=0x%x",
 		active_driver ? active_driver : "unknown",
@@ -203,7 +203,7 @@ static bool s_create_device(DTTR_BackendState *state) {
 			return true;
 		}
 
-		log_error(
+		DTTR_LOG_ERROR(
 			"GPU device creation failed for configured graphics_api='%s'; no fallback "
 			"APIs "
 			"will be attempted",
@@ -228,7 +228,7 @@ static bool s_create_device(DTTR_BackendState *state) {
 		}
 	}
 
-	log_error("GPU device creation failed for all supported APIs (d3d12/vulkan)");
+	DTTR_LOG_ERROR("GPU device creation failed for all supported APIs (d3d12/vulkan)");
 	return false;
 }
 
@@ -247,13 +247,13 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	state->m_renderer = &s_renderer;
 
 	state->m_msaa_sample_count = s_select_msaa_sample_count(state);
-	log_info(
+	DTTR_LOG_INFO(
 		"MSAA requested: x%d, effective: x%d",
 		g_dttr_config.m_msaa_samples,
 		s_msaa_sample_count_to_int(state->m_msaa_sample_count)
 	);
 
-	log_info(
+	DTTR_LOG_INFO(
 		"SDL GPU initialized with %s (shaders: %s)",
 		SDL_GetGPUDeviceDriver(state->m_device),
 		dttr_graphics_shader_format_name(state->m_shader_format)
@@ -261,7 +261,7 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 
 	if (!dttr_graphics_sdl3gpu_create_pipelines()
 		|| !dttr_graphics_sdl3gpu_create_resources()) {
-		log_error("Failed to create GPU resources");
+		DTTR_LOG_ERROR("Failed to create GPU resources");
 		s_release_window_device(state);
 		return false;
 	}
@@ -500,7 +500,7 @@ static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture
 	st->m_gpu_tex = SDL_CreateGPUTexture(state->m_device, &tex_info);
 
 	if (!st->m_gpu_tex) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"Failed to create GPU texture %dx%d: %s",
 			st->m_width,
 			st->m_height,
@@ -855,7 +855,7 @@ static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
 	);
 
 	if (!state->m_render_pass) {
-		log_warn("Failed to begin render pass");
+		DTTR_LOG_WARN("Failed to begin render pass");
 		return false;
 	}
 
@@ -1029,7 +1029,7 @@ static void s_begin_frame(DTTR_BackendState *state) {
 	state->m_cmd = SDL_AcquireGPUCommandBuffer(state->m_device);
 
 	if (!state->m_cmd) {
-		log_error("Failed to acquire GPU command buffer");
+		DTTR_LOG_ERROR("Failed to acquire GPU command buffer");
 		return;
 	}
 
@@ -1042,7 +1042,7 @@ static void s_begin_frame(DTTR_BackendState *state) {
 			&state->m_swapchain_width,
 			&state->m_swapchain_height
 		)) {
-		log_warn("Failed to acquire swapchain texture: %s", SDL_GetError());
+		DTTR_LOG_WARN("Failed to acquire swapchain texture: %s", SDL_GetError());
 		SDL_CancelGPUCommandBuffer(state->m_cmd);
 		state->m_cmd = NULL;
 		return;
@@ -1067,7 +1067,7 @@ static void s_begin_frame(DTTR_BackendState *state) {
 	);
 
 	if (!state->m_transfer_mapped) {
-		log_warn("BeginFrame: MapGPUTransferBuffer failed");
+		DTTR_LOG_WARN("BeginFrame: MapGPUTransferBuffer failed");
 	}
 
 	state->m_frame_active = true;

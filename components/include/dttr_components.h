@@ -50,12 +50,15 @@ typedef union SDL_Event SDL_Event;
 #endif
 
 // Reject incompatible hosts by comparing ctx->m_api_version against this value.
-#define DTTR_COMPONENT_API_VERSION 2
+#define DTTR_COMPONENT_API_VERSION 4
 
 typedef void (*DTTR_LogFn)(int level, const char *file, int line, const char *fmt, ...);
+typedef bool (*DTTR_LogIsEnabledFn)(int level);
 
 typedef struct {
 	DTTR_LogFn m_log;
+	DTTR_LogIsEnabledFn m_log_is_enabled;
+	DTTR_LogFn m_log_unchecked;
 } DTTR_ComponentAPI;
 
 typedef uintptr_t (*DTTR_SigscanFn)(HMODULE mod, const char *sig, const char *mask);
@@ -149,6 +152,75 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 	DTTR_STORAGE(uintptr_t, name##_site)                                                 \
 	DTTR_STORAGE(DTTR_Hook *, name##_handle)
 
+// Track an import-address-table hook site, handle, original pointer, and log label.
+#define DTTR_IMPORT_HOOK_STATE(prefix, import_ident, import_log_name)                    \
+	static uintptr_t prefix##_##import_ident##_site;                                     \
+	static DTTR_Hook *prefix##_##import_ident##_handle;                                  \
+	static void *prefix##_##import_ident##_original;                                     \
+	static const char prefix##_##import_ident##_log_name[] = import_log_name;
+
+#define DTTR_IMPORT_HOOK_INSTALLED(spec) ((spec)->m_handle && *(spec)->m_handle)
+#define DTTR_IMPORT_INSTALL_SPEC(ctx, spec, site)                                        \
+	dttr_import_hook_install_spec(ctx, spec, (uintptr_t)(site))
+#define DTTR_IMPORT_UNINSTALL_SPEC(ctx, spec) dttr_import_hook_uninstall_spec(ctx, spec)
+
+extern int g_dttr_import_hook_trace_enabled;
+
+#define DTTR_IMPORT_HOOK_DECL(prefix, import_ident, import_log_name)                     \
+	DTTR_IMPORT_HOOK_STATE(prefix, import_ident, import_log_name)                        \
+	static __attribute__((naked)) void prefix##_##import_ident##_callback(void) {        \
+		__asm__ __volatile__("pushfl\n\t"                                                \
+							 "cmpl $0, _g_dttr_import_hook_trace_enabled\n\t"            \
+							 "je 1f\n\t"                                                 \
+							 "pushal\n\t"                                                \
+							 "pushl %0\n\t"                                              \
+							 "call _dttr_import_hook_trace\n\t"                          \
+							 "addl $4, %%esp\n\t"                                        \
+							 "popal\n\t"                                                 \
+							 "popfl\n\t"                                                 \
+							 "jmp *%1\n\t"                                               \
+							 "1:\n\t"                                                    \
+							 "popfl\n\t"                                                 \
+							 "jmp *%1"                                                   \
+							 :                                                           \
+							 : "i"(prefix##_##import_ident##_log_name),                  \
+							   "m"(prefix##_##import_ident##_original));                 \
+	}
+
+#define DTTR_IMPORT_HOOK_WARN_DECL(prefix, import_ident, import_log_name)                \
+	DTTR_IMPORT_HOOK_STATE(prefix, import_ident, import_log_name)                        \
+	static __attribute__((naked)) void prefix##_##import_ident##_callback(void) {        \
+		__asm__ __volatile__("pushfl\n\t"                                                \
+							 "pushal\n\t"                                                \
+							 "pushl %0\n\t"                                              \
+							 "call _dttr_import_hook_warn\n\t"                           \
+							 "addl $4, %%esp\n\t"                                        \
+							 "popal\n\t"                                                 \
+							 "popfl\n\t"                                                 \
+							 "jmp *%1"                                                   \
+							 :                                                           \
+							 : "i"(prefix##_##import_ident##_log_name),                  \
+							   "m"(prefix##_##import_ident##_original));                 \
+	}
+
+#define DTTR_IMPORT_HOOK_SPEC(prefix, import_ident, import_name)                         \
+	{                                                                                    \
+		.m_import_name = import_name,                                                    \
+		.m_callback = prefix##_##import_ident##_callback,                                \
+		.m_original = &prefix##_##import_ident##_original,                               \
+		.m_site = &prefix##_##import_ident##_site,                                       \
+		.m_handle = &prefix##_##import_ident##_handle,                                   \
+	}
+
+#define DTTR_IMPORT_SHOULD_NOT_CALL_SPEC(import_name)                                    \
+	{                                                                                    \
+		.m_import_name = import_name,                                                    \
+		.m_callback = NULL,                                                              \
+		.m_original = NULL,                                                              \
+		.m_site = NULL,                                                                  \
+		.m_handle = NULL,                                                                \
+	}
+
 // Track a hook site, handle, and trampoline pointer.
 #define DTTR_TRAMPOLINE_HOOK(name)                                                       \
 	DTTR_HOOK(name)                                                                      \
@@ -198,9 +270,13 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 			int32_t rel_ = (int32_t)((uintptr_t)(name##_callback) - (match_ + 5));        \
 			memcpy(jmp_ + 1, &rel_, 4);                                                   \
 			name##_handle = (ctx)->m_game_api->m_patch_bytes(match_, jmp_, 5);            \
-			log_debug("Installed " #name " at 0x%08X", (unsigned)match_);                 \
+			DTTR_COMPONENT_LOG_DEBUG(                                                     \
+				ctx,                                                                      \
+				"Installed " #name " at 0x%08X",                                          \
+				(unsigned)match_                                                          \
+			);                                                                            \
 		} else {                                                                          \
-			log_error(#name ": signature not found");                                     \
+			DTTR_COMPONENT_LOG_ERROR(ctx, #name ": signature not found");                 \
 		}                                                                                 \
 	} while (0)
 
@@ -214,7 +290,11 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 			int32_t rel_ = (int32_t)((uintptr_t)(name##_callback) - (match_ + 5));        \
 			memcpy(jmp_ + 1, &rel_, 4);                                                   \
 			name##_handle = (ctx)->m_game_api->m_patch_bytes(match_, jmp_, 5);            \
-			log_debug("Installed " #name " at 0x%08X", (unsigned)match_);                 \
+			DTTR_COMPONENT_LOG_DEBUG(                                                     \
+				ctx,                                                                      \
+				"Installed " #name " at 0x%08X",                                          \
+				(unsigned)match_                                                          \
+			);                                                                            \
 		}                                                                                 \
 	} while (0)
 
@@ -233,13 +313,17 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 			);                                                                            \
 			if (name##_handle) {                                                          \
 				name##_trampoline = (uint8_t *)orig_;                                     \
-				log_debug("Installed " #name " at 0x%08X", (unsigned)match_);             \
+				DTTR_COMPONENT_LOG_DEBUG(                                                 \
+					ctx,                                                                  \
+					"Installed " #name " at 0x%08X",                                      \
+					(unsigned)match_                                                      \
+				);                                                                        \
 			} else {                                                                      \
-				log_error(#name ": hook_function failed");                                \
+				DTTR_COMPONENT_LOG_ERROR(ctx, #name ": hook_function failed");            \
 				name##_site = 0;                                                          \
 			}                                                                             \
 		} else {                                                                          \
-			log_error(#name ": signature not found");                                     \
+			DTTR_COMPONENT_LOG_ERROR(ctx, #name ": signature not found");                 \
 		}                                                                                 \
 	} while (0)
 
@@ -256,9 +340,13 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		if (match_) {                                                                     \
 			name##_site = match_ + (offset);                                              \
 			name##_handle = (ctx)->m_game_api->m_patch_bytes(name##_site, bytes, size);   \
-			log_debug("Applied " #name " at 0x%08X", (unsigned)name##_site);              \
+			DTTR_COMPONENT_LOG_DEBUG(                                                     \
+				ctx,                                                                      \
+				"Applied " #name " at 0x%08X",                                            \
+				(unsigned)name##_site                                                     \
+			);                                                                            \
 		} else {                                                                          \
-			log_error(#name ": signature not found");                                     \
+			DTTR_COMPONENT_LOG_ERROR(ctx, #name ": signature not found");                 \
 		}                                                                                 \
 	} while (0)
 
@@ -274,9 +362,13 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 				&unused_original_                                                        \
 			);                                                                           \
 			if (name##_handle) {                                                         \
-				log_debug("Installed " #name " at 0x%08X", (unsigned)name##_site);       \
+				DTTR_COMPONENT_LOG_DEBUG(                                                \
+					ctx,                                                                 \
+					"Installed " #name " at 0x%08X",                                     \
+					(unsigned)name##_site                                                \
+				);                                                                       \
 			} else {                                                                     \
-				log_error(#name ": hook_pointer failed");                                \
+				DTTR_COMPONENT_LOG_ERROR(ctx, #name ": hook_pointer failed");            \
 				name##_site = 0;                                                         \
 			}                                                                            \
 		}                                                                                \
@@ -290,7 +382,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		if (match_) {                                                                     \
 			DTTR_INSTALL_POINTER_AT(name, ctx, site_expr, name##_callback);               \
 		} else {                                                                          \
-			log_error(#name ": signature not found");                                     \
+			DTTR_COMPONENT_LOG_ERROR(ctx, #name ": signature not found");                 \
 		}                                                                                 \
 	} while (0)
 
@@ -302,7 +394,11 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		if (match_) {                                                                     \
 			name##_site = match_ + (offset);                                              \
 			name##_handle = (ctx)->m_game_api->m_patch_bytes(name##_site, bytes, size);   \
-			log_debug("Applied " #name " at 0x%08X", (unsigned)name##_site);              \
+			DTTR_COMPONENT_LOG_DEBUG(                                                     \
+				ctx,                                                                      \
+				"Applied " #name " at 0x%08X",                                            \
+				(unsigned)name##_site                                                     \
+			);                                                                            \
 		}                                                                                 \
 	} while (0)
 
@@ -313,9 +409,13 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		uintptr_t match = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
 		if (match) {                                                                     \
 			name##_addr = (uintptr_t)(expr);                                             \
-			log_debug("Resolved " #name " at 0x%08X", (unsigned)name##_addr);            \
+			DTTR_COMPONENT_LOG_DEBUG(                                                    \
+				ctx,                                                                     \
+				"Resolved " #name " at 0x%08X",                                          \
+				(unsigned)name##_addr                                                    \
+			);                                                                           \
 		} else {                                                                         \
-			log_error(#name ": resolved to NULL");                                       \
+			DTTR_COMPONENT_LOG_ERROR(ctx, #name ": resolved to NULL");                   \
 		}                                                                                \
 	} while (0)
 
@@ -327,21 +427,31 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 
 // Logging macros
 
-#define DTTR_LOG_LVL_TRACE 0
-#define DTTR_LOG_LVL_DEBUG 1
-#define DTTR_LOG_LVL_INFO 2
-#define DTTR_LOG_LVL_WARN 3
-#define DTTR_LOG_LVL_ERROR 4
-#define DTTR_LOG_LVL_FATAL 5
+#define DTTR_COMPONENT_LOG_LVL_TRACE 0
+#define DTTR_COMPONENT_LOG_LVL_DEBUG 1
+#define DTTR_COMPONENT_LOG_LVL_INFO 2
+#define DTTR_COMPONENT_LOG_LVL_WARN 3
+#define DTTR_COMPONENT_LOG_LVL_ERROR 4
+#define DTTR_COMPONENT_LOG_LVL_FATAL 5
 
-#define DTTR_LOG(ctx, level, ...)                                                        \
-	(ctx)->m_api->m_log(level, __FILE__, __LINE__, __VA_ARGS__)
-#define DTTR_LOG_TRACE(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_TRACE, __VA_ARGS__)
-#define DTTR_LOG_DEBUG(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_DEBUG, __VA_ARGS__)
-#define DTTR_LOG_INFO(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_INFO, __VA_ARGS__)
-#define DTTR_LOG_WARN(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_WARN, __VA_ARGS__)
-#define DTTR_LOG_ERROR(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_ERROR, __VA_ARGS__)
-#define DTTR_LOG_FATAL(ctx, ...) DTTR_LOG(ctx, DTTR_LOG_LVL_FATAL, __VA_ARGS__)
+#define DTTR_COMPONENT_LOG(ctx, level, ...)                                              \
+	do {                                                                                 \
+		if ((ctx)->m_api->m_log_is_enabled(level)) {                                     \
+			(ctx)->m_api->m_log_unchecked(level, __FILE__, __LINE__, __VA_ARGS__);       \
+		}                                                                                \
+	} while (0)
+#define DTTR_COMPONENT_LOG_TRACE(ctx, ...)                                               \
+	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_TRACE, __VA_ARGS__)
+#define DTTR_COMPONENT_LOG_DEBUG(ctx, ...)                                               \
+	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_DEBUG, __VA_ARGS__)
+#define DTTR_COMPONENT_LOG_INFO(ctx, ...)                                                \
+	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_INFO, __VA_ARGS__)
+#define DTTR_COMPONENT_LOG_WARN(ctx, ...)                                                \
+	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_WARN, __VA_ARGS__)
+#define DTTR_COMPONENT_LOG_ERROR(ctx, ...)                                               \
+	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_ERROR, __VA_ARGS__)
+#define DTTR_COMPONENT_LOG_FATAL(ctx, ...)                                               \
+	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_FATAL, __VA_ARGS__)
 
 // Component export macros.
 //

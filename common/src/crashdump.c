@@ -4,7 +4,7 @@
 
 #include <dbghelp.h>
 
-#include <log.h>
+#include <dttr_log.h>
 #include <sds.h>
 
 static char s_dump_dir[MAX_PATH];
@@ -40,7 +40,7 @@ sds dttr_crashdump_write(
 		NULL
 	);
 	if (file == INVALID_HANDLE_VALUE) {
-		log_error("Failed to create dump file %s", filename);
+		DTTR_LOG_ERROR("Failed to create dump file %s", filename);
 		sdsfree(filename);
 		return NULL;
 	}
@@ -60,12 +60,12 @@ sds dttr_crashdump_write(
 	CloseHandle(file);
 
 	if (!success) {
-		log_error("Failed to write crash dump to %s", filename);
+		DTTR_LOG_ERROR("Failed to write crash dump to %s", filename);
 		sdsfree(filename);
 		return NULL;
 	}
 
-	log_info("Crash dump written to %s", filename);
+	DTTR_LOG_INFO("Crash dump written to %s", filename);
 	return filename;
 }
 
@@ -189,5 +189,5 @@ void dttr_crashdump_init(const char *const dump_dir) {
 	strncpy(s_dump_dir, dump_dir, MAX_PATH - 1);
 	s_dump_dir[MAX_PATH - 1] = '\0';
 	SetUnhandledExceptionFilter(s_unhandled_exception_filter);
-	log_debug("Crash dump handler installed");
+	DTTR_LOG_DEBUG("Crash dump handler installed");
 }

@@ -1,5 +1,5 @@
 #include "config_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 
 #include <khash.h>
 
@@ -16,27 +16,32 @@ KHASH_MAP_INIT_STR(dttr_config_lookup, int)
 #define S_FIELD_TOP(_key, _field, _type) S_FIELD(NULL, _key, _field, _type)
 
 static const S_ConfigFieldSpec s_config_schema[] = {
-	S_FIELD("graphics", "scaling_fit",                m_scaling_fit,              S_CONFIG_SCALING_FIT),
-	S_FIELD("graphics", "scaling_method",             m_scaling_method,           S_CONFIG_SCALING_METHOD),
-	S_FIELD("graphics", "graphics_api",               m_graphics_api,             S_CONFIG_GRAPHICS_API),
-	S_FIELD("graphics", "present_scaling_algorithm",  m_present_filter,           S_CONFIG_PRESENT_FILTER),
-	S_FIELD("graphics", "window_width",               m_window_width,             S_CONFIG_INT),
-	S_FIELD("graphics", "window_height",              m_window_height,            S_CONFIG_INT),
-	S_FIELD("graphics", "msaa_samples",               m_msaa_samples,             S_CONFIG_INT),
-	S_FIELD("graphics", "texture_upload_sync",        m_texture_upload_sync,      S_CONFIG_BOOL),
+	S_FIELD("graphics", "scaling_fit", m_scaling_fit, S_CONFIG_SCALING_FIT),
+	S_FIELD("graphics", "scaling_method", m_scaling_method, S_CONFIG_SCALING_METHOD),
+	S_FIELD("graphics", "graphics_api", m_graphics_api, S_CONFIG_GRAPHICS_API),
+	S_FIELD(
+		"graphics",
+		"present_scaling_algorithm",
+		m_present_filter,
+		S_CONFIG_PRESENT_FILTER
+	),
+	S_FIELD("graphics", "window_width", m_window_width, S_CONFIG_INT),
+	S_FIELD("graphics", "window_height", m_window_height, S_CONFIG_INT),
+	S_FIELD("graphics", "msaa_samples", m_msaa_samples, S_CONFIG_INT),
+	S_FIELD("graphics", "texture_upload_sync", m_texture_upload_sync, S_CONFIG_BOOL),
 	S_FIELD("graphics", "generate_texture_mipmaps",   m_generate_texture_mipmaps, S_CONFIG_BOOL),
-	S_FIELD("graphics", "vertex_precision",           m_vertex_precision,         S_CONFIG_VERTEX_PRECISION),
-	S_FIELD("graphics", "sprite_smooth",              m_sprite_smooth,            S_CONFIG_BOOL),
-	S_FIELD("graphics", "fullscreen",                 m_fullscreen,               S_CONFIG_BOOL),
+	S_FIELD("graphics", "vertex_precision", m_vertex_precision, S_CONFIG_VERTEX_PRECISION),
+	S_FIELD("graphics", "sprite_smooth", m_sprite_smooth, S_CONFIG_BOOL),
+	S_FIELD("graphics", "fullscreen", m_fullscreen, S_CONFIG_BOOL),
 
-	S_FIELD("audio", "mss_sdl_enabled",        m_mss_sdl_enabled,        S_CONFIG_BOOL),
-	S_FIELD("audio", "mss_sample_gain",        m_mss_sample_gain,        S_CONFIG_FLOAT),
+	S_FIELD("audio", "mss_sdl_enabled", m_mss_sdl_enabled, S_CONFIG_BOOL),
+	S_FIELD("audio", "mss_sample_gain", m_mss_sample_gain, S_CONFIG_FLOAT),
 	S_FIELD("audio", "mss_sample_preemphasis", m_mss_sample_preemphasis, S_CONFIG_FLOAT),
 
-	S_FIELD_TOP("log_level",      m_log_level,      S_CONFIG_LOG_LEVEL),
-	S_FIELD_TOP("minidump_type",  m_minidump_type,  S_CONFIG_MINIDUMP_TYPE),
-	S_FIELD_TOP("pcdogs_path",       m_pcdogs_path,       S_CONFIG_STRING),
-	S_FIELD_TOP("saves_path",       m_saves_path,         S_CONFIG_STRING),
+	S_FIELD_TOP("log_level", m_log_level, S_CONFIG_LOG_LEVEL),
+	S_FIELD_TOP("minidump_type", m_minidump_type, S_CONFIG_MINIDUMP_TYPE),
+	S_FIELD_TOP("pcdogs_path", m_pcdogs_path, S_CONFIG_STRING),
+	S_FIELD_TOP("saves_path", m_saves_path, S_CONFIG_STRING),
 };
 // clang-format on
 

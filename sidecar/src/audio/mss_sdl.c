@@ -1,7 +1,7 @@
+#include "dttr_hooks_audio.h"
 #include "mss_internal.h"
 
-#include "dttr_hooks_audio.h"
-#include "log.h"
+#include <dttr_log.h>
 
 #include <SDL3/SDL.h>
 
@@ -87,7 +87,7 @@ static void s_install_mss_import_descriptor(
 			continue;
 		}
 
-		log_error("Unhandled MSS32 import: %s", import_name->Name);
+		DTTR_LOG_ERROR("Unhandled MSS32 import: %s", import_name->Name);
 	}
 }
 
@@ -99,7 +99,7 @@ void dttr_mss_sdl_release_hooks(const DTTR_ComponentContext *ctx) {
 
 void dttr_mss_sdl_install_hooks(const DTTR_ComponentContext *ctx) {
 	if (dttr_mss_sdl_original_mode_enabled()) {
-		log_info("MSS SDL import shim disabled");
+		DTTR_LOG_INFO("MSS SDL import shim disabled");
 		return;
 	}
 
@@ -154,7 +154,7 @@ int __stdcall dttr_mss_ail_waveOutOpen(
 	int device_id,
 	const void *format
 ) {
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_waveOutOpen(driver_out=%p, wave_out=%p, device_id=%d, format=%p)",
 		driver_out,
 		wave_out,
@@ -168,7 +168,7 @@ int __stdcall dttr_mss_ail_waveOutOpen(
 	SDL_AudioSpec desired_spec = {0};
 	if (s_wave_format_spec(format, &desired_spec)) {
 		dttr_mss_core_set_desired_spec(&desired_spec);
-		log_trace(
+		DTTR_LOG_TRACE(
 			"MSS AIL_waveOutOpen desired spec: format=%u channels=%d freq=%d",
 			(unsigned)desired_spec.format,
 			desired_spec.channels,
@@ -177,7 +177,7 @@ int __stdcall dttr_mss_ail_waveOutOpen(
 	}
 
 	if (!dttr_mss_core_ensure_mixer()) {
-		log_trace("MSS AIL_waveOutOpen -> -1 (mixer unavailable)");
+		DTTR_LOG_TRACE("MSS AIL_waveOutOpen -> -1 (mixer unavailable)");
 		return -1;
 	}
 
@@ -186,7 +186,7 @@ int __stdcall dttr_mss_ail_waveOutOpen(
 		*driver_out = dttr_mss_core_mixer();
 	}
 
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_waveOutOpen -> 0 driver=%p open_count=%d",
 		dttr_mss_core_mixer(),
 		dttr_mss_core_driver_open_count()
@@ -195,14 +195,14 @@ int __stdcall dttr_mss_ail_waveOutOpen(
 }
 
 void __stdcall dttr_mss_ail_waveOutClose(void *driver) {
-	log_trace(
+	DTTR_LOG_TRACE(
 		"MSS AIL_waveOutClose(driver=%p, mixer=%p, open_count=%d)",
 		driver,
 		dttr_mss_core_mixer(),
 		dttr_mss_core_driver_open_count()
 	);
 	if (driver && driver != dttr_mss_core_mixer()) {
-		log_error("Ignoring AIL_waveOutClose for unknown driver %p", driver);
+		DTTR_LOG_ERROR("Ignoring AIL_waveOutClose for unknown driver %p", driver);
 		return;
 	}
 
@@ -210,7 +210,10 @@ void __stdcall dttr_mss_ail_waveOutClose(void *driver) {
 		dttr_mss_core_decrement_driver_open_count();
 	}
 
-	log_trace("MSS AIL_waveOutClose open_count -> %d", dttr_mss_core_driver_open_count());
+	DTTR_LOG_TRACE(
+		"MSS AIL_waveOutClose open_count -> %d",
+		dttr_mss_core_driver_open_count()
+	);
 	if (dttr_mss_core_driver_open_count() > 0) {
 		return;
 	}

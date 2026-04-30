@@ -1,7 +1,7 @@
 #include "components_internal.h"
-
 #include "dttr_sidecar.h"
-#include "log.h"
+
+#include <dttr_log.h>
 
 #include <sds.h>
 
@@ -35,7 +35,7 @@ static void s_log_component_info(const char *filename, DTTR_ComponentInfoFn info
 		return;
 	}
 
-	log_info(
+	DTTR_LOG_INFO(
 		"Component: %s v%s by %s (%s)",
 		info->m_name ? info->m_name : "unknown",
 		info->m_version ? info->m_version : "?",
@@ -45,13 +45,13 @@ static void s_log_component_info(const char *filename, DTTR_ComponentInfoFn info
 }
 
 void dttr_components_init(void) {
-	log_info("Loading components...");
+	DTTR_LOG_INFO("Loading components...");
 
 	sds components_dir = sdscatprintf(sdsempty(), "%scomponents\\", g_dttr_loader_dir);
 
 	DWORD attrs = GetFileAttributesA(components_dir);
 	if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
-		log_info("No components directory found at %s - skipping", components_dir);
+		DTTR_LOG_INFO("No components directory found at %s - skipping", components_dir);
 		sdsfree(components_dir);
 		return;
 	}
@@ -63,7 +63,7 @@ void dttr_components_init(void) {
 	sdsfree(search_pattern);
 
 	if (find_handle == INVALID_HANDLE_VALUE) {
-		log_info("Loaded 0 component(s)");
+		DTTR_LOG_INFO("Loaded 0 component(s)");
 		sdsfree(components_dir);
 		return;
 	}
@@ -72,7 +72,7 @@ void dttr_components_init(void) {
 
 	do {
 		if (s_loaded_component_count >= S_COMPONENTS_MAX) {
-			log_warn(
+			DTTR_LOG_WARN(
 				"Maximum component count (%d) reached - skipping remaining",
 				S_COMPONENTS_MAX
 			);
@@ -84,7 +84,7 @@ void dttr_components_init(void) {
 		sdsfree(dll_path);
 
 		if (!handle) {
-			log_warn(
+			DTTR_LOG_WARN(
 				"Failed to load component DLL: %s (error %lu)",
 				find_data.cFileName,
 				GetLastError()
@@ -98,7 +98,7 @@ void dttr_components_init(void) {
 			GetProcAddress(handle, "dttr_component_cleanup");
 
 		if (!init_fn || !cleanup_fn) {
-			log_warn(
+			DTTR_LOG_WARN(
 				"Component %s missing required exports "
 				"(dttr_component_init/dttr_component_cleanup) - skipping",
 				find_data.cFileName
@@ -127,7 +127,7 @@ void dttr_components_init(void) {
 		const DTTR_ComponentContext ctx = s_component_context(base_ctx);
 
 		if (!mod->m_init(&ctx)) {
-			log_warn("Component %s init failed - skipping", mod->m_filename);
+			DTTR_LOG_WARN("Component %s init failed - skipping", mod->m_filename);
 			FreeLibrary(handle);
 			continue;
 		}
@@ -139,7 +139,7 @@ void dttr_components_init(void) {
 	FindClose(find_handle);
 	sdsfree(components_dir);
 
-	log_info("Loaded %d component(s)", s_loaded_component_count);
+	DTTR_LOG_INFO("Loaded %d component(s)", s_loaded_component_count);
 }
 
 void dttr_components_tick(void) {
@@ -190,7 +190,7 @@ void dttr_components_cleanup(void) {
 		S_LoadedComponent *mod = &s_loaded_components[i];
 
 		if (mod->m_initialized) {
-			log_info("Cleaning up component: %s", mod->m_filename);
+			DTTR_LOG_INFO("Cleaning up component: %s", mod->m_filename);
 			mod->m_cleanup();
 		}
 

@@ -10,7 +10,7 @@
 #include "dttr_sidecar.h"
 #include "graphics_com_internal.h"
 #include "graphics_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 
 DTTR_Graphics_COM_DirectDraw7 *g_dttr_graphics_hook_ddraw7;
 HWND g_dttr_graphics_hook_hwnd;
@@ -34,14 +34,19 @@ static DTTR_Graphics_COM_DirectDraw7 *s_get_or_create_ddraw7(void) {
 
 static void s_store_pointer(void **slot, void *value) {
 	DWORD old = 0;
+	const SIZE_T slot_size = sizeof(*slot);
 
-	if (!VirtualProtect(slot, sizeof(*slot), PAGE_READWRITE, &old)) {
-		log_error("VirtualProtect failed for slot=%p error=%lu", slot, GetLastError());
+	if (!VirtualProtect(slot, slot_size, PAGE_READWRITE, &old)) {
+		DTTR_LOG_ERROR(
+			"VirtualProtect failed for slot=%p error=%lu",
+			slot,
+			GetLastError()
+		);
 		return;
 	}
 
 	*slot = value;
-	VirtualProtect(slot, sizeof(*slot), old, &old);
+	VirtualProtect(slot, slot_size, old, &old);
 }
 
 HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
@@ -62,7 +67,7 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 		s_store_pointer(ddraw_out, ddraw7);
 	}
 
-	log_debug("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
+	DTTR_LOG_DEBUG("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
 	return S_OK;
 }
 
@@ -73,7 +78,7 @@ HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 	LPVOID lpContext,
 	DWORD dwFlags
 ) {
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"DirectDrawEnumerateExA intercepted - callback=%p context=%p flags=0x%x",
 		lpCallback,
 		lpContext,
@@ -94,12 +99,12 @@ void dttr_graphics_hooks_init(const DTTR_ComponentContext *ctx) {
 	g_dttr_graphics_hook_hwnd = dttr_graphics_init();
 
 	if (!g_dttr_graphics_hook_hwnd) {
-		log_error("Failed to initialize backend");
+		DTTR_LOG_ERROR("Failed to initialize backend");
 		return;
 	}
 
 	if (!s_get_or_create_ddraw7()) {
-		log_error("Failed to create DirectDraw translator");
+		DTTR_LOG_ERROR("Failed to create DirectDraw translator");
 		return;
 	}
 

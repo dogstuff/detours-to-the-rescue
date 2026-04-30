@@ -27,6 +27,12 @@ typedef struct {
 	S_ConfigValueType value_type;
 } S_ConfigFieldSpec;
 
+static inline void s_config_clear_button_map(int *map) {
+	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
+		map[i] = DTTR_GAMEPAD_MAPPING_NONE;
+	}
+}
+
 bool s_config_parse_bool(const char *value, bool *out_value);
 bool s_config_parse_scaling_fit(const char *value, DTTR_ScalingMode *out_value);
 bool s_config_parse_scaling_method(const char *value, DTTR_ScalingMethod *out_value);

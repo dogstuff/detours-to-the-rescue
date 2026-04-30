@@ -1,9 +1,10 @@
 #include "hook_registry_internal.h"
 
+#include <dttr_log.h>
+
 #include <Zydis/Zydis.h>
 #include <khash.h>
 #include <kvec.h>
-#include <log.h>
 #include <psapi.h>
 #include <xxhash.h>
 
@@ -60,7 +61,7 @@ static bool s_decoder_init(void) {
 		ZYDIS_STACK_WIDTH_32
 	);
 	if (!ZYAN_SUCCESS(status)) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: ZydisDecoderInit failed (status=0x%08X)",
 			(unsigned)status
 		);
@@ -93,7 +94,7 @@ static bool s_copy_memory_checked(uintptr_t addr, uint8_t *out, size_t size) {
 		const uintptr_t cur = addr + copied;
 		MEMORY_BASIC_INFORMATION mbi;
 		if (!VirtualQuery((const void *)cur, &mbi, sizeof(mbi))) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: VirtualQuery failed at 0x%08X (err=%lu)",
 				(unsigned)cur,
 				GetLastError()
@@ -102,7 +103,7 @@ static bool s_copy_memory_checked(uintptr_t addr, uint8_t *out, size_t size) {
 		}
 
 		if (mbi.State != MEM_COMMIT) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: unreadable memory state=0x%lX at 0x%08X",
 				(unsigned long)mbi.State,
 				(unsigned)cur
@@ -111,7 +112,7 @@ static bool s_copy_memory_checked(uintptr_t addr, uint8_t *out, size_t size) {
 		}
 		if ((mbi.Protect & PAGE_GUARD) || (mbi.Protect & PAGE_NOACCESS)
 			|| !s_is_readable_page_protect(mbi.Protect)) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: unreadable memory protect=0x%lX at 0x%08X",
 				(unsigned long)mbi.Protect,
 				(unsigned)cur
@@ -156,7 +157,7 @@ static void s_log_prologue_bytes(uintptr_t site, const uint8_t *bytes, size_t si
 	}
 
 	hex[pos] = '\0';
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"hook_validate: site=0x%08X prologue_bytes[%u]=%s",
 		(unsigned)site,
 		(unsigned)size,
@@ -178,7 +179,7 @@ static bool s_decode_prologue(
 	}
 	if (!insns || !out_insn_count || !out_prologue_size || !out_prologue_bytes
 		|| out_prologue_bytes_cap == 0) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: invalid decode parameters for 0x%08X",
 			(unsigned)addr
 		);
@@ -192,7 +193,7 @@ static bool s_decode_prologue(
 			need = DTTR_HOOK_MIN_PROLOGUE;
 		}
 	} else if (requested_size < 0) {
-		log_warn(
+		DTTR_LOG_WARN(
 			"hook_attach_function: negative requested prologue=%d at 0x%08X; using auto",
 			requested_size,
 			(unsigned)addr
@@ -200,7 +201,7 @@ static bool s_decode_prologue(
 	}
 
 	if (need > DTTR_HOOK_MAX_PROLOGUE) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: invalid requested prologue=%u at 0x%08X",
 			(unsigned)need,
 			(unsigned)addr
@@ -215,7 +216,7 @@ static bool s_decode_prologue(
 
 	uint8_t code_window[DTTR_HOOK_MAX_PROLOGUE] = {0};
 	if (!s_copy_memory_checked(addr, code_window, decode_window)) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: failed to read decode window at 0x%08X (size=%u)",
 			(unsigned)addr,
 			(unsigned)decode_window
@@ -228,7 +229,7 @@ static bool s_decode_prologue(
 
 	while (offset < need) {
 		if (count >= DTTR_HOOK_MAX_INSN) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: too many instructions while decoding 0x%08X",
 				(unsigned)addr
 			);
@@ -244,7 +245,7 @@ static bool s_decode_prologue(
 			&inst
 		);
 		if (!ZYAN_SUCCESS(status) || inst.length == 0) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: decode failed at 0x%08X+0x%X (status=0x%08X)",
 				(unsigned)addr,
 				(unsigned)offset,
@@ -259,7 +260,7 @@ static bool s_decode_prologue(
 		}
 
 		if (offset + inst.length > DTTR_HOOK_MAX_PROLOGUE) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: decoded prologue exceeded %u bytes at 0x%08X",
 				(unsigned)DTTR_HOOK_MAX_PROLOGUE,
 				(unsigned)addr
@@ -284,7 +285,7 @@ static bool s_decode_prologue(
 		}
 
 		if (out->m_rel_size != 0 && out->m_rel_size != 4) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: unsupported relative immediate size=%u at "
 				"0x%08X+0x%X (%s)",
 				(unsigned)out->m_rel_size,
@@ -296,7 +297,7 @@ static bool s_decode_prologue(
 		}
 		if (out->m_rel_size == 4
 			&& (size_t)out->m_rel_offset + out->m_rel_size > out->m_length) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: invalid relative-immediate layout at 0x%08X+0x%X",
 				(unsigned)addr,
 				(unsigned)offset
@@ -304,7 +305,7 @@ static bool s_decode_prologue(
 			return false;
 		}
 
-		log_debug(
+		DTTR_LOG_DEBUG(
 			"hook_decode: site=0x%08X off=0x%02X len=%u mnemonic=%s rel_off=%u "
 			"rel_size=%u",
 			(unsigned)addr,
@@ -320,7 +321,7 @@ static bool s_decode_prologue(
 	}
 
 	if (offset > out_prologue_bytes_cap) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: prologue output overflow at 0x%08X (%u > %u)",
 			(unsigned)addr,
 			(unsigned)offset,
@@ -349,7 +350,7 @@ static bool s_trampoline_relocate(
 		}
 
 		if (insn->m_rel_size != 4) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: relocate unsupported rel_size=%u at 0x%08X+0x%X",
 				(unsigned)insn->m_rel_size,
 				(unsigned)site,
@@ -371,7 +372,7 @@ static bool s_trampoline_relocate(
 											 + insn->m_length);
 		const int64_t new_rel64 = (int64_t)(old_target - new_next);
 		if (new_rel64 < INT32_MIN || new_rel64 > INT32_MAX) {
-			log_error(
+			DTTR_LOG_ERROR(
 				"hook_attach_function: relocated target out of range at 0x%08X+0x%X",
 				(unsigned)site,
 				(unsigned)insn->m_offset
@@ -386,7 +387,7 @@ static bool s_trampoline_relocate(
 			sizeof(new_rel)
 		);
 
-		log_debug(
+		DTTR_LOG_DEBUG(
 			"hook_reloc: site=0x%08X off=0x%02X target=0x%08X rel=%d",
 			(unsigned)site,
 			(unsigned)insn->m_offset,
@@ -458,7 +459,7 @@ static void s_check_overlap(uintptr_t addr, size_t size) {
 		const uintptr_t h_end = h->m_addr + h->m_size;
 
 		if (addr < h_end && h->m_addr < end) {
-			log_warn(
+			DTTR_LOG_WARN(
 				"hook overlap: [0x%08X, +%zu) conflicts with [0x%08X, +%zu)",
 				(unsigned)addr,
 				size,
@@ -487,7 +488,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 	void **out_original
 ) {
 	if (!addr || !handler) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: invalid parameters site=0x%08X handler=0x%08X",
 			(unsigned)addr,
 			(unsigned)(uintptr_t)handler
@@ -513,7 +514,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 		return NULL;
 	}
 
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"hook_attach_function: site=0x%08X requested=%d aligned=%u insn_count=%u",
 		(unsigned)addr,
 		prologue_size,
@@ -529,7 +530,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 	);
 
 	if (!trampoline) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: trampoline alloc failed for 0x%08X",
 			(unsigned)addr
 		);
@@ -547,7 +548,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 							   - (int64_t)((uintptr_t)trampoline + actual_prologue_size
 										   + DTTR_HOOK_PATCH_SIZE);
 	if (jmp_back64 < INT32_MIN || jmp_back64 > INT32_MAX) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: trampoline jmp-back out of range at 0x%08X",
 			(unsigned)addr
 		);
@@ -559,7 +560,10 @@ static DTTR_Hook *s_hook_attach_function_common(
 
 	DTTR_Hook *hook = (DTTR_Hook *)calloc(1, sizeof(DTTR_Hook));
 	if (!hook) {
-		log_error("hook_attach_function: hook alloc failed for 0x%08X", (unsigned)addr);
+		DTTR_LOG_ERROR(
+			"hook_attach_function: hook alloc failed for 0x%08X",
+			(unsigned)addr
+		);
 		VirtualFree(trampoline, 0, MEM_RELEASE);
 		return NULL;
 	}
@@ -568,7 +572,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 	hook->m_size = DTTR_HOOK_PATCH_SIZE;
 	hook->m_original = (uint8_t *)malloc(DTTR_HOOK_PATCH_SIZE);
 	if (!hook->m_original) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: original-bytes alloc failed for 0x%08X",
 			(unsigned)addr
 		);
@@ -585,7 +589,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 	const int64_t rel64 = (int64_t)(uintptr_t)handler
 						  - (int64_t)(addr + DTTR_HOOK_PATCH_SIZE);
 	if (rel64 < INT32_MIN || rel64 > INT32_MAX) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_attach_function: handler jump out of range at 0x%08X -> 0x%08X",
 			(unsigned)addr,
 			(unsigned)(uintptr_t)handler
@@ -599,7 +603,7 @@ static DTTR_Hook *s_hook_attach_function_common(
 	memcpy(jmp + 1, &rel, 4);
 
 	if (!s_write_bytes(addr, jmp, DTTR_HOOK_PATCH_SIZE)) {
-		log_error("hook_attach_function: write failed for 0x%08X", (unsigned)addr);
+		DTTR_LOG_ERROR("hook_attach_function: write failed for 0x%08X", (unsigned)addr);
 		VirtualFree(trampoline, 0, MEM_RELEASE);
 		free(hook->m_original);
 		free(hook);
@@ -637,7 +641,7 @@ DTTR_Hook *dttr_hook_patch_bytes(uintptr_t addr, const uint8_t *bytes, size_t si
 
 	DTTR_Hook *hook = (DTTR_Hook *)calloc(1, sizeof(DTTR_Hook));
 	if (!hook) {
-		log_error("hook_patch_bytes: hook alloc failed for 0x%08X", (unsigned)addr);
+		DTTR_LOG_ERROR("hook_patch_bytes: hook alloc failed for 0x%08X", (unsigned)addr);
 		return NULL;
 	}
 
@@ -645,7 +649,7 @@ DTTR_Hook *dttr_hook_patch_bytes(uintptr_t addr, const uint8_t *bytes, size_t si
 	hook->m_size = size;
 	hook->m_original = (uint8_t *)malloc(size);
 	if (!hook->m_original) {
-		log_error(
+		DTTR_LOG_ERROR(
 			"hook_patch_bytes: original-bytes alloc failed for 0x%08X",
 			(unsigned)addr
 		);
@@ -655,7 +659,10 @@ DTTR_Hook *dttr_hook_patch_bytes(uintptr_t addr, const uint8_t *bytes, size_t si
 
 	DWORD old_protect;
 	if (!VirtualProtect((void *)addr, size, PAGE_EXECUTE_READWRITE, &old_protect)) {
-		log_error("hook_patch_bytes: VirtualProtect failed for 0x%08X", (unsigned)addr);
+		DTTR_LOG_ERROR(
+			"hook_patch_bytes: VirtualProtect failed for 0x%08X",
+			(unsigned)addr
+		);
 		s_hook_destroy(hook);
 		return NULL;
 	}

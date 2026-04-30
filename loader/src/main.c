@@ -1,7 +1,7 @@
 #include <dttr_config.h>
 #include <dttr_crashdump.h>
 #include <dttr_loader.h>
-#include <log.h>
+#include <dttr_log.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
@@ -35,19 +35,19 @@ int main(const int argc, char *argv[]) {
 
 	dttr_config_load(g_dttr_config_path);
 
-	const int level = g_dttr_config.m_log_level;
-	log_set_level(level);
+	const int log_level = g_dttr_config.m_log_level;
+	dttr_log_set_level(log_level);
 
 	FILE *const log_file = fopen(LOG_FILE_NAME, "a+");
 	if (log_file) {
-		log_add_fp(log_file, level);
+		dttr_log_add_fp(log_file, log_level);
 	}
 
-	log_info("Starting DttR loader (log level: %s)", log_level_string(level));
+	DTTR_LOG_INFO("Starting DttR loader (log level: %s)", log_level_string(log_level));
 
 	WCHAR exe_path[MAX_PATH];
 	if (!dttr_loader_resolve_exe_path(exe_path, g_dttr_config.m_pcdogs_path)) {
-		log_info("User exited without selecting a game path");
+		DTTR_LOG_INFO("User exited without selecting a game path");
 		if (log_file) {
 			fclose(log_file);
 		}
@@ -69,7 +69,7 @@ int main(const int argc, char *argv[]) {
 	dttr_loader_inject_sidecar(&child_info);
 	dttr_loader_watchdog_wait(&child_info);
 
-	log_info("Exiting loader");
+	DTTR_LOG_INFO("Exiting loader");
 
 	CloseHandle(child_info.hThread);
 	CloseHandle(child_info.hProcess);

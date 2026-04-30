@@ -3,7 +3,7 @@
 
 #include <dttr_errors.h>
 #include <dttr_loader.h>
-#include <log.h>
+#include <dttr_log.h>
 #include <string.h>
 #include <windows.h>
 
@@ -131,7 +131,7 @@ void dttr_compat_create_process(
 	size_t shim_data_len,
 	PROCESS_INFORMATION *child_info
 ) {
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Spawning game process: NtCreateUserProcess (%u bytes shim data)",
 		(unsigned)shim_data_len
 	);
@@ -177,8 +177,8 @@ void dttr_compat_create_process(
 	rtl_init_unicode_string(&us_cmd, image_name);
 	rtl_init_unicode_string(&us_cwd, cwd);
 
-	log_debug("NT image path: %ls", nt_path);
-	log_debug("Working directory: %ls", cwd);
+	DTTR_LOG_DEBUG("NT image path: %ls", nt_path);
+	DTTR_LOG_DEBUG("Working directory: %ls", cwd);
 
 	PVOID params = NULL;
 	NTSTATUS status = rtl_create_process_parameters_ex(
@@ -237,26 +237,28 @@ void dttr_compat_create_process(
 	child_info->hThread = thread;
 	child_info->dwProcessId = (DWORD)(ULONG_PTR)client_id.m_process;
 	child_info->dwThreadId = (DWORD)(ULONG_PTR)client_id.m_thread;
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Process created: PID=%lu, TID=%lu",
 		child_info->dwProcessId,
 		child_info->dwThreadId
 	);
 
-	CONTEXT ctx = {.ContextFlags = CONTEXT_INTEGER};
-	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(thread, &ctx));
+	CONTEXT thread_context = {.ContextFlags = CONTEXT_INTEGER};
+	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(thread, &thread_context));
 
 	// EBX holds PEB in suspended 32-bit process
-	const uintptr_t peb_addr = (uintptr_t)ctx.Ebx;
+	const uintptr_t peb_addr = (uintptr_t)thread_context.Ebx;
 
-	const SIZE_T data_len = shim_data_len;
-
-	LPVOID remote_shim = DTTR_UNWRAP_WINAPI_EXISTS(
-		VirtualAllocEx(process, NULL, data_len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)
-	);
+	LPVOID remote_shim = DTTR_UNWRAP_WINAPI_EXISTS(VirtualAllocEx(
+		process,
+		NULL,
+		shim_data_len,
+		MEM_COMMIT | MEM_RESERVE,
+		PAGE_READWRITE
+	));
 
 	DTTR_UNWRAP_WINAPI_NONZERO(
-		WriteProcessMemory(process, remote_shim, shim_data, data_len, NULL)
+		WriteProcessMemory(process, remote_shim, shim_data, shim_data_len, NULL)
 	);
 
 	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
@@ -267,9 +269,9 @@ void dttr_compat_create_process(
 		NULL
 	));
 
-	log_debug(
+	DTTR_LOG_DEBUG(
 		"Shim data (%u bytes) written to PEB->pShimData at 0x%08X",
-		(unsigned)data_len,
+		(unsigned)shim_data_len,
 		(unsigned)(uintptr_t)remote_shim
 	);
 }

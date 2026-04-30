@@ -1,7 +1,7 @@
-#include "dttr_hooks_other.h"
+#include "dttr_hooks_game.h"
 #include "dttr_sidecar.h"
-#include "log.h"
 #include "sds.h"
+#include <dttr_log.h>
 
 #include <SDL3/SDL.h>
 #include <sys/stat.h>
@@ -76,7 +76,7 @@ static const char *s_redirect_path(
 		return path;
 	}
 
-	log_debug("Redirecting \"%s\" -> \"%s\"", path, buf);
+	DTTR_LOG_DEBUG("Redirecting \"%s\" -> \"%s\"", path, buf);
 	return buf;
 }
 
@@ -99,7 +99,7 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	const int perms = ((mode && strchr(mode, 'r')) ? _S_IREAD : 0)
 					  | (wants_write ? _S_IWRITE : 0);
 
-	log_error(
+	DTTR_LOG_ERROR(
 		"Permission error opening \"%s\" (mode \"%s\"): %s",
 		path,
 		mode,
@@ -139,14 +139,14 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	if (button_id != 1)
 		return NULL;
 
-	log_debug("chmod \"%s\" 0o%03o", path, perms);
+	DTTR_LOG_DEBUG("chmod \"%s\" 0o%03o", path, perms);
 	chmod(path, perms);
 
 	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
 	if (result)
 		return result;
 
-	log_error(
+	DTTR_LOG_ERROR(
 		"chmod didn't resolve permission error for \"%s\": %s",
 		path,
 		strerror(errno)
@@ -165,7 +165,7 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 
 	// The game handles missing files and read-only failures correctly.
 	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
-		log_error("File \"%s\" does not exist; passing to game.", path);
+		DTTR_LOG_ERROR("File \"%s\" does not exist; passing to game.", path);
 		return result;
 	}
 
@@ -179,7 +179,12 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		if (result)
 			return result;
 	} else {
-		log_error("Failed to open \"%s\" (mode \"%s\"): %s", path, mode, strerror(errno));
+		DTTR_LOG_ERROR(
+			"Failed to open \"%s\" (mode \"%s\"): %s",
+			path,
+			mode,
+			strerror(errno)
+		);
 	}
 
 	return s_open_file_fallback(path, mode);

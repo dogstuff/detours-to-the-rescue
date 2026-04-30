@@ -3,7 +3,7 @@
 
 #include "graphics_com_internal.h"
 #include "graphics_internal.h"
-#include "log.h"
+#include <dttr_log.h>
 #include <khash.h>
 #include <stdlib.h>
 #include <string.h>
@@ -344,7 +344,7 @@ static DTTR_Texture s_surface_texture_create_or_retain(
 	if (idx < 0) {
 		if (state->m_staged_texture_count >= DTTR_MAX_STAGED_TEXTURES) {
 			SDL_UnlockMutex(state->m_texture_mutex);
-			log_error("Too many textures");
+			DTTR_LOG_ERROR("Too many textures");
 			return DTTR_INVALID_TEXTURE;
 		}
 		idx = state->m_staged_texture_count++;

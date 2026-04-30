@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include <log.h>
+#include <dttr_log.h>
 #include <sds.h>
 #include <windows.h>
 
@@ -16,7 +16,7 @@
 #define DTTR_ERROR(error_message, ...)                                                   \
 	do {                                                                                 \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__);           \
-		log_error("%s", _err_msg);                                                       \
+		DTTR_LOG_ERROR("%s", _err_msg);                                                  \
 		dttr_sdl_show_simple_message_box(                                                \
 			SDL_MESSAGEBOX_ERROR,                                                        \
 			"DttR: Error",                                                               \
@@ -34,7 +34,7 @@
 	do {                                                                                 \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__);           \
 		_err_msg = sdscat(_err_msg, DTTR_REPORT_SUFFIX);                                 \
-		log_error("%s", _err_msg);                                                       \
+		DTTR_LOG_ERROR("%s", _err_msg);                                                  \
 		dttr_sdl_show_simple_message_box(                                                \
 			SDL_MESSAGEBOX_ERROR,                                                        \
 			"DttR: Fatal Error",                                                         \

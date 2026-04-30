@@ -6,7 +6,7 @@
 #include <cimgui.h>
 #include <cimgui_impl.h>
 #include <cimgui_impl_sdlgpu3.h>
-#include <log.h>
+#include <dttr_log.h>
 
 static DTTR_BackendType s_backend_type;
 
@@ -50,7 +50,7 @@ void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType
 		ImGui_ImplOpenGL3_Init("#version 330");
 	}
 
-	log_info(
+	DTTR_LOG_INFO(
 		"ImGui overlay initialized (backend: %s)",
 		backend == DTTR_BACKEND_SDL_GPU ? "SDL_GPU" : "OpenGL"
 	);
@@ -65,7 +65,7 @@ void dttr_imgui_cleanup(void) {
 
 	ImGui_ImplSDL3_Shutdown();
 	igDestroyContext(NULL);
-	log_info("ImGui overlay cleaned up");
+	DTTR_LOG_INFO("ImGui overlay cleaned up");
 }
 
 bool dttr_imgui_process_event(const SDL_Event *event) {

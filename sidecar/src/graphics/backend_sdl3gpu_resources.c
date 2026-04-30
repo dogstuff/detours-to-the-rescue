@@ -1,21 +1,22 @@
 #include "backend_sdl3gpu_internal.h"
 #include "graphics_internal.h"
 
-#include "log.h"
+#include <dttr_log.h>
 
 #include <string.h>
 
 // Creates persistent vertex and transfer buffers used by per-frame uploads
 static void s_create_frame_buffers(DTTR_BackendState *state) {
+	const uint32_t frame_buffer_size = DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE;
 	const SDL_GPUBufferCreateInfo vbuf_info = {
 		.usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-		.size = DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE,
+		.size = frame_buffer_size,
 	};
 	state->m_vertex_buffer = SDL_CreateGPUBuffer(state->m_device, &vbuf_info);
 
 	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
 		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-		.size = DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE,
+		.size = frame_buffer_size,
 	};
 	state->m_transfer_buffer = SDL_CreateGPUTransferBuffer(state->m_device, &tbuf_info);
 }
@@ -160,6 +161,7 @@ static void s_upload_dummy_white_pixel(DTTR_BackendState *state) {
 // Creates persistent GPU buffers, samplers, and textures required for rendering
 bool dttr_graphics_sdl3gpu_create_resources(void) {
 	DTTR_BackendState *state = &g_dttr_backend;
+	const bool needs_msaa_target = state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1;
 
 	s_create_frame_buffers(state);
 	s_create_samplers(state);
@@ -167,29 +169,31 @@ bool dttr_graphics_sdl3gpu_create_resources(void) {
 	s_create_dummy_texture(state);
 
 	if (!state->m_vertex_buffer || !state->m_transfer_buffer) {
-		log_error("Failed to create frame buffers");
+		DTTR_LOG_ERROR("Failed to create frame buffers");
 		return false;
 	}
 
-	if (!state->m_samplers[0] || !state->m_samplers[1] || !state->m_samplers[2]
-		|| !state->m_samplers[3]) {
-		log_error("Failed to create samplers");
+	for (int i = 0; i < DTTR_SAMPLER_COUNT; i++) {
+		if (state->m_samplers[i]) {
+			continue;
+		}
+
+		DTTR_LOG_ERROR("Failed to create samplers");
 		return false;
 	}
 
 	if (!state->m_render_target || !state->m_depth_texture) {
-		log_error("Failed to create render textures");
+		DTTR_LOG_ERROR("Failed to create render textures");
 		return false;
 	}
 
 	if (!state->m_dummy_texture) {
-		log_error("Failed to create dummy texture");
+		DTTR_LOG_ERROR("Failed to create dummy texture");
 		return false;
 	}
 
-	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1
-		&& !state->m_msaa_render_target) {
-		log_error("Failed to create MSAA render target");
+	if (needs_msaa_target && !state->m_msaa_render_target) {
+		DTTR_LOG_ERROR("Failed to create MSAA render target");
 		return false;
 	}
 
@@ -200,6 +204,7 @@ bool dttr_graphics_sdl3gpu_create_resources(void) {
 // Recreates render-target and depth textures to match a new resolution
 bool dttr_graphics_sdl3gpu_resize_render_textures(int width, int height) {
 	DTTR_BackendState *state = &g_dttr_backend;
+	const bool needs_msaa_target = state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1;
 
 	if (!state->m_device || !state->m_window || width <= 0 || height <= 0)
 		return false;
@@ -224,13 +229,12 @@ bool dttr_graphics_sdl3gpu_resize_render_textures(int width, int height) {
 	s_create_render_textures(state);
 
 	if (!state->m_render_target || !state->m_depth_texture) {
-		log_error("Failed to recreate render textures at %dx%d", width, height);
+		DTTR_LOG_ERROR("Failed to recreate render textures at %dx%d", width, height);
 		return false;
 	}
 
-	if (state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1
-		&& !state->m_msaa_render_target) {
-		log_error("Failed to recreate MSAA render target at %dx%d", width, height);
+	if (needs_msaa_target && !state->m_msaa_render_target) {
+		DTTR_LOG_ERROR("Failed to recreate MSAA render target at %dx%d", width, height);
 		return false;
 	}
 

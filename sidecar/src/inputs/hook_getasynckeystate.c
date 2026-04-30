@@ -1,6 +1,5 @@
 #include <SDL3/SDL.h>
 #include <dttr_sidecar.h>
-#include <stdint.h>
 #include <windows.h>
 
 /// High bit returned by GetAsyncKeyState when the key is held down.

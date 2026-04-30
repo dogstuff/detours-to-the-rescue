@@ -1,6 +1,6 @@
 #include "config_internal.h"
-#include "log.h"
 #include <dttr_config.h>
+#include <dttr_log.h>
 
 #define DTTR_GAMEPAD_AXIS_DEFAULTS                                                       \
 	.m_gamepad_axes = { \
@@ -41,10 +41,7 @@ static const DTTR_Config s_default_config = {
 DTTR_Config g_dttr_config;
 
 static void s_set_default_button_map(int *map) {
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
-		map[i] = DTTR_GAMEPAD_MAPPING_NONE;
-	}
-
+	s_config_clear_button_map(map);
 	map[SDL_GAMEPAD_BUTTON_SOUTH] = PCDOGS_GAMEPAD_IDX_BTN_0;
 	map[SDL_GAMEPAD_BUTTON_EAST] = PCDOGS_GAMEPAD_IDX_BTN_1;
 	map[SDL_GAMEPAD_BUTTON_WEST] = PCDOGS_GAMEPAD_IDX_BTN_2;

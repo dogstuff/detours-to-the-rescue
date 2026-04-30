@@ -1,8 +1,7 @@
-#include "dttr_hooks_other.h"
+#include "dttr_hooks_game.h"
 #include "dttr_interop_pcdogs.h"
-#include "log.h"
 
-void dttr_other_hooks_init(const DTTR_ComponentContext *ctx) {
+void dttr_game_hooks_init(const DTTR_ComponentContext *ctx) {
 	DTTR_RESOLVE(
 		dttr_crt_open_file_with_mode,
 		ctx,
@@ -34,7 +33,7 @@ void dttr_other_hooks_init(const DTTR_ComponentContext *ctx) {
 	);
 }
 
-void dttr_other_hooks_cleanup(const DTTR_ComponentContext *ctx) {
+void dttr_game_hooks_cleanup(const DTTR_ComponentContext *ctx) {
 	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_cleanup_level_assets, ctx);
 	DTTR_UNINSTALL(dttr_hook_resolve_pcdogs_path, ctx);
 	DTTR_UNINSTALL(dttr_crt_hook_open_file, ctx);
