@@ -3,6 +3,7 @@
 #include "game_api_private.h"
 
 #include <dttr_log.h>
+#include <dttr_path.h>
 
 #include <sds.h>
 
@@ -48,7 +49,12 @@ static void s_log_component_info(const char *filename, DTTR_ComponentInfoFn info
 void dttr_components_init(void) {
 	DTTR_LOG_INFO("Loading components...");
 
-	sds components_dir = sdscatprintf(sdsempty(), "%scomponents\\", g_dttr_loader_dir);
+	sds components_dir = sdsnew(g_dttr_loader_dir);
+	if (!components_dir || !dttr_path_append_segment(&components_dir, "components", '\\')
+		|| !dttr_path_append_separator(&components_dir, '\\')) {
+		sdsfree(components_dir);
+		return;
+	}
 
 	DWORD attrs = GetFileAttributesA(components_dir);
 	if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
@@ -110,8 +116,11 @@ void dttr_components_init(void) {
 
 		S_LoadedComponent *mod = &s_loaded_components[s_loaded_component_count];
 		mod->m_handle = handle;
-		strncpy(mod->m_filename, find_data.cFileName, MAX_PATH - 1);
-		mod->m_filename[MAX_PATH - 1] = '\0';
+		dttr_path_copy_string(
+			mod->m_filename,
+			sizeof(mod->m_filename),
+			find_data.cFileName
+		);
 		mod->m_init = init_fn;
 		mod->m_cleanup = cleanup_fn;
 		mod->m_tick = (DTTR_ComponentTickFn)GetProcAddress(handle, "dttr_component_tick");

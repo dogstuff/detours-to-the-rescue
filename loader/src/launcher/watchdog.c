@@ -3,11 +3,12 @@
 #include <dttr_loader.h>
 #include <dttr_log.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <windows.h>
 
-#define WATCHDOG_TIMEOUT_MS 30000
-#define WATCHDOG_SENTINEL "DTTR_SIDECAR_ENTRYPOINT"
+#define S_WATCHDOG_TIMEOUT_MS 30000
+#define S_WATCHDOG_SENTINEL "DTTR_SIDECAR_ENTRYPOINT"
 
 typedef BOOL(WINAPI *S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
 
@@ -101,13 +102,12 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 	DTTR_LOG_DEBUG("Watchdog attached to PID %lu", child_info->dwProcessId);
 }
 
-// Return true when the child emits the watchdog ready sentinel.
 static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) {
-	if (info->fUnicode || info->nDebugStringLength < sizeof(WATCHDOG_SENTINEL)) {
+	if (info->fUnicode || info->nDebugStringLength < sizeof(S_WATCHDOG_SENTINEL)) {
 		return false;
 	}
 
-	char buf[sizeof(WATCHDOG_SENTINEL)];
+	char buf[sizeof(S_WATCHDOG_SENTINEL)];
 	SIZE_T bytes_read = 0;
 
 	if (!ReadProcessMemory(
@@ -120,8 +120,8 @@ static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) 
 		return false;
 	}
 
-	return bytes_read >= sizeof(WATCHDOG_SENTINEL)
-		   && memcmp(buf, WATCHDOG_SENTINEL, sizeof(WATCHDOG_SENTINEL)) == 0;
+	return bytes_read == sizeof(S_WATCHDOG_SENTINEL)
+		   && memcmp(buf, S_WATCHDOG_SENTINEL, sizeof(S_WATCHDOG_SENTINEL)) == 0;
 }
 
 void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
@@ -132,11 +132,11 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 
 	DTTR_LOG_DEBUG(
 		"Watching for early crash or ready sentinel (timeout=%dms)",
-		WATCHDOG_TIMEOUT_MS
+		S_WATCHDOG_TIMEOUT_MS
 	);
 
-	DEBUG_EVENT evt;
-	DWORD remaining = WATCHDOG_TIMEOUT_MS;
+	DEBUG_EVENT evt = {0};
+	DWORD remaining = S_WATCHDOG_TIMEOUT_MS;
 
 	while (remaining > 0) {
 		const DWORD start = GetTickCount();
@@ -152,18 +152,20 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 		case EXCEPTION_DEBUG_EVENT: {
 			const DWORD code = evt.u.Exception.ExceptionRecord.ExceptionCode;
 
-			if (!evt.u.Exception.dwFirstChance) {
-				s_write_child_dump(
-					child_info->hProcess,
-					child_info->dwProcessId,
-					evt.dwThreadId,
-					code
-				);
-				done = true;
-			} else if (code != EXCEPTION_BREAKPOINT) {
-				continue_status = DBG_EXCEPTION_NOT_HANDLED;
+			if (evt.u.Exception.dwFirstChance) {
+				if (code != EXCEPTION_BREAKPOINT) {
+					continue_status = DBG_EXCEPTION_NOT_HANDLED;
+				}
+				break;
 			}
 
+			s_write_child_dump(
+				child_info->hProcess,
+				child_info->dwProcessId,
+				evt.dwThreadId,
+				code
+			);
+			done = true;
 			break;
 		}
 
@@ -178,7 +180,7 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 		case EXIT_PROCESS_DEBUG_EVENT:
 			DTTR_ERROR(
 				"Game exited unexpectedly within %ds (code %lu)." DTTR_REPORT_SUFFIX,
-				WATCHDOG_TIMEOUT_MS / 1000,
+				S_WATCHDOG_TIMEOUT_MS / 1000,
 				evt.u.ExitProcess.dwExitCode
 			);
 			done = true;

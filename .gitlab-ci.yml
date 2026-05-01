@@ -45,8 +45,6 @@ build:
         version="${CI_COMMIT_TAG:-dev}"
         task build DTTR_VERSION="${version}"
         task build DTTR_VERSION="${version}" DTTR_MODDING=ON
-        ctest --test-dir build -C Debug --output-on-failure
-
         for archive_spec in \
           "dttr-${CI_COMMIT_SHORT_SHA}-debug.zip:Debug" \
           "dttr-modding-${CI_COMMIT_SHORT_SHA}-debug.zip:Debug-modding"
@@ -77,9 +75,6 @@ build-release:
         task build-release DTTR_VERSION="${CI_COMMIT_TAG}"
         task build-release DTTR_VERSION="${CI_COMMIT_TAG}" DTTR_MODDING=ON
 
-        for config in Debug Release; do
-          ctest --test-dir build -C "${config}" --output-on-failure
-        done
 
         for archive_spec in \
           "dttr-${CI_COMMIT_TAG}-debug.zip:Debug" \

@@ -1,8 +1,7 @@
 #include <dttr_sdl.h>
 
 #include <dttr_log.h>
-#include <stdio.h>
-#include <string.h>
+#include <dttr_path.h>
 #include <windows.h>
 
 typedef bool (*S_ShowSimpleMessageBox)(
@@ -33,6 +32,9 @@ typedef void (*S_Delay)(Uint32 ms);
 
 #define S_RESOLVE(module, type, name) ((type)GetProcAddress(module, name))
 
+static const char s_sdl_module_path[] = "modules\\SDL3.dll";
+static const char s_sdl_module_name[] = "SDL3.dll";
+
 static bool s_load_attempted;
 static S_ShowSimpleMessageBox s_show_simple_message_box;
 static S_ShowMessageBox s_show_message_box;
@@ -41,20 +43,24 @@ static S_ShowOpenFileDialog s_show_open_file_dialog;
 static S_PumpEvents s_pump_events;
 static S_Delay s_delay;
 
+static void s_report_dialog_failure(SDL_DialogFileCallback callback, void *userdata) {
+	callback(userdata, NULL, -1);
+}
+
 static bool s_resolve_sdl_dll_path(char *out, size_t out_size) {
-	const DWORD len = GetModuleFileNameA(NULL, out, (DWORD)out_size);
-	if (!len || len >= out_size) {
-		return false;
+	sds path = dttr_path_module_sibling(NULL, s_sdl_module_path);
+	const bool copied = dttr_path_copy_sds(out, out_size, path);
+	sdsfree(path);
+	return copied;
+}
+
+static HMODULE s_get_loaded_sdl_module(void) {
+	HMODULE module = GetModuleHandleA(s_sdl_module_path);
+	if (module) {
+		return module;
 	}
 
-	char *const last_sep = strrchr(out, '\\');
-	if (!last_sep) {
-		return false;
-	}
-
-	const size_t dir_len = (size_t)(last_sep - out) + 1;
-	const int written = snprintf(out + dir_len, out_size - dir_len, "modules\\SDL3.dll");
-	return written > 0 && (size_t)written < out_size - dir_len;
+	return GetModuleHandleA(s_sdl_module_name);
 }
 
 static bool s_load_sdl(void) {
@@ -66,13 +72,16 @@ static bool s_load_sdl(void) {
 	}
 	s_load_attempted = true;
 
-	char path[MAX_PATH];
-	if (!s_resolve_sdl_dll_path(path, sizeof(path))) {
-		DTTR_LOG_ERROR("Could not resolve SDL3.dll path");
-		return false;
-	}
+	HMODULE module = s_get_loaded_sdl_module();
+	if (!module) {
+		char path[MAX_PATH];
+		if (!s_resolve_sdl_dll_path(path, sizeof(path))) {
+			DTTR_LOG_ERROR("Could not resolve SDL3.dll path");
+			return false;
+		}
 
-	const HMODULE module = LoadLibraryA(path);
+		module = LoadLibraryA(path);
+	}
 	if (!module) {
 		DTTR_LOG_ERROR("Could not load SDL3.dll");
 		return false;
@@ -131,7 +140,7 @@ void dttr_sdl_show_open_folder_dialog(
 	bool allow_many
 ) {
 	if (!s_load_sdl()) {
-		callback(userdata, NULL, -1);
+		s_report_dialog_failure(callback, userdata);
 		return;
 	}
 
@@ -148,7 +157,7 @@ void dttr_sdl_show_open_file_dialog(
 	bool allow_many
 ) {
 	if (!s_load_sdl()) {
-		callback(userdata, NULL, -1);
+		s_report_dialog_failure(callback, userdata);
 		return;
 	}
 

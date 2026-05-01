@@ -10,6 +10,8 @@
 #include <dttr_config.h>
 #include <dttr_interop_pcdogs.h>
 
+#define DTTR_EXE_HASH_LENGTH 16
+
 // Handle to the injected sidecar DLL.
 extern HINSTANCE g_dttr_sidecar_module;
 
@@ -17,7 +19,7 @@ extern HINSTANCE g_dttr_sidecar_module;
 extern char g_dttr_loader_dir[MAX_PATH];
 
 // 16-character lowercase hex XXH3_64 hash of the game executable.
-extern char g_dttr_exe_hash[17];
+extern char g_dttr_exe_hash[DTTR_EXE_HASH_LENGTH + 1];
 
 /// Initializes the graphics backend and returns the game window handle.
 HWND dttr_graphics_init(void);

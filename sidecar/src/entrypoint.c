@@ -7,14 +7,15 @@
 #include "dttr_sidecar.h"
 #include "graphics/graphics_com_private.h"
 #include <dttr_log.h>
+#include <dttr_path.h>
 #include <sds.h>
 
 #include <SDL3/SDL.h>
 
 #include "dttr_errors.h"
 #include "dttr_hooks.h"
-#include "game/game_data_source_private.h"
 #include "game_api_private.h"
+#include "game_data_private.h"
 #include "graphics/graphics_private.h"
 #include "hook_registry_private.h"
 #include <xxhash.h>
@@ -26,7 +27,7 @@
 
 HINSTANCE g_dttr_sidecar_module;
 char g_dttr_loader_dir[MAX_PATH];
-char g_dttr_exe_hash[17];
+char g_dttr_exe_hash[DTTR_EXE_HASH_LENGTH + 1];
 
 static HMODULE s_pc_dogs_module;
 
@@ -115,7 +116,12 @@ static sds s_get_loader_dir(void) {
 		module_dir[0] = '\0';
 	}
 
-	return sdscat(sdsnew(module_path), "\\");
+	sds loader_dir = sdsnew(module_path);
+	if (!loader_dir || !dttr_path_append_separator(&loader_dir, '\\')) {
+		sdsfree(loader_dir);
+		return NULL;
+	}
+	return loader_dir;
 }
 
 static void s_handle_sdl_event(const SDL_Event *event) {
@@ -131,37 +137,39 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 		return;
 	}
 
-	if (event->type == SDL_EVENT_QUIT) {
+	switch (event->type) {
+	case SDL_EVENT_QUIT:
 		g_pcdogs_should_quit_set(1);
 		return;
-	}
 
-	if (event->type == SDL_EVENT_GAMEPAD_ADDED
-		|| event->type == SDL_EVENT_GAMEPAD_REMOVED) {
+	case SDL_EVENT_GAMEPAD_ADDED:
+	case SDL_EVENT_GAMEPAD_REMOVED:
 		dttr_inputs_handle_device_event(event);
 		return;
-	}
 
-	if (event->type == SDL_EVENT_AUDIO_DEVICE_ADDED
-		|| event->type == SDL_EVENT_AUDIO_DEVICE_REMOVED) {
+	case SDL_EVENT_AUDIO_DEVICE_ADDED:
+	case SDL_EVENT_AUDIO_DEVICE_REMOVED:
 		dttr_audio_handle_device_event(event);
 		return;
-	}
 
-	if (event->type == SDL_EVENT_KEY_DOWN && event->key.scancode == SDL_SCANCODE_F11) {
-		SDL_Window *const window = g_dttr_backend.m_window;
-		const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN)
-								   != 0;
-		SDL_SetWindowFullscreen(window, !is_fullscreen);
+	case SDL_EVENT_KEY_DOWN:
+		if (event->key.scancode == SDL_SCANCODE_F11) {
+			SDL_Window *const window = g_dttr_backend.m_window;
+			const bool is_fullscreen = (SDL_GetWindowFlags(window)
+										& SDL_WINDOW_FULLSCREEN)
+									   != 0;
+			SDL_SetWindowFullscreen(window, !is_fullscreen);
+		}
+		return;
+
+	case SDL_EVENT_WINDOW_RESIZED:
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+		dttr_graphics_handle_window_resize(event->window.data1, event->window.data2);
+		return;
+
+	default:
 		return;
 	}
-
-	if (event->type != SDL_EVENT_WINDOW_RESIZED
-		&& event->type != SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-		return;
-	}
-
-	dttr_graphics_handle_window_resize(event->window.data1, event->window.data2);
 }
 
 static void s_poll_sdl_events(void) {
@@ -173,7 +181,8 @@ static void s_poll_sdl_events(void) {
 }
 
 static void s_cleanup_runtime(const DTTR_ComponentContext *ctx) {
-	dttr_game_data_source_cleanup();
+	dttr_game_data_cleanup();
+
 #ifdef DTTR_MODDING_ENABLED
 	dttr_components_cleanup();
 	dttr_imgui_cleanup();
@@ -239,8 +248,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	int32_t nCmdShow
 ) {
 	sds loader_dir = s_get_loader_dir();
-	strncpy(g_dttr_loader_dir, loader_dir, MAX_PATH - 1);
-	g_dttr_loader_dir[MAX_PATH - 1] = '\0';
+	dttr_path_copy_sds(g_dttr_loader_dir, sizeof(g_dttr_loader_dir), loader_dir);
 
 	dttr_crashdump_init(g_dttr_loader_dir);
 	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
@@ -269,7 +277,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	dttr_log_set_level(level);
 	dttr_log_add_fp(log_file, level);
 	DTTR_LOG_INFO("Log level set to %s", log_level_string(level));
-	dttr_game_data_source_init();
+	dttr_game_data_init();
 
 	dttr_game_api_init(s_pc_dogs_module, g_dttr_sidecar_module);
 	const DTTR_ComponentContext *ctx = dttr_game_api_get_ctx();

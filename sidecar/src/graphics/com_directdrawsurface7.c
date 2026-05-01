@@ -234,23 +234,20 @@ static uint64_t s_surface_hash_source_pixels(
 	const uint32_t bytes_per_pixel = self->m_bpp / 8;
 	const size_t row_bytes = (size_t)upload_w * bytes_per_pixel;
 	const uint8_t has_colorkey = self->m_has_colorkey ? 1 : 0;
-	XXH3_state_t *hash_state = XXH3_createState();
-	if (!hash_state || XXH3_64bits_reset(hash_state) != XXH_OK) {
-		XXH3_freeState(hash_state);
+	XXH3_state_t hash_state;
+	if (XXH3_64bits_reset(&hash_state) != XXH_OK) {
 		return 0;
 	}
 
-	XXH3_64bits_update(hash_state, &self->m_bpp, sizeof(self->m_bpp));
-	XXH3_64bits_update(hash_state, &self->m_a_mask, sizeof(self->m_a_mask));
-	XXH3_64bits_update(hash_state, &has_colorkey, sizeof(has_colorkey));
-	XXH3_64bits_update(hash_state, &self->m_colorkey, sizeof(self->m_colorkey));
+	XXH3_64bits_update(&hash_state, &self->m_bpp, sizeof(self->m_bpp));
+	XXH3_64bits_update(&hash_state, &self->m_a_mask, sizeof(self->m_a_mask));
+	XXH3_64bits_update(&hash_state, &has_colorkey, sizeof(has_colorkey));
+	XXH3_64bits_update(&hash_state, &self->m_colorkey, sizeof(self->m_colorkey));
 	for (uint32_t y = 0; y < upload_h; y++) {
 		const uint8_t *row = (const uint8_t *)self->m_pixels + (size_t)y * self->m_pitch;
-		XXH3_64bits_update(hash_state, row, row_bytes);
+		XXH3_64bits_update(&hash_state, row, row_bytes);
 	}
-	const uint64_t hash = XXH3_64bits_digest(hash_state);
-	XXH3_freeState(hash_state);
-	return hash;
+	return XXH3_64bits_digest(&hash_state);
 }
 
 // Queues one staged texture index for deferred GPU upload if not already queued

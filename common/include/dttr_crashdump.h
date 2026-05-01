@@ -14,7 +14,7 @@ sds dttr_crashdump_write(
 );
 
 /// Installs an unhandled exception filter that writes a crash dump and shows a dialog.
-/// Crash dumps will be written to the given directory.
+/// Crash dumps will be written to a dumps directory inside the given directory.
 void dttr_crashdump_init(const char *dump_dir);
 
 #endif

@@ -1,6 +1,9 @@
 #include <dttr_config.h>
 #include <dttr_crashdump.h>
 #include <dttr_errors.h>
+#include <dttr_imgui.h>
+#include <dttr_path.h>
+#include <dttr_sdl.h>
 
 #include <dbghelp.h>
 
@@ -8,6 +11,14 @@
 #include <sds.h>
 
 static char s_dump_dir[MAX_PATH];
+
+#ifndef NDEBUG
+
+#define S_MAX_STACK_FRAMES 32
+#define S_SYMBOL_NAME_CAPACITY 256
+#define S_SYMBOL_BUFFER_SIZE (sizeof(IMAGEHLP_SYMBOL) + S_SYMBOL_NAME_CAPACITY)
+
+#endif
 
 sds dttr_crashdump_write(
 	HANDLE process,
@@ -87,7 +98,7 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 
 	*message = sdscat(*message, "\n\nStack trace:");
 
-	for (int i = 0; i < 32; i++) {
+	for (int i = 0; i < S_MAX_STACK_FRAMES; i++) {
 		if (!StackWalk(
 				IMAGE_FILE_MACHINE_I386,
 				process,
@@ -98,11 +109,8 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 				SymFunctionTableAccess,
 				SymGetModuleBase,
 				NULL
-			)) {
-			break;
-		}
-
-		if (frame.AddrPC.Offset == 0) {
+			)
+			|| frame.AddrPC.Offset == 0) {
 			break;
 		}
 
@@ -116,10 +124,10 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 		}
 
 		// Resolve symbol name
-		_Alignas(IMAGEHLP_SYMBOL) char sym_buf[sizeof(IMAGEHLP_SYMBOL) + 256];
+		_Alignas(IMAGEHLP_SYMBOL) char sym_buf[S_SYMBOL_BUFFER_SIZE];
 		IMAGEHLP_SYMBOL *sym = (IMAGEHLP_SYMBOL *)sym_buf;
 		sym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL);
-		sym->MaxNameLength = 256;
+		sym->MaxNameLength = S_SYMBOL_NAME_CAPACITY;
 
 		DWORD displacement = 0;
 		if (!SymGetSymFromAddr(process, addr, &displacement, sym)) {
@@ -143,12 +151,10 @@ static void s_append_stack_trace(sds *message, CONTEXT *ctx) {
 
 static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const exception_info) {
 	const DWORD code = exception_info->ExceptionRecord->ExceptionCode;
-	sds filename = dttr_crashdump_write(
-		GetCurrentProcess(),
-		GetCurrentProcessId(),
-		GetCurrentThreadId(),
-		exception_info
-	);
+	const HANDLE process = GetCurrentProcess();
+	const DWORD pid = GetCurrentProcessId();
+	const DWORD tid = GetCurrentThreadId();
+	sds filename = dttr_crashdump_write(process, pid, tid, exception_info);
 
 	sds message;
 
@@ -173,21 +179,49 @@ static LONG WINAPI s_unhandled_exception_filter(EXCEPTION_POINTERS *const except
 #endif
 
 	message = sdscat(message, DTTR_REPORT_SUFFIX);
-	dttr_sdl_show_simple_message_box(
-		SDL_MESSAGEBOX_ERROR,
-		"crash jumpscare",
-		message,
-		NULL
-	);
+	if (!dttr_imgui_error_show("DttR: Crash", message)) {
+		dttr_sdl_show_simple_message_box(
+			SDL_MESSAGEBOX_ERROR,
+			"DttR: Crash",
+			message,
+			NULL
+		);
+	}
 	sdsfree(message);
 	sdsfree(filename);
 	ExitProcess(1);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
+static bool s_set_dump_dir(const char *base_dir) {
+	sds dump_dir = sdsnew(base_dir);
+	if (!dump_dir || !dttr_path_append_segment(&dump_dir, "dumps", '\\')) {
+		sdsfree(dump_dir);
+		return false;
+	}
+
+	if (!CreateDirectoryA(dump_dir, NULL) && GetLastError() != ERROR_ALREADY_EXISTS) {
+		DTTR_LOG_ERROR("Failed to create crash dump directory %s", dump_dir);
+		sdsfree(dump_dir);
+		return false;
+	}
+
+	if (!dttr_path_append_separator(&dump_dir, '\\')
+		|| !dttr_path_copy_sds(s_dump_dir, sizeof(s_dump_dir), dump_dir)) {
+		sdsfree(dump_dir);
+		return false;
+	}
+
+	sdsfree(dump_dir);
+	return true;
+}
+
 void dttr_crashdump_init(const char *const dump_dir) {
-	strncpy(s_dump_dir, dump_dir, MAX_PATH - 1);
-	s_dump_dir[MAX_PATH - 1] = '\0';
+	if (!s_set_dump_dir(dump_dir)) {
+		DTTR_LOG_ERROR("Could not initialize crash dump directory");
+		s_dump_dir[0] = '\0';
+	}
+
 	SetUnhandledExceptionFilter(s_unhandled_exception_filter);
 	DTTR_LOG_DEBUG("Crash dump handler installed");
 }

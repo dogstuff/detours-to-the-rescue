@@ -7,7 +7,10 @@
 #include <sds.h>
 #include <windows.h>
 
-#include "dttr_sdl.h"
+typedef void (*DTTR_ErrorMessageHandler)(const char *title, const char *message);
+
+void dttr_errors_set_message_handler(DTTR_ErrorMessageHandler handler);
+void dttr_errors_show_message(const char *title, const char *message);
 
 #ifndef typeof
 #define typeof __typeof__
@@ -17,30 +20,20 @@
 	do {                                                                                 \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__);           \
 		DTTR_LOG_ERROR("%s", _err_msg);                                                  \
-		dttr_sdl_show_simple_message_box(                                                \
-			SDL_MESSAGEBOX_ERROR,                                                        \
-			"DttR: Error",                                                               \
-			_err_msg,                                                                    \
-			NULL                                                                         \
-		);                                                                               \
+		dttr_errors_show_message("DttR: Error", _err_msg);                               \
 		sdsfree(_err_msg);                                                               \
 	} while (0)
 
 #define DTTR_REPORT_SUFFIX                                                               \
-	"\n\nIf this error is unexpected feel free to report it as an "                      \
-	"issue:\nhttps://gitlab.com/dogstuff/detours-to-the-rescue\n"
+	"\n\nFeel free to report this error as an "                                          \
+	"issue if it's unexpected:\nhttps://gitlab.com/dogstuff/detours-to-the-rescue\n"
 
 #define DTTR_FATAL(error_message, ...)                                                   \
 	do {                                                                                 \
 		sds _err_msg = sdscatprintf(sdsempty(), error_message, ##__VA_ARGS__);           \
 		_err_msg = sdscat(_err_msg, DTTR_REPORT_SUFFIX);                                 \
 		DTTR_LOG_ERROR("%s", _err_msg);                                                  \
-		dttr_sdl_show_simple_message_box(                                                \
-			SDL_MESSAGEBOX_ERROR,                                                        \
-			"DttR: Fatal Error",                                                         \
-			_err_msg,                                                                    \
-			NULL                                                                         \
-		);                                                                               \
+		dttr_errors_show_message("DttR: Fatal Error", _err_msg);                         \
 		sdsfree(_err_msg);                                                               \
 		exit(EXIT_FAILURE);                                                              \
 	} while (0)
@@ -77,7 +70,6 @@
 		_r;                                                                              \
 	})
 
-// Returns true when the API result indicates failure
 #define DTTR_UNWRAP_WINAPI_NONNEGATIVE_IS_ERROR(x) ((x) < 0)
 #define DTTR_UNWRAP_WINAPI_NONNEGATIVE(result)                                           \
 	DTTR_UNWRAP_WINAPI_IF(result, DTTR_UNWRAP_WINAPI_NONNEGATIVE_IS_ERROR)
@@ -90,4 +82,4 @@
 #define DTTR_UNWRAP_WINAPI_EXISTS(result)                                                \
 	DTTR_UNWRAP_WINAPI_IF(result, DTTR_UNWRAP_WINAPI_EXISTS_IS_ERROR)
 
-#endif // DTTR_ERRORS_H
+#endif /* DTTR_ERRORS_H */

@@ -1,4 +1,5 @@
 #include <dttr_iso.h>
+#include <dttr_path.h>
 
 #include <physfs.h>
 #include <sds.h>
@@ -7,16 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WIN32
 #include <direct.h>
 #include <windows.h>
+
 #define S_MKDIR(path)                                                                    \
 	(CreateDirectoryA((path), NULL) || GetLastError() == ERROR_ALREADY_EXISTS)
-#else
-#include <sys/stat.h>
-#include <sys/types.h>
-#define S_MKDIR(path) (mkdir((path), 0777) == 0 || errno == EEXIST)
-#endif
 
 enum { S_ISO_SECTOR_SIZE = 2048 };
 
@@ -43,46 +39,6 @@ const char *dttr_iso_last_error(void) {
 	return s_last_error[0] ? s_last_error : "no error";
 }
 
-static char s_ascii_lower(char ch) {
-	if (ch >= 'A' && ch <= 'Z') {
-		return (char)(ch - 'A' + 'a');
-	}
-	return ch;
-}
-
-static bool s_is_path_separator(char ch) { return ch == '\\' || ch == '/'; }
-
-static const char *s_skip_separators(const char *path) {
-	while (s_is_path_separator(*path)) {
-		path++;
-	}
-	return path;
-}
-
-static size_t s_segment_len(const char *path) {
-	size_t len = 0;
-
-	while (path[len] && !s_is_path_separator(path[len])) {
-		len++;
-	}
-
-	return len;
-}
-
-static bool s_is_relative_segment(const char *segment, size_t segment_len) {
-	return segment_len == 0 || (segment_len == 1 && segment[0] == '.')
-		   || (segment_len == 2 && segment[0] == '.' && segment[1] == '.');
-}
-
-static bool s_ascii_ieq_n(const char *lhs, const char *rhs, size_t n) {
-	for (size_t i = 0; i < n; i++) {
-		if (s_ascii_lower(lhs[i]) != s_ascii_lower(rhs[i])) {
-			return false;
-		}
-	}
-	return true;
-}
-
 static bool s_is_iso_version_suffix(const char *suffix) {
 	if (!suffix || suffix[0] != ';' || !suffix[1]) {
 		return false;
@@ -107,30 +63,11 @@ static size_t s_strip_iso_version_suffix_len(const char *segment, size_t segment
 	return segment_len;
 }
 
-static bool s_copy_sds(char *out, size_t out_size, sds value) {
-	if (!value || sdslen(value) >= out_size) {
-		return false;
-	}
-
-	memcpy(out, value, sdslen(value) + 1);
-	return true;
-}
-
-static bool s_sdscat_char(sds *out, char ch) {
-	sds next = sdscatlen(*out, &ch, 1);
-	if (!next) {
-		return false;
-	}
-
-	*out = next;
-	return true;
-}
-
 static bool s_sdscat_lower_segment(sds *out, const char *segment, size_t segment_len) {
 	segment_len = s_strip_iso_version_suffix_len(segment, segment_len);
 	for (size_t i = 0; i < segment_len; i++) {
-		const char ch = s_ascii_lower(segment[i]);
-		if (!s_sdscat_char(out, ch)) {
+		const char ch = dttr_path_ascii_lower(segment[i]);
+		if (!dttr_path_append_char(out, ch)) {
 			return false;
 		}
 	}
@@ -154,24 +91,24 @@ bool dttr_iso_cache_path_for_file(
 		return false;
 	}
 
-	while (sdslen(path) > 0 && s_is_path_separator(path[sdslen(path) - 1])) {
+	while (sdslen(path) > 0 && dttr_path_is_separator(path[sdslen(path) - 1])) {
 		sdsrange(path, 0, -2);
 	}
 
-	const char *p = s_skip_separators(iso_relative_path);
+	const char *p = dttr_path_skip_separators(iso_relative_path);
 
 	bool wrote_segment = false;
 	bool ok = true;
 	while (*p) {
 		const char *segment = p;
-		size_t segment_len = s_segment_len(p);
+		size_t segment_len = dttr_path_segment_len(p);
 
-		if (s_is_relative_segment(segment, segment_len)) {
+		if (dttr_path_is_relative_segment(segment, segment_len)) {
 			ok = false;
 			break;
 		}
 
-		if (!s_sdscat_char(&path, '\\')
+		if (!dttr_path_append_separator(&path, '\\')
 			|| !s_sdscat_lower_segment(&path, segment, segment_len)) {
 			ok = false;
 			break;
@@ -180,8 +117,8 @@ bool dttr_iso_cache_path_for_file(
 		wrote_segment = true;
 
 		p += segment_len;
-		if (s_is_path_separator(*p)) {
-			p = s_skip_separators(p);
+		if (dttr_path_is_separator(*p)) {
+			p = dttr_path_skip_separators(p);
 			if (!*p) {
 				ok = false;
 				break;
@@ -189,7 +126,7 @@ bool dttr_iso_cache_path_for_file(
 		}
 	}
 
-	ok = ok && wrote_segment && s_copy_sds(out_path, out_path_size, path);
+	ok = ok && wrote_segment && dttr_path_copy_sds(out_path, out_path_size, path);
 	sdsfree(path);
 	return ok;
 }
@@ -241,7 +178,7 @@ bool dttr_iso_open(DTTR_IsoImage *iso, const char *iso_path) {
 		return false;
 	}
 
-	strncpy(iso->m_iso_path, iso_path, sizeof(iso->m_iso_path) - 1);
+	dttr_path_copy_string(iso->m_iso_path, sizeof(iso->m_iso_path), iso_path);
 	iso->m_open = true;
 
 	return true;
@@ -255,7 +192,7 @@ static bool s_name_matches_segment(
 	const size_t name_len = strlen(name);
 	return (name_len == segment_len
 			|| (name_len > segment_len && s_is_iso_version_suffix(name + segment_len)))
-		   && s_ascii_ieq_n(name, segment, segment_len);
+		   && dttr_path_ascii_ieq_n(name, segment, segment_len);
 }
 
 static bool s_find_case_match(
@@ -276,8 +213,7 @@ static bool s_find_case_match(
 			continue;
 		}
 
-		strncpy(out_name, *entry, out_name_size - 1);
-		out_name[out_name_size - 1] = '\0';
+		dttr_path_copy_string(out_name, out_name_size, *entry);
 		found = true;
 		break;
 	}
@@ -300,14 +236,14 @@ static bool s_resolve_iso_path_case(
 		return false;
 	}
 
-	const char *p = s_skip_separators(requested);
+	const char *p = dttr_path_skip_separators(requested);
 
 	bool wrote_segment = false;
 	bool ok = true;
 	while (*p) {
 		const char *segment = p;
-		size_t segment_len = s_segment_len(p);
-		if (s_is_relative_segment(segment, segment_len)) {
+		size_t segment_len = dttr_path_segment_len(p);
+		if (dttr_path_is_relative_segment(segment, segment_len)) {
 			ok = false;
 			break;
 		}
@@ -318,25 +254,18 @@ static bool s_resolve_iso_path_case(
 			break;
 		}
 
-		if (sdslen(path) > 0 && !s_sdscat_char(&path, '/')) {
+		if (!dttr_path_append_segment(&path, match, '/')) {
 			ok = false;
 			break;
 		}
-
-		sds next = sdscat(path, match);
-		if (!next) {
-			ok = false;
-			break;
-		}
-		path = next;
 
 		wrote_segment = true;
 
 		p += segment_len;
-		p = s_skip_separators(p);
+		p = dttr_path_skip_separators(p);
 	}
 
-	ok = ok && wrote_segment && s_copy_sds(out_path, out_path_size, path);
+	ok = ok && wrote_segment && dttr_path_copy_sds(out_path, out_path_size, path);
 	sdsfree(path);
 	return ok;
 }
@@ -352,7 +281,7 @@ static bool s_create_parent_dirs(const char *path) {
 	memcpy(tmp, path, len + 1);
 
 	for (size_t i = 1; tmp[i]; i++) {
-		if (!s_is_path_separator(tmp[i])) {
+		if (!dttr_path_is_separator(tmp[i])) {
 			continue;
 		}
 
@@ -396,18 +325,12 @@ static sds s_child_iso_path(const char *parent, const char *entry) {
 		return NULL;
 	}
 
-	if (sdslen(child) > 0 && !s_sdscat_char(&child, '/')) {
+	if (!dttr_path_append_segment(&child, entry, '/')) {
 		sdsfree(child);
 		return NULL;
 	}
 
-	sds next = sdscat(child, entry);
-	if (!next) {
-		sdsfree(child);
-		return NULL;
-	}
-
-	return next;
+	return child;
 }
 
 bool dttr_iso_extract_file(

@@ -1,8 +1,9 @@
 #include "dttr_interop_pcdogs.h"
-#include "game/game_data_source_private.h"
+#include "game_data_private.h"
 #include "mss_private.h"
 
 #include <dttr_log.h>
+#include <dttr_path.h>
 
 #include <sds.h>
 
@@ -158,10 +159,15 @@ void dttr_mss_stream_apply_master_gain(void) {
 }
 
 static sds s_resolve_game_relative_stream_path(const char *relative) {
-	sds requested = sdscatprintf(sdsempty(), "%s\\%s", g_pcdogs_directory_ptr(), relative);
+	sds requested = sdsnew(g_pcdogs_directory_ptr());
+	if (!requested || !dttr_path_append_segment(&requested, relative, '\\')) {
+		sdsfree(requested);
+		return sdsempty();
+	}
+
 	char case_resolved[MAX_PATH];
 	const char *resolved = NULL;
-	if (dttr_game_data_source_resolve_existing_read_path(
+	if (dttr_game_data_resolve_existing_read_path(
 			requested,
 			case_resolved,
 			sizeof(case_resolved)
@@ -170,8 +176,7 @@ static sds s_resolve_game_relative_stream_path(const char *relative) {
 	}
 
 	char cached[MAX_PATH];
-	if (!resolved
-		&& dttr_game_data_source_resolve_read_path(relative, cached, sizeof(cached))) {
+	if (!resolved && dttr_game_data_resolve_read_path(relative, cached, sizeof(cached))) {
 		resolved = cached;
 	}
 
@@ -184,49 +189,29 @@ static sds s_resolve_game_relative_stream_path(const char *relative) {
 	return out;
 }
 
+static const char *s_find_data_segment(const char *path) {
+	for (const char *p = path; *p;) {
+		const size_t segment_len = dttr_path_segment_len(p);
+		if (segment_len == 4 && dttr_path_ascii_ieq_n(p, "data", 4)) {
+			return p;
+		}
+
+		p = dttr_path_skip_separators(p + segment_len);
+	}
+
+	return NULL;
+}
+
 static sds s_resolve_stream_path(const char *path) {
 	if (!path) {
 		return sdsempty();
 	}
 
-	const bool absolute = strlen(path) >= 3 && path[1] == ':'
-						  && (path[2] == '\\' || path[2] == '/');
-	const char *relative = path;
-	bool found_game_relative = !absolute;
-	if (absolute) {
-		static const char *const data_roots[] = {
-			"data\\",
-			"DATA\\",
-			"data/",
-			"DATA/",
-		};
-		relative = path + 3;
-		while (*relative == '\\' || *relative == '/') {
-			relative++;
-		}
-
-		for (size_t i = 0; i < SDL_arraysize(data_roots); i++) {
-			const char *data = strstr(relative, data_roots[i]);
-			if (!data) {
-				continue;
-			}
-
-			relative = data;
-			found_game_relative = true;
-			break;
-		}
-	}
-
-	sds resolved = sdsnew(path);
-	if (found_game_relative) {
-		sdsfree(resolved);
-		resolved = s_resolve_game_relative_stream_path(relative);
-	}
-	for (char *p = resolved; *p; p++) {
-		if (*p == '/') {
-			*p = '\\';
-		}
-	}
+	const bool absolute = dttr_path_is_windows_absolute(path);
+	const char *relative = absolute ? s_find_data_segment(path + 3) : path;
+	sds resolved = relative ? s_resolve_game_relative_stream_path(relative)
+							: sdsnew(path);
+	sdsmapchars(resolved, "/", "\\", 1);
 	return resolved;
 }
 

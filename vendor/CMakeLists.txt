@@ -56,7 +56,4 @@ add_subdirectory(physfs)
 
 add_subdirectory(glad)
 
-if(DTTR_MODDING)
-    enable_language(CXX)
-    add_subdirectory(cimgui)
-endif()
+add_subdirectory(cimgui)

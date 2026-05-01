@@ -20,9 +20,10 @@ target_include_directories(cimgui_static PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui"
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends"
+    ${SDL3_INCLUDE_DIRS}
 )
 
-target_link_libraries(cimgui_static PUBLIC PkgConfig::SDL3)
+target_compile_options(cimgui_static PRIVATE ${SDL3_CFLAGS_OTHER})
 target_link_libraries(cimgui_static PRIVATE glad)
 
 target_compile_definitions(cimgui_static PUBLIC

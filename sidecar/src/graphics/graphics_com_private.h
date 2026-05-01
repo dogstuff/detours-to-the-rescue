@@ -7,11 +7,9 @@
 #include <stdint.h>
 #include <windows.h>
 
-// ---------------------------------------------------------------------------
 // D3D and DDraw struct sizes used by stub memset and size checks
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/ns-ddraw-ddsurfacedesc2
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/ns-ddraw-ddpixelformat
-// ---------------------------------------------------------------------------
 #define DTTR_SIZEOF_D3DDEVICEDESC7 224
 #define DTTR_SIZEOF_D3DMATERIAL7 76
 #define DTTR_SIZEOF_D3DLIGHT7 104
@@ -22,23 +20,17 @@
 #define DTTR_SIZEOF_DDSURFACEDESC2 124
 #define DTTR_SIZEOF_DDDEVICEIDENTIFIER2 1084
 
-// ---------------------------------------------------------------------------
 // DirectDraw bit-depth flags (DDBD_*)
 // https://learn.microsoft.com/en-us/windows/win32/api/ddraw/ns-ddraw-ddcaps_dx7
-// ---------------------------------------------------------------------------
 #define DTTR_DDBD_16 0x00000400
 #define DTTR_DDBD_32 0x00000200
 
-// ---------------------------------------------------------------------------
 // HRESULT and error codes
-// ---------------------------------------------------------------------------
 #define DTTR_DDERR_GENERIC 0x887601C2
 
-// ---------------------------------------------------------------------------
 // D3D Flexible Vertex Format (FVF) masks and flags
 // https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dfvf
 // https://learn.microsoft.com/en-us/windows/win32/direct3d9/fixed-function-fvf-codes
-// ---------------------------------------------------------------------------
 #define DTTR_D3DFVF_POSITION_MASK 0x400E
 
 #define DTTR_D3DFVF_XYZ 0x0002
@@ -59,10 +51,8 @@
 #define DTTR_D3DFVF_LASTBETA_UBYTE4 0x1000
 #define DTTR_D3DFVF_LASTBETA_D3DCOLOR 0x8000
 
-// ---------------------------------------------------------------------------
 // D3D primitive types (D3DPRIMITIVETYPE enum values)
 // https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dprimitivetype
-// ---------------------------------------------------------------------------
 #define DTTR_D3DPT_POINTLIST 1
 #define DTTR_D3DPT_LINELIST 2
 #define DTTR_D3DPT_LINESTRIP 3
