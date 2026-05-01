@@ -4,7 +4,7 @@ vars:
   BUILD_DIR: "build"
   TOOLCHAIN_DIR: ".toolchain"
   TOOLCHAIN_FILE: ".toolchain/toolchain.cmake"
-  SHADER_OUTPUT_DIR: "sidecar/include/gen"
+  SHADER_OUTPUT_DIR: "modules/sidecar/include/gen"
 
   GIT_SHORT_SHA:
     sh: git rev-parse --short HEAD
@@ -49,8 +49,8 @@ tasks:
 
   build-asm:
     vars:
-      ASM_DIR: "{{ .ROOT_DIR }}/loader/asm"
-      OUTPUT_FILE: "{{ .ROOT_DIR }}/loader/include/gen/asm.h"
+      ASM_DIR: "{{ .ROOT_DIR }}/modules/loader/asm"
+      OUTPUT_FILE: "{{ .ROOT_DIR }}/modules/loader/include/gen/asm.h"
       BIN_DIR:
         sh: mktemp -d
     cmds:
@@ -60,8 +60,8 @@ tasks:
 
   build-compat:
     vars:
-      INPUT_FILE: "{{ .ROOT_DIR }}/loader/compat/packed_sdb.bin"
-      OUTPUT_FILE: "{{ .ROOT_DIR }}/loader/include/gen/packed_sdb.h"
+      INPUT_FILE: "{{ .ROOT_DIR }}/modules/loader/compat/packed_sdb.bin"
+      OUTPUT_FILE: "{{ .ROOT_DIR }}/modules/loader/include/gen/packed_sdb.h"
     cmds:
       - |
         echo "Embedding {{ .INPUT_FILE | quote }} into {{ .OUTPUT_FILE | quote }}" && \
@@ -99,7 +99,7 @@ tasks:
     cmds:
       - echo "Running formatter"
       - |
-        find ./loader ./sidecar ./common ./components \
+        find ./modules/loader ./modules/sidecar ./modules/common ./sdk/components \
           -path '*/include/gen/*' -prune -o \
           \( -iname '*.h' -o -iname '*.c' \) -print | xargs clang-format -i
 

@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-sidecar/include/gen}}}"
-src_dir="sidecar/shaders/opengl"
+out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-modules/sidecar/include/gen}}}"
+src_dir="modules/sidecar/shaders/opengl"
 header_path="${out_dir}/opengl_shaders.h"
 
 if [ ! -d "$src_dir" ]; then
