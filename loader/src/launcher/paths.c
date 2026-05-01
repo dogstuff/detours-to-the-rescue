@@ -13,22 +13,17 @@ static const wchar_t *const S_GAME_SUBPATHS[] = {
 };
 
 static const wchar_t S_ISO_SUFFIX[] = L".iso";
-static const char *S_ISO_GAME_ROOT = "Setup/102Dalms";
-static const char *S_ISO_GAME_EXE_PATH = "Setup/102Dalms/pcdogs.exe";
-static const char *S_ISO_GAME_PKG_PATH = "Setup/102Dalms/pcdogs.pkg";
-static const char *S_ISO_GAME_DATA_PATH = "Setup/102Dalms/data";
+static const char *const S_ISO_CACHE_PATH = "DetoursToTheRescue\\cache\\iso";
+static const char *const S_ISO_GAME_ROOT = "Setup/102Dalms";
+static const char *const S_ISO_GAME_EXE_PATH = "Setup/102Dalms/pcdogs.exe";
+static const char *const S_ISO_GAME_PKG_PATH = "Setup/102Dalms/pcdogs.pkg";
+static const char *const S_ISO_GAME_DATA_PATH = "Setup/102Dalms/data";
+
 static wchar_t s_ascii_lower_w(wchar_t ch) {
 	if (ch >= L'A' && ch <= L'Z') {
 		return (wchar_t)(ch - L'A' + L'a');
 	}
 	return ch;
-}
-
-static char s_normalized_path_char(char ch) {
-	if (ch >= 'A' && ch <= 'Z') {
-		ch = (char)(ch - 'A' + 'a');
-	}
-	return ch == '/' ? '\\' : ch;
 }
 
 bool dttr_loader_path_is_iso_w(const wchar_t *path) {
@@ -57,10 +52,7 @@ size_t dttr_loader_game_subpath_count(void) {
 }
 
 const wchar_t *dttr_loader_game_subpath_at(size_t index) {
-	if (index >= dttr_loader_game_subpath_count()) {
-		return NULL;
-	}
-	return S_GAME_SUBPATHS[index];
+	return index < dttr_loader_game_subpath_count() ? S_GAME_SUBPATHS[index] : NULL;
 }
 
 const char *dttr_loader_iso_game_root(void) { return S_ISO_GAME_ROOT; }
@@ -77,9 +69,8 @@ static uint64_t s_hash_path(const char *path) {
 		return 0;
 	}
 
-	for (char *ch = normalized; *ch; ch++) {
-		*ch = s_normalized_path_char(*ch);
-	}
+	sdstolower(normalized);
+	sdsmapchars(normalized, "/", "\\", 1);
 
 	const XXH64_hash_t hash = XXH3_64bits(normalized, sdslen(normalized));
 	sdsfree(normalized);
@@ -106,9 +97,10 @@ bool dttr_loader_iso_cache_root_for_path(
 	const int written = snprintf(
 		out_path,
 		out_path_size,
-		"%s%sDetoursToTheRescue\\cache\\iso\\%016llx",
+		"%s%s%s\\%016llx",
 		cache_base_dir,
 		needs_separator ? "\\" : "",
+		S_ISO_CACHE_PATH,
 		(unsigned long long)hash
 	);
 	return written > 0 && (size_t)written < out_path_size;

@@ -2,6 +2,7 @@
 #include <dttr_iso.h>
 #include <dttr_loader.h>
 #include <dttr_loader_paths.h>
+#include <dttr_loader_ui.h>
 #include <dttr_log.h>
 #include <dttr_sdl.h>
 
@@ -71,19 +72,6 @@ static bool s_extract_iso_file(
 	return false;
 }
 
-static bool s_extract_iso_tree(
-	DTTR_IsoImage *iso,
-	const char *cache_root,
-	const char *iso_path
-) {
-	if (dttr_iso_extract_tree(iso, iso_path, cache_root)) {
-		return true;
-	}
-
-	DTTR_LOG_ERROR("Could not extract %s (%s)", iso_path, dttr_iso_last_error());
-	return false;
-}
-
 static bool s_extract_iso_game_cache(
 	DTTR_IsoImage *iso,
 	const char *cache_root,
@@ -111,7 +99,13 @@ static bool s_extract_iso_game_cache(
 		return false;
 	}
 
-	return s_extract_iso_tree(iso, cache_root, dttr_loader_iso_game_data_path());
+	const char *data_path = dttr_loader_iso_game_data_path();
+	if (dttr_iso_extract_tree(iso, data_path, cache_root)) {
+		return true;
+	}
+
+	DTTR_LOG_ERROR("Could not extract %s (%s)", data_path, dttr_iso_last_error());
+	return false;
 }
 
 static bool s_resolve_iso_direct(
@@ -189,12 +183,10 @@ static bool s_resolve_iso(
 		return true;
 	}
 
-	dttr_sdl_show_simple_message_box(
-		SDL_MESSAGEBOX_ERROR,
+	dttr_loader_ui_show_error(
 		"DttR: ISO Load Failed",
 		"DttR could not read the selected ISO. Consider using the extracted game files "
-		"instead.",
-		NULL
+		"instead."
 	);
 	return false;
 }
@@ -221,108 +213,163 @@ static bool s_try_configured_path(
 }
 
 static char s_browse_result[MAX_PATH];
-static volatile bool s_browse_chosen;
+static HANDLE s_browse_event;
 
-static void SDLCALL
-s_browse_callback(void *userdata, const char *const *filelist, int filter) {
-	(void)userdata;
-	(void)filter;
-
+static void SDLCALL s_browse_callback(void *, const char *const *filelist, int) {
 	if (!filelist || !filelist[0]) {
 		s_browse_result[0] = '\0';
-		s_browse_chosen = true;
-		return;
+	} else {
+		s_copy_path(s_browse_result, sizeof(s_browse_result), filelist[0]);
 	}
 
-	strncpy(s_browse_result, filelist[0], MAX_PATH - 1);
-	s_browse_result[MAX_PATH - 1] = '\0';
-	s_browse_chosen = true;
+	if (s_browse_event) {
+		SetEvent(s_browse_event);
+	}
 }
 
 static bool s_wait_for_browse_result(void) {
-	while (!s_browse_chosen) {
+	while (WaitForSingleObject(s_browse_event, 0) == WAIT_TIMEOUT) {
 		dttr_sdl_pump_events();
 		dttr_sdl_delay(10);
 	}
 	return s_browse_result[0] != '\0';
 }
 
-static bool s_prompt_browse_for_path(WCHAR *out, DTTR_LoaderIsoContext *iso_context) {
-	const SDL_MessageBoxButtonData buttons[] = {
-		{SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Exit"},
-		{0, 1, "Use Directory"},
-		{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 2, "Use ISO"},
-	};
+static void s_save_selected_path(const char *path) {
+	s_copy_path(g_dttr_config.m_pcdogs_path, sizeof(g_dttr_config.m_pcdogs_path), path);
+	dttr_config_save(g_dttr_config_path, &g_dttr_config);
+}
 
-	const SDL_MessageBoxData msgbox = {
-		.flags = SDL_MESSAGEBOX_INFORMATION,
-		.window = NULL,
-		.title = "DttR: Specify Game Files",
-		.message = "Select either a directory containing the 102 Dalmatians: Puppies "
-				   "to the Rescue files, the original game disc, or an ISO image.",
-		.numbuttons = 3,
-		.buttons = buttons,
-	};
+static void s_scan_disc_candidates(
+	DTTR_LoaderUiDiscCandidate *candidates,
+	size_t *candidate_count
+) {
+	*candidate_count = 0;
+	const DWORD drives = GetLogicalDrives();
+	for (char drive = 'A'; drive <= 'Z'; drive++) {
+		const DWORD bit = 1u << (drive - 'A');
+		if ((drives & bit) == 0) {
+			continue;
+		}
 
-	int button_id = 0;
-	dttr_sdl_show_message_box(&msgbox, &button_id);
+		WCHAR root_w[] = {drive, L':', L'\\', L'\0'};
+		const UINT drive_type = GetDriveTypeW(root_w);
+		if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
+			continue;
+		}
 
-	if (button_id != 1 && button_id != 2) {
-		return false;
+		WCHAR game_path[MAX_PATH];
+		if (!s_try_dir(game_path, root_w)) {
+			continue;
+		}
+
+		DTTR_LoaderUiDiscCandidate *candidate = &candidates[*candidate_count];
+		snprintf(candidate->m_label, sizeof(candidate->m_label), "Open Disc %c:", drive);
+		snprintf(candidate->m_path, sizeof(candidate->m_path), "%c:\\", drive);
+		(*candidate_count)++;
+		if (*candidate_count >= DTTR_LOADER_UI_MAX_DISC_CANDIDATES) {
+			return;
+		}
 	}
+}
 
-	s_browse_chosen = false;
-	if (button_id == 1) {
-		dttr_sdl_show_open_folder_dialog(s_browse_callback, NULL, NULL, NULL, false);
-	} else {
-		const SDL_DialogFileFilter filters[] = {{"ISO images", "iso"}};
-		dttr_sdl_show_open_file_dialog(
-			s_browse_callback,
-			NULL,
-			NULL,
-			filters,
-			1,
-			NULL,
-			false
-		);
-	}
-
-	if (!s_wait_for_browse_result()) {
-		return false;
-	}
-
+static bool s_try_disc_candidate(WCHAR *out, const DTTR_LoaderUiDiscCandidate *candidate) {
 	WCHAR wide_path[MAX_PATH];
-	s_utf8_to_wide_path(wide_path, s_browse_result);
+	s_utf8_to_wide_path(wide_path, candidate->m_path);
+	if (!s_try_dir(out, wide_path)) {
+		dttr_loader_ui_show_error(
+			"DttR: Disc Not Found",
+			"The selected disc no longer contains pcdogs.exe."
+		);
+		return false;
+	}
 
-	bool resolved = false;
-	if (button_id == 2 || dttr_loader_path_is_iso_w(wide_path)) {
-		resolved = s_resolve_iso(out, s_browse_result, iso_context);
-	} else {
-		resolved = s_try_dir(out, wide_path);
-		if (!resolved) {
-			dttr_sdl_show_simple_message_box(
-				SDL_MESSAGEBOX_ERROR,
-				"DttR: Game Not Found",
-				"The selected folder does not contain pcdogs.exe.",
-				NULL
-			);
+	DTTR_LOG_INFO("Selected game disc: %s", candidate->m_path);
+	s_save_selected_path(candidate->m_path);
+	return true;
+}
+
+static bool s_run_browse_dialog(DTTR_LoaderUiChoice choice) {
+	if (!s_browse_event) {
+		s_browse_event = CreateEventW(NULL, TRUE, FALSE, NULL);
+		if (!s_browse_event) {
+			DTTR_LOG_ERROR("Could not create browse completion event");
+			return false;
 		}
 	}
 
-	if (!resolved) {
-		return false;
+	s_browse_result[0] = '\0';
+	ResetEvent(s_browse_event);
+	if (choice == DTTR_LOADER_UI_CHOICE_BROWSE_FOLDER) {
+		dttr_sdl_show_open_folder_dialog(s_browse_callback, NULL, NULL, NULL, false);
+		return s_wait_for_browse_result();
 	}
 
-	DTTR_LOG_INFO("Selected game path: %s", s_browse_result);
+	const SDL_DialogFileFilter filters[] = {{"ISO images", "iso"}};
+	dttr_sdl_show_open_file_dialog(s_browse_callback, NULL, NULL, filters, 1, NULL, false);
+	return s_wait_for_browse_result();
+}
 
-	s_copy_path(
-		g_dttr_config.m_pcdogs_path,
-		sizeof(g_dttr_config.m_pcdogs_path),
-		s_browse_result
+static bool s_try_browsed_path(
+	WCHAR *out,
+	DTTR_LoaderUiChoice choice,
+	DTTR_LoaderIsoContext *iso_context
+) {
+	WCHAR wide_path[MAX_PATH];
+	s_utf8_to_wide_path(wide_path, s_browse_result);
+
+	if (choice == DTTR_LOADER_UI_CHOICE_BROWSE_ISO
+		|| dttr_loader_path_is_iso_w(wide_path)) {
+		return s_resolve_iso(out, s_browse_result, iso_context);
+	}
+
+	if (s_try_dir(out, wide_path)) {
+		return true;
+	}
+
+	dttr_loader_ui_show_error(
+		"DttR: Game Not Found",
+		"The selected folder does not contain pcdogs.exe."
 	);
-	dttr_config_save(g_dttr_config_path, &g_dttr_config);
+	return false;
+}
 
-	return true;
+static bool s_prompt_browse_for_path(WCHAR *out, DTTR_LoaderIsoContext *iso_context) {
+	DTTR_LoaderUiDiscCandidate disc_candidates[DTTR_LOADER_UI_MAX_DISC_CANDIDATES];
+	size_t disc_candidate_count = 0;
+	s_scan_disc_candidates(disc_candidates, &disc_candidate_count);
+
+	for (;;) {
+		const DTTR_LoaderUiChoice choice = dttr_loader_ui_choose_game_source(
+			disc_candidates,
+			disc_candidate_count
+		);
+
+		size_t disc_index = 0;
+		if (dttr_loader_ui_choice_is_disc(choice, &disc_index)) {
+			if (disc_index < disc_candidate_count
+				&& s_try_disc_candidate(out, &disc_candidates[disc_index])) {
+				return true;
+			}
+
+			s_scan_disc_candidates(disc_candidates, &disc_candidate_count);
+			continue;
+		}
+
+		if (choice != DTTR_LOADER_UI_CHOICE_BROWSE_FOLDER
+			&& choice != DTTR_LOADER_UI_CHOICE_BROWSE_ISO) {
+			return false;
+		}
+
+		if (!s_run_browse_dialog(choice)
+			|| !s_try_browsed_path(out, choice, iso_context)) {
+			continue;
+		}
+
+		DTTR_LOG_INFO("Selected game path: %s", s_browse_result);
+		s_save_selected_path(s_browse_result);
+		return true;
+	}
 }
 
 bool dttr_loader_resolve_exe_path(

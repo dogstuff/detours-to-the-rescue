@@ -3,20 +3,21 @@
 #include "../components/components_private.h"
 #include "imgui_overlay_private.h"
 
-#include <cimgui.h>
-#include <cimgui_impl.h>
-#include <cimgui_impl_sdlgpu3.h>
+#include <dttr_imgui.h>
 #include <dttr_log.h>
 
 static DTTR_BackendType s_backend_type;
+static SDL_Window *s_window;
+static DTTR_ImGuiDesktopScaleState s_imgui_scale;
 
-// Buffered events are flushed into ImGui before the overlay frame only.
 #define MAX_BUFFERED_EVENTS 128
 static SDL_Event s_event_buf[MAX_BUFFERED_EVENTS];
 static int s_event_count;
 
 void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType backend) {
 	s_backend_type = backend;
+	s_window = window;
+	s_imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
 
 	igCreateContext(NULL);
 
@@ -28,6 +29,7 @@ void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType
 	ImGuiStyle *style = igGetStyle();
 	style->Alpha = 0.9f;
 	style->WindowRounding = 4.0f;
+	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
 
 	if (backend == DTTR_BACKEND_SDL_GPU) {
 		ImGui_ImplSDL3_InitForSDLGPU(window);
@@ -65,13 +67,17 @@ void dttr_imgui_cleanup(void) {
 
 	ImGui_ImplSDL3_Shutdown();
 	igDestroyContext(NULL);
+	s_window = NULL;
+	s_imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
 	DTTR_LOG_INFO("ImGui overlay cleaned up");
 }
 
 bool dttr_imgui_process_event(const SDL_Event *event) {
-	if (s_event_count < MAX_BUFFERED_EVENTS) {
-		s_event_buf[s_event_count++] = *event;
+	if (s_event_count >= MAX_BUFFERED_EVENTS) {
+		return false;
 	}
+
+	s_event_buf[s_event_count++] = *event;
 	return false;
 }
 
@@ -94,12 +100,13 @@ static void s_new_frame(void) {
 	s_backend_new_frame();
 	s_flush_buffered_events();
 	ImGui_ImplSDL3_NewFrame();
+	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
 	igNewFrame();
 }
 
-// Begins a frame with a custom display size, skipping SDL input processing.
 static void s_new_frame_no_input(uint32_t w, uint32_t h) {
 	s_backend_new_frame();
+	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
 	ImGuiIO *io = igGetIO_Nil();
 	io->DisplaySize = (ImVec2_c){(float)w, (float)h};
 	igNewFrame();
@@ -120,8 +127,9 @@ static ImDrawData *s_render_game_frame(uint32_t w, uint32_t h) {
 }
 
 static void s_draw_components_overlay(const DTTR_RenderContext *ctx) {
-	const float scale = ctx->m_scale > 0.0f ? ctx->m_scale : 1.0f;
-	const float margin = 4.0f * scale;
+	const float game_scale = ctx->m_scale > 0.0f ? ctx->m_scale : 1.0f;
+	const float desktop_scale = dttr_imgui_get_current_desktop_scale(&s_imgui_scale);
+	const float margin = 4.0f * game_scale * desktop_scale;
 	const ImVec2_c pos = {
 		(float)ctx->m_game_x + (float)ctx->m_game_w - margin,
 		(float)ctx->m_game_y + margin,
@@ -137,7 +145,7 @@ static void s_draw_components_overlay(const DTTR_RenderContext *ctx) {
 								   | ImGuiWindowFlags_NoSavedSettings
 								   | ImGuiWindowFlags_AlwaysAutoResize;
 
-	igPushFont(NULL, igGetFontSize() * scale);
+	igPushFont(NULL, igGetFontSize() * game_scale);
 
 	if (igBegin("##components_overlay", NULL, flags)) {
 		igText("COMPONENTS ENABLED");
@@ -222,10 +230,11 @@ void dttr_imgui_render_game_opengl(void) {
 	if (!dttr_components_has_render_game()) {
 		return;
 	}
+
 	ImGuiIO *io = igGetIO_Nil();
-	s_submit_opengl(
-		s_render_game_frame((uint32_t)io->DisplaySize.x, (uint32_t)io->DisplaySize.y)
-	);
+	const uint32_t width = (uint32_t)io->DisplaySize.x;
+	const uint32_t height = (uint32_t)io->DisplaySize.y;
+	s_submit_opengl(s_render_game_frame(width, height));
 }
 
 void dttr_imgui_render_sdl3gpu(
@@ -252,14 +261,9 @@ void dttr_imgui_render_opengl(
 	uint32_t game_h
 ) {
 	ImGuiIO *io = igGetIO_Nil();
-	s_submit_opengl(s_render_overlay_frame(
-		(uint32_t)io->DisplaySize.x,
-		(uint32_t)io->DisplaySize.y,
-		game_x,
-		game_y,
-		game_w,
-		game_h
-	));
+	const uint32_t width = (uint32_t)io->DisplaySize.x;
+	const uint32_t height = (uint32_t)io->DisplaySize.y;
+	s_submit_opengl(s_render_overlay_frame(width, height, game_x, game_y, game_w, game_h));
 }
 
 #endif /* DTTR_MODDING_ENABLED */

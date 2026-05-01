@@ -1,8 +1,10 @@
 #include "dttr_hooks_game.h"
 #include "dttr_sidecar.h"
-#include "game/game_data_source_private.h"
+#include "game_data_private.h"
 #include "sds.h"
 #include <dttr_log.h>
+#include <dttr_path.h>
+#include <dttr_sdl.h>
 
 #include <SDL3/SDL.h>
 #include <sys/stat.h>
@@ -15,7 +17,7 @@ static bool s_is_relative_path(const char *path) {
 		return false;
 	}
 
-	return strlen(path) < 3 || path[1] != ':' || path[2] != '\\';
+	return !dttr_path_is_windows_absolute(path);
 }
 
 static bool s_mode_wants_write(const char *mode) { return mode && strchr(mode, 'w'); }
@@ -23,19 +25,33 @@ static bool s_mode_wants_write(const char *mode) { return mode && strchr(mode, '
 static bool s_redirect_saves_initialized = false;
 
 static void s_build_saves_dir(char *buf, size_t buf_size) {
+	sds dir = NULL;
 	if (s_is_relative_path(g_dttr_config.m_saves_path)) {
-		snprintf(buf, buf_size, "%s%s", g_dttr_loader_dir, g_dttr_config.m_saves_path);
-		return;
+		dir = sdsnew(g_dttr_loader_dir);
+		if (!dir || !dttr_path_append_segment(&dir, g_dttr_config.m_saves_path, '\\')) {
+			sdsfree(dir);
+			buf[0] = '\0';
+			return;
+		}
+	} else {
+		dir = sdsnew(g_dttr_config.m_saves_path);
 	}
 
-	snprintf(buf, buf_size, "%s", g_dttr_config.m_saves_path);
+	if (!dttr_path_copy_sds(buf, buf_size, dir)) {
+		buf[0] = '\0';
+	}
+	sdsfree(dir);
 }
 
 static void s_build_save_slot_dir(char *buf, size_t buf_size) {
 	s_build_saves_dir(buf, buf_size);
 
-	size_t len = strlen(buf);
-	snprintf(buf + len, buf_size - len, "\\%s", g_dttr_exe_hash);
+	sds dir = sdsnew(buf);
+	if (!dir || !dttr_path_append_segment(&dir, g_dttr_exe_hash, '\\')
+		|| !dttr_path_copy_sds(buf, buf_size, dir)) {
+		buf[0] = '\0';
+	}
+	sdsfree(dir);
 }
 
 static void s_ensure_save_dir(void) {
@@ -70,10 +86,15 @@ static const char *s_redirect_path(
 	s_ensure_save_dir();
 
 	s_build_save_slot_dir(buf, buf_size);
-	size_t len = strlen(buf);
-	snprintf(buf + len, buf_size - len, "\\%s", path);
+	sds redirected = sdsnew(buf);
+	if (!redirected || !dttr_path_append_segment(&redirected, path, '\\')
+		|| !dttr_path_copy_sds(buf, buf_size, redirected)) {
+		sdsfree(redirected);
+		return path;
+	}
+	sdsfree(redirected);
 
-	if (IS_READ_ONLY_MODE(mode) && GetFileAttributesA(buf) == INVALID_FILE_ATTRIBUTES) {
+	if (IS_READ_ONLY_MODE(mode) && !dttr_path_exact_exists(buf)) {
 		return path;
 	}
 
@@ -89,7 +110,7 @@ static void *s_open_file_fallback(const char *path, char *mode) {
 		mode,
 		strerror(errno)
 	);
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
+	dttr_sdl_show_simple_message_box(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
 	sdsfree(msg);
 
 	return dttr_crt_open_file_with_mode("NUL", mode, 0x40);
@@ -134,7 +155,7 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	};
 
 	int button_id = 0;
-	SDL_ShowMessageBox(&msgbox, &button_id);
+	dttr_sdl_show_message_box(&msgbox, &button_id);
 	sdsfree(prompt);
 
 	if (button_id != 1)
@@ -158,17 +179,13 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 static void *s_try_open_read_path(const char *path, char *mode) {
 	char resolved[MAX_PATH];
 
-	if (dttr_game_data_source_resolve_existing_read_path(
-			path,
-			resolved,
-			sizeof(resolved)
-		)) {
+	if (dttr_game_data_resolve_existing_read_path(path, resolved, sizeof(resolved))) {
 		DTTR_LOG_DEBUG("Resolved case-insensitive read \"%s\" -> \"%s\"", path, resolved);
 		return dttr_crt_open_file_with_mode(resolved, mode, 0x40);
 	}
 
 	char cached[MAX_PATH];
-	if (!dttr_game_data_source_resolve_read_path(path, cached, sizeof(cached))) {
+	if (!dttr_game_data_resolve_read_path(path, cached, sizeof(cached))) {
 		return NULL;
 	}
 

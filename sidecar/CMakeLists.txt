@@ -51,7 +51,7 @@ add_library(dttr_sidecar SHARED
     ${DTTR_MSS_SOURCES}
 
     src/game/hooks.c
-    src/game/game_data_source.c
+    src/game_data.c
     src/game/hook_crt_open_file.c
     src/game/hook_cleanup_level_assets.c
     src/game/hook_resolve_pcdogs_path.c

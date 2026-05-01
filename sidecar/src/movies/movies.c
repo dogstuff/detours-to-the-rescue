@@ -1,8 +1,9 @@
 #include "dttr_hooks_movies.h"
 
 #include "dttr_sidecar.h"
-#include "game/game_data_source_private.h"
+#include "game_data_private.h"
 #include <dttr_log.h>
+#include <dttr_path.h>
 #include <sds.h>
 
 #include <SDL3/SDL.h>
@@ -580,17 +581,16 @@ void dttr_movies_cleanup(void) {
 }
 
 static sds s_resolve_movie_path(const char *path) {
-	sds requested_path = sdscatprintf(
-		sdsempty(),
-		"%s\\%s",
-		g_pcdogs_directory_ptr(),
-		path
-	);
+	sds requested_path = sdsnew(g_pcdogs_directory_ptr());
+	if (!requested_path || !dttr_path_append_segment(&requested_path, path, '\\')) {
+		sdsfree(requested_path);
+		return sdsempty();
+	}
 
 	char resolved[MAX_PATH];
 	const char *movie_path = NULL;
 
-	if (dttr_game_data_source_resolve_existing_read_path(
+	if (dttr_game_data_resolve_existing_read_path(
 			requested_path,
 			resolved,
 			sizeof(resolved)
@@ -600,7 +600,7 @@ static sds s_resolve_movie_path(const char *path) {
 
 	char cached[MAX_PATH];
 	if (!movie_path) {
-		const bool got_cached = dttr_game_data_source_resolve_read_path(
+		const bool got_cached = dttr_game_data_resolve_read_path(
 			path,
 			cached,
 			sizeof(cached)

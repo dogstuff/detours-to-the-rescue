@@ -1,5 +1,6 @@
 #include "graphics_private.h"
 
+#include <dttr_errors.h>
 #include <dttr_log.h>
 
 #include <stddef.h>
@@ -246,7 +247,7 @@ HWND dttr_graphics_init(void) {
 		}
 
 		DTTR_LOG_ERROR("%s", msg);
-		MessageBoxA(NULL, msg, "DttR: Error", MB_OK | MB_ICONERROR);
+		dttr_errors_show_message("DttR: Error", msg);
 		sdsfree(msg);
 	}
 

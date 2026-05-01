@@ -2,15 +2,20 @@
 #include <dttr_errors.h>
 #include <dttr_loader.h>
 #include <dttr_log.h>
+#include <dttr_path.h>
 #include <gen/asm.h>
+#include <sds.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
 
-static const char *SIDECAR_DLL_RELATIVE_PATH = "modules\\libdttr_sidecar.dll";
+static const char *const S_SIDECAR_DLL_RELATIVE_PATH = "modules\\libdttr_sidecar.dll";
+static const char S_LOAD_LIBRARY_EX_NAME[] = "LoadLibraryExA";
+static const char S_EXIT_THREAD_NAME[] = "ExitThread";
+static const char S_GET_LAST_ERROR_NAME[] = "GetLastError";
 
-static const uintptr_t PEB_IMAGE_BASE_OFFSET = 0x8;
+static const uintptr_t S_PEB_IMAGE_BASE_OFFSET = 0x8;
 
 static void s_read_remote_bytes(
 	HANDLE process,
@@ -39,7 +44,7 @@ static uintptr_t s_read_remote_image_base_from_thread_context(
 
 	s_read_remote_bytes(
 		process,
-		peb_address + PEB_IMAGE_BASE_OFFSET,
+		peb_address + S_PEB_IMAGE_BASE_OFFSET,
 		&image_base,
 		sizeof(image_base),
 		"PEB image base"
@@ -87,34 +92,13 @@ static uintptr_t s_read_entry_point_rva_from_remote_image(
 	return rva;
 }
 
-static void s_resolve_loader_dir(char *out_dir, size_t out_dir_size) {
-	const DWORD loader_path_len = GetModuleFileNameA(NULL, out_dir, (DWORD)out_dir_size);
-	if (loader_path_len == 0 || loader_path_len >= out_dir_size) {
-		DTTR_FATAL("Could not resolve loader path");
-	}
-
-	char *const last_sep = strrchr(out_dir, '\\');
-	if (!last_sep) {
-		DTTR_FATAL("Could not resolve loader directory");
-	}
-
-	last_sep[1] = '\0';
-}
-
 static void s_resolve_sidecar_dll_path(char *out_path, size_t out_path_size) {
-	char loader_dir[MAX_PATH];
-	s_resolve_loader_dir(loader_dir, sizeof(loader_dir));
-
-	const int written = snprintf(
-		out_path,
-		out_path_size,
-		"%s%s",
-		loader_dir,
-		SIDECAR_DLL_RELATIVE_PATH
-	);
-	if (written < 0 || (size_t)written >= out_path_size) {
+	sds sidecar_path = dttr_path_module_sibling(NULL, S_SIDECAR_DLL_RELATIVE_PATH);
+	if (!dttr_path_copy_sds(out_path, out_path_size, sidecar_path)) {
+		sdsfree(sidecar_path);
 		DTTR_FATAL("Sidecar DLL path is too long");
 	}
+	sdsfree(sidecar_path);
 }
 
 static void s_initialize_shellcode_payload(
@@ -122,7 +106,7 @@ static void s_initialize_shellcode_payload(
 	const char *dll_path,
 	uintptr_t original_entry
 ) {
-	static const WCHAR KERNEL32_NAME[] = L"kernel32.dll";
+	static const WCHAR S_KERNEL32_NAME[] = L"kernel32.dll";
 
 	memset(out_payload, 0, sizeof(*out_payload));
 
@@ -134,22 +118,22 @@ static void s_initialize_shellcode_payload(
 	memcpy(out_payload->m_dll_path, dll_path, dll_path_len + 1);
 	memcpy(
 		out_payload->m_kernel32_name,
-		KERNEL32_NAME,
+		S_KERNEL32_NAME,
 		sizeof(out_payload->m_kernel32_name)
 	);
 	memcpy(
 		out_payload->m_loadlibraryex_name,
-		"LoadLibraryExA",
+		S_LOAD_LIBRARY_EX_NAME,
 		sizeof(out_payload->m_loadlibraryex_name)
 	);
 	memcpy(
 		out_payload->m_exitthread_name,
-		"ExitThread",
+		S_EXIT_THREAD_NAME,
 		sizeof(out_payload->m_exitthread_name)
 	);
 	memcpy(
 		out_payload->m_getlasterror_name,
-		"GetLastError",
+		S_GET_LAST_ERROR_NAME,
 		sizeof(out_payload->m_getlasterror_name)
 	);
 	out_payload->m_original_entry = (uint32_t)original_entry;
@@ -190,12 +174,11 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 		child_info->hProcess,
 		&child_thread_context
 	);
-
-	const uintptr_t entry_point_rva = s_read_entry_point_rva_from_remote_image(
-		child_info->hProcess,
-		image_base
-	);
-	const uintptr_t original_entry = image_base + entry_point_rva;
+	const uintptr_t original_entry = image_base
+									 + s_read_entry_point_rva_from_remote_image(
+										 child_info->hProcess,
+										 image_base
+									 );
 
 	DTTR_LOG_DEBUG(
 		"Resolved original entry point: 0x%08X (base=0x%08X + RVA)",
@@ -237,7 +220,7 @@ void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info) {
 	));
 	DTTR_LOG_DEBUG("Shellcode written to remote process");
 
-	DWORD old_protect;
+	DWORD old_protect = 0;
 
 	DTTR_UNWRAP_WINAPI_NONZERO(VirtualProtectEx(
 		child_info->hProcess,

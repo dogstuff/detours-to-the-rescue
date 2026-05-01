@@ -28,20 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
-#else
-// Parse-only stand-ins for non-Windows hosts. Components still build with the
-// Windows cross-compiler.
-typedef void *HMODULE;
-typedef void *HINSTANCE;
-typedef int BOOL;
-typedef unsigned long DWORD;
-typedef void *LPVOID;
-#define WINAPI
-#define TRUE 1
-#define FALSE 0
-#endif
 
 // Forward declarations for components that do not include SDL3/SDL.h.
 #ifndef SDL_h_
@@ -390,11 +377,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 //   DTTR_COMPONENT_INIT { return true; }
 //   DTTR_COMPONENT_CLEANUP { }
 
-#if defined(_WIN32) || defined(__CYGWIN__)
 #define DTTR_EXPORT __declspec(dllexport)
-#else
-#define DTTR_EXPORT __attribute__((visibility("default")))
-#endif
 
 #define DTTR_COMPONENT_INFO(name, version, author)                                       \
 	static const DTTR_ComponentInfo s_dttr_component_info_ = {                           \

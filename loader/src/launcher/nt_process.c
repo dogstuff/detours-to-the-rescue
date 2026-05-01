@@ -1,5 +1,4 @@
-/// Extremely evil direct RTL/NT function calling to override subprocess
-/// compatibility shims without making registry/non-portable changes.
+/// Direct RTL/NT calls to override subprocess compatibility shims.
 
 #include <dttr_errors.h>
 #include <dttr_loader.h>
@@ -11,7 +10,7 @@
 #define PS_ATTRIBUTE_CLIENT_ID 0x00010003
 #define RTL_USER_PROC_PARAMS_NORMALIZED 0x01
 #define THREAD_CREATE_FLAGS_CREATE_SUSPENDED 0x00000001
-#define PEB_SHIM_DATA_OFFSET 0x1E8
+#define S_PEB_SHIM_DATA_OFFSET 0x1E8
 
 typedef LONG NTSTATUS;
 #define NT_SUCCESS(s) ((NTSTATUS)(s) >= 0)
@@ -117,9 +116,10 @@ static void s_resolve_nt_path_and_cwd(
 
 	memcpy(cwd, full_path, (full_path_len + 1) * sizeof(WCHAR));
 	WCHAR *const last_sep = wcsrchr(cwd, L'\\');
-	if (last_sep) {
-		last_sep[1] = L'\0';
+	if (!last_sep) {
+		DTTR_FATAL("Game path is missing a parent directory");
 	}
+	last_sep[1] = L'\0';
 }
 
 // Creates a suspended process with the provided shim data using NT functions.
@@ -263,7 +263,7 @@ void dttr_compat_create_process(
 
 	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
 		process,
-		(LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET),
+		(LPVOID)(peb_addr + S_PEB_SHIM_DATA_OFFSET),
 		&remote_shim,
 		sizeof(PVOID),
 		NULL

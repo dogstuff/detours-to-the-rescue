@@ -18,16 +18,20 @@ uintptr_t dttr_hook_sigscan(HMODULE mod, const char *sig, const char *mask) {
 	if (!GetModuleInformation(GetCurrentProcess(), mod, &mi, sizeof(mi))) {
 		return 0;
 	}
+
 	const uint8_t *base = (const uint8_t *)mi.lpBaseOfDll;
 	const size_t size = mi.SizeOfImage;
 	const size_t len = strlen(mask);
+
 	if (len == 0 || len > size) {
 		return 0;
 	}
+
 	for (size_t i = 0; i <= size - len; i++) {
 		for (size_t j = 0;; j++) {
 			if (j == len)
 				return (uintptr_t)(base + i);
+
 			if (mask[j] == 'x' && base[i + j] != (uint8_t)sig[j])
 				break;
 		}
@@ -148,11 +152,13 @@ static void s_log_prologue_bytes(uintptr_t site, const uint8_t *bytes, size_t si
 		if (wrote <= 0) {
 			break;
 		}
+
 		const size_t w = (size_t)wrote;
 		if (w >= sizeof(hex) - pos) {
 			pos = sizeof(hex) - 1;
 			break;
 		}
+
 		pos += w;
 	}
 
@@ -177,6 +183,7 @@ static bool s_decode_prologue(
 	if (!s_decoder_init()) {
 		return false;
 	}
+
 	if (!insns || !out_insn_count || !out_prologue_size || !out_prologue_bytes
 		|| out_prologue_bytes_cap == 0) {
 		DTTR_LOG_ERROR(
