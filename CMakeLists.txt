@@ -6,7 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=)
 
-
 if(NOT DEFINED DTTR_VERSION)
     set(DTTR_VERSION "${PROJECT_VERSION}")
 endif()
@@ -20,11 +19,11 @@ if(NOT WIN32)
 endif()
 
 add_subdirectory(vendor)
-add_subdirectory(common)
-add_subdirectory(sidecar)
-add_subdirectory(loader)
+add_subdirectory(modules/common)
+add_subdirectory(modules/sidecar)
+add_subdirectory(modules/loader)
 
-set(DTTR_SUPPORT_STUB_MANIFEST "${CMAKE_SOURCE_DIR}/stubs/manifest.txt")
+set(DTTR_SUPPORT_STUB_MANIFEST "${CMAKE_SOURCE_DIR}/packaging/stubs/manifest.txt")
 set(DTTR_SUPPORT_STUB_GENERATED_DIR "${CMAKE_BINARY_DIR}/generated/stubs")
 set(DTTR_SUPPORT_STUB_ASM "${DTTR_SUPPORT_STUB_GENERATED_DIR}/dttr_support_stub_entry.s")
 file(STRINGS "${DTTR_SUPPORT_STUB_MANIFEST}" DTTR_SUPPORT_STUB_NAMES REGEX [=[^\[[^]]+\]$]=])
@@ -114,7 +113,7 @@ endforeach()
 
 file(GENERATE
     OUTPUT "${DTTR_DIST_DIR}/dttr.jsonc"
-    INPUT "${CMAKE_SOURCE_DIR}/common/dttr.jsonc"
+    INPUT "${CMAKE_SOURCE_DIR}/modules/common/dttr.jsonc"
 )
 
 add_custom_target(dttr_dist ALL
@@ -133,7 +132,7 @@ if(DTTR_MODDING)
             "${DTTR_DIST_DIR}/components"
             "${DTTR_DIST_DIR}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/components/include/dttr_components.h"
+            "${CMAKE_SOURCE_DIR}/sdk/components/include/dttr_components.h"
             "${DTTR_DIST_DIR}/include/dttr_components.h"
     )
 endif()

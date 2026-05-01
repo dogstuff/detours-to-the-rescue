@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-sidecar/include/gen}}}"
+out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-modules/sidecar/include/gen}}}"
 bin_dir="${out_dir}/shaders"
-src_dir="sidecar/shaders/sdl3gpu"
+src_dir="modules/sidecar/shaders/sdl3gpu"
 header_path="${out_dir}/sdl3gpu_shaders.h"
 shadercross="$(command -v shadercross || command -v sdl_shadercross || true)"
 
