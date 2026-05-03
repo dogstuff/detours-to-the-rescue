@@ -118,12 +118,7 @@ release:
     - apk add --no-cache git
   script:
     - |
-      prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
-      if [ -n "$prev_tag" ]; then
-        git log --first-parent --no-merges --format="- %s (%h)" "${prev_tag}..HEAD" > changelog.md
-      else
-        git log --first-parent --no-merges --format="- %s (%h)" > changelog.md
-      fi
+      scripts/generate-release-notes.sh > changelog.md
   needs:
     - job: build-release
       artifacts: false
