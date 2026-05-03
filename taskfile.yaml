@@ -79,6 +79,18 @@ tasks:
           echo "Generating OpenGL shaders to {{ .SHADER_OUTPUT_DIR | quote }}" && \
           bash ./scripts/build-opengl-shaders.sh {{ .SHADER_OUTPUT_DIR | quote }}
 
+  shader-build:
+    desc: Build generated shader headers in a minimal Podman Nix container
+    vars:
+      SHADER_CONTAINER_IMAGE: docker.io/nixos/nix:latest
+    cmds:
+      - >-
+        bash ./scripts/container-build-shaders.sh
+        {{ .ROOT_DIR | quote }}
+        {{ .DOCKER | quote }}
+        {{ .SHADER_CONTAINER_IMAGE | quote }}
+        {{ .SHADER_OUTPUT_DIR | quote }}
+
   container-build:
     cmds:
       - >-

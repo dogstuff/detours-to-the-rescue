@@ -30,6 +30,12 @@ typedef struct {
 	GLint m_loc_screen_size;
 	GLint m_loc_is_2d;
 	GLint m_loc_has_texture;
+	GLint m_loc_color_op;
+	GLint m_loc_color_arg1;
+	GLint m_loc_color_arg2;
+	GLint m_loc_alpha_op;
+	GLint m_loc_alpha_arg1;
+	GLint m_loc_alpha_arg2;
 	GLint m_loc_texture;
 	GLuint m_msaa_fbo;
 	GLuint m_msaa_color_rbo;

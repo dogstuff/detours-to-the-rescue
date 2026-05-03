@@ -273,6 +273,12 @@ static void s_d3d_device7_record_draw(
 										 ? (g_dttr_config.m_sprite_smooth ? 2.0f : 1.0f)
 										 : 0.0f;
 	draw_rec.draw.uniforms.m_has_texture = textured ? 1.0f : 0.0f;
+	draw_rec.draw.uniforms.m_color_op = (float)state->m_stage_color_op;
+	draw_rec.draw.uniforms.m_color_arg1 = (float)state->m_stage_color_arg1;
+	draw_rec.draw.uniforms.m_color_arg2 = (float)state->m_stage_color_arg2;
+	draw_rec.draw.uniforms.m_alpha_op = (float)state->m_stage_alpha_op;
+	draw_rec.draw.uniforms.m_alpha_arg1 = (float)state->m_stage_alpha_arg1;
+	draw_rec.draw.uniforms.m_alpha_arg2 = (float)state->m_stage_alpha_arg2;
 
 	draw_rec.draw.texture = (textured && state->m_bound_texture) ? state->m_bound_texture
 																 : state->m_dummy_texture;
@@ -430,9 +436,29 @@ static void s_d3d_device7_set_viewport(
 }
 
 /// Sets the color combine operation
-static void s_d3d_device7_set_color_op(int op) {}
+static void s_d3d_device7_set_color_op(int op) {
+	g_dttr_backend.m_stage_color_op = (DWORD)op;
+}
+/// Sets the first color combine argument
+static void s_d3d_device7_set_color_arg1(DWORD arg) {
+	g_dttr_backend.m_stage_color_arg1 = arg;
+}
+/// Sets the second color combine argument
+static void s_d3d_device7_set_color_arg2(DWORD arg) {
+	g_dttr_backend.m_stage_color_arg2 = arg;
+}
 /// Sets the alpha combine operation
-static void s_d3d_device7_set_alpha_op(int op) {}
+static void s_d3d_device7_set_alpha_op(int op) {
+	g_dttr_backend.m_stage_alpha_op = (DWORD)op;
+}
+/// Sets the first alpha combine argument
+static void s_d3d_device7_set_alpha_arg1(DWORD arg) {
+	g_dttr_backend.m_stage_alpha_arg1 = arg;
+}
+/// Sets the second alpha combine argument
+static void s_d3d_device7_set_alpha_arg2(DWORD arg) {
+	g_dttr_backend.m_stage_alpha_arg2 = arg;
+}
 
 DTTR_COM_QI_SELF(s_d3ddevice7_queryinterface, DTTR_Graphics_COM_Direct3DDevice7)
 
@@ -976,14 +1002,51 @@ static HRESULT __stdcall s_d3ddevice7_settexture(
 	return S_OK;
 }
 
-DTTR_COM_STUB_SET(
-	s_d3ddevice7_gettexturestagestate,
-	DWORD,
-	0,
+static HRESULT __stdcall s_d3ddevice7_gettexturestagestate(
 	DTTR_Graphics_COM_Direct3DDevice7 *self,
 	DWORD stage,
-	DWORD type
-)
+	DWORD type,
+	DWORD *out
+) {
+	if (!out)
+		return S_OK;
+
+	if (stage != 0) {
+		*out = 0;
+		return S_OK;
+	}
+
+	switch (type) {
+	case D3DTSS_COLOROP:
+		*out = g_dttr_backend.m_stage_color_op;
+		break;
+	case D3DTSS_COLORARG1:
+		*out = g_dttr_backend.m_stage_color_arg1;
+		break;
+	case D3DTSS_COLORARG2:
+		*out = g_dttr_backend.m_stage_color_arg2;
+		break;
+	case D3DTSS_ALPHAOP:
+		*out = g_dttr_backend.m_stage_alpha_op;
+		break;
+	case D3DTSS_ALPHAARG1:
+		*out = g_dttr_backend.m_stage_alpha_arg1;
+		break;
+	case D3DTSS_ALPHAARG2:
+		*out = g_dttr_backend.m_stage_alpha_arg2;
+		break;
+	case D3DTSS_ADDRESSU:
+		*out = (DWORD)g_dttr_backend.m_addr_u;
+		break;
+	case D3DTSS_ADDRESSV:
+		*out = (DWORD)g_dttr_backend.m_addr_v;
+		break;
+	default:
+		*out = 0;
+		break;
+	}
+	return S_OK;
+}
 
 static HRESULT __stdcall s_d3ddevice7_settexturestagestate(
 	DTTR_Graphics_COM_Direct3DDevice7 *self,
@@ -991,13 +1054,24 @@ static HRESULT __stdcall s_d3ddevice7_settexturestagestate(
 	DWORD type,
 	DWORD value
 ) {
-
 	switch (type) {
 	case D3DTSS_COLOROP:
 		s_d3d_device7_set_color_op((int)value);
 		break;
+	case D3DTSS_COLORARG1:
+		s_d3d_device7_set_color_arg1(value);
+		break;
+	case D3DTSS_COLORARG2:
+		s_d3d_device7_set_color_arg2(value);
+		break;
 	case D3DTSS_ALPHAOP:
 		s_d3d_device7_set_alpha_op((int)value);
+		break;
+	case D3DTSS_ALPHAARG1:
+		s_d3d_device7_set_alpha_arg1(value);
+		break;
+	case D3DTSS_ALPHAARG2:
+		s_d3d_device7_set_alpha_arg2(value);
 		break;
 	case D3DTSS_ADDRESS: // Sets both U and V address mode for legacy combined state
 		s_d3d_device7_set_texture_address_u((DTTR_TextureAddress)value);

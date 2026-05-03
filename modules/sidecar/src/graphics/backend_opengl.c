@@ -342,6 +342,12 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	gl->m_loc_screen_size = glGetUniformLocation(gl->m_program, "u_screen_size");
 	gl->m_loc_is_2d = glGetUniformLocation(gl->m_program, "u_is_2d");
 	gl->m_loc_has_texture = glGetUniformLocation(gl->m_program, "u_has_texture");
+	gl->m_loc_color_op = glGetUniformLocation(gl->m_program, "u_color_op");
+	gl->m_loc_color_arg1 = glGetUniformLocation(gl->m_program, "u_color_arg1");
+	gl->m_loc_color_arg2 = glGetUniformLocation(gl->m_program, "u_color_arg2");
+	gl->m_loc_alpha_op = glGetUniformLocation(gl->m_program, "u_alpha_op");
+	gl->m_loc_alpha_arg1 = glGetUniformLocation(gl->m_program, "u_alpha_arg1");
+	gl->m_loc_alpha_arg2 = glGetUniformLocation(gl->m_program, "u_alpha_arg2");
 	gl->m_loc_texture = glGetUniformLocation(gl->m_program, "u_texture");
 
 	// Create the vertex array and buffer objects.
@@ -675,6 +681,7 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 		if (rec->draw.depth_test != last_depth_test) {
 			if (rec->draw.depth_test) {
 				glEnable(GL_DEPTH_TEST);
+				glDepthFunc(GL_LEQUAL);
 			} else {
 				glDisable(GL_DEPTH_TEST);
 			}
@@ -695,6 +702,12 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 		);
 		glUniform1f(gl->m_loc_is_2d, rec->draw.uniforms.m_is_2d);
 		glUniform1f(gl->m_loc_has_texture, rec->draw.uniforms.m_has_texture);
+		glUniform1f(gl->m_loc_color_op, rec->draw.uniforms.m_color_op);
+		glUniform1f(gl->m_loc_color_arg1, rec->draw.uniforms.m_color_arg1);
+		glUniform1f(gl->m_loc_color_arg2, rec->draw.uniforms.m_color_arg2);
+		glUniform1f(gl->m_loc_alpha_op, rec->draw.uniforms.m_alpha_op);
+		glUniform1f(gl->m_loc_alpha_arg1, rec->draw.uniforms.m_alpha_arg1);
+		glUniform1f(gl->m_loc_alpha_arg2, rec->draw.uniforms.m_alpha_arg2);
 
 		// Bind the active texture or the dummy fallback.
 		GLuint tex_id = gl->m_dummy_texture;
@@ -888,6 +901,12 @@ static bool s_present_video_frame_bgra(
 	glUniform2f(gl->m_loc_screen_size, (float)window_w, (float)window_h);
 	glUniform1f(gl->m_loc_is_2d, 1.0f);
 	glUniform1f(gl->m_loc_has_texture, 1.0f);
+	glUniform1f(gl->m_loc_color_op, (float)DTTR_D3DTOP_MODULATE);
+	glUniform1f(gl->m_loc_color_arg1, (float)DTTR_D3DTA_TEXTURE);
+	glUniform1f(gl->m_loc_color_arg2, (float)DTTR_D3DTA_DIFFUSE);
+	glUniform1f(gl->m_loc_alpha_op, (float)DTTR_D3DTOP_SELECTARG1);
+	glUniform1f(gl->m_loc_alpha_arg1, (float)DTTR_D3DTA_TEXTURE);
+	glUniform1f(gl->m_loc_alpha_arg2, (float)DTTR_D3DTA_DIFFUSE);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, gl->m_video_texture);

@@ -60,6 +60,15 @@ typedef enum {
 	DTTR_CULL_CCW = 3,
 } DTTR_CullMode;
 
+#define DTTR_D3DTOP_DISABLE 1
+#define DTTR_D3DTOP_SELECTARG1 2
+#define DTTR_D3DTOP_SELECTARG2 3
+#define DTTR_D3DTOP_MODULATE 4
+
+#define DTTR_D3DTA_DIFFUSE 0
+#define DTTR_D3DTA_CURRENT 1
+#define DTTR_D3DTA_TEXTURE 2
+
 typedef struct {
 	float x, y, z;
 	float rhw;
@@ -99,6 +108,12 @@ typedef struct {
 	float m_screen_size[2];
 	float m_is_2d;
 	float m_has_texture;
+	float m_color_op;
+	float m_color_arg1;
+	float m_color_arg2;
+	float m_alpha_op;
+	float m_alpha_arg1;
+	float m_alpha_arg2;
 } DTTR_Uniforms;
 
 typedef enum {
@@ -209,6 +224,12 @@ struct DTTR_BackendState {
 	DTTR_TextureAddress m_addr_u;
 	DTTR_TextureAddress m_addr_v;
 	DTTR_BlendFactor m_blend_dst;
+	DWORD m_stage_color_op;
+	DWORD m_stage_color_arg1;
+	DWORD m_stage_color_arg2;
+	DWORD m_stage_alpha_op;
+	DWORD m_stage_alpha_arg1;
+	DWORD m_stage_alpha_arg2;
 	int m_viewport_x;
 	int m_viewport_y;
 	int m_viewport_w;

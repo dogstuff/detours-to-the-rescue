@@ -45,6 +45,8 @@ emit_shader_source() {
 
   echo "#endif /* DTTR_GENERATED_OPENGL_SHADERS_H */"
 } > "$header_path"
-clang-format -i "$header_path"
+if command -v clang-format >/dev/null 2>&1; then
+  clang-format -i "$header_path"
+fi
 
 echo "Generated $header_path"

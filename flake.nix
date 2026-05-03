@@ -19,6 +19,7 @@
           paths = [
             pkgs.sdl3-shadercross
             pkgs.shaderc
+            pkgs.gnused
             pkgs.xxd
           ];
         };

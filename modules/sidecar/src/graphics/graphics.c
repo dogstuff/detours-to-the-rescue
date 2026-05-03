@@ -145,6 +145,12 @@ static void s_init_common_state(DTTR_BackendState *state) {
 	state->m_addr_u = DTTR_TEXADDR_WRAP;
 	state->m_addr_v = DTTR_TEXADDR_WRAP;
 	state->m_blend_dst = DTTR_BLEND_ZERO;
+	state->m_stage_color_op = DTTR_D3DTOP_MODULATE;
+	state->m_stage_color_arg1 = DTTR_D3DTA_TEXTURE;
+	state->m_stage_color_arg2 = DTTR_D3DTA_DIFFUSE;
+	state->m_stage_alpha_op = DTTR_D3DTOP_SELECTARG1;
+	state->m_stage_alpha_arg1 = DTTR_D3DTA_TEXTURE;
+	state->m_stage_alpha_arg2 = DTTR_D3DTA_DIFFUSE;
 
 	state->m_viewport_x = 0;
 	state->m_viewport_y = 0;
