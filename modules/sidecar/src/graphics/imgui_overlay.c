@@ -128,9 +128,10 @@ static ImDrawData *s_render_game_frame(uint32_t w, uint32_t h) {
 	return igGetDrawData();
 }
 
-static void s_draw_components_overlay(const DTTR_RenderContext *ctx) {
+static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
 	const float game_scale = ctx->m_scale > 0.0f ? ctx->m_scale : 1.0f;
 	const float desktop_scale = dttr_imgui_get_current_desktop_scale(&s_imgui_scale);
+	const float badge_scale = 0.09f * game_scale;
 	const float margin = 4.0f * game_scale * desktop_scale;
 	const ImVec2_c pos = {
 		(float)ctx->m_game_x + (float)ctx->m_game_w - margin,
@@ -147,10 +148,10 @@ static void s_draw_components_overlay(const DTTR_RenderContext *ctx) {
 								   | ImGuiWindowFlags_NoSavedSettings
 								   | ImGuiWindowFlags_AlwaysAutoResize;
 
-	igPushFont(NULL, igGetFontSize() * game_scale);
+	igPushFont(NULL, igGetFontSize() * badge_scale);
 
-	if (igBegin("##components_overlay", NULL, flags)) {
-		igText("COMPONENTS ENABLED");
+	if (igBegin("##modding_overlay", NULL, flags)) {
+		igText("Modding");
 	}
 	igEnd();
 
@@ -177,7 +178,7 @@ static ImDrawData *s_render_overlay_frame(
 
 	s_new_frame();
 	dttr_components_render(&ctx);
-	s_draw_components_overlay(&ctx);
+	s_draw_modding_overlay(&ctx);
 
 	igRender();
 	return igGetDrawData();
