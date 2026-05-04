@@ -1,0 +1,54 @@
+[project]
+site_name = "102 Patches: Detours to the Rescue!"
+site_description = "Documentation for DttR, an alternate entrypoint that keeps 102 Dalmatians: Puppies to the Rescue playable on modern PCs."
+site_author = "dogstuff"
+copyright = "Copyright &copy; 2026 dogstuff"
+
+docs_dir = "pages"
+site_dir = "build"
+
+repo_name = "dogstuff/detours-to-the-rescue"
+repo_url = "https://gitlab.com/dogstuff/detours-to-the-rescue"
+extra_css = ["assets/stylesheets/site.css"]
+nav = [
+  { "Home" = "index.md" },
+  { "Configuration" = "configuration.md" },
+  { "Technical Reference" = [
+    { "Configuration" = "technical/configuration.md" },
+    { "Patches" = "technical/patches.md" },
+    { "Building" = "technical/building.md" },
+    { "Modding" = [
+      { "Creating a Mod" = "technical/modding/creating-a-mod.md" },
+      { "Component API" = "technical/modding/api.md" },
+      { "Component Exports" = "technical/modding/exports.md" },
+    ] },
+    { "Internal API" = "internal/" },
+  ] },
+]
+
+[project.theme]
+language = "en"
+features = [
+  "content.code.copy",
+  "navigation.indexes",
+  "navigation.top",
+  "toc.follow",
+]
+
+[project.extra]
+generator = false
+
+[[project.theme.palette]]
+scheme = "slate"
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.pymdownx.blocks.caption]
+
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+linenums_style = "pymdownx-inline"

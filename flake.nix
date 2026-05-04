@@ -16,11 +16,11 @@
       packages = forEachSystem (pkgs: {
         shader-tools = pkgs.buildEnv {
           name = "shader-tools";
-          paths = [
-            pkgs.sdl3-shadercross
-            pkgs.shaderc
-            pkgs.gnused
-            pkgs.xxd
+          paths = with pkgs; [
+            sdl3-shadercross
+            shaderc
+            gnused
+            xxd
           ];
         };
       });
@@ -117,6 +117,7 @@
                 perl
                 xxd
                 doxygen
+                zensical
                 curl
                 zip
                 mingwCc
@@ -143,9 +144,9 @@
                 chmod +x "$toolchain_dir/i686-w64-mingw32-$wrapper"
               }
 
-              write_tool_wrapper gcc gcc
-              write_tool_wrapper g++ g++
-              write_tool_wrapper windres windres
+              for wrapper in gcc g++ windres; do
+                write_tool_wrapper "$wrapper" "$wrapper"
+              done
               write_tool_wrapper gcc-ar ar
               write_tool_wrapper gcc-ranlib ranlib
 
