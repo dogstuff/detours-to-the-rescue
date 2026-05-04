@@ -9,16 +9,63 @@
 static DTTR_BackendType s_backend_type;
 static SDL_Window *s_window;
 static DTTR_ImGuiDesktopScaleState s_imgui_scale;
+static bool s_initialized;
 
-#define MAX_BUFFERED_EVENTS 128
-static SDL_Event s_event_buf[MAX_BUFFERED_EVENTS];
-static int s_event_count;
+static bool s_uses_sdl_gpu(void) { return s_backend_type == DTTR_BACKEND_SDL_GPU; }
+
+static const char *s_backend_name(void) {
+	return s_uses_sdl_gpu() ? "SDL_GPU" : "OpenGL";
+}
+
+static bool s_has_draw_data(const ImDrawData *draw_data) {
+	return draw_data && draw_data->CmdListsCount > 0;
+}
+
+static void s_backend_init(SDL_Window *window, SDL_GPUDevice *device) {
+	if (s_uses_sdl_gpu()) {
+		ImGui_ImplSDL3_InitForSDLGPU(window);
+
+		SDL_GPUTextureFormat swapchain_format = SDL_GetGPUSwapchainTextureFormat(
+			device,
+			window
+		);
+		CImGui_ImplSDLGPU3_InitInfo info = {
+			.Device = device,
+			.ColorTargetFormat = swapchain_format,
+			.MSAASamples = SDL_GPU_SAMPLECOUNT_1,
+			.SwapchainComposition = SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+			.PresentMode = SDL_GPU_PRESENTMODE_VSYNC,
+		};
+
+		cImGui_ImplSDLGPU3_Init(&info);
+		return;
+	}
+
+	ImGui_ImplSDL3_InitForOpenGL(window, NULL);
+	ImGui_ImplOpenGL3_Init("#version 330");
+}
+
+static void s_backend_shutdown(void) {
+	if (s_uses_sdl_gpu()) {
+		cImGui_ImplSDLGPU3_Shutdown();
+		return;
+	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+}
 
 void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType backend) {
+	if (s_initialized) {
+		DTTR_LOG_WARN(
+			"ImGui overlay init requested while already initialized; cleaning up stale "
+			"backend state"
+		);
+		dttr_imgui_cleanup();
+	}
+
 	s_backend_type = backend;
 	s_window = window;
 	s_imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
-	s_event_count = 0;
 
 	igCreateContext(NULL);
 
@@ -32,66 +79,36 @@ void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType
 	style->WindowRounding = 4.0f;
 	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
 
-	if (backend == DTTR_BACKEND_SDL_GPU) {
-		ImGui_ImplSDL3_InitForSDLGPU(window);
-
-		SDL_GPUTextureFormat swapchain_format = SDL_GetGPUSwapchainTextureFormat(
-			device,
-			window
-		);
-
-		CImGui_ImplSDLGPU3_InitInfo info = {
-			.Device = device,
-			.ColorTargetFormat = swapchain_format,
-			.MSAASamples = SDL_GPU_SAMPLECOUNT_1,
-			.SwapchainComposition = SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-			.PresentMode = SDL_GPU_PRESENTMODE_VSYNC,
-		};
-		cImGui_ImplSDLGPU3_Init(&info);
-	} else {
-		ImGui_ImplSDL3_InitForOpenGL(window, NULL);
-		ImGui_ImplOpenGL3_Init("#version 330");
-	}
-
-	DTTR_LOG_INFO(
-		"ImGui overlay initialized (backend: %s)",
-		backend == DTTR_BACKEND_SDL_GPU ? "SDL_GPU" : "OpenGL"
-	);
+	s_backend_init(window, device);
+	s_initialized = true;
+	DTTR_LOG_INFO("ImGui overlay initialized (backend: %s)", s_backend_name());
 }
 
 void dttr_imgui_cleanup(void) {
-	if (s_backend_type == DTTR_BACKEND_SDL_GPU) {
-		cImGui_ImplSDLGPU3_Shutdown();
-	} else {
-		ImGui_ImplOpenGL3_Shutdown();
+	if (!s_initialized) {
+		return;
 	}
 
+	s_backend_shutdown();
 	ImGui_ImplSDL3_Shutdown();
 	igDestroyContext(NULL);
 	s_window = NULL;
 	s_imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
-	s_event_count = 0;
+	s_initialized = false;
 	DTTR_LOG_INFO("ImGui overlay cleaned up");
 }
 
 bool dttr_imgui_process_event(const SDL_Event *event) {
-	if (s_event_count >= MAX_BUFFERED_EVENTS) {
+	if (!s_initialized) {
 		return false;
 	}
 
-	s_event_buf[s_event_count++] = *event;
+	ImGui_ImplSDL3_ProcessEvent(event);
 	return false;
 }
 
-static void s_flush_buffered_events(void) {
-	for (int i = 0; i < s_event_count; i++) {
-		ImGui_ImplSDL3_ProcessEvent(&s_event_buf[i]);
-	}
-	s_event_count = 0;
-}
-
 static void s_backend_new_frame(void) {
-	if (s_backend_type == DTTR_BACKEND_SDL_GPU) {
+	if (s_uses_sdl_gpu()) {
 		cImGui_ImplSDLGPU3_NewFrame();
 	} else {
 		ImGui_ImplOpenGL3_NewFrame();
@@ -100,7 +117,6 @@ static void s_backend_new_frame(void) {
 
 static void s_new_frame(void) {
 	s_backend_new_frame();
-	s_flush_buffered_events();
 	ImGui_ImplSDL3_NewFrame();
 	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
 	igNewFrame();
@@ -122,6 +138,7 @@ static ImDrawData *s_render_game_frame(uint32_t w, uint32_t h) {
 		.m_height = h,
 		.m_scale = (float)h / 480.0f,
 	};
+
 	dttr_components_render_game(&ctx);
 
 	igRender();
@@ -137,6 +154,7 @@ static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
 		(float)ctx->m_game_x + (float)ctx->m_game_w - margin,
 		(float)ctx->m_game_y + margin,
 	};
+
 	const ImVec2_c pivot = {1.0f, 0.0f};
 
 	igSetNextWindowPos(pos, ImGuiCond_Always, pivot);
@@ -153,6 +171,7 @@ static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
 	if (igBegin("##modding_overlay", NULL, flags)) {
 		igText("Modding");
 	}
+
 	igEnd();
 
 	igPopFont();
@@ -184,12 +203,18 @@ static ImDrawData *s_render_overlay_frame(
 	return igGetDrawData();
 }
 
+static void s_current_display_size(uint32_t *width, uint32_t *height) {
+	ImGuiIO *io = igGetIO_Nil();
+	*width = (uint32_t)io->DisplaySize.x;
+	*height = (uint32_t)io->DisplaySize.y;
+}
+
 static void s_submit_sdl3gpu(
 	ImDrawData *draw_data,
 	SDL_GPUCommandBuffer *cmd,
 	SDL_GPUTexture *target
 ) {
-	if (draw_data->CmdListsCount == 0) {
+	if (!s_has_draw_data(draw_data)) {
 		return;
 	}
 
@@ -205,12 +230,13 @@ static void s_submit_sdl3gpu(
 	if (!pass) {
 		return;
 	}
+
 	cImGui_ImplSDLGPU3_RenderDrawData(draw_data, cmd, pass);
 	SDL_EndGPURenderPass(pass);
 }
 
 static void s_submit_opengl(ImDrawData *draw_data) {
-	if (draw_data->CmdListsCount == 0) {
+	if (!s_has_draw_data(draw_data)) {
 		return;
 	}
 
@@ -226,6 +252,7 @@ void dttr_imgui_render_game_sdl3gpu(
 	if (!dttr_components_has_render_game()) {
 		return;
 	}
+
 	s_submit_sdl3gpu(s_render_game_frame(w, h), cmd, render_target);
 }
 
@@ -234,9 +261,9 @@ void dttr_imgui_render_game_opengl(void) {
 		return;
 	}
 
-	ImGuiIO *io = igGetIO_Nil();
-	const uint32_t width = (uint32_t)io->DisplaySize.x;
-	const uint32_t height = (uint32_t)io->DisplaySize.y;
+	uint32_t width = 0;
+	uint32_t height = 0;
+	s_current_display_size(&width, &height);
 	s_submit_opengl(s_render_game_frame(width, height));
 }
 
@@ -263,9 +290,9 @@ void dttr_imgui_render_opengl(
 	uint32_t game_w,
 	uint32_t game_h
 ) {
-	ImGuiIO *io = igGetIO_Nil();
-	const uint32_t width = (uint32_t)io->DisplaySize.x;
-	const uint32_t height = (uint32_t)io->DisplaySize.y;
+	uint32_t width = 0;
+	uint32_t height = 0;
+	s_current_display_size(&width, &height);
 	s_submit_opengl(s_render_overlay_frame(width, height, game_x, game_y, game_w, game_h));
 }
 

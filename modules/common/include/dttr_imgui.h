@@ -87,8 +87,12 @@ static inline bool dttr_imgui_apply_window_desktop_scale(
 typedef struct DTTR_ImGuiDialogContext {
 	SDL_Window *m_window;
 	SDL_GLContext m_gl_context;
+	ImGuiContext *m_imgui_context;
+	ImGuiContext *m_previous_imgui_context;
 	DTTR_ImGuiDesktopScaleState m_imgui_scale;
 	float m_desktop_scale;
+	int m_logical_window_width;
+	int m_logical_window_height;
 	bool m_imgui_context_ready;
 	bool m_imgui_sdl_ready;
 	bool m_imgui_gl_ready;
@@ -107,11 +111,20 @@ float dttr_imgui_dialog_scaled_float(const DTTR_ImGuiDialogContext *ctx, float v
 int dttr_imgui_dialog_scaled_int(const DTTR_ImGuiDialogContext *ctx, float value);
 bool dttr_imgui_dialog_refresh_scale(DTTR_ImGuiDialogContext *ctx);
 
-void dttr_imgui_dialog_process_events(bool *running);
-void dttr_imgui_dialog_new_frame(void);
+void dttr_imgui_dialog_process_event(
+	const DTTR_ImGuiDialogContext *ctx,
+	const SDL_Event *event,
+	bool *running
+);
+void dttr_imgui_dialog_process_events(const DTTR_ImGuiDialogContext *ctx, bool *running);
+void dttr_imgui_dialog_new_frame(const DTTR_ImGuiDialogContext *ctx);
 void dttr_imgui_dialog_render(DTTR_ImGuiDialogContext *ctx);
 
-bool dttr_imgui_dialog_begin_root(DTTR_ImGuiDialogContext *ctx, const char *title);
+bool dttr_imgui_dialog_begin_root(
+	DTTR_ImGuiDialogContext *ctx,
+	const char *title,
+	ImGuiWindowFlags flags
+);
 void dttr_imgui_dialog_end_root(void);
 
 bool dttr_imgui_dialog_button(
@@ -142,6 +155,7 @@ bool dttr_imgui_error_show(const char *title, const char *message);
 
 #ifdef __cplusplus
 }
+
 #endif
 
 #endif /* DTTR_IMGUI_H */

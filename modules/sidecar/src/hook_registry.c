@@ -29,13 +29,16 @@ uintptr_t dttr_hook_sigscan(HMODULE mod, const char *sig, const char *mask) {
 
 	for (size_t i = 0; i <= size - len; i++) {
 		for (size_t j = 0;; j++) {
-			if (j == len)
+			if (j == len) {
 				return (uintptr_t)(base + i);
+			}
 
-			if (mask[j] == 'x' && base[i + j] != (uint8_t)sig[j])
+			if (mask[j] == 'x' && base[i + j] != (uint8_t)sig[j]) {
 				break;
+			}
 		}
 	}
+
 	return 0;
 }
 
@@ -114,6 +117,7 @@ static bool s_copy_memory_checked(uintptr_t addr, uint8_t *out, size_t size) {
 			);
 			return false;
 		}
+
 		if ((mbi.Protect & PAGE_GUARD) || (mbi.Protect & PAGE_NOACCESS)
 			|| !s_is_readable_page_protect(mbi.Protect)) {
 			DTTR_LOG_ERROR(
@@ -302,6 +306,7 @@ static bool s_decode_prologue(
 			);
 			return false;
 		}
+
 		if (out->m_rel_size == 4
 			&& (size_t)out->m_rel_offset + out->m_rel_size > out->m_length) {
 			DTTR_LOG_ERROR(
@@ -336,6 +341,7 @@ static bool s_decode_prologue(
 		);
 		return false;
 	}
+
 	memcpy(out_prologue_bytes, code_window, offset);
 	s_log_prologue_bytes(addr, out_prologue_bytes, offset);
 
@@ -444,6 +450,7 @@ uintptr_t dttr_hook_cached_sigscan(HMODULE mod, const char *sig, const char *mas
 typedef kvec_t(DTTR_Hook *) S_HookVec;
 
 static S_HookVec s_hooks;
+static void *s_hook_owner = NULL;
 
 static void s_hook_destroy(DTTR_Hook *hook) {
 	if (!hook) {
@@ -477,6 +484,36 @@ static void s_check_overlap(uintptr_t addr, size_t size) {
 	}
 }
 
+static DTTR_Hook *s_hook_create(const char *op, uintptr_t addr, size_t size) {
+	DTTR_Hook *hook = (DTTR_Hook *)calloc(1, sizeof(DTTR_Hook));
+	if (!hook) {
+		DTTR_LOG_ERROR("%s: hook alloc failed for 0x%08X", op, (unsigned)addr);
+		return NULL;
+	}
+
+	hook->m_addr = addr;
+	hook->m_size = size;
+	hook->m_owner = s_hook_owner;
+	hook->m_original = (uint8_t *)malloc(size);
+	if (!hook->m_original) {
+		DTTR_LOG_ERROR("%s: original-bytes alloc failed for 0x%08X", op, (unsigned)addr);
+		free(hook);
+		return NULL;
+	}
+
+	return hook;
+}
+
+static size_t s_hook_find_index(DTTR_Hook *hook) {
+	for (size_t i = 0; i < kv_size(s_hooks); i++) {
+		if (kv_A(s_hooks, i) == hook) {
+			return i;
+		}
+	}
+
+	return kv_size(s_hooks);
+}
+
 static bool s_write_bytes(uintptr_t addr, const uint8_t *bytes, size_t size) {
 	DWORD old_protect;
 	if (!VirtualProtect((void *)addr, size, PAGE_EXECUTE_READWRITE, &old_protect)) {
@@ -486,6 +523,14 @@ static bool s_write_bytes(uintptr_t addr, const uint8_t *bytes, size_t size) {
 	memcpy((void *)addr, bytes, size);
 	VirtualProtect((void *)addr, size, old_protect, &old_protect);
 	return true;
+}
+
+static void s_hook_detach_index(size_t index) {
+	DTTR_Hook *hook = kv_A(s_hooks, index);
+	s_write_bytes(hook->m_addr, hook->m_original, hook->m_size);
+	kv_A(s_hooks, index) = kv_A(s_hooks, kv_size(s_hooks) - 1);
+	kv_pop(s_hooks);
+	s_hook_destroy(hook);
 }
 
 static DTTR_Hook *s_hook_attach_function_common(
@@ -562,29 +607,13 @@ static DTTR_Hook *s_hook_attach_function_common(
 		VirtualFree(trampoline, 0, MEM_RELEASE);
 		return NULL;
 	}
+
 	const int32_t jmp_back = (int32_t)jmp_back64;
 	memcpy(trampoline + actual_prologue_size + 1, &jmp_back, 4);
 
-	DTTR_Hook *hook = (DTTR_Hook *)calloc(1, sizeof(DTTR_Hook));
+	DTTR_Hook *hook = s_hook_create("hook_attach_function", addr, DTTR_HOOK_PATCH_SIZE);
 	if (!hook) {
-		DTTR_LOG_ERROR(
-			"hook_attach_function: hook alloc failed for 0x%08X",
-			(unsigned)addr
-		);
 		VirtualFree(trampoline, 0, MEM_RELEASE);
-		return NULL;
-	}
-
-	hook->m_addr = addr;
-	hook->m_size = DTTR_HOOK_PATCH_SIZE;
-	hook->m_original = (uint8_t *)malloc(DTTR_HOOK_PATCH_SIZE);
-	if (!hook->m_original) {
-		DTTR_LOG_ERROR(
-			"hook_attach_function: original-bytes alloc failed for 0x%08X",
-			(unsigned)addr
-		);
-		VirtualFree(trampoline, 0, MEM_RELEASE);
-		free(hook);
 		return NULL;
 	}
 
@@ -601,19 +630,16 @@ static DTTR_Hook *s_hook_attach_function_common(
 			(unsigned)addr,
 			(unsigned)(uintptr_t)handler
 		);
-		VirtualFree(trampoline, 0, MEM_RELEASE);
-		free(hook->m_original);
-		free(hook);
+		s_hook_destroy(hook);
 		return NULL;
 	}
+
 	const int32_t rel = (int32_t)rel64;
 	memcpy(jmp + 1, &rel, 4);
 
 	if (!s_write_bytes(addr, jmp, DTTR_HOOK_PATCH_SIZE)) {
 		DTTR_LOG_ERROR("hook_attach_function: write failed for 0x%08X", (unsigned)addr);
-		VirtualFree(trampoline, 0, MEM_RELEASE);
-		free(hook->m_original);
-		free(hook);
+		s_hook_destroy(hook);
 		return NULL;
 	}
 
@@ -639,28 +665,15 @@ DTTR_Hook *dttr_hook_attach_pointer(uintptr_t addr, void *new_value, void **out_
 		*out_original = *(void **)addr;
 	}
 
-	uintptr_t val = (uintptr_t)new_value;
-	return dttr_hook_patch_bytes(addr, (const uint8_t *)&val, sizeof(void *));
+	const uintptr_t value = (uintptr_t)new_value;
+	return dttr_hook_patch_bytes(addr, (const uint8_t *)&value, sizeof(value));
 }
 
 DTTR_Hook *dttr_hook_patch_bytes(uintptr_t addr, const uint8_t *bytes, size_t size) {
 	s_check_overlap(addr, size);
 
-	DTTR_Hook *hook = (DTTR_Hook *)calloc(1, sizeof(DTTR_Hook));
+	DTTR_Hook *hook = s_hook_create("hook_patch_bytes", addr, size);
 	if (!hook) {
-		DTTR_LOG_ERROR("hook_patch_bytes: hook alloc failed for 0x%08X", (unsigned)addr);
-		return NULL;
-	}
-
-	hook->m_addr = addr;
-	hook->m_size = size;
-	hook->m_original = (uint8_t *)malloc(size);
-	if (!hook->m_original) {
-		DTTR_LOG_ERROR(
-			"hook_patch_bytes: original-bytes alloc failed for 0x%08X",
-			(unsigned)addr
-		);
-		free(hook);
 		return NULL;
 	}
 
@@ -687,28 +700,43 @@ void dttr_hook_detach(DTTR_Hook *hook) {
 		return;
 	}
 
-	s_write_bytes(hook->m_addr, hook->m_original, hook->m_size);
-
-	for (size_t i = 0; i < kv_size(s_hooks); i++) {
-		if (kv_A(s_hooks, i) == hook) {
-			kv_A(s_hooks, i) = kv_A(s_hooks, kv_size(s_hooks) - 1);
-			s_hooks.n--;
-			break;
-		}
+	const size_t index = s_hook_find_index(hook);
+	if (index == kv_size(s_hooks)) {
+		DTTR_LOG_DEBUG("hook_detach: ignoring stale or already detached hook handle");
+		return;
 	}
 
-	s_hook_destroy(hook);
+	s_hook_detach_index(index);
+}
+
+void *dttr_hook_set_owner(void *owner) {
+	void *previous = s_hook_owner;
+	s_hook_owner = owner;
+	return previous;
+}
+
+void dttr_hook_detach_owner(void *owner) {
+	if (!owner) {
+		return;
+	}
+
+	for (size_t i = kv_size(s_hooks); i > 0; i--) {
+		if (kv_A(s_hooks, i - 1)->m_owner != owner) {
+			continue;
+		}
+
+		s_hook_detach_index(i - 1);
+	}
 }
 
 void dttr_hook_cleanup_all(void) {
-	for (size_t i = kv_size(s_hooks); i > 0; i--) {
-		DTTR_Hook *hook = kv_A(s_hooks, i - 1);
-		s_write_bytes(hook->m_addr, hook->m_original, hook->m_size);
-		s_hook_destroy(hook);
+	while (kv_size(s_hooks) > 0) {
+		s_hook_detach_index(kv_size(s_hooks) - 1);
 	}
 
 	kv_destroy(s_hooks);
 	kv_init(s_hooks);
+	s_hook_owner = NULL;
 
 	if (s_cache) {
 		kh_destroy(sigscan_cache, s_cache);

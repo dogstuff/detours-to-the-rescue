@@ -5,33 +5,44 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
-typedef enum {
-	S_CONFIG_BOOL = 0,
-	S_CONFIG_SCALING_FIT = 1,
-	S_CONFIG_SCALING_METHOD = 2,
-	S_CONFIG_GRAPHICS_API = 3,
-	S_CONFIG_INT = 4,
-	S_CONFIG_FLOAT = 5,
-	S_CONFIG_PRESENT_FILTER = 6,
-	S_CONFIG_LOG_LEVEL = 7,
-	S_CONFIG_MINIDUMP_TYPE = 8,
-	S_CONFIG_STRING = 9,
-	S_CONFIG_VERTEX_PRECISION = 10,
-} S_ConfigValueType;
+enum {
+	S_CONFIG_BOOL = DTTR_CONFIG_VALUE_BOOL,
+	S_CONFIG_SCALING_FIT = DTTR_CONFIG_VALUE_SCALING_FIT,
+	S_CONFIG_SCALING_METHOD = DTTR_CONFIG_VALUE_SCALING_METHOD,
+	S_CONFIG_GRAPHICS_API = DTTR_CONFIG_VALUE_GRAPHICS_API,
+	S_CONFIG_INT = DTTR_CONFIG_VALUE_INT,
+	S_CONFIG_FLOAT = DTTR_CONFIG_VALUE_FLOAT,
+	S_CONFIG_PRESENT_FILTER = DTTR_CONFIG_VALUE_PRESENT_FILTER,
+	S_CONFIG_LOG_LEVEL = DTTR_CONFIG_VALUE_LOG_LEVEL,
+	S_CONFIG_MINIDUMP_TYPE = DTTR_CONFIG_VALUE_MINIDUMP_TYPE,
+	S_CONFIG_STRING = DTTR_CONFIG_VALUE_STRING,
+	S_CONFIG_VERTEX_PRECISION = DTTR_CONFIG_VALUE_VERTEX_PRECISION,
+	S_CONFIG_GAMEPAD_AXIS = DTTR_CONFIG_VALUE_GAMEPAD_AXIS,
+};
 
-typedef struct {
-	const char *section;
-	const char *key;
-	ptrdiff_t offset;
-	S_ConfigValueType value_type;
-} S_ConfigFieldSpec;
+#define S_CONFIG_GAMEPAD_AXIS_FIELDS(X)                                                  \
+	X("axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                     \
+	X("axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                     \
+	X("axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+
+#define S_CONFIG_GAMEPAD_DEADZONE_FIELDS(X)                                              \
+	X("deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                 \
+	X("deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                 \
+	X("deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+
+static inline bool s_config_sections_match(const char *lhs, const char *rhs) {
+	return lhs == rhs || (lhs && rhs && strcmp(lhs, rhs) == 0);
+}
 
 static inline void s_config_clear_button_map(int *map) {
 	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
 		map[i] = DTTR_GAMEPAD_MAPPING_NONE;
 	}
 }
+
+const DTTR_ConfigFieldSpec *s_config_schema_find(const char *section, const char *key);
 
 bool s_config_parse_bool(const char *value, bool *out_value);
 bool s_config_parse_scaling_fit(const char *value, DTTR_ScalingMode *out_value);
@@ -48,7 +59,6 @@ bool s_config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_valu
 bool s_config_parse_string(const char *value, char *out_value, size_t out_size);
 bool s_config_parse_vertex_precision(const char *value, DTTR_VertexPrecision *out_value);
 
-const char *s_config_format_bool(bool value);
 void s_config_format_int(int value, char *buf, size_t buf_size);
 void s_config_format_float(float value, char *buf, size_t buf_size);
 const char *s_config_format_scaling_fit(DTTR_ScalingMode mode);
@@ -60,20 +70,9 @@ const char *s_config_format_minidump_type(DTTR_MinidumpType type);
 const char *s_config_format_gamepad_source(int source);
 const char *s_config_format_game_action(int action);
 const char *s_config_format_gamepad_axis(int axis);
-const char *s_config_format_string(const char *value);
 const char *s_config_format_vertex_precision(DTTR_VertexPrecision precision);
 
-int s_config_schema_count(void);
-const S_ConfigFieldSpec *s_config_schema_get(int index);
-
 bool s_config_apply_entry(
-	DTTR_Config *config,
-	const char *section,
-	const char *key,
-	const char *value
-);
-
-bool s_config_apply_gamepad_entry(
 	DTTR_Config *config,
 	const char *section,
 	const char *key,

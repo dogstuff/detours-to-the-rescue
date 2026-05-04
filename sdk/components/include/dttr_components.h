@@ -1,7 +1,5 @@
-/// DttR component API.
-///
-/// Components are shared libraries (.dll) in `components/` and are loaded by
-/// the sidecar.
+/// DttR component DLL API.
+/// Components live in `components/`.
 ///
 /// Required exports:
 ///   bool dttr_component_init(const DTTR_ComponentContext *ctx)
@@ -13,6 +11,9 @@
 ///   bool dttr_component_event(const SDL_Event *event)
 ///   void dttr_component_render_game(const DTTR_RenderGameContext *ctx)
 ///   void dttr_component_render(const DTTR_RenderContext *ctx)
+///   bool dttr_component_should_advance_game_frame(void)
+///   void dttr_component_game_frame_advanced(void)
+///   void dttr_component_game_frame_blocked(void)
 
 #ifndef DTTR_COMPONENTS_H
 #define DTTR_COMPONENTS_H
@@ -31,7 +32,7 @@ typedef union SDL_Event SDL_Event;
 #endif
 
 // Reject incompatible hosts by comparing ctx->m_api_version against this value.
-#define DTTR_COMPONENT_API_VERSION 4
+#define DTTR_COMPONENT_API_VERSION 5
 
 typedef void (*DTTR_LogFn)(int level, const char *file, int line, const char *fmt, ...);
 typedef bool (*DTTR_LogIsEnabledFn)(int level);
@@ -44,7 +45,7 @@ typedef struct {
 
 typedef uintptr_t (*DTTR_SigscanFn)(HMODULE mod, const char *sig, const char *mask);
 
-/// Opaque hook handle returned by hook/patch functions.
+/// Opaque hook handle returned by hook and patch helpers.
 typedef struct DTTR_Hook DTTR_Hook;
 
 typedef DTTR_Hook *(*DTTR_HookFunctionFn)(
@@ -120,7 +121,13 @@ typedef void (*DTTR_ComponentRenderGameFn)(const DTTR_RenderGameContext *ctx);
 
 typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 
-// Interop storage macros (gated on DTTR_INTEROP_IMPLEMENT).
+typedef bool (*DTTR_ComponentShouldAdvanceGameFrameFn)(void);
+
+typedef void (*DTTR_ComponentGameFrameAdvancedFn)(void);
+
+typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
+
+// Interop storage macros.
 
 #ifdef DTTR_INTEROP_IMPLEMENT
 #define DTTR_STORAGE(type, name) type name = 0;
@@ -128,7 +135,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 #define DTTR_STORAGE(type, name) extern type name;
 #endif
 
-// Track a hook site address and registry handle.
+// Track a hook site and registry handle.
 #define DTTR_HOOK(name)                                                                  \
 	DTTR_STORAGE(uintptr_t, name##_site)                                                 \
 	DTTR_STORAGE(DTTR_Hook *, name##_handle)
@@ -138,13 +145,13 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 	DTTR_HOOK(name)                                                                      \
 	DTTR_STORAGE(uint8_t *, name##_trampoline)
 
-// Track a function address with a typedef and inline call wrapper.
+// Track a function address with a typed inline wrapper.
 #define DTTR_FUNC(name, cc, ret, params, args)                                           \
 	typedef ret(cc *name##_fn_t) params;                                                 \
 	DTTR_STORAGE(uintptr_t, name##_addr)                                                 \
 	static inline ret name params { return ((name##_fn_t)name##_addr)args; }
 
-// Track a variable address with typed ptr/get/set accessors.
+// Track a variable address with typed accessors.
 #define DTTR_VAR(name, type)                                                             \
 	DTTR_STORAGE(uintptr_t, name##_addr)                                                 \
 	static inline type *name##_ptr(void) { return (type *)name##_addr; }                 \
@@ -172,7 +179,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                \
 	} while (0)
 
-// Scans for a signature, installs an E9 JMP hook, and logs the result.
+// Scan for a signature, install an E9 JMP hook, and log the result.
 #define DTTR_INSTALL_JMP(name, ctx, sig, mask)                                            \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -192,7 +199,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
-// Scans for a signature and installs an E9 JMP hook, silently skipping if not found.
+// Scan for a signature and install an optional E9 JMP hook.
 #define DTTR_INSTALL_JMP_OPTIONAL(name, ctx, sig, mask)                                   \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -210,7 +217,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
-// Scans for a signature, installs a trampoline hook, and stores the trampoline pointer.
+// Scan for a signature, install a trampoline hook, and store the trampoline pointer.
 #define DTTR_INSTALL_TRAMPOLINE(name, ctx, sig, mask, prologue)                           \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -239,13 +246,11 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
-// Scans for a signature and installs a trampoline hook with automatic prologue sizing.
-// The hook backend decodes instructions and copies the minimum whole-instruction prologue
-// needed to place the 5-byte JMP patch safely.
+// Scan for a signature and install a trampoline hook with automatic prologue sizing.
 #define DTTR_INSTALL_TRAMPOLINE_AUTO(name, ctx, sig, mask)                               \
 	DTTR_INSTALL_TRAMPOLINE(name, ctx, sig, mask, 0)
 
-// Scans for a signature and patches bytes at the match plus an offset.
+// Scan for a signature and patch bytes at match plus an offset.
 #define DTTR_INSTALL_BYTES(name, ctx, sig, mask, offset, bytes, size)                     \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -262,7 +267,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
-// Installs a pointer hook at a known site.
+// Install a pointer hook at a known site.
 #define DTTR_INSTALL_POINTER_AT(name, ctx, site, new_value)                              \
 	do {                                                                                 \
 		if (!name##_handle) {                                                            \
@@ -286,8 +291,8 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                \
 	} while (0)
 
-// Scans for a signature, computes the hook site from the match, and installs a pointer
-// hook. The site_expr parameter is evaluated with match_ in scope.
+// Scan for a signature, compute the hook site, and install a pointer hook.
+// site_expr is evaluated with match_ in scope.
 #define DTTR_INSTALL_POINTER(name, ctx, sig, mask, site_expr)                             \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -298,8 +303,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
-// Scans for a signature and patches bytes at match plus an offset, silently skipping if
-// not found.
+// Scan for a signature and optionally patch bytes at match plus an offset.
 #define DTTR_INSTALL_BYTES_OPTIONAL(name, ctx, sig, mask, offset, bytes, size)            \
 	do {                                                                                  \
 		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -314,8 +318,8 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                 \
 	} while (0)
 
-// Scans for a signature and resolves a DTTR_FUNC or DTTR_VAR address.
-// The expr parameter is evaluated with match in scope.
+// Scan for a signature and resolve a DTTR_FUNC or DTTR_VAR address.
+// expr is evaluated with match in scope.
 #define DTTR_RESOLVE(name, ctx, sig, mask, expr)                                         \
 	do {                                                                                 \
 		uintptr_t match = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
@@ -331,13 +335,13 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		}                                                                                \
 	} while (0)
 
-// Resolves an E8 relative call at address p to its absolute target.
+// Resolve an E8 relative call at address p to its absolute target.
 #define DTTR_E8_TARGET(p) ((p) + 5 + *(int32_t *)((p) + 1))
 
-// Reads the absolute jump target from an FF 25 import thunk at address p.
+// Read the absolute jump target from an FF 25 import thunk at address p.
 #define DTTR_FF25_ADDR(p) (*(uint32_t *)((p) + 2))
 
-// Logging macros
+// Logging macros.
 
 #define DTTR_COMPONENT_LOG_LVL_TRACE 0
 #define DTTR_COMPONENT_LOG_LVL_DEBUG 1
@@ -383,7 +387,7 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 		return &s_dttr_component_info_;                                                  \
 	}
 
-// Checks API version and delegates to the component body.
+// Check API version and delegate to the component body.
 #define DTTR_COMPONENT_INIT                                                              \
 	static bool s_dttr_component_init_(const DTTR_ComponentContext *);                   \
 	DTTR_EXPORT bool dttr_component_init(const DTTR_ComponentContext *ctx) {             \
@@ -401,12 +405,24 @@ typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 // Return true to consume the event.
 #define DTTR_COMPONENT_EVENT DTTR_EXPORT bool dttr_component_event(const SDL_Event *event)
 
-// Renders at game resolution, letterboxed and scaled with the game image.
+// Render at game resolution, letterboxed and scaled with the game image.
 #define DTTR_COMPONENT_RENDER_GAME                                                       \
 	DTTR_EXPORT void dttr_component_render_game(const DTTR_RenderGameContext *ctx)
 
-// Renders at full window resolution, above letterbox bars.
+// Render at full window resolution, above letterbox bars.
 #define DTTR_COMPONENT_RENDER                                                            \
 	DTTR_EXPORT void dttr_component_render(const DTTR_RenderContext *ctx)
+
+// Return false to skip this host-loop game frame while still presenting overlays.
+#define DTTR_COMPONENT_SHOULD_ADVANCE_GAME_FRAME                                         \
+	DTTR_EXPORT bool dttr_component_should_advance_game_frame(void)
+
+// Called after a game frame was advanced because all components allowed it.
+#define DTTR_COMPONENT_GAME_FRAME_ADVANCED                                               \
+	DTTR_EXPORT void dttr_component_game_frame_advanced(void)
+
+// Called after a host frame presented overlays without advancing the game.
+#define DTTR_COMPONENT_GAME_FRAME_BLOCKED                                                \
+	DTTR_EXPORT void dttr_component_game_frame_blocked(void)
 
 #endif /* DTTR_COMPONENTS_H */

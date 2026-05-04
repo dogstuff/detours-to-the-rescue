@@ -48,42 +48,36 @@ static void s_compute_exe_hash(void) {
 		0,
 		NULL
 	);
-
+	void *buf = NULL;
 	if (file == INVALID_HANDLE_VALUE) {
 		DTTR_LOG_ERROR("Failed to open exe for hashing: %s", exe_path);
-		s_set_default_exe_hash();
-		return;
+		goto fail;
 	}
 
 	DWORD file_size = GetFileSize(file, NULL);
 	if (file_size == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
 		DTTR_LOG_ERROR("Failed to get exe size for hashing: %s", exe_path);
-		CloseHandle(file);
-		s_set_default_exe_hash();
-		return;
+		goto fail;
 	}
 
-	void *buf = malloc(file_size);
+	buf = malloc(file_size);
 	if (file_size != 0 && !buf) {
 		DTTR_LOG_ERROR("Failed to allocate %lu bytes for exe hashing", file_size);
-		CloseHandle(file);
-		s_set_default_exe_hash();
-		return;
+		goto fail;
 	}
 
 	DWORD bytes_read = 0;
 	if (!ReadFile(file, buf, file_size, &bytes_read, NULL)) {
 		DTTR_LOG_ERROR("Failed to read exe for hashing: %s", exe_path);
-		CloseHandle(file);
-		free(buf);
-		s_set_default_exe_hash();
-		return;
+		goto fail;
 	}
 
 	CloseHandle(file);
+	file = INVALID_HANDLE_VALUE;
 
 	XXH64_hash_t hash = XXH3_64bits(buf, bytes_read);
 	free(buf);
+	buf = NULL;
 
 	snprintf(
 		g_dttr_exe_hash,
@@ -91,6 +85,15 @@ static void s_compute_exe_hash(void) {
 		"%016llx",
 		(unsigned long long)hash
 	);
+	return;
+
+fail:
+	if (file != INVALID_HANDLE_VALUE) {
+		CloseHandle(file);
+	}
+
+	free(buf);
+	s_set_default_exe_hash();
 }
 
 static sds s_get_loader_dir(void) {
@@ -107,6 +110,21 @@ static sds s_get_loader_dir(void) {
 	return loader_dir;
 }
 
+static sds s_get_config_path(void) {
+	const char *config_env = getenv("DTTR_CONFIG_PATH");
+	return sdsnew(config_env ? config_env : DTTR_CONFIG_FILENAME);
+}
+
+static sds s_get_log_path(void) {
+	return dttr_path_resolve_relative_to(g_dttr_loader_dir, g_dttr_config.m_log_file_path);
+}
+
+static void s_toggle_fullscreen(void) {
+	SDL_Window *const window = g_dttr_backend.m_window;
+	const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+	SDL_SetWindowFullscreen(window, !is_fullscreen);
+}
+
 static void s_handle_sdl_event(const SDL_Event *event) {
 #ifdef DTTR_MODDING_ENABLED
 	dttr_imgui_process_event(event);
@@ -114,6 +132,7 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 	if (dttr_components_handle_event(event)) {
 		return;
 	}
+
 #endif
 
 	if (dttr_movies_handle_event(event)) {
@@ -137,12 +156,9 @@ static void s_handle_sdl_event(const SDL_Event *event) {
 
 	case SDL_EVENT_KEY_DOWN:
 		if (event->key.scancode == SDL_SCANCODE_F11) {
-			SDL_Window *const window = g_dttr_backend.m_window;
-			const bool is_fullscreen = (SDL_GetWindowFlags(window)
-										& SDL_WINDOW_FULLSCREEN)
-									   != 0;
-			SDL_SetWindowFullscreen(window, !is_fullscreen);
+			s_toggle_fullscreen();
 		}
+
 		return;
 
 	case SDL_EVENT_WINDOW_RESIZED:
@@ -191,7 +207,19 @@ static void s_tick_main_loop(void) {
 	SDL_DelayNS(1);
 
 	if (g_pcdogs_rendering_enabled_get()) {
+#ifdef DTTR_MODDING_ENABLED
+		if (dttr_components_should_advance_game_frame()) {
+			pcdogs_render_frame();
+			dttr_components_game_frame_advanced();
+		} else {
+			dttr_graphics_begin_frame();
+			dttr_graphics_end_frame();
+			dttr_components_game_frame_blocked();
+		}
+
+#else
 		pcdogs_render_frame();
+#endif
 	}
 
 #ifdef DTTR_MODDING_ENABLED
@@ -230,17 +258,39 @@ static void s_play_intro_movies(void) {
 	}
 }
 
+static void s_install_win_main_hook(void) {
+	uintptr_t site = dttr_hook_sigscan(
+		s_pc_dogs_module,
+		"\x83\xEC\x40\x53\x8B\x5C\x24",
+		"xxxxxxx"
+	);
+	if (!site) {
+		return;
+	}
+
+	dttr_hook_win_main_site = site;
+	uint8_t jmp[5] = {0xE9};
+	int32_t rel = (int32_t)((uintptr_t)dttr_hook_win_main_callback - (site + 5));
+	memcpy(jmp + 1, &rel, 4);
+	dttr_hook_win_main_handle = dttr_hook_patch_bytes(site, jmp, sizeof(jmp));
+}
+
 int32_t _stdcall dttr_hook_win_main_callback(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine,
 	int32_t nCmdShow
 ) {
+	int exit_code = 0;
+	bool should_exit_process = false;
+	FILE *log_file = NULL;
 	sds loader_dir = s_get_loader_dir();
+	sds config_path = NULL;
+	sds log_path = NULL;
+
 	if (!loader_dir
 		|| !dttr_path_copy_sds(g_dttr_loader_dir, sizeof(g_dttr_loader_dir), loader_dir)) {
-		sdsfree(loader_dir);
-		return 0;
+		goto cleanup;
 	}
 
 	dttr_crashdump_init(g_dttr_loader_dir);
@@ -248,27 +298,26 @@ int32_t _stdcall dttr_hook_win_main_callback(
 
 	s_compute_exe_hash();
 
-	sds log_path = sdsnew(g_dttr_loader_dir);
-	sdsfree(loader_dir);
-	if (!log_path || !dttr_path_append_segment(&log_path, "dttr.log", '\\')) {
-		sdsfree(log_path);
-		return 0;
+	config_path = s_get_config_path();
+	if (!config_path || !dttr_config_load(config_path)) {
+		DTTR_FATAL(
+			"Failed to load configuration file at %s",
+			config_path ? config_path : DTTR_CONFIG_FILENAME
+		);
 	}
 
-	const char *config_env = getenv("DTTR_CONFIG_PATH");
-	sds config_path = sdsnew(config_env ? config_env : DTTR_CONFIG_FILENAME);
+	log_path = s_get_log_path();
+	if (!log_path) {
+		goto cleanup;
+	}
 
-	FILE *const log_file = fopen(log_path, "a+");
+	log_file = fopen(log_path, "a+");
 	if (!log_file) {
 		DTTR_FATAL("Could not open log file at %s", log_path);
 	}
 
 	DTTR_LOG_INFO("Starting DttR sidecar");
-	DTTR_LOG_INFO("Loading configuration file at %s...", config_path);
-
-	if (!dttr_config_load(config_path)) {
-		DTTR_FATAL("Failed to load configuration file at %s", config_path);
-	}
+	DTTR_LOG_INFO("Loaded configuration file at %s", config_path);
 
 	const int level = g_dttr_config.m_log_level;
 	dttr_log_set_level(level);
@@ -281,9 +330,10 @@ int32_t _stdcall dttr_hook_win_main_callback(
 
 	HWND hwnd = dttr_graphics_init();
 
-	if (hwnd == NULL) {
+	if (!hwnd) {
 		DTTR_LOG_ERROR("Failed to initialize - aborting");
-		return 1;
+		exit_code = 1;
+		goto cleanup;
 	}
 
 	DTTR_LOG_INFO("Initializing game globals...");
@@ -344,12 +394,22 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	s_cleanup_runtime(ctx);
 
 	DTTR_LOG_INFO("Exiting DttR sidecar");
+	should_exit_process = true;
+
+cleanup:
 	sdsfree(log_path);
 	sdsfree(config_path);
-	fclose(log_file);
+	sdsfree(loader_dir);
 
-	ExitProcess(0);
-	return 0;
+	if (log_file) {
+		fclose(log_file);
+	}
+
+	if (should_exit_process) {
+		ExitProcess(0);
+	}
+
+	return exit_code;
 }
 
 BOOL APIENTRY DllMain(HMODULE module, const DWORD reason_for_call, LPVOID reserved) {
@@ -357,23 +417,7 @@ BOOL APIENTRY DllMain(HMODULE module, const DWORD reason_for_call, LPVOID reserv
 		g_dttr_sidecar_module = module;
 
 		s_pc_dogs_module = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("pcdogs.exe"));
-
-		// Patches WinMain with an E9 JMP to bootstrap the sidecar.
-		{
-			uintptr_t site = dttr_hook_sigscan(
-				s_pc_dogs_module,
-				"\x83\xEC\x40\x53\x8B\x5C\x24",
-				"xxxxxxx"
-			);
-			if (site) {
-				dttr_hook_win_main_site = site;
-				uint8_t jmp[5] = {0xE9};
-				int32_t rel = (int32_t)((uintptr_t)dttr_hook_win_main_callback
-										- (site + 5));
-				memcpy(jmp + 1, &rel, 4);
-				dttr_hook_win_main_handle = dttr_hook_patch_bytes(site, jmp, 5);
-			}
-		}
+		s_install_win_main_hook();
 	}
 
 	return TRUE;

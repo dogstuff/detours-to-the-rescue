@@ -13,7 +13,6 @@
 
 #include <gen/packed_sdb.h>
 
-static const char *const S_LOG_FILE_NAME = "dttr.log";
 static const char *const S_MODULES_DIR_NAME = "modules";
 
 enum { PATH_ENV_BUFFER_SIZE = 1u << 15 };
@@ -37,17 +36,16 @@ static bool s_resolve_modules_dir(char *out, size_t out_size) {
 	return copied;
 }
 
-static void s_resolve_config_path(int argc, char *argv[]) {
-	if (argc > 1) {
-		g_dttr_config_path = argv[1];
-	}
+static bool s_resolve_loader_dir(char *out, size_t out_size) {
+	sds loader_dir = dttr_path_module_dir(NULL);
+	const bool copied = dttr_path_copy_sds(out, out_size, loader_dir);
+	sdsfree(loader_dir);
+	return copied;
+}
 
-	const DWORD len = GetFullPathNameA(
-		g_dttr_config_path,
-		MAX_PATH,
-		s_config_path_buf,
-		NULL
-	);
+static void s_resolve_config_path(int argc, char *argv[]) {
+	const char *config_path = argc > 1 ? argv[1] : g_dttr_config_path;
+	const DWORD len = GetFullPathNameA(config_path, MAX_PATH, s_config_path_buf, NULL);
 	if (len == 0 || len >= MAX_PATH) {
 		DTTR_FATAL("Could not resolve loader config path");
 	}
@@ -56,12 +54,34 @@ static void s_resolve_config_path(int argc, char *argv[]) {
 }
 
 static FILE *s_open_log_file(int log_level) {
-	FILE *log_file = fopen(S_LOG_FILE_NAME, "a+");
+	char loader_dir[MAX_PATH];
+	const char *base_dir = NULL;
+	if (s_resolve_loader_dir(loader_dir, sizeof(loader_dir))) {
+		base_dir = loader_dir;
+	}
+
+	sds log_path = dttr_path_resolve_relative_to(base_dir, g_dttr_config.m_log_file_path);
+	if (!log_path) {
+		return NULL;
+	}
+
+	FILE *log_file = fopen(log_path, "a+");
 	if (log_file) {
 		dttr_log_add_fp(log_file, log_level);
 	}
 
+	sdsfree(log_path);
 	return log_file;
+}
+
+static void s_close_child_handles(PROCESS_INFORMATION *child_info) {
+	if (child_info->hThread) {
+		CloseHandle(child_info->hThread);
+	}
+
+	if (child_info->hProcess) {
+		CloseHandle(child_info->hProcess);
+	}
 }
 
 static void s_prepend_modules_to_path(void) {
@@ -80,15 +100,11 @@ static void s_prepend_modules_to_path(void) {
 	}
 
 	char new_path[PATH_ENV_BUFFER_SIZE];
-	const int written = old_len > 0
-							? snprintf(
-								  new_path,
-								  sizeof(new_path),
-								  "%s;%s",
-								  modules_dir,
-								  old_path
-							  )
-							: snprintf(new_path, sizeof(new_path), "%s", modules_dir);
+	int written = snprintf(new_path, sizeof(new_path), "%s", modules_dir);
+	if (old_len > 0) {
+		written = snprintf(new_path, sizeof(new_path), "%s;%s", modules_dir, old_path);
+	}
+
 	if (written <= 0 || (size_t)written >= sizeof(new_path)) {
 		DTTR_LOG_ERROR("PATH is too long after prepending DttR modules directory");
 		return;
@@ -104,12 +120,10 @@ static void s_prepend_modules_to_path(void) {
 __declspec(dllexport) int dttr_launcher_main(int argc, char *argv[]) {
 	char exe_dir[MAX_PATH];
 	PROCESS_INFORMATION child_info = {0};
-	sds exe_dir_sds = dttr_path_module_dir(NULL);
-	if (!dttr_path_copy_sds(exe_dir, sizeof(exe_dir), exe_dir_sds)) {
-		sdsfree(exe_dir_sds);
+
+	if (!s_resolve_loader_dir(exe_dir, sizeof(exe_dir))) {
 		DTTR_FATAL("Could not resolve loader directory");
 	}
-	sdsfree(exe_dir_sds);
 
 	dttr_crashdump_init(exe_dir);
 	dttr_errors_set_message_handler(dttr_loader_ui_show_error);
@@ -161,14 +175,7 @@ __declspec(dllexport) int dttr_launcher_main(int argc, char *argv[]) {
 	DTTR_LOG_INFO("Exiting loader");
 
 cleanup:
-	if (child_info.hThread) {
-		CloseHandle(child_info.hThread);
-	}
-
-	if (child_info.hProcess) {
-		CloseHandle(child_info.hProcess);
-	}
-
+	s_close_child_handles(&child_info);
 	dttr_imgui_dialog_shutdown();
 
 	if (log_file) {

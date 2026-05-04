@@ -1,21 +1,32 @@
 #include "config_internal.h"
 #include <dttr_log.h>
+#include <dttr_path.h>
 
 #include <khash.h>
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
 KHASH_MAP_INIT_STR(dttr_config_lookup, int)
 
 // clang-format off
 #define S_FIELD(_section, _key, _field, _type) \
-	{ .section = (_section), .key = (_key), .offset = offsetof(DTTR_Config, _field), .value_type = (_type) }
+	{ \
+		.section = (_section), \
+		.key = (_key), \
+		.offset = offsetof(DTTR_Config, _field), \
+		.size = sizeof(((DTTR_Config *)0)->_field), \
+		.value_type = (_type) \
+	}
 
 #define S_FIELD_TOP(_key, _field, _type) S_FIELD(NULL, _key, _field, _type)
+#define S_FIELD_GAMEPAD_AXIS(_key, _index) \
+	S_FIELD("gamepad", _key, m_gamepad_axes[_index], S_CONFIG_GAMEPAD_AXIS),
+#define S_FIELD_GAMEPAD_DEADZONE(_key, _index) \
+	S_FIELD("gamepad", _key, m_gamepad_axis_deadzone[_index], S_CONFIG_INT),
 
-static const S_ConfigFieldSpec s_config_schema[] = {
+static const DTTR_ConfigFieldSpec s_config_schema[] = {
+	S_FIELD_TOP("schema_major_version", m_schema_major_version, S_CONFIG_INT),
 	S_FIELD("graphics", "scaling_fit", m_scaling_fit, S_CONFIG_SCALING_FIT),
 	S_FIELD("graphics", "scaling_method", m_scaling_method, S_CONFIG_SCALING_METHOD),
 	S_FIELD("graphics", "graphics_api", m_graphics_api, S_CONFIG_GRAPHICS_API),
@@ -29,7 +40,7 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("graphics", "window_height", m_window_height, S_CONFIG_INT),
 	S_FIELD("graphics", "msaa_samples", m_msaa_samples, S_CONFIG_INT),
 	S_FIELD("graphics", "texture_upload_sync", m_texture_upload_sync, S_CONFIG_BOOL),
-	S_FIELD("graphics", "generate_texture_mipmaps",   m_generate_texture_mipmaps, S_CONFIG_BOOL),
+	S_FIELD("graphics", "generate_texture_mipmaps", m_generate_texture_mipmaps, S_CONFIG_BOOL),
 	S_FIELD("graphics", "vertex_precision", m_vertex_precision, S_CONFIG_VERTEX_PRECISION),
 	S_FIELD("graphics", "sprite_smooth", m_sprite_smooth, S_CONFIG_BOOL),
 	S_FIELD("graphics", "fullscreen", m_fullscreen, S_CONFIG_BOOL),
@@ -38,51 +49,73 @@ static const S_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("audio", "mss_sample_gain", m_mss_sample_gain, S_CONFIG_FLOAT),
 	S_FIELD("audio", "mss_sample_preemphasis", m_mss_sample_preemphasis, S_CONFIG_FLOAT),
 
+	S_FIELD("modding", "hot_reload", m_hot_reload, S_CONFIG_BOOL),
+
 	S_FIELD_TOP("log_level", m_log_level, S_CONFIG_LOG_LEVEL),
 	S_FIELD_TOP("minidump_type", m_minidump_type, S_CONFIG_MINIDUMP_TYPE),
+	S_FIELD_TOP("log_file_path", m_log_file_path, S_CONFIG_STRING),
 	S_FIELD_TOP("pcdogs_path", m_pcdogs_path, S_CONFIG_STRING),
 	S_FIELD_TOP("saves_path", m_saves_path, S_CONFIG_STRING),
+
+	S_FIELD("gamepad", "enabled", m_gamepad_enabled, S_CONFIG_BOOL),
+	S_FIELD("gamepad", "index", m_gamepad_index, S_CONFIG_INT),
+	S_CONFIG_GAMEPAD_AXIS_FIELDS(S_FIELD_GAMEPAD_AXIS)
+	S_CONFIG_GAMEPAD_DEADZONE_FIELDS(S_FIELD_GAMEPAD_DEADZONE)
 };
+
 // clang-format on
+
+#define S_CONFIG_SCHEMA_COUNT ((int)SDL_arraysize(s_config_schema))
+
+#undef S_FIELD_GAMEPAD_DEADZONE
+#undef S_FIELD_GAMEPAD_AXIS
 
 static khash_t(dttr_config_lookup) *g_dttr_config_lookup = NULL;
 
-typedef struct {
-	const char *key;
-	int index;
-} S_ConfigKeyIndex;
+int dttr_config_schema_count(void) { return S_CONFIG_SCHEMA_COUNT; }
 
-#define S_CONFIG_GAMEPAD_AXIS_KEYS(X)                                                    \
-	X("axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                     \
-	X("axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                     \
-	X("axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
-
-#define S_CONFIG_GAMEPAD_DEADZONE_KEYS(X)                                                \
-	X("deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                 \
-	X("deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                 \
-	X("deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
-
-#define S_CONFIG_KEY_INDEX(key_name, key_index) {key_name, key_index},
-
-static const S_ConfigKeyIndex s_gamepad_axis_keys[] = {
-	S_CONFIG_GAMEPAD_AXIS_KEYS(S_CONFIG_KEY_INDEX)
-};
-
-static const S_ConfigKeyIndex s_gamepad_deadzone_keys[] = {
-	S_CONFIG_GAMEPAD_DEADZONE_KEYS(S_CONFIG_KEY_INDEX)
-};
-
-#undef S_CONFIG_KEY_INDEX
-
-int s_config_schema_count(void) {
-	return (int)(sizeof(s_config_schema) / sizeof(s_config_schema[0]));
-}
-
-const S_ConfigFieldSpec *s_config_schema_get(int index) {
-	if (index < 0 || index >= s_config_schema_count()) {
+const DTTR_ConfigFieldSpec *dttr_config_schema_get(int index) {
+	if (index < 0 || index >= S_CONFIG_SCHEMA_COUNT) {
 		return NULL;
 	}
+
 	return &s_config_schema[index];
+}
+
+static const char *s_config_field_bytes(
+	const DTTR_Config *config,
+	const DTTR_ConfigFieldSpec *spec
+) {
+	return ((const char *)config) + spec->offset;
+}
+
+bool dttr_config_field_changed(
+	const DTTR_Config *current,
+	const DTTR_Config *base,
+	const DTTR_ConfigFieldSpec *spec
+) {
+	if (!current || !base || !spec) {
+		return false;
+	}
+
+	const char *current_field = s_config_field_bytes(current, spec);
+	const char *base_field = s_config_field_bytes(base, spec);
+	if (spec->value_type == DTTR_CONFIG_VALUE_STRING) {
+		return !dttr_path_matches_normalized(current_field, base_field);
+	}
+
+	return spec->size > 0 && memcmp(current_field, base_field, spec->size) != 0;
+}
+
+bool dttr_config_schema_changed(const DTTR_Config *current, const DTTR_Config *base) {
+	for (int i = 0; i < S_CONFIG_SCHEMA_COUNT; i++) {
+		const DTTR_ConfigFieldSpec *const spec = &s_config_schema[i];
+		if (dttr_config_field_changed(current, base, spec)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static void s_config_schema_init(void) {
@@ -95,8 +128,8 @@ static void s_config_schema_init(void) {
 		return;
 	}
 
-	for (int i = 0; i < s_config_schema_count(); i++) {
-		const S_ConfigFieldSpec *const spec = &s_config_schema[i];
+	for (int i = 0; i < S_CONFIG_SCHEMA_COUNT; i++) {
+		const DTTR_ConfigFieldSpec *const spec = &s_config_schema[i];
 		int put_ret = 0;
 		const khint_t it = kh_put(
 			dttr_config_lookup,
@@ -110,11 +143,7 @@ static void s_config_schema_init(void) {
 	}
 }
 
-static bool s_config_sections_match(const char *lhs, const char *rhs) {
-	return lhs == rhs || (lhs && rhs && strcmp(lhs, rhs) == 0);
-}
-
-static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const char *key) {
+const DTTR_ConfigFieldSpec *s_config_schema_find(const char *section, const char *key) {
 	s_config_schema_init();
 	if (!g_dttr_config_lookup) {
 		return NULL;
@@ -125,8 +154,8 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 		return NULL;
 	}
 
-	const S_ConfigFieldSpec *const spec = &s_config_schema
-											  [kh_value(g_dttr_config_lookup, it)];
+	const int index = kh_value(g_dttr_config_lookup, it);
+	const DTTR_ConfigFieldSpec *const spec = dttr_config_schema_get(index);
 	if (!s_config_sections_match(spec->section, section)) {
 		return NULL;
 	}
@@ -170,9 +199,14 @@ static const S_ConfigFieldSpec *s_config_schema_find(const char *section, const 
 	  s_config_assign_minidump_type)                                                     \
 	X(S_CONFIG_VERTEX_PRECISION,                                                         \
 	  DTTR_VertexPrecision,                                                              \
-	  DTTR_VERTEX_PRECISION_SUBPIXEL,                                                    \
+	  DTTR_VERTEX_PRECISION_NATIVE,                                                      \
 	  s_config_parse_vertex_precision,                                                   \
-	  s_config_assign_vertex_precision)
+	  s_config_assign_vertex_precision)                                                  \
+	X(S_CONFIG_GAMEPAD_AXIS,                                                             \
+	  int,                                                                               \
+	  DTTR_GAMEPAD_MAPPING_NONE,                                                         \
+	  s_config_parse_gamepad_axis,                                                       \
+	  s_config_assign_gamepad_axis)
 
 #define S_CONFIG_ASSIGN_FN(value_type, type, default_val, parse_fn, fn_name)             \
 	static bool fn_name(char *field, const char *value) {                                \
@@ -188,8 +222,8 @@ S_CONFIG_ASSIGN_TYPES(S_CONFIG_ASSIGN_FN)
 
 #undef S_CONFIG_ASSIGN_FN
 
-static bool s_config_assign_string(char *field, const char *value) {
-	return s_config_parse_string(value, field, sizeof(((DTTR_Config *)0)->m_pcdogs_path));
+static bool s_config_assign_string(char *field, size_t field_size, const char *value) {
+	return field_size > 0 && s_config_parse_string(value, field, field_size);
 }
 
 bool s_config_apply_entry(
@@ -202,7 +236,7 @@ bool s_config_apply_entry(
 		return false;
 	}
 
-	const S_ConfigFieldSpec *const spec = s_config_schema_find(section, key);
+	const DTTR_ConfigFieldSpec *const spec = s_config_schema_find(section, key);
 	if (!spec) {
 		return false;
 	}
@@ -215,7 +249,7 @@ bool s_config_apply_entry(
 	switch (spec->value_type) {
 		S_CONFIG_ASSIGN_TYPES(S_CONFIG_ASSIGN_CASE)
 	case S_CONFIG_STRING:
-		return s_config_assign_string(field, value);
+		return s_config_assign_string(field, spec->size, value);
 
 	default:
 		return false;
@@ -224,83 +258,4 @@ bool s_config_apply_entry(
 #undef S_CONFIG_ASSIGN_CASE
 }
 
-static int s_config_lookup_index(
-	const S_ConfigKeyIndex *entries,
-	size_t entry_count,
-	const char *key
-) {
-	for (size_t i = 0; i < entry_count; i++) {
-		if (strcmp(entries[i].key, key) == 0) {
-			return entries[i].index;
-		}
-	}
-
-	return -1;
-}
-
-bool s_config_apply_gamepad_entry(
-	DTTR_Config *config,
-	const char *section,
-	const char *key,
-	const char *value
-) {
-	if (!config || !section || !key || !value) {
-		return false;
-	}
-
-	if (strcmp(section, "gamepad") != 0) {
-		return false;
-	}
-
-	if (strcmp(key, "enabled") == 0) {
-		bool enabled = true;
-		if (!s_config_parse_bool(value, &enabled)) {
-			return false;
-		}
-		config->m_gamepad_enabled = enabled;
-		return true;
-	}
-
-	if (strcmp(key, "index") == 0) {
-		int index = 0;
-
-		if (!s_config_parse_int(value, &index)) {
-			return false;
-		}
-
-		config->m_gamepad_index = index;
-		return true;
-	}
-
-	const int axis_index = s_config_lookup_index(
-		s_gamepad_axis_keys,
-		sizeof(s_gamepad_axis_keys) / sizeof(s_gamepad_axis_keys[0]),
-		key
-	);
-	if (axis_index >= 0) {
-		int axis = DTTR_GAMEPAD_MAPPING_NONE;
-		if (!s_config_parse_gamepad_axis(value, &axis)) {
-			return false;
-		}
-
-		config->m_gamepad_axes[axis_index] = axis;
-		return true;
-	}
-
-	const int deadzone_index = s_config_lookup_index(
-		s_gamepad_deadzone_keys,
-		sizeof(s_gamepad_deadzone_keys) / sizeof(s_gamepad_deadzone_keys[0]),
-		key
-	);
-	if (deadzone_index >= 0) {
-		int deadzone = 0;
-		if (!s_config_parse_int(value, &deadzone)) {
-			return false;
-		}
-
-		config->m_gamepad_axis_deadzone[deadzone_index] = deadzone;
-		return true;
-	}
-
-	return false;
-}
+#undef S_CONFIG_SCHEMA_COUNT
