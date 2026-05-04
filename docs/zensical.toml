@@ -14,15 +14,18 @@ nav = [
   { "Home" = "index.md" },
   { "Configuration" = "configuration.md" },
   { "Releases" = "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases" },
+
   { "Technical Reference" = [
     { "Configuration" = "technical/configuration.md" },
     { "Patches" = "technical/patches.md" },
     { "Building" = "technical/building.md" },
+
     { "Modding" = [
       { "Creating a Mod" = "technical/modding/creating-a-mod.md" },
       { "Component API" = "technical/modding/api.md" },
       { "Component Exports" = "technical/modding/exports.md" },
     ] },
+
     { "Internal API" = "internal/" },
   ] },
 ]
@@ -43,11 +46,11 @@ generator = false
 scheme = "slate"
 
 [project.markdown_extensions.admonition]
-[project.markdown_extensions.pymdownx.details]
-[project.markdown_extensions.pymdownx.superfences]
-[project.markdown_extensions.pymdownx.inlinehilite]
 [project.markdown_extensions.attr_list]
 [project.markdown_extensions.md_in_html]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.superfences]
 [project.markdown_extensions.pymdownx.blocks.caption]
 
 [project.markdown_extensions.pymdownx.highlight]

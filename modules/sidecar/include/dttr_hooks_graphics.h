@@ -33,7 +33,7 @@ HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 	DWORD dwFlags
 );
 
-// Pointer hooks (IAT patches)
+// IAT hooks
 DTTR_HOOK(dttr_hook_directdraw_create_ex)
 DTTR_HOOK(dttr_hook_directdraw_enumerate_ex_a)
 

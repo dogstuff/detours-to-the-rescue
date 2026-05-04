@@ -85,7 +85,6 @@ static inline int dttr_mss_loops_to_sdl(int mss_loop_count) {
 	return mss_loop_count - 1;
 }
 
-bool dttr_mss_core_original_mode_enabled(void);
 bool dttr_mss_core_has_driver(void);
 void dttr_mss_core_reset_preferences(void);
 void dttr_mss_core_ensure_preferences(void);
@@ -132,7 +131,6 @@ bool dttr_mss_wave_decode_f32(
 );
 void dttr_mss_wave_free(void *ptr);
 
-bool dttr_mss_sdl_original_mode_enabled(void);
 bool dttr_mss_sdl_has_driver(void);
 void dttr_mss_sdl_stop_all_samples(void);
 void dttr_mss_sdl_shutdown(void);

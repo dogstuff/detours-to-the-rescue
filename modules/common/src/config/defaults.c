@@ -28,7 +28,6 @@ static const DTTR_Config s_default_config = {
 	.m_texture_upload_sync = false,
 	.m_generate_texture_mipmaps = true,
 	.m_fullscreen = false,
-	.m_mss_sdl_enabled = true,
 	.m_hot_reload = false,
 	.m_mss_sample_gain = 1.0f,
 	.m_mss_sample_preemphasis = 0.0f,

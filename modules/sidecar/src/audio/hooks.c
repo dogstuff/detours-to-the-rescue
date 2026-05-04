@@ -101,11 +101,6 @@ void dttr_audio_init(const DTTR_ComponentContext *ctx) {
 
 	dttr_mss_sdl_install_hooks(ctx);
 
-	if (dttr_mss_sdl_original_mode_enabled()) {
-		DTTR_LOG_INFO("DttR audio trampolines disabled");
-		return;
-	}
-
 	DTTR_INSTALL_TRAMPOLINE_AUTO(
 		dttr_hook_audio_init_system,
 		ctx,

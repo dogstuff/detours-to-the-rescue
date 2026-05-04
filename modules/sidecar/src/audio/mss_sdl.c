@@ -35,10 +35,6 @@ static bool s_wave_format_spec(const void *format, SDL_AudioSpec *spec) {
 	return true;
 }
 
-bool dttr_mss_sdl_original_mode_enabled(void) {
-	return dttr_mss_core_original_mode_enabled();
-}
-
 bool dttr_mss_sdl_has_driver(void) { return dttr_mss_core_has_driver(); }
 
 void dttr_mss_sdl_shutdown(void) {
@@ -98,11 +94,6 @@ void dttr_mss_sdl_release_hooks(const DTTR_ComponentContext *ctx) {
 }
 
 void dttr_mss_sdl_install_hooks(const DTTR_ComponentContext *ctx) {
-	if (dttr_mss_sdl_original_mode_enabled()) {
-		DTTR_LOG_INFO("MSS SDL import shim disabled");
-		return;
-	}
-
 	HMODULE module = ctx->m_game_module;
 	uint8_t *base = (uint8_t *)module;
 	IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER *)base;

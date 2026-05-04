@@ -41,10 +41,6 @@ static float s_clamp_float(float value, float min_value, float max_value) {
 	return value;
 }
 
-bool dttr_mss_core_original_mode_enabled(void) {
-	return !g_dttr_config.m_mss_sdl_enabled;
-}
-
 bool dttr_mss_core_has_driver(void) { return s_driver_open_count > 0 && s_mixer; }
 
 void dttr_mss_core_reset_preferences(void) {

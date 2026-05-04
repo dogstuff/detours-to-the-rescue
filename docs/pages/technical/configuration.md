@@ -21,9 +21,7 @@ dttr.exe path/to/my_config.json
     "window_height": 480,
     "fullscreen": false
   },
-  "audio": {
-    "mss_sdl_enabled": true
-  },
+  "audio": {},
   "gamepad": {
     "enabled": true,
     "index": 0
@@ -69,7 +67,6 @@ Audio settings belong under `audio`.
 
 | Key | Type | Values | Default | Description |
 | --- | --- | --- | --- | --- |
-| `mss_sdl_enabled` | Boolean | `true`, `false` | `true` | Replace Miles Sound System output through SDL. |
 | `mss_sample_gain` | Number | Floating-point number | `1.0` | Sample gain. |
 | `mss_sample_preemphasis` | Number | Floating-point number | `0.0` | Sample preemphasis. |
 

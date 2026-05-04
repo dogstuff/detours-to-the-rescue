@@ -267,7 +267,7 @@ typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 		}                                                                                 \
 	} while (0)
 
-// Install a pointer hook at a known site.
+// Install an IAT hook at a known site.
 #define DTTR_INSTALL_POINTER_AT(name, ctx, site, new_value)                              \
 	do {                                                                                 \
 		if (!name##_handle) {                                                            \
@@ -291,7 +291,7 @@ typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 		}                                                                                \
 	} while (0)
 
-// Scan for a signature, compute the hook site, and install a pointer hook.
+// Scan for a signature, compute the hook site, and install an IAT hook.
 // site_expr is evaluated with match_ in scope.
 #define DTTR_INSTALL_POINTER(name, ctx, sig, mask, site_expr)                             \
 	do {                                                                                  \

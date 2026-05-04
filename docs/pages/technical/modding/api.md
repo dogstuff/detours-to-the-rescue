@@ -60,7 +60,7 @@ The numeric level macros are also exposed as `DTTR_COMPONENT_LOG_LVL_TRACE` thro
 | --- | --- | --- |
 | `m_sigscan` | `DTTR_SigscanFn` | Search a module for a byte signature and mask. |
 | `m_hook_function` | `DTTR_HookFunctionFn` | Install a function hook and optionally return the original trampoline. |
-| `m_hook_pointer` | `DTTR_HookPointerFn` | Replace a function or data pointer and capture the original value. |
+| `m_hook_pointer` | `DTTR_HookPointerFn` | Replace an IAT or function-pointer slot and capture the original value. |
 | `m_patch_bytes` | `DTTR_PatchBytesFn` | Patch bytes at an address. |
 | `m_unhook` | `DTTR_UnhookFn` | Remove a hook or patch represented by `DTTR_Hook`. |
 
@@ -90,8 +90,8 @@ Install and resolve macros:
 | `DTTR_INSTALL_TRAMPOLINE_AUTO(name, ctx, sig, mask)` | Trampoline install with automatic prologue sizing. |
 | `DTTR_INSTALL_BYTES(name, ctx, sig, mask, offset, bytes, size)` | Sigscan and patch bytes at `match + offset`. Logs an error if not found. |
 | `DTTR_INSTALL_BYTES_OPTIONAL(name, ctx, sig, mask, offset, bytes, size)` | Optional byte patch; no error if not found. |
-| `DTTR_INSTALL_POINTER_AT(name, ctx, site, new_value)` | Install a pointer hook at a known address. |
-| `DTTR_INSTALL_POINTER(name, ctx, sig, mask, site_expr)` | Sigscan, compute a pointer site from `match_`, and install `name_callback`. |
+| `DTTR_INSTALL_POINTER_AT(name, ctx, site, new_value)` | Install an IAT hook at a known address. |
+| `DTTR_INSTALL_POINTER(name, ctx, sig, mask, site_expr)` | Sigscan, compute an IAT site from `match_`, and install `name_callback`. |
 | `DTTR_RESOLVE(name, ctx, sig, mask, expr)` | Sigscan and resolve a `DTTR_FUNC` or `DTTR_VAR` address from `match`. |
 | `DTTR_E8_TARGET(p)` | Resolve an `E8` relative call target. |
 | `DTTR_FF25_ADDR(p)` | Read the target from an `FF 25` import thunk. |

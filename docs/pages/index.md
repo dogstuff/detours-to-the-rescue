@@ -1,6 +1,6 @@
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue**. It leaves the game logic intact and replaces the fragile original PC port glue with a modern runtime, so the Windows release runs more predictably on current machines.
+DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue**. It keeps the game logic intact and replaces the fragile PC port glue with a modern runtime, so the Windows release behaves more predictably on current machines.
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 
@@ -12,13 +12,11 @@ DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue**. I
 - Modern keyboard input routing
 - FFmpeg movie playback for MCI-era videos
 - Audio, crash, compatibility, and filesystem fixes
-- Optional modding API and builds
+- Optional modding support
 
-DttR is built with the [102 Dalmatians Speedrunning Community](https://www.102.dog/) in mind. The goal is portability and stability, not changing how the game plays.
+DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.dog/). It aims for portability and stability, not gameplay changes.
 
-## Supported releases
-
-The following PC releases of **102 Dalmatians: Puppies to the Rescue** are supported:
+## Supported PC releases
 
 - English
 - French, German, Italian, Spanish, Dutch (European)
@@ -26,16 +24,16 @@ The following PC releases of **102 Dalmatians: Puppies to the Rescue** are suppo
 
 ## Quick start
 
-1. Download the [latest normal release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-v1.7.1-release.zip).
+1. Download the [latest release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-v1.7.1-release.zip).
 2. Extract the archive to a writable folder.
 3. Run `dttr.exe`.
-4. Choose where DttR should load the original game files from:
+4. When DttR asks where to load the original game files from, choose one of these:
 
 ![DttR prompt asking where to load game files from](assets/load-prompt.png)
 
 ### Original CD
 
-Insert the **102 Dalmatians: Puppies to the Rescue** CD, then choose the detected disc button.
+Insert the original **102 Dalmatians: Puppies to the Rescue** CD, then choose the detected disc.
 
 ![DttR loader showing an inserted game disc](assets/load-disc.png)
 
@@ -51,8 +49,8 @@ Choose **Open ISO**, select the original disc image, then choose **Open**.
 
 ![Windows file picker selecting a 102 Puppies ISO image](assets/load-iso.png)
 
-If all is well, you're done!
+Once DttR finds the game files, it starts normally.
 
 ![PttR title screen running through DttR](assets/done.png)
 
-Issues setting up or need to adjust the renderer, window, audio, or controller setup? See [Configuration](configuration.md).
+For renderer, window, audio, or controller settings, see [Configuration](configuration.md).

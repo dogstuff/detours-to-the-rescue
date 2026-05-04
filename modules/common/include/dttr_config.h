@@ -99,7 +99,6 @@ typedef struct {
 	bool m_texture_upload_sync;
 	bool m_generate_texture_mipmaps;
 	bool m_fullscreen;
-	bool m_mss_sdl_enabled;
 	bool m_hot_reload;
 	int m_disabled_component_count;
 	char m_disabled_components[DTTR_CONFIG_DISABLED_COMPONENTS_MAX][MAX_PATH];

@@ -45,7 +45,6 @@ static const DTTR_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD("graphics", "sprite_smooth", m_sprite_smooth, S_CONFIG_BOOL),
 	S_FIELD("graphics", "fullscreen", m_fullscreen, S_CONFIG_BOOL),
 
-	S_FIELD("audio", "mss_sdl_enabled", m_mss_sdl_enabled, S_CONFIG_BOOL),
 	S_FIELD("audio", "mss_sample_gain", m_mss_sample_gain, S_CONFIG_FLOAT),
 	S_FIELD("audio", "mss_sample_preemphasis", m_mss_sample_preemphasis, S_CONFIG_FLOAT),
 

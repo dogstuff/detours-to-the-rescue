@@ -6,8 +6,8 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 
 ## Terms
 
-- Pointer hooks replace an import table slot or another function pointer.
-- Jump hooks replace the first five bytes of the matched code with `E9 <rel32>`.
+- IAT hooks replace an import-address-table slot.
+- Jump hooks replace the first five bytes of the matched assembly with `E9 <rel32>`.
 - Trampoline hooks use the same jump patch, but keep a callable copy of the original prologue.
 
 !!! warning
@@ -33,10 +33,10 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 
 ### DirectDraw import hooks
 
-| Site | Signature / site | Patch | Original pointer target | Replacement target | Notes |
+| Site | Signature / site | Patch | Original IAT target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_hook_directdraw_create_ex` | Finds `E8 ?? ?? ?? ?? 85 C0 7D ?? 68 ?? ?? ?? ?? 6A 00 50 E8`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | Pointer hook | IAT/thunk target for `DirectDrawCreateEx` | `dttr_hook_directdraw_create_ex_callback` | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
-| `dttr_hook_directdraw_enumerate_ex_a` | Finds `E8 ?? ?? ?? ?? 8B F0 A1`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | Pointer hook | IAT/thunk target for `DirectDrawEnumerateExA` | `dttr_hook_directdraw_enumerate_ex_a_callback` | Enumerates DttR's virtual display device. |
+| `dttr_hook_directdraw_create_ex` | Finds `E8 ?? ?? ?? ?? 85 C0 7D ?? 68 ?? ?? ?? ?? 6A 00 50 E8`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | IAT hook | IAT/thunk target for `DirectDrawCreateEx` | `dttr_hook_directdraw_create_ex_callback` | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
+| `dttr_hook_directdraw_enumerate_ex_a` | Finds `E8 ?? ?? ?? ?? 8B F0 A1`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | IAT hook | IAT/thunk target for `DirectDrawEnumerateExA` | `dttr_hook_directdraw_enumerate_ex_a_callback` | Enumerates DttR's virtual display device. |
 
 ### Subpixel vertex precision byte patches
 
@@ -59,16 +59,16 @@ These patches are installed only when `vertex_precision` is set to `subpixel`.
 
 ## Input
 
-| Site | Signature / site | Patch | Original pointer target | Replacement target | Notes |
+| Site | Signature / site | Patch | Original IAT target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `dttr_inputs_hook_dinput_poll` | `56 8B 74 24 ?? 56 8B 06` | `E9 <rel32>` at match | Game DirectInput joystick poll function | `dttr_inputs_hook_dinput_poll_callback` | Maps SDL gamepad state into the game's joystick layout. |
-| `dttr_inputs_hook_get_async_key_state` | Finds `8B 1D ?? ?? ?? ?? 56 33 F6`, then patches `*(uint32_t *)(match_ + 2)` | Pointer hook | Function pointer loaded by `mov ebx, [GetAsyncKeyStateSlot]` | `dttr_inputs_hook_get_async_key_state_callback` | Routes keyboard state through SDL and limits input to the SDL window. |
+| `dttr_inputs_hook_get_async_key_state` | Finds `8B 1D ?? ?? ?? ?? 56 33 F6`, then patches `*(uint32_t *)(match_ + 2)` | IAT hook | IAT-style slot loaded by `mov ebx, [GetAsyncKeyStateSlot]` | `dttr_inputs_hook_get_async_key_state_callback` | Routes keyboard state through SDL and limits input to the SDL window. |
 
 ## Audio
 
 ### Audio trampolines
 
-These are skipped when the original Miles path is explicitly enabled.
+These guard game audio paths around the SDL-backed MSS shim.
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |

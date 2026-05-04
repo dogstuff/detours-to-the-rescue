@@ -17,5 +17,5 @@
 }
 
 .md-typeset :not(pre) > code {
-    color: var(--md-typeset-a-color);
+    color: #77bfff;
 }

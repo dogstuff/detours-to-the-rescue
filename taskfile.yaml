@@ -48,8 +48,7 @@ tasks:
 
   clean:
     cmds:
-      - rm -rf {{ .BUILD_DIR | quote }}
-      - rm -rf {{ .TOOLCHAIN_DIR | quote }}
+      - rm -rf {{ .BUILD_DIR | quote }} {{ .TOOLCHAIN_DIR | quote }}
 
   build-asm:
     vars:
@@ -74,11 +73,11 @@ tasks:
       - cmd: 'echo "WARN: Skipping SDL3 GPU shaders on macOS because shadercross is unavailable. Consider using container builds instead."'
         platforms: [darwin]
       - cmd: |
-          echo "Compiling SDL3 GPU shaders to {{ .SHADER_OUTPUT_DIR | quote }}" && \
+          echo "Compiling SDL3 GPU shaders to {{ .SHADER_OUTPUT_DIR | quote }}"
           bash ./scripts/build-shaders.sh {{ .SHADER_OUTPUT_DIR | quote }}
         platforms: [linux, windows]
       - cmd: |
-          echo "Generating OpenGL shaders to {{ .SHADER_OUTPUT_DIR | quote }}" && \
+          echo "Generating OpenGL shaders to {{ .SHADER_OUTPUT_DIR | quote }}"
           bash ./scripts/build-opengl-shaders.sh {{ .SHADER_OUTPUT_DIR | quote }}
 
   shader-build:
@@ -96,7 +95,7 @@ tasks:
   container-build:
     cmds:
       - >-
-        {{ .DOCKER }} build -t "{{ .CONTAINER_IMAGE }}" -f {{ .CONTAINERFILE_BUILD | quote }}
+        {{ .DOCKER }} build -t {{ .CONTAINER_IMAGE | quote }} -f {{ .CONTAINERFILE_BUILD | quote }}
         {{ .ROOT_DIR | quote }}
       - >-
         bash ./scripts/container-build.sh
