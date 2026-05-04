@@ -1,0 +1,21 @@
+@media screen and (min-width: 76.25em) {
+    .md-grid {
+        max-width: 76rem;
+    }
+}
+
+.md-typeset table:not([class]) {
+    display: table;
+    width: 100%;
+}
+
+@media screen and (max-width: 44.984375em) {
+    .md-typeset table:not([class]) {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+.md-typeset :not(pre) > code {
+    color: var(--md-typeset-a-color);
+}
