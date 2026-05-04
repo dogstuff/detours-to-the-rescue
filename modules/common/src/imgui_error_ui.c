@@ -42,6 +42,14 @@ static sds s_sdsnewspan(S_TextSpan span) {
 	return sdsnewlen(span.m_text, s_span_len(span));
 }
 
+static float s_text_padding_x(const DTTR_ImGuiDialogContext *ctx) {
+	return dttr_imgui_dialog_scaled_float(ctx, DTTR_ERROR_UI_TEXT_PADDING_X);
+}
+
+static void s_set_text_padding_x(const DTTR_ImGuiDialogContext *ctx) {
+	igSetCursorPosX(s_text_padding_x(ctx));
+}
+
 static S_ErrorMessage s_parse_error_message(const char *message) {
 	const char *stack = strstr(message, S_STACK_TRACE_MARKER);
 	if (!stack) {
@@ -62,11 +70,8 @@ static S_ErrorMessage s_parse_error_message(const char *message) {
 }
 
 static void s_draw_wrapped_text_span(const DTTR_ImGuiDialogContext *ctx, S_TextSpan text) {
-	igSetCursorPosX(dttr_imgui_dialog_scaled_float(ctx, DTTR_ERROR_UI_TEXT_PADDING_X));
-	igPushTextWrapPos(
-		igGetWindowWidth()
-		- dttr_imgui_dialog_scaled_float(ctx, DTTR_ERROR_UI_TEXT_PADDING_X)
-	);
+	s_set_text_padding_x(ctx);
+	igPushTextWrapPos(igGetWindowWidth() - s_text_padding_x(ctx));
 	igTextWrapped("%.*s", (int)s_span_len(text), text.m_text);
 	igPopTextWrapPos();
 }
@@ -80,14 +85,10 @@ static void s_draw_clickable_text(
 	const char *label,
 	const char *url
 ) {
-	igSetCursorPosX(dttr_imgui_dialog_scaled_float(ctx, DTTR_ERROR_UI_TEXT_PADDING_X));
-	igTextColored(DTTR_IMGUI_COLOR_LINK, "%s", label);
-	if (igIsItemHovered(ImGuiHoveredFlags_None)) {
-		igSetMouseCursor(ImGuiMouseCursor_Hand);
-	}
-	if (igIsItemClicked(ImGuiMouseButton_Left)) {
-		SDL_OpenURL(url);
-	}
+	s_set_text_padding_x(ctx);
+	igPushStyleColor_Vec4(ImGuiCol_TextLink, DTTR_IMGUI_COLOR_LINK);
+	igTextLinkOpenURL(label, url);
+	igPopStyleColor(1);
 }
 
 static sds s_file_url_for_parent_dir(const char *path) {
@@ -97,6 +98,7 @@ static sds s_file_url_for_parent_dir(const char *path) {
 			last_separator = p;
 		}
 	}
+
 	if (!last_separator) {
 		return NULL;
 	}
@@ -111,6 +113,7 @@ static sds s_file_url_for_parent_dir(const char *path) {
 			url = sdscatlen(url, p, 1);
 		}
 	}
+
 	return url;
 }
 
@@ -125,11 +128,11 @@ static void s_draw_dump_text(const DTTR_ImGuiDialogContext *ctx, S_TextSpan dump
 		return;
 	}
 
-	s_draw_wrapped_text_span(ctx, s_span(dump_text.m_text, newline));
 	sds label = s_sdsnewspan(s_span(newline + 1, dump_text.m_end));
 	if (label) {
 		sdstrim(label, "\r\n");
 	}
+
 	sds url = label ? s_file_url_for_parent_dir(label) : NULL;
 	if (!label || sdslen(label) == 0 || !url) {
 		sdsfree(label);
@@ -138,6 +141,7 @@ static void s_draw_dump_text(const DTTR_ImGuiDialogContext *ctx, S_TextSpan dump
 		return;
 	}
 
+	s_draw_wrapped_text_span(ctx, s_span(dump_text.m_text, newline));
 	s_draw_clickable_text(ctx, label, url);
 	sdsfree(label);
 	sdsfree(url);
@@ -186,12 +190,8 @@ static void s_draw_copyable_stack_trace(
 		s_add_vertical_spacing(ctx, 8.0f);
 	}
 
-	igSetCursorPosX(dttr_imgui_dialog_scaled_float(ctx, DTTR_ERROR_UI_TEXT_PADDING_X));
-	const float stack_width = igGetWindowWidth()
-							  - dttr_imgui_dialog_scaled_float(
-								  ctx,
-								  DTTR_ERROR_UI_TEXT_PADDING_X * 2.0f
-							  );
+	s_set_text_padding_x(ctx);
+	const float stack_width = igGetWindowWidth() - (s_text_padding_x(ctx) * 2.0f);
 	igPushStyleColor_Vec4(ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
 	igPushStyleColor_Vec4(ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
 	igPushStyleColor_Vec4(ImGuiCol_FrameBgActive, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
@@ -233,15 +233,16 @@ bool dttr_imgui_error_show(const char *title, const char *message) {
 
 	bool running = true;
 	while (running) {
-		dttr_imgui_dialog_process_events(&running);
+		dttr_imgui_dialog_process_events(&ctx, &running);
 		dttr_imgui_dialog_refresh_scale(&ctx);
-		dttr_imgui_dialog_new_frame();
+		dttr_imgui_dialog_new_frame(&ctx);
 
-		if (dttr_imgui_dialog_begin_root(&ctx, window_title)) {
+		if (dttr_imgui_dialog_begin_root(&ctx, window_title, ImGuiWindowFlags_None)) {
 			const ImVec2_c ok_button_size = {
 				dttr_imgui_dialog_scaled_float(&ctx, 100.0f),
 				dttr_imgui_dialog_scaled_float(&ctx, DTTR_ERROR_UI_BUTTON_H),
 			};
+
 			dttr_imgui_dialog_draw_header(&ctx, S_HEADER_TITLE, DTTR_VERSION);
 			if (parsed_message.m_stack_trace) {
 				s_draw_copyable_stack_trace(&ctx, safe_message, &parsed_message);
@@ -253,10 +254,12 @@ bool dttr_imgui_error_show(const char *title, const char *message) {
 					DTTR_ERROR_UI_TEXT_PADDING_Y
 				);
 			}
+
 			dttr_imgui_dialog_center_next_item(ok_button_size.x);
 			if (dttr_imgui_dialog_button(&ctx, "##ok", "OK", ok_button_size)) {
 				running = false;
 			}
+
 			igDummy((ImVec2_c){
 				0.0f,
 				dttr_imgui_dialog_scaled_float(&ctx, DTTR_ERROR_UI_TEXT_PADDING_Y),

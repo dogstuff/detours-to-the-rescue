@@ -20,10 +20,38 @@ static bool s_copy_path_value(
 	return true;
 }
 
+static const char *s_skip_dot_separators(const char *path) {
+	while (path[0] == '.' && dttr_path_is_separator(path[1])) {
+		path += 2;
+	}
+
+	return path;
+}
+
+static void s_trim_trailing_separators(sds path) {
+	const size_t path_len = sdslen(path);
+	size_t len = path_len;
+	while (len > 0 && dttr_path_is_separator(path[len - 1])) {
+		len--;
+	}
+
+	if (len == path_len) {
+		return;
+	}
+
+	if (len == 0) {
+		sdsclear(path);
+		return;
+	}
+
+	sdsrange(path, 0, (int)len - 1);
+}
+
 char dttr_path_ascii_lower(char ch) {
 	if (ch >= 'A' && ch <= 'Z') {
 		return (char)(ch - 'A' + 'a');
 	}
+
 	return ch;
 }
 
@@ -33,6 +61,7 @@ bool dttr_path_ascii_ieq_n(const char *lhs, const char *rhs, size_t n) {
 			return false;
 		}
 	}
+
 	return true;
 }
 
@@ -50,6 +79,7 @@ const char *dttr_path_skip_separators(const char *path) {
 	while (*path && dttr_path_is_separator(*path)) {
 		path++;
 	}
+
 	return path;
 }
 
@@ -90,6 +120,52 @@ bool dttr_path_is_safe_relative(const char *path) {
 	return true;
 }
 
+static sds s_normalize_path_for_compare(const char *path) {
+	if (!path) {
+		return sdsempty();
+	}
+
+	path = s_skip_dot_separators(path);
+
+	sds normalized = sdsempty();
+	if (!normalized) {
+		return NULL;
+	}
+
+	bool previous_separator = false;
+	for (const char *p = path; *p; p++) {
+		const bool is_separator = dttr_path_is_separator(*p);
+		const char ch = is_separator ? '/' : *p;
+		if (is_separator) {
+			if (previous_separator) {
+				continue;
+			}
+
+			previous_separator = true;
+		} else {
+			previous_separator = false;
+		}
+
+		if (!dttr_path_append_char(&normalized, ch)) {
+			sdsfree(normalized);
+			return NULL;
+		}
+	}
+
+	s_trim_trailing_separators(normalized);
+	return normalized;
+}
+
+bool dttr_path_matches_normalized(const char *lhs, const char *rhs) {
+	sds normalized_lhs = s_normalize_path_for_compare(lhs);
+	sds normalized_rhs = s_normalize_path_for_compare(rhs);
+	const bool matches = normalized_lhs && normalized_rhs
+						 && strcmp(normalized_lhs, normalized_rhs) == 0;
+	sdsfree(normalized_lhs);
+	sdsfree(normalized_rhs);
+	return matches;
+}
+
 bool dttr_path_is_windows_absolute(const char *path) {
 	return path && strlen(path) >= 3 && path[1] == ':' && dttr_path_is_separator(path[2]);
 }
@@ -112,6 +188,7 @@ sds dttr_path_current_dir(void) {
 	if (len == 0 || len >= sizeof(cwd)) {
 		return NULL;
 	}
+
 	return sdsnew(cwd);
 }
 
@@ -140,6 +217,25 @@ sds dttr_path_module_sibling(void *module, const char *relative_path) {
 	}
 
 	return path;
+}
+
+sds dttr_path_resolve_relative_to(const char *base_dir, const char *path) {
+	if (!path) {
+		return NULL;
+	}
+
+	if (dttr_path_is_any_absolute(path)) {
+		return sdsnew(path);
+	}
+
+	sds resolved = sdsnew(base_dir ? base_dir : "");
+	if (!resolved
+		|| !dttr_path_append_segment(&resolved, path, DTTR_PATH_NATIVE_SEPARATOR)) {
+		sdsfree(resolved);
+		return NULL;
+	}
+
+	return resolved;
 }
 
 sds dttr_path_native_root(const char *path, const char **rest) {
@@ -172,8 +268,9 @@ bool dttr_path_append_separator(sds *path, char separator) {
 }
 
 bool dttr_path_append_segment(sds *path, const char *segment, char separator) {
-	if (sdslen(*path) > 0 && !dttr_path_is_separator((*path)[sdslen(*path) - 1])) {
-		if (!dttr_path_append_separator(path, separator)) {
+	const size_t len = sdslen(*path);
+	if (len > 0 && !dttr_path_is_separator((*path)[len - 1])) {
+		if (!dttr_path_append_char(path, separator)) {
 			return false;
 		}
 	}

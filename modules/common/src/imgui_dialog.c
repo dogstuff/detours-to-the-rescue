@@ -8,6 +8,24 @@ static const ImGuiWindowFlags S_ROOT_WINDOW_FLAGS = ImGuiWindowFlags_NoDecoratio
 
 static bool s_sdl_video_ready;
 
+static void s_use_dialog_imgui_context(const DTTR_ImGuiDialogContext *ctx) {
+	if (ctx && ctx->m_imgui_context) {
+		igSetCurrentContext(ctx->m_imgui_context);
+	}
+}
+
+static void s_restore_previous_imgui_context(const DTTR_ImGuiDialogContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+
+	igSetCurrentContext(ctx->m_previous_imgui_context);
+}
+
+static void s_offset_cursor_y(const DTTR_ImGuiDialogContext *ctx, float amount) {
+	igSetCursorPosY(igGetCursorPosY() + dttr_imgui_dialog_scaled_float(ctx, amount));
+}
+
 static float s_context_scale(const DTTR_ImGuiDialogContext *ctx) {
 	return ctx && ctx->m_desktop_scale > 0.0f ? ctx->m_desktop_scale : 1.0f;
 }
@@ -21,6 +39,19 @@ int dttr_imgui_dialog_scaled_int(const DTTR_ImGuiDialogContext *ctx, float value
 	return scaled > 0 ? scaled : 1;
 }
 
+static void s_resize_dialog_window_for_scale(DTTR_ImGuiDialogContext *ctx) {
+	if (!ctx || !ctx->m_window || ctx->m_logical_window_width <= 0
+		|| ctx->m_logical_window_height <= 0) {
+		return;
+	}
+
+	SDL_SetWindowSize(
+		ctx->m_window,
+		dttr_imgui_dialog_scaled_int(ctx, (float)ctx->m_logical_window_width),
+		dttr_imgui_dialog_scaled_int(ctx, (float)ctx->m_logical_window_height)
+	);
+}
+
 bool dttr_imgui_dialog_refresh_scale(DTTR_ImGuiDialogContext *ctx) {
 	if (!ctx || !ctx->m_window) {
 		return false;
@@ -32,7 +63,16 @@ bool dttr_imgui_dialog_refresh_scale(DTTR_ImGuiDialogContext *ctx) {
 		ctx->m_window
 	);
 	ctx->m_desktop_scale = dttr_imgui_get_current_desktop_scale(&ctx->m_imgui_scale);
-	return style_changed || dttr_imgui_scale_changed(old_scale, ctx->m_desktop_scale);
+	const bool scale_changed = style_changed
+							   || dttr_imgui_scale_changed(
+								   old_scale,
+								   ctx->m_desktop_scale
+							   );
+	if (scale_changed) {
+		s_resize_dialog_window_for_scale(ctx);
+	}
+
+	return scale_changed;
 }
 
 static void s_set_gl_attributes(void) {
@@ -56,16 +96,49 @@ static bool s_init_sdl_video(void) {
 	return true;
 }
 
+static bool s_init_dialog_imgui(DTTR_ImGuiDialogContext *ctx) {
+	ctx->m_previous_imgui_context = igGetCurrentContext();
+	ctx->m_imgui_context = igCreateContext(NULL);
+	s_use_dialog_imgui_context(ctx);
+	ctx->m_imgui_context_ready = true;
+
+	ImGuiIO *io = igGetIO_Nil();
+	io->IniFilename = NULL;
+	io->LogFilename = NULL;
+	io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+	igStyleColorsDark(NULL);
+	dttr_imgui_dialog_refresh_scale(ctx);
+	if (!ImGui_ImplSDL3_InitForOpenGL(ctx->m_window, ctx->m_gl_context)) {
+		return false;
+	}
+
+	ctx->m_imgui_sdl_ready = true;
+	if (!ImGui_ImplOpenGL3_Init("#version 130")) {
+		return false;
+	}
+
+	ctx->m_imgui_gl_ready = true;
+	return true;
+}
+
 bool dttr_imgui_dialog_begin(
 	DTTR_ImGuiDialogContext *ctx,
 	const char *title,
 	int width,
 	int height
 ) {
+	if (!ctx) {
+		return false;
+	}
+
 	*ctx = (DTTR_ImGuiDialogContext){0};
 	if (!s_init_sdl_video()) {
 		return false;
 	}
+
+	ctx->m_logical_window_width = width;
+	ctx->m_logical_window_height = height;
 
 	s_set_gl_attributes();
 
@@ -89,23 +162,9 @@ bool dttr_imgui_dialog_begin(
 		goto fail;
 	}
 
-	igCreateContext(NULL);
-	ctx->m_imgui_context_ready = true;
-	ImGuiIO *io = igGetIO_Nil();
-	io->IniFilename = NULL;
-	io->LogFilename = NULL;
-	io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-	igStyleColorsDark(NULL);
-	dttr_imgui_dialog_refresh_scale(ctx);
-	if (!ImGui_ImplSDL3_InitForOpenGL(ctx->m_window, ctx->m_gl_context)) {
+	if (!s_init_dialog_imgui(ctx)) {
 		goto fail;
 	}
-	ctx->m_imgui_sdl_ready = true;
-	if (!ImGui_ImplOpenGL3_Init("#version 130")) {
-		goto fail;
-	}
-	ctx->m_imgui_gl_ready = true;
 
 	SDL_ShowWindow(ctx->m_window);
 	return true;
@@ -116,21 +175,32 @@ fail:
 }
 
 void dttr_imgui_dialog_end(DTTR_ImGuiDialogContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+
+	s_use_dialog_imgui_context(ctx);
 	if (ctx->m_imgui_gl_ready) {
 		ImGui_ImplOpenGL3_Shutdown();
 	}
+
 	if (ctx->m_imgui_sdl_ready) {
 		ImGui_ImplSDL3_Shutdown();
 	}
+
 	if (ctx->m_imgui_context_ready) {
-		igDestroyContext(NULL);
+		igDestroyContext(ctx->m_imgui_context);
 	}
+
+	s_restore_previous_imgui_context(ctx);
 	if (ctx->m_gl_context) {
 		SDL_GL_DestroyContext(ctx->m_gl_context);
 	}
+
 	if (ctx->m_window) {
 		SDL_DestroyWindow(ctx->m_window);
 	}
+
 	*ctx = (DTTR_ImGuiDialogContext){0};
 }
 
@@ -144,13 +214,15 @@ void dttr_imgui_dialog_shutdown(void) {
 	s_sdl_video_ready = false;
 }
 
-void dttr_imgui_dialog_new_frame(void) {
+void dttr_imgui_dialog_new_frame(const DTTR_ImGuiDialogContext *ctx) {
+	s_use_dialog_imgui_context(ctx);
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL3_NewFrame();
 	igNewFrame();
 }
 
 void dttr_imgui_dialog_render(DTTR_ImGuiDialogContext *ctx) {
+	s_use_dialog_imgui_context(ctx);
 	int width;
 	int height;
 	SDL_GetWindowSizeInPixels(ctx->m_window, &width, &height);
@@ -163,29 +235,38 @@ void dttr_imgui_dialog_render(DTTR_ImGuiDialogContext *ctx) {
 	SDL_GL_SwapWindow(ctx->m_window);
 }
 
-static bool s_event_closes_dialog(const SDL_Event *event) {
-	if (event->type == SDL_EVENT_QUIT) {
-		return true;
-	}
-
-	return event->type == SDL_EVENT_KEY_DOWN
-		   && event->key.scancode == SDL_SCANCODE_ESCAPE;
-}
-
-void dttr_imgui_dialog_process_events(bool *running) {
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		ImGui_ImplSDL3_ProcessEvent(&event);
-		if (!s_event_closes_dialog(&event)) {
-			continue;
-		}
-
-		*running = false;
+void dttr_imgui_dialog_process_event(
+	const DTTR_ImGuiDialogContext *ctx,
+	const SDL_Event *event,
+	bool *running
+) {
+	if (!event) {
 		return;
 	}
+
+	s_use_dialog_imgui_context(ctx);
+	ImGui_ImplSDL3_ProcessEvent(event);
+	if (event->type != SDL_EVENT_QUIT) {
+		return;
+	}
+
+	if (running) {
+		*running = false;
+	}
 }
 
-static void s_begin_full_window(DTTR_ImGuiDialogContext *ctx) {
+void dttr_imgui_dialog_process_events(const DTTR_ImGuiDialogContext *ctx, bool *running) {
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		dttr_imgui_dialog_process_event(ctx, &event, running);
+		if (running && !*running) {
+			break;
+		}
+	}
+}
+
+static void s_begin_full_window(const DTTR_ImGuiDialogContext *ctx) {
+	s_use_dialog_imgui_context(ctx);
 	int width;
 	int height;
 	SDL_GetWindowSize(ctx->m_window, &width, &height);
@@ -193,10 +274,14 @@ static void s_begin_full_window(DTTR_ImGuiDialogContext *ctx) {
 	igSetNextWindowSize((ImVec2_c){(float)width, (float)height}, ImGuiCond_Always);
 }
 
-bool dttr_imgui_dialog_begin_root(DTTR_ImGuiDialogContext *ctx, const char *title) {
+bool dttr_imgui_dialog_begin_root(
+	DTTR_ImGuiDialogContext *ctx,
+	const char *title,
+	ImGuiWindowFlags flags
+) {
 	s_begin_full_window(ctx);
 	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, (ImVec2_c){0.0f, 0.0f});
-	return igBegin(title, NULL, S_ROOT_WINDOW_FLAGS);
+	return igBegin(title, NULL, S_ROOT_WINDOW_FLAGS | flags);
 }
 
 void dttr_imgui_dialog_end_root(void) {
@@ -210,34 +295,19 @@ bool dttr_imgui_dialog_button(
 	const char *label,
 	ImVec2_c size
 ) {
-	const bool clicked = igInvisibleButton(id, size, ImGuiButtonFlags_None);
-	const ImVec2_c min = igGetItemRectMin();
-	const ImVec2_c max = igGetItemRectMax();
-	const bool active = igIsItemActive();
-	const bool hovered = igIsItemHovered(ImGuiHoveredFlags_None);
-
-	const ImVec4_c bg = active	  ? DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE
-						: hovered ? DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED
-								  : DTTR_IMGUI_COLOR_BUTTON_BG;
-	const ImU32 bg_col = igGetColorU32_Vec4(bg);
-	const ImU32 text_col = igGetColorU32_Vec4(DTTR_IMGUI_COLOR_BUTTON_TEXT);
-
-	ImDrawList *draw_list = igGetWindowDrawList();
-	ImDrawList_AddRectFilled(
-		draw_list,
-		min,
-		max,
-		bg_col,
-		dttr_imgui_dialog_scaled_float(ctx, 2.0f),
-		0
+	igPushID_Str(id);
+	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_IMGUI_COLOR_BUTTON_TEXT);
+	igPushStyleColor_Vec4(ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
+	igPushStyleVar_Float(
+		ImGuiStyleVar_FrameRounding,
+		dttr_imgui_dialog_scaled_float(ctx, 2.0f)
 	);
-	const ImVec2_c text_size = igCalcTextSize(label, NULL, false, -1.0f);
-	const ImVec2_c text_pos = {
-		min.x + (size.x - text_size.x) * 0.5f,
-		min.y + (size.y - text_size.y) * 0.5f,
-	};
-
-	ImDrawList_AddText_Vec2(draw_list, text_pos, text_col, label, NULL);
+	const bool clicked = igButton(label, size);
+	igPopStyleVar(1);
+	igPopStyleColor(4);
+	igPopID();
 	return clicked;
 }
 
@@ -259,14 +329,14 @@ void dttr_imgui_dialog_draw_header(
 	const char *title,
 	const char *version
 ) {
-	igSetCursorPosY(dttr_imgui_dialog_scaled_float(ctx, 18.0f));
+	s_offset_cursor_y(ctx, 3.0f);
 	const ImGuiStyle *style = igGetStyle();
 	igPushFont(NULL, style->FontSizeBase * 1.35f);
 	s_draw_centered_text(title);
 	igPopFont();
-	igSetCursorPosY(igGetCursorPosY() + dttr_imgui_dialog_scaled_float(ctx, 4.0f));
+	s_offset_cursor_y(ctx, 4.0f);
 	s_draw_centered_text(version);
-	igSetCursorPosY(igGetCursorPosY() + dttr_imgui_dialog_scaled_float(ctx, 2.0f));
+	s_offset_cursor_y(ctx, 2.0f);
 }
 
 void dttr_imgui_dialog_draw_padded_text(
@@ -276,11 +346,11 @@ void dttr_imgui_dialog_draw_padded_text(
 	float padding_y
 ) {
 	igSetCursorPosX(dttr_imgui_dialog_scaled_float(ctx, padding_x));
-	igSetCursorPosY(igGetCursorPosY() + dttr_imgui_dialog_scaled_float(ctx, padding_y));
+	s_offset_cursor_y(ctx, padding_y);
 	igPushTextWrapPos(igGetWindowWidth() - dttr_imgui_dialog_scaled_float(ctx, padding_x));
 	igTextWrapped("%s", message ? message : "");
 	igPopTextWrapPos();
-	igSetCursorPosY(igGetCursorPosY() + dttr_imgui_dialog_scaled_float(ctx, padding_y));
+	s_offset_cursor_y(ctx, padding_y);
 }
 
 void dttr_imgui_dialog_fit_window_to_content(

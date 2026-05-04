@@ -49,15 +49,21 @@ static DTTR_LoaderUIChoice s_native_choose_game_source(void) {
 	return dttr_loader_ui_choice_from_id(choice_id);
 }
 
+static float s_button_spacing(const DTTR_ImGuiDialogContext *ctx) {
+	return dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_SPACING);
+}
+
 static float s_button_row_width(const DTTR_ImGuiDialogContext *ctx, size_t button_count) {
 	if (button_count == 0) {
 		return 0.0f;
 	}
 
-	return dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_W)
-			   * (float)button_count
-		   + dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_SPACING)
-				 * (float)(button_count - 1);
+	const float button_width = dttr_imgui_dialog_scaled_float(
+		ctx,
+		DTTR_LOADER_UI_BUTTON_W
+	);
+	return (button_width * (float)button_count)
+		   + (s_button_spacing(ctx) * (float)(button_count - 1));
 }
 
 static ImVec2_c s_button_size(const DTTR_ImGuiDialogContext *ctx) {
@@ -91,20 +97,21 @@ static bool s_draw_disc_button(
 	DTTR_LoaderUIChoice *result,
 	bool *running
 ) {
-	char button_id[32];
-	snprintf(button_id, sizeof(button_id), "##disc_%u", (unsigned)disc_index);
-	return s_draw_source_button(
+	igPushID_Int((int)disc_index);
+	const bool selected = s_draw_source_button(
 		ctx,
-		button_id,
+		"##disc",
 		disc_candidates[disc_index].m_label,
 		dttr_loader_ui_disc_choice_for_index(disc_index),
 		result,
 		running
 	);
+	igPopID();
+	return selected;
 }
 
 static void s_same_button_row(const DTTR_ImGuiDialogContext *ctx) {
-	igSameLine(0.0f, dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_SPACING));
+	igSameLine(0.0f, s_button_spacing(ctx));
 }
 
 static size_t s_clamp_disc_candidate_count(size_t disc_candidate_count) {
@@ -120,19 +127,14 @@ static void s_draw_browse_buttons(
 	DTTR_LoaderUIChoice *result,
 	bool *running
 ) {
-	if (!*running) {
-		return;
-	}
-
-	s_draw_source_button(
-		ctx,
-		"##open_directory",
-		"Open Directory",
-		DTTR_LOADER_UI_CHOICE_BROWSE_FOLDER,
-		result,
-		running
-	);
-	if (!*running) {
+	if (s_draw_source_button(
+			ctx,
+			"##open_directory",
+			"Open Directory",
+			DTTR_LOADER_UI_CHOICE_BROWSE_FOLDER,
+			result,
+			running
+		)) {
 		return;
 	}
 
@@ -184,7 +186,7 @@ DTTR_LoaderUIChoice dttr_loader_ui_choose_game_source(
 	const DTTR_LoaderUIDiscCandidate *disc_candidates,
 	size_t disc_candidate_count
 ) {
-	DTTR_ImGuiDialogContext ctx;
+	DTTR_ImGuiDialogContext ctx = {0};
 
 	if (!dttr_imgui_dialog_begin(
 			&ctx,
@@ -195,20 +197,18 @@ DTTR_LoaderUIChoice dttr_loader_ui_choose_game_source(
 		return s_native_choose_game_source();
 	}
 
-	if (!disc_candidates) {
-		disc_candidate_count = 0;
-	} else {
-		disc_candidate_count = s_clamp_disc_candidate_count(disc_candidate_count);
-	}
+	disc_candidate_count = disc_candidates
+							   ? s_clamp_disc_candidate_count(disc_candidate_count)
+							   : 0;
 
 	DTTR_LoaderUIChoice result = DTTR_LOADER_UI_CHOICE_EXIT;
 	bool running = true;
 	while (running) {
-		dttr_imgui_dialog_process_events(&running);
+		dttr_imgui_dialog_process_events(&ctx, &running);
 		dttr_imgui_dialog_refresh_scale(&ctx);
-		dttr_imgui_dialog_new_frame();
+		dttr_imgui_dialog_new_frame(&ctx);
 
-		if (dttr_imgui_dialog_begin_root(&ctx, S_WINDOW_TITLE)) {
+		if (dttr_imgui_dialog_begin_root(&ctx, S_WINDOW_TITLE, ImGuiWindowFlags_None)) {
 			dttr_imgui_dialog_draw_header(&ctx, S_HEADER_TITLE, DTTR_VERSION);
 			igSeparator();
 			dttr_imgui_dialog_draw_padded_text(
@@ -226,6 +226,7 @@ DTTR_LoaderUIChoice dttr_loader_ui_choose_game_source(
 			);
 			dttr_imgui_dialog_fit_window_to_content(&ctx, DTTR_LOADER_UI_WINDOW_W, 18.0f);
 		}
+
 		dttr_imgui_dialog_end_root();
 
 		dttr_imgui_dialog_render(&ctx);
