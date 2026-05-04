@@ -1,6 +1,6 @@
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue**. It keeps the game logic intact and replaces the fragile PC port glue with a modern runtime, so the Windows release behaves more predictably on current machines.
+DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue** that replaces the fragile original PC port glue with a complete modern runtime, allowing the game to run seamlessly on modern machines.
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 
