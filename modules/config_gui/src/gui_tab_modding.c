@@ -64,11 +64,8 @@ static void s_scan_component_dlls(
 	}
 
 	do {
-		if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			continue;
-		}
-
-		if (s_is_shadow_component_dll(find_data.cFileName)) {
+		if ((find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			|| s_is_shadow_component_dll(find_data.cFileName)) {
 			continue;
 		}
 
@@ -76,13 +73,15 @@ static void s_scan_component_dlls(
 			break;
 		}
 
-		if (dttr_path_copy_string(
+		if (!dttr_path_copy_string(
 				out->m_names[out->m_count],
 				sizeof(out->m_names[out->m_count]),
 				find_data.cFileName
 			)) {
-			out->m_count++;
+			continue;
 		}
+
+		out->m_count++;
 	} while (FindNextFileA(find_handle, &find_data));
 
 	FindClose(find_handle);
@@ -112,7 +111,7 @@ static bool s_begin_component_table(const DTTR_ImGuiDialogContext *ctx) {
 		0
 	);
 	igTableSetupColumn(
-		"##enabled",
+		"Enabled",
 		ImGuiTableColumnFlags_WidthFixed,
 		s_component_enable_column_width(ctx),
 		0

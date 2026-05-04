@@ -10,10 +10,6 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 - Jump hooks replace the first five bytes of the matched assembly with `E9 <rel32>`.
 - Trampoline hooks use the same jump patch, but keep a callable copy of the original prologue.
 
-!!! warning
-
-    These signatures are executable-version sensitive. If a signature moves, check `ctx->m_exe_hash`, keep the pattern strict enough for the supported executable, and update this page with the source change.
-
 ## Bootstrap
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |

@@ -10,29 +10,6 @@ static const char *const S_GAMEPAD_AXIS_TOOLTIPS[] = {
 	"Uses the right trigger axis.",
 };
 
-static const char *const S_GAME_ACTION_TOOLTIPS[] = {
-	"Disables this gamepad input source.",
-	"Maps this input to up.",
-	"Maps this input to down.",
-	"Maps this input to left.",
-	"Maps this input to right.",
-	"Maps this input to POV up.",
-	"Maps this input to POV down.",
-	"Maps this input to joy button 1.",
-	"Maps this input to joy button 2.",
-	"Maps this input to joy button 3.",
-	"Maps this input to joy button 4.",
-	"Maps this input to joy button 5.",
-	"Maps this input to joy button 6.",
-	"Maps this input to joy button 7.",
-	"Maps this input to joy button 8.",
-	"Maps this input to joy button 9.",
-	"Maps this input to joy button 10.",
-	"Maps this input to joy button 11.",
-	"Maps this input to joy button 12.",
-	"Maps this input to joy button 13.",
-};
-
 static const char *S_TOOLTIP_GAMEPAD_ENABLED = "Whether to enable gamepad input. Set to "
 											   "false to disable all gamepad support. "
 											   "Default: true.";
@@ -43,9 +20,9 @@ static const char *S_TOOLTIP_GAMEPAD_AXIS
 	  "left stick; camera RZ uses the right stick horizontal axis.";
 static const char *S_TOOLTIP_GAMEPAD_DEADZONE = "Per-axis deadzone (scaled axis units, "
 												"default 700). Default: 700.";
-static const char *S_TOOLTIP_GAMEPAD_BUTTONS = "SDL gamepad to PCDogs joypad mappings. "
-											   "Multiple SDL inputs can map to the same "
-											   "game action.";
+static const char *S_TOOLTIP_GAMEPAD_BUTTONS
+	= "Each row maps what you press to what the game does. Click Bind, press a "
+	  "controller button, or Clear to leave that action unused.";
 static const char *S_TOOLTIP_GAMEPAD_SOUTH = "joy_1 is always used as the menu confirm "
 											 "button.";
 static const char *S_TOOLTIP_GAMEPAD_EAST = "joy_2 is always used as the menu back "
@@ -55,6 +32,8 @@ static const char *S_TOOLTIP_GAMEPAD_START = "joy_9 is always used as the start/
 static const char *S_TOOLTIP_BIND_BUTTON = "Click, then press a gamepad button or "
 										   "trigger to remap this SDL source row.";
 static const char *S_TOOLTIP_CLEAR_BUTTON = "Set this SDL input mapping to none.";
+static const char *S_TOOLTIP_RESET_BUTTON = "Reset this game action to its default "
+											"controller input.";
 
 typedef struct {
 	const char *m_label;
@@ -113,12 +92,15 @@ static void s_draw_gamepad_deadzone_input(
 }
 
 const char *s_source_label(int source) {
-	if (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT) {
+	switch (source) {
+	case DTTR_GAMEPAD_MAPPING_NONE:
+		return "none";
+	case DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT:
 		return "left_trigger";
-	}
-
-	if (source == DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT) {
+	case DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT:
 		return "right_trigger";
+	default:
+		break;
 	}
 
 	if (source < 0 || source >= SDL_GAMEPAD_BUTTON_COUNT) {
@@ -131,6 +113,8 @@ const char *s_source_label(int source) {
 
 const char *s_source_tooltip(int source) {
 	switch (source) {
+	case DTTR_GAMEPAD_MAPPING_NONE:
+		return "No controller input is bound to this game action.";
 	case SDL_GAMEPAD_BUTTON_SOUTH:
 		return S_TOOLTIP_GAMEPAD_SOUTH;
 	case SDL_GAMEPAD_BUTTON_EAST:
@@ -163,40 +147,6 @@ int s_source_from_event(const SDL_Event *event) {
 	default:
 		return -1;
 	}
-}
-
-bool s_event_cancels_binding(const SDL_Event *event) {
-	return event->type == SDL_EVENT_KEY_DOWN
-		   && event->key.scancode == SDL_SCANCODE_ESCAPE;
-}
-
-void s_cancel_binding(S_ConfigUIState *state) {
-	if (state->m_binding_row < 0) {
-		return;
-	}
-
-	state->m_binding_row = -1;
-	s_set_status(state, "Cancelled controller input capture.");
-}
-
-void s_capture_source(S_ConfigUIState *state, int new_source) {
-	const int binding_row = state->m_binding_row;
-	if (binding_row < 0 || binding_row >= DTTR_GAMEPAD_SOURCE_COUNT || new_source < 0
-		|| new_source >= DTTR_GAMEPAD_SOURCE_COUNT) {
-		return;
-	}
-
-	const int old_source = state->m_button_sources[binding_row];
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
-		if (i != binding_row && state->m_button_sources[i] == new_source) {
-			state->m_button_sources[i] = old_source;
-			break;
-		}
-	}
-
-	state->m_button_sources[binding_row] = new_source;
-	state->m_binding_row = -1;
-	s_set_status(state, "Captured controller input.");
 }
 
 static void s_draw_gamepad_axes(
@@ -261,25 +211,22 @@ static void s_draw_gamepad_button_row(
 ) {
 	igPushID_Int(row);
 
+	const int action = state->m_button_actions[row];
+	const int source = state->m_button_sources[row];
+
 	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
 	igTableNextColumn();
 	igTableNextColumn();
 	igAlignTextToFramePadding();
-	const int source = state->m_button_sources[row];
 	s_draw_config_label(
-		s_source_label(source),
-		s_source_tooltip(source),
-		s_gamepad_button_label_state(state, source, state->m_button_actions[row])
+		s_gamepad_button_row_label(row),
+		s_game_action_tooltip(action),
+		s_gamepad_button_label_state(state, source, action)
 	);
 
 	igTableNextColumn();
-	igSetNextItemWidth(s_table_input_width(ctx, DTTR_CONFIG_UI_GAMEPAD_ACTION_W));
-	s_choice_combo(
-		"##action",
-		&state->m_button_actions[row],
-		DTTR_CONFIG_CHOICES_GAME_ACTION,
-		S_GAME_ACTION_TOOLTIPS
-	);
+	igAlignTextToFramePadding();
+	igText("%s", s_source_label(source));
 	s_show_tooltip(s_source_tooltip(source));
 
 	igTableNextColumn();
@@ -292,17 +239,17 @@ static void s_draw_gamepad_button_row(
 
 	igTableNextColumn();
 	if (s_themed_row_button(ctx, "##clear", "Clear", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
-		state->m_button_actions[row] = DTTR_GAMEPAD_MAPPING_NONE;
+		state->m_button_sources[row] = DTTR_GAMEPAD_MAPPING_NONE;
 	}
 
 	s_show_tooltip(S_TOOLTIP_CLEAR_BUTTON);
 
 	igTableNextColumn();
 	if (s_themed_row_button(ctx, "##reset", "Reset", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
-		state->m_button_actions[row] = state->m_defaults.m_gamepad_button_map[source];
+		state->m_button_sources[row] = s_gamepad_default_source_for_action(state, action);
 	}
 
-	s_show_tooltip("Reset this binding to its default.");
+	s_show_tooltip(S_TOOLTIP_RESET_BUTTON);
 
 	igPopID();
 }
@@ -315,14 +262,17 @@ static void s_draw_gamepad_buttons(
 	igSeparatorText("Button mappings");
 	s_show_tooltip(S_TOOLTIP_GAMEPAD_BUTTONS);
 	if (state->m_binding_row >= 0) {
-		igText("Waiting for input for row %d...", state->m_binding_row + 1);
+		igText(
+			"Waiting for input for %s...",
+			s_gamepad_button_row_label(state->m_binding_row)
+		);
 	}
 
 	if (!s_begin_gamepad_button_table(ctx)) {
 		return;
 	}
 
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
+	for (int i = 0; i < s_gamepad_button_row_count(); i++) {
 		s_draw_gamepad_button_row(ctx, state, i);
 	}
 

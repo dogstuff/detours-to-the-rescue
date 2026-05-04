@@ -98,9 +98,11 @@ Raise a deadzone if a stick drifts while centered. Lower it if movement or camer
 
 ### Buttons
 
-Change one binding at a time, then test in game. If a button does the wrong thing, set it back before trying the next one.
+Button mappings are shown from the game's point of view. Each row is an action the original game understands, such as a direction, confirm, back, or start/pause. The source shown next to it is the physical controller button that performs that action.
 
-Set a button to `none` to leave it unused.
+To change a mapping, choose **Bind** on the action you want to change, then press the controller button or trigger you want to use. If that button is already assigned elsewhere, the configuration tool swaps the old source into the other row so the same physical button is not shown twice.
+
+Change one binding at a time, then test in game. If a button does the wrong thing, use **Reset** to restore the default input for that action, or **Clear** to leave it unbound.
 
 ## Advanced editing
 

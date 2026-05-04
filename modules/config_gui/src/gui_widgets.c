@@ -80,20 +80,6 @@ static int s_choice_index(const DTTR_ConfigChoice *choices, int choice_count, in
 	return 0;
 }
 
-static const char *s_choice_label(
-	const DTTR_ConfigChoice *choices,
-	int choice_count,
-	int value
-) {
-	for (int i = 0; i < choice_count; i++) {
-		if (choices[i].value == value) {
-			return choices[i].label;
-		}
-	}
-
-	return "Unknown";
-}
-
 bool s_choice_combo(
 	const char *label,
 	int *value,
@@ -103,7 +89,7 @@ bool s_choice_combo(
 	int choice_count = 0;
 	const DTTR_ConfigChoice *choice_list = dttr_config_choices(choices, &choice_count);
 	const int current = s_choice_index(choice_list, choice_count, *value);
-	const char *preview = s_choice_label(choice_list, choice_count, *value);
+	const char *preview = choice_count > 0 ? choice_list[current].label : "Unknown";
 	if (!igBeginCombo(label, preview, ImGuiComboFlags_None)) {
 		return false;
 	}
@@ -403,13 +389,13 @@ bool s_begin_settings_table_with_cell_padding_and_margins(
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##label",
+		"Setting",
 		ImGuiTableColumnFlags_WidthFixed,
 		label_width
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##input",
+		"Value",
 		ImGuiTableColumnFlags_WidthStretch,
 		input_width
 	);
@@ -419,6 +405,7 @@ bool s_begin_settings_table_with_cell_padding_and_margins(
 		ImGuiTableColumnFlags_WidthFixed,
 		right_margin_width
 	);
+	igTableHeadersRow();
 	return true;
 }
 
@@ -495,31 +482,31 @@ bool s_begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##source",
+		"Game does",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_SOURCE_W
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##action",
+		"You press",
 		ImGuiTableColumnFlags_WidthStretch,
 		s_config_standard_input_width()
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##bind",
+		"Bind",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##clear",
+		"Clear",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
 	s_setup_scaled_table_column(
 		ctx,
-		"##reset",
+		"Reset",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
@@ -529,6 +516,7 @@ bool s_begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_ROW_MARGIN_X * 4.0f
 	);
+	igTableHeadersRow();
 	return true;
 }
 

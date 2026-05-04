@@ -29,6 +29,7 @@ target_link_options(dttr_config PRIVATE -static)
 
 target_compile_definitions(dttr_config PRIVATE
     DTTR_VERSION="${DTTR_VERSION}"
+    $<$<BOOL:${DTTR_MODDING}>:DTTR_MODDING_ENABLED>
 )
 
 target_link_libraries(dttr_config PRIVATE
