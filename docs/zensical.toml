@@ -13,6 +13,7 @@ extra_css = ["assets/stylesheets/site.css"]
 nav = [
   { "Home" = "index.md" },
   { "Configuration" = "configuration.md" },
+  { "Releases" = "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases" },
   { "Technical Reference" = [
     { "Configuration" = "technical/configuration.md" },
     { "Patches" = "technical/patches.md" },

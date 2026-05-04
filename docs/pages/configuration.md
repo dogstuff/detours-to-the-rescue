@@ -92,9 +92,9 @@ The default layout uses the left stick for movement and the right stick for the 
 
 Change axis bindings when:
 
-- movement is on the wrong stick
-- the camera moves on the wrong axis
-- you want a trigger or unused stick to do nothing
+- Movement is on the wrong stick
+- The camera moves on the wrong axis
+- You want a trigger or unused stick to do nothing
 
 Set an axis to `none` to disable it.
 

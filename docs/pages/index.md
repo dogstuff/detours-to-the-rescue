@@ -26,12 +26,10 @@ The following PC releases of **102 Dalmatians: Puppies to the Rescue** are suppo
 
 ## Quick start
 
-1. Download the latest normal build: [latest normal build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip).
+1. Download the [latest normal release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-v1.7.1-release.zip).
 2. Extract the archive to a writable folder.
 3. Run `dttr.exe`.
-4. Choose where DttR should load the original game files from.
-
-DttR writes `dttr.json` next to `dttr.exe` on first launch.
+4. Choose where DttR should load the original game files from:
 
 ![DttR prompt asking where to load game files from](assets/load-prompt.png)
 
@@ -53,8 +51,8 @@ Choose **Open ISO**, select the original disc image, then choose **Open**.
 
 ![Windows file picker selecting a 102 Puppies ISO image](assets/load-iso.png)
 
-After DttR finds the game files, it starts the game.
+If all is well, you're done!
 
 ![PttR title screen running through DttR](assets/done.png)
 
-Need to change the renderer, window, audio, or controller setup? See [Configuration](configuration.md).
+Issues setting up or need to adjust the renderer, window, audio, or controller setup? See [Configuration](configuration.md).

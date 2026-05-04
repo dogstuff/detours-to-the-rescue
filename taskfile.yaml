@@ -120,5 +120,6 @@ tasks:
   build-docs:
     cmds:
       - rm -rf {{ .DOCS_BUILD_DIR | quote }}
+      - bash ./scripts/update-latest-release-link.sh
       - zensical build --clean --config-file {{ .DOCS_CONFIG | quote }}
       - doxygen {{ .DOXYFILE | quote }}
