@@ -12,14 +12,12 @@ A DttR component is a 32-bit Windows DLL placed in the `components/` directory n
 
 ### 1. Create a project directory
 
-```text
-my-dttr-component/
-├── CMakeLists.txt
-├── include/
-│   └── dttr_components.h
-└── src/
-    └── component.c
-```
+Create these directories and files:
+
+- `my-dttr-component/`
+- `my-dttr-component/CMakeLists.txt`
+- `my-dttr-component/include/dttr_components.h`
+- `my-dttr-component/src/component.c`
 
 Copy or symlink `sdk/components/include/dttr_components.h` from this repository into `include/`.
 

@@ -51,6 +51,6 @@ Choose **Open ISO**, select the original disc image, then choose **Open**.
 
 Once DttR finds the game files, it starts normally.
 
-![PttR title screen running through DttR](assets/done.png)
+![102 Dalmatians title screen running through DttR](assets/done.png)
 
 For renderer, window, audio, or controller settings, see [Configuration](configuration.md).

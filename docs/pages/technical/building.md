@@ -4,7 +4,7 @@ DttR uses [Nix](https://github.com/NixOS/nix) for the cross-compiler, tools, and
 
 !!! note
 
-    The process for building DttR on Windows is not yet documented and it's recommended that Windows users build in WSL so in the interim.
+    Native Windows build steps are not documented yet. Windows users should build in WSL for now.
 
 ## Nix flake
 
