@@ -24,7 +24,7 @@ DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.do
 
 ## Quick start
 
-1. Download the [latest release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-v1.7.1-release.zip).
+1. Download the [latest release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip).
 2. Extract the archive to a writable folder.
 3. Run `dttr.exe`.
 4. When DttR asks where to load the original game files from, choose one of these:
