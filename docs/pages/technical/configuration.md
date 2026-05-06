@@ -13,6 +13,7 @@ dttr.exe path/to/my_config.json
 ```json
 {
   "schema_major_version": 1,
+  "skip_intro_movies": false,
   "graphics": {
     "graphics_api": "auto",
     "scaling_fit": "letterbox",
@@ -39,6 +40,7 @@ dttr.exe path/to/my_config.json
 | `log_file_path` | String | Path | `dttr.log` | Log file path. |
 | `pcdogs_path` | String | Path | Empty | Game executable or game data path. |
 | `saves_path` | String | Path | `saves` | Save directory. |
+| `skip_intro_movies` | Boolean | `true`, `false` | `false` | Skip the intro movies at launch. |
 
 ## `graphics`
 

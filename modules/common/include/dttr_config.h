@@ -87,6 +87,7 @@ typedef struct {
 	char m_log_file_path[MAX_PATH];
 	char m_pcdogs_path[MAX_PATH];
 	char m_saves_path[MAX_PATH];
+	bool m_skip_intro_movies;
 	DTTR_ScalingMode m_scaling_fit;
 	DTTR_ScalingMethod m_scaling_method;
 	DTTR_GraphicsApi m_graphics_api;

@@ -22,6 +22,10 @@ Change it when:
 - you want saves in a backed up location
 - you want separate save folders for testing or speedrunning
 
+### Intro movies
+
+Enable **Skip intro movies** to skip the intro movies/videos.
+
 ## Graphics
 
 ### Scaling method

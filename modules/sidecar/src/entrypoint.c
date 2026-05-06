@@ -227,7 +227,11 @@ static void s_tick_main_loop(void) {
 #endif
 }
 
-static void s_play_intro_movies(void) {
+static void s_attempt_play_startup_movies(void) {
+	if (g_dttr_config.m_skip_intro_movies) {
+		return;
+	}
+
 	const char *const prefix = g_pcdogs_movie_path_prefix_ptr();
 	char **const names = g_pcdogs_movie_file_names_ptr();
 
@@ -367,7 +371,7 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	pcdogs_initialize_graphics_subsystem(hwnd, NULL);
 	pcdogs_initialize_capabilities();
 
-	s_play_intro_movies();
+	s_attempt_play_startup_movies();
 
 	pcdogs_initialize_window_handle(hwnd);
 	pcdogs_reset_input_and_state();

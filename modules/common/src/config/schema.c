@@ -55,6 +55,7 @@ static const DTTR_ConfigFieldSpec s_config_schema[] = {
 	S_FIELD_TOP("log_file_path", m_log_file_path, S_CONFIG_STRING),
 	S_FIELD_TOP("pcdogs_path", m_pcdogs_path, S_CONFIG_STRING),
 	S_FIELD_TOP("saves_path", m_saves_path, S_CONFIG_STRING),
+	S_FIELD_TOP("skip_intro_movies", m_skip_intro_movies, S_CONFIG_BOOL),
 
 	S_FIELD("gamepad", "enabled", m_gamepad_enabled, S_CONFIG_BOOL),
 	S_FIELD("gamepad", "index", m_gamepad_index, S_CONFIG_INT),
