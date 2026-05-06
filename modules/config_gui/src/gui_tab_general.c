@@ -27,6 +27,8 @@ static const char *S_TOOLTIP_LOG_FILE_PATH = "Path to the DttR log file. Default
 static const char *S_TOOLTIP_MINIDUMP_TYPE = "The type of minidump to write on crash. "
 											 "Default: normal (Release), detailed "
 											 "(Debug).";
+static const char *S_TOOLTIP_SKIP_INTRO_MOVIES = "Whether to skip the "
+												 "intro movies at launch. Default: false.";
 
 void s_draw_general_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
 	if (!s_begin_tab_settings_table(
@@ -85,6 +87,14 @@ void s_draw_general_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *sta
 		S_MINIDUMP_TYPE_TOOLTIPS,
 		S_TOOLTIP_MINIDUMP_TYPE,
 		S_FIELD_LABEL_STATE(state, m_minidump_type)
+	);
+	s_labeled_checkbox(
+		ctx,
+		"Skip intro movies",
+		"##skip_intro_movies",
+		&state->m_config.m_skip_intro_movies,
+		S_TOOLTIP_SKIP_INTRO_MOVIES,
+		S_FIELD_LABEL_STATE(state, m_skip_intro_movies)
 	);
 	s_end_settings_table();
 }

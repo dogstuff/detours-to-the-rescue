@@ -2,6 +2,7 @@
 /.direnv/
 /.toolchain/
 /.worktrees/
+/gamefiles/
 
 /build*/
 /cmake-build-*/

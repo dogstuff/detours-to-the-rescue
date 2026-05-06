@@ -510,7 +510,7 @@ static bool s_resolve_components_dir(void) {
 	return copied;
 }
 
-static void s_maybe_hot_reload_components(void) {
+static void s_attempt_hot_reload_components(void) {
 	if (!g_dttr_config.m_hot_reload) {
 		return;
 	}
@@ -538,7 +538,7 @@ void dttr_components_init(void) {
 }
 
 void dttr_components_tick(void) {
-	s_maybe_hot_reload_components();
+	s_attempt_hot_reload_components();
 
 	for (size_t i = 0; i < kv_size(s_loaded_components); i++) {
 		S_LoadedComponent *component = &kv_A(s_loaded_components, i);
