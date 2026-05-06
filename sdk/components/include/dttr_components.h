@@ -5,15 +5,7 @@
 ///   bool dttr_component_init(const DTTR_ComponentContext *ctx)
 ///   void dttr_component_cleanup(void)
 ///
-/// Optional exports:
-///   const DTTR_ComponentInfo *dttr_component_info(void)
-///   void dttr_component_tick(void)
-///   bool dttr_component_event(const SDL_Event *event)
-///   void dttr_component_render_game(const DTTR_RenderGameContext *ctx)
-///   void dttr_component_render(const DTTR_RenderContext *ctx)
-///   bool dttr_component_should_advance_game_frame(void)
-///   void dttr_component_game_frame_advanced(void)
-///   void dttr_component_game_frame_blocked(void)
+/// Optional exports use the DTTR_COMPONENT_* macros below.
 
 #ifndef DTTR_COMPONENTS_H
 #define DTTR_COMPONENTS_H
@@ -32,11 +24,10 @@ typedef union SDL_Event SDL_Event;
 #endif
 
 // Reject incompatible hosts by comparing ctx->m_api_version against this value.
-#define DTTR_COMPONENT_API_VERSION 5
+#define DTTR_COMPONENT_API_VERSION 7
 
 typedef void (*DTTR_LogFn)(int level, const char *file, int line, const char *fmt, ...);
 typedef bool (*DTTR_LogIsEnabledFn)(int level);
-
 typedef struct {
 	DTTR_LogFn m_log;
 	DTTR_LogIsEnabledFn m_log_is_enabled;
@@ -90,14 +81,63 @@ typedef struct {
 } DTTR_ComponentInfo;
 
 typedef bool (*DTTR_ComponentInitFn)(const DTTR_ComponentContext *ctx);
-
 typedef void (*DTTR_ComponentCleanupFn)(void);
-
 typedef void (*DTTR_ComponentTickFn)(void);
-
 typedef bool (*DTTR_ComponentEventFn)(const SDL_Event *event);
-
 typedef const DTTR_ComponentInfo *(*DTTR_ComponentInfoFn)(void);
+typedef void (*DTTR_ComponentLateInitFn)(void);
+typedef void (*DTTR_ComponentBeforeUnloadFn)(void);
+
+typedef struct {
+	uint64_t m_frame_index;
+	uint32_t m_window_w;
+	uint32_t m_window_h;
+	uint32_t m_game_x;
+	uint32_t m_game_y;
+	uint32_t m_game_w;
+	uint32_t m_game_h;
+	float m_scale;
+} DTTR_FrameContext;
+
+typedef struct {
+	uint64_t m_frame_index;
+	uint32_t m_window_w;
+	uint32_t m_window_h;
+	uint32_t m_game_x;
+	uint32_t m_game_y;
+	uint32_t m_game_w;
+	uint32_t m_game_h;
+	float m_scale;
+	bool m_imgui_frame_active;
+	bool m_overlay_rendered;
+} DTTR_PresentContext;
+
+typedef struct {
+	SDL_Window *m_window;
+	HWND m_hwnd;
+	uint32_t m_window_w;
+	uint32_t m_window_h;
+} DTTR_WindowContext;
+
+typedef enum {
+	DTTR_GRAPHICS_BACKEND_UNKNOWN = 0,
+	DTTR_GRAPHICS_BACKEND_SDL_GPU = 1,
+	DTTR_GRAPHICS_BACKEND_OPENGL = 2,
+} DTTR_GraphicsBackend;
+
+typedef struct {
+	SDL_Window *m_window;
+	HWND m_hwnd;
+	DTTR_GraphicsBackend m_backend;
+	const char *m_driver_name;
+	uint32_t m_render_w;
+	uint32_t m_render_h;
+} DTTR_GraphicsContext;
+
+typedef struct {
+	bool m_overlay_visible;
+	bool m_game_input_enabled;
+} DTTR_InputContext;
 
 /// Context passed to the render_game callback at game resolution.
 typedef struct {
@@ -118,13 +158,30 @@ typedef struct {
 } DTTR_RenderContext;
 
 typedef void (*DTTR_ComponentRenderGameFn)(const DTTR_RenderGameContext *ctx);
-
 typedef void (*DTTR_ComponentRenderFn)(const DTTR_RenderContext *ctx);
 
+typedef void (*DTTR_ComponentFrameBeginFn)(const DTTR_FrameContext *ctx);
+typedef void (*DTTR_ComponentBeforeGameFrameFn)(const DTTR_FrameContext *ctx);
+typedef void (*DTTR_ComponentAfterGameFrameFn)(const DTTR_FrameContext *ctx);
+typedef void (*DTTR_ComponentBeforePresentFn)(const DTTR_PresentContext *ctx);
+typedef void (*DTTR_ComponentAfterPresentFn)(const DTTR_PresentContext *ctx);
+typedef void (*DTTR_ComponentFrameEndFn)(const DTTR_FrameContext *ctx);
+typedef void (*DTTR_ComponentImguiBeginFn)(const DTTR_RenderContext *ctx);
+typedef void (*DTTR_ComponentImguiEndFn)(const DTTR_RenderContext *ctx);
+typedef void (*DTTR_ComponentOverlayVisibleChangedFn)(bool visible);
+typedef void (*DTTR_ComponentWindowCreatedFn)(const DTTR_WindowContext *ctx);
+typedef void (*DTTR_ComponentWindowResizedFn)(const DTTR_WindowContext *ctx);
+typedef void (*DTTR_ComponentWindowDestroyingFn)(const DTTR_WindowContext *ctx);
+typedef void (*DTTR_ComponentGraphicsDeviceCreatedFn)(const DTTR_GraphicsContext *ctx);
+typedef void (*DTTR_ComponentGraphicsDeviceLostFn)(const DTTR_GraphicsContext *ctx);
+typedef void (*DTTR_ComponentGraphicsDeviceRestoredFn)(const DTTR_GraphicsContext *ctx);
+typedef void (*DTTR_ComponentGraphicsDeviceDestroyingFn)(const DTTR_GraphicsContext *ctx);
+typedef bool (*DTTR_ComponentBeforeEventFn)(const SDL_Event *event);
+typedef void (*DTTR_ComponentAfterEventFn)(const SDL_Event *event, bool consumed);
+typedef void (*DTTR_ComponentInputModeChangedFn)(const DTTR_InputContext *ctx);
+
 typedef bool (*DTTR_ComponentShouldAdvanceGameFrameFn)(void);
-
 typedef void (*DTTR_ComponentGameFrameAdvancedFn)(void);
-
 typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 
 // Interop storage macros.
@@ -267,6 +324,21 @@ typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 		}                                                                                 \
 	} while (0)
 
+// Scan for a signature and optionally patch bytes at match plus an offset.
+#define DTTR_INSTALL_BYTES_OPTIONAL(name, ctx, sig, mask, offset, bytes, size)            \
+	do {                                                                                  \
+		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
+		if (match_) {                                                                     \
+			name##_site = match_ + (offset);                                              \
+			name##_handle = (ctx)->m_game_api->m_patch_bytes(name##_site, bytes, size);   \
+			DTTR_COMPONENT_LOG_DEBUG(                                                     \
+				ctx,                                                                      \
+				"Applied " #name " at 0x%08X",                                            \
+				(unsigned)name##_site                                                     \
+			);                                                                            \
+		}                                                                                 \
+	} while (0)
+
 // Install an IAT hook at a known site.
 #define DTTR_INSTALL_POINTER_AT(name, ctx, site, new_value)                              \
 	do {                                                                                 \
@@ -300,21 +372,6 @@ typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 			DTTR_INSTALL_POINTER_AT(name, ctx, site_expr, name##_callback);               \
 		} else {                                                                          \
 			DTTR_COMPONENT_LOG_ERROR(ctx, #name ": signature not found");                 \
-		}                                                                                 \
-	} while (0)
-
-// Scan for a signature and optionally patch bytes at match plus an offset.
-#define DTTR_INSTALL_BYTES_OPTIONAL(name, ctx, sig, mask, offset, bytes, size)            \
-	do {                                                                                  \
-		uintptr_t match_ = (ctx)->m_game_api->m_sigscan((ctx)->m_game_module, sig, mask); \
-		if (match_) {                                                                     \
-			name##_site = match_ + (offset);                                              \
-			name##_handle = (ctx)->m_game_api->m_patch_bytes(name##_site, bytes, size);   \
-			DTTR_COMPONENT_LOG_DEBUG(                                                     \
-				ctx,                                                                      \
-				"Applied " #name " at 0x%08X",                                            \
-				(unsigned)name##_site                                                     \
-			);                                                                            \
 		}                                                                                 \
 	} while (0)
 
@@ -370,10 +427,6 @@ typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 	DTTR_COMPONENT_LOG(ctx, DTTR_COMPONENT_LOG_LVL_FATAL, __VA_ARGS__)
 
 // Component export macros.
-//
-//   DTTR_COMPONENT_INFO("My Plugin", "1.0.0", "Author")
-//   DTTR_COMPONENT_INIT { return true; }
-//   DTTR_COMPONENT_CLEANUP { }
 
 #define DTTR_EXPORT __declspec(dllexport)
 
@@ -399,8 +452,72 @@ typedef void (*DTTR_ComponentGameFrameBlockedFn)(void);
 	static bool s_dttr_component_init_(const DTTR_ComponentContext *ctx)
 
 #define DTTR_COMPONENT_CLEANUP DTTR_EXPORT void dttr_component_cleanup(void)
-
 #define DTTR_COMPONENT_TICK DTTR_EXPORT void dttr_component_tick(void)
+#define DTTR_COMPONENT_LATE_INIT DTTR_EXPORT void dttr_component_late_init(void)
+#define DTTR_COMPONENT_BEFORE_UNLOAD DTTR_EXPORT void dttr_component_before_unload(void)
+
+#define DTTR_COMPONENT_FRAME_BEGIN                                                       \
+	DTTR_EXPORT void dttr_component_frame_begin(const DTTR_FrameContext *ctx)
+
+#define DTTR_COMPONENT_BEFORE_GAME_FRAME                                                 \
+	DTTR_EXPORT void dttr_component_before_game_frame(const DTTR_FrameContext *ctx)
+
+#define DTTR_COMPONENT_AFTER_GAME_FRAME                                                  \
+	DTTR_EXPORT void dttr_component_after_game_frame(const DTTR_FrameContext *ctx)
+
+#define DTTR_COMPONENT_BEFORE_PRESENT                                                    \
+	DTTR_EXPORT void dttr_component_before_present(const DTTR_PresentContext *ctx)
+
+#define DTTR_COMPONENT_AFTER_PRESENT                                                     \
+	DTTR_EXPORT void dttr_component_after_present(const DTTR_PresentContext *ctx)
+
+#define DTTR_COMPONENT_FRAME_END                                                         \
+	DTTR_EXPORT void dttr_component_frame_end(const DTTR_FrameContext *ctx)
+
+#define DTTR_COMPONENT_IMGUI_BEGIN                                                       \
+	DTTR_EXPORT void dttr_component_imgui_begin(const DTTR_RenderContext *ctx)
+
+#define DTTR_COMPONENT_IMGUI_END                                                         \
+	DTTR_EXPORT void dttr_component_imgui_end(const DTTR_RenderContext *ctx)
+
+#define DTTR_COMPONENT_OVERLAY_VISIBLE_CHANGED                                           \
+	DTTR_EXPORT void dttr_component_overlay_visible_changed(bool visible)
+
+#define DTTR_COMPONENT_WINDOW_CREATED                                                    \
+	DTTR_EXPORT void dttr_component_window_created(const DTTR_WindowContext *ctx)
+
+#define DTTR_COMPONENT_WINDOW_RESIZED                                                    \
+	DTTR_EXPORT void dttr_component_window_resized(const DTTR_WindowContext *ctx)
+
+#define DTTR_COMPONENT_WINDOW_DESTROYING                                                 \
+	DTTR_EXPORT void dttr_component_window_destroying(const DTTR_WindowContext *ctx)
+
+#define DTTR_COMPONENT_GRAPHICS_DEVICE_CREATED                                           \
+	DTTR_EXPORT void dttr_component_graphics_device_created(                             \
+		const DTTR_GraphicsContext *ctx                                                  \
+	)
+
+#define DTTR_COMPONENT_GRAPHICS_DEVICE_LOST                                              \
+	DTTR_EXPORT void dttr_component_graphics_device_lost(const DTTR_GraphicsContext *ctx)
+
+#define DTTR_COMPONENT_GRAPHICS_DEVICE_RESTORED                                          \
+	DTTR_EXPORT void dttr_component_graphics_device_restored(                            \
+		const DTTR_GraphicsContext *ctx                                                  \
+	)
+
+#define DTTR_COMPONENT_GRAPHICS_DEVICE_DESTROYING                                        \
+	DTTR_EXPORT void dttr_component_graphics_device_destroying(                          \
+		const DTTR_GraphicsContext *ctx                                                  \
+	)
+
+#define DTTR_COMPONENT_BEFORE_EVENT                                                      \
+	DTTR_EXPORT bool dttr_component_before_event(const SDL_Event *event)
+
+#define DTTR_COMPONENT_AFTER_EVENT                                                       \
+	DTTR_EXPORT void dttr_component_after_event(const SDL_Event *event, bool consumed)
+
+#define DTTR_COMPONENT_INPUT_MODE_CHANGED                                                \
+	DTTR_EXPORT void dttr_component_input_mode_changed(const DTTR_InputContext *ctx)
 
 // Return true to consume the event.
 #define DTTR_COMPONENT_EVENT DTTR_EXPORT bool dttr_component_event(const SDL_Event *event)

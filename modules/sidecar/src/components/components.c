@@ -85,25 +85,86 @@ static void s_log_component_info(const char *filename, DTTR_ComponentInfoFn info
 	);
 }
 
-static void *s_component_enter(S_LoadedComponent *component) {
-	return dttr_hook_set_owner(component->m_hook_owner);
-}
-
-static void s_component_leave(void *previous_owner) {
-	dttr_hook_set_owner(previous_owner);
-}
-
 #define S_COMPONENT_WITH_OWNER(component, call)                                          \
 	do {                                                                                 \
-		void *previous_owner = s_component_enter(component);                             \
+		void *previous_owner = dttr_hook_set_owner((component)->m_hook_owner);           \
 		call;                                                                            \
-		s_component_leave(previous_owner);                                               \
+		dttr_hook_set_owner(previous_owner);                                             \
+	} while (0)
+
+#define S_COMPONENT_DISPATCH0(field)                                                     \
+	do {                                                                                 \
+		for (size_t i = 0; i < kv_size(s_loaded_components); i++) {                      \
+			S_LoadedComponent *component = &kv_A(s_loaded_components, i);                \
+			if (component->field) {                                                      \
+				S_COMPONENT_WITH_OWNER(component, component->field());                   \
+			}                                                                            \
+		}                                                                                \
+	} while (0)
+
+#define S_COMPONENT_DISPATCH1(field, arg)                                                \
+	do {                                                                                 \
+		for (size_t i = 0; i < kv_size(s_loaded_components); i++) {                      \
+			S_LoadedComponent *component = &kv_A(s_loaded_components, i);                \
+			if (component->field) {                                                      \
+				S_COMPONENT_WITH_OWNER(component, component->field(arg));                \
+			}                                                                            \
+		}                                                                                \
+	} while (0)
+
+#define S_COMPONENT_DISPATCH2(field, arg0, arg1)                                         \
+	do {                                                                                 \
+		for (size_t i = 0; i < kv_size(s_loaded_components); i++) {                      \
+			S_LoadedComponent *component = &kv_A(s_loaded_components, i);                \
+			if (component->field) {                                                      \
+				S_COMPONENT_WITH_OWNER(component, component->field(arg0, arg1));         \
+			}                                                                            \
+		}                                                                                \
 	} while (0)
 
 #define S_COMPONENT_OPTIONAL_EXPORTS(X)                                                  \
 	X(m_tick, DTTR_ComponentTickFn, "dttr_component_tick")                               \
 	X(m_event, DTTR_ComponentEventFn, "dttr_component_event")                            \
 	X(m_info, DTTR_ComponentInfoFn, "dttr_component_info")                               \
+	X(m_late_init, DTTR_ComponentLateInitFn, "dttr_component_late_init")                 \
+	X(m_before_unload, DTTR_ComponentBeforeUnloadFn, "dttr_component_before_unload")     \
+	X(m_frame_begin, DTTR_ComponentFrameBeginFn, "dttr_component_frame_begin")           \
+	X(m_before_game_frame,                                                               \
+	  DTTR_ComponentBeforeGameFrameFn,                                                   \
+	  "dttr_component_before_game_frame")                                                \
+	X(m_after_game_frame,                                                                \
+	  DTTR_ComponentAfterGameFrameFn,                                                    \
+	  "dttr_component_after_game_frame")                                                 \
+	X(m_before_present, DTTR_ComponentBeforePresentFn, "dttr_component_before_present")  \
+	X(m_after_present, DTTR_ComponentAfterPresentFn, "dttr_component_after_present")     \
+	X(m_frame_end, DTTR_ComponentFrameEndFn, "dttr_component_frame_end")                 \
+	X(m_imgui_begin, DTTR_ComponentImguiBeginFn, "dttr_component_imgui_begin")           \
+	X(m_imgui_end, DTTR_ComponentImguiEndFn, "dttr_component_imgui_end")                 \
+	X(m_overlay_visible_changed,                                                         \
+	  DTTR_ComponentOverlayVisibleChangedFn,                                             \
+	  "dttr_component_overlay_visible_changed")                                          \
+	X(m_window_created, DTTR_ComponentWindowCreatedFn, "dttr_component_window_created")  \
+	X(m_window_resized, DTTR_ComponentWindowResizedFn, "dttr_component_window_resized")  \
+	X(m_window_destroying,                                                               \
+	  DTTR_ComponentWindowDestroyingFn,                                                  \
+	  "dttr_component_window_destroying")                                                \
+	X(m_graphics_device_created,                                                         \
+	  DTTR_ComponentGraphicsDeviceCreatedFn,                                             \
+	  "dttr_component_graphics_device_created")                                          \
+	X(m_graphics_device_lost,                                                            \
+	  DTTR_ComponentGraphicsDeviceLostFn,                                                \
+	  "dttr_component_graphics_device_lost")                                             \
+	X(m_graphics_device_restored,                                                        \
+	  DTTR_ComponentGraphicsDeviceRestoredFn,                                            \
+	  "dttr_component_graphics_device_restored")                                         \
+	X(m_graphics_device_destroying,                                                      \
+	  DTTR_ComponentGraphicsDeviceDestroyingFn,                                          \
+	  "dttr_component_graphics_device_destroying")                                       \
+	X(m_before_event, DTTR_ComponentBeforeEventFn, "dttr_component_before_event")        \
+	X(m_after_event, DTTR_ComponentAfterEventFn, "dttr_component_after_event")           \
+	X(m_input_mode_changed,                                                              \
+	  DTTR_ComponentInputModeChangedFn,                                                  \
+	  "dttr_component_input_mode_changed")                                               \
 	X(m_render_game, DTTR_ComponentRenderGameFn, "dttr_component_render_game")           \
 	X(m_render, DTTR_ComponentRenderFn, "dttr_component_render")                         \
 	X(m_should_advance_game_frame,                                                       \
@@ -142,6 +203,9 @@ static void s_unload_component(S_LoadedComponent *component) {
 
 	if (component->m_initialized) {
 		DTTR_LOG_INFO("Cleaning up component: %s", component->m_filename);
+		if (component->m_before_unload) {
+			S_COMPONENT_WITH_OWNER(component, component->m_before_unload());
+		}
 		dttr_hook_detach_owner(component->m_hook_owner);
 		if (component->m_cleanup) {
 			S_COMPONENT_WITH_OWNER(component, component->m_cleanup());
@@ -290,9 +354,9 @@ static bool s_init_component(S_LoadedComponent *component) {
 	const DTTR_ComponentContext *base_ctx = dttr_game_api_get_ctx();
 	const DTTR_ComponentContext ctx = s_component_context(base_ctx);
 
-	void *previous_owner = s_component_enter(component);
+	void *previous_owner = dttr_hook_set_owner(component->m_hook_owner);
 	const bool initialized = component->m_init(&ctx);
-	s_component_leave(previous_owner);
+	dttr_hook_set_owner(previous_owner);
 
 	if (!initialized) {
 		DTTR_LOG_WARN("Component %s init failed - skipping", component->m_filename);
@@ -548,6 +612,97 @@ void dttr_components_tick(void) {
 
 		S_COMPONENT_WITH_OWNER(component, component->m_tick());
 	}
+}
+
+void dttr_components_late_init(void) { S_COMPONENT_DISPATCH0(m_late_init); }
+
+void dttr_components_before_unload(void) { S_COMPONENT_DISPATCH0(m_before_unload); }
+
+void dttr_components_frame_begin(const DTTR_FrameContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_frame_begin, ctx);
+}
+
+void dttr_components_before_game_frame(const DTTR_FrameContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_before_game_frame, ctx);
+}
+
+void dttr_components_after_game_frame(const DTTR_FrameContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_after_game_frame, ctx);
+}
+
+void dttr_components_before_present(const DTTR_PresentContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_before_present, ctx);
+}
+
+void dttr_components_after_present(const DTTR_PresentContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_after_present, ctx);
+}
+
+void dttr_components_frame_end(const DTTR_FrameContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_frame_end, ctx);
+}
+
+void dttr_components_imgui_begin(const DTTR_RenderContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_imgui_begin, ctx);
+}
+
+void dttr_components_imgui_end(const DTTR_RenderContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_imgui_end, ctx);
+}
+
+void dttr_components_overlay_visible_changed(bool visible) {
+	S_COMPONENT_DISPATCH1(m_overlay_visible_changed, visible);
+}
+
+void dttr_components_window_created(const DTTR_WindowContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_window_created, ctx);
+}
+
+void dttr_components_window_resized(const DTTR_WindowContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_window_resized, ctx);
+}
+
+void dttr_components_window_destroying(const DTTR_WindowContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_window_destroying, ctx);
+}
+
+void dttr_components_graphics_device_created(const DTTR_GraphicsContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_graphics_device_created, ctx);
+}
+
+void dttr_components_graphics_device_lost(const DTTR_GraphicsContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_graphics_device_lost, ctx);
+}
+
+void dttr_components_graphics_device_restored(const DTTR_GraphicsContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_graphics_device_restored, ctx);
+}
+
+void dttr_components_graphics_device_destroying(const DTTR_GraphicsContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_graphics_device_destroying, ctx);
+}
+
+bool dttr_components_before_event(const SDL_Event *event) {
+	for (size_t i = 0; i < kv_size(s_loaded_components); i++) {
+		S_LoadedComponent *component = &kv_A(s_loaded_components, i);
+		if (!component->m_before_event) {
+			continue;
+		}
+		bool consumed = false;
+		S_COMPONENT_WITH_OWNER(component, consumed = component->m_before_event(event));
+		if (consumed) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void dttr_components_after_event(const SDL_Event *event, bool consumed) {
+	S_COMPONENT_DISPATCH2(m_after_event, event, consumed);
+}
+
+void dttr_components_input_mode_changed(const DTTR_InputContext *ctx) {
+	S_COMPONENT_DISPATCH1(m_input_mode_changed, ctx);
 }
 
 bool dttr_components_should_advance_game_frame(void) {

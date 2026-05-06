@@ -3,6 +3,7 @@
 /.toolchain/
 /.worktrees/
 
+/gamefiles/
 /build*/
 /cmake-build-*/
 /compile_commands.json

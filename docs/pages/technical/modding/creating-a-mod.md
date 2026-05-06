@@ -71,6 +71,22 @@ DTTR_COMPONENT_CLEANUP {
 
 Only `DTTR_COMPONENT_INIT` and `DTTR_COMPONENT_CLEANUP` are required. `DTTR_COMPONENT_INFO` is optional, but it makes the load obvious in the log.
 
+### Optional callbacks
+
+Add only the callbacks the component needs. DttR loads each optional export by name after loading the DLL and before it runs init.
+
+```c
+DTTR_COMPONENT_LATE_INIT {
+    DTTR_COMPONENT_LOG_INFO(g_ctx, "game systems are ready");
+}
+
+DTTR_COMPONENT_BEFORE_UNLOAD {
+    DTTR_COMPONENT_LOG_DEBUG(g_ctx, "component is about to unload");
+}
+```
+
+Use [Component exports](exports.md) for callback timing and [Component API](api.md) for context structs and macros.
+
 ### 4. Build a 32-bit Windows DLL
 
 From the component project directory, configure CMake with a 32-bit Windows toolchain. For example, with MinGW-w64:
