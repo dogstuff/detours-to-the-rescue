@@ -287,6 +287,80 @@ bool dttr_graphics_present_video_frame_bgra(
 /// Returns true when called from the renderer's GPU thread
 bool dttr_graphics_is_gpu_thread(void);
 
+#ifdef DTTR_MODDING_ENABLED
+void dttr_graphics_component_frame_begin(DTTR_BackendState *state);
+void dttr_graphics_component_before_game_frame(DTTR_BackendState *state);
+void dttr_graphics_component_after_game_frame(DTTR_BackendState *state);
+void dttr_graphics_component_before_present(
+	DTTR_BackendState *state,
+	uint32_t game_x,
+	uint32_t game_y,
+	uint32_t game_w,
+	uint32_t game_h,
+	bool imgui_frame_active,
+	bool overlay_rendered
+);
+void dttr_graphics_component_after_present(
+	DTTR_BackendState *state,
+	uint32_t game_x,
+	uint32_t game_y,
+	uint32_t game_w,
+	uint32_t game_h,
+	bool imgui_frame_active,
+	bool overlay_rendered
+);
+void dttr_graphics_component_frame_end(DTTR_BackendState *state);
+void dttr_graphics_component_window_created(DTTR_BackendState *state);
+void dttr_graphics_component_window_resized(DTTR_BackendState *state);
+void dttr_graphics_component_window_destroying(DTTR_BackendState *state);
+void dttr_graphics_component_device_created(DTTR_BackendState *state);
+void dttr_graphics_component_device_lost(DTTR_BackendState *state);
+void dttr_graphics_component_device_restored(DTTR_BackendState *state);
+void dttr_graphics_component_device_destroying(DTTR_BackendState *state);
+#else
+static inline void dttr_graphics_component_frame_begin(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_before_game_frame(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_after_game_frame(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_before_present(
+	DTTR_BackendState *,
+	uint32_t,
+	uint32_t,
+	uint32_t,
+	uint32_t,
+	bool,
+	bool
+) {}
+
+static inline void dttr_graphics_component_after_present(
+	DTTR_BackendState *,
+	uint32_t,
+	uint32_t,
+	uint32_t,
+	uint32_t,
+	bool,
+	bool
+) {}
+
+static inline void dttr_graphics_component_frame_end(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_window_created(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_window_resized(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_window_destroying(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_device_created(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_device_lost(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_device_restored(DTTR_BackendState *) {}
+
+static inline void dttr_graphics_component_device_destroying(DTTR_BackendState *) {}
+#endif
+
 /// Computes the number of mip levels needed for a texture size
 int dttr_graphics_calc_mip_levels(int w, int h);
 /// Writes an identity matrix into a 4x4 float matrix buffer

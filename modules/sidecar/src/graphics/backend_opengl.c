@@ -350,7 +350,6 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	gl->m_loc_alpha_arg2 = glGetUniformLocation(gl->m_program, "u_alpha_arg2");
 	gl->m_loc_texture = glGetUniformLocation(gl->m_program, "u_texture");
 
-	// Create the vertex array and buffer objects.
 	glGenVertexArrays(1, &gl->m_vao);
 	glBindVertexArray(gl->m_vao);
 	glGenBuffers(1, &gl->m_vbo);
@@ -373,7 +372,6 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride, (void *)(8 * sizeof(float)));
 	glEnableVertexAttribArray(3);
 
-	// Create the framebuffer.
 	if (!s_create_fbo(gl, state->m_width, state->m_height)) {
 		glDeleteProgram(gl->m_program);
 		glDeleteVertexArrays(1, &gl->m_vao);
@@ -559,6 +557,36 @@ static S_OpenglPresentRect s_compute_present_rect(
 	};
 }
 
+static void s_component_before_present(
+	DTTR_BackendState *state,
+	const S_OpenglPresentRect *present
+) {
+	dttr_graphics_component_before_present(
+		state,
+		(uint32_t)present->x,
+		(uint32_t)present->y,
+		(uint32_t)present->w,
+		(uint32_t)present->h,
+		false,
+		true
+	);
+}
+
+static void s_component_after_present(
+	DTTR_BackendState *state,
+	const S_OpenglPresentRect *present
+) {
+	dttr_graphics_component_after_present(
+		state,
+		(uint32_t)present->x,
+		(uint32_t)present->y,
+		(uint32_t)present->w,
+		(uint32_t)present->h,
+		false,
+		true
+	);
+}
+
 static void s_upload_video_texture(
 	S_OpenglBackendData *gl,
 	const uint8_t *pixels,
@@ -606,6 +634,7 @@ static void s_begin_frame(DTTR_BackendState *state) {
 	state->m_vertex_offset = 0;
 	state->m_transfer_mapped = gl->m_vertex_staging;
 	state->m_frame_active = true;
+	dttr_graphics_component_frame_begin(state);
 }
 
 static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendData *gl) {
@@ -656,7 +685,6 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 			continue;
 		}
 
-		// Process a draw record.
 		if (rec->draw.blend_mode != last_blend_mode) {
 			if (rec->draw.blend_mode == DTTR_BLEND_OFF) {
 				glDisable(GL_BLEND);
@@ -693,7 +721,6 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 			last_depth_write = rec->draw.depth_write;
 		}
 
-		// Upload per-draw uniforms.
 		glUniformMatrix4fv(gl->m_loc_mvp, 1, GL_FALSE, rec->draw.uniforms.m_mvp);
 		glUniform2f(
 			gl->m_loc_screen_size,
@@ -709,7 +736,6 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 		glUniform1f(gl->m_loc_alpha_arg1, rec->draw.uniforms.m_alpha_arg1);
 		glUniform1f(gl->m_loc_alpha_arg2, rec->draw.uniforms.m_alpha_arg2);
 
-		// Bind the active texture or the dummy fallback.
 		GLuint tex_id = gl->m_dummy_texture;
 
 		if (rec->draw.uniforms.m_has_texture > 0.5f
@@ -750,6 +776,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 	}
 
 	state->m_frame_active = false;
+	dttr_graphics_component_before_game_frame(state);
 	state->m_transfer_mapped = NULL;
 
 	if (state->m_vertex_offset > 0) {
@@ -769,6 +796,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 #ifdef DTTR_MODDING_ENABLED
 	dttr_imgui_render_game_opengl();
 #endif
+	dttr_graphics_component_after_game_frame(state);
 
 	if (gl->m_msaa_samples > 0) {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->m_msaa_fbo);
@@ -838,8 +866,11 @@ static void s_end_frame(DTTR_BackendState *state) {
 		(uint32_t)present.h
 	);
 #endif
+	s_component_before_present(state, &present);
 
 	SDL_GL_SwapWindow(state->m_window);
+	s_component_after_present(state, &present);
+	dttr_graphics_component_frame_end(state);
 }
 
 static bool s_present_video_frame_bgra(
@@ -913,7 +944,6 @@ static bool s_present_video_frame_bgra(
 	glUniform1i(gl->m_loc_texture, 0);
 	glBindSampler(0, 0);
 
-	// Build quad vertices and submit the draw call.
 	DTTR_Vertex verts[6] = {
 		{x0, y0, 0, 1, 1, 1, 1, 1, 0, 0},
 		{x1, y0, 0, 1, 1, 1, 1, 1, 1, 0},

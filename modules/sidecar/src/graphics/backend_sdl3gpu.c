@@ -27,7 +27,6 @@ typedef struct {
 	Uint32 h;
 } S_GraphicsPresentRect;
 
-// Converts config integer sample count into SDL GPU sample-count enum
 static SDL_GPUSampleCount s_msaa_sample_count_from_config(int value) {
 	switch (value) {
 	case 2:
@@ -41,7 +40,6 @@ static SDL_GPUSampleCount s_msaa_sample_count_from_config(int value) {
 	}
 }
 
-// Returns readable integer form for logging a sample-count enum
 static int s_msaa_sample_count_to_int(SDL_GPUSampleCount value) {
 	switch (value) {
 	case SDL_GPU_SAMPLECOUNT_2:
@@ -55,7 +53,6 @@ static int s_msaa_sample_count_to_int(SDL_GPUSampleCount value) {
 	}
 }
 
-// Selects the runtime MSAA sample count based on config and GPU support
 static SDL_GPUSampleCount s_select_msaa_sample_count(DTTR_BackendState *state) {
 	const SDL_GPUSampleCount requested = s_msaa_sample_count_from_config(
 		g_dttr_config.m_msaa_samples
@@ -179,7 +176,6 @@ static bool s_try_create_device_for_driver(
 	return false;
 }
 
-// Maps config graphics API mode to SDL GPU driver name (NULL means auto-select)
 static const char *s_graphics_api_driver_name(DTTR_GraphicsApi api) {
 	switch (api) {
 	case DTTR_GRAPHICS_API_VULKAN:
@@ -191,7 +187,6 @@ static const char *s_graphics_api_driver_name(DTTR_GraphicsApi api) {
 	}
 }
 
-// Tries supported backend drivers in order until one produces a usable GPU device
 static bool s_create_device(DTTR_BackendState *state) {
 	const SDL_GPUShaderFormat requested_formats = dttr_graphics_requested_shader_formats();
 	const char *const requested_driver = s_graphics_api_driver_name(
@@ -331,7 +326,6 @@ static void s_cleanup(DTTR_BackendState *state) {
 	state->m_backend_data = NULL;
 }
 
-// Tracks one pending texture upload ready for mipmap generation
 typedef struct {
 	SDL_GPUTexture *tex;
 	uint32_t bytes;
@@ -352,13 +346,11 @@ typedef struct {
 	SDL_GPUSampler *last_sampler;
 } S_GraphicsReplayState;
 
-// Returns true when frame rendering is configured to use multisampled color
 static bool s_msaa_enabled(const DTTR_BackendState *state) {
 	return state->m_msaa_sample_count != SDL_GPU_SAMPLECOUNT_1
 		   && state->m_msaa_render_target != NULL;
 }
 
-// Marks a reusable upload slot as available
 static void s_release_upload_pool_slot(DTTR_BackendState *state, int pool_slot) {
 	if (!state || pool_slot < 0 || pool_slot >= DTTR_UPLOAD_POOL_SIZE) {
 		return;
@@ -367,7 +359,6 @@ static void s_release_upload_pool_slot(DTTR_BackendState *state, int pool_slot) 
 	state->m_upload_pool[pool_slot].m_in_use = false;
 }
 
-// Acquires or grows one reusable upload slot that can fit `bytes`
 static int s_acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) {
 	if (!state || !state->m_device || bytes == 0) {
 		return -1;
@@ -427,7 +418,6 @@ static int s_acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) 
 	return slot_index;
 }
 
-// Binds the shared frame vertex buffer to the current render pass when available
 static void s_bind_frame_vertex_buffer(
 	const DTTR_BackendState *state,
 	SDL_GPURenderPass *render_pass
@@ -442,7 +432,6 @@ static void s_bind_frame_vertex_buffer(
 	SDL_BindGPUVertexBuffers(render_pass, 0, &vbuf_binding, 1);
 }
 
-// Ends the active render pass and clears the pass pointer
 static void s_end_render_pass_if_active(DTTR_BackendState *state) {
 	if (!state->m_render_pass) {
 		return;
@@ -452,7 +441,6 @@ static void s_end_render_pass_if_active(DTTR_BackendState *state) {
 	state->m_render_pass = NULL;
 }
 
-// Releases textures deferred for destruction on the GPU thread
 static void s_release_deferred_texture_destroys(DTTR_BackendState *state) {
 	S_SDL3GPUBackendData *bd = (S_SDL3GPUBackendData *)state->m_backend_data;
 	if (!bd) {
@@ -469,7 +457,6 @@ static void s_release_deferred_texture_destroys(DTTR_BackendState *state) {
 	SDL_UnlockMutex(state->m_texture_mutex);
 }
 
-// Queues an SDL GPU texture for deferred deletion on the next frame
 static void s_defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 	S_SDL3GPUBackendData *bd = (S_SDL3GPUBackendData *)state->m_backend_data;
 	if (!bd || texture_index < 0 || texture_index >= DTTR_MAX_STAGED_TEXTURES) {
@@ -482,7 +469,6 @@ static void s_defer_texture_destroy(DTTR_BackendState *state, int texture_index)
 	}
 }
 
-// Lazily creates the GPU texture backing a staged texture slot
 static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st) {
 	if (st->m_gpu_tex) {
 		return true;
@@ -512,7 +498,6 @@ static bool s_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture
 	return true;
 }
 
-// Uploads one pending pixel payload directly to a GPU texture via transfer buffer
 static bool s_upload_texture_data(
 	DTTR_BackendState *state,
 	SDL_GPUCopyPass *copy,
@@ -588,7 +573,6 @@ static bool s_upload_texture_data(
 	return true;
 }
 
-// Detaches staged pixel payloads and uploads them directly to GPU textures
 static int s_collect_and_upload_pending(
 	DTTR_BackendState *state,
 	SDL_GPUCopyPass *copy,
@@ -604,7 +588,6 @@ static int s_collect_and_upload_pending(
 	const size_t queued_count = kv_size(state->m_pending_upload_indices);
 	size_t deferred_write = 0;
 
-	// Detach pixel payloads under the mutex, collecting texture/size info
 	typedef struct {
 		SDL_GPUTexture *tex;
 		void *pixels;
@@ -671,7 +654,6 @@ static int s_collect_and_upload_pending(
 	state->m_pending_upload_indices.n = deferred_write;
 	SDL_UnlockMutex(state->m_texture_mutex);
 
-	// Upload each detached payload directly to its texture
 	for (int i = 0; i < pending_count; i++) {
 		const bool ok = s_upload_texture_data(
 			state,
@@ -693,7 +675,6 @@ static int s_collect_and_upload_pending(
 	return pending_count;
 }
 
-// Generates mipmaps and tallies stats for successfully uploaded textures
 static void s_generate_pending_mipmaps(
 	DTTR_BackendState *state,
 	SDL_GPUCommandBuffer *cmd,
@@ -724,7 +705,6 @@ static void s_generate_pending_mipmaps(
 	}
 }
 
-// Flushes all pending staged textures to GPU textures
 static void s_upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBuffer *cmd) {
 	if (!cmd) {
 		return;
@@ -803,6 +783,37 @@ static S_GraphicsPresentRect s_compute_present_rect(
 	return rect;
 }
 
+static void s_component_before_present(
+	DTTR_BackendState *state,
+	const S_GraphicsPresentRect *present
+) {
+	dttr_graphics_component_before_present(
+		state,
+		present->x,
+		present->y,
+		present->w,
+		present->h,
+		false,
+		true
+	);
+}
+
+static void s_component_after_present(
+	DTTR_BackendState *state,
+	const S_GraphicsPresentRect *present,
+	bool overlay_rendered
+) {
+	dttr_graphics_component_after_present(
+		state,
+		present->x,
+		present->y,
+		present->w,
+		present->h,
+		false,
+		overlay_rendered
+	);
+}
+
 static void s_set_default_viewport(const DTTR_BackendState *state) {
 	if (!state->m_render_pass) {
 		return;
@@ -827,7 +838,6 @@ static void s_set_default_viewport(const DTTR_BackendState *state) {
 	SDL_SetGPUScissor(state->m_render_pass, &scissor);
 }
 
-// Opens a standard draw pass when no render pass is active
 static bool s_begin_draw_pass_if_needed(DTTR_BackendState *state) {
 	if (state->m_render_pass) {
 		return false;
@@ -874,7 +884,6 @@ static void s_reset_replay_state(S_GraphicsReplayState *replay_state) {
 	replay_state->last_sampler = NULL;
 }
 
-// Opens a render pass configured for the recorded clear command
 static void s_begin_clear_pass(
 	DTTR_BackendState *state,
 	const DTTR_BatchRecord *rec,
@@ -912,7 +921,6 @@ static void s_begin_clear_pass(
 	s_reset_replay_state(replay_state);
 }
 
-// Executes one recorded draw command in the active frame command buffer
 static void s_draw_batch_record(
 	DTTR_BackendState *state,
 	const DTTR_BatchRecord *rec,
@@ -991,7 +999,6 @@ static void s_draw_batch_record(
 	}
 }
 
-// Replays all recorded batch operations for the frame
 static S_GraphicsReplayStats s_replay_batch_records(DTTR_BackendState *state) {
 	S_GraphicsReplayStats replay_stats = {0};
 
@@ -1018,7 +1025,6 @@ static S_GraphicsReplayStats s_replay_batch_records(DTTR_BackendState *state) {
 	return replay_stats;
 }
 
-// Starts a frame, acquires command/swapchain resources, and maps the upload buffer
 static void s_begin_frame(DTTR_BackendState *state) {
 	if (!state->m_device || !state->m_window || !dttr_graphics_is_gpu_thread()) {
 		return;
@@ -1071,11 +1077,13 @@ static void s_begin_frame(DTTR_BackendState *state) {
 	}
 
 	state->m_frame_active = true;
+	dttr_graphics_component_frame_begin(state);
 }
 
-// Finalizes GPU uploads and batch replay, then submits the frame command buffer
 static void s_end_frame(DTTR_BackendState *state) {
 	state->m_frame_active = false;
+
+	dttr_graphics_component_before_game_frame(state);
 
 	if (state->m_transfer_mapped) {
 		SDL_UnmapGPUTransferBuffer(state->m_device, state->m_transfer_buffer);
@@ -1116,7 +1124,15 @@ static void s_end_frame(DTTR_BackendState *state) {
 		(uint32_t)state->m_height
 	);
 #endif
+	dttr_graphics_component_after_game_frame(state);
 
+	S_GraphicsPresentRect present = {
+		.x = 0,
+		.y = 0,
+		.w = (Uint32)state->m_width,
+		.h = (Uint32)state->m_height,
+	};
+	bool overlay_rendered = false;
 	if (state->m_swapchain_tex) {
 		const Uint32 swap_w = (state->m_swapchain_width > 0) ? state->m_swapchain_width
 															 : (Uint32)state->m_width;
@@ -1124,7 +1140,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 															  : (Uint32)state->m_height;
 		const bool is_internal_method
 			= (g_dttr_config.m_scaling_method == DTTR_SCALING_METHOD_LOGICAL);
-		const S_GraphicsPresentRect present = s_compute_present_rect(
+		present = s_compute_present_rect(
 			swap_w,
 			swap_h,
 			state->m_width,
@@ -1133,6 +1149,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 			(!is_internal_method)
 				&& (g_dttr_config.m_scaling_fit == DTTR_SCALING_MODE_INTEGER)
 		);
+		overlay_rendered = true;
 
 		const SDL_GPUBlitInfo blit = {
 			.source =
@@ -1167,6 +1184,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 			present.h
 		);
 #endif
+		s_component_before_present(state, &present);
 	}
 
 	SDL_SubmitGPUCommandBuffer(state->m_cmd);
@@ -1175,10 +1193,11 @@ static void s_end_frame(DTTR_BackendState *state) {
 		SDL_WaitForGPUIdle(state->m_device);
 	}
 
+	s_component_after_present(state, &present, overlay_rendered);
+	dttr_graphics_component_frame_end(state);
 	state->m_cmd = NULL;
 }
 
-// Ensures the dedicated video texture exists and matches the decoded frame size
 static bool s_ensure_video_texture(DTTR_BackendState *state, int width, int height) {
 	if (state->m_video_texture && state->m_video_width == width
 		&& state->m_video_height == height) {

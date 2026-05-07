@@ -196,8 +196,10 @@ static ImDrawData *s_render_overlay_frame(
 	};
 
 	s_new_frame();
+	dttr_components_imgui_begin(&ctx);
 	dttr_components_render(&ctx);
 	s_draw_modding_overlay(&ctx);
+	dttr_components_imgui_end(&ctx);
 
 	igRender();
 	return igGetDrawData();

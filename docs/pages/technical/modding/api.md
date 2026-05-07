@@ -100,11 +100,17 @@ Install and resolve macros:
 
     Hook helpers assume the signatures and patch sizes match the loaded game executable. Check `ctx->m_exe_hash` when a hook only supports one executable, or keep the signatures strict enough.
 
-## Metadata and render context types
+## Metadata and callback context types
 
 | Type | Use |
 | --- | --- |
 | `DTTR_ComponentInfo` | Metadata returned by `dttr_component_info`. |
+| `DTTR_FrameContext` | Per-frame index, window size, game viewport, and scale. |
+| `DTTR_PresentContext` | Present-time frame context. Also includes `m_imgui_frame_active` and `m_overlay_rendered`. |
+| `DTTR_WindowContext` | Window pointer, native `HWND`, and window size. |
+| `DTTR_GraphicsBackend` | Backend enum: unknown, SDL GPU, or OpenGL. |
+| `DTTR_GraphicsContext` | Window, `HWND`, backend, driver name, and render-target size. |
+| `DTTR_InputContext` | Overlay visibility and game-input enabled state. |
 | `DTTR_RenderGameContext` | Game-resolution render callback context. Contains `m_width`, `m_height`, and `m_scale`. |
 | `DTTR_RenderContext` | Window-resolution render callback context. Contains window size, game viewport, and scale. |
 
@@ -116,11 +122,32 @@ The header exposes typedefs for every component callback DttR can load:
 | --- | --- |
 | `DTTR_ComponentInitFn` | `bool (*)(const DTTR_ComponentContext *ctx)` |
 | `DTTR_ComponentCleanupFn` | `void (*)(void)` |
-| `DTTR_ComponentInfoFn` | `const DTTR_ComponentInfo *(*)(void)` |
 | `DTTR_ComponentTickFn` | `void (*)(void)` |
 | `DTTR_ComponentEventFn` | `bool (*)(const SDL_Event *event)` |
+| `DTTR_ComponentInfoFn` | `const DTTR_ComponentInfo *(*)(void)` |
+| `DTTR_ComponentLateInitFn` | `void (*)(void)` |
+| `DTTR_ComponentBeforeUnloadFn` | `void (*)(void)` |
 | `DTTR_ComponentRenderGameFn` | `void (*)(const DTTR_RenderGameContext *ctx)` |
 | `DTTR_ComponentRenderFn` | `void (*)(const DTTR_RenderContext *ctx)` |
+| `DTTR_ComponentFrameBeginFn` | `void (*)(const DTTR_FrameContext *ctx)` |
+| `DTTR_ComponentBeforeGameFrameFn` | `void (*)(const DTTR_FrameContext *ctx)` |
+| `DTTR_ComponentAfterGameFrameFn` | `void (*)(const DTTR_FrameContext *ctx)` |
+| `DTTR_ComponentBeforePresentFn` | `void (*)(const DTTR_PresentContext *ctx)` |
+| `DTTR_ComponentAfterPresentFn` | `void (*)(const DTTR_PresentContext *ctx)` |
+| `DTTR_ComponentFrameEndFn` | `void (*)(const DTTR_FrameContext *ctx)` |
+| `DTTR_ComponentImguiBeginFn` | `void (*)(const DTTR_RenderContext *ctx)` |
+| `DTTR_ComponentImguiEndFn` | `void (*)(const DTTR_RenderContext *ctx)` |
+| `DTTR_ComponentOverlayVisibleChangedFn` | `void (*)(bool visible)` |
+| `DTTR_ComponentWindowCreatedFn` | `void (*)(const DTTR_WindowContext *ctx)` |
+| `DTTR_ComponentWindowResizedFn` | `void (*)(const DTTR_WindowContext *ctx)` |
+| `DTTR_ComponentWindowDestroyingFn` | `void (*)(const DTTR_WindowContext *ctx)` |
+| `DTTR_ComponentGraphicsDeviceCreatedFn` | `void (*)(const DTTR_GraphicsContext *ctx)` |
+| `DTTR_ComponentGraphicsDeviceLostFn` | `void (*)(const DTTR_GraphicsContext *ctx)` |
+| `DTTR_ComponentGraphicsDeviceRestoredFn` | `void (*)(const DTTR_GraphicsContext *ctx)` |
+| `DTTR_ComponentGraphicsDeviceDestroyingFn` | `void (*)(const DTTR_GraphicsContext *ctx)` |
+| `DTTR_ComponentBeforeEventFn` | `bool (*)(const SDL_Event *event)` |
+| `DTTR_ComponentAfterEventFn` | `void (*)(const SDL_Event *event, bool consumed)` |
+| `DTTR_ComponentInputModeChangedFn` | `void (*)(const DTTR_InputContext *ctx)` |
 | `DTTR_ComponentShouldAdvanceGameFrameFn` | `bool (*)(void)` |
 | `DTTR_ComponentGameFrameAdvancedFn` | `void (*)(void)` |
 | `DTTR_ComponentGameFrameBlockedFn` | `void (*)(void)` |
@@ -135,6 +162,27 @@ Use these instead of writing the exported function declarations by hand:
 | `DTTR_COMPONENT_INIT` | `dttr_component_init` with API-version check. |
 | `DTTR_COMPONENT_CLEANUP` | `dttr_component_cleanup`. |
 | `DTTR_COMPONENT_TICK` | `dttr_component_tick`. |
+| `DTTR_COMPONENT_LATE_INIT` | `dttr_component_late_init`. |
+| `DTTR_COMPONENT_BEFORE_UNLOAD` | `dttr_component_before_unload`. |
+| `DTTR_COMPONENT_FRAME_BEGIN` | `dttr_component_frame_begin`. |
+| `DTTR_COMPONENT_BEFORE_GAME_FRAME` | `dttr_component_before_game_frame`. |
+| `DTTR_COMPONENT_AFTER_GAME_FRAME` | `dttr_component_after_game_frame`. |
+| `DTTR_COMPONENT_BEFORE_PRESENT` | `dttr_component_before_present`. |
+| `DTTR_COMPONENT_AFTER_PRESENT` | `dttr_component_after_present`. |
+| `DTTR_COMPONENT_FRAME_END` | `dttr_component_frame_end`. |
+| `DTTR_COMPONENT_IMGUI_BEGIN` | `dttr_component_imgui_begin`. |
+| `DTTR_COMPONENT_IMGUI_END` | `dttr_component_imgui_end`. |
+| `DTTR_COMPONENT_OVERLAY_VISIBLE_CHANGED` | `dttr_component_overlay_visible_changed`. |
+| `DTTR_COMPONENT_WINDOW_CREATED` | `dttr_component_window_created`. |
+| `DTTR_COMPONENT_WINDOW_RESIZED` | `dttr_component_window_resized`. |
+| `DTTR_COMPONENT_WINDOW_DESTROYING` | `dttr_component_window_destroying`. |
+| `DTTR_COMPONENT_GRAPHICS_DEVICE_CREATED` | `dttr_component_graphics_device_created`. |
+| `DTTR_COMPONENT_GRAPHICS_DEVICE_LOST` | `dttr_component_graphics_device_lost`. |
+| `DTTR_COMPONENT_GRAPHICS_DEVICE_RESTORED` | `dttr_component_graphics_device_restored`. |
+| `DTTR_COMPONENT_GRAPHICS_DEVICE_DESTROYING` | `dttr_component_graphics_device_destroying`. |
+| `DTTR_COMPONENT_BEFORE_EVENT` | `dttr_component_before_event`. |
+| `DTTR_COMPONENT_AFTER_EVENT` | `dttr_component_after_event`. |
+| `DTTR_COMPONENT_INPUT_MODE_CHANGED` | `dttr_component_input_mode_changed`. |
 | `DTTR_COMPONENT_EVENT` | `dttr_component_event`. |
 | `DTTR_COMPONENT_RENDER_GAME` | `dttr_component_render_game`. |
 | `DTTR_COMPONENT_RENDER` | `dttr_component_render`. |

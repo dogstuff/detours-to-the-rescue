@@ -125,50 +125,74 @@ static void s_toggle_fullscreen(void) {
 	SDL_SetWindowFullscreen(window, !is_fullscreen);
 }
 
+#ifdef DTTR_MODDING_ENABLED
+static void s_after_sdl_event(const SDL_Event *event, bool consumed) {
+	dttr_components_after_event(event, consumed);
+}
+#else
+#define s_after_sdl_event(event, consumed)                                               \
+	do {                                                                                 \
+	} while (0)
+#endif
+
 static void s_handle_sdl_event(const SDL_Event *event) {
 #ifdef DTTR_MODDING_ENABLED
+	if (dttr_components_before_event(event)) {
+		s_after_sdl_event(event, true);
+		return;
+	}
+
 	dttr_imgui_process_event(event);
 
 	if (dttr_components_handle_event(event)) {
+		s_after_sdl_event(event, true);
 		return;
 	}
 
 #endif
 
 	if (dttr_movies_handle_event(event)) {
+		s_after_sdl_event(event, true);
 		return;
 	}
 
 	switch (event->type) {
 	case SDL_EVENT_QUIT:
 		g_pcdogs_should_quit_set(1);
+		s_after_sdl_event(event, true);
 		return;
 
 	case SDL_EVENT_GAMEPAD_ADDED:
 	case SDL_EVENT_GAMEPAD_REMOVED:
 		dttr_inputs_handle_device_event(event);
+		s_after_sdl_event(event, true);
 		return;
 
 	case SDL_EVENT_AUDIO_DEVICE_ADDED:
 	case SDL_EVENT_AUDIO_DEVICE_REMOVED:
 		dttr_audio_handle_device_event(event);
+		s_after_sdl_event(event, true);
 		return;
 
 	case SDL_EVENT_KEY_DOWN:
 		if (event->key.scancode == SDL_SCANCODE_F11) {
 			s_toggle_fullscreen();
+			s_after_sdl_event(event, true);
+			return;
 		}
-
-		return;
+		break;
 
 	case SDL_EVENT_WINDOW_RESIZED:
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 		dttr_graphics_handle_window_resize(event->window.data1, event->window.data2);
+		s_after_sdl_event(event, true);
 		return;
 
 	default:
-		return;
+		break;
 	}
+
+	s_after_sdl_event(event, false);
 }
 
 static void s_poll_sdl_events(void) {
@@ -361,6 +385,15 @@ int32_t _stdcall dttr_hook_win_main_callback(
 		g_dttr_backend.m_backend_type
 	);
 	dttr_components_init();
+	dttr_graphics_component_window_created(&g_dttr_backend);
+	dttr_graphics_component_device_created(&g_dttr_backend);
+	dttr_graphics_component_device_restored(&g_dttr_backend);
+	const DTTR_InputContext input_ctx = {
+		.m_overlay_visible = false,
+		.m_game_input_enabled = true,
+	};
+	dttr_components_input_mode_changed(&input_ctx);
+	dttr_components_overlay_visible_changed(false);
 #endif
 
 	g_pcdogs_main_window_handle2_set(hwnd);
@@ -382,6 +415,9 @@ int32_t _stdcall dttr_hook_win_main_callback(
 	}
 
 	dttr_inputs_late_init();
+#ifdef DTTR_MODDING_ENABLED
+	dttr_components_late_init();
+#endif
 	g_pcdogs_should_quit_set(0);
 
 	g_pcdogs_game_initialized_set(1);

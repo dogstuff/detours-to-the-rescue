@@ -7,6 +7,9 @@
 #include <windows.h>
 
 #include "dttr_hooks_graphics.h"
+#ifdef DTTR_MODDING_ENABLED
+#include "components/components_private.h"
+#endif
 #include "dttr_sidecar.h"
 #include "game_api_private.h"
 #include "sds.h"
@@ -164,15 +167,254 @@ static void s_init_common_state(DTTR_BackendState *state) {
 }
 
 static HWND s_get_hwnd(SDL_Window *window) {
+	if (!window) {
+		return NULL;
+	}
 	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
 	return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 }
+
+#ifdef DTTR_MODDING_ENABLED
+static float s_graphics_scale(uint32_t height) {
+	return height > 0 ? (float)height / 480.0f : 1.0f;
+}
+
+static void s_graphics_window_size(
+	const DTTR_BackendState *state,
+	uint32_t *w,
+	uint32_t *h
+) {
+	int win_w = 0;
+	int win_h = 0;
+	if (state && state->m_window) {
+		SDL_GetWindowSizeInPixels(state->m_window, &win_w, &win_h);
+	}
+	*w = (uint32_t)((win_w > 0) ? win_w : (state ? state->m_width : 0));
+	*h = (uint32_t)((win_h > 0) ? win_h : (state ? state->m_height : 0));
+}
+
+static DTTR_FrameContext s_graphics_frame_context(const DTTR_BackendState *state) {
+	uint32_t window_w = 0;
+	uint32_t window_h = 0;
+	const uint32_t game_w = (uint32_t)(state ? state->m_width : 0);
+	const uint32_t game_h = (uint32_t)(state ? state->m_height : 0);
+	s_graphics_window_size(state, &window_w, &window_h);
+	return (DTTR_FrameContext){
+		.m_frame_index = state ? state->m_frame_index : 0,
+		.m_window_w = window_w,
+		.m_window_h = window_h,
+		.m_game_x = 0,
+		.m_game_y = 0,
+		.m_game_w = game_w,
+		.m_game_h = game_h,
+		.m_scale = s_graphics_scale(game_h),
+	};
+}
+
+static DTTR_PresentContext s_graphics_present_context(
+	const DTTR_BackendState *state,
+	uint32_t game_x,
+	uint32_t game_y,
+	uint32_t game_w,
+	uint32_t game_h,
+	bool imgui_frame_active,
+	bool overlay_rendered
+) {
+	uint32_t window_w = 0;
+	uint32_t window_h = 0;
+	s_graphics_window_size(state, &window_w, &window_h);
+	return (DTTR_PresentContext){
+		.m_frame_index = state ? state->m_frame_index : 0,
+		.m_window_w = window_w,
+		.m_window_h = window_h,
+		.m_game_x = game_x,
+		.m_game_y = game_y,
+		.m_game_w = game_w,
+		.m_game_h = game_h,
+		.m_scale = s_graphics_scale(game_h),
+		.m_imgui_frame_active = imgui_frame_active,
+		.m_overlay_rendered = overlay_rendered,
+	};
+}
+
+static DTTR_WindowContext s_graphics_window_context(const DTTR_BackendState *state) {
+	uint32_t window_w = 0;
+	uint32_t window_h = 0;
+	s_graphics_window_size(state, &window_w, &window_h);
+	return (DTTR_WindowContext){
+		.m_window = state ? state->m_window : NULL,
+		.m_hwnd = state ? s_get_hwnd(state->m_window) : NULL,
+		.m_window_w = window_w,
+		.m_window_h = window_h,
+	};
+}
+
+static DTTR_GraphicsBackend s_graphics_backend(const DTTR_BackendState *state) {
+	if (!state) {
+		return DTTR_GRAPHICS_BACKEND_UNKNOWN;
+	}
+	switch (state->m_backend_type) {
+	case DTTR_BACKEND_SDL_GPU:
+		return DTTR_GRAPHICS_BACKEND_SDL_GPU;
+	case DTTR_BACKEND_OPENGL:
+		return DTTR_GRAPHICS_BACKEND_OPENGL;
+	default:
+		return DTTR_GRAPHICS_BACKEND_UNKNOWN;
+	}
+}
+
+static DTTR_GraphicsContext s_graphics_context(const DTTR_BackendState *state) {
+	return (DTTR_GraphicsContext){
+		.m_window = state ? state->m_window : NULL,
+		.m_hwnd = state ? s_get_hwnd(state->m_window) : NULL,
+		.m_backend = s_graphics_backend(state),
+		.m_driver_name = (state && state->m_renderer)
+							 ? state->m_renderer->get_driver_name(state)
+							 : NULL,
+		.m_render_w = (uint32_t)(state ? state->m_width : 0),
+		.m_render_h = (uint32_t)(state ? state->m_height : 0),
+	};
+}
+
+static void s_call_frame_component(
+	DTTR_BackendState *state,
+	DTTR_ComponentFrameBeginFn callback
+) {
+	const DTTR_FrameContext ctx = s_graphics_frame_context(state);
+	callback(&ctx);
+}
+
+static void s_call_present_component(
+	DTTR_BackendState *state,
+	uint32_t game_x,
+	uint32_t game_y,
+	uint32_t game_w,
+	uint32_t game_h,
+	bool imgui_frame_active,
+	bool overlay_rendered,
+	DTTR_ComponentBeforePresentFn callback
+) {
+	const DTTR_PresentContext ctx = s_graphics_present_context(
+		state,
+		game_x,
+		game_y,
+		game_w,
+		game_h,
+		imgui_frame_active,
+		overlay_rendered
+	);
+	callback(&ctx);
+}
+
+static void s_call_window_component(
+	DTTR_BackendState *state,
+	DTTR_ComponentWindowCreatedFn callback
+) {
+	const DTTR_WindowContext ctx = s_graphics_window_context(state);
+	callback(&ctx);
+}
+
+static void s_call_graphics_component(
+	DTTR_BackendState *state,
+	DTTR_ComponentGraphicsDeviceCreatedFn callback
+) {
+	const DTTR_GraphicsContext ctx = s_graphics_context(state);
+	callback(&ctx);
+}
+
+void dttr_graphics_component_frame_begin(DTTR_BackendState *state) {
+	s_call_frame_component(state, dttr_components_frame_begin);
+}
+
+void dttr_graphics_component_before_game_frame(DTTR_BackendState *state) {
+	s_call_frame_component(state, dttr_components_before_game_frame);
+}
+
+void dttr_graphics_component_after_game_frame(DTTR_BackendState *state) {
+	s_call_frame_component(state, dttr_components_after_game_frame);
+}
+
+void dttr_graphics_component_before_present(
+	DTTR_BackendState *state,
+	uint32_t game_x,
+	uint32_t game_y,
+	uint32_t game_w,
+	uint32_t game_h,
+	bool imgui_frame_active,
+	bool overlay_rendered
+) {
+	s_call_present_component(
+		state,
+		game_x,
+		game_y,
+		game_w,
+		game_h,
+		imgui_frame_active,
+		overlay_rendered,
+		dttr_components_before_present
+	);
+}
+
+void dttr_graphics_component_after_present(
+	DTTR_BackendState *state,
+	uint32_t game_x,
+	uint32_t game_y,
+	uint32_t game_w,
+	uint32_t game_h,
+	bool imgui_frame_active,
+	bool overlay_rendered
+) {
+	s_call_present_component(
+		state,
+		game_x,
+		game_y,
+		game_w,
+		game_h,
+		imgui_frame_active,
+		overlay_rendered,
+		dttr_components_after_present
+	);
+}
+
+void dttr_graphics_component_frame_end(DTTR_BackendState *state) {
+	s_call_frame_component(state, dttr_components_frame_end);
+}
+
+void dttr_graphics_component_window_created(DTTR_BackendState *state) {
+	s_call_window_component(state, dttr_components_window_created);
+}
+
+void dttr_graphics_component_window_resized(DTTR_BackendState *state) {
+	s_call_window_component(state, dttr_components_window_resized);
+}
+
+void dttr_graphics_component_window_destroying(DTTR_BackendState *state) {
+	s_call_window_component(state, dttr_components_window_destroying);
+}
+
+void dttr_graphics_component_device_created(DTTR_BackendState *state) {
+	s_call_graphics_component(state, dttr_components_graphics_device_created);
+}
+
+void dttr_graphics_component_device_lost(DTTR_BackendState *state) {
+	s_call_graphics_component(state, dttr_components_graphics_device_lost);
+}
+
+void dttr_graphics_component_device_restored(DTTR_BackendState *state) {
+	s_call_graphics_component(state, dttr_components_graphics_device_restored);
+}
+
+void dttr_graphics_component_device_destroying(DTTR_BackendState *state) {
+	s_call_graphics_component(state, dttr_components_graphics_device_destroying);
+}
+#endif
 
 static void s_destroy_window(DTTR_BackendState *state) {
 	if (!state->m_window) {
 		return;
 	}
 
+	dttr_graphics_component_window_destroying(state);
 	SDL_DestroyWindow(state->m_window);
 	state->m_window = NULL;
 }
@@ -228,6 +470,10 @@ HWND dttr_graphics_init(void) {
 		if (!s_backend_candidates[i].m_init(state)) {
 			continue;
 		}
+
+		dttr_graphics_component_window_created(state);
+		dttr_graphics_component_device_created(state);
+		dttr_graphics_component_device_restored(state);
 
 		if (g_dttr_config.m_fullscreen) {
 			SDL_SetWindowFullscreen(state->m_window, true);
@@ -288,6 +534,7 @@ void dttr_graphics_handle_window_resize(int width, int height) {
 
 	s_refresh_render_resolution(&g_dttr_backend);
 	s_update_window_title(&g_dttr_backend);
+	dttr_graphics_component_window_resized(&g_dttr_backend);
 }
 
 void dttr_graphics_begin_frame(void) {
@@ -327,6 +574,8 @@ bool dttr_graphics_present_video_frame_bgra(
 }
 
 void dttr_graphics_cleanup(void) {
+	dttr_graphics_component_device_lost(&g_dttr_backend);
+	dttr_graphics_component_device_destroying(&g_dttr_backend);
 	dttr_graphics_hooks_cleanup(dttr_game_api_get_ctx());
 
 	DTTR_BackendState *state = &g_dttr_backend;
