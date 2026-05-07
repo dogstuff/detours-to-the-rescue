@@ -6,11 +6,11 @@ DttR modding builds load component DLLs from `components/`. A DLL counts as a co
 
     The component API is experimental and can break between releases. Components should check `ctx->m_api_version` during initialization. `DTTR_COMPONENT_INIT` already does this.
 
-## Minimal project
+## Minimal Project
 
 A DttR component is a 32-bit Windows DLL placed in the `components/` directory next to `dttr.exe`. Use a DttR **modding** build while developing components; normal builds do not load component DLLs.
 
-### 1. Create a project directory
+### 1. Create a Project Directory
 
 Create these directories and files:
 
@@ -71,7 +71,7 @@ DTTR_COMPONENT_CLEANUP {
 
 Only `DTTR_COMPONENT_INIT` and `DTTR_COMPONENT_CLEANUP` are required. `DTTR_COMPONENT_INFO` is optional, but it makes the load obvious in the log.
 
-### Optional callbacks
+### Optional Callbacks
 
 Add only the callbacks the component needs. DttR loads each optional export by name after loading the DLL and before it runs init.
 
@@ -87,7 +87,7 @@ DTTR_COMPONENT_BEFORE_UNLOAD {
 
 Use [Component exports](exports.md) for callback timing and [Component API](api.md) for context structs and macros.
 
-### 4. Build a 32-bit Windows DLL
+### 4. Build a 32-Bit Windows DLL
 
 From the component project directory, configure CMake with a 32-bit Windows toolchain. For example, with MinGW-w64:
 
@@ -102,7 +102,7 @@ cmake --build build --config Release
 
 The exact compiler path depends on your environment. The result must be a 32-bit Windows DLL, because the game process is 32-bit.
 
-### 5. Install and run
+### 5. Install and Run
 
 1. Create `components/` next to `dttr.exe` if it does not already exist.
 2. Copy `my_component.dll` into `components/`.

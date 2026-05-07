@@ -16,13 +16,13 @@ DttR is an alternate entrypoint for **102 Dalmatians: Puppies to the Rescue** th
 
 DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.dog/). It aims for portability and stability, not gameplay changes.
 
-## Supported PC releases
+## Supported PC Releases
 
 - English
 - French, German, Italian, Spanish, Dutch (European)
 - Norwegian, Danish, Swedish (Scandinavian)
 
-## Quick start
+## Quick Start
 
 1. Download the [latest release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip).
 2. Extract the archive to a writable folder.
@@ -37,7 +37,7 @@ Insert the original **102 Dalmatians: Puppies to the Rescue** CD, then choose th
 
 ![DttR loader showing an inserted game disc](assets/load-disc.png)
 
-### Installed copy
+### Installed Copy
 
 Choose **Open Directory**, then pick the folder that contains the game's `data` directory.
 

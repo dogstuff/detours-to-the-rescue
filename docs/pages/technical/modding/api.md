@@ -2,7 +2,7 @@
 
 `dttr_components.h` is the C SDK header for component DLLs. Include it for the types, callbacks, and macros below. These are header declarations, not extra exports your DLL needs to define.
 
-## Version and export helpers
+## Version and Export Helpers
 
 | Name | Kind | Use |
 | --- | --- | --- |
@@ -11,7 +11,7 @@
 
 `DTTR_COMPONENT_INIT` checks `ctx->m_api_version` against `DTTR_COMPONENT_API_VERSION` before it runs your init body.
 
-## Component context
+## Component Context
 
 DttR passes `const DTTR_ComponentContext *ctx` into `dttr_component_init`:
 
@@ -52,7 +52,7 @@ Most components should use the macros instead:
 
 The numeric level macros are also exposed as `DTTR_COMPONENT_LOG_LVL_TRACE` through `DTTR_COMPONENT_LOG_LVL_FATAL`.
 
-## Game patching API
+## Game Patching API
 
 `ctx->m_game_api` exposes the low-level patching helpers:
 
@@ -66,7 +66,7 @@ The numeric level macros are also exposed as `DTTR_COMPONENT_LOG_LVL_TRACE` thro
 
 `DTTR_Hook` is an opaque handle. Store it and pass it back to `m_unhook`. Do not inspect it.
 
-## Hook storage and install macros
+## Hook Storage and Install Macros
 
 The header also includes macros for the common hook storage and install patterns:
 
@@ -100,7 +100,7 @@ Install and resolve macros:
 
     Hook helpers assume the signatures and patch sizes match the loaded game executable. Check `ctx->m_exe_hash` when a hook only supports one executable, or keep the signatures strict enough.
 
-## Metadata and callback context types
+## Metadata and Callback Context Types
 
 | Type | Use |
 | --- | --- |
@@ -114,7 +114,7 @@ Install and resolve macros:
 | `DTTR_RenderGameContext` | Game-resolution render callback context. Contains `m_width`, `m_height`, and `m_scale`. |
 | `DTTR_RenderContext` | Window-resolution render callback context. Contains window size, game viewport, and scale. |
 
-## Callback typedefs
+## Callback Typedefs
 
 The header exposes typedefs for every component callback DttR can load:
 
@@ -152,7 +152,7 @@ The header exposes typedefs for every component callback DttR can load:
 | `DTTR_ComponentGameFrameAdvancedFn` | `void (*)(void)` |
 | `DTTR_ComponentGameFrameBlockedFn` | `void (*)(void)` |
 
-## Component export macros
+## Component Export Macros
 
 Use these instead of writing the exported function declarations by hand:
 

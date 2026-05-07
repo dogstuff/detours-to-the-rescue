@@ -8,11 +8,11 @@ Save before closing the configuration tool.
 
 ## General
 
-### Game directory or ISO
+### Game Directory or ISO
 
 Use **Game directory or ISO** to switch discs, choose a different installed copy, or fix a path after moving files.
 
-### Save folder
+### Save Folder
 
 DttR writes saves to `saves` next to `dttr.exe` by default.
 
@@ -22,20 +22,20 @@ Change it when:
 - you want saves in a backed up location
 - you want separate save folders for testing or speedrunning
 
-### Intro movies
+### Intro Movies
 
 Enable **Skip intro movies** to skip the intro movies/videos.
 
 ## Graphics
 
-### Scaling method
+### Scaling Method
 
 Use `logical` unless you are comparing renderers or debugging scaling.
 
 - `logical` is the normal choice.
 - `present` scales the final image instead.
 
-### Scaling fit
+### Scaling Fit
 
 - `letterbox` keeps the correct aspect ratio and adds borders if needed.
 - `stretch` fills the whole window, even if that distorts the image.
@@ -43,7 +43,7 @@ Use `logical` unless you are comparing renderers or debugging scaling.
 
 Start with `letterbox` unless you are deliberately going for another look.
 
-### Vertex precision
+### Vertex Precision
 
 - `native` keeps the original-style vertex positioning.
 - `subpixel` allows smoother polygon movement, but it currently reveals seams in some models.
@@ -55,7 +55,7 @@ Keep this on `auto` unless startup or rendering problems force you to pick a bac
 - `auto` lets DttR choose the best graphics API for the machine.
 - `vulkan`, `direct3d12`, and `opengl` force a backend.
 
-### Other video options
+### Other Video Options
 
 - `window_width` and `window_height` set the startup window size.
 - `fullscreen` starts DttR fullscreen. You can also toggle fullscreen in game with ++f11++.
@@ -67,24 +67,24 @@ Leave texture upload synchronization at its default unless you are already debug
 
 ## Audio
 
-### Audio output
+### Audio Output
 
 Audio always routes the game's old Miles Sound System calls through SDL. This is the tested path on modern Windows.
 
-### Volume and sample tuning
+### Volume and Sample Tuning
 
 - `mss_sample_gain` makes game audio louder or quieter. Use small changes; large values can clip.
 - `mss_sample_preemphasis` changes how samples are filtered before playback. Leave it at the default unless you are deliberately tuning or comparing audio output.
 
 ## Gamepad
 
-### Enable and pick a controller
+### Enable and Pick a Controller
 
 Enable gamepad support, save, then start the game with the controller connected.
 
 The controller index is SDL's gamepad number. Keep it at `0` for one controller. If DttR listens to the wrong controller, change the index, save, and restart.
 
-### Sticks and axes
+### Sticks and Axes
 
 The default layout uses the left stick for movement and the right stick for the camera.
 
@@ -108,7 +108,7 @@ To change a mapping, choose **Bind** on the action you want to change, then pres
 
 Change one binding at a time, then test in game. If a button does the wrong thing, use **Reset** to restore the default input for that action, or **Clear** to leave it unbound.
 
-## Advanced editing
+## Advanced Editing
 
 You can edit `dttr.json` directly or start DttR with another config file:
 

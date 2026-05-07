@@ -16,7 +16,7 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 | --- | --- | --- | --- | --- | --- |
 | `dttr_hook_win_main` | `83 EC 40 53 8B 5C 24` | `E9 <rel32>` at the matched function entry | Game `WinMain`-style entrypoint | `dttr_hook_win_main_callback` | Installed before normal sidecar runtime setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and components, then drives the original game loop. |
 
-## Game data and process fixes
+## Game Data and Process Fixes
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -27,14 +27,14 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 
 ## Graphics
 
-### DirectDraw import hooks
+### DirectDraw Import Hooks
 
 | Site | Signature / site | Patch | Original IAT target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `dttr_hook_directdraw_create_ex` | Finds `E8 ?? ?? ?? ?? 85 C0 7D ?? 68 ?? ?? ?? ?? 6A 00 50 E8`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | IAT hook | IAT/thunk target for `DirectDrawCreateEx` | `dttr_hook_directdraw_create_ex_callback` | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
 | `dttr_hook_directdraw_enumerate_ex_a` | Finds `E8 ?? ?? ?? ?? 8B F0 A1`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | IAT hook | IAT/thunk target for `DirectDrawEnumerateExA` | `dttr_hook_directdraw_enumerate_ex_a_callback` | Enumerates DttR's virtual display device. |
 
-### Subpixel vertex precision byte patches
+### Subpixel Vertex Precision Byte Patches
 
 These patches are installed only when `vertex_precision` is set to `subpixel`.
 
@@ -62,7 +62,7 @@ These patches are installed only when `vertex_precision` is set to `subpixel`.
 
 ## Audio
 
-### Audio trampolines
+### Audio Trampolines
 
 These guard game audio paths around the SDL-backed MSS shim.
 
@@ -73,7 +73,7 @@ These guard game audio paths around the SDL-backed MSS shim.
 | `dttr_hook_audio_init_level_audio` | `A1 ?? ?? ?? ?? 6A 7F 50 FF 15` | Trampoline `E9 <rel32>` at match | Game level-audio init routine, available through `dttr_hook_audio_init_level_audio_trampoline` | `dttr_hook_audio_init_level_audio_callback` | Guards level audio init when no driver is active. |
 | `dttr_hook_audio_stop_all_samples` | `56 57 8B 3D ?? ?? ?? ?? BE` | Trampoline `E9 <rel32>` at match | Game stop-all-samples routine, available through `dttr_hook_audio_stop_all_samples_trampoline` | `dttr_hook_audio_stop_all_samples_callback` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
 
-### Miles Sound System import hooks
+### Miles Sound System Import Hooks
 
 DttR patches the `mss32.dll` import address table by name. The original target is the imported MSS32 function in the game's IAT slot; DttR keeps it only so the hook can be restored.
 

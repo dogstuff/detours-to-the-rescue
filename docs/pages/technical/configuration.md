@@ -30,7 +30,7 @@ dttr.exe path/to/my_config.json
 }
 ```
 
-## Top-level keys
+## Top-Level Keys
 
 | Key | Type | Values | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -87,7 +87,7 @@ Gamepad settings belong under `gamepad`.
 | `stick_y_deadzone` | Integer | SDL axis deadzone | `700` | Vertical movement deadzone. |
 | `camera_rz_deadzone` | Integer | SDL axis deadzone | `700` | Camera axis deadzone. |
 
-### Axis tokens
+### Axis Tokens
 
 | Token | Description |
 | --- | --- |
@@ -103,7 +103,7 @@ Gamepad settings belong under `gamepad`.
 
 `gamepad.buttons` maps [source tokens](#button-source-tokens) to [action tokens](#button-action-tokens).
 
-### Button source tokens
+### Button Source Tokens
 
 | Token | Description |
 | --- | --- |
@@ -114,7 +114,7 @@ Gamepad settings belong under `gamepad`.
 | `dpad_up`, `dpad_down`, `dpad_left`, `dpad_right` | Directional pad buttons. |
 | `left_trigger`, `right_trigger` | Trigger buttons. |
 
-### Button action tokens
+### Button Action Tokens
 
 | Token | Description |
 | --- | --- |

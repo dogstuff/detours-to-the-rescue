@@ -6,7 +6,7 @@ DttR uses [Nix](https://github.com/NixOS/nix) for the cross-compiler, tools, and
 
     Native Windows build steps are not documented yet. Windows users should build in WSL for now.
 
-## Nix flake
+## Nix Flake
 
 Build from the development shell:
 
@@ -18,7 +18,7 @@ task build
 
 The shell brings in the cross-compiler, SDL3, FFmpeg, NASM, and the rest of the build dependencies.
 
-## Container build
+## Container Build
 
 Build inside a container:
 
