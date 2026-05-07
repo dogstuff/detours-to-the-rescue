@@ -166,7 +166,16 @@ static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
 								   | ImGuiWindowFlags_NoSavedSettings
 								   | ImGuiWindowFlags_AlwaysAutoResize;
 
-	igPushFont(NULL, igGetFontSize() * badge_scale);
+	ImGuiIO *io = igGetIO_Nil();
+	ImFont *font = io ? io->FontDefault : NULL;
+
+	if (!font) {
+		font = igGetFont();
+	}
+
+	if (font) {
+		igPushFont(font, igGetFontSize() * badge_scale);
+	}
 
 	if (igBegin("##modding_overlay", NULL, flags)) {
 		igText("Modding");
@@ -174,7 +183,9 @@ static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
 
 	igEnd();
 
-	igPopFont();
+	if (font) {
+		igPopFont();
+	}
 }
 
 static ImDrawData *s_render_overlay_frame(
