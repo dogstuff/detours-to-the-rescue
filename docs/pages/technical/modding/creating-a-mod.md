@@ -1,6 +1,6 @@
 # Creating a Mod
 
-DttR modding builds load component DLLs from `components/`. A DLL counts as a component only when it exports the two required entry points from [Component exports](exports.md). If either one is missing, DttR skips the DLL.
+DttR modding builds load component DLLs from `components/`. A DLL counts as a component only when it exports the two required entry points from [Component exports](exports.md). DttR skips DLLs missing either export.
 
 !!! warning
 
@@ -8,11 +8,11 @@ DttR modding builds load component DLLs from `components/`. A DLL counts as a co
 
 ## Minimal Project
 
-A DttR component is a 32-bit Windows DLL placed in the `components/` directory next to `dttr.exe`. Use a DttR **modding** build while developing components; normal builds do not load component DLLs.
+A DttR component is a 32-bit Windows DLL in `components/` next to `dttr.exe`. Use a DttR **modding** build while developing components; normal builds do not load component DLLs.
 
 ### 1. Create a Project Directory
 
-Create these directories and files:
+Layout:
 
 - `my-dttr-component/`
 - `my-dttr-component/CMakeLists.txt`
@@ -100,7 +100,7 @@ cmake -S . -B build \
 cmake --build build --config Release
 ```
 
-The exact compiler path depends on your environment. The result must be a 32-bit Windows DLL, because the game process is 32-bit.
+The result must be a 32-bit Windows DLL, because the game process is 32-bit.
 
 ### 5. Install and Run
 

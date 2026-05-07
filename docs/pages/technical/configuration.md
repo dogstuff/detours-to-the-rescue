@@ -1,8 +1,8 @@
 # Configuration
 
-DttR stores its settings in `dttr.json`. The file must be strict JSON. If it is missing, DttR writes a fresh one from the built-in defaults.
+DttR stores settings in `dttr.json`. The file must be strict JSON. If it is missing, DttR writes one from the built-in defaults.
 
-Start DttR with another config file when you want a separate setup:
+Start DttR with another config file for a separate setup:
 
 ```sh
 dttr.exe path/to/my_config.json
@@ -44,7 +44,7 @@ dttr.exe path/to/my_config.json
 
 ## `graphics`
 
-Graphics settings belong under `graphics`.
+Graphics settings live under `graphics`.
 
 | Key | Type | Values | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Alias: `d3d12`.
 
 ## `audio`
 
-Audio settings belong under `audio`.
+Audio settings live under `audio`.
 
 | Key | Type | Values | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ Audio settings belong under `audio`.
 
 ## `gamepad`
 
-Gamepad settings belong under `gamepad`.
+Gamepad settings live under `gamepad`.
 
 | Key | Type | Values | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -125,7 +125,7 @@ Gamepad settings belong under `gamepad`.
 
 ## `modding`
 
-Modding settings belong under `modding`.
+Modding settings live under `modding`.
 
 | Key | Type | Values | Default | Description |
 | --- | --- | --- | --- | --- |

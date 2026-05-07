@@ -1,6 +1,6 @@
 # Component API
 
-`dttr_components.h` is the C SDK header for component DLLs. Include it for the types, callbacks, and macros below. These are header declarations, not extra exports your DLL needs to define.
+`dttr_components.h` is the C SDK header for component DLLs. Include it for the types, callbacks, and macros below. These declarations are not extra exports your DLL must define.
 
 ## Version and Export Helpers
 
@@ -13,7 +13,7 @@
 
 ## Component Context
 
-DttR passes `const DTTR_ComponentContext *ctx` into `dttr_component_init`:
+DttR passes `const DTTR_ComponentContext *ctx` to `dttr_component_init`:
 
 | Field | Type | Use |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ The numeric level macros are also exposed as `DTTR_COMPONENT_LOG_LVL_TRACE` thro
 
 ## Hook Storage and Install Macros
 
-The header also includes macros for the common hook storage and install patterns:
+Common hook storage macros:
 
 | Macro | Use |
 | --- | --- |
@@ -116,7 +116,7 @@ Install and resolve macros:
 
 ## Callback Typedefs
 
-The header exposes typedefs for every component callback DttR can load:
+The header exposes typedefs for each component callback DttR can load:
 
 | Typedef | Function shape |
 | --- | --- |
@@ -154,7 +154,7 @@ The header exposes typedefs for every component callback DttR can load:
 
 ## Component Export Macros
 
-Use these instead of writing the exported function declarations by hand:
+Use these instead of handwritten exported declarations:
 
 | Macro | Defines |
 | --- | --- |

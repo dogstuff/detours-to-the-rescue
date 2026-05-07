@@ -27,19 +27,19 @@ DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.do
 1. Download the [latest release build](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip).
 2. Extract the archive to a writable folder.
 3. Run `dttr.exe`.
-4. When DttR asks where to load the original game files from, choose one of these:
+4. When DttR asks where to load the original game files from, choose a source:
 
 ![DttR prompt asking where to load game files from](assets/load-prompt.png)
 
 ### Original CD
 
-Insert the original **102 Dalmatians: Puppies to the Rescue** CD, then choose the detected disc.
+Insert the original **102 Dalmatians: Puppies to the Rescue** CD, then choose the disc.
 
 ![DttR loader showing an inserted game disc](assets/load-disc.png)
 
-### Installed Copy
+### Installed copy
 
-Choose **Open Directory**, then pick the folder that contains the game's `data` directory.
+Choose **Open Directory**, then pick the folder containing the game's `data` directory.
 
 ![Windows folder picker selecting an installed 102 Dalmatians folder](assets/load-install.png)
 
@@ -49,7 +49,7 @@ Choose **Open ISO**, select the original disc image, then choose **Open**.
 
 ![Windows file picker selecting a 102 Puppies ISO image](assets/load-iso.png)
 
-Once DttR finds the game files, it starts normally.
+After DttR finds the game files, it starts normally.
 
 ![102 Dalmatians title screen running through DttR](assets/done.png)
 

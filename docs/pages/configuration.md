@@ -1,6 +1,6 @@
 # Configuration
 
-Run `dttr_config.exe` next to `dttr.exe` to change settings without editing `dttr.json` by hand.
+Run `dttr_config.exe` next to `dttr.exe` to change settings without manually editing `dttr.json`.
 
 ![DttR configuration window](assets/config-gui.png)
 
@@ -10,7 +10,7 @@ Save before closing the configuration tool.
 
 ### Game Directory or ISO
 
-Use **Game directory or ISO** to switch discs, choose a different installed copy, or fix a path after moving files.
+Use **Game directory or ISO** to switch discs, choose another installed copy, or fix a moved path.
 
 ### Save Folder
 
@@ -19,12 +19,12 @@ DttR writes saves to `saves` next to `dttr.exe` by default.
 Change it when:
 
 - Windows cannot write to the DttR folder
-- you want saves in a backed up location
+- you want saves in a backed-up location
 - you want separate save folders for testing or speedrunning
 
 ### Intro Movies
 
-Enable **Skip intro movies** to skip the intro movies/videos.
+Enable **Skip intro movies** to skip the opening videos.
 
 ## Graphics
 
@@ -41,7 +41,7 @@ Use `logical` unless you are comparing renderers or debugging scaling.
 - `stretch` fills the whole window, even if that distorts the image.
 - `integer` scales in whole-number steps for sharper pixels.
 
-Start with `letterbox` unless you are deliberately going for another look.
+Start with `letterbox` unless you want another look.
 
 ### Vertex Precision
 
@@ -50,7 +50,7 @@ Start with `letterbox` unless you are deliberately going for another look.
 
 ### Graphics API
 
-Keep this on `auto` unless startup or rendering problems force you to pick a backend.
+Keep this on `auto` unless startup or rendering problems require a backend.
 
 - `auto` lets DttR choose the best graphics API for the machine.
 - `vulkan`, `direct3d12`, and `opengl` force a backend.
@@ -63,13 +63,13 @@ Keep this on `auto` unless startup or rendering problems force you to pick a bac
 - `msaa_samples` smooths 3D edges at some performance cost.
 - `generate_texture_mipmaps` can make scaled textures look smoother.
 
-Leave texture upload synchronization at its default unless you are already debugging a renderer issue.
+Leave texture upload synchronization at its default unless you are debugging a renderer issue.
 
 ## Audio
 
 ### Audio Output
 
-Audio always routes the game's old Miles Sound System calls through SDL. This is the tested path on modern Windows.
+Audio routes the game's old Miles Sound System calls through SDL. This is the tested path on modern Windows.
 
 ### Volume and Sample Tuning
 
@@ -82,31 +82,29 @@ Audio always routes the game's old Miles Sound System calls through SDL. This is
 
 Enable gamepad support, save, then start the game with the controller connected.
 
-The controller index is SDL's gamepad number. Keep it at `0` for one controller. If DttR listens to the wrong controller, change the index, save, and restart.
+The controller index is SDL's gamepad number. Keep `0` for one controller. If DttR listens to the wrong controller, change the index, save, and restart.
 
 ### Sticks and Axes
 
-The default layout uses the left stick for movement and the right stick for the camera.
+The default layout uses the left stick for movement and the right stick for the camera. Set an axis to `none` to disable it.
 
 Change axis bindings when:
 
-- Movement is on the wrong stick
-- The camera moves on the wrong axis
-- You want a trigger or unused stick to do nothing
-
-Set an axis to `none` to disable it.
+- movement is on the wrong stick
+- the camera moves on the wrong axis
+- a trigger or unused stick should do nothing
 
 ### Deadzones
 
-Raise a deadzone if a stick drifts while centered. Lower it if movement or camera control feels unresponsive near the center. Change values in small steps, save, then test in game.
+Raise a deadzone if a centered stick drifts. Lower it if movement or camera control feels unresponsive near the center. Change values in small steps, save, then test in game.
 
 ### Buttons
 
-Button mappings are shown from the game's point of view. Each row is an action the original game understands, such as a direction, confirm, back, or start/pause. The source shown next to it is the physical controller button that performs that action.
+Button mappings use the game's actions: directions, confirm, back, and start/pause. The source is the physical controller button for that action.
 
-To change a mapping, choose **Bind** on the action you want to change, then press the controller button or trigger you want to use. If that button is already assigned elsewhere, the configuration tool swaps the old source into the other row so the same physical button is not shown twice.
+To change a mapping, choose **Bind**, then press the controller button or trigger. If that button is already assigned elsewhere, the configuration tool swaps the old source into the other row.
 
-Change one binding at a time, then test in game. If a button does the wrong thing, use **Reset** to restore the default input for that action, or **Clear** to leave it unbound.
+Change one binding at a time, then test in game. Use **Reset** to restore the default input, or **Clear** to leave it unbound.
 
 ## Advanced Editing
 

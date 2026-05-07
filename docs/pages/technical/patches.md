@@ -1,6 +1,6 @@
 # Patches
 
-This page tracks the runtime hooks and byte patches installed by the sidecar. It is meant as a map back to the code, not as a patching tutorial.
+This page tracks sidecar runtime hooks and byte patches.
 
 Most sites come from `dttr_hook_sigscan()` against the loaded game module. In signatures, `?` bytes are wildcards from the paired mask.
 
@@ -36,7 +36,7 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 
 ### Subpixel Vertex Precision Byte Patches
 
-These patches are installed only when `vertex_precision` is set to `subpixel`.
+These patches install only when `vertex_precision` is `subpixel`.
 
 | Site | Signature / site | Offset | Patch bytes / assembly | Original target | Notes |
 | --- | --- | ---: | --- | --- | --- |

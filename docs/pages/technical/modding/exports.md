@@ -1,8 +1,8 @@
 # Component Exports
 
-DttR uses `GetProcAddress` to load the C exports below from each DLL in `components/`. A DLL must export the two required functions before DttR treats it as a component. Optional exports are loaded only when present.
+DttR uses `GetProcAddress` to load these C exports from each DLL in `components/`. A DLL must export the two required functions before DttR treats it as a component. Optional exports are loaded only when present.
 
-The SDK macros in `dttr_components.h` declare these exports with the right names. Prefer them unless you have a reason to write the exports by hand.
+The SDK macros in `dttr_components.h` declare these exports with the right names.
 
 ## Required Exports
 
@@ -12,7 +12,7 @@ The SDK macros in `dttr_components.h` declare these exports with the right names
 bool dttr_component_init(const DTTR_ComponentContext *ctx);
 ```
 
-Called once after DttR loads the component DLL, before any optional callbacks are used.
+Called once after DttR loads the component DLL and before optional callbacks are used.
 
 Return `true` to keep the component loaded. Return `false` to reject the host, report initialization failure, or disable the component for this run. DttR unloads the DLL when init fails.
 
@@ -49,9 +49,9 @@ DTTR_COMPONENT_CLEANUP {
 const DTTR_ComponentInfo *dttr_component_info(void);
 ```
 
-Returns component metadata for logging. DttR calls this before initialization and logs the name, version, author, and DLL filename when the function returns a non-`NULL` pointer.
+Returns metadata for logging. DttR calls this before initialization and logs the name, version, author, and DLL filename when the function returns a non-`NULL` pointer.
 
-The returned pointer must stay valid for the lifetime of the DLL. The SDK macro creates static storage for it:
+Returned storage must stay valid for the DLL lifetime. The SDK macro uses static storage:
 
 ```c
 DTTR_COMPONENT_INFO("My Component", "1.0.0", "Author")
@@ -90,7 +90,7 @@ DTTR_COMPONENT_BEFORE_UNLOAD {
 void dttr_component_tick(void);
 ```
 
-Called once per host-loop tick after DttR advances or blocks the game frame. DttR also checks for hot-reloaded component DLLs before running tick callbacks.
+Called once per host-loop tick after DttR advances or blocks the game frame. DttR checks for hot-reloaded component DLLs before tick callbacks.
 
 Macro form:
 
@@ -238,7 +238,7 @@ Use the other lifecycle macros from [Component API](api.md#component-export-macr
 
 ### Render Callbacks
 
-| Export | Signature | Called | Use For |
+| Export | Signature | Called | Use for |
 | --- | --- | --- | --- |
 | `dttr_component_render_game` | `void dttr_component_render_game(const DTTR_RenderGameContext *ctx);` | While DttR renders an ImGui frame at game resolution. Anything drawn here is letterboxed and scaled with the game image. | Overlays that should stay inside the game's 4:3 render area. |
 | `dttr_component_render` | `void dttr_component_render(const DTTR_RenderContext *ctx);` | While DttR renders an ImGui frame at full window resolution, above both the game image and the letterbox bars. | Window-space overlays, tools, and UI. |
@@ -282,12 +282,12 @@ DTTR_COMPONENT_RENDER {
 | Export | Signature | Called |
 | --- | --- | --- |
 | `dttr_component_should_advance_game_frame` | `bool dttr_component_should_advance_game_frame(void);` | Before DttR advances a game frame. |
-| `dttr_component_game_frame_advanced` | `void dttr_component_game_frame_advanced(void);` | After DttR advances a game frame because no component blocked it. |
-| `dttr_component_game_frame_blocked` | `void dttr_component_game_frame_blocked(void);` | After DttR presents overlays without advancing the game because at least one component returned `false` from `dttr_component_should_advance_game_frame`. |
+| `dttr_component_game_frame_advanced` | `void dttr_component_game_frame_advanced(void);` | After DttR advances a game frame. |
+| `dttr_component_game_frame_blocked` | `void dttr_component_game_frame_blocked(void);` | After DttR presents overlays without advancing the game. |
 
-If every component with `dttr_component_should_advance_game_frame` returns `true`, DttR calls the game's frame function and then notifies components through `dttr_component_game_frame_advanced`.
+If every component with `dttr_component_should_advance_game_frame` returns `true`, DttR calls the game's frame function and then calls `dttr_component_game_frame_advanced`.
 
-Return `false` to block the game frame while still letting DttR present overlays. If any component returns `false`, DttR skips the game frame for that host-loop iteration and then notifies components through `dttr_component_game_frame_blocked`.
+Return `false` to block the game frame while still presenting overlays. If any component returns `false`, DttR skips that game frame and then calls `dttr_component_game_frame_blocked`.
 
 Macro form:
 
