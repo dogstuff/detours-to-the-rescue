@@ -101,11 +101,11 @@ pages:
   stage: deploy
   script:
     - nix develop --command task build-docs
-  pages:
-    publish: docs/build
+    - rm -rf public
+    - cp -r docs/build public
   artifacts:
     paths:
-      - docs/build
+      - public
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
