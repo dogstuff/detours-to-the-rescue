@@ -28,6 +28,22 @@ extern "C" {
 /// @addtogroup sdk_util_unstable
 /// @{
 
+/// Cast a stable opaque Level_Data pointer to the unstable audited runtime layout.
+/// The stable API keeps Level_Data opaque; this helper makes the intentional
+/// bridge explicit for callers that opt into unstable layouts.
+static inline DTTR_PCDOGS_T_Level_RuntimeData *DTTR_Util_LevelDataAsRuntimeDataMutable(
+	void *ptr_
+) {
+	return (DTTR_PCDOGS_T_Level_RuntimeData *)ptr_;
+}
+
+/// Const-preserving variant of the Level_Data runtime-layout cast.
+static inline const DTTR_PCDOGS_T_Level_RuntimeData *DTTR_Util_LevelDataAsRuntimeDataConst(
+	const void *ptr_
+) {
+	return (const DTTR_PCDOGS_T_Level_RuntimeData *)ptr_;
+}
+
 /// Experimental package traversal helpers for reverse-engineering workflows.
 /// These declarations may change while package layouts are still being mapped.
 #define DTTR_UTIL_PKG_DEFAULT_TOC_COUNT 138u

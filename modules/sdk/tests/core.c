@@ -979,130 +979,14 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	DTTR_PCDOGS_Reset();
 }
 
-// Covers actor scale read/write/push/restore helpers and stateless actor utilities.
-static void test_pcdogs_actor_scale_and_active_actor_helpers(void **state) {
-	enum {
-		ACTOR_POSITION_X_OFFSET = 64,
-		ACTOR_POSITION_Y_OFFSET = 68,
-		ACTOR_POSITION_Z_OFFSET = 72,
-		ACTOR_SCALE_XY_OFFSET = 104,
-		ACTOR_RENDER_POSITION_X_OFFSET = 152,
-		ACTOR_RENDER_POSITION_Y_OFFSET = 156,
-		ACTOR_RENDER_POSITION_Z_OFFSET = 160,
-		ACTOR_SCALE_FACTOR_OFFSET = 206,
-		ACTOR_VELOCITY_X_OFFSET = 212,
-		ACTOR_VELOCITY_Y_OFFSET = 216,
-		ACTOR_VELOCITY_Z_OFFSET = 220,
-		ACTOR_TEST_SIZE = 512,
-	};
-	uint8_t *storage = (uint8_t *)
-		VirtualAlloc(NULL, ACTOR_TEST_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	assert_non_null(storage);
-
-	DTTR_PCDOGS_T_Actor_State *actor = (DTTR_PCDOGS_T_Actor_State *)storage;
-	DTTR_PCDOGS_T_Actor_State *other_actor = (DTTR_PCDOGS_T_Actor_State
-												  *)(storage + ACTOR_TEST_SIZE / 2);
-	*(int32_t *)(storage + ACTOR_POSITION_X_OFFSET) = 10;
-	*(int32_t *)(storage + ACTOR_POSITION_Y_OFFSET) = 20;
-	*(int32_t *)(storage + ACTOR_POSITION_Z_OFFSET) = 30;
-	*(int32_t *)(storage + ACTOR_VELOCITY_X_OFFSET) = 1;
-	*(int32_t *)(storage + ACTOR_VELOCITY_Y_OFFSET) = 2;
-	*(int32_t *)(storage + ACTOR_VELOCITY_Z_OFFSET) = 3;
-	*(int32_t *)(storage + ACTOR_SCALE_XY_OFFSET) = 1000;
-	*(int16_t *)(storage + ACTOR_SCALE_FACTOR_OFFSET) = 300;
-
-	DTTR_PCDOGS_T_Actor_Scale scale = {0};
-	assert_true(DTTR_PCDOGS_Actor_Scale_Read(actor, &scale));
-	assert_int_equal(scale.scale_xy, 1000);
-	assert_int_equal(scale.scale_factor, 300);
-	assert_false(DTTR_PCDOGS_Actor_Scale_Read(NULL, &scale));
-	assert_false(DTTR_PCDOGS_Actor_Scale_Read(actor, NULL));
-
-	DTTR_PCDOGS_T_Vec3i32 vec = {0};
-	assert_true(DTTR_PCDOGS_Actor_ReadPosition(actor, &vec));
-	assert_int_equal(vec.x, 10);
-	assert_int_equal(vec.y, 20);
-	assert_int_equal(vec.z, 30);
-	vec = (DTTR_PCDOGS_T_Vec3i32){40, 50, 60};
-	assert_true(DTTR_PCDOGS_Actor_WritePositionAndRenderMirror(actor, vec));
-	assert_int_equal(*(int32_t *)(storage + ACTOR_POSITION_X_OFFSET), 40);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_POSITION_Y_OFFSET), 50);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_POSITION_Z_OFFSET), 60);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_RENDER_POSITION_X_OFFSET), 40);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_RENDER_POSITION_Y_OFFSET), 50);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_RENDER_POSITION_Z_OFFSET), 60);
-	vec = (DTTR_PCDOGS_T_Vec3i32){7, 8, 9};
-	assert_true(DTTR_PCDOGS_Actor_ReadVelocity(actor, &vec));
-	assert_int_equal(vec.x, 1);
-	assert_int_equal(vec.y, 2);
-	assert_int_equal(vec.z, 3);
-	vec = (DTTR_PCDOGS_T_Vec3i32){-1, -2, -3};
-	assert_true(DTTR_PCDOGS_Actor_WriteVelocity(actor, vec));
-	assert_int_equal(*(int32_t *)(storage + ACTOR_VELOCITY_X_OFFSET), -1);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_VELOCITY_Y_OFFSET), -2);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_VELOCITY_Z_OFFSET), -3);
-	assert_false(DTTR_PCDOGS_Actor_ReadPosition(NULL, &vec));
-	assert_false(DTTR_PCDOGS_Actor_ReadVelocity(actor, NULL));
-
-	int32_t collision_velocity[3] = {11, 22, 33};
-	int16_t collision_normal[3] = {1, 2, 3};
-	int16_t collision_contact[3] = {4, 5, 6};
-	int32_t collision_result = 77;
-	DTTR_PCDOGS_T_Collision3D_Payload collision_payload = {
-		.struct_size = sizeof(collision_payload),
-	};
-	assert_true(DTTR_PCDOGS_Collision3D_ReadPayload(
-		actor,
-		collision_velocity,
-		collision_normal,
-		collision_contact,
-		&collision_result,
-		&collision_payload
-	));
-	assert_ptr_equal(collision_payload.actor, actor);
-	assert_true(collision_payload.velocity_readable);
-	assert_true(collision_payload.velocity_writable);
-	assert_int_equal(collision_payload.velocity.x, 11);
-	assert_int_equal(collision_payload.velocity.y, 22);
-	assert_int_equal(collision_payload.velocity.z, 33);
-	assert_true(collision_payload.surface_normal_readable);
-	assert_int_equal(collision_payload.surface_normal.x, 1);
-	assert_true(collision_payload.contact_point_readable);
-	assert_int_equal(collision_payload.contact_point.z, 6);
-	assert_true(collision_payload.result_readable);
-	assert_true(collision_payload.result_writable);
-	assert_int_equal(collision_payload.result_value, 77);
-
-	DTTR_PCDOGS_T_Actor_Scale max_scale = {INT32_MAX, INT16_MAX};
-	DTTR_PCDOGS_T_Actor_Scale min_scale = {INT32_MIN, INT16_MIN};
-	DTTR_PCDOGS_T_Actor_Scale clamped = DTTR_PCDOGS_Actor_Scale_MultiplyClamped(
-		max_scale,
-		2
-	);
-	assert_int_equal(clamped.scale_xy, INT32_MAX);
-	assert_int_equal(clamped.scale_factor, INT16_MAX);
-	clamped = DTTR_PCDOGS_Actor_Scale_MultiplyClamped(min_scale, 2);
-	assert_int_equal(clamped.scale_xy, INT32_MIN);
-	assert_int_equal(clamped.scale_factor, INT16_MIN);
-
-	DTTR_PCDOGS_T_Actor_Scale replacement = {-123, 45};
-	assert_true(DTTR_PCDOGS_Actor_Scale_Write(actor, replacement));
-	assert_int_equal(*(int32_t *)(storage + ACTOR_SCALE_XY_OFFSET), -123);
-	assert_int_equal(*(int16_t *)(storage + ACTOR_SCALE_FACTOR_OFFSET), 45);
-
-	DTTR_PCDOGS_T_Actor_Scale original = {0};
-	assert_true(DTTR_PCDOGS_Actor_Scale_PushMultiplied(actor, 2, &original));
-	assert_int_equal(original.scale_xy, replacement.scale_xy);
-	assert_int_equal(original.scale_factor, replacement.scale_factor);
-	assert_int_equal(*(int32_t *)(storage + ACTOR_SCALE_XY_OFFSET), -246);
-	assert_int_equal(*(int16_t *)(storage + ACTOR_SCALE_FACTOR_OFFSET), 90);
-	assert_true(DTTR_PCDOGS_Actor_Scale_Restore(actor, &original));
-	assert_int_equal(*(int32_t *)(storage + ACTOR_SCALE_XY_OFFSET), replacement.scale_xy);
-	assert_int_equal(
-		*(int16_t *)(storage + ACTOR_SCALE_FACTOR_OFFSET),
-		replacement.scale_factor
-	);
-	assert_false(DTTR_PCDOGS_Actor_Scale_Restore(actor, NULL));
+// Covers stateless actor utility helpers.
+static void test_pcdogs_active_actor_helpers(void **state) {
+	(void)state;
+	uint8_t actor_storage[1] = {0};
+	uint8_t other_actor_storage[1] = {0};
+	DTTR_PCDOGS_T_Actor_State *actor = (DTTR_PCDOGS_T_Actor_State *)actor_storage;
+	DTTR_PCDOGS_T_Actor_State *other_actor = (DTTR_PCDOGS_T_Actor_State *)
+		other_actor_storage;
 
 	assert_true(DTTR_Util_SameActor(actor, actor));
 	assert_false(DTTR_Util_SameActor(actor, other_actor));
@@ -1126,81 +1010,6 @@ static void test_pcdogs_actor_scale_and_active_actor_helpers(void **state) {
 	assert_null(DTTR_Util_GetActiveActor(NULL));
 	DTTR_PCDOGS_Reset();
 	active_actor_result = NULL;
-
-	DTTR_PCDOGS_T_PlayerActor_Query query = {
-		.struct_size = sizeof(query),
-	};
-	assert_true(DTTR_PCDOGS_PlayerActor_QueryForHook(
-		NULL,
-		DTTR_PCDOGS_FUNCTION_PLAYER_PROCESS_MOVEMENT,
-		actor,
-		&query
-	));
-	assert_ptr_equal(query.actor, actor);
-	assert_int_equal(query.source, DTTR_PCDOGS_PLAYER_ACTOR_SOURCE_CANDIDATE);
-	assert_int_equal(query.confidence, DTTR_PCDOGS_PLAYER_ACTOR_CONFIDENCE_LOW);
-	assert_true(query.mutable_now);
-	assert_false(query.retainable_after_callback);
-	query.struct_size = sizeof(query);
-	assert_true(DTTR_PCDOGS_PlayerActor_QueryForHook(
-		NULL,
-		DTTR_PCDOGS_FUNCTION_ACTOR_PROCESS_RENDERING,
-		actor,
-		&query
-	));
-	assert_false(query.mutable_now);
-
-	uint8_t *camera_storage = (uint8_t *)
-		VirtualAlloc(NULL, 128, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	assert_non_null(camera_storage);
-	DTTR_PCDOGS_T_Camera_Runtime *camera = (DTTR_PCDOGS_T_Camera_Runtime *)camera_storage;
-	*(int16_t *)(camera_storage + 0) = 100;
-	*(int16_t *)(camera_storage + 2) = 101;
-	*(int16_t *)(camera_storage + 4) = 102;
-	*(int16_t *)(camera_storage + 6) = 103;
-	*(int16_t *)(camera_storage + 8) = 104;
-	*(int16_t *)(camera_storage + 10) = 105;
-	*(int32_t *)(camera_storage + 12) = 1000;
-	*(int32_t *)(camera_storage + 16) = 10;
-	*(int32_t *)(camera_storage + 20) = 30;
-	*(int32_t *)(camera_storage + 24) = 20;
-	*(int32_t *)(camera_storage + 28) = 40;
-	*(int32_t *)(camera_storage + 32) = 60;
-	*(int32_t *)(camera_storage + 36) = 50;
-	int16_t angle = 0;
-	assert_true(DTTR_PCDOGS_Camera_ReadMovementYaw(camera, &angle));
-	assert_int_equal(angle, 100);
-	assert_true(DTTR_PCDOGS_Camera_ReadLookAtPitch(camera, &angle));
-	assert_int_equal(angle, 103);
-	assert_true(DTTR_PCDOGS_Camera_ReadOrbitYaw(camera, &angle));
-	assert_int_equal(angle, 104);
-	assert_true(DTTR_PCDOGS_Camera_ReadFov(camera, &angle));
-	assert_int_equal(angle, 105);
-	DTTR_PCDOGS_T_Camera_RuntimePose pose = {
-		.struct_size = sizeof(pose),
-	};
-	assert_true(DTTR_PCDOGS_Camera_ReadPose(camera, &pose));
-	assert_int_equal(pose.eye.x, 10);
-	assert_int_equal(pose.eye.y, 20);
-	assert_int_equal(pose.eye.z, 30);
-	assert_int_equal(pose.target.x, 40);
-	assert_int_equal(pose.target.y, 50);
-	assert_int_equal(pose.target.z, 60);
-	pose.eye = (DTTR_PCDOGS_T_Vec3i32){-10, -20, -30};
-	pose.target = (DTTR_PCDOGS_T_Vec3i32){-40, -50, -60};
-	pose.fov = 222;
-	assert_true(DTTR_PCDOGS_Camera_WritePose(camera, &pose));
-	assert_int_equal(*(int32_t *)(camera_storage + 16), -10);
-	assert_int_equal(*(int32_t *)(camera_storage + 20), -30);
-	assert_int_equal(*(int32_t *)(camera_storage + 24), -20);
-	assert_int_equal(*(int32_t *)(camera_storage + 28), -40);
-	assert_int_equal(*(int32_t *)(camera_storage + 32), -60);
-	assert_int_equal(*(int32_t *)(camera_storage + 36), -50);
-	assert_int_equal(*(int16_t *)(camera_storage + 10), 222);
-	assert_false(DTTR_PCDOGS_Camera_ReadPose(NULL, &pose));
-	VirtualFree(camera_storage, 0, MEM_RELEASE);
-
-	VirtualFree(storage, 0, MEM_RELEASE);
 }
 
 // Covers Reset preserving hook handles so a following UnhookAll can restore bytes.
@@ -1625,8 +1434,7 @@ static const DTTR_TestCase TEST_CASES[] = {
 	 test_core_function_hook_overlap_reports_chain_unsupported},
 	{"pcdogs-data-pointer-null-hook",
 	 test_pcdogs_data_pointer_hooks_accept_null_replacement},
-	{"pcdogs-actor-scale-and-active-actor",
-	 test_pcdogs_actor_scale_and_active_actor_helpers},
+	{"pcdogs-active-actor-helpers", test_pcdogs_active_actor_helpers},
 	{"pcdogs-reset-unhookable", test_pcdogs_reset_preserves_unhookable_handles},
 	{"pcdogs-symbol-facade", test_pcdogs_symbol_facade_exposes_object_metadata},
 };

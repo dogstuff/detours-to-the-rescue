@@ -120,7 +120,7 @@ dttr_add_cmocka_test_suite(dttr_core_sdk_tests
         pcdogs-typed-patch-hook-chain
         core-sdk-hook-chain-unsupported
         pcdogs-data-pointer-null-hook
-        pcdogs-actor-scale-and-active-actor
+        pcdogs-active-actor-helpers
         pcdogs-reset-unhookable
         pcdogs-symbol-facade
 )

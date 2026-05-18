@@ -14753,7 +14753,7 @@ stable.data(
     "current_level_data",
     xref("Audio_TriggerMusicTransition", 65, 1),
     type="Level_Data*",
-    doc="Active stable Level_Data pointer at 0x01A8ADA0. Include dttr_pcdogs_unstable.h and use DTTR_PCDOGS_LevelData_AsRuntimeData when code needs the audited Level_RuntimeData layout.",
+    doc="Active stable Level_Data pointer at 0x01A8ADA0. Include dttr_pcdogs_unstable.h and use DTTR_Util_LevelDataAsRuntimeDataMutable or DTTR_Util_LevelDataAsRuntimeDataConst when code needs the audited Level_RuntimeData layout.",
 )
 stable.data("level_scale_factor", xref("Render_AdjustLevelScale", 63, 2))
 stable.data("level_render_distance", xref("Level_InitializeActorSystem", 389, 2))

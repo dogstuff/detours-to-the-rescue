@@ -17,7 +17,7 @@ extern "C" void DTTR_Mod_Cleanup();
 int main() {
 	static_assert(
 		std::is_same<
-			decltype(DTTR_PCDOGS_LevelData_AsRuntimeData(
+			decltype(DTTR_Util_LevelDataAsRuntimeDataMutable(
 				static_cast<DTTR_PCDOGS_T_Level_Data *>(nullptr)
 			)),
 			DTTR_PCDOGS_T_Level_RuntimeData *>::value,
@@ -25,7 +25,7 @@ int main() {
 	);
 	static_assert(
 		std::is_same<
-			decltype(DTTR_PCDOGS_LevelData_AsRuntimeData(
+			decltype(DTTR_Util_LevelDataAsRuntimeDataConst(
 				static_cast<const DTTR_PCDOGS_T_Level_Data *>(nullptr)
 			)),
 			const DTTR_PCDOGS_T_Level_RuntimeData *>::value,
@@ -33,7 +33,7 @@ int main() {
 	);
 	static_assert(
 		std::is_same<
-			decltype(DTTR_PCDOGS_LevelData_AsRuntimeData(
+			decltype(DTTR_Util_LevelDataAsRuntimeDataConst(
 				static_cast<const DTTR_PCDOGS_T_Level_RuntimeData *>(nullptr)
 			)),
 			const DTTR_PCDOGS_T_Level_RuntimeData *>::value,

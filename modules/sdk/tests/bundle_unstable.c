@@ -150,67 +150,13 @@ static void compile_global_helpers() {
 	}
 }
 
-// Compile opaque-actor scale helpers and stateless active-actor utilities.
+// Compile stateless active-actor utilities.
 static void compile_actor_helpers(
 	const DTTR_Core_Context *ctx,
 	DTTR_PCDOGS_T_Actor_State *actor
 ) {
-	DTTR_PCDOGS_T_Actor_Scale scale = {0};
-	DTTR_PCDOGS_Actor_Scale_Read(actor, &scale);
-	scale = DTTR_PCDOGS_Actor_Scale_MultiplyClamped(scale, 2);
-	DTTR_PCDOGS_Actor_Scale_Write(actor, scale);
-	DTTR_PCDOGS_Actor_Scale_PushMultiplied(actor, 2, &scale);
-	DTTR_PCDOGS_Actor_Scale_Restore(actor, &scale);
-
-	DTTR_PCDOGS_T_Vec3i32 vec = {0};
-	DTTR_PCDOGS_Actor_ReadPosition(actor, &vec);
-	DTTR_PCDOGS_Actor_WritePosition(actor, vec);
-	DTTR_PCDOGS_Actor_WritePositionAndRenderMirror(actor, vec);
-	DTTR_PCDOGS_Actor_ReadVelocity(actor, &vec);
-	DTTR_PCDOGS_Actor_WriteVelocity(actor, vec);
-
-	int32_t velocity[3] = {0};
-	int16_t normal[3] = {0};
-	int16_t contact[3] = {0};
-	int32_t result = 0;
-	DTTR_PCDOGS_T_Collision3D_Payload collision_payload = {
-		.struct_size = sizeof(collision_payload),
-	};
-	DTTR_PCDOGS_Collision3D_ReadPayload(
-		actor,
-		velocity,
-		normal,
-		contact,
-		&result,
-		&collision_payload
-	);
-
-	DTTR_PCDOGS_T_PlayerActor_Query query = {
-		.struct_size = sizeof(query),
-	};
-	DTTR_PCDOGS_PlayerActor_QueryForHook(
-		ctx,
-		DTTR_PCDOGS_FUNCTION_PLAYER_PROCESS_MOVEMENT,
-		actor,
-		&query
-	);
-
 	DTTR_PCDOGS_T_Actor_State *active_actor = DTTR_Util_GetActiveActor(ctx);
 	DTTR_Util_SameActor(actor, active_actor);
-}
-
-// Compile camera helpers against opaque stable camera pointers.
-static void compile_camera_helpers(DTTR_PCDOGS_T_Camera_Runtime *camera) {
-	int16_t angle = 0;
-	DTTR_PCDOGS_Camera_ReadMovementYaw(camera, &angle);
-	DTTR_PCDOGS_Camera_ReadLookAtPitch(camera, &angle);
-	DTTR_PCDOGS_Camera_ReadOrbitYaw(camera, &angle);
-	DTTR_PCDOGS_Camera_ReadFov(camera, &angle);
-	DTTR_PCDOGS_T_Camera_RuntimePose pose = {
-		.struct_size = sizeof(pose),
-	};
-	DTTR_PCDOGS_Camera_ReadPose(camera, &pose);
-	DTTR_PCDOGS_Camera_WritePose(camera, &pose);
 }
 
 // Compile mod-context examples against the runtime context nested in DTTR_Mods_Context.
@@ -246,7 +192,7 @@ enum {
 	unstable_level_data_const_dispatch_type_check
 	= 1
 	  / __builtin_types_compatible_p(
-		  __typeof__(DTTR_PCDOGS_LevelData_AsRuntimeData(
+		  __typeof__(DTTR_Util_LevelDataAsRuntimeDataConst(
 			  (const DTTR_PCDOGS_T_Level_Data *)0
 		  )),
 		  const DTTR_PCDOGS_T_Level_RuntimeData *
@@ -254,7 +200,7 @@ enum {
 	unstable_level_runtime_data_const_dispatch_type_check
 	= 1
 	  / __builtin_types_compatible_p(
-		  __typeof__(DTTR_PCDOGS_LevelData_AsRuntimeData(
+		  __typeof__(DTTR_Util_LevelDataAsRuntimeDataConst(
 			  (const DTTR_PCDOGS_T_Level_RuntimeData *)0
 		  )),
 		  const DTTR_PCDOGS_T_Level_RuntimeData *
