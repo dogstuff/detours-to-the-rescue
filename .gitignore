@@ -20,6 +20,7 @@
 /modules/sdk/src/generated/
 /modules/sdk/src/pcdogs.c
 /modules/sidecar/include/gen/
+/modules/sidecar/shaders/cache/
 __pycache__/
 *.py[cod]
 

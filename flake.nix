@@ -133,6 +133,8 @@
               ++ lib.optionals stdenv.hostPlatform.isLinux [
                 sdl3-shadercross
                 shaderc
+              ]
+              ++ lib.optionals (stdenv.hostPlatform.system == "x86_64-linux") [
                 wineWowPackages.stable
               ];
 

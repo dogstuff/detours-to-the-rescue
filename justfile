@@ -17,6 +17,7 @@ require-pcdogs-fixtures := env_var_or_default("DTTR_REQUIRE_PCDOGS_FIXTURES", "O
 pcdogs-fixture-dir := env_var_or_default("DTTR_PCDOGS_FIXTURE_DIR", "fixture")
 docker := "podman"
 container-image := "dttr-toolchain"
+container-platform := env_var_or_default("DTTR_CONTAINER_PLATFORM", "linux/amd64")
 containerfile-build := "build.Containerfile"
 
 # Show available local build recipes.
@@ -89,11 +90,12 @@ build-shaders-container:
 
 # Build the project in a container for stable artifacts.
 build-container:
-    {{ docker }} build -t "{{ container-image }}" -f "{{ containerfile-build }}" "{{ justfile_directory() }}"
+    {{ docker }} build --platform "{{ container-platform }}" -t "{{ container-image }}" -f "{{ containerfile-build }}" "{{ justfile_directory() }}"
     bash ./scripts/build-container.sh \
       "{{ justfile_directory() }}" \
       "{{ docker }}" \
       "{{ container-image }}" \
+      "{{ container-platform }}" \
       "{{ toolchain-dir }}" \
       "build-container" \
       "{{ dttr-version }}" \

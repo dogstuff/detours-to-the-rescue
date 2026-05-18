@@ -3,17 +3,41 @@ dttr_find_sdl3()
 dttr_find_sdl3_mixer()
 
 set(DTTR_SIDECAR_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include")
-set(DTTR_SIDECAR_OPENGL_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/opengl_shaders.h")
-set(DTTR_SIDECAR_SDL3GPU_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/sdl3gpu_shaders.h")
+set(DTTR_SIDECAR_GENERATED_SHADER_DIR "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen")
+set(DTTR_SIDECAR_OPENGL_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/opengl_shaders.h")
+set(DTTR_SIDECAR_SDL3GPU_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/sdl3gpu_shaders.h")
+set(DTTR_SIDECAR_SDL3GPU_SHADER_OUTPUTS
+    "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.dxil"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.spv"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxil"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.spv"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.dxil"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.spv"
+)
 set(DTTR_SIDECAR_GENERATED_SHADER_OUTPUTS
     "${DTTR_SIDECAR_OPENGL_SHADER_HEADER}"
-    "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
-    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.dxil"
-    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.spv"
-    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.dxil"
-    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.spv"
-    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.dxil"
-    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.spv"
+    ${DTTR_SIDECAR_SDL3GPU_SHADER_OUTPUTS}
+)
+
+set(DTTR_USE_CACHED_SDL3GPU_SHADERS_DEFAULT OFF)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(DTTR_USE_CACHED_SDL3GPU_SHADERS_DEFAULT ON)
+endif()
+option(
+    DTTR_USE_CACHED_SDL3GPU_SHADERS
+    "Copy cached SDL3 GPU shader blobs instead of compiling them with host shader tools"
+    ${DTTR_USE_CACHED_SDL3GPU_SHADERS_DEFAULT}
+)
+set(DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cache/sdl3gpu")
+set(DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUTS
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/sdl3gpu_shaders.h"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.dxil"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.spv"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxil"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.spv"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.dxil"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.spv"
 )
 file(GLOB DTTR_SIDECAR_OPENGL_SHADER_INPUTS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/opengl/*.glsl"
@@ -26,7 +50,7 @@ file(GLOB DTTR_SIDECAR_SDL3GPU_SHADER_INPUTS CONFIGURE_DEPENDS
 add_custom_command(
     OUTPUT "${DTTR_SIDECAR_OPENGL_SHADER_HEADER}"
     COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-opengl-shaders.sh"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen"
+        "${DTTR_SIDECAR_GENERATED_SHADER_DIR}"
     DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-opengl-shaders.sh"
         ${DTTR_SIDECAR_OPENGL_SHADER_INPUTS}
@@ -35,24 +59,56 @@ add_custom_command(
     VERBATIM
 )
 
-add_custom_command(
-    OUTPUT
-        "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.dxil"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.spv"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.dxil"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.spv"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.dxil"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.spv"
-    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-shaders.sh"
-        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen"
-    DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-shaders.sh"
-        ${DTTR_SIDECAR_SDL3GPU_SHADER_INPUTS}
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Generating sidecar SDL3 GPU shader headers and blobs"
-    VERBATIM
-)
+if(DTTR_USE_CACHED_SDL3GPU_SHADERS)
+    foreach(DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUT IN LISTS DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUTS)
+        if(NOT EXISTS "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUT}")
+            message(FATAL_ERROR "Missing cached SDL3 GPU shader artifact: ${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUT}")
+        endif()
+    endforeach()
+
+    add_custom_command(
+        OUTPUT ${DTTR_SIDECAR_SDL3GPU_SHADER_OUTPUTS}
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/sdl3gpu_shaders.h"
+            "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.dxil"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.dxil"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.spv"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.spv"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxil"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxil"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.spv"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.spv"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.dxil"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.dxil"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.spv"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.spv"
+        DEPENDS ${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUTS}
+        COMMENT "Copying cached sidecar SDL3 GPU shader headers and blobs"
+        VERBATIM
+    )
+else()
+    add_custom_command(
+        OUTPUT ${DTTR_SIDECAR_SDL3GPU_SHADER_OUTPUTS}
+        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-shaders.sh"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-shaders.sh"
+            ${DTTR_SIDECAR_SDL3GPU_SHADER_INPUTS}
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMENT "Generating sidecar SDL3 GPU shader headers and blobs"
+        VERBATIM
+    )
+endif()
 
 add_custom_target(dttr_sidecar_generated_shaders
     DEPENDS ${DTTR_SIDECAR_GENERATED_SHADER_OUTPUTS}
