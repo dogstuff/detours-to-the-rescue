@@ -1,6 +1,6 @@
 # Building
 
-Use the [Nix](https://github.com/NixOS/nix) shell for local Windows builds. It provides MinGW, the project dependencies, and the build tools this project expects.
+Use the [Nix](https://github.com/NixOS/nix) shell for local Windows builds. It provides MinGW, project dependencies, and the expected build tools.
 
 !!! note
 
@@ -25,7 +25,7 @@ just setup-build
 cmake --preset mingw32-nix
 ```
 
-Both commands configure `build/` with `Ninja Multi-Config` and default to `DTTR_MODS_ENABLED=OFF`.
+Both commands configure `build/` with `Ninja Multi-Config`. The default is `DTTR_MODS_ENABLED=OFF`.
 
 To build with modding enabled, set `DTTR_MODS_ENABLED=ON` and run the same `just` command:
 
@@ -36,7 +36,7 @@ DTTR_MODS_ENABLED=ON just build
 
 ## Container Build
 
-Use the project container when you need a clean toolchain image:
+Use the project container when you need a clean toolchain:
 
 ```sh
 just build-container

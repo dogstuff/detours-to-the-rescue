@@ -4,7 +4,7 @@
 /// PCDOGS generated symbols describe known game functions, globals, types, and
 /// patch targets for supported 102 Dalmatians executables.
 ///
-/// Use them to read game state, call known functions, install typed hooks, or
+/// Use these symbols to read game state, call known functions, install typed hooks, or
 /// build patch specs without hand-written lookup logic. DttR resolves required
 /// PCDOGS symbols before loading mods; custom SDK hosts and tests can call
 /// `DTTR_PCDOGS_ResolveAll()` explicitly.

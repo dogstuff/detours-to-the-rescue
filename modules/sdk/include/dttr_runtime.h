@@ -68,7 +68,7 @@ struct DTTR_Core_API {
 };
 
 // Purpose-agnostic declaration/definition helpers for private consumer storage.
-// These do not install hooks, resolve targets, or otherwise hide runtime behavior.
+// These do not install hooks, resolve targets, or hide runtime behavior.
 #define DTTR_DECLARE_STORAGE(type, name) extern type name;
 #define DTTR_DEFINE_STORAGE(type, name) type name;
 
@@ -127,7 +127,7 @@ void DTTR_Core_HookDetach(DTTR_Core_Hook *hook);
 /// @return `true` when the hook is detached, already stale, or NULL.
 bool DTTR_Core_HookDetachChecked(DTTR_Core_Hook *hook);
 
-/// Return whether a hook handle is still registered with the runtime.
+/// Report whether a hook handle is still registered with the runtime.
 /// @param hook Hook or patch handle returned by this runtime; may be `NULL`.
 /// @return `true` while the hook is still active.
 bool DTTR_Core_HookIsActive(DTTR_Core_Hook *hook);

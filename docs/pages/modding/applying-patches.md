@@ -1,6 +1,6 @@
 # Applying Game Patches
 
-Patches change bytes, pointer slots, or jump sites at game or runtime addresses. Keep each feature in one patch group so cleanup has one rollback path.
+Patches change bytes, pointer slots, or jump sites in game or runtime code. Keep each feature in one patch group so cleanup has one rollback path.
 
 The usual flow is:
 
@@ -10,7 +10,7 @@ The usual flow is:
 
 ## Patch Group Ownership
 
-A `DTTR_Core_PatchGroup` lets a mod manage installed patches and hooks through one owner. If a required patch fails, the group can roll back anything it already installed.
+A `DTTR_Core_PatchGroup` lets a mod manage installed patches and hooks under one owner. If a required patch fails, the group can roll back anything it already installed.
 
 ```c
 #include <dttr_sdk.h>
@@ -35,11 +35,11 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-Create the patch group before exposing the feature. If an install API creates the group for you, keep the returned group and release it during cleanup.
+Create the patch group before exposing the feature. If an install API creates the group for you, keep the returned handle and release it during cleanup.
 
 ## PCDOGS Patch Specs
 
-With `DTTR_PCDOGS_T_Patch_Spec`, one install call can apply SDK-provided PCDOGS symbol patches.
+With `DTTR_PCDOGS_T_Patch_Spec`, one install call applies SDK-provided PCDOGS symbol patches.
 
 ```c
 static int32_t __cdecl trace_player_set_lives(char lives) {
@@ -80,7 +80,7 @@ Use `true` for required specs when a missing target should abort the install.
 
 ## Target Specs
 
-`DTTR_Core_TargetSpec` installs into an existing patch group. If you are not using `DTTR_PCDOGS_PatchGroup_Install()`, create the group during init and check the result before installing targets:
+`DTTR_Core_TargetSpec` installs into an existing patch group. If you are not using `DTTR_PCDOGS_PatchGroup_Install()`, create the group during init and check the result before adding targets:
 
 ```c
 DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx->runtime, &patch_group);
@@ -139,8 +139,8 @@ const DTTR_PCDOGS_T_Patch_Spec specs[] = {
 };
 ```
 
-A skipped optional spec increments `DTTR_PCDOGS_T_Patch_Report::skipped_optional`. Treat that as expected compatibility handling, not a hard failure.
+A skipped optional spec increments `DTTR_PCDOGS_T_Patch_Report::skipped_optional`. Treat that as expected compatibility behavior, not a hard failure.
 
 ## Cleanup
 
-To disable a feature temporarily, call `DTTR_Core_PatchGroupUninstall(patch_group)`. It detaches active handles but keeps the group object available for reuse.
+To disable a feature temporarily, call `DTTR_Core_PatchGroupUninstall(patch_group)`. It detaches active handles but keeps the group available for reuse.

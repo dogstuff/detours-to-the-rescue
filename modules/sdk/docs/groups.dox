@@ -71,12 +71,9 @@
 /// to compare a hook actor with the engine's current active actor.
 
 /// @defgroup sdk_util_unstable Experimental SDK Utilities
-/// Proof-gated helpers for package traversal and other reverse-engineering
-/// workflows.
 ///
 /// These APIs are included from the bundle header only when
-/// DTTR_SDK_ENABLE_UNSTABLE is defined. They use explicit status visits and
-/// visitor-controlled traversal instead of hidden decoding assumptions.
+/// DTTR_SDK_ENABLE_UNSTABLE is defined.
 
 /// @defgroup sdk_runtime Runtime Hooking API
 /// Low-level hook, patch, storage, and sigscan helpers.

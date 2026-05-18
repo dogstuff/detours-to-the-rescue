@@ -1,10 +1,10 @@
 # Manually Resolving Symbols
 
-PCDOGS symbols describe known game functions, globals, patch sites, and types. Resolve them against the current executable before a feature relies on typed wrappers or raw addresses.
+PCDOGS symbols describe known game functions, globals, patch sites, and types. Resolve them against the current executable before a feature uses typed wrappers or raw addresses.
 
 ## Resolution in DttR
 
-DttR resolves the required PCDOGS symbols before loading mods. Normal mods can use typed helpers directly and guard optional behavior with `IsCallable()`, `Try()`, `Read()`, or `Write()`.
+DttR resolves the required PCDOGS symbols before loading mods. Most mods can use typed helpers directly and guard optional behavior with `IsCallable()`, `Try()`, `Read()`, or `Write()`.
 
 Custom SDK hosts and tests can resolve all known symbols explicitly:
 
@@ -20,7 +20,7 @@ DTTR_MODS_INIT {
 }
 ```
 
-A `false` return from `DTTR_PCDOGS_ResolveAll()` means at least one known symbol did not resolve. Optional features can still check the individual symbol they need.
+A `false` return from `DTTR_PCDOGS_ResolveAll()` means at least one known symbol did not resolve. Optional features can still check the symbol they need.
 
 ## Typed Wrapper Checks
 
@@ -52,7 +52,7 @@ Keep copied values in mod state. Do not assume a game-memory pointer stays valid
 
 ## ID-Based Resolution
 
-Use ID-based helpers when no typed wrapper exists, or when a lower-level SDK call needs a raw address chosen by enum.
+Use ID-based helpers when no typed wrapper exists, or when a lower-level SDK call needs a raw address selected by enum.
 
 ```c
 uintptr_t address = 0;
@@ -78,4 +78,4 @@ DTTR_Core_Result result = DTTR_PCDOGS_DataResolve(
 uintptr_t player_lives_address = DTTR_Core_ResultOk(result) ? address : 0;
 ```
 
-Prefer typed wrappers for ordinary reads, writes, calls, and hooks. Drop to ID-based resolution only for raw-address APIs or reverse-engineering work that has no generated helper yet.
+Prefer typed wrappers for ordinary reads, writes, calls, and hooks. Use ID-based resolution only for raw-address APIs or reverse-engineering work with no generated helper yet.

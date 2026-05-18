@@ -1,6 +1,6 @@
 # Calling Game Functions
 
-The SDK gives you typed PCDOGS wrappers for known game functions. Use those wrappers unless you are working on an unsupported patch that needs a raw address.
+The SDK provides typed PCDOGS wrappers for known game functions. Use those wrappers unless you are working on an unsupported patch that needs a raw address.
 
 ## API Shape
 
@@ -21,7 +21,7 @@ For raw address lookup, see [Manually Resolving Symbols](resolving-symbols.md).
 
 ## Callable Checks
 
-Check callability before your mod depends on a direct call in the current executable.
+Check callability before your mod relies on a direct call in the current executable.
 
 ```c
 static bool can_call_movie_play_file;
@@ -41,14 +41,14 @@ DTTR_MODS_INIT {
 
 ## Fallback Calls
 
-`DTTR_PCDOGS_*->Call()` calls the game function when available. If the symbol is not callable, it returns the fallback value and leaves game-owned output parameters untouched.
+`DTTR_PCDOGS_*->Call()` calls the game function when available. If the symbol is not callable, it returns the fallback value and leaves game-owned output parameters alone.
 
 ```c
 // Returns 0 when Timer_GetRawTickCount is unavailable.
 int32_t ticks = DTTR_PCDOGS_F_TimerGetRawTickCount->Call(&ctx->runtime, 0);
 ```
 
-Use `Try()` when a missing symbol should disable a feature or produce a log instead of quietly taking a fallback value.
+Use `Try()` when a missing symbol should disable a feature or produce a log instead of quietly using a fallback value.
 
 ## Guarded Calls
 
@@ -76,7 +76,7 @@ static bool try_play_movie_path(
 
 ## Game Pointers
 
-When a wrapper needs a game-owned pointer, check the SDK declaration for the pointer type it expects.
+When a wrapper needs a game-owned pointer, check the SDK declaration for the expected pointer type.
 
 ```c
 static BOOL actor_is_close(

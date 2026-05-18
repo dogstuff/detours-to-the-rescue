@@ -10,7 +10,7 @@ Pass a config file to `dttr.exe` when you need a separate setup:
 dttr.exe custom_dttr.json
 ```
 
-Set string fields to `null` to clear them. DttR reports unknown or mistyped scalar keys as configuration errors.
+Set string fields to `null` to clear them. DttR treats unknown or mistyped scalar keys as configuration errors.
 
 ## Example
 
@@ -80,7 +80,7 @@ Set string fields to `null` to clear them. DttR reports unknown or mistyped scal
 | `present_scaling_algorithm` | String | `linear` | Sampling used when `scaling_method` is `present`: `nearest` or `linear`. |
 | `window_width` | Integer | `640` | Initial window width in pixels. Numbers below 64 fall back to 640 at runtime. |
 | `window_height` | Integer | `480` | Initial window height in pixels. Numbers below 64 fall back to 480 at runtime. |
-| `msaa_samples` | Integer | `2` | Multisample count. `1` disables MSAA. SDL GPU backends support `1`, `2`, `4`, and `8`. OpenGL clamps to device support. Unsupported SDL GPU counts fall back to no MSAA. |
+| `msaa_samples` | Integer | `2` | Multisample count. `1` disables MSAA. SDL GPU backends support `1`, `2`, `4`, and `8`. OpenGL clamps to device support. Unsupported SDL GPU counts disable MSAA. |
 | `texture_upload_sync` | Boolean | `false` | Synchronize texture uploads. |
 | `generate_texture_mipmaps` | Boolean | `true` | Generate texture mipmaps. |
 | `vertex_precision` | String | `native` | Vertex positioning precision: `native` or `subpixel`. |
@@ -121,7 +121,7 @@ Set string fields to `null` to clear them. DttR reports unknown or mistyped scal
 
 ## Gamepad Buttons (`gamepad.buttons`)
 
-`gamepad.buttons` is a JSON object. Each key is the physical input you press, and each value is the game action DttR sends. When the object is present, omitted inputs are intentionally unbound, so include every binding you want to keep.
+`gamepad.buttons` is a JSON object. Each key is the physical input you press, and each value is the game action DttR sends. When the object is present, omitted inputs are unbound, so include every binding you want to keep.
 
 This example binds three inputs and leaves the rest unbound:
 

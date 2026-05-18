@@ -12,7 +12,7 @@ A function hook has three parts:
 
 ## Patch Spec Hook
 
-Prefer generated PCDOGS patch specs for normal mods. They keep hook metadata with the generated symbol, install through a `DTTR_Core_PatchGroup`, and give cleanup one owner.
+Prefer generated PCDOGS patch specs for most mods. They keep hook metadata with the generated symbol, install through a `DTTR_Core_PatchGroup`, and give cleanup one owner.
 
 ```c
 #include <dttr_sdk.h>
@@ -73,7 +73,7 @@ Other patch types still reject overlaps: byte patches, pointer hooks, raw rel32 
 
 ## Single-Owner Convenience Hook
 
-The generated `Hook()` and `Unhook()` helpers are shorter, but they have one generated hook slot per symbol. Use them only when your mod is the only owner of that generated helper. Prefer patch specs when hooks should compose with other mods.
+The generated `Hook()` and `Unhook()` helpers are shorter, but they have one generated hook slot per symbol. Use them only when your mod is the only owner of that helper. Prefer patch specs when hooks should compose with other mods.
 
 ```c
 #include <dttr_sdk.h>

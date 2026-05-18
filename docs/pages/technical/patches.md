@@ -1,6 +1,6 @@
 # Patches
 
-This page maps the runtime hooks and byte patches DttR installs.
+This page lists the runtime hooks and byte patches DttR installs.
 
 DttR resolves most sites with `DTTR_Core_HookSigscan()` against the loaded game module. In signatures, `?` bytes are mask wildcards.
 
@@ -14,7 +14,7 @@ DttR resolves most sites with `DTTR_Core_HookSigscan()` against the loaded game 
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_hook_win_main` | `83 EC 40 53 8B 5C 24` | `E9 <rel32>` at the matched function entry | Game `WinMain`-style entrypoint | `DTTR_Hook_WinMainCallback` | DttR installs this before normal sidecar setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and mods, then drives the original game loop. |
+| `dttr_hook_win_main` | `83 EC 40 53 8B 5C 24` | `E9 <rel32>` at the matched function entry | Game `WinMain`-style entrypoint | `DTTR_Hook_WinMainCallback` | DttR installs this before sidecar setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and mods, then drives the original game loop. |
 
 ## Game Data and Process Fixes
 

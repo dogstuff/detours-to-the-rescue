@@ -4,7 +4,7 @@
 ///
 /// These declarations are available through dttr_sdk.h only when
 /// DTTR_SDK_ENABLE_UNSTABLE is defined. Expect source and ABI churn while package
-/// layouts are still being proven.
+/// layouts are still being mapped.
 
 #ifndef DTTR_UTIL_UNSTABLE_H
 #define DTTR_UTIL_UNSTABLE_H
@@ -29,10 +29,10 @@ extern "C" {
 /// @{
 
 /// Experimental package traversal helpers for reverse-engineering workflows.
-/// These declarations may change while package layouts are still being proven.
+/// These declarations may change while package layouts are still being mapped.
 #define DTTR_UTIL_PKG_DEFAULT_TOC_COUNT 138u
 
-/// Package subtree families that the walker may expose.
+/// Package subtree families that the walker can expose.
 typedef enum DTTR_Util_PkgWalkDomain {
 	DTTR_UTIL_PKG_DOMAIN_TOC = 1u << 0,
 	DTTR_UTIL_PKG_DOMAIN_ENTRY = 1u << 1,
@@ -52,7 +52,7 @@ typedef enum DTTR_Util_PkgWalkDomain {
 									 | DTTR_UTIL_PKG_DOMAIN_KNOWN_CHILDREN,
 } DTTR_Util_PkgWalkDomain;
 
-/// The shape of the object reported to a package visitor.
+/// Object kind reported to a package visitor.
 typedef enum DTTR_Util_PkgVisitKind {
 	DTTR_UTIL_PKG_VISIT_TOC_ENTRY = 1,
 	DTTR_UTIL_PKG_VISIT_LOADED_ENTRY,

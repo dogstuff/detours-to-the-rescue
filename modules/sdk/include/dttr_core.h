@@ -1,6 +1,6 @@
 /// @file dttr_core.h
 /// Core SDK APIs for status handling, signature scans, patches, hooks, and patch
-/// sets.
+/// groups.
 /// @ingroup sdk_core
 
 #ifndef DTTR_Core_H
@@ -85,7 +85,7 @@ typedef struct DTTR_Core_TargetReport {
 /// @return Static string such as `DTTR_OK` or `DTTR_ERR_INVALID_ARGUMENT`.
 const char *DTTR_Core_StatusName(DTTR_Core_Status status);
 
-/// Return whether an SDK result represents success.
+/// Report whether an SDK result represents success.
 /// @param result Result object returned by an SDK operation.
 /// @return `true` when `result.status` is `DTTR_OK`.
 bool DTTR_Core_ResultOk(DTTR_Core_Result result);
@@ -238,7 +238,7 @@ void DTTR_Core_Unhook(DTTR_Core_Hook *hook);
 /// @return `DTTR_OK` when the handle is detached or already null; an error otherwise.
 DTTR_Core_Result DTTR_Core_UnhookChecked(DTTR_Core_Hook *hook);
 
-/// Create a patch group that groups hooks for rollback and teardown.
+/// Create a patch group for rollback and teardown.
 /// @param ctx Runtime context used by patch-group installs.
 /// @param out_group Receives the created patch group on success.
 /// @return `DTTR_OK` when the patch group is created, otherwise an error status.

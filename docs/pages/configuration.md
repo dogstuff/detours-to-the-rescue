@@ -10,7 +10,7 @@ Save your changes before closing the tool. DttR reads the saved `dttr.json` the 
 
 ### Game Directory or ISO
 
-Use **Game directory or ISO** to switch discs, choose another installed copy, or fix a path after moving files.
+Use **Game directory or ISO** to switch discs, choose another installed copy, or fix a moved path.
 
 ### Saves Directory
 
@@ -44,7 +44,7 @@ Use **Minidump type** to choose how much detail crash dumps include. Release bui
 Leave this on `logical` unless you're comparing renderers or debugging scaling.
 
 - `logical` is the normal choice.
-- `present` scales the final image instead. In `dttr.json`, use `present_scaling_algorithm` to choose nearest-neighbor or linear sampling.
+- `present` scales the final image instead. Set `present_scaling_algorithm` in `dttr.json` to choose nearest-neighbor or linear sampling.
 
 ### Scaling Fit
 
@@ -72,7 +72,7 @@ Keep this on `auto` unless DttR has startup or rendering problems.
 - `fullscreen` starts DttR fullscreen. You can also toggle fullscreen in game with ++f11++.
 - `sprite_smooth` smooths scaled sprites. Turn it off for sharper pixels.
 - `msaa_samples` smooths 3D edges at some performance cost. Use `1` to disable MSAA.
-- `generate_texture_mipmaps` can make scaled textures look smoother.
+- `generate_texture_mipmaps` may make scaled textures look smoother.
 
 Leave `texture_upload_sync` at its default unless you're debugging a renderer issue.
 
@@ -85,7 +85,7 @@ DttR routes the game's old Miles Sound System calls through SDL.
 ### Volume and Sample Tuning
 
 - `mss_sample_gain` makes game audio louder or quieter. Use small changes because high values can clip.
-- `mss_sample_preemphasis` changes how samples are filtered before playback. Leave it at the default unless you're comparing audio output on purpose.
+- `mss_sample_preemphasis` changes how samples are filtered before playback. Leave it at the default unless you're deliberately comparing audio output.
 
 ## Gamepad
 
@@ -115,7 +115,7 @@ Change values in small steps, save, then test in game.
 
 Button mappings connect a physical controller button to a game action: directions, confirm, back, and start/pause.
 
-To change a mapping, choose **Bind**, then press the controller button or trigger. If that button is already assigned to another action, the configuration tool swaps the old source into the other row.
+To change a mapping, choose **Bind**, then press the controller button or trigger. If that button is already assigned to another action, the tool swaps the old source into the other row.
 
 Change one binding at a time, then test in game. Use **Reset** to restore the default mapping, or **Clear** to leave it unbound.
 

@@ -8,7 +8,7 @@ Use callbacks for most mod work: setup, per-frame updates, input handling, overl
 | --- | --- |
 | `DTTR_MODS_LATE_INIT` | Runs after mods load for cross-mod setup or delayed checks. |
 | `DTTR_MODS_BEFORE_UNLOAD` | Runs before a mod unloads, so you can do final cleanup. |
-| `DTTR_MODS_TICK` | Runs each host tick for small bits of legacy tick work. Prefer frame callbacks when you need frame data. |
+| `DTTR_MODS_TICK` | Runs each host tick for legacy tick work. Prefer frame callbacks when you need frame data. |
 | `DTTR_MODS_FRAME_BEGIN` | Runs at the start of each host frame for timers, polling, and lightweight state updates. |
 | `DTTR_MODS_BEFORE_GAME_FRAME` | Runs immediately before game image submission for render-backend work. This can also run on blocked presentation frames. |
 | `DTTR_MODS_AFTER_GAME_FRAME` | Runs immediately after game image submission for render-backend work. This can also run on blocked presentation frames. |
@@ -70,7 +70,7 @@ DTTR_MODS_AFTER_EVENT {
 
 ## Per-Frame Work
 
-Frame callbacks receive the current render-frame dimensions and scale. Use those values instead of guessing from cached window size.
+Frame callbacks receive the current render-frame dimensions and scale. Use those values instead of cached window-size guesses.
 
 ```c
 static uint64_t last_frame_index;
@@ -86,7 +86,7 @@ DTTR_MODS_FRAME_BEGIN {
 
 ## Game Frame Advancement
 
-Some tools need to pause game execution while overlays keep presenting. `DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME` controls whether that happens.
+Some tools need to pause game execution while overlays keep presenting. `DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME` controls that gate.
 
 ```c
 static uint32_t blocked_frames_remaining;
@@ -102,6 +102,6 @@ DTTR_MODS_GAME_FRAME_BLOCKED {
 }
 ```
 
-`DTTR_MODS_GAME_FRAME_ADVANCED` fires after a host-loop frame advances the game. `DTTR_MODS_GAME_FRAME_BLOCKED` fires after a frame presents without advancing it.
+`DTTR_MODS_GAME_FRAME_ADVANCED` fires after a host-loop frame advances the game. `DTTR_MODS_GAME_FRAME_BLOCKED` fires after a frame presents without advancing the game.
 
 Use `DTTR_MODS_GAME_FRAME_ADVANCED` for strict simulation-step work. `DTTR_MODS_BEFORE_GAME_FRAME` and `DTTR_MODS_AFTER_GAME_FRAME` are render-backend image-submission hooks. They currently also run when advancement is blocked but presentation continues.
