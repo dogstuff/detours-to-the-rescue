@@ -777,37 +777,49 @@ static bool dttr_pcdogs_unhook_checked(
 ${doxy_comment(row["doc"], params=row["param_docs"])}
 typedef ${row["ret"]}(${row["cc"]}*${row["typedef_name"]}) ${row["params"]};
 
+/// Accessor table for the generated `${row["display_name"]}` symbol object.
 struct ${row["accessor_struct_name"]} {
+	/// Stable generated symbol ID.
 	DTTR_PCDOGS_T_Symbol_Function_Id SymbolId;
 % if not unstable:
+	/// Public stable function ID.
 	DTTR_PCDOGS_T_Function_Id FunctionId;
 % endif
+	/// Returns true after this symbol has resolved in the active process.
 	bool (*IsResolved)();
+	/// Returns true when this symbol is resolved and safe to call.
 	bool (*IsCallable)(const DTTR_Core_Context* ctx);
+	/// Returns the resolved function address, or zero when unresolved.
 	uintptr_t (*Address)();
-	DTTR_PCDOGS_T_Hook_Kind (*HookKind)(); ///< Returns the generated hook-site shape.
-	uint32_t (*HookPrologueSize)();        ///< REL32 trampoline size, or HOTPATCH entry-window size.
+	/// Returns the generated hook-site shape.
+	DTTR_PCDOGS_T_Hook_Kind (*HookKind)();
+	/// Returns the REL32 trampoline size or HOTPATCH entry-window size.
+	uint32_t (*HookPrologueSize)();
+	/// Calls the resolved function; value-returning wrappers write through `out_ret`.
 	bool (*Try) ${row["try_params"]};
-		// Installs only REL32 generated hooks; returns false for HOTPATCH metadata.
+	/// Installs generated REL32 hooks; HOTPATCH metadata returns false.
 	bool (*Hook)(
 		const DTTR_Core_Context* ctx,
 		${row["typedef_name"]} detour,
 		${row["typedef_name"]}* out_original
 	);
 % if not unstable:
-		// Builds only REL32 function-hook specs; HOTPATCH metadata yields an unsupported spec.
+	/// Builds a REL32 function-hook spec; HOTPATCH metadata returns an unsupported spec.
 	DTTR_PCDOGS_T_Patch_Spec (*PatchSpec)(
 		bool required,
 		${row["typedef_name"]} detour,
 		${row["typedef_name"]}* out_original
 	);
 % endif
+	/// Detaches the hook installed through this accessor, if any.
 	void (*Unhook)(const DTTR_Core_Context* ctx);
 % if row["ret"] != "void":
+	/// Calls the resolved function, or returns `fallback_ret`.
 	${row["ret"]} (*Call) ${row["call_or_params"]};
 % endif
 };
 
+/// Generated accessor object for `${row["display_name"]}`.
 DTTR_PCDOGS_API const struct ${row["accessor_struct_name"]}* const DTTR_PCDOGS_F_${row["public"]};
 
 /// @}

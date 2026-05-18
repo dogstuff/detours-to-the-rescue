@@ -31,6 +31,8 @@ extern "C" {
 /// Cast a stable opaque Level_Data pointer to the unstable audited runtime layout.
 /// The stable API keeps Level_Data opaque; this helper makes the intentional
 /// bridge explicit for callers that opt into unstable layouts.
+/// @param ptr_ Stable opaque Level_Data pointer to cast.
+/// @return Mutable pointer using the unstable runtime layout.
 static inline DTTR_PCDOGS_T_Level_RuntimeData *DTTR_Util_LevelDataAsRuntimeDataMutable(
 	void *ptr_
 ) {
@@ -38,6 +40,8 @@ static inline DTTR_PCDOGS_T_Level_RuntimeData *DTTR_Util_LevelDataAsRuntimeDataM
 }
 
 /// Const-preserving variant of the Level_Data runtime-layout cast.
+/// @param ptr_ Stable opaque Level_Data pointer to cast.
+/// @return Const pointer using the unstable runtime layout.
 static inline const DTTR_PCDOGS_T_Level_RuntimeData *DTTR_Util_LevelDataAsRuntimeDataConst(
 	const void *ptr_
 ) {

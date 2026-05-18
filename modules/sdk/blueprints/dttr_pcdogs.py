@@ -260,7 +260,7 @@ stable.struct(
         "uint8_t",
         "reserved_01",
         1,
-        doc="Opaque/alignment byte; audited animation frame paths did not isolate stable semantics for it.",
+        doc="Opaque/alignment byte; no stable meaning is known.",
     ),
     member("int16_t", "normal_count", 2),
     member("int16_t", "vertex_count", 4),
@@ -578,7 +578,7 @@ stable.struct(
         "int16_t",
         "world_rot_reserved",
         136,
-        doc="Opaque/pad word after camera view matrix data; audited camera setup/update paths did not isolate stable semantics for it.",
+        doc="Opaque/pad word after camera view matrix data; no stable meaning is known.",
     ),
     member(
         "uint8_t",
