@@ -28,13 +28,13 @@ A `false` return means the value was unavailable or the memory was not readable.
 
 Typed writes check that the PCDOGS wrapper is available and that the target memory is writable. Check `WritePolicy` before exposing a feature that edits game memory:
 
-| Policy | Meaning | Mod guidance |
-| --- | --- | --- |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY` | Plain generated data slot. | `Write()` may update it after availability and memory-permission checks. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY` | Dispatch, jump, lookup, opcode, or index table decoded as data. | Use it for documentation or read-only inspection. Do not rewrite table entries through `Write()`. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED` | Live pointer or state owned by the game engine. | Read it or pass it to higher-level SDK helpers. Replacing it directly is not supported as a stable mod contract. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY` | Symbol is intended for explicit patch/hook flows. | Prefer the generated `PatchSpec()`/patch-group APIs when available. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN` | Untyped or insufficiently classified global. | Use only for low-level investigation. |
+| Policy | Contract |
+| --- | --- |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY` | Plain generated data slot. `Write()` may update it after availability and memory-permission checks. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY` | Dispatch, jump, lookup, opcode, or index table decoded as data. Use it for documentation or read-only inspection; do not rewrite table entries through `Write()`. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED` | Live pointer or state owned by the game engine. Read it or pass it to higher-level SDK helpers; replacing it directly is not a stable mod contract. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY` | Symbol intended for explicit patch/hook flows. Prefer the generated `PatchSpec()`/patch-group APIs when available. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN` | Untyped or insufficiently classified global. Use only for low-level investigation. |
 
 ```c
 static bool write_save_file_player_lives(int32_t lives) {
