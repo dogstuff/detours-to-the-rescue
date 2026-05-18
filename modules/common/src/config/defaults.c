@@ -8,40 +8,40 @@
 typedef struct {
 	int source;
 	int action;
-} S_DefaultGamepadBinding;
+} default_gamepad_binding;
 
-static const DTTR_Config s_default_config = {
-	.m_schema_major_version = DTTR_CONFIG_SCHEMA_MAJOR_VERSION,
-	.m_log_level = DTTR_DEFAULT_LOG_LEVEL,
-	.m_minidump_type = DTTR_DEFAULT_MINIDUMP_TYPE,
-	.m_log_file_path = "dttr.log",
-	.m_pcdogs_path = "",
-	.m_saves_path = "saves",
-	.m_skip_intro_movies = false,
-	.m_scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
-	.m_scaling_method = DTTR_SCALING_METHOD_LOGICAL,
-	.m_graphics_api = DTTR_GRAPHICS_API_AUTO,
-	.m_vertex_precision = DTTR_VERTEX_PRECISION_NATIVE,
-	.m_sprite_smooth = true,
-	.m_present_filter = SDL_GPU_FILTER_LINEAR,
-	.m_window_width = WINDOW_WIDTH,
-	.m_window_height = WINDOW_HEIGHT,
-	.m_msaa_samples = 2,
-	.m_texture_upload_sync = false,
-	.m_generate_texture_mipmaps = true,
-	.m_fullscreen = false,
-	.m_hot_reload = false,
-	.m_mss_sample_gain = 1.0f,
-	.m_mss_sample_preemphasis = 0.0f,
-	.m_gamepad_enabled = true,
-	.m_gamepad_index = 0,
-	.m_gamepad_axes =
+static const DTTR_Config default_config = {
+	.schema_major_version = DTTR_CONFIG_SCHEMA_MAJOR_VERSION,
+	.log_level = DTTR_DEFAULT_LOG_LEVEL,
+	.minidump_type = DTTR_DEFAULT_MINIDUMP_TYPE,
+	.log_file_path = "dttr.log",
+	.pcdogs_path = "",
+	.saves_path = "saves",
+	.skip_intro_movies = false,
+	.scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
+	.scaling_method = DTTR_SCALING_METHOD_LOGICAL,
+	.graphics_api = DTTR_GRAPHICS_API_AUTO,
+	.vertex_precision = DTTR_VERTEX_PRECISION_NATIVE,
+	.sprite_smooth = true,
+	.present_filter = SDL_GPU_FILTER_LINEAR,
+	.window_width = WINDOW_WIDTH,
+	.window_height = WINDOW_HEIGHT,
+	.msaa_samples = 2,
+	.texture_upload_sync = false,
+	.generate_texture_mipmaps = true,
+	.fullscreen = false,
+	.hot_reload = false,
+	.mss_sample_gain = 1.0f,
+	.mss_sample_preemphasis = 0.0f,
+	.gamepad_enabled = true,
+	.gamepad_index = 0,
+	.gamepad_axes =
 		{
 			[DTTR_GAMEPAD_AXIS_IDX_STICK_X] = SDL_GAMEPAD_AXIS_LEFTX,
 			[DTTR_GAMEPAD_AXIS_IDX_STICK_Y] = SDL_GAMEPAD_AXIS_LEFTY,
 			[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = SDL_GAMEPAD_AXIS_RIGHTX,
 		},
-	.m_gamepad_axis_deadzone =
+	.gamepad_axis_deadzone =
 		{
 			[DTTR_GAMEPAD_AXIS_IDX_STICK_X] = 700,
 			[DTTR_GAMEPAD_AXIS_IDX_STICK_Y] = 700,
@@ -49,9 +49,9 @@ static const DTTR_Config s_default_config = {
 		},
 };
 
-DTTR_Config g_dttr_config;
+DTTR_Config dttr_config;
 
-static const S_DefaultGamepadBinding s_default_button_map[] = {
+static const default_gamepad_binding default_button_map[] = {
 	{SDL_GAMEPAD_BUTTON_SOUTH, PCDOGS_GAMEPAD_IDX_BTN_0},
 	{SDL_GAMEPAD_BUTTON_EAST, PCDOGS_GAMEPAD_IDX_BTN_1},
 	{SDL_GAMEPAD_BUTTON_WEST, PCDOGS_GAMEPAD_IDX_BTN_2},
@@ -68,32 +68,25 @@ static const S_DefaultGamepadBinding s_default_button_map[] = {
 	{DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT, PCDOGS_GAMEPAD_IDX_BTN_5},
 };
 
-void dttr_config_clear_gamepad_button_map(int *map) {
+void DTTR_Config_ClearGamepadButtonMap(int *map) {
 	if (!map) {
 		return;
 	}
 
-	s_config_clear_button_map(map);
+	config_clear_button_map(map);
 }
 
-static int s_find_disabled_component(
-	const DTTR_Config *config,
-	const char *component_filename
-) {
-	if (!config || !component_filename || !component_filename[0]) {
+static int find_disabled_mod(const DTTR_Config *config, const char *mod_filename) {
+	if (!config || !mod_filename || !mod_filename[0]) {
 		return -1;
 	}
 
-	const size_t component_filename_len = strlen(component_filename);
-	for (int i = 0; i < config->m_disabled_component_count; i++) {
-		const char *const disabled_component = config->m_disabled_components[i];
-		const size_t disabled_component_len = strlen(disabled_component);
-		if (disabled_component_len == component_filename_len
-			&& dttr_path_ascii_ieq_n(
-				disabled_component,
-				component_filename,
-				disabled_component_len
-			)) {
+	const size_t mod_filename_len = strlen(mod_filename);
+	for (int i = 0; i < config->disabled_mod_count; i++) {
+		const char *const disabled_mod = config->disabled_mods[i];
+		const size_t disabled_mod_len = strlen(disabled_mod);
+		if (disabled_mod_len == mod_filename_len
+			&& DTTR_Path_AsciiIeqN(disabled_mod, mod_filename, disabled_mod_len)) {
 			return i;
 		}
 	}
@@ -101,91 +94,85 @@ static int s_find_disabled_component(
 	return -1;
 }
 
-bool dttr_config_is_component_disabled(
-	const DTTR_Config *config,
-	const char *component_filename
-) {
-	return s_find_disabled_component(config, component_filename) >= 0;
+bool DTTR_Config_IsModDisabled(const DTTR_Config *config, const char *mod_filename) {
+	return find_disabled_mod(config, mod_filename) >= 0;
 }
 
-static void s_remove_disabled_component(DTTR_Config *config, int index) {
+static void remove_disabled_mod(DTTR_Config *config, int index) {
 	if (!config) {
 		return;
 	}
 
-	const int last_index = config->m_disabled_component_count - 1;
+	const int last_index = config->disabled_mod_count - 1;
 	if (index < 0 || index > last_index) {
 		return;
 	}
 
 	if (index < last_index) {
 		memmove(
-			config->m_disabled_components[index],
-			config->m_disabled_components[index + 1],
-			(size_t)(last_index - index) * sizeof(config->m_disabled_components[0])
+			config->disabled_mods[index],
+			config->disabled_mods[index + 1],
+			(size_t)(last_index - index) * sizeof(config->disabled_mods[0])
 		);
 	}
 
-	config->m_disabled_component_count = last_index;
-	config->m_disabled_components[last_index][0] = '\0';
+	config->disabled_mod_count = last_index;
+	config->disabled_mods[last_index][0] = '\0';
 }
 
-static bool s_add_disabled_component(DTTR_Config *config, const char *component_filename) {
-	if (!config || !component_filename || !component_filename[0]) {
+static bool add_disabled_mod(DTTR_Config *config, const char *mod_filename) {
+	if (!config || !mod_filename || !mod_filename[0]) {
 		return false;
 	}
 
-	if (config->m_disabled_component_count >= DTTR_CONFIG_DISABLED_COMPONENTS_MAX) {
+	if (config->disabled_mod_count >= DTTR_CONFIG_DISABLED_MODS_MAX) {
 		return false;
 	}
 
-	if (!dttr_path_copy_string(
-			config->m_disabled_components[config->m_disabled_component_count],
-			sizeof(config->m_disabled_components[config->m_disabled_component_count]),
-			component_filename
+	if (!DTTR_Path_CopyString(
+			config->disabled_mods[config->disabled_mod_count],
+			sizeof(config->disabled_mods[config->disabled_mod_count]),
+			mod_filename
 		)) {
 		return false;
 	}
 
-	config->m_disabled_component_count++;
+	config->disabled_mod_count++;
 	return true;
 }
 
-bool dttr_config_set_component_enabled(
+bool DTTR_Config_SetModEnabled(
 	DTTR_Config *config,
-	const char *component_filename,
+	const char *mod_filename,
 	bool enabled
 ) {
-	if (!config || !component_filename || !component_filename[0]) {
+	if (!config || !mod_filename || !mod_filename[0]) {
 		return false;
 	}
 
-	const int index = s_find_disabled_component(config, component_filename);
+	const int index = find_disabled_mod(config, mod_filename);
 	if (enabled && index >= 0) {
-		s_remove_disabled_component(config, index);
+		remove_disabled_mod(config, index);
 	}
 
 	if (enabled || index >= 0) {
 		return true;
 	}
 
-	return s_add_disabled_component(config, component_filename);
+	return add_disabled_mod(config, mod_filename);
 }
 
-bool dttr_config_disabled_components_changed(
-	const DTTR_Config *current,
-	const DTTR_Config *base
-) {
+bool DTTR_Config_DisabledModsChanged(const DTTR_Config *current, const DTTR_Config *base) {
 	if (!current || !base) {
 		return false;
 	}
 
-	if (current->m_disabled_component_count != base->m_disabled_component_count) {
+	if (current->disabled_mod_count != base->disabled_mod_count) {
 		return true;
 	}
 
-	for (int i = 0; i < current->m_disabled_component_count; i++) {
-		if (!dttr_config_is_component_disabled(base, current->m_disabled_components[i])) {
+	for (int i = 0; i < current->disabled_mod_count; i++) {
+		if (!DTTR_Config_IsModDisabled(base, current->disabled_mods[i])) {
 			return true;
 		}
 	}
@@ -193,23 +180,23 @@ bool dttr_config_disabled_components_changed(
 	return false;
 }
 
-static void s_set_default_button_map(int *map) {
-	dttr_config_clear_gamepad_button_map(map);
+static void set_default_button_map(int *map) {
+	DTTR_Config_ClearGamepadButtonMap(map);
 
-	for (size_t i = 0; i < SDL_arraysize(s_default_button_map); i++) {
-		map[s_default_button_map[i].source] = s_default_button_map[i].action;
+	for (size_t i = 0; i < SDL_arraysize(default_button_map); i++) {
+		map[default_button_map[i].source] = default_button_map[i].action;
 	}
 }
 
-const char *dttr_config_graphics_api_name(DTTR_GraphicsApi api) {
-	return s_config_format_graphics_api(api);
+const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsApi api) {
+	return config_format_graphics_api(api);
 }
 
-void dttr_config_set_defaults(DTTR_Config *config) {
+void DTTR_Config_SetDefaults(DTTR_Config *config) {
 	if (!config) {
 		return;
 	}
 
-	*config = s_default_config;
-	s_set_default_button_map(config->m_gamepad_button_map);
+	*config = default_config;
+	set_default_button_map(config->gamepad_button_map);
 }

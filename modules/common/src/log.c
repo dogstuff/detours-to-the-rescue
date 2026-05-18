@@ -4,20 +4,20 @@
 #include <stdio.h>
 #include <time.h>
 
-#define S_MAX_CALLBACKS 32
+#define MAX_CALLBACKS 32
 
 typedef struct {
 	log_LogFn fn;
 	void *udata;
 	int level;
-} S_LogCallback;
+} log_callback;
 
 static int s_level = LOG_TRACE;
-static bool s_quiet;
-static S_LogCallback s_callbacks[S_MAX_CALLBACKS];
-static int s_callback_count;
+static bool quiet;
+static log_callback callbacks[MAX_CALLBACKS];
+static int callback_count;
 
-static const char *s_log_level_string(int level) {
+static const char *level_to_string(int level) {
 	switch (level) {
 	case LOG_TRACE:
 		return "TRACE";
@@ -36,7 +36,7 @@ static const char *s_log_level_string(int level) {
 	}
 }
 
-static void s_init_event(log_Event *ev, void *udata) {
+static void init_event(log_Event *ev, void *udata) {
 	if (!ev->time) {
 		time_t t = time(NULL);
 		ev->time = localtime(&t);
@@ -44,14 +44,14 @@ static void s_init_event(log_Event *ev, void *udata) {
 	ev->udata = udata;
 }
 
-static void s_stderr_callback(log_Event *ev) {
+static void stderr_callback(log_Event *ev) {
 	char buf[16];
 	buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
 	fprintf(
 		ev->udata,
 		"%s %-5s %s:%d: ",
 		buf,
-		s_log_level_string(ev->level),
+		level_to_string(ev->level),
 		ev->file,
 		ev->line
 	);
@@ -60,14 +60,14 @@ static void s_stderr_callback(log_Event *ev) {
 	fflush(ev->udata);
 }
 
-static void s_file_callback(log_Event *ev) {
+static void file_callback(log_Event *ev) {
 	char buf[64];
 	buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
 	fprintf(
 		ev->udata,
 		"%s %-5s %s:%d: ",
 		buf,
-		s_log_level_string(ev->level),
+		level_to_string(ev->level),
 		ev->file,
 		ev->line
 	);
@@ -76,13 +76,13 @@ static void s_file_callback(log_Event *ev) {
 	fflush(ev->udata);
 }
 
-bool dttr_log_is_enabled(int level) {
-	if (!s_quiet && level >= s_level) {
+bool DTTR_Log_IsEnabled(int log_level) {
+	if (!quiet && log_level >= s_level) {
 		return true;
 	}
 
-	for (int i = 0; i < s_callback_count; i++) {
-		if (level >= s_callbacks[i].level) {
+	for (int i = 0; i < callback_count; i++) {
+		if (log_level >= callbacks[i].level) {
 			return true;
 		}
 	}
@@ -90,8 +90,8 @@ bool dttr_log_is_enabled(int level) {
 	return false;
 }
 
-static void s_dttr_vlog_unchecked(
-	int level,
+static void dttr_vlog_unchecked(
+	int log_level,
 	const char *file,
 	int line,
 	const char *fmt,
@@ -101,20 +101,20 @@ static void s_dttr_vlog_unchecked(
 		.fmt = fmt,
 		.file = file,
 		.line = line,
-		.level = level,
+		.level = log_level,
 	};
 
-	if (!s_quiet && level >= s_level) {
-		s_init_event(&ev, stderr);
+	if (!quiet && log_level >= s_level) {
+		init_event(&ev, stderr);
 		va_copy(ev.ap, args);
-		s_stderr_callback(&ev);
+		stderr_callback(&ev);
 		va_end(ev.ap);
 	}
 
-	for (int i = 0; i < s_callback_count; i++) {
-		S_LogCallback *cb = &s_callbacks[i];
-		if (level >= cb->level) {
-			s_init_event(&ev, cb->udata);
+	for (int i = 0; i < callback_count; i++) {
+		log_callback *cb = &callbacks[i];
+		if (log_level >= cb->level) {
+			init_event(&ev, cb->udata);
 			va_copy(ev.ap, args);
 			cb->fn(&ev);
 			va_end(ev.ap);
@@ -122,34 +122,34 @@ static void s_dttr_vlog_unchecked(
 	}
 }
 
-void dttr_log(int level, const char *file, int line, const char *fmt, ...) {
-	if (!dttr_log_is_enabled(level)) {
+void DTTR_Log(int level, const char *file, int line, const char *fmt, ...) {
+	if (!DTTR_Log_IsEnabled(level)) {
 		return;
 	}
 
 	va_list args;
 	va_start(args, fmt);
-	s_dttr_vlog_unchecked(level, file, line, fmt, args);
+	dttr_vlog_unchecked(level, file, line, fmt, args);
 	va_end(args);
 }
 
-void dttr_log_unchecked(int level, const char *file, int line, const char *fmt, ...) {
+void DTTR_Log_Unchecked(int level, const char *file, int line, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
-	s_dttr_vlog_unchecked(level, file, line, fmt, args);
+	dttr_vlog_unchecked(level, file, line, fmt, args);
 	va_end(args);
 }
 
-void dttr_log_set_level(int level) { s_level = level; }
+void DTTR_Log_SetLevel(int log_level) { s_level = log_level; }
 
-void dttr_log_set_quiet(bool enable) { s_quiet = enable; }
+void DTTR_Log_SetQuiet(bool enable) { quiet = enable; }
 
-int dttr_log_add_callback(log_LogFn fn, void *udata, int level) {
-	if (!fn || s_callback_count >= S_MAX_CALLBACKS) {
+int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level) {
+	if (!fn || callback_count >= MAX_CALLBACKS) {
 		return -1;
 	}
 
-	s_callbacks[s_callback_count++] = (S_LogCallback){
+	callbacks[callback_count++] = (log_callback){
 		.fn = fn,
 		.udata = udata,
 		.level = level,
@@ -157,6 +157,6 @@ int dttr_log_add_callback(log_LogFn fn, void *udata, int level) {
 	return 0;
 }
 
-int dttr_log_add_fp(FILE *fp, int level) {
-	return dttr_log_add_callback(s_file_callback, fp, level);
+int DTTR_Log_AddFP(FILE *fp, int level) {
+	return DTTR_Log_AddCallback(file_callback, fp, level);
 }

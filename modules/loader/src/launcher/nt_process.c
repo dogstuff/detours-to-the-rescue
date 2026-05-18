@@ -8,95 +8,95 @@
 #define PS_ATTRIBUTE_CLIENT_ID 0x00010003
 #define RTL_USER_PROC_PARAMS_NORMALIZED 0x01
 #define THREAD_CREATE_FLAGS_CREATE_SUSPENDED 0x00000001
-#define S_PEB_SHIM_DATA_OFFSET 0x1E8
+#define PEB_SHIM_DATA_OFFSET 0x1E8
 
-static const WCHAR S_NT_PATH_PREFIX[] = L"\\??\\";
+static const WCHAR NT_PATH_PREFIX[] = L"\\??\\";
 
 typedef LONG NTSTATUS;
 #define NT_SUCCESS(s) ((NTSTATUS)(s) >= 0)
 
 typedef struct {
-	USHORT m_length;
-	USHORT m_max_length;
-	PWSTR m_buffer;
-} S_UnicodeString;
+	USHORT length;
+	USHORT max_length;
+	PWSTR buffer;
+} unicode_string;
 
 typedef struct {
-	ULONG m_length;
-	HANDLE m_root_directory;
-	S_UnicodeString *m_object_name;
-	ULONG m_attributes;
-	PVOID m_security_descriptor;
-	PVOID m_security_qos;
-} S_ObjectAttributes;
+	ULONG length;
+	HANDLE root_directory;
+	unicode_string *object_name;
+	ULONG attributes;
+	PVOID security_descriptor;
+	PVOID security_qos;
+} object_attributes;
 
 typedef struct {
-	HANDLE m_process;
-	HANDLE m_thread;
-} S_ClientId;
+	HANDLE process;
+	HANDLE thread;
+} client_id;
 
 typedef struct {
-	ULONG m_attribute;
-	SIZE_T m_size;
+	ULONG attribute;
+	SIZE_T size;
 	union {
-		ULONG m_value;
-		PVOID m_value_ptr;
+		ULONG value;
+		PVOID value_ptr;
 	};
-	PSIZE_T m_return_length;
-} S_Attribute;
+	PSIZE_T return_length;
+} attribute;
 
 typedef struct {
-	SIZE_T m_total_length;
-	S_Attribute m_attributes[2];
-} S_AttributeList;
+	SIZE_T total_length;
+	attribute attributes[2];
+} attribute_list;
 
 typedef struct {
-	SIZE_T m_size;
-	ULONG m_state;
+	SIZE_T size;
+	ULONG state;
 	union {
 		struct {
-			ULONG m_init_flags;
-			ULONG m_additional_file_access;
-		} m_init_state;
-		UCHAR m_reserved[64];
+			ULONG init_flags;
+			ULONG additional_file_access;
+		} init_state;
+		UCHAR reserved[64];
 	};
-} S_CreateInfo;
+} create_info;
 
-typedef NTSTATUS(NTAPI *S_NtCreateUserProcess)(
+typedef NTSTATUS(NTAPI *nt_create_user_process_fn)(
 	PHANDLE,
 	PHANDLE,
 	ACCESS_MASK,
 	ACCESS_MASK,
-	S_ObjectAttributes *,
-	S_ObjectAttributes *,
+	object_attributes *,
+	object_attributes *,
 	ULONG,
 	ULONG,
 	PVOID,
-	S_CreateInfo *,
-	S_AttributeList *
+	create_info *,
+	attribute_list *
 );
 
-typedef NTSTATUS(NTAPI *S_RtlCreateProcessParametersEx)(
+typedef NTSTATUS(NTAPI *rtl_create_process_parameters_ex_fn)(
 	PVOID *,
-	S_UnicodeString *,
-	S_UnicodeString *,
-	S_UnicodeString *,
-	S_UnicodeString *,
+	unicode_string *,
+	unicode_string *,
+	unicode_string *,
+	unicode_string *,
 	PVOID,
-	S_UnicodeString *,
-	S_UnicodeString *,
-	S_UnicodeString *,
-	S_UnicodeString *,
+	unicode_string *,
+	unicode_string *,
+	unicode_string *,
+	unicode_string *,
 	ULONG
 );
 
-typedef NTSTATUS(NTAPI *S_RtlDestroyProcessParameters)(PVOID);
-typedef VOID(NTAPI *S_RtlInitUnicodeString)(S_UnicodeString *, PCWSTR);
+typedef NTSTATUS(NTAPI *rtl_destroy_process_parameters_fn)(PVOID);
+typedef VOID(NTAPI *rtl_init_unicode_string_fn)(unicode_string *, PCWSTR);
 
-#define S_RESOLVE(module, type, name)                                                    \
+#define RESOLVE(module, type, name)                                                      \
 	((type)DTTR_UNWRAP_WINAPI_EXISTS(GetProcAddress(module, name)))
 
-static void s_resolve_nt_path_and_cwd(
+static void resolve_nt_path_and_cwd(
 	WCHAR *nt_path,
 	size_t nt_path_size,
 	WCHAR *cwd,
@@ -104,14 +104,17 @@ static void s_resolve_nt_path_and_cwd(
 	const WCHAR *image_name
 ) {
 	WCHAR full_path[MAX_PATH];
-	DTTR_UNWRAP_WINAPI_NONZERO(GetFullPathNameW(image_name, MAX_PATH, full_path, NULL));
+	const DWORD resolved_len = GetFullPathNameW(image_name, MAX_PATH, full_path, NULL);
+	if (resolved_len == 0 || resolved_len >= MAX_PATH) {
+		DTTR_FATAL("Game path is too long");
+	}
 
 	const size_t full_path_len = wcslen(full_path);
 	if (full_path_len + 5 > nt_path_size || full_path_len + 1 > cwd_size) {
 		DTTR_FATAL("Game path is too long");
 	}
 
-	memcpy(nt_path, S_NT_PATH_PREFIX, 4 * sizeof(WCHAR));
+	memcpy(nt_path, NT_PATH_PREFIX, 4 * sizeof(WCHAR));
 	memcpy(nt_path + 4, full_path, (full_path_len + 1) * sizeof(WCHAR));
 
 	memcpy(cwd, full_path, (full_path_len + 1) * sizeof(WCHAR));
@@ -122,7 +125,7 @@ static void s_resolve_nt_path_and_cwd(
 	last_sep[1] = L'\0';
 }
 
-static void s_write_remote_shim_data(
+static void write_remote_shim_data(
 	HANDLE process,
 	uintptr_t peb_addr,
 	const char *shim_data,
@@ -142,7 +145,7 @@ static void s_write_remote_shim_data(
 
 	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
 		process,
-		(LPVOID)(peb_addr + S_PEB_SHIM_DATA_OFFSET),
+		(LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET),
 		&remote_shim,
 		sizeof(PVOID),
 		NULL
@@ -155,7 +158,7 @@ static void s_write_remote_shim_data(
 	);
 }
 
-void dttr_compat_create_process(
+void DTTR_Compat_CreateProcess(
 	const WCHAR *image_name,
 	const char *shim_data,
 	size_t shim_data_len,
@@ -168,33 +171,33 @@ void dttr_compat_create_process(
 
 	HMODULE ntdll = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("ntdll.dll"));
 
-	const S_NtCreateUserProcess nt_create_user_process = S_RESOLVE(
+	const nt_create_user_process_fn nt_create_user_process = RESOLVE(
 		ntdll,
-		S_NtCreateUserProcess,
+		nt_create_user_process_fn,
 		"NtCreateUserProcess"
 	);
 
-	const S_RtlCreateProcessParametersEx rtl_create_process_parameters_ex = S_RESOLVE(
+	const rtl_create_process_parameters_ex_fn rtl_create_process_parameters_ex = RESOLVE(
 		ntdll,
-		S_RtlCreateProcessParametersEx,
+		rtl_create_process_parameters_ex_fn,
 		"RtlCreateProcessParametersEx"
 	);
 
-	const S_RtlDestroyProcessParameters rtl_destroy_process_parameters = S_RESOLVE(
+	const rtl_destroy_process_parameters_fn rtl_destroy_process_parameters = RESOLVE(
 		ntdll,
-		S_RtlDestroyProcessParameters,
+		rtl_destroy_process_parameters_fn,
 		"RtlDestroyProcessParameters"
 	);
 
-	const S_RtlInitUnicodeString rtl_init_unicode_string = S_RESOLVE(
+	const rtl_init_unicode_string_fn rtl_init_unicode_string = RESOLVE(
 		ntdll,
-		S_RtlInitUnicodeString,
+		rtl_init_unicode_string_fn,
 		"RtlInitUnicodeString"
 	);
 
 	WCHAR nt_path[MAX_PATH + 8];
 	WCHAR cwd[MAX_PATH];
-	s_resolve_nt_path_and_cwd(
+	resolve_nt_path_and_cwd(
 		nt_path,
 		sizeof(nt_path) / sizeof(nt_path[0]),
 		cwd,
@@ -202,7 +205,7 @@ void dttr_compat_create_process(
 		image_name
 	);
 
-	S_UnicodeString us_image, us_cmd, us_cwd;
+	unicode_string us_image, us_cmd, us_cwd;
 	rtl_init_unicode_string(&us_image, nt_path);
 	rtl_init_unicode_string(&us_cmd, image_name);
 	rtl_init_unicode_string(&us_cwd, cwd);
@@ -228,21 +231,21 @@ void dttr_compat_create_process(
 		DTTR_FATAL("RtlCreateProcessParametersEx failed: 0x%08lX", (unsigned long)status);
 	}
 
-	S_ClientId client_id = {0};
-	S_AttributeList attr_list = {0};
+	client_id client_id = {0};
+	attribute_list attr_list = {0};
 
-	attr_list.m_total_length = sizeof(attr_list);
-	attr_list.m_attributes[0] = (S_Attribute){PS_ATTRIBUTE_IMAGE_NAME,
-											  us_image.m_length,
-											  {.m_value_ptr = us_image.m_buffer},
-											  NULL};
-	attr_list.m_attributes[1] = (S_Attribute){PS_ATTRIBUTE_CLIENT_ID,
-											  sizeof(client_id),
-											  {.m_value_ptr = &client_id},
-											  NULL};
+	attr_list.total_length = sizeof(attr_list);
+	attr_list.attributes[0] = (attribute){PS_ATTRIBUTE_IMAGE_NAME,
+										  us_image.length,
+										  {.value_ptr = us_image.buffer},
+										  NULL};
+	attr_list.attributes[1] = (attribute){PS_ATTRIBUTE_CLIENT_ID,
+										  sizeof(client_id),
+										  {.value_ptr = &client_id},
+										  NULL};
 
-	S_CreateInfo create_info = {0};
-	create_info.m_size = sizeof(create_info);
+	create_info create_info = {0};
+	create_info.size = sizeof(create_info);
 
 	HANDLE process = NULL, thread = NULL;
 	status = nt_create_user_process(
@@ -265,8 +268,8 @@ void dttr_compat_create_process(
 
 	child_info->hProcess = process;
 	child_info->hThread = thread;
-	child_info->dwProcessId = (DWORD)(ULONG_PTR)client_id.m_process;
-	child_info->dwThreadId = (DWORD)(ULONG_PTR)client_id.m_thread;
+	child_info->dwProcessId = (DWORD)(ULONG_PTR)client_id.process;
+	child_info->dwThreadId = (DWORD)(ULONG_PTR)client_id.thread;
 	DTTR_LOG_DEBUG(
 		"Process created: PID=%lu, TID=%lu",
 		child_info->dwProcessId,
@@ -277,5 +280,5 @@ void dttr_compat_create_process(
 	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(thread, &thread_context));
 
 	const uintptr_t peb_addr = (uintptr_t)thread_context.Ebx;
-	s_write_remote_shim_data(process, peb_addr, shim_data, shim_data_len);
+	write_remote_shim_data(process, peb_addr, shim_data, shim_data_len);
 }

@@ -7,28 +7,28 @@
 #include <string.h>
 #include <windows.h>
 
-enum { S_WATCHDOG_TIMEOUT_MS = 30000 };
-static const char S_WATCHDOG_SENTINEL[] = "DTTR_SIDECAR_ENTRYPOINT";
+enum { WATCHDOG_TIMEOUT_MS = 30000 };
+static const char WATCHDOG_SENTINEL[] = "DTTR_SIDECAR_ENTRYPOINT";
 
-typedef BOOL(WINAPI *S_IsWow64Process2)(HANDLE, USHORT *, USHORT *);
+typedef BOOL(WINAPI *is_wow64_process2_fn)(HANDLE, USHORT *, USHORT *);
 
-static bool s_watchdog_attached = false;
+static bool watchdog_attached = false;
 
-static void s_detach_watchdog(DWORD process_id) {
-	if (!s_watchdog_attached) {
+static void detach_watchdog(DWORD process_id) {
+	if (!watchdog_attached) {
 		return;
 	}
 
 	DebugActiveProcessStop(process_id);
-	s_watchdog_attached = false;
+	watchdog_attached = false;
 	DTTR_LOG_DEBUG("Watchdog detached");
 }
 
-static bool s_should_disable_watchdog(void) {
+static bool should_disable_watchdog() {
 	const HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
-	const S_IsWow64Process2 is_wow64_process2
-		= (S_IsWow64Process2)(kernel32 ? GetProcAddress(kernel32, "IsWow64Process2")
-									   : NULL);
+	const is_wow64_process2_fn is_wow64_process2
+		= (is_wow64_process2_fn)(kernel32 ? GetProcAddress(kernel32, "IsWow64Process2")
+										  : NULL);
 
 	if (is_wow64_process2) {
 		uint16_t process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
@@ -54,7 +54,7 @@ static bool s_should_disable_watchdog(void) {
 	return system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64;
 }
 
-static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD exception_code) {
+static void write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD exception_code) {
 	HANDLE thread = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
 	if (!thread) {
 		DTTR_ERROR("Failed to open crashing thread %lu", tid);
@@ -62,8 +62,11 @@ static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excep
 	}
 
 	CONTEXT thread_context = {.ContextFlags = CONTEXT_ALL};
-	GetThreadContext(thread, &thread_context);
-	CloseHandle(thread);
+	if (!GetThreadContext(thread, &thread_context)) {
+		CloseHandle(thread);
+		DTTR_ERROR("Failed to read crashing thread %lu context", tid);
+		return;
+	}
 
 	EXCEPTION_RECORD fake_record = {.ExceptionCode = exception_code};
 	EXCEPTION_POINTERS ptrs = {
@@ -71,29 +74,38 @@ static void s_write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excep
 		.ContextRecord = &thread_context,
 	};
 
-	sds filename = dttr_crashdump_write(process, pid, tid, &ptrs);
+	sds filename = DTTR_Crashdump_Write(process, pid, tid, &ptrs);
+	sds stack_trace = DTTR_Crashdump_FormatStackTrace(process, thread, &thread_context);
+	CloseHandle(thread);
 
+	sds message = sdsempty();
 	if (filename) {
-		DTTR_ERROR(
-			"Game crashed (exception 0x%08lX). Crash dump written to "
-			"%s." DTTR_REPORT_SUFFIX,
+		message = sdscatprintf(
+			message,
+			"Game crashed (exception 0x%08lX). Crash dump written to %s.",
 			exception_code,
 			filename
 		);
 		sdsfree(filename);
 	} else {
-		DTTR_ERROR(
-			"Game crashed (exception 0x%08lX). Failed to write crash "
-			"dump." DTTR_REPORT_SUFFIX,
+		message = sdscatprintf(
+			message,
+			"Game crashed (exception 0x%08lX). Failed to write crash dump.",
 			exception_code
 		);
 	}
+
+	message = sdscatsds(message, stack_trace);
+	sdsfree(stack_trace);
+	message = sdscat(message, DTTR_REPORT_SUFFIX);
+	DTTR_ERROR("%s", message);
+	sdsfree(message);
 }
 
-void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
-	s_watchdog_attached = false;
+void DTTR_Loader_WatchdogAttach(const PROCESS_INFORMATION *child_info) {
+	watchdog_attached = false;
 
-	if (s_should_disable_watchdog()) {
+	if (should_disable_watchdog()) {
 		DTTR_LOG_WARN(
 			"Skipping watchdog debugger because debugging is not available on this "
 			"machine"
@@ -108,16 +120,20 @@ void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info) {
 		return;
 	}
 
-	s_watchdog_attached = true;
+	watchdog_attached = true;
 	DTTR_LOG_DEBUG("Watchdog attached to PID %lu", child_info->dwProcessId);
 }
 
-static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) {
-	if (info->fUnicode || info->nDebugStringLength < sizeof(S_WATCHDOG_SENTINEL)) {
+void DTTR_Loader_WatchdogDetach(const PROCESS_INFORMATION *child_info) {
+	detach_watchdog(child_info->dwProcessId);
+}
+
+static bool is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) {
+	if (info->fUnicode || info->nDebugStringLength < sizeof(WATCHDOG_SENTINEL)) {
 		return false;
 	}
 
-	char buf[sizeof(S_WATCHDOG_SENTINEL)];
+	char buf[sizeof(WATCHDOG_SENTINEL)];
 	SIZE_T bytes_read = 0;
 
 	if (!ReadProcessMemory(
@@ -130,23 +146,25 @@ static bool s_is_sentinel(HANDLE process, const OUTPUT_DEBUG_STRING_INFO *info) 
 		return false;
 	}
 
-	return bytes_read == sizeof(S_WATCHDOG_SENTINEL)
-		   && memcmp(buf, S_WATCHDOG_SENTINEL, sizeof(S_WATCHDOG_SENTINEL)) == 0;
+	return bytes_read == sizeof(WATCHDOG_SENTINEL)
+		   && memcmp(buf, WATCHDOG_SENTINEL, sizeof(WATCHDOG_SENTINEL)) == 0;
 }
 
-void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
-	if (!s_watchdog_attached) {
+bool DTTR_Loader_WatchdogWait(const PROCESS_INFORMATION *child_info) {
+	if (!watchdog_attached) {
 		DTTR_LOG_DEBUG("Watchdog not attached; skipping early crash monitoring");
-		return;
+		return true;
 	}
 
 	DTTR_LOG_DEBUG(
 		"Watching for early crash or ready sentinel (timeout=%dms)",
-		S_WATCHDOG_TIMEOUT_MS
+		WATCHDOG_TIMEOUT_MS
 	);
 
 	DEBUG_EVENT evt = {0};
-	DWORD remaining = S_WATCHDOG_TIMEOUT_MS;
+	DWORD remaining = WATCHDOG_TIMEOUT_MS;
+	bool saw_sentinel = false;
+	bool saw_failure = false;
 
 	while (remaining > 0) {
 		const DWORD start = GetTickCount();
@@ -169,28 +187,43 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 				break;
 			}
 
-			s_write_child_dump(
+			write_child_dump(
 				child_info->hProcess,
 				child_info->dwProcessId,
 				evt.dwThreadId,
 				code
 			);
+			saw_failure = true;
 			done = true;
 			break;
 		}
 
 		case OUTPUT_DEBUG_STRING_EVENT:
-			if (s_is_sentinel(child_info->hProcess, &evt.u.DebugString)) {
+			if (is_sentinel(child_info->hProcess, &evt.u.DebugString)) {
 				DTTR_LOG_INFO("Sidecar confirmed entrypoint entered!");
+				saw_sentinel = true;
 				done = true;
 			}
 
 			break;
 
+		case CREATE_PROCESS_DEBUG_EVENT:
+			if (evt.u.CreateProcessInfo.hFile) {
+				CloseHandle(evt.u.CreateProcessInfo.hFile);
+			}
+			break;
+
+		case LOAD_DLL_DEBUG_EVENT:
+			if (evt.u.LoadDll.hFile) {
+				CloseHandle(evt.u.LoadDll.hFile);
+			}
+			break;
+
 		case EXIT_PROCESS_DEBUG_EVENT:
+			saw_failure = true;
 			DTTR_ERROR(
 				"Game exited unexpectedly within %ds (code %lu)." DTTR_REPORT_SUFFIX,
-				S_WATCHDOG_TIMEOUT_MS / 1000,
+				WATCHDOG_TIMEOUT_MS / 1000,
 				evt.u.ExitProcess.dwExitCode
 			);
 			done = true;
@@ -210,5 +243,15 @@ void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info) {
 		remaining -= (elapsed < remaining) ? elapsed : remaining;
 	}
 
-	s_detach_watchdog(child_info->dwProcessId);
+	detach_watchdog(child_info->dwProcessId);
+	if (!saw_sentinel && !saw_failure) {
+		DTTR_ERROR(
+			"Sidecar did not report entrypoint within %ds; aborting "
+			"launch." DTTR_REPORT_SUFFIX,
+			WATCHDOG_TIMEOUT_MS / 1000
+		);
+		return false;
+	}
+
+	return saw_sentinel && !saw_failure;
 }

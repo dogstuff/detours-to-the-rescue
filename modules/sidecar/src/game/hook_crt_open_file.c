@@ -1,106 +1,121 @@
-#include "dttr_hooks_game.h"
 #include "dttr_sidecar.h"
 #include "game_data_private.h"
-#include "sds.h"
+#include "hooks_private.h"
+#include "sidecar_private.h"
 #include <dttr_log.h>
 #include <dttr_path.h>
+#include <dttr_pcdogs.h>
 #include <dttr_sdl.h>
 
 #include <SDL3/SDL.h>
+#include <sds.h>
 #include <sys/stat.h>
 #include <windows.h>
 
 #define IS_READ_ONLY_MODE(m) ((m) && (m)[0] == 'r' && !strchr((m), '+'))
 
-static bool s_is_relative_path(const char *path) {
-	if (!path || !path[0]) {
-		return false;
-	}
-
-	return !dttr_path_is_windows_absolute(path);
+// Calls the game's CRT wrapper with the sharing flag expected by original file access.
+static DTTR_PCDOGS_T_File_Handle *file_open_with_mode(
+	const char *path,
+	const char *mode,
+	uint8_t sharing_flag
+) {
+	return DTTR_PCDOGS_F_FileOpenWithMode
+		->Call(dttr_sidecar_runtime_context(), path, mode, sharing_flag, NULL);
 }
 
-static bool s_mode_wants_write(const char *mode) { return mode && strchr(mode, 'w'); }
+// Accepts only non-empty relative paths for save redirection and game-data lookup.
+static bool is_relative_path(const char *path) { return DTTR_Path_IsSafeRelative(path); }
 
-static bool s_redirect_saves_initialized = false;
+// Detects write modes so permission repair prompts for the correct file bits.
+static bool mode_wants_write(const char *mode) {
+	return mode && (strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+'));
+}
 
-static void s_create_dir_if_set(const char *path) {
+static bool redirect_saves_initialized = false;
+
+// Creates save directories only after save redirection resolves a path.
+static void create_dir_if_set(const char *path) {
 	if (path && path[0]) {
 		CreateDirectoryA(path, NULL);
 	}
 }
 
-static void s_build_saves_dir(char *buf, size_t buf_size) {
+// Resolves the root save directory used to move game writes out of the install tree.
+static void build_saves_dir(char *buf, size_t buf_size) {
 	sds dir = NULL;
-	if (s_is_relative_path(g_dttr_config.m_saves_path)) {
-		dir = sdsnew(g_dttr_loader_dir);
-		if (!dir || !dttr_path_append_segment(&dir, g_dttr_config.m_saves_path, '\\')) {
+	if (is_relative_path(dttr_config.saves_path)) {
+		dir = sdsnew(dttr_loader_dir);
+		if (!dir || !DTTR_Path_AppendSegment(&dir, dttr_config.saves_path, '\\')) {
 			sdsfree(dir);
 			buf[0] = '\0';
 			return;
 		}
 	} else {
-		dir = sdsnew(g_dttr_config.m_saves_path);
+		dir = sdsnew(dttr_config.saves_path);
 	}
 
-	if (!dttr_path_copy_sds(buf, buf_size, dir)) {
+	if (!DTTR_Path_CopySds(buf, buf_size, dir)) {
 		buf[0] = '\0';
 	}
 	sdsfree(dir);
 }
 
-static void s_build_save_slot_dir(char *buf, size_t buf_size) {
-	s_build_saves_dir(buf, buf_size);
+// Maps slot-specific saves into the redirected save root.
+static void build_save_slot_dir(char *buf, size_t buf_size) {
+	build_saves_dir(buf, buf_size);
 
 	sds dir = sdsnew(buf);
-	if (!dir || !dttr_path_append_segment(&dir, g_dttr_exe_hash, '\\')
-		|| !dttr_path_copy_sds(buf, buf_size, dir)) {
+	if (!dir || !DTTR_Path_AppendSegment(&dir, dttr_exe_hash, '\\')
+		|| !DTTR_Path_CopySds(buf, buf_size, dir)) {
 		buf[0] = '\0';
 	}
 	sdsfree(dir);
 }
 
-static void s_ensure_save_dir(void) {
-	if (s_redirect_saves_initialized) {
+// Creates redirected save folders before the CRT hook returns a writable path.
+static void ensure_save_dir() {
+	if (redirect_saves_initialized) {
 		return;
 	}
 
-	s_redirect_saves_initialized = true;
+	redirect_saves_initialized = true;
 
 	char dir[MAX_PATH];
-	s_build_saves_dir(dir, sizeof(dir));
-	s_create_dir_if_set(dir);
+	build_saves_dir(dir, sizeof(dir));
+	create_dir_if_set(dir);
 
-	s_build_save_slot_dir(dir, sizeof(dir));
-	s_create_dir_if_set(dir);
+	build_save_slot_dir(dir, sizeof(dir));
+	create_dir_if_set(dir);
 }
 
-static const char *s_redirect_path(
+// Redirects relative save writes into the configured per-executable save directory.
+static const char *redirect_path(
 	const char *path,
 	char *buf,
 	size_t buf_size,
 	const char *mode
 ) {
-	if (!g_dttr_config.m_saves_path[0]) {
+	if (!dttr_config.saves_path[0]) {
 		return path;
 	}
 
-	if (!s_is_relative_path(path)) {
+	if (!is_relative_path(path)) {
 		return path;
 	}
 
-	s_ensure_save_dir();
+	ensure_save_dir();
 
-	s_build_save_slot_dir(buf, buf_size);
+	build_save_slot_dir(buf, buf_size);
 	sds redirected = sdsnew(buf);
-	if (!redirected || !dttr_path_append_segment(&redirected, path, '\\')
-		|| !dttr_path_copy_sds(buf, buf_size, redirected)) {
+	if (!redirected || !DTTR_Path_AppendSegment(&redirected, path, '\\')
+		|| !DTTR_Path_CopySds(buf, buf_size, redirected)) {
 		sdsfree(redirected);
 		return path;
 	}
 	sdsfree(redirected);
 
-	if (IS_READ_ONLY_MODE(mode) && !dttr_path_exact_exists(buf)) {
+	if (IS_READ_ONLY_MODE(mode) && !DTTR_Path_ExactExists(buf)) {
 		return path;
 	}
 
@@ -108,7 +123,11 @@ static const char *s_redirect_path(
 	return buf;
 }
 
-static void *s_open_file_fallback(const char *path, char *mode) {
+// Reports a failed write/open path without pretending the CRT call succeeded.
+static DTTR_PCDOGS_T_File_Handle *report_file_open_failure(
+	const char *path,
+	const char *mode
+) {
 	sds msg = sdscatprintf(
 		sdsempty(),
 		"Failed to open \"%s\" (mode \"%s\"). This file will not be written.\n\n%s",
@@ -116,14 +135,15 @@ static void *s_open_file_fallback(const char *path, char *mode) {
 		mode,
 		strerror(errno)
 	);
-	dttr_sdl_show_simple_message_box(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
+	DTTR_SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: File Error", msg, NULL);
 	sdsfree(msg);
 
-	return dttr_crt_open_file_with_mode("NUL", mode, 0x40);
+	return NULL;
 }
 
-static void *s_try_fix_permissions(const char *path, char *mode) {
-	const bool wants_write = s_mode_wants_write(mode);
+// Offers to repair file permissions when Wine or the host blocks a requested write.
+static DTTR_PCDOGS_T_File_Handle *try_fix_permissions(const char *path, const char *mode) {
+	const bool wants_write = mode_wants_write(mode);
 	const int perms = ((mode && strchr(mode, 'r')) ? _S_IREAD : 0)
 					  | (wants_write ? _S_IWRITE : 0);
 
@@ -161,7 +181,7 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	};
 
 	int button_id = 0;
-	dttr_sdl_show_message_box(&msgbox, &button_id);
+	DTTR_SDL_ShowMessageBox(&msgbox, &button_id);
 	sdsfree(prompt);
 
 	if (button_id != 1) {
@@ -171,7 +191,7 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	DTTR_LOG_DEBUG("chmod \"%s\" 0o%03o", path, perms);
 	chmod(path, perms);
 
-	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
+	DTTR_PCDOGS_T_File_Handle *result = file_open_with_mode(path, mode, 0x40);
 	if (result) {
 		return result;
 	}
@@ -184,12 +204,13 @@ static void *s_try_fix_permissions(const char *path, char *mode) {
 	return NULL;
 }
 
-static void *s_try_open_read_path(const char *path, char *mode) {
+// Resolves case-insensitive and ISO-backed read paths before the game sees a miss.
+static DTTR_PCDOGS_T_File_Handle *try_open_read_path(const char *path, const char *mode) {
 	char resolved[MAX_PATH];
 
 	if (dttr_game_data_resolve_existing_read_path(path, resolved, sizeof(resolved))) {
 		DTTR_LOG_DEBUG("Resolved case-insensitive read \"%s\" -> \"%s\"", path, resolved);
-		return dttr_crt_open_file_with_mode(resolved, mode, 0x40);
+		return file_open_with_mode(resolved, mode, 0x40);
 	}
 
 	char cached[MAX_PATH];
@@ -198,21 +219,25 @@ static void *s_try_open_read_path(const char *path, char *mode) {
 	}
 
 	DTTR_LOG_DEBUG("Resolved ISO-backed read \"%s\" -> \"%s\"", path, cached);
-	return dttr_crt_open_file_with_mode(cached, mode, 0x40);
+	return file_open_with_mode(cached, mode, 0x40);
 }
 
-void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
+// Replaces the game file-open callback with save redirection plus data-file fallback.
+DTTR_PCDOGS_T_File_Handle *__cdecl dttr_crt_hook_open_file_callback(
+	const char *path,
+	const char *mode
+) {
 	char redirected[MAX_PATH];
-	path = s_redirect_path(path, redirected, sizeof(redirected), mode);
+	path = redirect_path(path, redirected, sizeof(redirected), mode);
 
-	void *result = dttr_crt_open_file_with_mode(path, mode, 0x40);
+	DTTR_PCDOGS_T_File_Handle *result = file_open_with_mode(path, mode, 0x40);
 	if (result) {
 		return result;
 	}
 
 	if (IS_READ_ONLY_MODE(mode) || errno == 0 || errno == ENOENT) {
 		if (IS_READ_ONLY_MODE(mode)) {
-			result = s_try_open_read_path(path, mode);
+			result = try_open_read_path(path, mode);
 			if (result) {
 				return result;
 			}
@@ -221,12 +246,12 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		return result;
 	}
 
-	const bool wants_write = s_mode_wants_write(mode);
+	const bool wants_write = mode_wants_write(mode);
 	const bool is_perm_error
 		= (errno == EACCES || errno == EPERM || (errno == EBADF && wants_write));
 
 	if (is_perm_error) {
-		result = s_try_fix_permissions(path, mode);
+		result = try_fix_permissions(path, mode);
 		if (result) {
 			return result;
 		}
@@ -239,5 +264,5 @@ void *__cdecl dttr_crt_hook_open_file_callback(const char *path, char *mode) {
 		);
 	}
 
-	return s_open_file_fallback(path, mode);
+	return report_file_open_failure(path, mode);
 }

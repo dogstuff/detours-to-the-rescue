@@ -1,0 +1,100 @@
+/// @defgroup sdk_mods Mod API
+/// Mod DLL lifecycle, callbacks, logging, and exported entrypoints.
+///
+/// Keep globals for mod-owned state only. A cached DTTR_Mods_Context pointer is
+/// valid only until DTTR_Mod_Cleanup returns.
+///
+/// @code{.c}
+/// #include <dttr_sdk.h>
+///
+/// static const DTTR_Mods_Context *mod_ctx;
+///
+/// DTTR_MODS_INFO("example-mod", "0.1.0", "dogstuff")
+///
+/// DTTR_MODS_INIT {
+///     mod_ctx = ctx;
+///     DTTR_MODS_LOG_INFO(ctx, "mod loaded");
+///     return true;
+/// }
+///
+/// DTTR_MODS_FRAME_BEGIN {
+///     DTTR_MODS_LOG_DEBUG(mod_ctx, "frame: %llu", (unsigned long long)ctx->frame_index);
+/// }
+///
+/// DTTR_MODS_CLEANUP {
+///     mod_ctx = NULL;
+/// }
+/// @endcode
+
+/// @defgroup sdk_core Core SDK
+/// Result handling, AOB/signature scanning, patches, hooks, and patch groups.
+///
+/// Use patch groups when related targets should install as one unit and roll back
+/// on required failures.
+///
+/// @code{.c}
+/// static DTTR_Core_PatchGroup *patches;
+/// static DTTR_PCDOGS_F_PlayerSetLives_proto original_player_set_lives;
+///
+/// DTTR_MODS_INIT {
+///     DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(
+///         &ctx->runtime,
+///         &patches
+///     );
+///     if (!DTTR_Core_ResultOk(result)) {
+///         DTTR_MODS_LOG_ERROR(ctx, "patch group failed: %s", result.message);
+///         return false;
+///     }
+///
+///     result = DTTR_Core_PatchGroupHookFunction(
+///         patches,
+///         DTTR_PCDOGS_F_PlayerSetLives->Address(),
+///         (int)DTTR_PCDOGS_F_PlayerSetLives->HookPrologueSize(),
+///         (void *)trace_player_set_lives,
+///         (void **)&original_player_set_lives,
+///         NULL
+///     );
+///     return DTTR_Core_ResultOk(result);
+/// }
+///
+/// DTTR_MODS_CLEANUP {
+///     DTTR_Core_PatchGroupRelease(&patches);
+///     original_player_set_lives = NULL;
+/// }
+/// @endcode
+
+/// @defgroup sdk_util SDK Utilities
+/// Small public helper APIs for common modding patterns.
+///
+/// Utility APIs do not add new game symbol knowledge. They keep common checks
+/// short; use DTTR_Util_GetActiveActor with DTTR_Util_SameActor when a mod needs
+/// to compare a hook actor with the engine's current active actor.
+
+/// @defgroup sdk_util_unstable Experimental SDK Utilities
+/// Proof-gated helpers for package traversal and other reverse-engineering
+/// workflows.
+///
+/// These APIs are included from the bundle header only when
+/// DTTR_SDK_ENABLE_UNSTABLE is defined. They use explicit status visits and
+/// visitor-controlled traversal instead of hidden decoding assumptions.
+
+/// @defgroup sdk_runtime Runtime Hooking API
+/// Low-level hook, patch, storage, and sigscan helpers.
+///
+/// Prefer the Core SDK from mods unless you need raw handles and manual cleanup.
+///
+/// @code{.c}
+/// static DTTR_Core_Hook *hook;
+/// static void *original;
+///
+/// static bool install_raw_hook(uintptr_t site) {
+///     hook = DTTR_Core_HookAttachFunction(site, 0, (void *)detour_fn, &original);
+///     return hook != NULL;
+/// }
+///
+/// static void cleanup_raw_hook() {
+///     DTTR_Core_HookDetach(hook);
+///     hook = NULL;
+///     original = NULL;
+/// }
+/// @endcode

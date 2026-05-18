@@ -1,6 +1,6 @@
 #include "gui_internal.h"
 
-static const char *const S_LOG_LEVEL_TOOLTIPS[] = {
+static const char *const LOG_LEVEL_TOOLTIPS[] = {
 	"Logs every message, including detailed trace output.",
 	"Logs debug, info, warning, error, and fatal messages.",
 	"Logs normal runtime messages and higher-severity messages.",
@@ -9,92 +9,92 @@ static const char *const S_LOG_LEVEL_TOOLTIPS[] = {
 	"Logs only fatal messages.",
 };
 
-static const char *const S_MINIDUMP_TYPE_TOOLTIPS[] = {
+static const char *const MINIDUMP_TYPE_TOOLTIPS[] = {
 	"Writes a standard crash minidump.",
 	"Writes a larger crash minidump with additional details.",
 };
 
-static const char *S_TOOLTIP_PCDOGS_PATH = "The extracted/installed game directory or "
-										   "original game ISO.";
-static const char *S_TOOLTIP_SAVES_PATH
+static const char *TOOLTIP_PCDOGS_PATH = "The extracted/installed game directory or "
+										 "original game ISO.";
+static const char *TOOLTIP_SAVES_PATH
 	= "Path for redirected saves/logs reads and writes, relative to the DttR directory. "
 	  "Files are stored in subdirectories unique to the version of the game being run. "
 	  "Set to null or \"\" to disable redirection. Default: saves.";
-static const char *S_TOOLTIP_LOG_LEVEL = "The minimum log level to output. Default: "
-										 "info (Release), debug (Debug).";
-static const char *S_TOOLTIP_LOG_FILE_PATH = "Path to the DttR log file. Default: "
-											 "dttr.log.";
-static const char *S_TOOLTIP_MINIDUMP_TYPE = "The type of minidump to write on crash. "
-											 "Default: normal (Release), detailed "
-											 "(Debug).";
-static const char *S_TOOLTIP_SKIP_INTRO_MOVIES = "Whether to skip the "
-												 "intro movies at launch. Default: false.";
+static const char *TOOLTIP_LOG_LEVEL = "The minimum log level to output. Default: "
+									   "info (Release), debug (Debug).";
+static const char *TOOLTIP_LOG_FILE_PATH = "Path to the DttR log file. Default: "
+										   "dttr.log.";
+static const char *TOOLTIP_MINIDUMP_TYPE = "The type of minidump to write on crash. "
+										   "Default: normal (Release), detailed "
+										   "(Debug).";
+static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Whether to skip the "
+											   "intro movies at launch. Default: false.";
 
-void s_draw_general_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
-	if (!s_begin_tab_settings_table(
+void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	if (!begin_tab_settings_table(
 			ctx,
 			"##general_settings_table",
-			s_config_standard_input_width()
+			config_standard_input_width()
 		)) {
 		return;
 	}
 
-	s_labeled_path_picker(
+	labeled_path_picker(
 		ctx,
 		state,
 		"Game directory or ISO",
 		"##pcdogs_path",
-		state->m_config.m_pcdogs_path,
-		sizeof(state->m_config.m_pcdogs_path),
-		S_TOOLTIP_PCDOGS_PATH,
-		S_PATH_FIELD_LABEL_STATE(state, m_pcdogs_path)
+		state->config.pcdogs_path,
+		sizeof(state->config.pcdogs_path),
+		TOOLTIP_PCDOGS_PATH,
+		PATH_FIELD_LABEL_STATE(state, pcdogs_path)
 	);
-	s_labeled_input_text(
+	labeled_input_text(
 		ctx,
 		"Saves path",
 		"##saves_path",
-		state->m_config.m_saves_path,
-		sizeof(state->m_config.m_saves_path),
-		S_TOOLTIP_SAVES_PATH,
-		S_PATH_FIELD_LABEL_STATE(state, m_saves_path)
+		state->config.saves_path,
+		sizeof(state->config.saves_path),
+		TOOLTIP_SAVES_PATH,
+		PATH_FIELD_LABEL_STATE(state, saves_path)
 	);
-	s_labeled_log_path_picker(
+	labeled_log_path_picker(
 		ctx,
 		state,
 		"Log file path",
 		"##log_file_path",
-		state->m_config.m_log_file_path,
-		sizeof(state->m_config.m_log_file_path),
-		S_TOOLTIP_LOG_FILE_PATH,
-		S_PATH_FIELD_LABEL_STATE(state, m_log_file_path)
+		state->config.log_file_path,
+		sizeof(state->config.log_file_path),
+		TOOLTIP_LOG_FILE_PATH,
+		PATH_FIELD_LABEL_STATE(state, log_file_path)
 	);
-	s_labeled_choice_combo(
+	labeled_choice_combo(
 		ctx,
 		"Log level",
 		"##log_level",
-		&state->m_config.m_log_level,
+		&state->config.log_level,
 		DTTR_CONFIG_CHOICES_LOG_LEVEL,
-		S_LOG_LEVEL_TOOLTIPS,
-		S_TOOLTIP_LOG_LEVEL,
-		S_FIELD_LABEL_STATE(state, m_log_level)
+		LOG_LEVEL_TOOLTIPS,
+		TOOLTIP_LOG_LEVEL,
+		FIELD_LABEL_STATE(state, log_level)
 	);
-	s_labeled_choice_combo(
+	labeled_choice_combo(
 		ctx,
 		"Minidump type",
 		"##minidump_type",
-		(int *)&state->m_config.m_minidump_type,
+		(int *)&state->config.minidump_type,
 		DTTR_CONFIG_CHOICES_MINIDUMP_TYPE,
-		S_MINIDUMP_TYPE_TOOLTIPS,
-		S_TOOLTIP_MINIDUMP_TYPE,
-		S_FIELD_LABEL_STATE(state, m_minidump_type)
+		MINIDUMP_TYPE_TOOLTIPS,
+		TOOLTIP_MINIDUMP_TYPE,
+		FIELD_LABEL_STATE(state, minidump_type)
 	);
-	s_labeled_checkbox(
+	labeled_checkbox(
 		ctx,
 		"Skip intro movies",
 		"##skip_intro_movies",
-		&state->m_config.m_skip_intro_movies,
-		S_TOOLTIP_SKIP_INTRO_MOVIES,
-		S_FIELD_LABEL_STATE(state, m_skip_intro_movies)
+		&state->config.skip_intro_movies,
+		TOOLTIP_SKIP_INTRO_MOVIES,
+		FIELD_LABEL_STATE(state, skip_intro_movies)
 	);
-	s_end_settings_table();
+	end_settings_table();
 }

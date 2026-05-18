@@ -8,26 +8,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define S_CONFIG_SCALING_FIT_TOKENS(X)                                                   \
+#define CONFIG_SCALING_FIT_TOKENS(X)                                                     \
 	X("letterbox", DTTR_SCALING_MODE_LETTERBOX)                                          \
 	X("stretch", DTTR_SCALING_MODE_STRETCH)                                              \
 	X("integer", DTTR_SCALING_MODE_INTEGER)
 
-#define S_CONFIG_SCALING_METHOD_TOKENS(X)                                                \
+#define CONFIG_SCALING_METHOD_TOKENS(X)                                                  \
 	X("present", DTTR_SCALING_METHOD_PRESENT)                                            \
 	X("logical", DTTR_SCALING_METHOD_LOGICAL)
 
-#define S_CONFIG_GRAPHICS_API_FORMAT_TOKENS(X)                                           \
+#define CONFIG_GRAPHICS_API_FORMAT_TOKENS(X)                                             \
 	X(DTTR_DRIVER_AUTO, DTTR_GRAPHICS_API_AUTO)                                          \
 	X(DTTR_DRIVER_VULKAN, DTTR_GRAPHICS_API_VULKAN)                                      \
 	X(DTTR_DRIVER_DIRECT3D12, DTTR_GRAPHICS_API_DIRECT3D12)                              \
 	X(DTTR_DRIVER_OPENGL, DTTR_GRAPHICS_API_OPENGL)
 
-#define S_CONFIG_PRESENT_FILTER_TOKENS(X)                                                \
+#define CONFIG_PRESENT_FILTER_TOKENS(X)                                                  \
 	X("nearest", SDL_GPU_FILTER_NEAREST)                                                 \
 	X("linear", SDL_GPU_FILTER_LINEAR)
 
-#define S_CONFIG_GAMEPAD_MISC_SOURCE_TOKENS(X)                                           \
+#define CONFIG_GAMEPAD_MISC_SOURCE_TOKENS(X)                                             \
 	X("misc1", SDL_GAMEPAD_BUTTON_MISC1)                                                 \
 	X("misc2", SDL_GAMEPAD_BUTTON_MISC2)                                                 \
 	X("misc3", SDL_GAMEPAD_BUTTON_MISC3)                                                 \
@@ -35,13 +35,13 @@
 	X("misc5", SDL_GAMEPAD_BUTTON_MISC5)                                                 \
 	X("misc6", SDL_GAMEPAD_BUTTON_MISC6)
 
-#define S_CONFIG_GAMEPAD_PADDLE_SOURCE_TOKENS(X)                                         \
+#define CONFIG_GAMEPAD_PADDLE_SOURCE_TOKENS(X)                                           \
 	X("right_paddle1", SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1)                                 \
 	X("left_paddle1", SDL_GAMEPAD_BUTTON_LEFT_PADDLE1)                                   \
 	X("right_paddle2", SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2)                                 \
 	X("left_paddle2", SDL_GAMEPAD_BUTTON_LEFT_PADDLE2)
 
-#define S_CONFIG_GAMEPAD_SOURCE_TOKENS(X)                                                \
+#define CONFIG_GAMEPAD_SOURCE_TOKENS(X)                                                  \
 	X("south", SDL_GAMEPAD_BUTTON_SOUTH)                                                 \
 	X("east", SDL_GAMEPAD_BUTTON_EAST)                                                   \
 	X("west", SDL_GAMEPAD_BUTTON_WEST)                                                   \
@@ -57,13 +57,13 @@
 	X("dpad_down", SDL_GAMEPAD_BUTTON_DPAD_DOWN)                                         \
 	X("dpad_left", SDL_GAMEPAD_BUTTON_DPAD_LEFT)                                         \
 	X("dpad_right", SDL_GAMEPAD_BUTTON_DPAD_RIGHT)                                       \
-	S_CONFIG_GAMEPAD_MISC_SOURCE_TOKENS(X)                                               \
-	S_CONFIG_GAMEPAD_PADDLE_SOURCE_TOKENS(X)                                             \
+	CONFIG_GAMEPAD_MISC_SOURCE_TOKENS(X)                                                 \
+	CONFIG_GAMEPAD_PADDLE_SOURCE_TOKENS(X)                                               \
 	X("touchpad", SDL_GAMEPAD_BUTTON_TOUCHPAD)                                           \
 	X("left_trigger", DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT)                                  \
 	X("right_trigger", DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT)
 
-#define S_CONFIG_GAME_ACTION_TOKENS(X)                                                   \
+#define CONFIG_GAME_ACTION_TOKENS(X)                                                     \
 	X("none", DTTR_GAMEPAD_MAPPING_NONE)                                                 \
 	X("up", PCDOGS_GAMEPAD_IDX_UP)                                                       \
 	X("down", PCDOGS_GAMEPAD_IDX_DOWN)                                                   \
@@ -85,7 +85,7 @@
 	X("joy_12", PCDOGS_GAMEPAD_IDX_BTN_11)                                               \
 	X("joy_13", PCDOGS_GAMEPAD_IDX_BTN_12)
 
-#define S_CONFIG_GAMEPAD_AXIS_TOKENS(X)                                                  \
+#define CONFIG_GAMEPAD_AXIS_TOKENS(X)                                                    \
 	X("none", DTTR_GAMEPAD_MAPPING_NONE)                                                 \
 	X("axis_left_x", SDL_GAMEPAD_AXIS_LEFTX)                                             \
 	X("axis_left_y", SDL_GAMEPAD_AXIS_LEFTY)                                             \
@@ -94,7 +94,7 @@
 	X("axis_left_trigger", SDL_GAMEPAD_AXIS_LEFT_TRIGGER)                                \
 	X("axis_right_trigger", SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
 
-#define S_CONFIG_LOG_LEVEL_TOKENS(X)                                                     \
+#define CONFIG_LOG_LEVEL_TOKENS(X)                                                       \
 	X("trace", LOG_TRACE)                                                                \
 	X("debug", LOG_DEBUG)                                                                \
 	X("info", LOG_INFO)                                                                  \
@@ -102,108 +102,106 @@
 	X("error", LOG_ERROR)                                                                \
 	X("fatal", LOG_FATAL)
 
-#define S_CONFIG_MINIDUMP_TYPE_TOKENS(X)                                                 \
+#define CONFIG_MINIDUMP_TYPE_TOKENS(X)                                                   \
 	X("normal", DTTR_MINIDUMP_NORMAL)                                                    \
 	X("detailed", DTTR_MINIDUMP_DETAILED)
 
-#define S_CONFIG_VERTEX_PRECISION_TOKENS(X)                                              \
+#define CONFIG_VERTEX_PRECISION_TOKENS(X)                                                \
 	X("native", DTTR_VERTEX_PRECISION_NATIVE)                                            \
 	X("subpixel", DTTR_VERTEX_PRECISION_SUBPIXEL)
 
-#define S_CONFIG_CHOICE(token, enum_value) {(token), (int)(enum_value)},
+#define CONFIG_CHOICE(token, enum_value) {(token), (int)(enum_value)},
 
-static const DTTR_ConfigChoice S_CONFIG_SCALING_FIT_CHOICES[] = {
-	S_CONFIG_SCALING_FIT_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_SCALING_FIT_CHOICES[] = {
+	CONFIG_SCALING_FIT_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_SCALING_METHOD_CHOICES[] = {
-	S_CONFIG_SCALING_METHOD_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_SCALING_METHOD_CHOICES[] = {
+	CONFIG_SCALING_METHOD_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_GRAPHICS_API_CHOICES[] = {
-	S_CONFIG_GRAPHICS_API_FORMAT_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_GRAPHICS_API_CHOICES[] = {
+	CONFIG_GRAPHICS_API_FORMAT_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_PRESENT_FILTER_CHOICES[] = {
-	S_CONFIG_PRESENT_FILTER_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_PRESENT_FILTER_CHOICES[] = {
+	CONFIG_PRESENT_FILTER_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_GAME_ACTION_CHOICES[] = {
-	S_CONFIG_GAME_ACTION_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_GAME_ACTION_CHOICES[] = {
+	CONFIG_GAME_ACTION_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_GAMEPAD_AXIS_CHOICES[] = {
-	S_CONFIG_GAMEPAD_AXIS_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_GAMEPAD_AXIS_CHOICES[] = {
+	CONFIG_GAMEPAD_AXIS_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_LOG_LEVEL_CHOICES[] = {
-	S_CONFIG_LOG_LEVEL_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_LOG_LEVEL_CHOICES[] = {
+	CONFIG_LOG_LEVEL_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_MINIDUMP_TYPE_CHOICES[] = {
-	S_CONFIG_MINIDUMP_TYPE_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_MINIDUMP_TYPE_CHOICES[] = {
+	CONFIG_MINIDUMP_TYPE_TOKENS(CONFIG_CHOICE)
 };
 
-static const DTTR_ConfigChoice S_CONFIG_VERTEX_PRECISION_CHOICES[] = {
-	S_CONFIG_VERTEX_PRECISION_TOKENS(S_CONFIG_CHOICE)
+static const DTTR_ConfigChoice CONFIG_VERTEX_PRECISION_CHOICES[] = {
+	CONFIG_VERTEX_PRECISION_TOKENS(CONFIG_CHOICE)
 };
 
-#undef S_CONFIG_CHOICE
+#undef CONFIG_CHOICE
 
 typedef struct {
 	const DTTR_ConfigChoice *choices;
 	int count;
-} S_ConfigChoiceListData;
+} config_choice_list_data;
 
-#define S_CONFIG_CHOICE_LIST_DATA(array) {(array), (int)SDL_arraysize(array)}
+#define CONFIG_CHOICE_LIST_DATA(array) {(array), (int)SDL_arraysize(array)}
 
-static const S_ConfigChoiceListData S_CONFIG_CHOICE_LISTS[] = {
-	[DTTR_CONFIG_CHOICES_LOG_LEVEL] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_LOG_LEVEL_CHOICES
+static const config_choice_list_data CONFIG_CHOICE_LISTS[] = {
+	[DTTR_CONFIG_CHOICES_LOG_LEVEL] = CONFIG_CHOICE_LIST_DATA(CONFIG_LOG_LEVEL_CHOICES),
+	[DTTR_CONFIG_CHOICES_MINIDUMP_TYPE] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_MINIDUMP_TYPE_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_MINIDUMP_TYPE] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_MINIDUMP_TYPE_CHOICES
+	[DTTR_CONFIG_CHOICES_GRAPHICS_API] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_GRAPHICS_API_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_GRAPHICS_API] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_GRAPHICS_API_CHOICES
+	[DTTR_CONFIG_CHOICES_SCALING_FIT] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_SCALING_FIT_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_SCALING_FIT] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_SCALING_FIT_CHOICES
+	[DTTR_CONFIG_CHOICES_SCALING_METHOD] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_SCALING_METHOD_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_SCALING_METHOD] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_SCALING_METHOD_CHOICES
+	[DTTR_CONFIG_CHOICES_PRESENT_FILTER] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_PRESENT_FILTER_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_PRESENT_FILTER] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_PRESENT_FILTER_CHOICES
+	[DTTR_CONFIG_CHOICES_VERTEX_PRECISION] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_VERTEX_PRECISION_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_VERTEX_PRECISION] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_VERTEX_PRECISION_CHOICES
+	[DTTR_CONFIG_CHOICES_GAMEPAD_AXIS] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_GAMEPAD_AXIS_CHOICES
 	),
-	[DTTR_CONFIG_CHOICES_GAMEPAD_AXIS] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_GAMEPAD_AXIS_CHOICES
-	),
-	[DTTR_CONFIG_CHOICES_GAME_ACTION] = S_CONFIG_CHOICE_LIST_DATA(
-		S_CONFIG_GAME_ACTION_CHOICES
+	[DTTR_CONFIG_CHOICES_GAME_ACTION] = CONFIG_CHOICE_LIST_DATA(
+		CONFIG_GAME_ACTION_CHOICES
 	),
 };
 
-#undef S_CONFIG_CHOICE_LIST_DATA
+#undef CONFIG_CHOICE_LIST_DATA
 
-static const S_ConfigChoiceListData *s_config_choice_list(DTTR_ConfigChoiceList list) {
-	if (list < 0 || list >= (DTTR_ConfigChoiceList)SDL_arraysize(S_CONFIG_CHOICE_LISTS)) {
+static const config_choice_list_data *config_choice_list(DTTR_ConfigChoiceList list) {
+	if (list < 0 || list >= (DTTR_ConfigChoiceList)SDL_arraysize(CONFIG_CHOICE_LISTS)) {
 		return NULL;
 	}
 
-	return &S_CONFIG_CHOICE_LISTS[list];
+	return &CONFIG_CHOICE_LISTS[list];
 }
 
-int dttr_config_choice_count(DTTR_ConfigChoiceList list) {
-	const S_ConfigChoiceListData *data = s_config_choice_list(list);
+int DTTR_Config_ChoiceCount(DTTR_ConfigChoiceList list) {
+	const config_choice_list_data *data = config_choice_list(list);
 	return data ? data->count : 0;
 }
 
-const DTTR_ConfigChoice *dttr_config_choice_get(DTTR_ConfigChoiceList list, int index) {
-	const S_ConfigChoiceListData *data = s_config_choice_list(list);
+const DTTR_ConfigChoice *DTTR_Config_ChoiceGet(DTTR_ConfigChoiceList list, int index) {
+	const config_choice_list_data *data = config_choice_list(list);
 	if (!data || index < 0 || index >= data->count) {
 		return NULL;
 	}
@@ -211,8 +209,8 @@ const DTTR_ConfigChoice *dttr_config_choice_get(DTTR_ConfigChoiceList list, int 
 	return &data->choices[index];
 }
 
-const DTTR_ConfigChoice *dttr_config_choices(DTTR_ConfigChoiceList list, int *count) {
-	const S_ConfigChoiceListData *data = s_config_choice_list(list);
+const DTTR_ConfigChoice *DTTR_Config_Choices(DTTR_ConfigChoiceList list, int *count) {
+	const config_choice_list_data *data = config_choice_list(list);
 	if (count) {
 		*count = data ? data->count : 0;
 	}
@@ -220,13 +218,13 @@ const DTTR_ConfigChoice *dttr_config_choices(DTTR_ConfigChoiceList list, int *co
 	return data ? data->choices : NULL;
 }
 
-static bool s_config_parse_choice(
+static bool config_parse_choice(
 	DTTR_ConfigChoiceList list,
 	const char *value,
 	int *out_value
 ) {
 	int count = 0;
-	const DTTR_ConfigChoice *choices = dttr_config_choices(list, &count);
+	const DTTR_ConfigChoice *choices = DTTR_Config_Choices(list, &count);
 	if (!value || !out_value || !choices) {
 		return false;
 	}
@@ -241,7 +239,7 @@ static bool s_config_parse_choice(
 	return false;
 }
 
-bool s_config_parse_bool(const char *value, bool *out_value) {
+bool config_parse_bool(const char *value, bool *out_value) {
 	if (!value || !out_value) {
 		return false;
 	}
@@ -259,33 +257,33 @@ bool s_config_parse_bool(const char *value, bool *out_value) {
 	return false;
 }
 
-#define S_CONFIG_PARSE_CHOICE_FN(fn_name, type, choice_list)                             \
+#define CONFIG_PARSE_CHOICE_FN(fn_name, type, choice_list)                               \
 	bool fn_name(const char *value, type *out_value) {                                   \
 		int parsed = 0;                                                                  \
-		if (!out_value || !s_config_parse_choice(choice_list, value, &parsed)) {         \
+		if (!out_value || !config_parse_choice(choice_list, value, &parsed)) {           \
 			return false;                                                                \
 		}                                                                                \
 		*out_value = (type)parsed;                                                       \
 		return true;                                                                     \
 	}
 
-S_CONFIG_PARSE_CHOICE_FN(
-	s_config_parse_scaling_fit,
+CONFIG_PARSE_CHOICE_FN(
+	config_parse_scaling_fit,
 	DTTR_ScalingMode,
 	DTTR_CONFIG_CHOICES_SCALING_FIT
 )
-S_CONFIG_PARSE_CHOICE_FN(
-	s_config_parse_scaling_method,
+CONFIG_PARSE_CHOICE_FN(
+	config_parse_scaling_method,
 	DTTR_ScalingMethod,
 	DTTR_CONFIG_CHOICES_SCALING_METHOD
 )
-S_CONFIG_PARSE_CHOICE_FN(
-	s_config_parse_present_filter,
+CONFIG_PARSE_CHOICE_FN(
+	config_parse_present_filter,
 	SDL_GPUFilter,
 	DTTR_CONFIG_CHOICES_PRESENT_FILTER
 )
 
-bool s_config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value) {
+bool config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value) {
 	if (!out_value) {
 		return false;
 	}
@@ -296,7 +294,7 @@ bool s_config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value)
 	}
 
 	int parsed = 0;
-	if (!s_config_parse_choice(DTTR_CONFIG_CHOICES_GRAPHICS_API, value, &parsed)) {
+	if (!config_parse_choice(DTTR_CONFIG_CHOICES_GRAPHICS_API, value, &parsed)) {
 		return false;
 	}
 
@@ -304,49 +302,49 @@ bool s_config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value)
 	return true;
 }
 
-#define S_CONFIG_PARSE_TOKEN(token, enum_value)                                          \
+#define CONFIG_PARSE_TOKEN(token, enum_value)                                            \
 	if (strcmp(value, token) == 0) {                                                     \
 		*out_value = enum_value;                                                         \
 		return true;                                                                     \
 	}
 
-bool s_config_parse_gamepad_source(const char *value, int *out_value) {
+bool config_parse_gamepad_source(const char *value, int *out_value) {
 	if (!value || !out_value) {
 		return false;
 	}
 
-	S_CONFIG_GAMEPAD_SOURCE_TOKENS(S_CONFIG_PARSE_TOKEN)
+	CONFIG_GAMEPAD_SOURCE_TOKENS(CONFIG_PARSE_TOKEN)
 	return false;
 }
 
-#undef S_CONFIG_PARSE_TOKEN
+#undef CONFIG_PARSE_TOKEN
 
-bool s_config_parse_game_action(const char *value, int *out_value) {
-	return s_config_parse_choice(DTTR_CONFIG_CHOICES_GAME_ACTION, value, out_value);
+bool config_parse_game_action(const char *value, int *out_value) {
+	return config_parse_choice(DTTR_CONFIG_CHOICES_GAME_ACTION, value, out_value);
 }
 
-bool s_config_parse_gamepad_axis(const char *value, int *out_value) {
-	return s_config_parse_choice(DTTR_CONFIG_CHOICES_GAMEPAD_AXIS, value, out_value);
+bool config_parse_gamepad_axis(const char *value, int *out_value) {
+	return config_parse_choice(DTTR_CONFIG_CHOICES_GAMEPAD_AXIS, value, out_value);
 }
 
-bool s_config_parse_log_level(const char *value, int *out_value) {
-	return s_config_parse_choice(DTTR_CONFIG_CHOICES_LOG_LEVEL, value, out_value);
+bool config_parse_log_level(const char *value, int *out_value) {
+	return config_parse_choice(DTTR_CONFIG_CHOICES_LOG_LEVEL, value, out_value);
 }
 
-S_CONFIG_PARSE_CHOICE_FN(
-	s_config_parse_minidump_type,
+CONFIG_PARSE_CHOICE_FN(
+	config_parse_minidump_type,
 	DTTR_MinidumpType,
 	DTTR_CONFIG_CHOICES_MINIDUMP_TYPE
 )
-S_CONFIG_PARSE_CHOICE_FN(
-	s_config_parse_vertex_precision,
+CONFIG_PARSE_CHOICE_FN(
+	config_parse_vertex_precision,
 	DTTR_VertexPrecision,
 	DTTR_CONFIG_CHOICES_VERTEX_PRECISION
 )
 
-#undef S_CONFIG_PARSE_CHOICE_FN
+#undef CONFIG_PARSE_CHOICE_FN
 
-bool s_config_parse_int(const char *value, int *out_value) {
+bool config_parse_int(const char *value, int *out_value) {
 	if (!value || !out_value) {
 		return false;
 	}
@@ -368,7 +366,7 @@ bool s_config_parse_int(const char *value, int *out_value) {
 	return true;
 }
 
-bool s_config_parse_float(const char *value, float *out_value) {
+bool config_parse_float(const char *value, float *out_value) {
 	if (!value || !out_value) {
 		return false;
 	}
@@ -385,99 +383,91 @@ bool s_config_parse_float(const char *value, float *out_value) {
 	return true;
 }
 
-bool s_config_parse_string(const char *value, char *out_value, size_t out_size) {
+bool config_parse_string(const char *value, char *out_value, size_t out_size) {
 	if (!value || !out_value || out_size == 0) {
 		return false;
 	}
 
-	strncpy(out_value, value, out_size - 1);
-	out_value[out_size - 1] = '\0';
+	const size_t value_len = strlen(value);
+	if (value_len >= out_size) {
+		return false;
+	}
+
+	memcpy(out_value, value, value_len + 1);
 	return true;
 }
 
-#define S_CONFIG_FORMAT_TOKEN(token, enum_value)                                         \
+#define CONFIG_FORMAT_TOKEN(token, enum_value)                                           \
 	case (enum_value):                                                                   \
 		return (token);
 
-void s_config_format_int(int value, char *buf, size_t buf_size) {
+void config_format_int(int value, char *buf, size_t buf_size) {
 	snprintf(buf, buf_size, "%d", value);
 }
 
-void s_config_format_float(float value, char *buf, size_t buf_size) {
+void config_format_float(float value, char *buf, size_t buf_size) {
 	snprintf(buf, buf_size, "%.9g", value);
 }
 
-#define S_CONFIG_FORMAT_FN(fn_name, type, arg_name, token_list, default_token)           \
+#define CONFIG_FORMAT_FN(fn_name, type, arg_name, token_list, default_token)             \
 	const char *fn_name(type arg_name) {                                                 \
 		switch (arg_name) {                                                              \
-			token_list(S_CONFIG_FORMAT_TOKEN) default : return (default_token);          \
+			token_list(CONFIG_FORMAT_TOKEN) default : return (default_token);            \
 		}                                                                                \
 	}
 
-S_CONFIG_FORMAT_FN(
-	s_config_format_scaling_fit,
+CONFIG_FORMAT_FN(
+	config_format_scaling_fit,
 	DTTR_ScalingMode,
 	mode,
-	S_CONFIG_SCALING_FIT_TOKENS,
+	CONFIG_SCALING_FIT_TOKENS,
 	"letterbox"
 )
-S_CONFIG_FORMAT_FN(
-	s_config_format_scaling_method,
+CONFIG_FORMAT_FN(
+	config_format_scaling_method,
 	DTTR_ScalingMethod,
 	method,
-	S_CONFIG_SCALING_METHOD_TOKENS,
+	CONFIG_SCALING_METHOD_TOKENS,
 	"present"
 )
-S_CONFIG_FORMAT_FN(
-	s_config_format_graphics_api,
+CONFIG_FORMAT_FN(
+	config_format_graphics_api,
 	DTTR_GraphicsApi,
 	api,
-	S_CONFIG_GRAPHICS_API_FORMAT_TOKENS,
+	CONFIG_GRAPHICS_API_FORMAT_TOKENS,
 	DTTR_DRIVER_AUTO
 )
-S_CONFIG_FORMAT_FN(
-	s_config_format_present_filter,
+CONFIG_FORMAT_FN(
+	config_format_present_filter,
 	SDL_GPUFilter,
 	filter,
-	S_CONFIG_PRESENT_FILTER_TOKENS,
+	CONFIG_PRESENT_FILTER_TOKENS,
 	"linear"
 )
-S_CONFIG_FORMAT_FN(s_config_format_log_level, int, level, S_CONFIG_LOG_LEVEL_TOKENS, "info")
-S_CONFIG_FORMAT_FN(
-	s_config_format_minidump_type,
+CONFIG_FORMAT_FN(config_format_log_level, int, level, CONFIG_LOG_LEVEL_TOKENS, "info")
+CONFIG_FORMAT_FN(
+	config_format_minidump_type,
 	DTTR_MinidumpType,
 	type,
-	S_CONFIG_MINIDUMP_TYPE_TOKENS,
+	CONFIG_MINIDUMP_TYPE_TOKENS,
 	"normal"
 )
-S_CONFIG_FORMAT_FN(
-	s_config_format_gamepad_source,
+CONFIG_FORMAT_FN(
+	config_format_gamepad_source,
 	int,
 	source,
-	S_CONFIG_GAMEPAD_SOURCE_TOKENS,
+	CONFIG_GAMEPAD_SOURCE_TOKENS,
 	NULL
 )
-S_CONFIG_FORMAT_FN(
-	s_config_format_game_action,
-	int,
-	action,
-	S_CONFIG_GAME_ACTION_TOKENS,
-	"none"
-)
-S_CONFIG_FORMAT_FN(
-	s_config_format_gamepad_axis,
-	int,
-	axis,
-	S_CONFIG_GAMEPAD_AXIS_TOKENS,
-	"none"
-)
-S_CONFIG_FORMAT_FN(
-	s_config_format_vertex_precision,
+CONFIG_FORMAT_FN(config_format_game_action, int, action, CONFIG_GAME_ACTION_TOKENS, "none")
+CONFIG_FORMAT_FN(config_format_gamepad_axis, int, axis, CONFIG_GAMEPAD_AXIS_TOKENS, "none")
+CONFIG_FORMAT_FN(
+	config_format_vertex_precision,
 	DTTR_VertexPrecision,
 	precision,
-	S_CONFIG_VERTEX_PRECISION_TOKENS,
+	CONFIG_VERTEX_PRECISION_TOKENS,
 	"subpixel"
 )
 
-#undef S_CONFIG_FORMAT_FN
-#undef S_CONFIG_FORMAT_TOKEN
+#undef CONFIG_FORMAT_FN
+#undef CONFIG_FORMAT_TOKEN

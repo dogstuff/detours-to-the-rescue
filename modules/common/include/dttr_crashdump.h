@@ -4,17 +4,19 @@
 #include <sds.h>
 #include <windows.h>
 
-/// Writes a minidump for the given process and returns the dump filename on success.
-/// Returns NULL on failure. Caller frees the returned sds.
-sds dttr_crashdump_write(
+/// Formats a stack trace from a thread context; caller frees the returned sds.
+sds DTTR_Crashdump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context);
+
+/// Writes a process minidump and returns the dump filename; caller frees the returned sds.
+sds DTTR_Crashdump_Write(
 	HANDLE process,
 	DWORD pid,
 	DWORD tid,
 	EXCEPTION_POINTERS *exception_info
 );
 
-/// Installs an unhandled exception filter that writes a crash dump and shows a dialog.
-/// Crash dumps will be written to a dumps directory inside the given directory.
-void dttr_crashdump_init(const char *dump_dir);
+/// Installs an exception filter that writes dumps under the given directory and shows a
+/// crash dialog.
+void DTTR_Crashdump_Init(const char *dump_dir);
 
-#endif /* DTTR_CRASHDUMP_H */
+#endif // DTTR_CRASHDUMP_H

@@ -3,7 +3,7 @@
 
 #include "dttr_sidecar.h"
 #include <SDL3/SDL.h>
-#include <dttr_components.h>
+#include <dttr_mods.h>
 #include <kvec.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -81,39 +81,39 @@ typedef struct {
 #define DTTR_CLEAR_STENCIL 0x04
 
 typedef struct {
-	SDL_GPUTexture *m_gpu_tex;
-	void *m_pixels;
-	int m_width;
-	int m_height;
-	bool m_pending_upload;
-	uint64_t m_last_update_frame;
-	uint32_t m_update_streak;
-	uint32_t m_refcount;
-	bool m_cache_key_valid;
-	uint64_t m_cache_key;
+	SDL_GPUTexture *gpu_tex;
+	void *pixels;
+	int width;
+	int height;
+	bool pending_upload;
+	uint64_t last_update_frame;
+	uint32_t update_streak;
+	uint32_t refcount;
+	bool cache_key_valid;
+	uint64_t cache_key;
 } DTTR_StagedTexture;
 
-/// One reusable upload slot holding a transfer buffer for texture uploads
+/// One reusable upload slot holding a transfer buffer for texture uploads.
 typedef struct {
-	SDL_GPUTransferBuffer *m_transfer_buffer;
-	uint32_t m_capacity;
-	bool m_in_use;
+	SDL_GPUTransferBuffer *transfer_buffer;
+	uint32_t capacity;
+	bool in_use;
 } DTTR_UploadPoolSlot;
 
 #define DTTR_MAX_STAGED_TEXTURES 4096
 #define DTTR_UPLOAD_POOL_SIZE 256
 
 typedef struct {
-	float m_mvp[16];
-	float m_screen_size[2];
-	float m_is_2d;
-	float m_has_texture;
-	float m_color_op;
-	float m_color_arg1;
-	float m_color_arg2;
-	float m_alpha_op;
-	float m_alpha_arg1;
-	float m_alpha_arg2;
+	float mvp[16];
+	float screen_size[2];
+	float is_2d;
+	float has_texture;
+	float color_op;
+	float color_arg1;
+	float color_arg2;
+	float alpha_op;
+	float alpha_arg1;
+	float alpha_arg2;
 } DTTR_Uniforms;
 
 typedef enum {
@@ -123,7 +123,7 @@ typedef enum {
 
 typedef struct DTTR_BackendState DTTR_BackendState;
 
-/// Backend-specific operations dispatched through function pointers
+/// Backend-specific operations dispatched through function pointers.
 typedef struct {
 	void (*begin_frame)(DTTR_BackendState *state);
 	void (*end_frame)(DTTR_BackendState *state);
@@ -142,7 +142,7 @@ typedef struct {
 
 typedef enum { DTTR_BATCH_DRAW, DTTR_BATCH_CLEAR } DTTR_BatchRecordType;
 
-/// A recorded clear or draw command replayed during frame submission
+/// A recorded clear or draw command replayed during frame submission.
 typedef struct {
 	DTTR_BatchRecordType type;
 
@@ -185,113 +185,113 @@ typedef kvec_t(DTTR_BatchRecord) DTTR_BatchRecordVector;
 #define DTTR_VERTEX_SIZE ((uint32_t)sizeof(DTTR_Vertex))
 
 struct DTTR_BackendState {
-	SDL_ThreadID m_gpu_thread_id;
+	SDL_ThreadID gpu_thread_id;
 
-	SDL_Window *m_window;
-	SDL_GPUDevice *m_device;
-	SDL_GPUShaderFormat m_shader_format;
-	SDL_GPUSampleCount m_msaa_sample_count;
-	SDL_GPUCommandBuffer *m_cmd;
-	SDL_GPUTexture *m_swapchain_tex;
-	SDL_GPURenderPass *m_render_pass;
+	SDL_Window *window;
+	SDL_GPUDevice *device;
+	SDL_GPUShaderFormat shader_format;
+	SDL_GPUSampleCount msaa_sample_count;
+	SDL_GPUCommandBuffer *cmd;
+	SDL_GPUTexture *swapchain_tex;
+	SDL_GPURenderPass *render_pass;
 
-	SDL_GPUGraphicsPipeline *m_pipelines[DTTR_PIPELINE_COUNT];
-	SDL_GPUComputePipeline *m_buf2tex_pipeline;
+	SDL_GPUGraphicsPipeline *pipelines[DTTR_PIPELINE_COUNT];
+	SDL_GPUComputePipeline *buf2tex_pipeline;
 
-	SDL_GPUSampler *m_samplers[DTTR_SAMPLER_COUNT];
-	SDL_GPUTexture *m_dummy_texture;
-	SDL_GPUTexture *m_depth_texture;
-	SDL_GPUTexture *m_msaa_render_target;
-	SDL_GPUTexture *m_render_target;
-	SDL_GPUTexture *m_video_texture;
-	int m_video_width;
-	int m_video_height;
-	SDL_GPUBuffer *m_vertex_buffer;
-	SDL_GPUTransferBuffer *m_transfer_buffer;
-	int m_logical_width;
-	int m_logical_height;
-	int m_width;
-	int m_height;
-	Uint32 m_swapchain_width;
-	Uint32 m_swapchain_height;
+	SDL_GPUSampler *samplers[DTTR_SAMPLER_COUNT];
+	SDL_GPUTexture *dummy_texture;
+	SDL_GPUTexture *depth_texture;
+	SDL_GPUTexture *msaa_render_target;
+	SDL_GPUTexture *render_target;
+	SDL_GPUTexture *video_texture;
+	int video_width;
+	int video_height;
+	SDL_GPUBuffer *vertex_buffer;
+	SDL_GPUTransferBuffer *transfer_buffer;
+	int logical_width;
+	int logical_height;
+	int width;
+	int height;
+	Uint32 swapchain_width;
+	Uint32 swapchain_height;
 
-	SDL_FColor m_clear_color;
-	SDL_GPUTexture *m_bound_texture;
-	DTTR_Texture m_bound_texture_handle;
-	bool m_depth_test;
-	bool m_depth_write;
-	bool m_blend_enabled;
-	DTTR_TextureAddress m_addr_u;
-	DTTR_TextureAddress m_addr_v;
-	DTTR_BlendFactor m_blend_dst;
-	DWORD m_stage_color_op;
-	DWORD m_stage_color_arg1;
-	DWORD m_stage_color_arg2;
-	DWORD m_stage_alpha_op;
-	DWORD m_stage_alpha_arg1;
-	DWORD m_stage_alpha_arg2;
-	int m_viewport_x;
-	int m_viewport_y;
-	int m_viewport_w;
-	int m_viewport_h;
-	float m_viewport_min_z;
-	float m_viewport_max_z;
-	float m_proj[16];
-	float m_view[16];
-	float m_model[16];
-	DTTR_BatchRecordVector m_batch_records;
-	uint32_t m_vertex_offset;
-	void *m_transfer_mapped;
-	uint64_t m_frame_index;
+	SDL_FColor clear_color;
+	SDL_GPUTexture *bound_texture;
+	DTTR_Texture bound_texture_handle;
+	bool depth_test;
+	bool depth_write;
+	bool blend_enabled;
+	DTTR_TextureAddress addr_u;
+	DTTR_TextureAddress addr_v;
+	DTTR_BlendFactor blend_dst;
+	DWORD stage_color_op;
+	DWORD stage_color_arg1;
+	DWORD stage_color_arg2;
+	DWORD stage_alpha_op;
+	DWORD stage_alpha_arg1;
+	DWORD stage_alpha_arg2;
+	int viewport_x;
+	int viewport_y;
+	int viewport_w;
+	int viewport_h;
+	float viewport_min_z;
+	float viewport_max_z;
+	float proj[16];
+	float view[16];
+	float model[16];
+	DTTR_BatchRecordVector batch_records;
+	uint32_t vertex_offset;
+	void *transfer_mapped;
+	uint64_t frame_index;
 
-	DTTR_StagedTexture m_staged_textures[DTTR_MAX_STAGED_TEXTURES];
-	int m_staged_texture_count;
-	DTTR_IntVector m_pending_upload_indices;
-	SDL_Mutex *m_texture_mutex;
-	DTTR_UploadPoolSlot m_upload_pool[DTTR_UPLOAD_POOL_SIZE];
+	DTTR_StagedTexture staged_textures[DTTR_MAX_STAGED_TEXTURES];
+	int staged_texture_count;
+	DTTR_IntVector pending_upload_indices;
+	SDL_Mutex *texture_mutex;
+	DTTR_UploadPoolSlot upload_pool[DTTR_UPLOAD_POOL_SIZE];
 
-	uint64_t m_perf_frame_start_ns;
-	uint64_t m_perf_cpu_ns_accum;
-	uint64_t m_perf_upload_bytes_accum;
-	uint32_t m_perf_upload_textures_accum;
-	uint32_t m_perf_mips_generated_accum;
-	uint32_t m_perf_mips_skipped_accum;
-	uint32_t m_perf_draws_accum;
-	uint32_t m_perf_clears_accum;
-	uint32_t m_perf_pipeline_binds_accum;
-	uint32_t m_perf_sampler_binds_accum;
-	uint32_t m_perf_frame_accum_count;
+	uint64_t perf_frame_start_ns;
+	uint64_t perf_cpu_ns_accum;
+	uint64_t perf_upload_bytes_accum;
+	uint32_t perf_upload_textures_accum;
+	uint32_t perf_mips_generated_accum;
+	uint32_t perf_mips_skipped_accum;
+	uint32_t perf_draws_accum;
+	uint32_t perf_clears_accum;
+	uint32_t perf_pipeline_binds_accum;
+	uint32_t perf_sampler_binds_accum;
+	uint32_t perf_frame_accum_count;
 
-	DTTR_BackendType m_backend_type;
-	const DTTR_RendererVtbl *m_renderer;
-	void *m_backend_data;
+	DTTR_BackendType backend_type;
+	const DTTR_RendererVtbl *renderer;
+	void *backend_data;
 
-	bool m_initialized;
-	bool m_frame_active;
+	bool initialized;
+	bool frame_active;
 };
 
-extern DTTR_BackendState g_dttr_backend;
+extern DTTR_BackendState dttr_backend;
 
-/// Begins a new GPU frame and prepares transfer resources
-void dttr_graphics_begin_frame(void);
-/// Submits queued GPU work and presents the current frame
-void dttr_graphics_end_frame(void);
-/// Uploads and presents one BGRA video frame directly to the swapchain
-bool dttr_graphics_present_video_frame_bgra(
+/// Begins a new GPU frame and prepares transfer resources.
+void dttr_graphics_begin_frame();
+/// Submits queued GPU work and presents the current frame.
+void dttr_graphics_end_frame();
+/// Uploads and presents one BGRA video frame directly to the swapchain.
+bool DTTR_Graphics_PresentVideoFrameBGRA(
 	const uint8_t *pixels,
 	int width,
 	int height,
 	int stride
 );
 
-/// Returns true when called from the renderer's GPU thread
-bool dttr_graphics_is_gpu_thread(void);
+/// Returns true when called from the renderer's GPU thread.
+bool dttr_graphics_is_gpu_thread();
 
-#ifdef DTTR_MODDING_ENABLED
-void dttr_graphics_component_frame_begin(DTTR_BackendState *state);
-void dttr_graphics_component_before_game_frame(DTTR_BackendState *state);
-void dttr_graphics_component_after_game_frame(DTTR_BackendState *state);
-void dttr_graphics_component_before_present(
+#ifdef DTTR_MODS_ENABLED
+void dttr_graphics_mod_frame_begin(DTTR_BackendState *state);
+void dttr_graphics_mod_before_game_frame(DTTR_BackendState *state);
+void dttr_graphics_mod_after_game_frame(DTTR_BackendState *state);
+void dttr_graphics_mod_before_present(
 	DTTR_BackendState *state,
 	uint32_t game_x,
 	uint32_t game_y,
@@ -300,7 +300,7 @@ void dttr_graphics_component_before_present(
 	bool imgui_frame_active,
 	bool overlay_rendered
 );
-void dttr_graphics_component_after_present(
+void dttr_graphics_mod_after_present(
 	DTTR_BackendState *state,
 	uint32_t game_x,
 	uint32_t game_y,
@@ -309,22 +309,22 @@ void dttr_graphics_component_after_present(
 	bool imgui_frame_active,
 	bool overlay_rendered
 );
-void dttr_graphics_component_frame_end(DTTR_BackendState *state);
-void dttr_graphics_component_window_created(DTTR_BackendState *state);
-void dttr_graphics_component_window_resized(DTTR_BackendState *state);
-void dttr_graphics_component_window_destroying(DTTR_BackendState *state);
-void dttr_graphics_component_device_created(DTTR_BackendState *state);
-void dttr_graphics_component_device_lost(DTTR_BackendState *state);
-void dttr_graphics_component_device_restored(DTTR_BackendState *state);
-void dttr_graphics_component_device_destroying(DTTR_BackendState *state);
+void dttr_graphics_mod_frame_end(DTTR_BackendState *state);
+void dttr_graphics_mod_window_created(DTTR_BackendState *state);
+void dttr_graphics_mod_window_resized(DTTR_BackendState *state);
+void dttr_graphics_mod_window_destroying(DTTR_BackendState *state);
+void dttr_graphics_mod_device_created(DTTR_BackendState *state);
+void dttr_graphics_mod_device_lost(DTTR_BackendState *state);
+void dttr_graphics_mod_device_restored(DTTR_BackendState *state);
+void dttr_graphics_mod_device_destroying(DTTR_BackendState *state);
 #else
-static inline void dttr_graphics_component_frame_begin(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_frame_begin(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_before_game_frame(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_before_game_frame(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_after_game_frame(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_after_game_frame(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_before_present(
+static inline void dttr_graphics_mod_before_present(
 	DTTR_BackendState *,
 	uint32_t,
 	uint32_t,
@@ -334,7 +334,7 @@ static inline void dttr_graphics_component_before_present(
 	bool
 ) {}
 
-static inline void dttr_graphics_component_after_present(
+static inline void dttr_graphics_mod_after_present(
 	DTTR_BackendState *,
 	uint32_t,
 	uint32_t,
@@ -344,53 +344,53 @@ static inline void dttr_graphics_component_after_present(
 	bool
 ) {}
 
-static inline void dttr_graphics_component_frame_end(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_frame_end(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_window_created(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_window_created(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_window_resized(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_window_resized(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_window_destroying(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_window_destroying(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_device_created(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_device_created(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_device_lost(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_device_lost(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_device_restored(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_device_restored(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_component_device_destroying(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_device_destroying(DTTR_BackendState *) {}
 #endif
 
-/// Computes the number of mip levels needed for a texture size
+/// Computes the number of mip levels needed for a texture size.
 int dttr_graphics_calc_mip_levels(int w, int h);
-/// Writes an identity matrix into a 4x4 float matrix buffer
+/// Writes an identity matrix into a 4x4 float matrix buffer.
 void dttr_graphics_mat4_identity(float *m);
 
-/// Returns a readable name for an SDL shader-format bit
+/// Returns a readable name for an SDL shader-format bit.
 const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format);
-/// Returns the shader formats embedded in this build
-SDL_GPUShaderFormat dttr_graphics_requested_shader_formats(void);
-/// Chooses the preferred shader format from an available format mask
+/// Returns the shader formats embedded in this build.
+SDL_GPUShaderFormat dttr_graphics_requested_shader_formats();
+/// Chooses the preferred shader format from an available format mask.
 SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat formats);
-/// Returns the preferred shader format for a specific backend driver
+/// Returns the preferred shader format for a specific backend driver.
 SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver);
-/// Chooses a shader format using driver preference with mask validation
+/// Chooses a shader format using driver preference with mask validation.
 SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 	const char *driver,
 	SDL_GPUShaderFormat formats
 );
 
-/// Updates logical resolution and optionally render size based on scaling method
+/// Updates logical resolution and optionally render size based on scaling method.
 void dttr_graphics_set_logical_resolution(int width, int height);
-/// Applies runtime window resize to rendering policy
-void dttr_graphics_handle_window_resize(int width, int height);
+/// Applies runtime window resize to rendering policy.
+void DTTR_Graphics_HandleWindowResize(int width, int height);
 
-/// Clears shared surface-texture cache state
-void dttr_graphics_surface_texture_cache_reset(void);
+/// Clears shared surface-texture cache state.
+void dttr_graphics_surface_texture_cache_reset();
 
-/// Initializes the SDL3 GPU backend (device, pipelines, resources)
+/// Initializes the SDL3 GPU backend (device, pipelines, resources).
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state);
-/// Initializes the OpenGL 3.3 backend (context, shaders, FBO, samplers)
+/// Initializes the OpenGL 3.3 backend (context, shaders, FBO, samplers).
 bool dttr_graphics_opengl_init(DTTR_BackendState *state);
 
 #endif

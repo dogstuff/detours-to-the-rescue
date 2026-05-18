@@ -5,21 +5,21 @@
 
 #include <SDL3/SDL.h>
 
-bool dttr_sdl_show_simple_message_box(
+bool DTTR_SDL_ShowSimpleMessageBox(
 	SDL_MessageBoxFlags flags,
 	const char *title,
 	const char *message,
 	SDL_Window *window
 );
-bool dttr_sdl_show_message_box(const SDL_MessageBoxData *messageboxdata, int *buttonid);
-void dttr_sdl_show_open_folder_dialog(
+bool DTTR_SDL_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid);
+void DTTR_SDL_ShowOpenFolderDialog(
 	SDL_DialogFileCallback callback,
 	void *userdata,
 	SDL_Window *window,
 	const char *default_location,
 	bool allow_many
 );
-void dttr_sdl_show_open_file_dialog(
+void DTTR_SDL_ShowOpenFileDialog(
 	SDL_DialogFileCallback callback,
 	void *userdata,
 	SDL_Window *window,
@@ -28,7 +28,7 @@ void dttr_sdl_show_open_file_dialog(
 	const char *default_location,
 	bool allow_many
 );
-void dttr_sdl_pump_events(void);
-void dttr_sdl_delay(Uint32 ms);
+void DTTR_SDL_PumpEvents();
+void DTTR_SDL_Delay(Uint32 ms);
 
-#endif /* DTTR_SDL_H */
+#endif // DTTR_SDL_H

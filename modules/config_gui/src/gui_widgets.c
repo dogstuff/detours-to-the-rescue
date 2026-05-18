@@ -1,18 +1,19 @@
 #include "gui_internal.h"
 
-void s_same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
+void same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
 	igSameLine(
 		0.0f,
-		dttr_imgui_dialog_scaled_float(ctx, DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
 	);
 }
 
-void s_add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height) {
-	igDummy((ImVec2_c){0.0f, dttr_imgui_dialog_scaled_float(ctx, height)});
+void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height) {
+	igDummy((ImVec2_c){0.0f, DTTR_ImGuiDialog_ScaledFloat(ctx, height)});
 }
 
-void s_align_next_item_right(float item_width) {
+void align_next_item_right(float item_width) {
 	const float available_width = igGetContentRegionAvail().x;
+
 	if (available_width <= item_width) {
 		return;
 	}
@@ -20,57 +21,57 @@ void s_align_next_item_right(float item_width) {
 	igSetCursorPosX(igGetCursorPosX() + available_width - item_width);
 }
 
-static float s_config_max_float(float a, float b) { return a > b ? a : b; }
+static float config_max_float(float a, float b) { return a > b ? a : b; }
 
-typedef void (*S_ConfigPathDialogFn)(
+typedef void (*config_path_dialog_fn)(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state
+	config_ui_state *state
 );
 
 typedef struct {
-	const char *m_id;
-	const char *m_label;
-	const char *m_tooltip;
-	S_ConfigPathDialogFn m_open_dialog;
-} S_ConfigPathPickerButton;
+	const char *id;
+	const char *label;
+	const char *tooltip;
+	config_path_dialog_fn open_dialog;
+} config_path_picker_button;
 
-static const ImGuiTableFlags S_CONFIG_TABLE_FLAGS = ImGuiTableFlags_BordersInnerH
-													| ImGuiTableFlags_BordersOuterH
-													| ImGuiTableFlags_SizingStretchProp
-													| ImGuiTableFlags_NoSavedSettings
-													| ImGuiTableFlags_NoPadOuterX;
+static const ImGuiTableFlags CONFIG_TABLE_FLAGS = ImGuiTableFlags_BordersInnerH
+												  | ImGuiTableFlags_BordersOuterH
+												  | ImGuiTableFlags_SizingStretchProp
+												  | ImGuiTableFlags_NoSavedSettings
+												  | ImGuiTableFlags_NoPadOuterX;
 
-static float s_config_path_control_width(void) {
+static float config_path_control_width() {
 	return DTTR_CONFIG_UI_PATH_INPUT_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING
 		   + DTTR_CONFIG_UI_PATH_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING
 		   + DTTR_CONFIG_UI_PATH_BUTTON_W;
 }
 
-float s_config_standard_input_width(void) {
-	return s_config_max_float(DTTR_CONFIG_UI_INPUT_W, s_config_path_control_width());
+float config_standard_input_width() {
+	return config_max_float(DTTR_CONFIG_UI_INPUT_W, config_path_control_width());
 }
 
-static float s_config_standard_content_width(void) {
+static float config_standard_content_width() {
 	return DTTR_CONFIG_UI_ROW_MARGIN_X * 2.0f + DTTR_CONFIG_UI_LABEL_W
-		   + s_config_standard_input_width();
+		   + config_standard_input_width();
 }
 
-static float s_config_gamepad_content_width(void) {
+static float config_gamepad_content_width() {
 	return DTTR_CONFIG_UI_ROW_MARGIN_X * 8.0f + DTTR_CONFIG_UI_GAMEPAD_SOURCE_W
-		   + s_config_standard_input_width()
+		   + config_standard_input_width()
 		   + (DTTR_CONFIG_UI_GAMEPAD_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
 				 * 3.0f;
 }
 
-int s_config_window_width(void) {
-	float content_width = s_config_max_float(
-		s_config_standard_content_width(),
-		s_config_gamepad_content_width()
+int config_window_width() {
+	float content_width = config_max_float(
+		config_standard_content_width(),
+		config_gamepad_content_width()
 	);
 	return (int)((DTTR_CONFIG_UI_PANEL_PADDING_X * 2.0f + content_width) * 0.833333f);
 }
 
-static int s_choice_index(const DTTR_ConfigChoice *choices, int choice_count, int value) {
+static int choice_index(const DTTR_ConfigChoice *choices, int choice_count, int value) {
 	for (int i = 0; i < choice_count; i++) {
 		if (choices[i].value == value) {
 			return i;
@@ -80,23 +81,26 @@ static int s_choice_index(const DTTR_ConfigChoice *choices, int choice_count, in
 	return 0;
 }
 
-bool s_choice_combo(
+bool choice_combo(
 	const char *label,
 	int *value,
 	DTTR_ConfigChoiceList choices,
 	const char *const *tooltips
 ) {
 	int choice_count = 0;
-	const DTTR_ConfigChoice *choice_list = dttr_config_choices(choices, &choice_count);
-	const int current = s_choice_index(choice_list, choice_count, *value);
+	const DTTR_ConfigChoice *choice_list = DTTR_Config_Choices(choices, &choice_count);
+	const int current = choice_index(choice_list, choice_count, *value);
 	const char *preview = choice_count > 0 ? choice_list[current].label : "Unknown";
+
 	if (!igBeginCombo(label, preview, ImGuiComboFlags_None)) {
 		return false;
 	}
 
 	bool changed = false;
+
 	for (int i = 0; i < choice_count; i++) {
 		const bool selected = i == current;
+
 		if (igSelectable_Bool(
 				choice_list[i].label,
 				selected,
@@ -107,18 +111,14 @@ bool s_choice_combo(
 			changed = true;
 		}
 
-		s_show_tooltip(tooltips ? tooltips[i] : NULL);
+		show_tooltip(tooltips ? tooltips[i] : NULL);
 	}
 
 	igEndCombo();
 	return changed;
 }
 
-static void s_draw_tooltip_text_segment(
-	const char *start,
-	const char *end,
-	bool same_line
-) {
+static void draw_tooltip_text_segment(const char *start, const char *end, bool same_line) {
 	if (!start || start == end) {
 		return;
 	}
@@ -130,11 +130,7 @@ static void s_draw_tooltip_text_segment(
 	igTextUnformatted(start, end);
 }
 
-static void s_draw_inline_text(const char *start, const char *end) {
-	s_draw_tooltip_text_segment(start, end, true);
-}
-
-static void s_draw_green_inline_text(const char *start, const char *end) {
+static void draw_green_inline_text(const char *start, const char *end) {
 	if (!start || start == end) {
 		return;
 	}
@@ -148,27 +144,29 @@ static void s_draw_green_inline_text(const char *start, const char *end) {
 	);
 }
 
-static void s_draw_default_tooltip_value(
+static void draw_default_tooltip_value(
 	const char *default_value_start,
 	const char *default_value_end
 ) {
 	const char *release_suffix = strstr(default_value_start, " (Release), ");
+
 	if (release_suffix && release_suffix < default_value_end) {
 		const char *debug_start = release_suffix + strlen(" (Release), ");
 		const char *debug_suffix = strstr(debug_start, " (Debug)");
+
 		if (debug_suffix && debug_suffix < default_value_end) {
-			s_draw_green_inline_text(default_value_start, release_suffix);
-			s_draw_inline_text(release_suffix, debug_start);
-			s_draw_green_inline_text(debug_start, debug_suffix);
-			s_draw_inline_text(debug_suffix, default_value_end);
+			draw_green_inline_text(default_value_start, release_suffix);
+			draw_tooltip_text_segment(release_suffix, debug_start, true);
+			draw_green_inline_text(debug_start, debug_suffix);
+			draw_tooltip_text_segment(debug_suffix, default_value_end, true);
 			return;
 		}
 	}
 
-	s_draw_green_inline_text(default_value_start, default_value_end);
+	draw_green_inline_text(default_value_start, default_value_end);
 }
 
-void s_show_tooltip(const char *text) {
+void show_tooltip(const char *text) {
 	if (!text || !text[0]) {
 		return;
 	}
@@ -179,19 +177,23 @@ void s_show_tooltip(const char *text) {
 
 	igPushTextWrapPos(DTTR_CONFIG_UI_TOOLTIP_WRAP_W);
 	const char *default_text = strstr(text, "Default:");
+
 	if (default_text) {
 		const char *default_value_start = default_text + strlen("Default:");
+
 		while (*default_value_start == ' ') {
 			default_value_start++;
 		}
 
 		const char *default_value_end = default_value_start + strlen(default_value_start);
+
 		if (default_value_end > default_value_start && default_value_end[-1] == '.') {
 			default_value_end--;
 		}
 
-		s_draw_tooltip_text_segment(text, default_value_start, false);
-		s_draw_default_tooltip_value(default_value_start, default_value_end);
+		draw_tooltip_text_segment(text, default_value_start, false);
+		draw_default_tooltip_value(default_value_start, default_value_end);
+
 		if (*default_value_end) {
 			igSameLine(0.0f, 0.0f);
 			igTextUnformatted(default_value_end, NULL);
@@ -204,21 +206,21 @@ void s_show_tooltip(const char *text) {
 	igEndTooltip();
 }
 
-bool s_themed_row_button(
+bool themed_row_button(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	const char *label,
 	float width
 ) {
 	const ImVec2_c size = {
-		dttr_imgui_dialog_scaled_float(ctx, width),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, width),
 		igGetFrameHeight(),
 	};
 
-	return dttr_imgui_dialog_button(ctx, id, label, size);
+	return DTTR_ImGuiDialog_Button(ctx, id, label, size);
 }
 
-void s_push_config_theme(void) {
+void push_config_theme() {
 	igPushStyleVar_Float(
 		ImGuiStyleVar_ScrollbarSize,
 		igGetStyle()->ScrollbarSize * DTTR_CONFIG_UI_SCROLLBAR_WIDTH_SCALE
@@ -241,19 +243,20 @@ void s_push_config_theme(void) {
 	igPushStyleColor_Vec4(ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
 }
 
-void s_pop_config_theme(void) {
+void pop_config_theme() {
 	igPopStyleColor(16);
 	igPopStyleVar(1);
 }
 
-static bool s_format_status_text(
-	const S_ConfigUIState *state,
+static bool format_status_text(
+	const config_ui_state *state,
 	char *buffer,
 	size_t buffer_size
 ) {
-	const bool changed = s_config_has_unsaved_changes(state);
-	const bool status_visible = state->m_status[0]
-								&& SDL_GetTicks() < state->m_status_expires_at_ms;
+	const bool changed = config_has_unsaved_changes(state);
+	const bool status_visible = state->status[0]
+								&& SDL_GetTicks() < state->status_expires_at_ms;
+
 	if (!changed && !status_visible) {
 		if (buffer_size > 0) {
 			buffer[0] = '\0';
@@ -263,22 +266,23 @@ static bool s_format_status_text(
 	}
 
 	if (changed && status_visible) {
-		snprintf(buffer, buffer_size, "Unsaved changes.\n%s", state->m_status);
+		snprintf(buffer, buffer_size, "Unsaved changes.\n%s", state->status);
 	} else if (changed) {
 		snprintf(buffer, buffer_size, "Unsaved changes.");
 	} else {
-		snprintf(buffer, buffer_size, "%s", state->m_status);
+		snprintf(buffer, buffer_size, "%s", state->status);
 	}
 
 	return true;
 }
 
-void s_draw_bottom_status_text(
+void draw_bottom_status_text(
 	const DTTR_ImGuiDialogContext *ctx,
-	const S_ConfigUIState *state
+	const config_ui_state *state
 ) {
-	char status_text[sizeof(state->m_status) + sizeof("Unsaved changes.\n")];
-	if (!s_format_status_text(state, status_text, sizeof(status_text))) {
+	char status_text[sizeof(state->status) + sizeof("Unsaved changes.\n")];
+
+	if (!format_status_text(state, status_text, sizeof(status_text))) {
 		return;
 	}
 
@@ -286,13 +290,13 @@ void s_draw_bottom_status_text(
 	const float status_height = igGetTextLineHeight()
 								+ (float)(line_count - 1)
 									  * igGetTextLineHeightWithSpacing();
-	const float bottom_margin = dttr_imgui_dialog_scaled_float(
+	const float bottom_margin = DTTR_ImGuiDialog_ScaledFloat(
 		ctx,
 		DTTR_CONFIG_UI_STATUS_BOTTOM_MARGIN
 	);
 	const ImVec2_c window_pos = igGetWindowPos();
 	const ImVec2_c text_pos = {
-		window_pos.x + dttr_imgui_dialog_scaled_float(ctx, DTTR_CONFIG_UI_STATUS_X),
+		window_pos.x + DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_STATUS_X),
 		window_pos.y + igGetWindowHeight() - status_height - bottom_margin,
 	};
 
@@ -306,10 +310,10 @@ void s_draw_bottom_status_text(
 	);
 }
 
-bool s_begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width) {
+bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width) {
 	const ImVec2_c padding = {
-		dttr_imgui_dialog_scaled_float(ctx, DTTR_CONFIG_UI_PANEL_PADDING_X),
-		dttr_imgui_dialog_scaled_float(ctx, DTTR_CONFIG_UI_PANEL_PADDING_Y),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_X),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_Y),
 	};
 
 	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, padding);
@@ -321,19 +325,19 @@ bool s_begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width) {
 	);
 }
 
-void s_end_padded_panel(void) {
+void end_padded_panel() {
 	igEndChild();
 	igPopStyleVar(1);
 }
 
-static ImVec2_c s_table_cell_padding(const DTTR_ImGuiDialogContext *ctx, float padding_x) {
+static ImVec2_c table_cell_padding(const DTTR_ImGuiDialogContext *ctx, float padding_x) {
 	return (ImVec2_c){
-		dttr_imgui_dialog_scaled_float(ctx, padding_x),
-		dttr_imgui_dialog_scaled_float(ctx, DTTR_CONFIG_UI_TABLE_CELL_PADDING_Y),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, padding_x),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TABLE_CELL_PADDING_Y),
 	};
 }
 
-static bool s_begin_config_table(
+static bool begin_config_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	int column_count,
@@ -342,12 +346,13 @@ static bool s_begin_config_table(
 ) {
 	igPushStyleVar_Vec2(
 		ImGuiStyleVar_CellPadding,
-		s_table_cell_padding(ctx, cell_padding_x)
+		table_cell_padding(ctx, cell_padding_x)
 	);
+
 	if (igBeginTable(
 			id,
 			column_count,
-			S_CONFIG_TABLE_FLAGS,
+			CONFIG_TABLE_FLAGS,
 			(ImVec2_c){table_width, 0.0f},
 			0.0f
 		)) {
@@ -358,16 +363,16 @@ static bool s_begin_config_table(
 	return false;
 }
 
-static void s_setup_scaled_table_column(
+static void setup_scaled_table_column(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	ImGuiTableColumnFlags flags,
 	float width
 ) {
-	igTableSetupColumn(id, flags, dttr_imgui_dialog_scaled_float(ctx, width), 0);
+	igTableSetupColumn(id, flags, DTTR_ImGuiDialog_ScaledFloat(ctx, width), 0);
 }
 
-bool s_begin_settings_table_with_cell_padding_and_margins(
+bool begin_settings_table_with_cell_padding_and_margins(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
@@ -377,29 +382,29 @@ bool s_begin_settings_table_with_cell_padding_and_margins(
 	float left_margin_width,
 	float right_margin_width
 ) {
-	if (!s_begin_config_table(ctx, id, 4, cell_padding_x, table_width)) {
+	if (!begin_config_table(ctx, id, 4, cell_padding_x, table_width)) {
 		return false;
 	}
 
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"##left_margin",
 		ImGuiTableColumnFlags_WidthFixed,
 		left_margin_width
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"Setting",
 		ImGuiTableColumnFlags_WidthFixed,
 		label_width
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"Value",
 		ImGuiTableColumnFlags_WidthStretch,
 		input_width
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"##right_margin",
 		ImGuiTableColumnFlags_WidthFixed,
@@ -409,14 +414,14 @@ bool s_begin_settings_table_with_cell_padding_and_margins(
 	return true;
 }
 
-bool s_begin_settings_table_with_width(
+bool begin_settings_table_with_width(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width,
 	float table_width
 ) {
-	return s_begin_settings_table_with_cell_padding_and_margins(
+	return begin_settings_table_with_cell_padding_and_margins(
 		ctx,
 		id,
 		label_width,
@@ -428,89 +433,89 @@ bool s_begin_settings_table_with_width(
 	);
 }
 
-bool s_begin_settings_table(
+bool begin_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width
 ) {
-	return s_begin_settings_table_with_width(ctx, id, label_width, input_width, 0.0f);
+	return begin_settings_table_with_width(ctx, id, label_width, input_width, 0.0f);
 }
 
-bool s_begin_full_width_settings_table(
+bool begin_full_width_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width
 ) {
-	return s_begin_settings_table_with_width(
+	return begin_settings_table_with_width(
 		ctx,
 		id,
 		label_width,
 		input_width,
-		s_table_width_ignoring_scrollbar()
+		table_width_ignoring_scrollbar()
 	);
 }
 
-void s_end_settings_table(void) {
+void end_settings_table() {
 	igEndTable();
 	igPopStyleVar(1);
 }
 
-float s_table_width_ignoring_scrollbar(void) {
+float table_width_ignoring_scrollbar() {
 	const ImGuiStyle *style = igGetStyle();
 	const float width = igGetContentRegionAvail().x + style->ScrollbarSize;
 	return width > 1.0f ? width : 1.0f;
 }
 
-bool s_begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
-	if (!s_begin_config_table(
+bool begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
+	if (!begin_config_table(
 			ctx,
 			"##gamepad_button_table",
 			7,
 			DTTR_CONFIG_UI_PATH_BUTTON_SPACING * 0.5f,
-			s_table_width_ignoring_scrollbar()
+			table_width_ignoring_scrollbar()
 		)) {
 		return false;
 	}
 
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"##left_margin",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_ROW_MARGIN_X * 4.0f
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"Game does",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_SOURCE_W
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"You press",
 		ImGuiTableColumnFlags_WidthStretch,
-		s_config_standard_input_width()
+		config_standard_input_width()
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"Bind",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"Clear",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"Reset",
 		ImGuiTableColumnFlags_WidthFixed,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
-	s_setup_scaled_table_column(
+	setup_scaled_table_column(
 		ctx,
 		"##right_margin",
 		ImGuiTableColumnFlags_WidthFixed,
@@ -520,28 +525,30 @@ bool s_begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
 	return true;
 }
 
-void s_begin_setting_row(void) {
+void begin_setting_row() {
 	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
 	igTableNextColumn();
 	igTableNextColumn();
 }
 
-float s_table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width) {
+float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width) {
 	const float available = igGetContentRegionAvail().x;
+
 	if (available > 1.0f) {
 		return available;
 	}
 
-	return dttr_imgui_dialog_scaled_float(ctx, input_width);
+	return DTTR_ImGuiDialog_ScaledFloat(ctx, input_width);
 }
 
-float s_path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count) {
-	float width = s_table_input_width(ctx, DTTR_CONFIG_UI_PATH_INPUT_W);
-	const float trailing_width = dttr_imgui_dialog_scaled_float(
+float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count) {
+	float width = table_input_width(ctx, DTTR_CONFIG_UI_PATH_INPUT_W);
+	const float trailing_width = DTTR_ImGuiDialog_ScaledFloat(
 		ctx,
 		(float)button_count * DTTR_CONFIG_UI_PATH_BUTTON_W
 			+ (float)button_count * DTTR_CONFIG_UI_PATH_BUTTON_SPACING
 	);
+
 	if (width > trailing_width + 1.0f) {
 		width -= trailing_width;
 	}
@@ -549,98 +556,99 @@ float s_path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_cou
 	return width > 1.0f ? width : 1.0f;
 }
 
-static ImVec4_c s_config_label_text_color(S_ConfigLabelState label_state) {
+static ImVec4_c config_label_text_color(config_label_state label_state) {
 	switch (label_state) {
-	case S_CONFIG_LABEL_UNSAVED:
+	case CONFIG_LABEL_UNSAVED:
 		return DTTR_CONFIG_UI_CHANGED_LABEL_TEXT_COLOR;
-	case S_CONFIG_LABEL_SAVED_CHANGED:
+	case CONFIG_LABEL_SAVED_CHANGED:
 		return DTTR_CONFIG_UI_SAVED_CHANGED_LABEL_TEXT_COLOR;
-	case S_CONFIG_LABEL_DEFAULT:
+	case CONFIG_LABEL_DEFAULT:
 	default:
 		return DTTR_CONFIG_UI_LABEL_TEXT_COLOR;
 	}
 }
 
-void s_draw_config_label(
+void draw_config_label(
 	const char *label,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
 	igTextColored(
-		s_config_label_text_color(label_state),
+		config_label_text_color(label_state),
 		"%s%s",
-		label_state == S_CONFIG_LABEL_UNSAVED ? "* " : "",
+		label_state == CONFIG_LABEL_UNSAVED ? "* " : "",
 		label
 	);
-	s_show_tooltip(tooltip);
+	show_tooltip(tooltip);
 }
 
-static void s_begin_labeled_control(
+static void begin_labeled_control(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	float input_width,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
 	igAlignTextToFramePadding();
-	s_draw_config_label(label, tooltip, label_state);
+	draw_config_label(label, tooltip, label_state);
 	igTableNextColumn();
-	igSetNextItemWidth(s_table_input_width(ctx, input_width));
+	igSetNextItemWidth(table_input_width(ctx, input_width));
 }
 
-static void s_draw_path_picker_button(
+static void draw_path_picker_button(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *id,
 	const char *label,
 	const char *tooltip,
-	S_ConfigPathDialogFn open_dialog
+	config_path_dialog_fn open_dialog
 ) {
-	s_same_path_button_row(ctx);
-	if (s_themed_row_button(ctx, id, label, DTTR_CONFIG_UI_PATH_BUTTON_W)) {
+	same_path_button_row(ctx);
+
+	if (themed_row_button(ctx, id, label, DTTR_CONFIG_UI_PATH_BUTTON_W)) {
 		open_dialog(ctx, state);
 	}
 
-	s_show_tooltip(tooltip);
+	show_tooltip(tooltip);
 }
 
-static void s_draw_path_picker_buttons(
+static void draw_path_picker_buttons(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
-	const S_ConfigPathPickerButton *buttons,
+	config_ui_state *state,
+	const config_path_picker_button *buttons,
 	int button_count
 ) {
 	for (int i = 0; i < button_count; i++) {
-		if (!buttons[i].m_open_dialog) {
+		if (!buttons[i].open_dialog) {
 			continue;
 		}
 
-		s_draw_path_picker_button(
+		draw_path_picker_button(
 			ctx,
 			state,
-			buttons[i].m_id,
-			buttons[i].m_label,
-			buttons[i].m_tooltip,
-			buttons[i].m_open_dialog
+			buttons[i].id,
+			buttons[i].label,
+			buttons[i].tooltip,
+			buttons[i].open_dialog
 		);
 	}
 }
 
-static bool s_labeled_path_picker_with_dialog(
+static bool labeled_path_picker_with_dialog(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state,
-	const S_ConfigPathPickerButton *buttons,
+	config_label_state label_state,
+	const config_path_picker_button *buttons,
 	int button_count
 ) {
-	s_begin_setting_row();
-	s_begin_labeled_control(ctx, label, DTTR_CONFIG_UI_PATH_INPUT_W, tooltip, label_state);
-	igSetNextItemWidth(s_path_text_input_width(ctx, button_count));
+	begin_setting_row();
+	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_PATH_INPUT_W, tooltip, label_state);
+	igSetNextItemWidth(path_text_input_width(ctx, button_count));
 	const bool edited = igInputText(
 		id,
 		buf,
@@ -649,22 +657,22 @@ static bool s_labeled_path_picker_with_dialog(
 		NULL,
 		NULL
 	);
-	s_show_tooltip(tooltip);
-	s_draw_path_picker_buttons(ctx, state, buttons, button_count);
+	show_tooltip(tooltip);
+	draw_path_picker_buttons(ctx, state, buttons, button_count);
 	return edited;
 }
 
-bool s_labeled_input_text(
+bool labeled_input_text(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	s_begin_setting_row();
-	s_begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_setting_row();
+	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
 	const bool edited = igInputText(
 		id,
 		buf,
@@ -673,36 +681,36 @@ bool s_labeled_input_text(
 		NULL,
 		NULL
 	);
-	s_show_tooltip(tooltip);
+	show_tooltip(tooltip);
 	return edited;
 }
 
-bool s_labeled_path_picker(
+bool labeled_path_picker(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	static const S_ConfigPathPickerButton buttons[] = {
+	static const config_path_picker_button buttons[] = {
 		{
 			"##open_dir",
 			"Open Dir",
 			"Select an extracted or installed game directory.",
-			s_open_pcdogs_dir_dialog,
+			open_pcdogs_dir_dialog,
 		},
 		{
 			"##open_iso",
 			"Open ISO",
 			"Select an original game ISO.",
-			s_open_pcdogs_iso_dialog,
+			open_pcdogs_iso_dialog,
 		},
 	};
 
-	return s_labeled_path_picker_with_dialog(
+	return labeled_path_picker_with_dialog(
 		ctx,
 		state,
 		label,
@@ -716,26 +724,26 @@ bool s_labeled_path_picker(
 	);
 }
 
-bool s_labeled_log_path_picker(
+bool labeled_log_path_picker(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	static const S_ConfigPathPickerButton buttons[] = {
+	static const config_path_picker_button buttons[] = {
 		{
 			"##open_log",
 			"Open Log",
 			"Select a DttR log file path.",
-			s_open_log_file_dialog,
+			open_log_file_dialog,
 		},
 	};
 
-	return s_labeled_path_picker_with_dialog(
+	return labeled_path_picker_with_dialog(
 		ctx,
 		state,
 		label,
@@ -749,15 +757,15 @@ bool s_labeled_log_path_picker(
 	);
 }
 
-static void s_push_spin_button_spacing(const DTTR_ImGuiDialogContext *ctx) {
-	const float spin_spacing = dttr_imgui_dialog_scaled_float(
+static void push_spin_button_spacing(const DTTR_ImGuiDialogContext *ctx) {
+	const float spin_spacing = DTTR_ImGuiDialog_ScaledFloat(
 		ctx,
 		DTTR_CONFIG_UI_SPIN_BUTTON_SPACING
 	);
 	igPushStyleVar_Vec2(ImGuiStyleVar_ItemInnerSpacing, (ImVec2_c){spin_spacing, 0.0f});
 }
 
-bool s_labeled_input_int(
+bool labeled_input_int(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
@@ -765,28 +773,28 @@ bool s_labeled_input_int(
 	int step,
 	int step_fast,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	s_begin_setting_row();
-	s_begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	s_push_spin_button_spacing(ctx);
+	begin_setting_row();
+	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	push_spin_button_spacing(ctx);
 	const bool edited = igInputInt(id, value, step, step_fast, ImGuiInputTextFlags_None);
 	igPopStyleVar(1);
-	s_show_tooltip(tooltip);
+	show_tooltip(tooltip);
 	return edited;
 }
 
-bool s_labeled_input_float(
+bool labeled_input_float(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
 	float *value,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	s_begin_setting_row();
-	s_begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	s_push_spin_button_spacing(ctx);
+	begin_setting_row();
+	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	push_spin_button_spacing(ctx);
 	const bool edited = igInputFloat(
 		id,
 		value,
@@ -796,28 +804,28 @@ bool s_labeled_input_float(
 		ImGuiInputTextFlags_None
 	);
 	igPopStyleVar(1);
-	s_show_tooltip(tooltip);
+	show_tooltip(tooltip);
 	return edited;
 }
 
-bool s_labeled_checkbox(
+bool labeled_checkbox(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
 	bool *value,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	s_begin_setting_row();
-	s_begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_setting_row();
+	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
 	const float checkbox_width = igGetFrameHeight();
-	s_align_next_item_right(checkbox_width);
+	align_next_item_right(checkbox_width);
 	const bool edited = igCheckbox(id, value);
-	s_show_tooltip(tooltip);
+	show_tooltip(tooltip);
 	return edited;
 }
 
-bool s_labeled_choice_combo(
+bool labeled_choice_combo(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
@@ -825,11 +833,11 @@ bool s_labeled_choice_combo(
 	DTTR_ConfigChoiceList choices,
 	const char *const *tooltips,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 ) {
-	s_begin_setting_row();
-	s_begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	const bool edited = s_choice_combo(id, value, choices, tooltips);
-	s_show_tooltip(tooltip);
+	begin_setting_row();
+	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	const bool edited = choice_combo(id, value, choices, tooltips);
+	show_tooltip(tooltip);
 	return edited;
 }

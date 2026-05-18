@@ -5,6 +5,8 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+include(dttrbuild)
 
 if(NOT DEFINED DTTR_VERSION)
     set(DTTR_VERSION "${PROJECT_VERSION}")
@@ -22,27 +24,50 @@ if(NOT DEFINED DTTR_VERSION)
     endif()
 endif()
 
-option(DTTR_MODDING "Enable modding build with component loading system" OFF)
+option(DTTR_MODS_ENABLED "Enable modding build with mod loading system" OFF)
+option(DTTR_REQUIRE_TEST_DEPS "Fail configure when optional test dependencies are missing" OFF)
+option(DTTR_REQUIRE_PCDOGS_FIXTURES "Fail fixture-backed tests instead of skipping when PCDOGS fixtures are missing" OFF)
+set(DTTR_PCDOGS_FIXTURE_DIR "fixture" CACHE PATH "Directory containing PCDOGS fixture executables for binary-backed tests")
+include(CTest)
+if(BUILD_TESTING)
+    find_program(DTTR_BASH_EXECUTABLE bash)
+    if(DTTR_BASH_EXECUTABLE)
+        add_test(
+            NAME dttr_generated_artifacts_source_tree_clean
+            COMMAND "${DTTR_BASH_EXECUTABLE}"
+                "${CMAKE_SOURCE_DIR}/scripts/check-generated-artifacts.sh"
+        )
+        set_tests_properties(dttr_generated_artifacts_source_tree_clean PROPERTIES
+            LABELS "generated"
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        )
+    endif()
+endif()
 
 if(NOT WIN32)
-    message(FATAL_ERROR
-        "Windows only. Use: cmake -B build -DCMAKE_TOOLCHAIN_FILE=i686-w64-mingw32.cmake"
-    )
+    message(FATAL_ERROR "Windows only. Enter the Nix dev shell and use .toolchain/toolchain.cmake")
 endif()
+
+dttr_configure_runtime_dependencies()
+dttr_configure_ffmpeg()
 
 add_subdirectory(vendor)
 add_subdirectory(modules/common)
+add_subdirectory(modules/sdk)
 add_subdirectory(modules/sidecar)
 add_subdirectory(modules/loader)
 add_subdirectory(modules/config_gui)
 
-set(DTTR_SUPPORT_STUB_MANIFEST "${CMAKE_SOURCE_DIR}/packaging/stubs/manifest.txt")
 set(DTTR_SUPPORT_STUB_GENERATED_DIR "${CMAKE_BINARY_DIR}/generated/stubs")
 set(DTTR_SUPPORT_STUB_ASM "${DTTR_SUPPORT_STUB_GENERATED_DIR}/dttr_support_stub_entry.s")
-file(
-    STRINGS "${DTTR_SUPPORT_STUB_MANIFEST}" DTTR_SUPPORT_STUB_NAMES REGEX [=[^\[[^]]+\]$]=]
+set(DTTR_SUPPORT_STUB_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/generate-support-stubs.py")
+set(DTTR_SUPPORT_STUB_OUTPUT_DIR "${CMAKE_BINARY_DIR}/stubs/$<CONFIG>")
+set(
+    DTTR_SUPPORT_STUB_NAMES
+        mss32
+        winstr
+        winplay
 )
-list(TRANSFORM DTTR_SUPPORT_STUB_NAMES REPLACE [=[^\[([^]]+)\]$]=] [=[\1]=])
 
 set(DTTR_SUPPORT_STUB_DEFS ${DTTR_SUPPORT_STUB_NAMES})
 list(TRANSFORM DTTR_SUPPORT_STUB_DEFS PREPEND "${DTTR_SUPPORT_STUB_GENERATED_DIR}/")
@@ -55,16 +80,42 @@ set(DTTR_SUPPORT_STUB_RUNTIME_DLLS ${DTTR_SUPPORT_STUB_TARGETS})
 list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS PREPEND "$<TARGET_FILE:")
 list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS APPEND ">")
 
+find_package(Python3 COMPONENTS Interpreter QUIET)
+set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
+if(Python3_Interpreter_FOUND)
+    set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
+        "${CMAKE_COMMAND}" -E env
+            PYTHONDONTWRITEBYTECODE=1
+            "${Python3_EXECUTABLE}"
+    )
+else()
+    find_program(DTTR_NIX_EXECUTABLE nix)
+    if(DTTR_NIX_EXECUTABLE)
+        set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
+            "${DTTR_NIX_EXECUTABLE}" develop "${CMAKE_SOURCE_DIR}" --command
+                "${CMAKE_COMMAND}" -E env
+                    PYTHONDONTWRITEBYTECODE=1
+        )
+    endif()
+endif()
+if(NOT DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
+    message(FATAL_ERROR
+        "Support-stub generator unavailable; install Python or nix so "
+        "support DLL stub sources can be produced"
+    )
+endif()
+
 add_custom_command(
     OUTPUT ${DTTR_SUPPORT_STUB_ASM} ${DTTR_SUPPORT_STUB_DEFS}
-    COMMAND "${CMAKE_SOURCE_DIR}/scripts/generate-support-stubs.sh"
-        "${DTTR_SUPPORT_STUB_MANIFEST}"
+    COMMAND ${DTTR_SUPPORT_STUB_SCRIPT_RUNNER}
+        "${DTTR_SUPPORT_STUB_SCRIPT}"
         "${DTTR_SUPPORT_STUB_GENERATED_DIR}"
     DEPENDS
-        "${CMAKE_SOURCE_DIR}/scripts/generate-support-stubs.sh"
-        "${DTTR_SUPPORT_STUB_MANIFEST}"
+        "${DTTR_SUPPORT_STUB_SCRIPT}"
     COMMENT "Generating support DLL stub sources"
+    VERBATIM
 )
+
 
 foreach(DTTR_SUPPORT_STUB_NAME DTTR_SUPPORT_STUB_TARGET IN ZIP_LISTS
     DTTR_SUPPORT_STUB_NAMES
@@ -78,8 +129,8 @@ foreach(DTTR_SUPPORT_STUB_NAME DTTR_SUPPORT_STUB_TARGET IN ZIP_LISTS
     set_target_properties(${DTTR_SUPPORT_STUB_TARGET} PROPERTIES
         PREFIX ""
         OUTPUT_NAME "${DTTR_SUPPORT_STUB_NAME}"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/stubs/$<CONFIG>"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/stubs/$<CONFIG>"
+        RUNTIME_OUTPUT_DIRECTORY "${DTTR_SUPPORT_STUB_OUTPUT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "${DTTR_SUPPORT_STUB_OUTPUT_DIR}"
     )
 
     target_link_options(${DTTR_SUPPORT_STUB_TARGET} PRIVATE
@@ -89,89 +140,19 @@ foreach(DTTR_SUPPORT_STUB_NAME DTTR_SUPPORT_STUB_TARGET IN ZIP_LISTS
 endforeach()
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>")
-if(DTTR_MODDING)
+if(DTTR_MODS_ENABLED)
     string(APPEND DTTR_DIST_DIR "-modding")
 endif()
 
 set(DTTR_DIST_MODULES_DIR "${DTTR_DIST_DIR}/modules")
-set(DTTR_DIST_COMPONENTS_DIR "${DTTR_DIST_DIR}/components")
-
-set(DTTR_SUPPORT_STUB_STALE_ROOT_DLLS ${DTTR_SUPPORT_STUB_NAMES})
-list(TRANSFORM DTTR_SUPPORT_STUB_STALE_ROOT_DLLS PREPEND "${DTTR_DIST_DIR}/")
-list(TRANSFORM DTTR_SUPPORT_STUB_STALE_ROOT_DLLS APPEND ".dll")
-
-set(DTTR_SUPPORT_STUB_STALE_COMPONENT_DLLS ${DTTR_SUPPORT_STUB_NAMES})
-list(
-    TRANSFORM DTTR_SUPPORT_STUB_STALE_COMPONENT_DLLS
-    PREPEND "${DTTR_DIST_COMPONENTS_DIR}/"
-)
-list(TRANSFORM DTTR_SUPPORT_STUB_STALE_COMPONENT_DLLS APPEND ".dll")
-
-set(DTTR_TOOLCHAIN_RUNTIME_DLL_NAMES
-    libgcc_s_dw2-1.dll
-    libgcc_s_seh-1.dll
-    libgcc_s_sjlj-1.dll
-    libgomp-1.dll
-    libmcfgthread-2.dll
-    libstdc++-6.dll
-    libwinpthread-1.dll
-)
-
-set(DTTR_TOOLCHAIN_RUNTIME_STALE_ROOT_DLLS ${DTTR_TOOLCHAIN_RUNTIME_DLL_NAMES})
-list(
-    TRANSFORM DTTR_TOOLCHAIN_RUNTIME_STALE_ROOT_DLLS
-    PREPEND "${DTTR_DIST_DIR}/"
-)
-
-set(DTTR_TOOLCHAIN_RUNTIME_STALE_COMPONENT_DLLS ${DTTR_TOOLCHAIN_RUNTIME_DLL_NAMES})
-list(
-    TRANSFORM DTTR_TOOLCHAIN_RUNTIME_STALE_COMPONENT_DLLS
-    PREPEND "${DTTR_DIST_COMPONENTS_DIR}/"
-)
 
 set(DTTR_DIST_MODULE_DLLS
     $<TARGET_FILE:dttr_launcher>
     $<TARGET_FILE:dttr_config>
     $<TARGET_FILE:dttr_sidecar>
     ${DTTR_SUPPORT_STUB_RUNTIME_DLLS}
-    "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3.dll"
-    "$<TARGET_FILE_DIR:dttr_sidecar>/SDL3_mixer.dll"
+    ${DTTR_SDL_RUNTIME_DLLS}
     ${DTTR_FFMPEG_RUNTIME_DLLS}
-)
-
-set(DTTR_DIST_STALE_ROOT_FILES
-    "${DTTR_DIST_DIR}/libdttr_sidecar.dll"
-    "${DTTR_DIST_DIR}/libdttr_config.dll"
-    ${DTTR_SUPPORT_STUB_STALE_ROOT_DLLS}
-    ${DTTR_TOOLCHAIN_RUNTIME_STALE_ROOT_DLLS}
-    "${DTTR_DIST_DIR}/SDL3.dll"
-    "${DTTR_DIST_DIR}/SDL3_mixer.dll"
-    "${DTTR_DIST_DIR}/dttr.jsonc"
-)
-
-foreach(DTTR_FFMPEG_RUNTIME_DLL IN LISTS DTTR_FFMPEG_RUNTIME_DLLS)
-    get_filename_component(
-        DTTR_FFMPEG_RUNTIME_DLL_NAME "${DTTR_FFMPEG_RUNTIME_DLL}" NAME
-    )
-    list(
-        APPEND DTTR_DIST_STALE_ROOT_FILES
-        "${DTTR_DIST_DIR}/${DTTR_FFMPEG_RUNTIME_DLL_NAME}"
-    )
-    list(
-        APPEND DTTR_DIST_STALE_COMPONENT_MODULE_FILES
-        "${DTTR_DIST_COMPONENTS_DIR}/${DTTR_FFMPEG_RUNTIME_DLL_NAME}"
-    )
-endforeach()
-
-set(DTTR_DIST_STALE_COMPONENT_MODULE_FILES
-    "${DTTR_DIST_COMPONENTS_DIR}/$<TARGET_FILE_NAME:dttr_launcher>"
-    "${DTTR_DIST_COMPONENTS_DIR}/$<TARGET_FILE_NAME:dttr_config>"
-    "${DTTR_DIST_COMPONENTS_DIR}/$<TARGET_FILE_NAME:dttr_sidecar>"
-    ${DTTR_SUPPORT_STUB_STALE_COMPONENT_DLLS}
-    ${DTTR_TOOLCHAIN_RUNTIME_STALE_COMPONENT_DLLS}
-    "${DTTR_DIST_COMPONENTS_DIR}/SDL3.dll"
-    "${DTTR_DIST_COMPONENTS_DIR}/SDL3_mixer.dll"
-    ${DTTR_DIST_STALE_COMPONENT_MODULE_FILES}
 )
 
 add_custom_target(dttr_dist ALL
@@ -182,9 +163,7 @@ add_custom_target(dttr_dist ALL
         dttr_launcher
         dttr_sidecar
         ${DTTR_SUPPORT_STUB_TARGETS}
-    COMMAND ${CMAKE_COMMAND} -E rm -rf "${DTTR_DIST_MODULES_DIR}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${DTTR_DIST_MODULES_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E rm -f ${DTTR_DIST_STALE_ROOT_FILES}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:dttr>
         "${DTTR_DIST_DIR}/dttr.exe"
@@ -197,15 +176,6 @@ add_custom_target(dttr_dist ALL
     COMMENT "Bundling runtime artifacts into ${DTTR_DIST_DIR}"
 )
 
-if(DTTR_MODDING)
-    add_custom_command(TARGET dttr_dist POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E rm -f
-            ${DTTR_DIST_STALE_COMPONENT_MODULE_FILES}
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${DTTR_DIST_COMPONENTS_DIR}"
-            "${DTTR_DIST_DIR}/include"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/sdk/components/include/dttr_components.h"
-            "${DTTR_DIST_DIR}/include/dttr_components.h"
-    )
+if(DTTR_MODS_ENABLED)
+    dttr_copy_modding_sdk_distribution(dttr_dist "${DTTR_DIST_DIR}")
 endif()

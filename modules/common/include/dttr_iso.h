@@ -7,30 +7,30 @@
 #define DTTR_ISO_MAX_PATH 260
 
 typedef struct {
-	bool m_open;
-	char m_iso_path[DTTR_ISO_MAX_PATH];
+	bool open;
+	char iso_path[DTTR_ISO_MAX_PATH];
 } DTTR_IsoImage;
 
-bool dttr_iso_cache_path_for_file(
+bool DTTR_ISO_CachePathForFile(
 	const char *cache_root,
 	const char *iso_relative_path,
 	char *out_path,
 	size_t out_path_size
 );
-bool dttr_iso_open(DTTR_IsoImage *iso, const char *iso_path);
-bool dttr_iso_extract_file(
+bool DTTR_ISO_Open(DTTR_IsoImage *iso, const char *iso_path);
+bool DTTR_ISO_ExtractFile(
 	DTTR_IsoImage *iso,
 	const char *iso_relative_path,
 	const char *cache_root,
 	char *out_path,
 	size_t out_path_size
 );
-bool dttr_iso_extract_tree(
+bool DTTR_ISO_ExtractTree(
 	DTTR_IsoImage *iso,
 	const char *iso_relative_path,
 	const char *cache_root
 );
-const char *dttr_iso_last_error(void);
-void dttr_iso_close(DTTR_IsoImage *iso);
+const char *DTTR_ISO_LastError();
+void DTTR_ISO_Close(DTTR_IsoImage *iso);
 
-#endif /* DTTR_ISO_H */
+#endif // DTTR_ISO_H

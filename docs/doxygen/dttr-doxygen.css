@@ -1,0 +1,56 @@
+:root {
+    --content-maxwidth: 1180px;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body,
+table,
+div,
+p,
+dl {
+    line-height: 1.55;
+}
+
+.contents {
+    max-width: var(--content-maxwidth);
+}
+
+.fragment,
+pre.fragment,
+div.line {
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.tablist li:focus-visible {
+    outline: 3px solid #ffbf47;
+    outline-offset: 2px;
+}
+
+.memtitle,
+.memproto,
+.memdoc {
+    border-radius: 4px;
+}
+
+.paramname,
+.paramtype,
+.memItemLeft,
+.memItemRight {
+    overflow-wrap: anywhere;
+}
+
+.directory td,
+.memberdecls td,
+.params td,
+.fieldtable td {
+    vertical-align: top;
+}

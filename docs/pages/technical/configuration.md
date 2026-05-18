@@ -1,91 +1,111 @@
 # Configuration
 
-DttR stores settings in `dttr.json`. The file must be strict JSON. If it is missing, DttR writes one from the built-in defaults.
+DttR stores settings in `dttr.json` next to `dttr.exe`. The file must be strict JSON and include `schema_major_version`.
 
-Start DttR with another config file for a separate setup:
+If `dttr.json` is missing, DttR creates it from the built-in defaults. If the file is empty, DttR uses the built-in defaults without rewriting it.
+
+Pass a config file to `dttr.exe` when you need a separate setup:
 
 ```sh
-dttr.exe path/to/my_config.json
+dttr.exe custom_dttr.json
 ```
+
+Set string fields to `null` to clear them. DttR reports unknown or mistyped scalar keys as configuration errors.
 
 ## Example
 
 ```json
 {
   "schema_major_version": 1,
+  "log_level": "info",
+  "minidump_type": "normal",
+  "log_file_path": "dttr.log",
+  "pcdogs_path": "",
+  "saves_path": "saves",
   "skip_intro_movies": false,
   "graphics": {
-    "graphics_api": "auto",
     "scaling_fit": "letterbox",
     "scaling_method": "logical",
+    "graphics_api": "auto",
+    "present_scaling_algorithm": "linear",
     "window_width": 640,
     "window_height": 480,
+    "msaa_samples": 2,
+    "texture_upload_sync": false,
+    "generate_texture_mipmaps": true,
+    "vertex_precision": "native",
+    "sprite_smooth": true,
     "fullscreen": false
   },
-  "audio": {},
+  "audio": {
+    "mss_sample_gain": 1.0,
+    "mss_sample_preemphasis": 0.0
+  },
+  "modding": {
+    "hot_reload": false,
+    "disabled_mods": []
+  },
   "gamepad": {
     "enabled": true,
-    "index": 0
+    "index": 0,
+    "axis_stick_x": "axis_left_x",
+    "axis_stick_y": "axis_left_y",
+    "axis_camera_rz": "axis_right_x",
+    "deadzone_stick_x": 700,
+    "deadzone_stick_y": 700,
+    "deadzone_camera_rz": 700
   }
 }
 ```
 
 ## Top-Level Keys
 
-| Key | Type | Values | Default | Description |
-| --- | --- | --- | --- | --- |
-| `schema_major_version` | Integer | `1` | `1` | Config schema version. |
-| `log_level` | String | `trace`, `debug`, `info`, `warn`, `error`, `fatal` | `debug` in debug builds; `info` in release builds | Minimum log level. |
-| `minidump_type` | String | `normal`, `detailed` | `detailed` in debug builds; `normal` in release builds | Crash minidump detail level. |
-| `log_file_path` | String | Path | `dttr.log` | Log file path. |
-| `pcdogs_path` | String | Path | Empty | Game executable or game data path. |
-| `saves_path` | String | Path | `saves` | Save directory. |
-| `skip_intro_movies` | Boolean | `true`, `false` | `false` | Skip the intro movies at launch. |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `schema_major_version` | Integer | `1` | Config schema version. Must be `1`. |
+| `log_level` | String | `debug` in debug builds, `info` in release builds | Minimum log level: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. |
+| `minidump_type` | String | `detailed` in debug builds, `normal` in release builds | Crash minidump detail level: `normal` or `detailed`. |
+| `log_file_path` | String | `dttr.log` | Log file path, or `null` to clear it. Relative paths resolve from the DttR directory. |
+| `pcdogs_path` | String | Empty | Extracted/installed game directory or ISO path. |
+| `saves_path` | String | `saves` | Save-redirection root. Relative paths resolve from the DttR directory. Empty or `null` disables save redirection. |
+| `skip_intro_movies` | Boolean | `false` | Skip the intro movies at launch. |
 
-## `graphics`
+## Graphics (`graphics`)
 
-Graphics settings live under `graphics`.
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `graphics_api` | String | `auto` | Renderer backend: `auto`, `vulkan`, `direct3d12`, or `opengl`. `d3d12` is accepted as an alias for `direct3d12`. |
+| `scaling_fit` | String | `letterbox` | How the game image fits the output: `letterbox`, `stretch`, or `integer`. |
+| `scaling_method` | String | `logical` | Where scaling is applied: `present` or `logical`. |
+| `present_scaling_algorithm` | String | `linear` | Sampling used when `scaling_method` is `present`: `nearest` or `linear`. |
+| `window_width` | Integer | `640` | Initial window width in pixels. Numbers below 64 fall back to 640 at runtime. |
+| `window_height` | Integer | `480` | Initial window height in pixels. Numbers below 64 fall back to 480 at runtime. |
+| `msaa_samples` | Integer | `2` | Multisample count. `1` disables MSAA. SDL GPU backends support `1`, `2`, `4`, and `8`. OpenGL clamps to device support. Unsupported SDL GPU counts fall back to no MSAA. |
+| `texture_upload_sync` | Boolean | `false` | Synchronize texture uploads. |
+| `generate_texture_mipmaps` | Boolean | `true` | Generate texture mipmaps. |
+| `vertex_precision` | String | `native` | Vertex positioning precision: `native` or `subpixel`. |
+| `sprite_smooth` | Boolean | `true` | Smooth sprite sampling. |
+| `fullscreen` | Boolean | `false` | Start fullscreen. |
 
-| Key | Type | Values | Default | Description |
-| --- | --- | --- | --- | --- |
-| `graphics_api` | String | `auto`, `vulkan`, `direct3d12`, `opengl` | `auto` | Renderer backend. |
-| `scaling_fit` | String | `letterbox`, `stretch`, `integer` | `letterbox` | How the game image fits the output. |
-| `scaling_method` | String | `present`, `logical` | `logical` | Where scaling is applied. |
-| `present_scaling_algorithm` | String | `nearest`, `linear` | `nearest` | Sampling used by present scaling. |
-| `window_width` | Integer | Positive integer | `640` | Initial window width. |
-| `window_height` | Integer | Positive integer | `480` | Initial window height. |
-| `msaa_samples` | Integer | Sample count | `2` | Multisample count. |
-| `texture_upload_sync` | Boolean | `true`, `false` | `false` | Synchronize texture uploads. |
-| `generate_texture_mipmaps` | Boolean | `true`, `false` | `true` | Generate texture mipmaps. |
-| `vertex_precision` | String | `native`, `subpixel` | `native` | Vertex positioning precision. |
-| `sprite_smooth` | Boolean | `true`, `false` | `true` | Smooth sprite sampling. |
-| `fullscreen` | Boolean | `true`, `false` | `false` | Start fullscreen. |
+## Audio (`audio`)
 
-Alias: `d3d12`.
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `mss_sample_gain` | Number | `1.0` | Floating-point sample gain. |
+| `mss_sample_preemphasis` | Number | `0.0` | Floating-point sample preemphasis. |
 
-## `audio`
+## Gamepad (`gamepad`)
 
-Audio settings live under `audio`.
-
-| Key | Type | Values | Default | Description |
-| --- | --- | --- | --- | --- |
-| `mss_sample_gain` | Number | Floating-point number | `1.0` | Sample gain. |
-| `mss_sample_preemphasis` | Number | Floating-point number | `0.0` | Sample preemphasis. |
-
-## `gamepad`
-
-Gamepad settings live under `gamepad`.
-
-| Key | Type | Values | Default | Description |
-| --- | --- | --- | --- | --- |
-| `enabled` | Boolean | `true`, `false` | `true` | Enable SDL gamepad input. |
-| `index` | Integer | SDL gamepad index | `0` | SDL gamepad index. |
-| `stick_x` | String | [Axis token](#axis-tokens) | `axis_left_x` | Horizontal movement axis. |
-| `stick_y` | String | [Axis token](#axis-tokens) | `axis_left_y` | Vertical movement axis. |
-| `camera_rz` | String | [Axis token](#axis-tokens) | `axis_right_x` | Camera axis. |
-| `stick_x_deadzone` | Integer | SDL axis deadzone | `700` | Horizontal movement deadzone. |
-| `stick_y_deadzone` | Integer | SDL axis deadzone | `700` | Vertical movement deadzone. |
-| `camera_rz_deadzone` | Integer | SDL axis deadzone | `700` | Camera axis deadzone. |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | Boolean | `true` | Enable SDL gamepad input. |
+| `index` | Integer | `0` | SDL gamepad index. |
+| `axis_stick_x` | String | `axis_left_x` | Horizontal movement axis. Use an [axis token](#axis-tokens). |
+| `axis_stick_y` | String | `axis_left_y` | Vertical movement axis. Use an [axis token](#axis-tokens). |
+| `axis_camera_rz` | String | `axis_right_x` | Camera axis. Use an [axis token](#axis-tokens). |
+| `deadzone_stick_x` | Integer | `700` | Horizontal movement deadzone in SDL axis units. |
+| `deadzone_stick_y` | Integer | `700` | Vertical movement deadzone in SDL axis units. |
+| `deadzone_camera_rz` | Integer | `700` | Camera axis deadzone in SDL axis units. |
 
 ### Axis Tokens
 
@@ -99,9 +119,24 @@ Gamepad settings live under `gamepad`.
 | `axis_left_trigger` | Left trigger axis. |
 | `axis_right_trigger` | Right trigger axis. |
 
-## `gamepad.buttons`
+## Gamepad Buttons (`gamepad.buttons`)
 
-`gamepad.buttons` maps [source tokens](#button-source-tokens) to [action tokens](#button-action-tokens).
+`gamepad.buttons` is a JSON object. Each key is the physical input you press, and each value is the game action DttR sends. When the object is present, omitted inputs are intentionally unbound, so include every binding you want to keep.
+
+This example binds three inputs and leaves the rest unbound:
+
+```json
+{
+  "schema_major_version": 1,
+  "gamepad": {
+    "buttons": {
+      "south": "joy_1",
+      "east": "joy_2",
+      "start": "joy_9"
+    }
+  }
+}
+```
 
 ### Button Source Tokens
 
@@ -112,6 +147,9 @@ Gamepad settings live under `gamepad`.
 | `left_stick_click`, `right_stick_click` | Stick click buttons. |
 | `left_shoulder`, `right_shoulder` | Shoulder buttons. |
 | `dpad_up`, `dpad_down`, `dpad_left`, `dpad_right` | Directional pad buttons. |
+| `misc1` through `misc6` | SDL miscellaneous buttons, when the controller exposes them. |
+| `right_paddle1`, `right_paddle2`, `left_paddle1`, `left_paddle2` | Paddle buttons, when the controller exposes them. |
+| `touchpad` | Touchpad button. |
 | `left_trigger`, `right_trigger` | Trigger buttons. |
 
 ### Button Action Tokens
@@ -123,11 +161,9 @@ Gamepad settings live under `gamepad`.
 | `pov_up`, `pov_down` | POV actions. |
 | `joy_1` through `joy_13` | Original game joystick buttons. |
 
-## `modding`
+## Modding (`modding`)
 
-Modding settings live under `modding`.
-
-| Key | Type | Values | Default | Description |
-| --- | --- | --- | --- | --- |
-| `hot_reload` | Boolean | `true`, `false` | `false` | Reload components while DttR runs. |
-| `disabled_components` | Array of strings | Component DLL filenames | Empty | Component DLL filenames to skip. |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `hot_reload` | Boolean | `false` | Reload mods while DttR runs. |
+| `disabled_mods` | Array of strings | Empty | Up to 32 mod DLL filenames to skip. Names are matched case-insensitively. |

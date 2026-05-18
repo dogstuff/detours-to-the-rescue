@@ -1,11 +1,14 @@
 <!-- For privacy reasons, do not upload minidump files (.dmp) to this issue. -->
 
 **Crash details**
-<!-- Paste the error message and any extra context here. -->
+<!-- Paste the exact error message, crash dialog text, or log excerpt. -->
 
 **Steps to reproduce**
-<!-- What were you doing when the crash occurred? -->
+<!-- List the shortest steps that trigger the crash. -->
 1.
+
+**What you expected**
+<!-- What should have happened instead? -->
 
 **System info**
 - OS:
@@ -13,6 +16,8 @@
 - GPU:
 - RAM:
 - DttR version:
+- Game release/language:
+- Original game source: CD / installed copy / ISO
 - Other relevant specs:
 
 /label ~"Crash Report"

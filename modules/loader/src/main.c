@@ -3,11 +3,11 @@
 #include <string.h>
 #include <windows.h>
 
-typedef int (*S_LauncherMainFn)(int argc, char **argv);
+typedef int (*launcher_main_fn)(int argc, char **argv);
 
-static const char *const S_LAUNCHER_DLL_RELATIVE_PATH = "modules\\libdttr_launcher.dll";
+static const char *const LAUNCHER_DLL_RELATIVE_PATH = "modules\\libdttr_launcher.dll";
 
-static bool s_get_exe_dir(char *buf, size_t buf_size) {
+static bool get_exe_dir(char *buf, size_t buf_size) {
 	if (buf_size == 0) {
 		return false;
 	}
@@ -28,8 +28,8 @@ static bool s_get_exe_dir(char *buf, size_t buf_size) {
 	return true;
 }
 
-static bool s_launcher_dll_path(char *out, size_t out_size) {
-	if (!s_get_exe_dir(out, out_size)) {
+static bool launcher_dll_path(char *out, size_t out_size) {
+	if (!get_exe_dir(out, out_size)) {
 		return false;
 	}
 
@@ -42,12 +42,12 @@ static bool s_launcher_dll_path(char *out, size_t out_size) {
 		out + len,
 		out_size - len,
 		"%s",
-		S_LAUNCHER_DLL_RELATIVE_PATH
+		LAUNCHER_DLL_RELATIVE_PATH
 	);
 	return written > 0 && (size_t)written < out_size - len;
 }
 
-static void s_show_startup_error(const char *message, DWORD error) {
+static void show_startup_error(const char *message, DWORD error) {
 	char detail[512];
 	char text[768];
 
@@ -70,29 +70,29 @@ static void s_show_startup_error(const char *message, DWORD error) {
 	MessageBoxA(NULL, text, "DttR: Error", MB_OK | MB_ICONERROR);
 }
 
-static S_LauncherMainFn s_resolve_launcher_main(HMODULE module) {
-	return (S_LauncherMainFn)GetProcAddress(module, "dttr_launcher_main");
+static launcher_main_fn resolve_launcher_main(HMODULE module) {
+	return (launcher_main_fn)GetProcAddress(module, "dttr_launcher_main");
 }
 
 int main(int argc, char *argv[]) {
 	char path[MAX_PATH];
-	if (!s_launcher_dll_path(path, sizeof(path))) {
-		s_show_startup_error("Could not resolve the DttR launcher module path.", 0);
+	if (!launcher_dll_path(path, sizeof(path))) {
+		show_startup_error("Could not resolve the DttR launcher module path.", 0);
 		return 1;
 	}
 
 	HMODULE module = LoadLibraryExA(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 	if (!module) {
-		s_show_startup_error(
+		show_startup_error(
 			"Could not load modules\\libdttr_launcher.dll.",
 			GetLastError()
 		);
 		return 1;
 	}
 
-	S_LauncherMainFn launcher_main = s_resolve_launcher_main(module);
+	launcher_main_fn launcher_main = resolve_launcher_main(module);
 	if (!launcher_main) {
-		s_show_startup_error(
+		show_startup_error(
 			"Could not find the DttR launcher entry point.",
 			GetLastError()
 		);

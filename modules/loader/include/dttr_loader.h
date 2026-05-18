@@ -5,26 +5,27 @@
 #include <windows.h>
 
 typedef struct {
-	bool m_is_iso;
-	char m_cache_root[MAX_PATH];
-	char m_game_root[MAX_PATH];
+	bool is_iso;
+	char cache_root[MAX_PATH];
+	char game_root[MAX_PATH];
 } DTTR_LoaderIsoContext;
 
-extern const char *g_dttr_config_path;
+extern const char *dttr_config_path;
 
-void dttr_compat_create_process(
+void DTTR_Compat_CreateProcess(
 	const WCHAR *image_name,
 	const char *shim_data,
 	size_t shim_data_len,
 	PROCESS_INFORMATION *child_info
 );
-void dttr_loader_inject_sidecar(const PROCESS_INFORMATION *child_info);
-bool dttr_loader_resolve_exe_path(
+bool DTTR_Loader_InjectSidecar(const PROCESS_INFORMATION *child_info);
+bool DTTR_Loader_ResolveEXEPath(
 	WCHAR *out,
 	const char *configured_path,
 	DTTR_LoaderIsoContext *iso_context
 );
-void dttr_loader_watchdog_attach(const PROCESS_INFORMATION *child_info);
-void dttr_loader_watchdog_wait(const PROCESS_INFORMATION *child_info);
+void DTTR_Loader_WatchdogAttach(const PROCESS_INFORMATION *child_info);
+void DTTR_Loader_WatchdogDetach(const PROCESS_INFORMATION *child_info);
+bool DTTR_Loader_WatchdogWait(const PROCESS_INFORMATION *child_info);
 
-#endif /* DTTR_LOADER_H */
+#endif // DTTR_LOADER_H

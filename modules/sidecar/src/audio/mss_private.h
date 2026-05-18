@@ -1,7 +1,7 @@
 #ifndef MSS_PRIVATE_H
 #define MSS_PRIVATE_H
 
-#include <dttr_components.h>
+#include <dttr_mods.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
@@ -85,32 +85,32 @@ static inline int dttr_mss_loops_to_sdl(int mss_loop_count) {
 	return mss_loop_count - 1;
 }
 
-bool dttr_mss_core_has_driver(void);
-void dttr_mss_core_reset_preferences(void);
-void dttr_mss_core_ensure_preferences(void);
+bool dttr_mss_core_has_driver();
+void dttr_mss_core_reset_preferences();
+void dttr_mss_core_ensure_preferences();
 int dttr_mss_core_get_preference(unsigned int preference);
 int dttr_mss_core_set_preference(unsigned int preference, int value);
-bool dttr_mss_core_ensure_mix_initialized(void);
-bool dttr_mss_core_ensure_mixer(void);
-void dttr_mss_core_destroy_mixer(void);
-MIX_Mixer *dttr_mss_core_mixer(void);
-SDL_AudioSpec dttr_mss_core_mixer_spec(void);
+bool dttr_mss_core_ensure_mix_initialized();
+bool dttr_mss_core_ensure_mixer();
+void dttr_mss_core_destroy_mixer();
+MIX_Mixer *dttr_mss_core_mixer();
+SDL_AudioSpec dttr_mss_core_mixer_spec();
 void dttr_mss_core_set_desired_spec(const SDL_AudioSpec *spec);
-int dttr_mss_core_driver_open_count(void);
-void dttr_mss_core_increment_driver_open_count(void);
-void dttr_mss_core_decrement_driver_open_count(void);
-void dttr_mss_core_reset_driver_open_count(void);
-float dttr_mss_core_master_gain(void);
+int dttr_mss_core_driver_open_count();
+void dttr_mss_core_increment_driver_open_count();
+void dttr_mss_core_decrement_driver_open_count();
+void dttr_mss_core_reset_driver_open_count();
+float dttr_mss_core_master_gain();
 void dttr_mss_core_set_master_gain(float gain);
-float dttr_mss_core_sample_headroom_gain(void);
-float dttr_mss_core_sample_preemphasis(void);
+float dttr_mss_core_sample_headroom_gain();
+float dttr_mss_core_sample_preemphasis();
 
-void dttr_mss_sample_shutdown_all(void);
-void dttr_mss_sample_stop_all(void);
-void dttr_mss_sample_apply_master_gain(void);
+void dttr_mss_sample_shutdown_all();
+void dttr_mss_sample_stop_all();
+void dttr_mss_sample_apply_master_gain();
 
-void dttr_mss_stream_shutdown_all(void);
-void dttr_mss_stream_apply_master_gain(void);
+void dttr_mss_stream_shutdown_all();
+void dttr_mss_stream_apply_master_gain();
 
 float dttr_mss_track_gain(int volume, float master_gain, float headroom);
 void dttr_mss_track_apply_pan(MIX_Track *track, int pan);
@@ -131,14 +131,14 @@ bool dttr_mss_wave_decode_f32(
 );
 void dttr_mss_wave_free(void *ptr);
 
-bool dttr_mss_sdl_has_driver(void);
-void dttr_mss_sdl_stop_all_samples(void);
-void dttr_mss_sdl_shutdown(void);
-void dttr_mss_sdl_release_hooks(const DTTR_ComponentContext *ctx);
-void dttr_mss_sdl_install_hooks(const DTTR_ComponentContext *ctx);
+bool dttr_mss_sdl_has_driver();
+void dttr_mss_sdl_stop_all_samples();
+void dttr_mss_sdl_shutdown();
+void dttr_mss_sdl_release_hooks();
+bool dttr_mss_sdl_install_hooks(const DTTR_Mods_Context *ctx);
 
-int __stdcall dttr_mss_ail_startup(void);
-void __stdcall dttr_mss_ail_shutdown(void);
+int __stdcall dttr_mss_ail_startup();
+void __stdcall dttr_mss_ail_shutdown();
 int __stdcall dttr_mss_ail_set_preference(unsigned int preference, int value);
 int __stdcall dttr_mss_ail_get_preference(unsigned int preference);
 int __stdcall dttr_mss_ail_waveOutOpen(
@@ -174,4 +174,4 @@ void __stdcall dttr_mss_ail_set_stream_volume(void *stream, int volume);
 void __stdcall dttr_mss_ail_set_stream_loop_count(void *stream, int loops);
 void __stdcall dttr_mss_ail_set_digital_master_volume(void *driver, int volume);
 
-#endif /* MSS_PRIVATE_H */
+#endif // MSS_PRIVATE_H

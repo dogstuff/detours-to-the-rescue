@@ -1,19 +1,62 @@
-find_package(PkgConfig REQUIRED)
+# Sidecar links SDL, FFmpeg, hook targets, and generated PCDogs headers into the injected DLL.
+dttr_find_sdl3()
+dttr_find_sdl3_mixer()
 
-if(NOT TARGET PkgConfig::SDL3)
-    pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
-endif()
+set(DTTR_SIDECAR_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include")
+set(DTTR_SIDECAR_OPENGL_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/opengl_shaders.h")
+set(DTTR_SIDECAR_SDL3GPU_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/sdl3gpu_shaders.h")
+set(DTTR_SIDECAR_GENERATED_SHADER_OUTPUTS
+    "${DTTR_SIDECAR_OPENGL_SHADER_HEADER}"
+    "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.dxil"
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.spv"
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.dxil"
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.spv"
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.dxil"
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.spv"
+)
+file(GLOB DTTR_SIDECAR_OPENGL_SHADER_INPUTS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/opengl/*.glsl"
+)
+file(GLOB DTTR_SIDECAR_SDL3GPU_SHADER_INPUTS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdl3gpu/*.glsl"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/sdl3gpu/*.spv"
+)
 
-if(NOT TARGET PkgConfig::SDL3_MIXER)
-    pkg_check_modules(SDL3_MIXER REQUIRED IMPORTED_TARGET sdl3-mixer)
-endif()
+add_custom_command(
+    OUTPUT "${DTTR_SIDECAR_OPENGL_SHADER_HEADER}"
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-opengl-shaders.sh"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-opengl-shaders.sh"
+        ${DTTR_SIDECAR_OPENGL_SHADER_INPUTS}
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating sidecar OpenGL shader header"
+    VERBATIM
+)
 
-set(DTTR_SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/gen")
-set(DTTR_FFMPEG_DIR "${CMAKE_SOURCE_DIR}/.toolchain/ffmpeg")
-set(DTTR_FFMPEG_LIBS avformat avcodec avutil swscale swresample)
+add_custom_command(
+    OUTPUT
+        "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.dxil"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.frag.spv"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.dxil"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/basic.vert.spv"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.dxil"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen/shaders/buf2tex.comp.spv"
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-shaders.sh"
+        "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}/gen"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-shaders.sh"
+        ${DTTR_SIDECAR_SDL3GPU_SHADER_INPUTS}
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating sidecar SDL3 GPU shader headers and blobs"
+    VERBATIM
+)
 
-file(GLOB DTTR_FFMPEG_RUNTIME_DLLS "${DTTR_FFMPEG_DIR}/bin/*.dll")
-set(DTTR_FFMPEG_RUNTIME_DLLS ${DTTR_FFMPEG_RUNTIME_DLLS} PARENT_SCOPE)
+add_custom_target(dttr_sidecar_generated_shaders
+    DEPENDS ${DTTR_SIDECAR_GENERATED_SHADER_OUTPUTS}
+)
 
 set(DTTR_MSS_SOURCES
     src/audio/mss_core.c
@@ -27,8 +70,6 @@ set(DTTR_MSS_SOURCES
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
     src/impl.c
-    src/game_api.c
-    src/hook_registry.c
 
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
@@ -53,74 +94,59 @@ add_library(dttr_sidecar SHARED
     src/game/hooks.c
     src/game_data.c
     src/game/hook_crt_open_file.c
-    src/game/hook_cleanup_level_assets.c
+    src/game/hook_cleanup_title_resources.c
     src/game/hook_resolve_pcdogs_path.c
 
     src/movies/movies.c
+
+    "${CMAKE_SOURCE_DIR}/modules/sdk/src/util_pkg_walk.c"
 )
 
+add_dependencies(dttr_sidecar dttr_pcdogs_generated_headers dttr_sidecar_generated_shaders)
+
 target_include_directories(dttr_sidecar PRIVATE
+    "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}"
     include
     src
-    "${CMAKE_SOURCE_DIR}/sdk/components/include"
-    "${DTTR_SHADER_OUTPUT_DIR}"
+    "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+    "${CMAKE_SOURCE_DIR}/modules/sdk/include"
     "${DTTR_FFMPEG_DIR}/include"
 )
 
-target_link_options(dttr_sidecar PRIVATE -static)
-
-target_compile_definitions(dttr_sidecar PRIVATE
-    DTTR_VERSION="${DTTR_VERSION}"
-)
-
-set(DTTR_FFMPEG_TARGETS ${DTTR_FFMPEG_LIBS})
-list(TRANSFORM DTTR_FFMPEG_TARGETS PREPEND "ffmpeg_")
-
-foreach(DTTR_FFMPEG_LIB DTTR_FFMPEG_TARGET IN ZIP_LISTS
-    DTTR_FFMPEG_LIBS
-    DTTR_FFMPEG_TARGETS
-)
-    add_library(${DTTR_FFMPEG_TARGET} SHARED IMPORTED)
-    set_target_properties(${DTTR_FFMPEG_TARGET} PROPERTIES
-        IMPORTED_IMPLIB "${DTTR_FFMPEG_DIR}/lib/lib${DTTR_FFMPEG_LIB}.dll.a"
-    )
-endforeach()
+dttr_use_windows_static_runtime(dttr_sidecar)
+dttr_set_target_version(dttr_sidecar)
 
 target_link_libraries(dttr_sidecar PRIVATE
     kernel32
-    psapi
-
     PkgConfig::SDL3
     PkgConfig::SDL3_MIXER
     ${DTTR_FFMPEG_TARGETS}
     glad
-    Zydis
-    sds
+    dttr_pcdogs_signatures
+    dttr_sdk_runtime
     klib
     xxhash
     dr_wav
-    log
     common
 )
 
-if(DTTR_MODDING)
+if(DTTR_MODS_ENABLED)
     target_sources(dttr_sidecar PRIVATE
-        src/components/components.c
+        src/mods/mods.c
         src/graphics/imgui_overlay.c
     )
 
-    target_compile_definitions(dttr_sidecar PRIVATE DTTR_MODDING_ENABLED)
+    target_compile_definitions(dttr_sidecar PRIVATE DTTR_MODS_ENABLED)
     target_link_libraries(dttr_sidecar PRIVATE cimgui_static stdc++)
     target_link_options(dttr_sidecar PRIVATE -Wl,--export-all-symbols)
 endif()
 
-add_custom_command(TARGET dttr_sidecar POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_FILE_DIR:dttr_sidecar>/libmpv-2.dll"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/.toolchain/sdl3/i686-w64-mingw32/bin/SDL3.dll"
-        "${CMAKE_SOURCE_DIR}/.toolchain/sdl3_mixer/i686-w64-mingw32/bin/SDL3_mixer.dll"
-        "$<TARGET_FILE_DIR:dttr_sidecar>"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+dttr_copy_runtime_files(dttr_sidecar "$<TARGET_FILE_DIR:dttr_sidecar>"
+    FILES
+        ${DTTR_SDL_RUNTIME_DLLS}
         ${DTTR_FFMPEG_RUNTIME_DLLS}
-        "$<TARGET_FILE_DIR:dttr_sidecar>"
 )
+
+if(BUILD_TESTING)
+    include("${CMAKE_CURRENT_LIST_DIR}/test/tests.cmake")
+endif()

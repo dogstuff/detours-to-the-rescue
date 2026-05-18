@@ -53,7 +53,8 @@ typedef enum {
 #define DTTR_GAMEPAD_SOURCE_COUNT (SDL_GAMEPAD_BUTTON_COUNT + 2)
 
 #define DTTR_CONFIG_SCHEMA_MAJOR_VERSION 1
-#define DTTR_CONFIG_DISABLED_COMPONENTS_MAX 32
+#define DTTR_CONFIG_DISABLED_MODS_MAX 32
+#define DTTR_MODS_SHADOW_PREFIX "_dttr_hot_"
 
 #define DTTR_GAMEPAD_AXIS_MAPPING_COUNT 3
 #define DTTR_GAMEPAD_AXIS_IDX_STICK_X 0
@@ -81,38 +82,38 @@ typedef enum {
 #define PCDOGS_GAMEPAD_IDX_BTN_12 18
 
 typedef struct {
-	int m_schema_major_version;
-	int m_log_level;
-	DTTR_MinidumpType m_minidump_type;
-	char m_log_file_path[MAX_PATH];
-	char m_pcdogs_path[MAX_PATH];
-	char m_saves_path[MAX_PATH];
-	bool m_skip_intro_movies;
-	DTTR_ScalingMode m_scaling_fit;
-	DTTR_ScalingMethod m_scaling_method;
-	DTTR_GraphicsApi m_graphics_api;
-	DTTR_VertexPrecision m_vertex_precision;
-	bool m_sprite_smooth;
-	SDL_GPUFilter m_present_filter;
-	int m_window_width;
-	int m_window_height;
-	int m_msaa_samples;
-	bool m_texture_upload_sync;
-	bool m_generate_texture_mipmaps;
-	bool m_fullscreen;
-	bool m_hot_reload;
-	int m_disabled_component_count;
-	char m_disabled_components[DTTR_CONFIG_DISABLED_COMPONENTS_MAX][MAX_PATH];
-	float m_mss_sample_gain;
-	float m_mss_sample_preemphasis;
-	bool m_gamepad_enabled;
-	int m_gamepad_index;
-	int m_gamepad_button_map[DTTR_GAMEPAD_SOURCE_COUNT];
-	int m_gamepad_axes[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
-	int m_gamepad_axis_deadzone[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
+	int schema_major_version;
+	int log_level;
+	DTTR_MinidumpType minidump_type;
+	char log_file_path[MAX_PATH];
+	char pcdogs_path[MAX_PATH];
+	char saves_path[MAX_PATH];
+	bool skip_intro_movies;
+	DTTR_ScalingMode scaling_fit;
+	DTTR_ScalingMethod scaling_method;
+	DTTR_GraphicsApi graphics_api;
+	DTTR_VertexPrecision vertex_precision;
+	bool sprite_smooth;
+	SDL_GPUFilter present_filter;
+	int window_width;
+	int window_height;
+	int msaa_samples;
+	bool texture_upload_sync;
+	bool generate_texture_mipmaps;
+	bool fullscreen;
+	bool hot_reload;
+	int disabled_mod_count;
+	char disabled_mods[DTTR_CONFIG_DISABLED_MODS_MAX][MAX_PATH];
+	float mss_sample_gain;
+	float mss_sample_preemphasis;
+	bool gamepad_enabled;
+	int gamepad_index;
+	int gamepad_button_map[DTTR_GAMEPAD_SOURCE_COUNT];
+	int gamepad_axes[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
+	int gamepad_axis_deadzone[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 } DTTR_Config;
 
-extern DTTR_Config g_dttr_config;
+extern DTTR_Config dttr_config;
 
 typedef enum {
 	DTTR_CONFIG_VALUE_BOOL = 0,
@@ -155,45 +156,42 @@ typedef enum {
 } DTTR_ConfigChoiceList;
 
 /// Returns the config token for a graphics API selection.
-const char *dttr_config_graphics_api_name(DTTR_GraphicsApi api);
+const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsApi api);
 
-int dttr_config_schema_count(void);
-const DTTR_ConfigFieldSpec *dttr_config_schema_get(int index);
-bool dttr_config_field_changed(
+int DTTR_Config_SchemaCount();
+const DTTR_ConfigFieldSpec *DTTR_Config_SchemaGet(int index);
+bool DTTR_Config_FieldChanged(
 	const DTTR_Config *current,
 	const DTTR_Config *base,
 	const DTTR_ConfigFieldSpec *spec
 );
-bool dttr_config_schema_changed(const DTTR_Config *current, const DTTR_Config *base);
+bool DTTR_Config_SchemaChanged(const DTTR_Config *current, const DTTR_Config *base);
 
-int dttr_config_choice_count(DTTR_ConfigChoiceList list);
-const DTTR_ConfigChoice *dttr_config_choice_get(DTTR_ConfigChoiceList list, int index);
-const DTTR_ConfigChoice *dttr_config_choices(DTTR_ConfigChoiceList list, int *count);
+int DTTR_Config_ChoiceCount(DTTR_ConfigChoiceList list);
+const DTTR_ConfigChoice *DTTR_Config_ChoiceGet(DTTR_ConfigChoiceList list, int index);
+const DTTR_ConfigChoice *DTTR_Config_Choices(DTTR_ConfigChoiceList list, int *count);
 
-void dttr_config_clear_gamepad_button_map(int *map);
+void DTTR_Config_ClearGamepadButtonMap(int *map);
 
-bool dttr_config_is_component_disabled(
-	const DTTR_Config *config,
-	const char *component_filename
-);
-bool dttr_config_set_component_enabled(
+bool DTTR_Config_IsModDisabled(const DTTR_Config *config, const char *mod_filename);
+bool DTTR_Config_SetModEnabled(
 	DTTR_Config *config,
-	const char *component_filename,
+	const char *mod_filename,
 	bool enabled
 );
-bool dttr_config_disabled_components_changed(
-	const DTTR_Config *current,
-	const DTTR_Config *base
-);
+bool DTTR_Config_DisabledModsChanged(const DTTR_Config *current, const DTTR_Config *base);
 
 /// Resets a config object to built-in defaults.
-void dttr_config_set_defaults(DTTR_Config *config);
+void DTTR_Config_SetDefaults(DTTR_Config *config);
 
 /// Loads config values from a strict JSON file into the global config object.
-bool dttr_config_load(const char *filename);
+bool DTTR_Config_Load(const char *filename);
+
+/// Returns details from the most recent config load failure, or NULL when none exist.
+const char *DTTR_Config_LastError();
 
 /// Saves config values back to a strict JSON file.
-bool dttr_config_save(const char *filename, const DTTR_Config *config);
+bool DTTR_Config_Save(const char *filename, const DTTR_Config *config);
 
 #define DTTR_CONFIG_FILENAME "dttr.json"
 

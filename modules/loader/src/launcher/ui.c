@@ -17,14 +17,14 @@
 #define DTTR_VERSION "unknown"
 #endif
 
-static const char *const S_WINDOW_TITLE = "DttR: Specify Game Files";
-static const char *const S_HEADER_TITLE = "102 Patches: Detours to the Rescue!";
-static const char *const S_GAME_SOURCE_MESSAGE
+static const char *const WINDOW_TITLE = "DttR: Specify Game Files";
+static const char *const HEADER_TITLE = "102 Patches: Detours to the Rescue!";
+static const char *const GAME_SOURCE_MESSAGE
 	= "Select either a directory containing the 102 Dalmatians: Puppies to the Rescue "
 	  "files, the original game disc, or an ISO image.";
-static const char *const S_ERROR_TITLE = "DttR: Error";
+static const char *const ERROR_TITLE = "DttR: Error";
 
-static DTTR_LoaderUIChoice s_native_choose_game_source(void) {
+static DTTR_LoaderUIChoice native_choose_game_source() {
 	const SDL_MessageBoxButtonData buttons[] = {
 		{0, DTTR_LOADER_UI_CHOICE_BROWSE_FOLDER, "Open Directory"},
 		{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
@@ -35,45 +35,42 @@ static DTTR_LoaderUIChoice s_native_choose_game_source(void) {
 	const SDL_MessageBoxData msgbox = {
 		.flags = SDL_MESSAGEBOX_INFORMATION,
 		.window = NULL,
-		.title = S_WINDOW_TITLE,
-		.message = S_GAME_SOURCE_MESSAGE,
+		.title = WINDOW_TITLE,
+		.message = GAME_SOURCE_MESSAGE,
 		.numbuttons = 2,
 		.buttons = buttons,
 	};
 
 	int choice_id = DTTR_LOADER_UI_CHOICE_EXIT;
-	if (!dttr_sdl_show_message_box(&msgbox, &choice_id)) {
+	if (!DTTR_SDL_ShowMessageBox(&msgbox, &choice_id)) {
 		return DTTR_LOADER_UI_CHOICE_EXIT;
 	}
 
-	return dttr_loader_ui_choice_from_id(choice_id);
+	return DTTR_LoaderUI_ChoiceFromID(choice_id);
 }
 
-static float s_button_spacing(const DTTR_ImGuiDialogContext *ctx) {
-	return dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_SPACING);
+static float button_spacing(const DTTR_ImGuiDialogContext *ctx) {
+	return DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_LOADER_UI_BUTTON_SPACING);
 }
 
-static float s_button_row_width(const DTTR_ImGuiDialogContext *ctx, size_t button_count) {
+static float button_row_width(const DTTR_ImGuiDialogContext *ctx, size_t button_count) {
 	if (button_count == 0) {
 		return 0.0f;
 	}
 
-	const float button_width = dttr_imgui_dialog_scaled_float(
-		ctx,
-		DTTR_LOADER_UI_BUTTON_W
-	);
+	const float button_width = DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_LOADER_UI_BUTTON_W);
 	return (button_width * (float)button_count)
-		   + (s_button_spacing(ctx) * (float)(button_count - 1));
+		   + (button_spacing(ctx) * (float)(button_count - 1));
 }
 
-static ImVec2_c s_button_size(const DTTR_ImGuiDialogContext *ctx) {
+static ImVec2_c button_size(const DTTR_ImGuiDialogContext *ctx) {
 	return (ImVec2_c){
-		dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_W),
-		dttr_imgui_dialog_scaled_float(ctx, DTTR_LOADER_UI_BUTTON_H),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_LOADER_UI_BUTTON_W),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_LOADER_UI_BUTTON_H),
 	};
 }
 
-static bool s_draw_source_button(
+static bool draw_source_button(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	const char *label,
@@ -81,7 +78,7 @@ static bool s_draw_source_button(
 	DTTR_LoaderUIChoice *result,
 	bool *running
 ) {
-	if (!dttr_imgui_dialog_button(ctx, id, label, s_button_size(ctx))) {
+	if (!DTTR_ImGuiDialog_Button(ctx, id, label, button_size(ctx))) {
 		return false;
 	}
 
@@ -90,7 +87,7 @@ static bool s_draw_source_button(
 	return true;
 }
 
-static bool s_draw_disc_button(
+static bool draw_disc_button(
 	const DTTR_ImGuiDialogContext *ctx,
 	size_t disc_index,
 	const DTTR_LoaderUIDiscCandidate *disc_candidates,
@@ -98,11 +95,11 @@ static bool s_draw_disc_button(
 	bool *running
 ) {
 	igPushID_Int((int)disc_index);
-	const bool selected = s_draw_source_button(
+	const bool selected = draw_source_button(
 		ctx,
 		"##disc",
-		disc_candidates[disc_index].m_label,
-		dttr_loader_ui_disc_choice_for_index(disc_index),
+		disc_candidates[disc_index].label,
+		DTTR_LoaderUI_DiscChoiceForIndex(disc_index),
 		result,
 		running
 	);
@@ -110,11 +107,11 @@ static bool s_draw_disc_button(
 	return selected;
 }
 
-static void s_same_button_row(const DTTR_ImGuiDialogContext *ctx) {
-	igSameLine(0.0f, s_button_spacing(ctx));
+static void same_button_row(const DTTR_ImGuiDialogContext *ctx) {
+	igSameLine(0.0f, button_spacing(ctx));
 }
 
-static size_t s_clamp_disc_candidate_count(size_t disc_candidate_count) {
+static size_t clamp_disc_candidate_count(size_t disc_candidate_count) {
 	if (disc_candidate_count > DTTR_LOADER_UI_MAX_DISC_CANDIDATES) {
 		return DTTR_LOADER_UI_MAX_DISC_CANDIDATES;
 	}
@@ -122,12 +119,12 @@ static size_t s_clamp_disc_candidate_count(size_t disc_candidate_count) {
 	return disc_candidate_count;
 }
 
-static void s_draw_browse_buttons(
+static void draw_browse_buttons(
 	const DTTR_ImGuiDialogContext *ctx,
 	DTTR_LoaderUIChoice *result,
 	bool *running
 ) {
-	if (s_draw_source_button(
+	if (draw_source_button(
 			ctx,
 			"##open_directory",
 			"Open Directory",
@@ -138,8 +135,8 @@ static void s_draw_browse_buttons(
 		return;
 	}
 
-	s_same_button_row(ctx);
-	s_draw_source_button(
+	same_button_row(ctx);
+	draw_source_button(
 		ctx,
 		"##open_iso",
 		"Open ISO",
@@ -149,7 +146,7 @@ static void s_draw_browse_buttons(
 	);
 }
 
-static void s_draw_source_buttons(
+static void draw_source_buttons(
 	const DTTR_ImGuiDialogContext *ctx,
 	const DTTR_LoaderUIDiscCandidate *disc_candidates,
 	size_t disc_candidate_count,
@@ -158,96 +155,91 @@ static void s_draw_source_buttons(
 ) {
 	size_t disc_index = 0;
 	const size_t first_row_buttons = disc_candidate_count > 0 ? 3 : 2;
-	dttr_imgui_dialog_center_next_item(s_button_row_width(ctx, first_row_buttons));
+	DTTR_ImGuiDialog_CenterNextItem(button_row_width(ctx, first_row_buttons));
 
 	if (disc_candidate_count > 0) {
-		s_draw_disc_button(ctx, disc_index++, disc_candidates, result, running);
-		s_same_button_row(ctx);
+		draw_disc_button(ctx, disc_index++, disc_candidates, result, running);
+		same_button_row(ctx);
 	}
 
-	s_draw_browse_buttons(ctx, result, running);
+	draw_browse_buttons(ctx, result, running);
 
 	while (disc_index < disc_candidate_count && *running) {
 		const size_t remaining = disc_candidate_count - disc_index;
 		const size_t row_count = remaining < 3 ? remaining : 3;
-		dttr_imgui_dialog_center_next_item(s_button_row_width(ctx, row_count));
+		DTTR_ImGuiDialog_CenterNextItem(button_row_width(ctx, row_count));
 
 		for (size_t col = 0; col < row_count && *running; col++, disc_index++) {
 			if (col > 0) {
-				s_same_button_row(ctx);
+				same_button_row(ctx);
 			}
 
-			s_draw_disc_button(ctx, disc_index, disc_candidates, result, running);
+			draw_disc_button(ctx, disc_index, disc_candidates, result, running);
 		}
 	}
 }
 
-DTTR_LoaderUIChoice dttr_loader_ui_choose_game_source(
+DTTR_LoaderUIChoice DTTR_LoaderUI_ChooseGameSource(
 	const DTTR_LoaderUIDiscCandidate *disc_candidates,
 	size_t disc_candidate_count
 ) {
 	DTTR_ImGuiDialogContext ctx = {0};
 
-	if (!dttr_imgui_dialog_begin(
+	if (!DTTR_ImGuiDialog_Begin(
 			&ctx,
-			S_WINDOW_TITLE,
+			WINDOW_TITLE,
 			DTTR_LOADER_UI_WINDOW_W,
 			DTTR_LOADER_UI_WINDOW_H
 		)) {
-		return s_native_choose_game_source();
+		return native_choose_game_source();
 	}
 
 	disc_candidate_count = disc_candidates
-							   ? s_clamp_disc_candidate_count(disc_candidate_count)
+							   ? clamp_disc_candidate_count(disc_candidate_count)
 							   : 0;
 
 	DTTR_LoaderUIChoice result = DTTR_LOADER_UI_CHOICE_EXIT;
 	bool running = true;
 	while (running) {
-		dttr_imgui_dialog_process_events(&ctx, &running);
-		dttr_imgui_dialog_refresh_scale(&ctx);
-		dttr_imgui_dialog_new_frame(&ctx);
+		DTTR_ImGuiDialog_ProcessEvents(&ctx, &running);
+		DTTR_ImGuiDialog_RefreshScale(&ctx);
+		DTTR_ImGuiDialog_NewFrame(&ctx);
 
-		if (dttr_imgui_dialog_begin_root(&ctx, S_WINDOW_TITLE, ImGuiWindowFlags_None)) {
-			dttr_imgui_dialog_draw_header(&ctx, S_HEADER_TITLE, DTTR_VERSION);
+		if (DTTR_ImGuiDialog_BeginRoot(&ctx, WINDOW_TITLE, ImGuiWindowFlags_None)) {
+			DTTR_ImGuiDialog_DrawHeader(&ctx, HEADER_TITLE, DTTR_VERSION);
 			igSeparator();
-			dttr_imgui_dialog_draw_padded_text(
+			DTTR_ImGuiDialog_DrawPaddedText(
 				&ctx,
-				S_GAME_SOURCE_MESSAGE,
+				GAME_SOURCE_MESSAGE,
 				DTTR_LOADER_UI_TEXT_PADDING_X,
 				DTTR_LOADER_UI_TEXT_PADDING_Y
 			);
-			s_draw_source_buttons(
+			draw_source_buttons(
 				&ctx,
 				disc_candidates,
 				disc_candidate_count,
 				&result,
 				&running
 			);
-			dttr_imgui_dialog_fit_window_to_content(&ctx, DTTR_LOADER_UI_WINDOW_W, 18.0f);
+			DTTR_ImGuiDialog_FitWindowToContent(&ctx, DTTR_LOADER_UI_WINDOW_W, 18.0f);
 		}
 
-		dttr_imgui_dialog_end_root();
+		DTTR_ImGuiDialog_EndRoot();
 
-		dttr_imgui_dialog_render(&ctx);
+		DTTR_ImGuiDialog_Render(&ctx);
 	}
 
-	dttr_imgui_dialog_end(&ctx);
+	DTTR_ImGuiDialog_End(&ctx);
 	return result;
 }
 
-void dttr_loader_ui_show_error(const char *title, const char *message) {
-	const char *window_title = title ? title : S_ERROR_TITLE;
+void DTTR_LoaderUI_ShowError(const char *title, const char *message) {
+	const char *window_title = title ? title : ERROR_TITLE;
 	const char *safe_message = message ? message : "";
 
-	if (dttr_imgui_error_show(window_title, safe_message)) {
+	if (DTTR_ImGui_ErrorShow(window_title, safe_message)) {
 		return;
 	}
 
-	dttr_sdl_show_simple_message_box(
-		SDL_MESSAGEBOX_ERROR,
-		window_title,
-		safe_message,
-		NULL
-	);
+	DTTR_SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, window_title, safe_message, NULL);
 }

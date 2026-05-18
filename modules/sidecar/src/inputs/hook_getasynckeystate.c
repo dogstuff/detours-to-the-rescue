@@ -2,10 +2,12 @@
 #include <dttr_sidecar.h>
 #include <windows.h>
 
+#include "hooks_private.h"
+
 /// High bit returned by GetAsyncKeyState when the key is held down.
 #define GETASYNCKEYSTATE_KEY_PRESSED 0x8000
 
-static const SDL_Scancode s_vk_to_scancode[256] = {
+static const SDL_Scancode vk_to_scancode[256] = {
 	['A'] = SDL_SCANCODE_A,
 	['B'] = SDL_SCANCODE_B,
 	['C'] = SDL_SCANCODE_C,
@@ -95,12 +97,13 @@ static const SDL_Scancode s_vk_to_scancode[256] = {
 	[VK_DIVIDE] = SDL_SCANCODE_KP_DIVIDE,
 };
 
+// Answers Win32 key-state reads from SDL keyboard state.
 SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey) {
-	if (vkey < 0 || vkey >= (int)SDL_arraysize(s_vk_to_scancode)) {
+	if (vkey < 0 || vkey >= (int)SDL_arraysize(vk_to_scancode)) {
 		return 0;
 	}
 
-	const SDL_Scancode scancode = s_vk_to_scancode[vkey];
+	const SDL_Scancode scancode = vk_to_scancode[vkey];
 
 	if (scancode == SDL_SCANCODE_UNKNOWN) {
 		return 0;

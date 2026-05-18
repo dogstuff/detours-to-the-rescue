@@ -7,18 +7,18 @@
 
 #include "gen/sdl3gpu_shaders.h"
 
-#define S_COMPUTE_WORKGROUP_X 16
-#define S_COMPUTE_WORKGROUP_Y 16
-#define S_COMPUTE_WORKGROUP_Z 1
+#define COMPUTE_WORKGROUP_X 16
+#define COMPUTE_WORKGROUP_Y 16
+#define COMPUTE_WORKGROUP_Z 1
 
-// Holds shader bytecode pointer/size pairs for SDL pipeline creation
+// Holds shader bytecode pointer/size pairs for SDL pipeline creation.
 typedef struct {
 	const Uint8 *code;
 	size_t size;
-} S_GraphicsShaderBlob;
+} graphics_shader_blob;
 
-// Returns a readable shader-stage name for diagnostics
-static const char *s_shader_stage_name(SDL_GPUShaderStage stage) {
+// Returns a readable shader-stage name for diagnostics.
+static const char *shader_stage_name(SDL_GPUShaderStage stage) {
 	switch (stage) {
 	case SDL_GPU_SHADERSTAGE_VERTEX:
 		return "vertex";
@@ -29,62 +29,61 @@ static const char *s_shader_stage_name(SDL_GPUShaderStage stage) {
 	}
 }
 
-// Returns the embedded basic vertex shader blob for the selected format
-static S_GraphicsShaderBlob s_get_basic_vert_blob(SDL_GPUShaderFormat format) {
+// Returns the embedded basic vertex shader blob for the selected format.
+static graphics_shader_blob get_basic_vert_blob(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
-		return (S_GraphicsShaderBlob){basic_vert_spv, (size_t)basic_vert_spv_len};
+		return (graphics_shader_blob){basic_vert_spv, (size_t)basic_vert_spv_len};
 	case SDL_GPU_SHADERFORMAT_DXIL:
-		return (S_GraphicsShaderBlob){basic_vert_dxil, (size_t)basic_vert_dxil_len};
+		return (graphics_shader_blob){basic_vert_dxil, (size_t)basic_vert_dxil_len};
 	default:
-		return (S_GraphicsShaderBlob){NULL, 0};
+		return (graphics_shader_blob){NULL, 0};
 	}
 }
 
-// Returns the embedded basic fragment shader blob for the selected format
-static S_GraphicsShaderBlob s_get_basic_frag_blob(SDL_GPUShaderFormat format) {
+// Returns the embedded basic fragment shader blob for the selected format.
+static graphics_shader_blob get_basic_frag_blob(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
-		return (S_GraphicsShaderBlob){basic_frag_spv, (size_t)basic_frag_spv_len};
+		return (graphics_shader_blob){basic_frag_spv, (size_t)basic_frag_spv_len};
 	case SDL_GPU_SHADERFORMAT_DXIL:
-		return (S_GraphicsShaderBlob){basic_frag_dxil, (size_t)basic_frag_dxil_len};
+		return (graphics_shader_blob){basic_frag_dxil, (size_t)basic_frag_dxil_len};
 	default:
-		return (S_GraphicsShaderBlob){NULL, 0};
+		return (graphics_shader_blob){NULL, 0};
 	}
 }
 
-// Returns the embedded buffer-to-texture compute shader blob for the selected
-// format
-static S_GraphicsShaderBlob s_get_buf2tex_comp_blob(SDL_GPUShaderFormat format) {
+// Returns the embedded buffer-to-texture compute shader blob for the selected format.
+static graphics_shader_blob get_buf2tex_comp_blob(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
-		return (S_GraphicsShaderBlob){
+		return (graphics_shader_blob){
 			buf2tex_comp_spv,
 			(size_t)buf2tex_comp_spv_len,
 		};
 	case SDL_GPU_SHADERFORMAT_DXIL:
-		return (S_GraphicsShaderBlob){
+		return (graphics_shader_blob){
 			buf2tex_comp_dxil,
 			(size_t)buf2tex_comp_dxil_len,
 		};
 	default:
-		return (S_GraphicsShaderBlob){NULL, 0};
+		return (graphics_shader_blob){NULL, 0};
 	}
 }
 
-// Creates one graphics shader object from an embedded blob
-static SDL_GPUShader *s_create_shader(
-	const S_GraphicsShaderBlob *blob,
+// Creates one graphics shader object from an embedded blob.
+static SDL_GPUShader *create_shader(
+	const graphics_shader_blob *blob,
 	SDL_GPUShaderStage stage,
 	uint32_t num_samplers
 ) {
-	DTTR_BackendState *state = &g_dttr_backend;
+	DTTR_BackendState *state = &dttr_backend;
 
 	if (!blob || !blob->code || blob->size == 0) {
 		SDL_SetError(
 			"No precompiled %s shader blob for %s format",
-			s_shader_stage_name(stage),
-			dttr_graphics_shader_format_name(state->m_shader_format)
+			shader_stage_name(stage),
+			dttr_graphics_shader_format_name(state->shader_format)
 		);
 		return NULL;
 	}
@@ -93,25 +92,23 @@ static SDL_GPUShader *s_create_shader(
 		.code = blob->code,
 		.code_size = blob->size,
 		.entrypoint = "main",
-		.format = state->m_shader_format,
+		.format = state->shader_format,
 		.stage = stage,
 		.num_samplers = num_samplers,
 		.num_uniform_buffers = 1,
 	};
 
-	return SDL_CreateGPUShader(state->m_device, &info);
+	return SDL_CreateGPUShader(state->device, &info);
 }
 
-// Creates the compute pipeline used to expand upload buffers into textures
-static SDL_GPUComputePipeline *s_create_compute_pipeline(
-	const S_GraphicsShaderBlob *blob
-) {
-	DTTR_BackendState *state = &g_dttr_backend;
+// Creates the compute pipeline used to expand upload buffers into textures.
+static SDL_GPUComputePipeline *create_compute_pipeline(const graphics_shader_blob *blob) {
+	DTTR_BackendState *state = &dttr_backend;
 
 	if (!blob || !blob->code || blob->size == 0) {
 		SDL_SetError(
 			"No precompiled compute shader blob for %s format",
-			dttr_graphics_shader_format_name(state->m_shader_format)
+			dttr_graphics_shader_format_name(state->shader_format)
 		);
 		return NULL;
 	}
@@ -120,33 +117,35 @@ static SDL_GPUComputePipeline *s_create_compute_pipeline(
 		.code = blob->code,
 		.code_size = blob->size,
 		.entrypoint = "main",
-		.format = state->m_shader_format,
+		.format = state->shader_format,
 		.num_readonly_storage_buffers = 1,
 		.num_readwrite_storage_textures = 1,
 		.num_uniform_buffers = 1,
-		.threadcount_x = S_COMPUTE_WORKGROUP_X,
-		.threadcount_y = S_COMPUTE_WORKGROUP_Y,
-		.threadcount_z = S_COMPUTE_WORKGROUP_Z,
+		.threadcount_x = COMPUTE_WORKGROUP_X,
+		.threadcount_y = COMPUTE_WORKGROUP_Y,
+		.threadcount_z = COMPUTE_WORKGROUP_Z,
 	};
 
-	return SDL_CreateGPUComputePipeline(state->m_device, &info);
+	return SDL_CreateGPUComputePipeline(state->device, &info);
 }
 
-// Releases a temporary vertex/fragment shader pair after pipeline creation
-static void s_release_shader_pair(
+// Releases a temporary vertex/fragment shader pair after pipeline creation.
+static void release_shader_pair(
 	DTTR_BackendState *state,
 	SDL_GPUShader *vert,
 	SDL_GPUShader *frag
 ) {
-	if (vert)
-		SDL_ReleaseGPUShader(state->m_device, vert);
+	if (vert) {
+		SDL_ReleaseGPUShader(state->device, vert);
+	}
 
-	if (frag)
-		SDL_ReleaseGPUShader(state->m_device, frag);
+	if (frag) {
+		SDL_ReleaseGPUShader(state->device, frag);
+	}
 }
 
-// Builds all blend/depth graphics pipeline variants used by draw replay
-static bool s_create_graphics_pipelines(
+// Builds all blend/depth graphics pipeline variants used by draw replay.
+static bool create_graphics_pipelines(
 	DTTR_BackendState *state,
 	SDL_GPUShader *vert,
 	SDL_GPUShader *frag
@@ -165,8 +164,8 @@ static bool s_create_graphics_pipelines(
 	};
 
 	const SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(
-		state->m_device,
-		state->m_window
+		state->device,
+		state->window
 	);
 
 	const SDL_GPUColorTargetDescription color_targets[3] = {
@@ -216,7 +215,7 @@ static bool s_create_graphics_pipelines(
 						},
 					.multisample_state =
 						{
-							.sample_count = state->m_msaa_sample_count,
+							.sample_count = state->msaa_sample_count,
 							.sample_mask = 0,
 							.enable_mask = false,
 						},
@@ -236,13 +235,14 @@ static bool s_create_graphics_pipelines(
 				};
 
 				const int idx = DTTR_PIPELINE_INDEX(bmode, dtest, dwrite);
-				state->m_pipelines[idx] = SDL_CreateGPUGraphicsPipeline(
-					state->m_device,
+				state->pipelines[idx] = SDL_CreateGPUGraphicsPipeline(
+					state->device,
 					&pipe_info
 				);
 
-				if (state->m_pipelines[idx])
+				if (state->pipelines[idx]) {
 					continue;
+				}
 
 				DTTR_LOG_ERROR("Failed to create pipeline[%d]: %s", idx, SDL_GetError());
 				return false;
@@ -253,48 +253,47 @@ static bool s_create_graphics_pipelines(
 	return true;
 }
 
-// Creates the compute pipeline used by staged texture uploads
-static bool s_create_buf2tex_pipeline(DTTR_BackendState *state) {
-	const S_GraphicsShaderBlob buf2tex_blob = s_get_buf2tex_comp_blob(
-		state->m_shader_format
-	);
-	state->m_buf2tex_pipeline = s_create_compute_pipeline(&buf2tex_blob);
+// Creates the compute pipeline used by staged texture uploads.
+static bool create_buf2tex_pipeline(DTTR_BackendState *state) {
+	const graphics_shader_blob buf2tex_blob = get_buf2tex_comp_blob(state->shader_format);
+	state->buf2tex_pipeline = create_compute_pipeline(&buf2tex_blob);
 
-	if (state->m_buf2tex_pipeline)
+	if (state->buf2tex_pipeline) {
 		return true;
+	}
 
 	DTTR_LOG_ERROR("Failed to create buf2tex compute pipeline: %s", SDL_GetError());
 	return false;
 }
 
-// Creates all graphics and compute pipelines required by the backend
-bool dttr_graphics_sdl3gpu_create_pipelines(void) {
-	DTTR_BackendState *state = &g_dttr_backend;
+// Creates all graphics and compute pipelines required by the backend.
+bool dttr_graphics_sdl3gpu_create_pipelines() {
+	DTTR_BackendState *state = &dttr_backend;
 
-	const S_GraphicsShaderBlob vert_blob = s_get_basic_vert_blob(state->m_shader_format);
-	SDL_GPUShader *vert = s_create_shader(&vert_blob, SDL_GPU_SHADERSTAGE_VERTEX, 0);
+	const graphics_shader_blob vert_blob = get_basic_vert_blob(state->shader_format);
+	SDL_GPUShader *vert = create_shader(&vert_blob, SDL_GPU_SHADERSTAGE_VERTEX, 0);
 
 	if (!vert) {
 		DTTR_LOG_ERROR("Failed to create vertex shader: %s", SDL_GetError());
 		return false;
 	}
 
-	const S_GraphicsShaderBlob frag_blob = s_get_basic_frag_blob(state->m_shader_format);
+	const graphics_shader_blob frag_blob = get_basic_frag_blob(state->shader_format);
 
-	SDL_GPUShader *frag = s_create_shader(&frag_blob, SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
+	SDL_GPUShader *frag = create_shader(&frag_blob, SDL_GPU_SHADERSTAGE_FRAGMENT, 1);
 
 	if (!frag) {
 		DTTR_LOG_ERROR("Failed to create fragment shader: %s", SDL_GetError());
-		s_release_shader_pair(state, vert, NULL);
+		release_shader_pair(state, vert, NULL);
 		return false;
 	}
 
-	if (!s_create_graphics_pipelines(state, vert, frag)) {
-		s_release_shader_pair(state, vert, frag);
+	if (!create_graphics_pipelines(state, vert, frag)) {
+		release_shader_pair(state, vert, frag);
 		return false;
 	}
 
-	s_release_shader_pair(state, vert, frag);
+	release_shader_pair(state, vert, frag);
 
-	return s_create_buf2tex_pipeline(state);
+	return create_buf2tex_pipeline(state);
 }

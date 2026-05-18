@@ -20,35 +20,35 @@ extern "C" {
 #endif
 
 typedef struct DTTR_ImGuiDesktopScaleState {
-	ImGuiStyle m_base_style;
-	float m_current_scale;
-	bool m_initialized;
+	ImGuiStyle base_style;
+	float current_scale;
+	bool initialized;
 } DTTR_ImGuiDesktopScaleState;
 
-static inline float dttr_imgui_normalize_desktop_scale(float scale) {
+static inline float DTTR_ImGui_NormalizeDesktopScale(float scale) {
 	return scale > 0.0f ? scale : 1.0f;
 }
 
-static inline float dttr_imgui_get_window_desktop_scale(SDL_Window *window) {
-	return dttr_imgui_normalize_desktop_scale(
+static inline float DTTR_ImGui_GetWindowDesktopScale(SDL_Window *window) {
+	return DTTR_ImGui_NormalizeDesktopScale(
 		window ? SDL_GetWindowDisplayScale(window) : 0.0f
 	);
 }
 
-static inline float dttr_imgui_get_current_desktop_scale(
+static inline float DTTR_ImGui_GetCurrentDesktopScale(
 	const DTTR_ImGuiDesktopScaleState *state
 ) {
-	return dttr_imgui_normalize_desktop_scale(
-		state && state->m_initialized ? state->m_current_scale : 0.0f
+	return DTTR_ImGui_NormalizeDesktopScale(
+		state && state->initialized ? state->current_scale : 0.0f
 	);
 }
 
-static inline bool dttr_imgui_scale_changed(float a, float b) {
+static inline bool DTTR_ImGui_ScaleChanged(float a, float b) {
 	const float delta = a > b ? a - b : b - a;
 	return delta > DTTR_IMGUI_SCALE_EPSILON;
 }
 
-static inline bool dttr_imgui_apply_desktop_scale(
+static inline bool DTTR_ImGui_ApplyDesktopScale(
 	DTTR_ImGuiDesktopScaleState *state,
 	float scale
 ) {
@@ -56,106 +56,103 @@ static inline bool dttr_imgui_apply_desktop_scale(
 		return false;
 	}
 
-	scale = dttr_imgui_normalize_desktop_scale(scale);
+	scale = DTTR_ImGui_NormalizeDesktopScale(scale);
 	ImGuiStyle *style = igGetStyle();
 
-	if (!state->m_initialized) {
-		state->m_base_style = *style;
-		state->m_initialized = true;
-	} else if (!dttr_imgui_scale_changed(state->m_current_scale, scale)) {
+	if (!state->initialized) {
+		state->base_style = *style;
+		state->initialized = true;
+	} else if (!DTTR_ImGui_ScaleChanged(state->current_scale, scale)) {
 		return false;
 	} else {
-		*style = state->m_base_style;
+		*style = state->base_style;
 	}
 
 	ImGuiStyle_ScaleAllSizes(style, scale);
-	style->FontScaleMain = state->m_base_style.FontScaleMain * scale;
-	state->m_current_scale = scale;
+	style->FontScaleMain = state->base_style.FontScaleMain * scale;
+	state->current_scale = scale;
 	return true;
 }
 
-static inline bool dttr_imgui_apply_window_desktop_scale(
+static inline bool DTTR_ImGui_ApplyWindowDesktopScale(
 	DTTR_ImGuiDesktopScaleState *state,
 	SDL_Window *window
 ) {
-	return dttr_imgui_apply_desktop_scale(
-		state,
-		dttr_imgui_get_window_desktop_scale(window)
-	);
+	return DTTR_ImGui_ApplyDesktopScale(state, DTTR_ImGui_GetWindowDesktopScale(window));
 }
 
 typedef struct DTTR_ImGuiDialogContext {
-	SDL_Window *m_window;
-	SDL_GLContext m_gl_context;
-	ImGuiContext *m_imgui_context;
-	ImGuiContext *m_previous_imgui_context;
-	DTTR_ImGuiDesktopScaleState m_imgui_scale;
-	float m_desktop_scale;
-	int m_logical_window_width;
-	int m_logical_window_height;
-	bool m_imgui_context_ready;
-	bool m_imgui_sdl_ready;
-	bool m_imgui_gl_ready;
+	SDL_Window *window;
+	SDL_GLContext gl_context;
+	ImGuiContext *imgui_context;
+	ImGuiContext *previous_imgui_context;
+	DTTR_ImGuiDesktopScaleState imgui_scale;
+	float desktop_scale;
+	int logical_window_width;
+	int logical_window_height;
+	bool imgui_context_ready;
+	bool imgui_sdl_ready;
+	bool imgui_gl_ready;
 } DTTR_ImGuiDialogContext;
 
-bool dttr_imgui_dialog_begin(
+bool DTTR_ImGuiDialog_Begin(
 	DTTR_ImGuiDialogContext *ctx,
 	const char *title,
 	int width,
 	int height
 );
-void dttr_imgui_dialog_end(DTTR_ImGuiDialogContext *ctx);
-void dttr_imgui_dialog_shutdown(void);
+void DTTR_ImGuiDialog_End(DTTR_ImGuiDialogContext *ctx);
+void DTTR_ImGuiDialog_Shutdown();
 
-float dttr_imgui_dialog_scaled_float(const DTTR_ImGuiDialogContext *ctx, float value);
-int dttr_imgui_dialog_scaled_int(const DTTR_ImGuiDialogContext *ctx, float value);
-bool dttr_imgui_dialog_refresh_scale(DTTR_ImGuiDialogContext *ctx);
+float DTTR_ImGuiDialog_ScaledFloat(const DTTR_ImGuiDialogContext *ctx, float value);
+int DTTR_ImGuiDialog_ScaledInt(const DTTR_ImGuiDialogContext *ctx, float value);
+bool DTTR_ImGuiDialog_RefreshScale(DTTR_ImGuiDialogContext *ctx);
 
-void dttr_imgui_dialog_process_event(
+void DTTR_ImGuiDialog_ProcessEvent(
 	const DTTR_ImGuiDialogContext *ctx,
 	const SDL_Event *event,
 	bool *running
 );
-void dttr_imgui_dialog_process_events(const DTTR_ImGuiDialogContext *ctx, bool *running);
-void dttr_imgui_dialog_new_frame(const DTTR_ImGuiDialogContext *ctx);
-void dttr_imgui_dialog_render(DTTR_ImGuiDialogContext *ctx);
+void DTTR_ImGuiDialog_ProcessEvents(const DTTR_ImGuiDialogContext *ctx, bool *running);
+void DTTR_ImGuiDialog_NewFrame(const DTTR_ImGuiDialogContext *ctx);
+void DTTR_ImGuiDialog_Render(DTTR_ImGuiDialogContext *ctx);
 
-bool dttr_imgui_dialog_begin_root(
+bool DTTR_ImGuiDialog_BeginRoot(
 	DTTR_ImGuiDialogContext *ctx,
 	const char *title,
 	ImGuiWindowFlags flags
 );
-void dttr_imgui_dialog_end_root(void);
+void DTTR_ImGuiDialog_EndRoot();
 
-bool dttr_imgui_dialog_button(
+bool DTTR_ImGuiDialog_Button(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	const char *label,
 	ImVec2_c size
 );
-void dttr_imgui_dialog_center_next_item(float item_width);
-void dttr_imgui_dialog_draw_header(
+void DTTR_ImGuiDialog_CenterNextItem(float item_width);
+void DTTR_ImGuiDialog_DrawHeader(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *title,
 	const char *version
 );
-void dttr_imgui_dialog_draw_padded_text(
+void DTTR_ImGuiDialog_DrawPaddedText(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *message,
 	float padding_x,
 	float padding_y
 );
-void dttr_imgui_dialog_fit_window_to_content(
+void DTTR_ImGuiDialog_FitWindowToContent(
 	DTTR_ImGuiDialogContext *ctx,
 	int width,
 	float padding_y
 );
 
-bool dttr_imgui_error_show(const char *title, const char *message);
+bool DTTR_ImGui_ErrorShow(const char *title, const char *message);
 
 #ifdef __cplusplus
 }
 
 #endif
 
-#endif /* DTTR_IMGUI_H */
+#endif // DTTR_IMGUI_H

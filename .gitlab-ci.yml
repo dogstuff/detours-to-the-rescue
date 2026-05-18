@@ -4,6 +4,10 @@ image: docker.io/nixos/nix:2.24.11
 variables:
   NIX_CONFIG: "experimental-features = nix-command flakes"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_TAG}"
+  DTTR_REQUIRE_TEST_DEPS: "ON"
+  DTTR_REQUIRE_PCDOGS_FIXTURES: "ON"
+  DTTR_PCDOGS_FIXTURE_DIR: "gamefiles"
+  DTTR_GAMEFILES_SECURE_FILE: "gamefiles.tar.gz"
 
 .nix-cache:
   cache:
@@ -23,37 +27,47 @@ variables:
     - |
       echo "Saving Nix store to cache..."
       mkdir -p .nix-cache/store
-      CACHED_PATHS=$(nix path-info --derivation --recursive .#devShells.x86_64-linux.default 2>/dev/null || true)
-      if [ -n "$CACHED_PATHS" ]; then
-        echo "$CACHED_PATHS" | xargs -I{} cp -rn {} .nix-cache/store/ 2>/dev/null || true
-        nix-store --dump-db $CACHED_PATHS > .nix-cache/db.dump
+      cached_paths=$(nix path-info --derivation --recursive .#devShells.x86_64-linux.default 2>/dev/null || true)
+      if [ -n "$cached_paths" ]; then
+        echo "$cached_paths" | xargs -I{} cp -rn {} .nix-cache/store/ 2>/dev/null || true
+        nix-store --dump-db $cached_paths > .nix-cache/db.dump
       fi
 
 stages:
+  - test
   - build
   - deploy
   - release
+
+test:
+  extends: .nix-cache
+  stage: test
+  script:
+    - nix develop --command scripts/fetch-ci-gamefiles.sh
+    - nix develop --command just test-all
+  artifacts:
+    when: always
+    paths:
+      - build/Testing/Temporary/LastTest.log
+    expire_in: 2 weeks
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
+
+docs-check:
+  extends: .nix-cache
+  stage: test
+  script:
+    - nix develop --command just build-docs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 build:
   extends: .nix-cache
   stage: build
   script:
-    - |
-      nix develop --command bash -c '
-        set -euo pipefail
-
-        package_build() {
-          local archive="$1"
-          local dist_name="$2"
-          (cd build/dist && zip -r "../../${archive}" "${dist_name}/")
-        }
-
-        version="${CI_COMMIT_TAG:-dev}"
-        task build DTTR_VERSION="${version}"
-        task build DTTR_VERSION="${version}" DTTR_MODDING=ON
-        package_build "dttr-${CI_COMMIT_SHORT_SHA}-debug.zip" "Debug"
-        package_build "dttr-modding-${CI_COMMIT_SHORT_SHA}-debug.zip" "Debug-modding"
-      '
+    - nix develop --command just package-debug "${CI_COMMIT_TAG:-dev}" "${CI_COMMIT_SHORT_SHA}"
   artifacts:
     paths:
       - dttr-*-debug.zip
@@ -62,30 +76,14 @@ build:
   rules:
     - if: $CI_COMMIT_TAG
       when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_REF_PROTECTED == "true"
 
 build-release:
   extends: .nix-cache
   stage: build
   script:
-    - |
-      nix develop --command bash -c '
-        set -euo pipefail
-
-        upload_build() {
-          local archive="$1"
-          local dist_name="$2"
-          (cd build/dist && zip -r "../../${archive}" "${dist_name}/")
-          curl --fail --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "${archive}" "${PACKAGE_REGISTRY_URL}/${archive}"
-        }
-
-        task build-release DTTR_VERSION="${CI_COMMIT_TAG}"
-        task build-release DTTR_VERSION="${CI_COMMIT_TAG}" DTTR_MODDING=ON
-        upload_build "dttr-${CI_COMMIT_TAG}-debug.zip" "Debug"
-        upload_build "dttr-${CI_COMMIT_TAG}-release.zip" "Release"
-        upload_build "dttr-modding-${CI_COMMIT_TAG}-debug.zip" "Debug-modding"
-        upload_build "dttr-modding-${CI_COMMIT_TAG}-release.zip" "Release-modding"
-      '
+    - nix develop --command just package-release "${CI_COMMIT_TAG}" "${CI_COMMIT_TAG}" "${PACKAGE_REGISTRY_URL}" "${CI_JOB_TOKEN}"
   artifacts:
     paths:
       - dttr-*-debug.zip
@@ -100,12 +98,12 @@ pages:
   extends: .nix-cache
   stage: deploy
   script:
-    - nix develop --command task build-docs
-    - rm -rf public
-    - cp -r docs/build public
+    - nix develop --command just build-docs
+  pages:
+    publish: docs/build
   artifacts:
     paths:
-      - public
+      - docs/build
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 

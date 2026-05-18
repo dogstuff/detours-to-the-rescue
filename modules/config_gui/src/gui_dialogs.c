@@ -1,34 +1,34 @@
 #include "gui_internal.h"
 
-static const SDL_DialogFileFilter S_ISO_FILE_FILTERS[] = {
+static const SDL_DialogFileFilter ISO_FILE_FILTERS[] = {
 	{"ISO images", "iso"},
 };
 
-static const SDL_DialogFileFilter S_LOG_FILE_FILTERS[] = {
+static const SDL_DialogFileFilter LOG_FILE_FILTERS[] = {
 	{"Log files", "log"},
 	{"Text files", "txt"},
 };
 
-static SDL_Window *s_dialog_parent_window(const DTTR_ImGuiDialogContext *ctx) {
-	return ctx ? ctx->m_window : NULL;
+static SDL_Window *dialog_parent_window(const DTTR_ImGuiDialogContext *ctx) {
+	return ctx ? ctx->window : NULL;
 }
 
-static const char *s_optional_path(const char *path) {
+static const char *optional_path(const char *path) {
 	return path && path[0] ? path : NULL;
 }
 
-static void s_open_file_dialog(
+static void open_file_dialog(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	SDL_DialogFileCallback callback,
 	const SDL_DialogFileFilter *filters,
 	int filter_count,
 	const char *path
 ) {
-	dttr_sdl_show_open_file_dialog(
+	DTTR_SDL_ShowOpenFileDialog(
 		callback,
 		state,
-		s_dialog_parent_window(ctx),
+		dialog_parent_window(ctx),
 		filters,
 		filter_count,
 		path,
@@ -36,8 +36,8 @@ static void s_open_file_dialog(
 	);
 }
 
-static void s_apply_dialog_selection(
-	S_ConfigUIState *state,
+static void apply_dialog_selection(
+	config_ui_state *state,
 	char *path,
 	size_t path_size,
 	const char *const *filelist,
@@ -49,7 +49,7 @@ static void s_apply_dialog_selection(
 	}
 
 	if (!filelist) {
-		s_set_status(state, open_failure_status);
+		set_status(state, open_failure_status);
 		return;
 	}
 
@@ -61,73 +61,71 @@ static void s_apply_dialog_selection(
 		return;
 	}
 
-	if (!dttr_path_copy_string(path, path_size, filelist[0])) {
-		s_set_status(state, "Selected path is too long.");
+	if (!DTTR_Path_CopyString(path, path_size, filelist[0])) {
+		set_status(state, "Selected path is too long.");
 		return;
 	}
 
-	s_set_status(state, selected_status);
+	set_status(state, selected_status);
 }
 
 static void SDLCALL
-s_pcdogs_path_dialog_callback(void *userdata, const char *const *filelist, int filter) {
-	(void)filter;
-	S_ConfigUIState *state = (S_ConfigUIState *)userdata;
-	s_apply_dialog_selection(
+pcdogs_path_dialog_callback(void *userdata, const char *const *filelist, int) {
+	config_ui_state *state = (config_ui_state *)userdata;
+	apply_dialog_selection(
 		state,
-		state ? state->m_config.m_pcdogs_path : NULL,
-		state ? sizeof(state->m_config.m_pcdogs_path) : 0,
+		state ? state->config.pcdogs_path : NULL,
+		state ? sizeof(state->config.pcdogs_path) : 0,
 		filelist,
 		"Failed to open path dialog.",
 		"Selected game path."
 	);
 }
 
-void s_open_pcdogs_dir_dialog(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
-	const char *path = state ? s_optional_path(state->m_config.m_pcdogs_path) : NULL;
-	dttr_sdl_show_open_folder_dialog(
-		s_pcdogs_path_dialog_callback,
+void open_pcdogs_dir_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	const char *path = state ? optional_path(state->config.pcdogs_path) : NULL;
+	DTTR_SDL_ShowOpenFolderDialog(
+		pcdogs_path_dialog_callback,
 		state,
-		s_dialog_parent_window(ctx),
+		dialog_parent_window(ctx),
 		path,
 		false
 	);
 }
 
-void s_open_pcdogs_iso_dialog(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
-	const char *path = state ? s_optional_path(state->m_config.m_pcdogs_path) : NULL;
-	s_open_file_dialog(
+void open_pcdogs_iso_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	const char *path = state ? optional_path(state->config.pcdogs_path) : NULL;
+	open_file_dialog(
 		ctx,
 		state,
-		s_pcdogs_path_dialog_callback,
-		S_ISO_FILE_FILTERS,
-		(int)SDL_arraysize(S_ISO_FILE_FILTERS),
+		pcdogs_path_dialog_callback,
+		ISO_FILE_FILTERS,
+		(int)SDL_arraysize(ISO_FILE_FILTERS),
 		path
 	);
 }
 
 static void SDLCALL
-s_log_file_path_dialog_callback(void *userdata, const char *const *filelist, int filter) {
-	(void)filter;
-	S_ConfigUIState *state = (S_ConfigUIState *)userdata;
-	s_apply_dialog_selection(
+log_file_path_dialog_callback(void *userdata, const char *const *filelist, int) {
+	config_ui_state *state = (config_ui_state *)userdata;
+	apply_dialog_selection(
 		state,
-		state ? state->m_config.m_log_file_path : NULL,
-		state ? sizeof(state->m_config.m_log_file_path) : 0,
+		state ? state->config.log_file_path : NULL,
+		state ? sizeof(state->config.log_file_path) : 0,
 		filelist,
 		"Failed to open log file dialog.",
 		"Selected log file path."
 	);
 }
 
-void s_open_log_file_dialog(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
-	const char *path = state ? s_optional_path(state->m_config.m_log_file_path) : NULL;
-	s_open_file_dialog(
+void open_log_file_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	const char *path = state ? optional_path(state->config.log_file_path) : NULL;
+	open_file_dialog(
 		ctx,
 		state,
-		s_log_file_path_dialog_callback,
-		S_LOG_FILE_FILTERS,
-		(int)SDL_arraysize(S_LOG_FILE_FILTERS),
+		log_file_path_dialog_callback,
+		LOG_FILE_FILTERS,
+		(int)SDL_arraysize(LOG_FILE_FILTERS),
 		path
 	);
 }

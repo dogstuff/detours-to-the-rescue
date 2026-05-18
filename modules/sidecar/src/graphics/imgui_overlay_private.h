@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType backend);
-void dttr_imgui_cleanup(void);
+void dttr_imgui_cleanup();
 bool dttr_imgui_process_event(const SDL_Event *event);
 
 void dttr_imgui_render_game_sdl3gpu(
@@ -17,7 +17,7 @@ void dttr_imgui_render_game_sdl3gpu(
 	uint32_t h
 );
 
-void dttr_imgui_render_game_opengl(void);
+void dttr_imgui_render_game_opengl();
 
 void dttr_imgui_render_sdl3gpu(
 	SDL_GPUCommandBuffer *cmd,
@@ -37,4 +37,4 @@ void dttr_imgui_render_opengl(
 	uint32_t game_h
 );
 
-#endif /* IMGUI_OVERLAY_PRIVATE_H */
+#endif // IMGUI_OVERLAY_PRIVATE_H
