@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-void dttr_game_data_init(void);
-void dttr_game_data_cleanup(void);
+void dttr_game_data_init();
+void dttr_game_data_cleanup();
 bool dttr_game_data_resolve_existing_read_path(
 	const char *path,
 	char *out_path,
@@ -17,4 +17,4 @@ bool dttr_game_data_resolve_read_path(
 	size_t out_path_size
 );
 
-#endif /* GAME_DATA_PRIVATE_H */
+#endif // GAME_DATA_PRIVATE_H

@@ -1,6 +1,5 @@
-find_package(PkgConfig REQUIRED)
-set(PKG_CONFIG_USE_STATIC_LIBS OFF)
-pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
+# Builds shared runtime helpers used by loader, config UI, and tests.
+dttr_find_sdl3()
 
 add_library(common STATIC
     src/log.c
@@ -41,3 +40,53 @@ target_compile_definitions(common PRIVATE
     DTTR_DEFAULT_MINIDUMP_TYPE=$<IF:$<CONFIG:Debug>,DTTR_MINIDUMP_DETAILED,DTTR_MINIDUMP_NORMAL>
     DTTR_VERSION="${DTTR_VERSION}"
 )
+
+# Builds binary-fixture support used by module test executables.
+if(BUILD_TESTING)
+    add_custom_target(dttr_common_tests)
+
+    include("${CMAKE_CURRENT_SOURCE_DIR}/tests/cmake/dttrcmocka.cmake")
+    dttr_find_cmocka()
+
+    if(NOT DTTR_CMOCKA_FOUND AND DTTR_REQUIRE_TEST_DEPS)
+        message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
+    endif()
+
+    if(DTTR_CMOCKA_FOUND)
+        dttr_add_cmocka_test_suite(dttr_common_core_tests
+            SOURCES
+                tests/src/core.c
+            LINK_LIBRARIES
+                common
+            LABELS
+                common
+            CASES
+                stack-trace-marker
+                set-level-filters-lower-priority-logs
+                safe-relative-rejects-absolute-and-traversal-paths
+                config-load-rejects-invalid-values
+        )
+        dttr_copy_runtime_files(
+            dttr_common_core_tests
+            "$<TARGET_FILE_DIR:dttr_common_core_tests>"
+            FILES
+                ${DTTR_SDL3_RUNTIME_DLL}
+        )
+        add_dependencies(dttr_common_tests dttr_common_core_tests)
+
+        add_library(dttr_test_support STATIC
+            tests/src/binary.c
+        )
+        target_include_directories(dttr_test_support PUBLIC
+            include
+            tests/include
+        )
+        target_link_libraries(dttr_test_support PUBLIC
+            ${DTTR_CMOCKA_TARGET}
+            physfs-static
+            sds
+            xxhash
+            Zydis
+        )
+    endif()
+endif()

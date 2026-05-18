@@ -1,0 +1,55 @@
+/// @defgroup sdk_pcdogs PCDOGS Symbols
+/// Stable generated symbols and typed helper APIs for 102 Dalmatians: Puppies to the Rescue.
+///
+/// PCDOGS generated symbols describe known game functions, globals, types, and
+/// patch targets for supported 102 Dalmatians executables.
+///
+/// Use them to read game state, call known functions, install typed hooks, or
+/// build patch specs without hand-written lookup logic. DttR resolves required
+/// PCDOGS symbols before loading mods; custom SDK hosts and tests can call
+/// `DTTR_PCDOGS_ResolveAll()` explicitly.
+///
+/// @code{.c}
+/// #include <dttr_sdk.h>
+///
+/// static int32_t last_lives;
+///
+/// DTTR_MODS_FRAME_BEGIN {
+///     int32_t lives = 0;
+///     if (DTTR_PCDOGS_D_SaveFilePlayerLives->Read(&lives)) {
+///         last_lives = lives;
+///     }
+/// }
+/// @endcode
+///
+/// @code{.c}
+/// // Returns FALSE when MoviePlayFile is unavailable.
+/// BOOL played = DTTR_PCDOGS_F_MoviePlayFile->Call(
+///     &ctx->runtime,
+///     movie_path,
+///     0,
+///     FALSE
+/// );
+/// @endcode
+
+/// @defgroup sdk_pcdogs_unstable PCDOGS Symbols (Unstable)
+/// Experimental/generated symbols that may change without compatibility guarantees.
+///
+/// Unstable PCDOGS symbols expose reverse-engineered game data for experiments,
+/// tooling, and early mod development.
+///
+/// Names, typedefs, layouts, hook metadata, and symbol availability may change.
+///
+/// @code{.c}
+/// #define DTTR_SDK_ENABLE_UNSTABLE
+/// #include <dttr_sdk.h>
+///
+/// DTTR_MODS_INIT {
+///     if (!DTTR_PCDOGS_ResolveAll(&ctx->runtime)) {
+///         DTTR_MODS_LOG_WARN(ctx, "unstable PCDOGS symbols were unavailable");
+///     }
+///
+///     // Probe or hook unstable symbols here, then keep cleanup explicit.
+///     return true;
+/// }
+/// @endcode

@@ -1,38 +1,137 @@
-// Graphics hooks intercept DirectDraw and D3D7 creation to return our translators
+#include <dttr_pcdogs.h>
 
 #include <stdlib.h>
 #include <windows.h>
 
 #include <dttr_config.h>
 
-#include "dttr_hooks_graphics.h"
-#include "dttr_interop_pcdogs.h"
 #include "dttr_sidecar.h"
 #include "graphics_com_private.h"
 #include "graphics_private.h"
+#include "hooks_private.h"
+#include "sidecar_private.h"
 #include <dttr_log.h>
 
-DTTR_Graphics_COM_DirectDraw7 *g_dttr_graphics_hook_ddraw7;
-HWND g_dttr_graphics_hook_hwnd;
+static DTTR_Graphics_COM_DirectDraw7 *graphics_hook_ddraw7;
+static HWND graphics_hook_hwnd;
 
-// Patch bytes for subpixel vertex precision
-static const uint8_t s_fast_path_patch[] = {0xE9, 0xBA, 0x00, 0x00, 0x00, 0x90};
-static const uint8_t s_nop2[] = {0x90, 0x90};
-static const uint8_t s_ftol_x_patch[] = {0xD9, 0x1F, 0x90, 0x90, 0x90};
-static const uint8_t s_nop4[] = {0x90, 0x90, 0x90, 0x90};
-static const uint8_t s_ftol_y_patch[] = {0xD9, 0x5D, 0x00, 0x90, 0x90};
-static const uint8_t s_nop3[] = {0x90, 0x90, 0x90};
-static const uint8_t s_ret[] = {0xC3};
+static const DTTR_PCDOGS_T_Patch_Spec graphics_import_thunk_patches[] = {
+	{
+		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
+		.required = true,
+		.function = DTTR_PCDOGS_FUNCTION_DDRAW_CREATE_EX,
+		.detour = dttr_hook_directdraw_create_ex_callback,
+		.out_original = NULL,
+	},
+	{
+		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
+		.required = true,
+		.function = DTTR_PCDOGS_FUNCTION_DIRECT_X_DIRECT_DRAW_ENUMERATE_EX_A,
+		.detour = dttr_hook_directdraw_enumerate_ex_a_callback,
+		.out_original = NULL,
+	},
+};
 
-static DTTR_Graphics_COM_DirectDraw7 *s_get_or_create_ddraw7(void) {
-	if (!g_dttr_graphics_hook_ddraw7) {
-		g_dttr_graphics_hook_ddraw7 = dttr_graphics_com_create_directdraw7();
+static const DTTR_PCDOGS_T_Patch_Spec graphics_byte_patches[] = {
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"83 F8 ?? 7C ?? D9 43 ?? D8 1D ?? ?? ?? ?? DF E0 F6 C4 41 0F ?? ?? ?? ??",
+		19,
+		0xE9,
+		0xBA,
+		0x00,
+		0x00,
+		0x00,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1",
+		17,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"83 C1 14 4E 75 ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1",
+		19,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"DB 44 24 30 D9 1F",
+		-15,
+		0xD9,
+		0x1F,
+		0x90,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"DB 44 24 30 D9 1F",
+		-10,
+		0x90,
+		0x90,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"8D AE ?? ?? ?? ?? DB 44 24 30 D9 1F",
+		10,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"8D AE ?? ?? ?? ?? DB 44 24 30",
+		6,
+		0x90,
+		0x90,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"8B 54 24 18 89 44 24 30",
+		-5,
+		0xD9,
+		0x5D,
+		0x00,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+		true,
+		"8B 54 24 18 89 44 24 30",
+		4,
+		0x90,
+		0x90,
+		0x90,
+		0x90
+	),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(true, "83 C0 14 50 55 D9 5D 00", 5, 0x90, 0x90, 0x90),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(true, "52 DB 44 24 34", 1, 0x90, 0x90, 0x90, 0x90),
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(false, "53 8B 5C 24 14 55 33 C9 56 57 85 DB", 0, 0xC3),
+};
+
+static DTTR_Core_PatchGroup *graphics_import_thunk_patch_group;
+static DTTR_Core_PatchGroup *graphics_byte_patch_group;
+
+// Lazily creates the DirectDraw 7 facade that satisfies the game's renderer bootstrap.
+static DTTR_Graphics_COM_DirectDraw7 *get_or_create_ddraw7() {
+	if (!graphics_hook_ddraw7) {
+		graphics_hook_ddraw7 = dttr_graphics_com_create_directdraw7();
 	}
 
-	return g_dttr_graphics_hook_ddraw7;
+	return graphics_hook_ddraw7;
 }
 
-static void s_store_pointer(void **slot, void *value) {
+// Temporarily relaxes page protection so the DirectDraw callback can publish the facade
+// pointer through the game-provided slot.
+static void store_pointer(void **slot, void *value) {
 	DWORD old = 0;
 	const SIZE_T slot_size = sizeof(*slot);
 
@@ -49,32 +148,34 @@ static void s_store_pointer(void **slot, void *value) {
 	VirtualProtect(slot, slot_size, old, &old);
 }
 
+// Replaces DirectDrawCreateEx with the sidecar facade so the game renders through the
+// selected backend.
 HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
-	const void *guid,
+	GUID *guid,
 	void **ddraw_out,
-	const void *iid,
-	const void *outer
+	GUID *iid,
+	IUnknown *outer
 ) {
-	DTTR_Graphics_COM_DirectDraw7 *const ddraw7 = s_get_or_create_ddraw7();
+	DTTR_Graphics_COM_DirectDraw7 *const ddraw7 = get_or_create_ddraw7();
 
 	if (!ddraw7) {
 		return E_OUTOFMEMORY;
 	}
 
-	g_pcdogs_ddraw_object_set(ddraw7);
+	DTTR_PCDOGS_D_DdrawObject->Write((DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7);
 
 	if (ddraw_out) {
-		s_store_pointer(ddraw_out, ddraw7);
+		store_pointer(ddraw_out, ddraw7);
 	}
 
-	DTTR_LOG_DEBUG("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->m_vtbl);
+	DTTR_LOG_DEBUG("DirectDrawCreateEx returning S_OK, vtbl=%p", ddraw7->vtbl);
 	return S_OK;
 }
 
-// Calls the enumerate callback with our virtual display device
-// https://learn.microsoft.com/en-us/windows/win32/api/ddraw/nf-ddraw-directdrawenumerateexa
+// Reports a single compatible DirectDraw device to keep the game enumeration path on the
+// sidecar renderer.
 HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
-	LPDDENUMCALLBACKEXA lpCallback,
+	DDraw_EnumCallbackExA lpCallback,
 	LPVOID lpContext,
 	DWORD dwFlags
 ) {
@@ -94,183 +195,54 @@ HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 	return S_OK;
 }
 
-// Initializes graphics and patches DirectDraw imports
-void dttr_graphics_hooks_init(const DTTR_ComponentContext *ctx) {
-	g_dttr_graphics_hook_hwnd = dttr_graphics_init();
+// Initializes the sidecar renderer before DirectDraw callbacks hand it to the game.
+bool dttr_graphics_hooks_init(const DTTR_Mods_Context *ctx) {
+	graphics_hook_hwnd = DTTR_Graphics_Init();
 
-	if (!g_dttr_graphics_hook_hwnd) {
+	if (!graphics_hook_hwnd) {
 		DTTR_LOG_ERROR("Failed to initialize backend");
-		return;
+		return false;
 	}
 
-	if (!s_get_or_create_ddraw7()) {
+	if (!get_or_create_ddraw7()) {
 		DTTR_LOG_ERROR("Failed to create DirectDraw translator");
-		return;
+		return false;
 	}
 
-	DTTR_INSTALL_POINTER(
-		dttr_hook_directdraw_create_ex,
-		ctx,
-		"\xE8????\x85\xC0\x7D?\x68????\x6A\x00\x50\xE8",
-		"x????xxx?x????xxxx",
-		DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))
-	);
-
-	DTTR_INSTALL_POINTER(
-		dttr_hook_directdraw_enumerate_ex_a,
-		ctx,
-		"\xE8????\x8B\xF0\xA1",
-		"x????xxx",
-		DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))
-	);
-
-	if (g_dttr_config.m_vertex_precision == DTTR_VERTEX_PRECISION_SUBPIXEL) {
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_fast_path,
+	if (!dttr_sidecar_install_pcdogs_patch_group(
 			ctx,
-			"\x83\xF8?\x7C?\xD9\x43?\xD8\x1D????\xDF\xE0\xF6\xC4\x41\x0F\x85????",
-			"xx?x?xx?xx????xxxxxx????",
-			19,
-			s_fast_path_patch,
-			6
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_batch_limit_a,
-			ctx,
-			"\x8B\x08\xEB?\xA1????\x8B\x0D????\x3B\xC1",
-			"xxx?x????xx????xx",
-			17,
-			s_nop2,
-			2
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_batch_limit_b,
-			ctx,
-			"\x83\xC1\x14\x4E\x75?\xA1????\x8B\x0D????\x3B\xC1",
-			"xxxxx?x????xx????xx",
-			19,
-			s_nop2,
-			2
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_ftol_x,
-			ctx,
-			"\xDB\x44\x24\x30\xD9\x1F",
-			"xxxxxx",
-			-15,
-			s_ftol_x_patch,
-			5
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_mov_x,
-			ctx,
-			"\xDB\x44\x24\x30\xD9\x1F",
-			"xxxxxx",
-			-10,
-			s_nop4,
-			4
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_fstp2_x,
-			ctx,
-			"\x8D\xAE????\xDB\x44\x24\x30\xD9\x1F",
-			"xx????xxxxxx",
-			10,
-			s_nop2,
-			2
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_fild_x,
-			ctx,
-			"\x8D\xAE????\xDB\x44\x24\x30",
-			"xx????xxxx",
-			6,
-			s_nop4,
-			4
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_ftol_y,
-			ctx,
-			"\x8B\x54\x24\x18\x89\x44\x24\x30",
-			"xxxxxxxx",
-			-5,
-			s_ftol_y_patch,
-			5
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_mov_y,
-			ctx,
-			"\x8B\x54\x24\x18\x89\x44\x24\x30",
-			"xxxxxxxx",
-			4,
-			s_nop4,
-			4
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_fstp2_y,
-			ctx,
-			"\x83\xC0\x14\x50\x55\xD9\x5D\x00",
-			"xxxxxxxx",
-			5,
-			s_nop3,
-			3
-		);
-
-		DTTR_INSTALL_BYTES(
-			dttr_hook_precision_fild_y,
-			ctx,
-			"\x52\xDB\x44\x24\x34",
-			"xxxxx",
-			1,
-			s_nop4,
-			4
-		);
-
-		DTTR_INSTALL_BYTES_OPTIONAL(
-			dttr_hook_render_quad_snap,
-			ctx,
-			"\x53\x8b\x5c\x24\x14\x55\x33\xc9\x56\x57\x85\xdb",
-			"xxxxxxxxxxxx",
-			0,
-			s_ret,
-			1
-		);
+			"sidecar/graphics-import-thunk",
+			graphics_import_thunk_patches,
+			DTTR_ARRAY_COUNT(graphics_import_thunk_patches),
+			&graphics_import_thunk_patch_group
+		)) {
+		return false;
 	}
+
+	if (dttr_config.vertex_precision == DTTR_VERTEX_PRECISION_SUBPIXEL) {
+		if (!dttr_sidecar_install_pcdogs_patch_group(
+				ctx,
+				"sidecar/graphics-byte-patch",
+				graphics_byte_patches,
+				DTTR_ARRAY_COUNT(graphics_byte_patches),
+				&graphics_byte_patch_group
+			)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
-// Removes hooks and releases translator state
-void dttr_graphics_hooks_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_UNINSTALL(dttr_hook_render_quad_snap, ctx);
+// Releases DirectDraw facade state after graphics patches are removed.
+void dttr_graphics_hooks_cleanup(const DTTR_Mods_Context *ctx) {
+	DTTR_Core_PatchGroupRelease(&graphics_byte_patch_group);
+	DTTR_Core_PatchGroupRelease(&graphics_import_thunk_patch_group);
 
-	DTTR_UNINSTALL(dttr_hook_precision_fast_path, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_batch_limit_a, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_batch_limit_b, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_fild_x, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_fstp2_x, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_mov_x, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_ftol_x, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_fild_y, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_fstp2_y, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_mov_y, ctx);
-	DTTR_UNINSTALL(dttr_hook_precision_ftol_y, ctx);
-
-	DTTR_UNINSTALL(dttr_hook_directdraw_create_ex, ctx);
-
-	DTTR_UNINSTALL(dttr_hook_directdraw_enumerate_ex_a, ctx);
-
-	if (!g_dttr_graphics_hook_ddraw7) {
+	if (!graphics_hook_ddraw7) {
 		return;
 	}
 
-	free(g_dttr_graphics_hook_ddraw7);
-	g_dttr_graphics_hook_ddraw7 = NULL;
+	free(graphics_hook_ddraw7);
+	graphics_hook_ddraw7 = NULL;
 }

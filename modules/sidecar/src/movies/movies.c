@@ -1,7 +1,9 @@
-#include "dttr_hooks_movies.h"
+#include <dttr_pcdogs.h>
 
 #include "dttr_sidecar.h"
 #include "game_data_private.h"
+#include "hooks_private.h"
+#include "sidecar_private.h"
 #include <dttr_log.h>
 #include <dttr_path.h>
 #include <sds.h>
@@ -20,10 +22,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define S_AUDIO_CHANNELS 2
-#define S_AUDIO_FORMAT AV_SAMPLE_FMT_S16
-#define S_AUDIO_QUEUE_LIMIT_MS 500
-#define S_AUDIO_DRAIN_LIMIT_MS 750
+static DTTR_PCDOGS_F_MoviePlayFile_proto movie_play_file_original;
+
+// Replaces the game's blocking movie call with sidecar-managed FFmpeg playback.
+static BOOL __cdecl movie_play_file_detour(
+	const char *movie_path,
+	char use_alt_video_rect
+) {
+	return dttr_movies_hook_movie_play_file_callback(movie_path, use_alt_video_rect);
+}
+
+#define AUDIO_CHANNELS 2
+#define AUDIO_FORMAT AV_SAMPLE_FMT_S16
+#define AUDIO_QUEUE_LIMIT_MS 500
+#define AUDIO_DRAIN_LIMIT_MS 750
 
 typedef struct {
 	AVFormatContext *format;
@@ -50,20 +62,21 @@ typedef struct {
 	double last_video_pts;
 	double frame_duration;
 	DTTR_MovieResult result;
-} S_MovieState;
+} movie_state;
 
-static S_MovieState s_movie = {
+static movie_state movie = {
 	.video_stream = -1,
 	.audio_stream_index = -1,
 	.frame_duration = 1.0 / 15.0,
 	.result = DTTR_MOVIE_ENDED,
 };
-static AVFrame *s_video_frame = NULL;
-static AVFrame *s_audio_frame = NULL;
-static AVPacket *s_packet = NULL;
+static AVFrame *video_frame = NULL;
+static AVFrame *audio_frame = NULL;
+static AVPacket *packet = NULL;
 
-static void s_reset_movie_state(DTTR_MovieResult result) {
-	s_movie = (S_MovieState){
+// Restores the movie decoder state to its idle defaults while preserving the final result.
+static void reset_movie_state(DTTR_MovieResult result) {
+	movie = (movie_state){
 		.video_stream = -1,
 		.audio_stream_index = -1,
 		.frame_duration = 1.0 / 15.0,
@@ -71,42 +84,47 @@ static void s_reset_movie_state(DTTR_MovieResult result) {
 	};
 }
 
-static const char *s_av_error(const int err) {
+// Formats the latest FFmpeg error into a reusable buffer for sidecar log messages.
+static const char *av_error(const int err) {
 	static char buf[AV_ERROR_MAX_STRING_SIZE];
 	av_strerror(err, buf, sizeof(buf));
 	return buf;
 }
 
-static void s_reset_video_buffer(void) {
-	free(s_movie.buffer);
-	s_movie.buffer = NULL;
-	s_movie.buf_w = 0;
-	s_movie.buf_h = 0;
-	s_movie.buf_stride = 0;
-	s_movie.video_frame_ready = false;
+// Frees the converted BGRA frame buffer and marks the presentation frame as empty.
+static void reset_video_buffer() {
+	free(movie.buffer);
+	movie.buffer = NULL;
+	movie.buf_w = 0;
+	movie.buf_h = 0;
+	movie.buf_stride = 0;
+	movie.video_frame_ready = false;
 }
 
-static void s_close_audio(void) {
-	if (s_movie.audio_stream) {
-		SDL_DestroyAudioStream(s_movie.audio_stream);
-		s_movie.audio_stream = NULL;
+// Releases the SDL audio stream and resampler used by decoded movie audio.
+static void close_audio() {
+	if (movie.audio_stream) {
+		SDL_DestroyAudioStream(movie.audio_stream);
+		movie.audio_stream = NULL;
 	}
 
-	swr_free(&s_movie.swr);
+	swr_free(&movie.swr);
 }
 
-static void s_close_movie(void) {
-	const DTTR_MovieResult result = s_movie.result;
-	s_close_audio();
-	sws_freeContext(s_movie.sws);
-	avcodec_free_context(&s_movie.video_codec);
-	avcodec_free_context(&s_movie.audio_codec);
-	avformat_close_input(&s_movie.format);
-	s_reset_video_buffer();
-	s_reset_movie_state(result);
+// Releases all FFmpeg and SDL movie resources while keeping the playback result intact.
+static void close_movie() {
+	const DTTR_MovieResult result = movie.result;
+	close_audio();
+	sws_freeContext(movie.sws);
+	avcodec_free_context(&movie.video_codec);
+	avcodec_free_context(&movie.audio_codec);
+	avformat_close_input(&movie.format);
+	reset_video_buffer();
+	reset_movie_state(result);
 }
 
-static AVCodecContext *s_open_codec(const AVStream *stream) {
+// Allocates and opens an FFmpeg decoder for one selected movie stream.
+static AVCodecContext *open_codec(const AVStream *stream) {
 	const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
 	if (!codec) {
 		DTTR_LOG_ERROR(
@@ -124,18 +142,14 @@ static AVCodecContext *s_open_codec(const AVStream *stream) {
 
 	int err = avcodec_parameters_to_context(ctx, stream->codecpar);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to configure movie decoder: %s", s_av_error(err));
+		DTTR_LOG_ERROR("Failed to configure movie decoder: %s", av_error(err));
 		avcodec_free_context(&ctx);
 		return NULL;
 	}
 
 	err = avcodec_open2(ctx, codec, NULL);
 	if (err < 0) {
-		DTTR_LOG_ERROR(
-			"Failed to open movie decoder %s: %s",
-			codec->name,
-			s_av_error(err)
-		);
+		DTTR_LOG_ERROR("Failed to open movie decoder %s: %s", codec->name, av_error(err));
 		avcodec_free_context(&ctx);
 		return NULL;
 	}
@@ -143,181 +157,188 @@ static AVCodecContext *s_open_codec(const AVStream *stream) {
 	return ctx;
 }
 
-static bool s_prepare_audio(void) {
-	if (!s_movie.audio_codec) {
+// Builds the resampler and SDL playback stream for movies that include audio.
+static bool prepare_audio() {
+	if (!movie.audio_codec) {
 		return true;
 	}
 
 	AVChannelLayout out_layout;
-	av_channel_layout_default(&out_layout, S_AUDIO_CHANNELS);
+	av_channel_layout_default(&out_layout, AUDIO_CHANNELS);
 
 	const int err = swr_alloc_set_opts2(
-		&s_movie.swr,
+		&movie.swr,
 		&out_layout,
-		S_AUDIO_FORMAT,
-		s_movie.audio_codec->sample_rate,
-		&s_movie.audio_codec->ch_layout,
-		s_movie.audio_codec->sample_fmt,
-		s_movie.audio_codec->sample_rate,
+		AUDIO_FORMAT,
+		movie.audio_codec->sample_rate,
+		&movie.audio_codec->ch_layout,
+		movie.audio_codec->sample_fmt,
+		movie.audio_codec->sample_rate,
 		0,
 		NULL
 	);
 	av_channel_layout_uninit(&out_layout);
 
-	if (err < 0 || !s_movie.swr) {
-		DTTR_LOG_ERROR("Failed to allocate movie audio resampler: %s", s_av_error(err));
+	if (err < 0 || !movie.swr) {
+		DTTR_LOG_ERROR("Failed to allocate movie audio resampler: %s", av_error(err));
 		return false;
 	}
 
-	const int init_err = swr_init(s_movie.swr);
+	const int init_err = swr_init(movie.swr);
 	if (init_err < 0) {
 		DTTR_LOG_ERROR(
 			"Failed to initialize movie audio resampler: %s",
-			s_av_error(init_err)
+			av_error(init_err)
 		);
 		return false;
 	}
 
 	const SDL_AudioSpec spec = {
 		.format = SDL_AUDIO_S16LE,
-		.channels = S_AUDIO_CHANNELS,
-		.freq = s_movie.audio_codec->sample_rate,
+		.channels = AUDIO_CHANNELS,
+		.freq = movie.audio_codec->sample_rate,
 	};
-	s_movie.audio_stream = SDL_OpenAudioDeviceStream(
+	movie.audio_stream = SDL_OpenAudioDeviceStream(
 		SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
 		&spec,
 		NULL,
 		NULL
 	);
-	if (!s_movie.audio_stream) {
+	if (!movie.audio_stream) {
 		DTTR_LOG_ERROR("Failed to open movie audio stream: %s", SDL_GetError());
 		return false;
 	}
 
-	SDL_ResumeAudioStreamDevice(s_movie.audio_stream);
+	SDL_ResumeAudioStreamDevice(movie.audio_stream);
 	return true;
 }
 
-static bool s_open_movie(const char *path) {
-	int err = avformat_open_input(&s_movie.format, path, NULL, NULL);
+// Opens the movie container, selects streams, and prepares decoders for sidecar playback.
+static bool open_movie(const char *path) {
+	int err = avformat_open_input(&movie.format, path, NULL, NULL);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to open movie %s: %s", path, s_av_error(err));
+		DTTR_LOG_ERROR("Failed to open movie %s: %s", path, av_error(err));
 		return false;
 	}
 
-	err = avformat_find_stream_info(s_movie.format, NULL);
+	err = avformat_find_stream_info(movie.format, NULL);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to read movie stream info: %s", s_av_error(err));
+		DTTR_LOG_ERROR("Failed to read movie stream info: %s", av_error(err));
 		return false;
 	}
 
-	s_movie.video_stream = av_find_best_stream(
-		s_movie.format,
+	movie.video_stream = av_find_best_stream(
+		movie.format,
 		AVMEDIA_TYPE_VIDEO,
 		-1,
 		-1,
 		NULL,
 		0
 	);
-	if (s_movie.video_stream < 0) {
+	if (movie.video_stream < 0) {
 		DTTR_LOG_ERROR(
 			"Movie has no playable video stream: %s",
-			s_av_error(s_movie.video_stream)
+			av_error(movie.video_stream)
 		);
 		return false;
 	}
 
-	s_movie.video_codec = s_open_codec(s_movie.format->streams[s_movie.video_stream]);
-	if (!s_movie.video_codec) {
+	AVStream *const video_stream = movie.format->streams[movie.video_stream];
+	movie.video_codec = open_codec(video_stream);
+	if (!movie.video_codec) {
 		return false;
 	}
 
-	s_movie.audio_stream_index = av_find_best_stream(
-		s_movie.format,
+	movie.audio_stream_index = av_find_best_stream(
+		movie.format,
 		AVMEDIA_TYPE_AUDIO,
 		-1,
-		s_movie.video_stream,
+		movie.video_stream,
 		NULL,
 		0
 	);
-	if (s_movie.audio_stream_index >= 0) {
-		s_movie.audio_codec = s_open_codec(
-			s_movie.format->streams[s_movie.audio_stream_index]
-		);
-		if (!s_movie.audio_codec || !s_prepare_audio()) {
+	if (movie.audio_stream_index >= 0) {
+		AVStream *const audio_stream = movie.format->streams[movie.audio_stream_index];
+		movie.audio_codec = open_codec(audio_stream);
+		if (!movie.audio_codec || !prepare_audio()) {
 			return false;
 		}
 	}
 
-	AVRational rate = av_guess_frame_rate(
-		s_movie.format,
-		s_movie.format->streams[s_movie.video_stream],
-		NULL
-	);
+	AVRational rate = av_guess_frame_rate(movie.format, video_stream, NULL);
 	if (rate.num > 0 && rate.den > 0) {
-		s_movie.frame_duration = av_q2d((AVRational){rate.den, rate.num});
+		movie.frame_duration = av_q2d((AVRational){rate.den, rate.num});
 	}
 
 	return true;
 }
 
-static double s_video_pts_seconds(const int64_t pts) {
+// Converts a decoded video timestamp into seconds using the stream time base.
+static double video_pts_seconds(const int64_t pts) {
 	if (pts == AV_NOPTS_VALUE) {
-		return s_movie.has_timing_origin ? s_movie.last_video_pts + s_movie.frame_duration
-										 : 0.0;
+		return movie.has_timing_origin ? movie.last_video_pts + movie.frame_duration
+									   : 0.0;
 	}
 
-	const AVStream *stream = s_movie.format->streams[s_movie.video_stream];
+	const AVStream *stream = movie.format->streams[movie.video_stream];
 	return (double)pts * av_q2d(stream->time_base);
 }
 
-static void s_set_next_video_time(const double pts) {
-	if (!s_movie.has_timing_origin) {
-		s_movie.start_ticks = SDL_GetTicks();
-		s_movie.pts_origin = pts;
-		s_movie.has_timing_origin = true;
+// Establishes the movie clock origin and next presentation timestamp for video pacing.
+static void set_next_video_time(const double pts) {
+	if (!movie.has_timing_origin) {
+		movie.start_ticks = SDL_GetTicks();
+		movie.pts_origin = pts;
+		movie.has_timing_origin = true;
 	}
 
-	s_movie.next_video_time = pts - s_movie.pts_origin;
-	if (s_movie.next_video_time < 0.0) {
-		s_movie.next_video_time = 0.0;
+	movie.next_video_time = pts - movie.pts_origin;
+	if (movie.next_video_time < 0.0) {
+		movie.next_video_time = 0.0;
 	}
-	s_movie.last_video_pts = pts;
+	movie.last_video_pts = pts;
 }
 
-static double s_frame_pts_seconds(const AVFrame *frame) {
-	return s_video_pts_seconds(frame->best_effort_timestamp);
+// Chooses the best available frame timestamp before scheduling presentation.
+static double frame_pts_seconds(const AVFrame *frame) {
+	return video_pts_seconds(frame->best_effort_timestamp);
 }
 
-static double s_packet_pts_seconds(const AVPacket *packet) {
-	return s_video_pts_seconds(packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts);
+// Converts a packet timestamp into seconds for fallback movie pacing.
+static double packet_pts_seconds(const AVPacket *packet) {
+	return video_pts_seconds(packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts);
 }
 
-static bool s_queue_video_frame(const AVFrame *frame) {
+// Converts a decoded frame to BGRA and records when the renderer should present it.
+static bool queue_video_frame(const AVFrame *frame) {
 	const int w = frame->width;
 	const int h = frame->height;
-	if (w <= 0 || h <= 0) {
+	if (w <= 0 || h <= 0 || w > INT_MAX / 4) {
 		return false;
 	}
 
 	const int stride = w * 4;
+	if ((size_t)h > SIZE_MAX / (size_t)stride) {
+		return false;
+	}
+
 	const size_t size = (size_t)stride * (size_t)h;
-	if (w != s_movie.buf_w || h != s_movie.buf_h || stride != s_movie.buf_stride) {
-		uint8_t *new_buffer = realloc(s_movie.buffer, size);
+	if (w != movie.buf_w || h != movie.buf_h || stride != movie.buf_stride) {
+		uint8_t *new_buffer = realloc(movie.buffer, size);
 		if (!new_buffer) {
 			DTTR_LOG_ERROR("Failed to allocate %zu bytes for movie frame", size);
 			return false;
 		}
 
-		s_movie.buffer = new_buffer;
-		s_movie.buf_w = w;
-		s_movie.buf_h = h;
-		s_movie.buf_stride = stride;
-		DTTR_LOG_DEBUG("Video Format: %dx%d", s_movie.buf_w, s_movie.buf_h);
+		movie.buffer = new_buffer;
+		movie.buf_w = w;
+		movie.buf_h = h;
+		movie.buf_stride = stride;
+		DTTR_LOG_DEBUG("Video Format: %dx%d", movie.buf_w, movie.buf_h);
 	}
 
-	s_movie.sws = sws_getCachedContext(
-		s_movie.sws,
+	movie.sws = sws_getCachedContext(
+		movie.sws,
 		w,
 		h,
 		(enum AVPixelFormat)frame->format,
@@ -329,15 +350,15 @@ static bool s_queue_video_frame(const AVFrame *frame) {
 		NULL,
 		NULL
 	);
-	if (!s_movie.sws) {
+	if (!movie.sws) {
 		DTTR_LOG_ERROR("Failed to create movie video converter");
 		return false;
 	}
 
-	uint8_t *dst_data[] = {s_movie.buffer, NULL, NULL, NULL};
-	int dst_linesize[] = {s_movie.buf_stride, 0, 0, 0};
+	uint8_t *dst_data[] = {movie.buffer, NULL, NULL, NULL};
+	int dst_linesize[] = {movie.buf_stride, 0, 0, 0};
 	sws_scale(
-		s_movie.sws,
+		movie.sws,
 		(const uint8_t *const *)frame->data,
 		frame->linesize,
 		0,
@@ -346,26 +367,24 @@ static bool s_queue_video_frame(const AVFrame *frame) {
 		dst_linesize
 	);
 
-	s_set_next_video_time(s_frame_pts_seconds(frame));
-	s_movie.video_frame_ready = true;
+	set_next_video_time(frame_pts_seconds(frame));
+	movie.video_frame_ready = true;
 	return true;
 }
 
-static bool s_queue_audio_frame(const AVFrame *frame) {
-	if (!s_movie.audio_stream || !s_movie.swr) {
+// Resamples decoded audio into the SDL stream while capping queued latency.
+static bool queue_audio_frame(const AVFrame *frame) {
+	if (!movie.audio_stream || !movie.swr) {
 		return true;
 	}
 
-	const int out_samples = (int)swr_get_delay(
-								s_movie.swr,
-								s_movie.audio_codec->sample_rate
-							)
+	const int out_samples = (int)swr_get_delay(movie.swr, movie.audio_codec->sample_rate)
 							+ frame->nb_samples;
 	const int out_size = av_samples_get_buffer_size(
 		NULL,
-		S_AUDIO_CHANNELS,
+		AUDIO_CHANNELS,
 		out_samples,
-		S_AUDIO_FORMAT,
+		AUDIO_FORMAT,
 		1
 	);
 	if (out_size <= 0) {
@@ -380,102 +399,109 @@ static bool s_queue_audio_frame(const AVFrame *frame) {
 
 	uint8_t *out_planes[] = {out, NULL};
 	const int converted = swr_convert(
-		s_movie.swr,
+		movie.swr,
 		out_planes,
 		out_samples,
 		(const uint8_t **)frame->extended_data,
 		frame->nb_samples
 	);
 	if (converted < 0) {
-		DTTR_LOG_ERROR("Failed to convert movie audio: %s", s_av_error(converted));
+		DTTR_LOG_ERROR("Failed to convert movie audio: %s", av_error(converted));
 		av_free(out);
 		return false;
 	}
 
 	const int converted_size = av_samples_get_buffer_size(
 		NULL,
-		S_AUDIO_CHANNELS,
+		AUDIO_CHANNELS,
 		converted,
-		S_AUDIO_FORMAT,
+		AUDIO_FORMAT,
 		1
 	);
 	if (converted_size > 0) {
-		SDL_PutAudioStreamData(s_movie.audio_stream, out, converted_size);
+		SDL_PutAudioStreamData(movie.audio_stream, out, converted_size);
 	}
 	av_free(out);
 
-	const int queue_limit = (s_movie.audio_codec->sample_rate * S_AUDIO_CHANNELS
-							 * av_get_bytes_per_sample(S_AUDIO_FORMAT)
-							 * S_AUDIO_QUEUE_LIMIT_MS)
+	const int queue_limit = (movie.audio_codec->sample_rate * AUDIO_CHANNELS
+							 * av_get_bytes_per_sample(AUDIO_FORMAT)
+							 * AUDIO_QUEUE_LIMIT_MS)
 							/ 1000;
-	while (SDL_GetAudioStreamQueued(s_movie.audio_stream) > queue_limit) {
+	while (SDL_GetAudioStreamQueued(movie.audio_stream) > queue_limit) {
 		SDL_Delay(1);
 	}
 
 	return true;
 }
 
-static bool s_receive_video_frame(void) {
-	while (!s_movie.video_frame_ready) {
-		const int err = avcodec_receive_frame(s_movie.video_codec, s_video_frame);
+// Pulls decoded video frames until one is ready for presentation or the decoder drains.
+static bool receive_video_frame() {
+	while (!movie.video_frame_ready) {
+		const int err = avcodec_receive_frame(movie.video_codec, video_frame);
 		if (err == AVERROR(EAGAIN) || err == AVERROR_EOF) {
 			return false;
 		}
 		if (err < 0) {
-			DTTR_LOG_ERROR("Failed to decode movie video: %s", s_av_error(err));
-			s_movie.result = DTTR_MOVIE_ENDED;
+			DTTR_LOG_ERROR("Failed to decode movie video: %s", av_error(err));
+			movie.result = DTTR_MOVIE_ENDED;
 			return false;
 		}
 
-		if (!s_queue_video_frame(s_video_frame)) {
-			s_movie.result = DTTR_MOVIE_ENDED;
+		if (!queue_video_frame(video_frame)) {
+			movie.result = DTTR_MOVIE_ENDED;
 		}
-		av_frame_unref(s_video_frame);
+		av_frame_unref(video_frame);
 	}
 
 	return true;
 }
 
-static void s_receive_audio_frames(void) {
-	if (!s_movie.audio_codec) {
+// Drains available audio frames so playback stays ahead of the video clock.
+static void receive_audio_frames() {
+	if (!movie.audio_codec) {
 		return;
 	}
 
 	for (;;) {
-		const int err = avcodec_receive_frame(s_movie.audio_codec, s_audio_frame);
+		const int err = avcodec_receive_frame(movie.audio_codec, audio_frame);
 		if (err == AVERROR(EAGAIN) || err == AVERROR_EOF) {
 			return;
 		}
 		if (err < 0) {
-			DTTR_LOG_WARN("Failed to decode movie audio: %s", s_av_error(err));
+			DTTR_LOG_WARN("Failed to decode movie audio: %s", av_error(err));
 			return;
 		}
 
-		s_queue_audio_frame(s_audio_frame);
-		av_frame_unref(s_audio_frame);
+		if (!queue_audio_frame(audio_frame)) {
+			DTTR_LOG_WARN("Failed to queue movie audio frame");
+			av_frame_unref(audio_frame);
+			return;
+		}
+		av_frame_unref(audio_frame);
 	}
 }
 
-static bool s_drain_eof(void) {
-	if (!s_movie.video_flushed) {
-		avcodec_send_packet(s_movie.video_codec, NULL);
-		s_movie.video_flushed = true;
+// Waits for queued audio to finish after video reaches end-of-stream.
+static bool drain_eof() {
+	if (!movie.video_flushed) {
+		avcodec_send_packet(movie.video_codec, NULL);
+		movie.video_flushed = true;
 		return true;
 	}
 
-	if (s_movie.audio_codec && !s_movie.audio_flushed) {
-		avcodec_send_packet(s_movie.audio_codec, NULL);
-		s_movie.audio_flushed = true;
-		s_receive_audio_frames();
-		if (s_movie.audio_stream) {
-			SDL_FlushAudioStream(s_movie.audio_stream);
-			s_movie.audio_drain_deadline_ticks = SDL_GetTicks() + S_AUDIO_DRAIN_LIMIT_MS;
+	if (movie.audio_codec && !movie.audio_flushed) {
+		avcodec_send_packet(movie.audio_codec, NULL);
+		movie.audio_flushed = true;
+		receive_audio_frames();
+		if (movie.audio_stream) {
+			SDL_FlushAudioStream(movie.audio_stream);
+			movie.audio_drain_deadline_ticks = SDL_GetTicks() + AUDIO_DRAIN_LIMIT_MS;
 		}
 	}
 
-	if (s_movie.audio_stream) {
-		const int queued = SDL_GetAudioStreamQueued(s_movie.audio_stream);
-		if (queued > 0 && SDL_GetTicks() < s_movie.audio_drain_deadline_ticks) {
+	if (movie.audio_stream) {
+		const int queued = SDL_GetAudioStreamQueued(movie.audio_stream);
+		if (queued > 0 && SDL_GetTicks() < movie.audio_drain_deadline_ticks) {
 			SDL_Delay(1);
 			return false;
 		}
@@ -485,104 +511,112 @@ static bool s_drain_eof(void) {
 		}
 	}
 
-	s_movie.result = DTTR_MOVIE_ENDED;
+	movie.result = DTTR_MOVIE_ENDED;
 	return false;
 }
 
-static void s_send_packet(void) {
-	if (s_packet->stream_index == s_movie.video_stream) {
-		if (s_packet->size <= 0) {
-			if (s_movie.buffer) {
-				s_set_next_video_time(s_packet_pts_seconds(s_packet));
-				s_movie.video_frame_ready = true;
+// Sends the current packet to the matching decoder and handles end-of-stream flushing.
+static void send_packet() {
+	if (packet->stream_index == movie.video_stream) {
+		if (packet->size <= 0) {
+			if (movie.buffer) {
+				set_next_video_time(packet_pts_seconds(packet));
+				movie.video_frame_ready = true;
 			}
 			return;
 		}
 
-		const int err = avcodec_send_packet(s_movie.video_codec, s_packet);
+		const int err = avcodec_send_packet(movie.video_codec, packet);
 		if (err < 0 && err != AVERROR(EAGAIN)) {
-			DTTR_LOG_ERROR("Failed to submit movie video packet: %s", s_av_error(err));
-			s_movie.result = DTTR_MOVIE_ENDED;
+			DTTR_LOG_ERROR("Failed to submit movie video packet: %s", av_error(err));
+			movie.result = DTTR_MOVIE_ENDED;
 		}
 		return;
 	}
 
-	if (s_packet->stream_index != s_movie.audio_stream_index || !s_movie.audio_codec) {
+	if (packet->stream_index != movie.audio_stream_index || !movie.audio_codec) {
 		return;
 	}
 
-	const int err = avcodec_send_packet(s_movie.audio_codec, s_packet);
+	const int err = avcodec_send_packet(movie.audio_codec, packet);
 	if (err < 0 && err != AVERROR(EAGAIN)) {
-		DTTR_LOG_WARN("Failed to submit movie audio packet: %s", s_av_error(err));
+		DTTR_LOG_WARN("Failed to submit movie audio packet: %s", av_error(err));
 	}
 }
 
-static bool s_decode_until_video_frame(void) {
-	while (s_movie.result == DTTR_MOVIE_PLAYING && !s_movie.video_frame_ready) {
-		if (s_receive_video_frame()) {
+// Advances packet decoding until a video frame is ready or playback reaches the end.
+static bool decode_until_video_frame() {
+	while (movie.result == DTTR_MOVIE_PLAYING && !movie.video_frame_ready) {
+		if (receive_video_frame()) {
 			return true;
 		}
-		s_receive_audio_frames();
+		receive_audio_frames();
 
-		if (s_movie.hit_eof) {
-			if (s_drain_eof()) {
+		if (movie.hit_eof) {
+			if (drain_eof()) {
 				continue;
 			}
 
 			return false;
 		}
 
-		const int err = av_read_frame(s_movie.format, s_packet);
+		const int err = av_read_frame(movie.format, packet);
 		if (err == AVERROR_EOF) {
-			s_movie.hit_eof = true;
+			movie.hit_eof = true;
 			continue;
 		}
 		if (err < 0) {
-			DTTR_LOG_ERROR("Failed to read movie packet: %s", s_av_error(err));
-			s_movie.result = DTTR_MOVIE_ENDED;
+			DTTR_LOG_ERROR("Failed to read movie packet: %s", av_error(err));
+			movie.result = DTTR_MOVIE_ENDED;
 			return false;
 		}
 
-		s_send_packet();
-		av_packet_unref(s_packet);
+		send_packet();
+		av_packet_unref(packet);
 	}
 
-	return s_movie.video_frame_ready;
+	return movie.video_frame_ready;
 }
 
-void dttr_movies_init(void) {
-	s_video_frame = av_frame_alloc();
-	s_audio_frame = av_frame_alloc();
-	s_packet = av_packet_alloc();
-	if (!s_video_frame || !s_audio_frame || !s_packet) {
+// Allocates reusable FFmpeg frames and packet storage for movie playback.
+void DTTR_Movies_Init() {
+	video_frame = av_frame_alloc();
+	audio_frame = av_frame_alloc();
+	packet = av_packet_alloc();
+	if (!video_frame || !audio_frame || !packet) {
 		DTTR_LOG_ERROR("Failed to allocate movie playback state");
 	}
 }
 
-void dttr_movies_hooks_init(const DTTR_ComponentContext *ctx) {
-	DTTR_INSTALL_JMP(
-		dttr_movies_hook_movie_play_file,
-		ctx,
-		"\x8B\x44\x24\x08\x8B\x0D????\x8B\x54\x24\x04\x56\x50",
-		"xxxxxx????xxxxxx"
-	);
+// Installs the game movie hook so sidecar playback replaces the original routine.
+bool dttr_movies_hooks_init(const DTTR_Mods_Context *ctx) {
+	if (!DTTR_PCDOGS_F_MoviePlayFile
+			 ->Hook(&ctx->runtime, movie_play_file_detour, &movie_play_file_original)) {
+		DTTR_MODS_LOG_ERROR(ctx, "movie_playfile: hook failed");
+		return false;
+	}
+	return true;
 }
 
-void dttr_movies_hooks_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_UNINSTALL(dttr_movies_hook_movie_play_file, ctx);
+// Removes the game movie hook and clears the saved original function pointer.
+void dttr_movies_hooks_cleanup(const DTTR_Mods_Context *ctx) {
+	DTTR_PCDOGS_F_MoviePlayFile->Unhook(&ctx->runtime);
+	movie_play_file_original = NULL;
 }
 
-void dttr_movies_cleanup(void) {
-	s_close_movie();
-	av_packet_free(&s_packet);
-	av_frame_free(&s_audio_frame);
-	av_frame_free(&s_video_frame);
+// Releases persistent FFmpeg frame and packet storage during sidecar shutdown.
+void DTTR_Movies_Cleanup() {
+	close_movie();
+	av_packet_free(&packet);
+	av_frame_free(&audio_frame);
+	av_frame_free(&video_frame);
 	DTTR_LOG_INFO("Released movie playback state");
 }
 
-static sds s_resolve_movie_path(const char *path) {
-	sds requested_path = sdsnew(g_pcdogs_directory_ptr());
-	if (!requested_path || !dttr_path_append_segment(&requested_path, path, '\\')) {
+// Maps the game movie filename to an override path or bundled data-file path.
+static sds resolve_movie_path(const char *path) {
+	sds requested_path = sdsnew(DTTR_PCDOGS_D_Directory->Ptr());
+	if (!requested_path || !DTTR_Path_AppendSegment(&requested_path, path, '\\')) {
 		sdsfree(requested_path);
 		return sdsempty();
 	}
@@ -619,113 +653,124 @@ static sds s_resolve_movie_path(const char *path) {
 	return out;
 }
 
-void dttr_movies_start(const char *path) {
-	if (!s_video_frame || !s_audio_frame || !s_packet) {
+// Resolves and opens a movie file, then marks playback active when decoders are ready.
+void DTTR_Movies_Start(const char *path) {
+	if (!video_frame || !audio_frame || !packet) {
 		DTTR_LOG_ERROR("Missing movie playback state");
-		s_movie.result = DTTR_MOVIE_ENDED;
+		movie.result = DTTR_MOVIE_ENDED;
 		return;
 	}
 
-	s_close_movie();
+	close_movie();
 
-	sds abs_path = s_resolve_movie_path(path);
+	sds abs_path = resolve_movie_path(path);
 	DTTR_LOG_INFO("Playing movie %s", abs_path);
 
-	if (!s_open_movie(abs_path)) {
+	if (!open_movie(abs_path)) {
 		sdsfree(abs_path);
-		s_close_movie();
-		s_movie.result = DTTR_MOVIE_ENDED;
+		close_movie();
+		movie.result = DTTR_MOVIE_ENDED;
 		return;
 	}
 
 	sdsfree(abs_path);
-	s_movie.result = DTTR_MOVIE_PLAYING;
+	movie.result = DTTR_MOVIE_PLAYING;
 }
 
-void dttr_movies_tick(void) {
-	if (s_movie.result != DTTR_MOVIE_PLAYING) {
+// Decodes and presents movie frames on the sidecar loop according to the video clock.
+void DTTR_Movies_Tick() {
+	if (movie.result != DTTR_MOVIE_PLAYING) {
 		return;
 	}
 
-	if (!s_movie.video_frame_ready && !s_decode_until_video_frame()) {
+	if (!movie.video_frame_ready && !decode_until_video_frame()) {
 		return;
 	}
 
-	if (!s_movie.video_frame_ready) {
+	if (!movie.video_frame_ready) {
 		return;
 	}
 
-	const double elapsed = (double)(SDL_GetTicks() - s_movie.start_ticks) / 1000.0;
-	if (elapsed + 0.001 < s_movie.next_video_time) {
+	const double elapsed = (double)(SDL_GetTicks() - movie.start_ticks) / 1000.0;
+	if (elapsed + 0.001 < movie.next_video_time) {
 		SDL_Delay(1);
 		return;
 	}
 
-	dttr_graphics_present_video_frame_bgra(
-		s_movie.buffer,
-		s_movie.buf_w,
-		s_movie.buf_h,
-		s_movie.buf_stride
-	);
-	s_movie.video_frame_ready = false;
+	if (!DTTR_Graphics_PresentVideoFrameBGRA(
+			movie.buffer,
+			movie.buf_w,
+			movie.buf_h,
+			movie.buf_stride
+		)) {
+		DTTR_LOG_WARN(
+			"Failed to present movie frame (%dx%d stride=%d)",
+			movie.buf_w,
+			movie.buf_h,
+			movie.buf_stride
+		);
+	}
+	movie.video_frame_ready = false;
 }
 
-bool dttr_movies_handle_event(const SDL_Event *event) {
-	if (s_movie.result != DTTR_MOVIE_PLAYING) {
+// Handles skip, quit, and gamepad input while a sidecar movie is playing.
+bool DTTR_Movies_HandleEvent(const SDL_Event *event) {
+	if (movie.result != DTTR_MOVIE_PLAYING) {
 		return false;
 	}
 
 	if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
 		if (event->key.scancode == SDL_SCANCODE_ESCAPE) {
-			s_movie.result = DTTR_MOVIE_ESCAPE;
+			movie.result = DTTR_MOVIE_ESCAPE;
 			return true;
 		}
 
 		if (event->key.scancode == SDL_SCANCODE_RETURN) {
-			s_movie.result = DTTR_MOVIE_ENDED;
+			movie.result = DTTR_MOVIE_ENDED;
 			return true;
 		}
 
 		if (event->key.scancode == SDL_SCANCODE_F4 && (event->key.mod & SDL_KMOD_ALT)) {
-			s_movie.result = DTTR_MOVIE_QUIT;
+			movie.result = DTTR_MOVIE_QUIT;
 			return true;
 		}
 	}
 
 	if (event->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-		s_movie.result = DTTR_MOVIE_ENDED;
+		movie.result = DTTR_MOVIE_ENDED;
 		return true;
 	}
 
 	if (event->type == SDL_EVENT_QUIT) {
-		s_movie.result = DTTR_MOVIE_QUIT;
+		movie.result = DTTR_MOVIE_QUIT;
 		return true;
 	}
 
 	return false;
 }
 
-DTTR_MovieResult dttr_movies_stop(void) {
-	const DTTR_MovieResult result = s_movie.result;
-	s_close_movie();
+// Stops playback, releases per-movie resources, and returns the final movie result.
+DTTR_MovieResult DTTR_Movies_Stop() {
+	const DTTR_MovieResult result = movie.result;
+	close_movie();
 	DTTR_LOG_INFO("Stopped movie with result %d", result);
 	return result;
 }
 
-bool dttr_movies_movie_is_playing(void) { return s_movie.result == DTTR_MOVIE_PLAYING; }
+// Reports whether the blocking movie hook should keep pumping events and decoding frames.
+bool DTTR_Movies_MovieIsPlaying() { return movie.result == DTTR_MOVIE_PLAYING; }
 
+// Runs replacement movie playback to completion while pumping sidecar events.
 int32_t __cdecl dttr_movies_hook_movie_play_file_callback(
 	const char *path,
 	const int32_t use_alt_rect
 ) {
-	dttr_movies_start(path);
+	DTTR_Movies_Start(path);
 
-	while (dttr_movies_movie_is_playing()) {
-		SDL_Event event;
-		while (SDL_PollEvent(&event))
-			dttr_movies_handle_event(&event);
-		dttr_movies_tick();
+	while (DTTR_Movies_MovieIsPlaying()) {
+		dttr_sidecar_poll_sdl_events();
+		DTTR_Movies_Tick();
 	}
 
-	return dttr_movies_stop();
+	return DTTR_Movies_Stop();
 }

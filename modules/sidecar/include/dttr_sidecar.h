@@ -6,63 +6,47 @@
 #include <windows.h>
 
 #include <SDL3/SDL.h>
-#include <dttr_components.h>
 #include <dttr_config.h>
-#include <dttr_interop_pcdogs.h>
+#include <dttr_mods.h>
 
 #define DTTR_EXE_HASH_LENGTH 16
 
 // Handle to the injected sidecar DLL.
-extern HINSTANCE g_dttr_sidecar_module;
+extern HINSTANCE dttr_sidecar_module;
 
 // Directory containing the loader DLL, with a trailing backslash.
-extern char g_dttr_loader_dir[MAX_PATH];
+extern char dttr_loader_dir[MAX_PATH];
 
 // 16-character lowercase hex XXH3_64 hash of the game executable.
-extern char g_dttr_exe_hash[DTTR_EXE_HASH_LENGTH + 1];
+extern char dttr_exe_hash[DTTR_EXE_HASH_LENGTH + 1];
 
-/// Initializes the graphics backend and returns the game window handle.
-HWND dttr_graphics_init(void);
+HWND DTTR_Graphics_Init();
 
-/// Releases all graphics resources and shuts down the graphics backend.
-void dttr_graphics_cleanup(void);
+void DTTR_Graphics_Cleanup();
 
-/// Returns the main game window.
-SDL_Window *dttr_graphics_get_window(void);
+SDL_Window *DTTR_Graphics_GetWindow();
 
-/// Returns the GPU device.
-SDL_GPUDevice *dttr_graphics_get_device(void);
+SDL_GPUDevice *DTTR_Graphics_GetDevice();
 
-/// Applies runtime window resize to rendering policy.
-void dttr_graphics_handle_window_resize(int width, int height);
+void DTTR_Graphics_HandleWindowResize(int width, int height);
 
-/// Uploads and presents one BGRA video frame directly to the swapchain.
-bool dttr_graphics_present_video_frame_bgra(
+/// Uploads one BGRA movie frame directly to the active swapchain.
+bool DTTR_Graphics_PresentVideoFrameBGRA(
 	const uint8_t *pixels,
 	int width,
 	int height,
 	int stride
 );
 
-extern SDL_Gamepad *g_dttr_gamepad;
+extern SDL_Gamepad *dttr_gamepad;
 
-/// Initializes the SDL gamepad subsystem.
-void dttr_inputs_init(void);
+void DTTR_Inputs_Init();
 
-/// Installs input hooks.
-void dttr_inputs_hooks_init(const DTTR_ComponentContext *ctx);
+void DTTR_Inputs_HandleDeviceEvent(const SDL_Event *event);
 
-/// Handles gamepad connection and disconnection events.
-void dttr_inputs_handle_device_event(const SDL_Event *event);
+void DTTR_Inputs_LateInit();
 
-/// Sets the joystick-available flag after game systems are initialized.
-void dttr_inputs_late_init(void);
-
-/// Removes input hooks.
-void dttr_inputs_hooks_cleanup(const DTTR_ComponentContext *ctx);
-
-/// Releases input subsystem resources.
-void dttr_inputs_cleanup(void);
+void DTTR_Inputs_Cleanup();
 
 typedef enum {
 	DTTR_MOVIE_PLAYING = 0,
@@ -71,32 +55,19 @@ typedef enum {
 	DTTR_MOVIE_QUIT = 3,
 } DTTR_MovieResult;
 
-/// Initializes the video playback subsystem.
-void dttr_movies_init(void);
+void DTTR_Movies_Init();
 
-/// Installs video playback hooks.
-void dttr_movies_hooks_init(const DTTR_ComponentContext *ctx);
+void DTTR_Movies_Cleanup();
 
-/// Removes video playback hooks.
-void dttr_movies_hooks_cleanup(const DTTR_ComponentContext *ctx);
+void DTTR_Movies_Start(const char *path);
 
-/// Releases video playback subsystem resources.
-void dttr_movies_cleanup(void);
+void DTTR_Movies_Tick();
 
-/// Starts movie playback for the given path.
-void dttr_movies_start(const char *path);
+bool DTTR_Movies_HandleEvent(const SDL_Event *event);
 
-/// Advances movie playback.
-void dttr_movies_tick(void);
+/// Stops active movie playback and returns the result expected by the game.
+DTTR_MovieResult DTTR_Movies_Stop();
 
-/// Handles input events for movie playback.
-/// Returns whether an event was consumed.
-bool dttr_movies_handle_event(const SDL_Event *event);
+bool DTTR_Movies_MovieIsPlaying();
 
-/// Stops playback and returns DTTR_MovieResult.
-DTTR_MovieResult dttr_movies_stop(void);
-
-/// Returns true if a movie is currently playing.
-bool dttr_movies_movie_is_playing(void);
-
-#endif /* DTTR_SIDECAR_H */
+#endif // DTTR_SIDECAR_H

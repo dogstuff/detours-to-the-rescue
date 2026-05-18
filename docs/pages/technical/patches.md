@@ -1,29 +1,29 @@
 # Patches
 
-This page tracks sidecar runtime hooks and byte patches.
+This page maps the runtime hooks and byte patches DttR installs.
 
-Most sites come from `dttr_hook_sigscan()` against the loaded game module. In signatures, `?` bytes are wildcards from the paired mask.
+DttR resolves most sites with `DTTR_Core_HookSigscan()` against the loaded game module. In signatures, `?` bytes are mask wildcards.
 
 ## Terms
 
 - IAT hooks replace an import-address-table slot.
-- Jump hooks replace the first five bytes of the matched assembly with `E9 <rel32>`.
-- Trampoline hooks use the same jump patch, but keep a callable copy of the original prologue.
+- Jump hooks replace the first five bytes at the match with `E9 <rel32>`.
+- Trampoline hooks use the same jump patch and keep a callable copy of the original prologue.
 
 ## Bootstrap
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_hook_win_main` | `83 EC 40 53 8B 5C 24` | `E9 <rel32>` at the matched function entry | Game `WinMain`-style entrypoint | `dttr_hook_win_main_callback` | Installed before normal sidecar runtime setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and components, then drives the original game loop. |
+| `dttr_hook_win_main` | `83 EC 40 53 8B 5C 24` | `E9 <rel32>` at the matched function entry | Game `WinMain`-style entrypoint | `DTTR_Hook_WinMainCallback` | DttR installs this before normal sidecar setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and mods, then drives the original game loop. |
 
 ## Game Data and Process Fixes
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_crt_open_file_with_mode` | `E8 ?? ?? ?? ?? 85 C0 75 ?? C3` | Resolve only | Target of the matched `CALL rel32` | — | Finds the game's lower-level CRT-style open routine so DttR can still delegate successful resolved paths back to the original file opener. |
-| `dttr_crt_hook_open_file` | `6A 40 FF 74 24 0C FF 74 24 0C E8` | `E9 <rel32>` at match | Game file-open wrapper | `dttr_crt_hook_open_file_callback` | Routes file reads through DttR path resolution, case-insensitive lookup, ISO paths, and safe failure handling. |
+| `DTTR_PCDOGS_F_FileOpenWithMode` | `E8 ?? ?? ?? ?? 85 C0 75 ?? C3` | Resolve only | Target of the matched `CALL rel32` | - | Finds the game's lower-level CRT-style open routine so DttR can hand resolved paths back to the original file opener. |
+| `dttr_crt_hook_open_file` | `6A 40 FF 74 24 0C FF 74 24 0C E8` | `E9 <rel32>` at match | Game file-open wrapper | `dttr_crt_hook_open_file_callback` | Routes file reads through DttR path resolution: case-insensitive lookup, ISO paths, and safe failure handling. |
 | `dttr_hook_resolve_pcdogs_path` | `51 8D 44 24 ?? 57` | Optional `E9 <rel32>` at match | Game directory resolver | `dttr_hook_resolve_pcdogs_path_callback` | Fixes later releases that mis-detect the game directory when an earlier path segment contains `p`. |
-| `dttr_hook_cleanup_level_assets` | `6A 01 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 83 ?? ??` | Trampoline `E9 <rel32>` at match | Original cleanup-level-assets routine, available through `dttr_hook_cleanup_level_assets_trampoline` | `dttr_hook_cleanup_level_assets_callback` | Runs the original cleanup, then clears stale level asset pointers. |
+| `dttr_hook_cleanup_title_resources` | `6A 01 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 83 ?? ??` | Trampoline `E9 <rel32>` at match | Original cleanup-title-resources routine, captured as `dttr_hook_cleanup_title_resources_original` | `dttr_hook_cleanup_title_resources_callback` | Runs the original cleanup, then clears stale title resource pointers. |
 
 ## Graphics
 
@@ -31,17 +31,17 @@ Most sites come from `dttr_hook_sigscan()` against the loaded game module. In si
 
 | Site | Signature / site | Patch | Original IAT target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_hook_directdraw_create_ex` | Finds `E8 ?? ?? ?? ?? 85 C0 7D ?? 68 ?? ?? ?? ?? 6A 00 50 E8`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | IAT hook | IAT/thunk target for `DirectDrawCreateEx` | `dttr_hook_directdraw_create_ex_callback` | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
-| `dttr_hook_directdraw_enumerate_ex_a` | Finds `E8 ?? ?? ?? ?? 8B F0 A1`, then patches `DTTR_FF25_ADDR(DTTR_E8_TARGET(match_))` | IAT hook | IAT/thunk target for `DirectDrawEnumerateExA` | `dttr_hook_directdraw_enumerate_ex_a_callback` | Enumerates DttR's virtual display device. |
+| `dttr_hook_directdraw_create_ex` | Generated `DDraw_CreateEx` import-thunk symbol | Trampoline hook on import thunk | `ddraw!DirectDrawCreateEx` thunk body (`FF 25 <IAT slot>`) | `dttr_hook_directdraw_create_ex_callback` | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
+| `dttr_hook_directdraw_enumerate_ex_a` | Generated `DirectX_DirectDrawEnumerateExA` import-thunk symbol | Trampoline hook on import thunk | `ddraw!DirectDrawEnumerateExA` thunk body (`FF 25 <IAT slot>`) | `dttr_hook_directdraw_enumerate_ex_a_callback` | Enumerates DttR's virtual display device. |
 
 ### Subpixel Vertex Precision Byte Patches
 
-These patches install only when `vertex_precision` is `subpixel`.
+DttR installs these patches only when `vertex_precision` is `subpixel`.
 
 | Site | Signature / site | Offset | Patch bytes / assembly | Original target | Notes |
 | --- | --- | ---: | --- | --- | --- |
 | `dttr_hook_precision_fast_path` | `83 F8 ?? 7C ?? D9 43 ?? D8 1D ?? ?? ?? ?? DF E0 F6 C4 41 0F 85 ?? ?? ?? ??` | `+19` | `E9 BA 00 00 00 90` (`jmp +0xBA; nop`) | Original fast-path conditional branch | Skips the integer-conversion fast path that collapses vertex precision. |
-| `dttr_hook_precision_batch_limit_a` | `8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1` | `+17` | `90 90` (`nop; nop`) | Original batch-limit branch/check tail | Keeps the precision path from bailing out through the old batch limit check. |
+| `dttr_hook_precision_batch_limit_a` | `8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1` | `+17` | `90 90` (`nop; nop`) | Original batch-limit branch/check tail | Keeps the precision path from leaving through the old batch-limit check. |
 | `dttr_hook_precision_batch_limit_b` | `83 C1 14 4E 75 ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1` | `+19` | `90 90` (`nop; nop`) | Original batch-limit branch/check tail | Same batch-limit fix for the second matched loop. |
 | `dttr_hook_precision_ftol_x` | `DB 44 24 30 D9 1F` | `-15` | `D9 1F 90 90 90` (`fstp dword ptr [edi]; nop; nop; nop`) | Original x-coordinate float-to-int conversion sequence | Stores the x coordinate directly as float instead of converting through integer precision. |
 | `dttr_hook_precision_mov_x` | `DB 44 24 30 D9 1F` | `-10` | `90 90 90 90` (`nop` x4) | Original x-coordinate integer move | Removes the integer move paired with the old x conversion. |
@@ -51,7 +51,7 @@ These patches install only when `vertex_precision` is `subpixel`.
 | `dttr_hook_precision_mov_y` | `8B 54 24 18 89 44 24 30` | `+4` | `90 90 90 90` (`nop` x4) | Original y-coordinate integer move | Removes the integer move paired with the old y conversion. |
 | `dttr_hook_precision_fstp2_y` | `83 C0 14 50 55 D9 5D 00` | `+5` | `90 90 90` (`nop` x3) | Original second y-coordinate store | Removes the second store from the old y conversion sequence. |
 | `dttr_hook_precision_fild_y` | `52 DB 44 24 34` | `+1` | `90 90 90 90` (`nop` x4) | Original y-coordinate `fild` reload | Removes the integer reload for y. |
-| `dttr_hook_render_quad_snap` | `53 8B 5C 24 14 55 33 C9 56 57 85 DB` | `+0` | `C3` (`ret`) | Original render-quad snap helper | Optional compatibility patch used with the subpixel path to stop render-quad snapping. |
+| `dttr_hook_render_quad_snap` | `53 8B 5C 24 14 55 33 C9 56 57 85 DB` | `+0` | `C3` (`ret`) | Original render-quad snap helper | Optional compatibility patch for the subpixel path. Stops render-quad snapping. |
 
 ## Input
 
@@ -64,18 +64,18 @@ These patches install only when `vertex_precision` is `subpixel`.
 
 ### Audio Trampolines
 
-These guard game audio paths around the SDL-backed MSS shim.
+These hooks keep game audio paths safe while DttR routes MSS through SDL.
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_hook_audio_init_system` | `81 EC 90 ?? ?? ?? 55 56 57 FF 15` | Trampoline `E9 <rel32>` at match | Game audio system init, available through `dttr_hook_audio_init_system_trampoline` | `dttr_hook_audio_init_system_callback` | Skips MSS init when SDL reports no playback devices. |
-| `dttr_hook_audio_stop_all_sounds` | `A1 ?? ?? ?? ?? 6A ?? 50 FF 15` | Trampoline `E9 <rel32>` at match | Game stop-all-sounds routine, available through `dttr_hook_audio_stop_all_sounds_trampoline` | `dttr_hook_audio_stop_all_sounds_callback` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
-| `dttr_hook_audio_init_level_audio` | `A1 ?? ?? ?? ?? 6A 7F 50 FF 15` | Trampoline `E9 <rel32>` at match | Game level-audio init routine, available through `dttr_hook_audio_init_level_audio_trampoline` | `dttr_hook_audio_init_level_audio_callback` | Guards level audio init when no driver is active. |
-| `dttr_hook_audio_stop_all_samples` | `56 57 8B 3D ?? ?? ?? ?? BE` | Trampoline `E9 <rel32>` at match | Game stop-all-samples routine, available through `dttr_hook_audio_stop_all_samples_trampoline` | `dttr_hook_audio_stop_all_samples_callback` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
+| `DTTR_PCDOGS_F_AudioInitializeSystem` | `81 EC 90 ?? ?? ?? 55 56 57 FF 15` | Generated `Hook()` helper | Game audio system init, captured as `audio_init_system_original` | `audio_init_system_detour` | Skips MSS init when SDL reports no playback devices. |
+| `DTTR_PCDOGS_F_AudioStopAllSounds` | `A1 ?? ?? ?? ?? 6A ?? 50 FF 15` | Generated `Hook()` helper | Game stop-all-sounds routine, captured as `audio_stop_all_sounds_original` | `audio_stop_all_sounds_detour` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
+| `DTTR_PCDOGS_F_AudioInitializeLevelAudio` | `A1 ?? ?? ?? ?? 6A 7F 50 FF 15` | Generated `Hook()` helper | Game level-audio init routine, captured as `audio_init_level_audio_original` | `audio_init_level_audio_detour` | Guards level audio init when no driver is active. |
+| `DTTR_PCDOGS_F_AudioStopAllSamples` | `56 57 8B 3D ?? ?? ?? ?? BE` | Generated `Hook()` helper | Game stop-all-samples routine, captured as `audio_stop_all_samples_original` | `audio_stop_all_samples_detour` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
 
 ### Miles Sound System Import Hooks
 
-DttR patches the `mss32.dll` import address table by name. The original target is the imported MSS32 function in the game's IAT slot; DttR keeps it only so the hook can be restored.
+DttR patches the `mss32.dll` import address table by name. It keeps the original MSS32 function from each game IAT slot so the hook can be restored.
 
 | Hook | Import name / site | Replacement target |
 | --- | --- | --- |
@@ -111,4 +111,4 @@ DttR patches the `mss32.dll` import address table by name. The original target i
 
 | Site | Signature / site | Patch | Original target | Replacement target | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `dttr_movies_hook_movie_play_file` | `8B 44 24 08 8B 0D ?? ?? ?? ?? 8B 54 24 04 56 50` | `E9 <rel32>` at match | Game `Movie_PlayFile` routine | `dttr_movies_hook_movie_play_file_callback` | Replaces MCI playback with DttR movie playback through FFmpeg and SDL audio/video output. |
+| `dttr_movies_hook_movie_play_file` | `8B 44 24 08 8B 0D ?? ?? ?? ?? 8B 54 24 04 56 50` | `E9 <rel32>` at match | Game `Movie_PlayFile` routine | `dttr_movies_hook_movie_play_file_callback` | Replaces MCI playback with DttR's FFmpeg/SDL-backed movie player. |

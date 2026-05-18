@@ -1,40 +1,50 @@
-#include "dttr_hooks_game.h"
-#include "dttr_interop_pcdogs.h"
+#include "hooks_private.h"
+#include "sidecar_private.h"
 
-void dttr_game_hooks_init(const DTTR_ComponentContext *ctx) {
-	DTTR_RESOLVE(
-		dttr_crt_open_file_with_mode,
-		ctx,
-		"\xE8????\x85\xC0\x75?\xC3",
-		"x????xxx?x",
-		match
-	);
+#include <dttr_pcdogs.h>
 
-	DTTR_INSTALL_JMP(
-		dttr_crt_hook_open_file,
-		ctx,
-		"\x6A\x40\xFF\x74\x24\x0C\xFF\x74\x24\x0C\xE8",
-		"xxxxxxxxxxx"
-	);
+static const DTTR_PCDOGS_T_Patch_Spec game_patches[] = {
+	{
+		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
+		.required = true,
+		.function = DTTR_PCDOGS_FUNCTION_FILE_OPEN,
+		.detour = dttr_crt_hook_open_file_callback,
+		.out_original = NULL,
+	},
+	{
+		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
+		.required = true,
+		.function = DTTR_PCDOGS_FUNCTION_TITLE_SCREEN_CLEANUP_RESOURCES,
+		.detour = dttr_hook_cleanup_title_resources_callback,
+		.out_original = (void **)&dttr_hook_cleanup_title_resources_original,
+	},
+	DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
+		false,
+		"51 8D 44 24 ?? 57",
+		0,
+		dttr_hook_resolve_pcdogs_path_callback
+	),
+};
 
-	DTTR_INSTALL_JMP_OPTIONAL(
-		dttr_hook_resolve_pcdogs_path,
-		ctx,
-		"\x51\x8D\x44\x24?\x57",
-		"xxxx?x"
-	);
+static DTTR_Core_PatchGroup *game_targets;
 
-	DTTR_INSTALL_TRAMPOLINE_AUTO(
-		dttr_hook_cleanup_level_assets,
-		ctx,
-		"\x6A\x01\xE8????\xE8????\xA1????\x50\xE8????\x8B\x0D????\x51\xE8????\x8B\x15????"
-		"\x52\xE8????\xA1????\x50\xE8????\x8B\x0D????\x51\xE8????\x83??",
-		"xxx????x????x????xx????xx????xx????xx????xx????x????xx????xx????xx??"
-	);
+// Installs the game-level patch group and clears cleanup state if any required hook fails.
+bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
+	if (!dttr_sidecar_install_pcdogs_patch_group(
+			ctx,
+			"sidecar/game",
+			game_patches,
+			DTTR_ARRAY_COUNT(game_patches),
+			&game_targets
+		)) {
+		dttr_hook_cleanup_title_resources_original = NULL;
+		return false;
+	}
+	return true;
 }
 
-void dttr_game_hooks_cleanup(const DTTR_ComponentContext *ctx) {
-	DTTR_TRAMPOLINE_UNINSTALL(dttr_hook_cleanup_level_assets, ctx);
-	DTTR_UNINSTALL(dttr_hook_resolve_pcdogs_path, ctx);
-	DTTR_UNINSTALL(dttr_crt_hook_open_file, ctx);
+// Releases all game-level patches and drops the saved cleanup callback pointer.
+void dttr_game_hooks_cleanup(const DTTR_Mods_Context *ctx) {
+	DTTR_Core_PatchGroupRelease(&game_targets);
+	dttr_hook_cleanup_title_resources_original = NULL;
 }

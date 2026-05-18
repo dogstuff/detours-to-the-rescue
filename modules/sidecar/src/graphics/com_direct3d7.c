@@ -8,23 +8,23 @@
 
 static const DWORD D3D7_MAX_TEXTURE_REPEAT = 1u << 15;
 
-static DTTR_Graphics_COM_Direct3DDevice7 *s_d3d7_device;
+static DTTR_Graphics_COM_Direct3DDevice7 *d3d7_device;
 
-static DTTR_Graphics_COM_Direct3DDevice7 *s_d3d7_get_device(void) {
-	if (!s_d3d7_device) {
-		s_d3d7_device = dttr_graphics_com_create_direct3ddevice7();
+static DTTR_Graphics_COM_Direct3DDevice7 *d3d7_get_device() {
+	if (!d3d7_device) {
+		d3d7_device = dttr_graphics_com_create_direct3ddevice7();
 	}
 
-	return s_d3d7_device;
+	return d3d7_device;
 }
 
-DTTR_COM_QI_SELF(s_d3d7_query_interface, DTTR_Graphics_COM_Direct3D7)
+DTTR_COM_QI_SELF(d3d7_query_interface, DTTR_Graphics_COM_Direct3D7)
 
-DTTR_COM_ADDREF(s_d3d7_addref, DTTR_Graphics_COM_Direct3D7)
+DTTR_COM_ADDREF(d3d7_addref, DTTR_Graphics_COM_Direct3D7)
 
-DTTR_COM_RELEASE(s_d3d7_release, DTTR_Graphics_COM_Direct3D7)
+DTTR_COM_RELEASE(d3d7_release, DTTR_Graphics_COM_Direct3D7)
 
-static HRESULT __stdcall s_d3d7_enum_devices(
+static HRESULT __stdcall d3d7_enum_devices(
 	DTTR_Graphics_COM_Direct3D7 *self,
 	void *cb,
 	void *ctx
@@ -71,13 +71,13 @@ static HRESULT __stdcall s_d3d7_enum_devices(
 	return S_OK;
 }
 
-static HRESULT __stdcall s_d3d7_createdevice(
+static HRESULT __stdcall d3d7_createdevice(
 	DTTR_Graphics_COM_Direct3D7 *self,
 	void *guid,
 	void *surf,
 	void **dev
 ) {
-	DTTR_Graphics_COM_Direct3DDevice7 *device = s_d3d7_get_device();
+	DTTR_Graphics_COM_Direct3DDevice7 *device = d3d7_get_device();
 
 	if (dev) {
 		*dev = device;
@@ -86,7 +86,7 @@ static HRESULT __stdcall s_d3d7_createdevice(
 	return S_OK;
 }
 
-static HRESULT __stdcall s_d3d7_createvertexbuffer(
+static HRESULT __stdcall d3d7_createvertexbuffer(
 	DTTR_Graphics_COM_Direct3D7 *self,
 	void *desc,
 	void **vb,
@@ -99,7 +99,7 @@ static HRESULT __stdcall s_d3d7_createvertexbuffer(
 	return S_OK;
 }
 
-static HRESULT __stdcall s_d3d7_enumzbufferformats(
+static HRESULT __stdcall d3d7_enumzbufferformats(
 	DTTR_Graphics_COM_Direct3D7 *self,
 	void *guid,
 	void *cb,
@@ -138,23 +138,23 @@ static HRESULT __stdcall s_d3d7_enumzbufferformats(
 	return S_OK;
 }
 
-DTTR_COM_NOOP_HRESULT(s_d3d7_evict_managed_textures, DTTR_Graphics_COM_Direct3D7 *self)
+DTTR_COM_NOOP_HRESULT(d3d7_evict_managed_textures, DTTR_Graphics_COM_Direct3D7 *self)
 
-static DTTR_Graphics_COM_Direct3D7_VT s_vtbl = {
-	.QueryInterface = s_d3d7_query_interface,
-	.AddRef = s_d3d7_addref,
-	.Release = s_d3d7_release,
-	.EnumDevices = s_d3d7_enum_devices,
-	.CreateDevice = s_d3d7_createdevice,
-	.CreateVertexBuffer = s_d3d7_createvertexbuffer,
-	.EnumZBufferFormats = s_d3d7_enumzbufferformats,
-	.EvictManagedTextures = s_d3d7_evict_managed_textures,
+static DTTR_Graphics_COM_Direct3D7_VT vtbl = {
+	.QueryInterface = d3d7_query_interface,
+	.AddRef = d3d7_addref,
+	.Release = d3d7_release,
+	.EnumDevices = d3d7_enum_devices,
+	.CreateDevice = d3d7_createdevice,
+	.CreateVertexBuffer = d3d7_createvertexbuffer,
+	.EnumZBufferFormats = d3d7_enumzbufferformats,
+	.EvictManagedTextures = d3d7_evict_managed_textures,
 };
 
-DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7(void) {
+DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7() {
 	DTTR_Graphics_COM_Direct3D7 *d3d = malloc(sizeof(DTTR_Graphics_COM_Direct3D7));
 	if (d3d) {
-		d3d->m_vtbl = &s_vtbl;
+		d3d->vtbl = &vtbl;
 	}
 	return d3d;
 }

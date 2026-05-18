@@ -1,33 +1,35 @@
-#ifdef DTTR_MODDING_ENABLED
+#ifdef DTTR_MODS_ENABLED
 
-#include "../components/components_private.h"
+#include "../mods/mods_private.h"
 #include "imgui_overlay_private.h"
 
 #include <dttr_imgui.h>
 #include <dttr_log.h>
 
-static DTTR_BackendType s_backend_type;
-static SDL_Window *s_window;
-static DTTR_ImGuiDesktopScaleState s_imgui_scale;
-static bool s_initialized;
+static DTTR_BackendType backend_type;
+static SDL_Window *window;
+static DTTR_ImGuiDesktopScaleState imgui_scale;
+static bool initialized;
 
-static bool s_uses_sdl_gpu(void) { return s_backend_type == DTTR_BACKEND_SDL_GPU; }
+// Selects the SDL GPU ImGui backend only when the active renderer is SDL GPU.
+static bool uses_sdl_gpu() { return backend_type == DTTR_BACKEND_SDL_GPU; }
 
-static const char *s_backend_name(void) {
-	return s_uses_sdl_gpu() ? "SDL_GPU" : "OpenGL";
-}
+// Returns the ImGui backend label used in overlay startup logs.
+static const char *backend_name() { return uses_sdl_gpu() ? "SDL_GPU" : "OpenGL"; }
 
-static bool s_has_draw_data(const ImDrawData *draw_data) {
+// Skips backend submission when ImGui produced no command lists for this frame.
+static bool has_draw_data(const ImDrawData *draw_data) {
 	return draw_data && draw_data->CmdListsCount > 0;
 }
 
-static void s_backend_init(SDL_Window *window, SDL_GPUDevice *device) {
-	if (s_uses_sdl_gpu()) {
-		ImGui_ImplSDL3_InitForSDLGPU(window);
+// Initializes the ImGui renderer backend that matches the active sidecar graphics API.
+static void backend_init(SDL_Window *sdl_window, SDL_GPUDevice *device) {
+	if (uses_sdl_gpu()) {
+		ImGui_ImplSDL3_InitForSDLGPU(sdl_window);
 
 		SDL_GPUTextureFormat swapchain_format = SDL_GetGPUSwapchainTextureFormat(
 			device,
-			window
+			sdl_window
 		);
 		CImGui_ImplSDLGPU3_InitInfo info = {
 			.Device = device,
@@ -41,12 +43,13 @@ static void s_backend_init(SDL_Window *window, SDL_GPUDevice *device) {
 		return;
 	}
 
-	ImGui_ImplSDL3_InitForOpenGL(window, NULL);
+	ImGui_ImplSDL3_InitForOpenGL(sdl_window, NULL);
 	ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-static void s_backend_shutdown(void) {
-	if (s_uses_sdl_gpu()) {
+// Shuts down the renderer-specific ImGui backend before the shared SDL layer exits.
+static void backend_shutdown() {
+	if (uses_sdl_gpu()) {
 		cImGui_ImplSDLGPU3_Shutdown();
 		return;
 	}
@@ -54,8 +57,13 @@ static void s_backend_shutdown(void) {
 	ImGui_ImplOpenGL3_Shutdown();
 }
 
-void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType backend) {
-	if (s_initialized) {
+// Creates the ImGui context and backend bindings used by mod overlay UI.
+void dttr_imgui_init(
+	SDL_Window *sdl_window,
+	SDL_GPUDevice *device,
+	DTTR_BackendType backend
+) {
+	if (initialized) {
 		DTTR_LOG_WARN(
 			"ImGui overlay init requested while already initialized; cleaning up stale "
 			"backend state"
@@ -63,9 +71,9 @@ void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType
 		dttr_imgui_cleanup();
 	}
 
-	s_backend_type = backend;
-	s_window = window;
-	s_imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
+	backend_type = backend;
+	window = sdl_window;
+	imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
 
 	igCreateContext(NULL);
 
@@ -77,82 +85,102 @@ void dttr_imgui_init(SDL_Window *window, SDL_GPUDevice *device, DTTR_BackendType
 	ImGuiStyle *style = igGetStyle();
 	style->Alpha = 0.9f;
 	style->WindowRounding = 4.0f;
-	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
+	DTTR_ImGui_ApplyWindowDesktopScale(&imgui_scale, window);
 
-	s_backend_init(window, device);
-	s_initialized = true;
-	DTTR_LOG_INFO("ImGui overlay initialized (backend: %s)", s_backend_name());
+	backend_init(window, device);
+	initialized = true;
+	DTTR_LOG_INFO("ImGui overlay initialized (backend: %s)", backend_name());
 }
 
-void dttr_imgui_cleanup(void) {
-	if (!s_initialized) {
+// Destroys ImGui state and clears cached backend handles during graphics shutdown.
+void dttr_imgui_cleanup() {
+	if (!initialized) {
 		return;
 	}
 
-	s_backend_shutdown();
+	backend_shutdown();
 	ImGui_ImplSDL3_Shutdown();
 	igDestroyContext(NULL);
-	s_window = NULL;
-	s_imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
-	s_initialized = false;
+	window = NULL;
+	imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
+	initialized = false;
 	DTTR_LOG_INFO("ImGui overlay cleaned up");
 }
 
+// Lets ImGui consume SDL mouse and keyboard events before they reach game input hooks.
 bool dttr_imgui_process_event(const SDL_Event *event) {
-	if (!s_initialized) {
+	if (!initialized) {
 		return false;
 	}
 
 	ImGui_ImplSDL3_ProcessEvent(event);
-	return false;
+	ImGuiIO *io = igGetIO_Nil();
+	switch (event->type) {
+	case SDL_EVENT_MOUSE_MOTION:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+	case SDL_EVENT_MOUSE_WHEEL:
+		return io->WantCaptureMouse;
+	case SDL_EVENT_KEY_DOWN:
+	case SDL_EVENT_KEY_UP:
+	case SDL_EVENT_TEXT_INPUT:
+		return io->WantCaptureKeyboard;
+	default:
+		return false;
+	}
 }
 
-static void s_backend_new_frame(void) {
-	if (s_uses_sdl_gpu()) {
+// Starts a renderer-backend ImGui frame for the active graphics API.
+static void backend_new_frame() {
+	if (uses_sdl_gpu()) {
 		cImGui_ImplSDLGPU3_NewFrame();
 	} else {
 		ImGui_ImplOpenGL3_NewFrame();
 	}
 }
 
-static void s_new_frame(void) {
-	s_backend_new_frame();
+// Starts a full interactive ImGui frame with SDL input and desktop scaling applied.
+static void new_frame() {
+	backend_new_frame();
 	ImGui_ImplSDL3_NewFrame();
-	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
+	DTTR_ImGui_ApplyWindowDesktopScale(&imgui_scale, window);
 	igNewFrame();
 }
 
-static void s_new_frame_no_input(uint32_t w, uint32_t h) {
-	s_backend_new_frame();
-	dttr_imgui_apply_window_desktop_scale(&s_imgui_scale, s_window);
+// Starts an offscreen ImGui frame for game rendering callbacks that should not read input.
+static void new_frame_no_input(uint32_t w, uint32_t h) {
+	backend_new_frame();
+	DTTR_ImGui_ApplyWindowDesktopScale(&imgui_scale, window);
 	ImGuiIO *io = igGetIO_Nil();
 	io->DisplaySize = (ImVec2_c){(float)w, (float)h};
 	igNewFrame();
 }
 
-static ImDrawData *s_render_game_frame(uint32_t w, uint32_t h) {
-	s_new_frame_no_input(w, h);
+// Renders game frame for the optional ImGui modding overlay across graphics backends.
+static ImDrawData *render_game_frame(uint32_t w, uint32_t h) {
+	new_frame_no_input(w, h);
 
-	const DTTR_RenderGameContext ctx = {
-		.m_width = w,
-		.m_height = h,
-		.m_scale = (float)h / 480.0f,
+	const DTTR_Mods_RenderGameContext ctx = {
+		.width = w,
+		.height = h,
+		.scale = (float)h / 480.0f,
 	};
 
-	dttr_components_render_game(&ctx);
+	dttr_mods_render_game(&ctx);
 
 	igRender();
 	return igGetDrawData();
 }
 
-static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
-	const float game_scale = ctx->m_scale > 0.0f ? ctx->m_scale : 1.0f;
-	const float desktop_scale = dttr_imgui_get_current_desktop_scale(&s_imgui_scale);
+// Draws the small modding badge in game coordinates after mod UI has rendered.
+static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
+	const float game_scale = ctx->scale > 0.0f ? ctx->scale : 1.0f;
+	const float desktop_scale = DTTR_ImGui_GetCurrentDesktopScale(&imgui_scale);
 	const float badge_scale = 0.09f * game_scale;
 	const float margin = 4.0f * game_scale * desktop_scale;
 	const ImVec2_c pos = {
-		(float)ctx->m_game_x + (float)ctx->m_game_w - margin,
-		(float)ctx->m_game_y + margin,
+		(float)ctx->game_x + (float)ctx->game_w - margin,
+		(float)ctx->game_y + margin,
 	};
 
 	const ImVec2_c pivot = {1.0f, 0.0f};
@@ -188,7 +216,8 @@ static void s_draw_modding_overlay(const DTTR_RenderContext *ctx) {
 	}
 }
 
-static ImDrawData *s_render_overlay_frame(
+// Renders overlay frame for the optional ImGui modding overlay across graphics backends.
+static ImDrawData *render_overlay_frame(
 	uint32_t swap_w,
 	uint32_t swap_h,
 	uint32_t game_x,
@@ -196,38 +225,40 @@ static ImDrawData *s_render_overlay_frame(
 	uint32_t game_w,
 	uint32_t game_h
 ) {
-	const DTTR_RenderContext ctx = {
-		.m_window_w = swap_w,
-		.m_window_h = swap_h,
-		.m_game_x = game_x,
-		.m_game_y = game_y,
-		.m_game_w = game_w,
-		.m_game_h = game_h,
-		.m_scale = (float)game_h / 480.0f,
+	const DTTR_Mods_RenderContext ctx = {
+		.window_w = swap_w,
+		.window_h = swap_h,
+		.game_x = game_x,
+		.game_y = game_y,
+		.game_w = game_w,
+		.game_h = game_h,
+		.scale = (float)game_h / 480.0f,
 	};
 
-	s_new_frame();
-	dttr_components_imgui_begin(&ctx);
-	dttr_components_render(&ctx);
-	s_draw_modding_overlay(&ctx);
-	dttr_components_imgui_end(&ctx);
+	new_frame();
+	dttr_mods_imgui_begin(&ctx);
+	dttr_mods_render(&ctx);
+	draw_modding_overlay(&ctx);
+	dttr_mods_imgui_end(&ctx);
 
 	igRender();
 	return igGetDrawData();
 }
 
-static void s_current_display_size(uint32_t *width, uint32_t *height) {
+// Reads ImGui's current display size for OpenGL paths that present to the default target.
+static void current_display_size(uint32_t *width, uint32_t *height) {
 	ImGuiIO *io = igGetIO_Nil();
 	*width = (uint32_t)io->DisplaySize.x;
 	*height = (uint32_t)io->DisplaySize.y;
 }
 
-static void s_submit_sdl3gpu(
+// Submits SDL3 GPU for the optional ImGui modding overlay across graphics backends.
+static void submit_sdl3gpu(
 	ImDrawData *draw_data,
 	SDL_GPUCommandBuffer *cmd,
 	SDL_GPUTexture *target
 ) {
-	if (!s_has_draw_data(draw_data)) {
+	if (!has_draw_data(draw_data)) {
 		return;
 	}
 
@@ -248,38 +279,42 @@ static void s_submit_sdl3gpu(
 	SDL_EndGPURenderPass(pass);
 }
 
-static void s_submit_opengl(ImDrawData *draw_data) {
-	if (!s_has_draw_data(draw_data)) {
+// Submits OpenGL for the optional ImGui modding overlay across graphics backends.
+static void submit_opengl(ImDrawData *draw_data) {
+	if (!has_draw_data(draw_data)) {
 		return;
 	}
 
 	ImGui_ImplOpenGL3_RenderDrawData(draw_data);
 }
 
+// Renders mod-provided game content into an SDL GPU render target.
 void dttr_imgui_render_game_sdl3gpu(
 	SDL_GPUCommandBuffer *cmd,
 	SDL_GPUTexture *render_target,
 	uint32_t w,
 	uint32_t h
 ) {
-	if (!dttr_components_has_render_game()) {
+	if (!dttr_mods_has_render_game()) {
 		return;
 	}
 
-	s_submit_sdl3gpu(s_render_game_frame(w, h), cmd, render_target);
+	submit_sdl3gpu(render_game_frame(w, h), cmd, render_target);
 }
 
-void dttr_imgui_render_game_opengl(void) {
-	if (!dttr_components_has_render_game()) {
+// Renders mod-provided game content through the OpenGL ImGui backend.
+void dttr_imgui_render_game_opengl() {
+	if (!dttr_mods_has_render_game()) {
 		return;
 	}
 
 	uint32_t width = 0;
 	uint32_t height = 0;
-	s_current_display_size(&width, &height);
-	s_submit_opengl(s_render_game_frame(width, height));
+	current_display_size(&width, &height);
+	submit_opengl(render_game_frame(width, height));
 }
 
+// Renders the interactive overlay into the SDL GPU swapchain target.
 void dttr_imgui_render_sdl3gpu(
 	SDL_GPUCommandBuffer *cmd,
 	SDL_GPUTexture *swapchain_tex,
@@ -290,13 +325,14 @@ void dttr_imgui_render_sdl3gpu(
 	uint32_t game_w,
 	uint32_t game_h
 ) {
-	s_submit_sdl3gpu(
-		s_render_overlay_frame(swap_w, swap_h, game_x, game_y, game_w, game_h),
+	submit_sdl3gpu(
+		render_overlay_frame(swap_w, swap_h, game_x, game_y, game_w, game_h),
 		cmd,
 		swapchain_tex
 	);
 }
 
+// Renders the interactive overlay through OpenGL after the game viewport is known.
 void dttr_imgui_render_opengl(
 	uint32_t game_x,
 	uint32_t game_y,
@@ -305,8 +341,8 @@ void dttr_imgui_render_opengl(
 ) {
 	uint32_t width = 0;
 	uint32_t height = 0;
-	s_current_display_size(&width, &height);
-	s_submit_opengl(s_render_overlay_frame(width, height, game_x, game_y, game_w, game_h));
+	current_display_size(&width, &height);
+	submit_opengl(render_overlay_frame(width, height, game_x, game_y, game_w, game_h));
 }
 
-#endif /* DTTR_MODDING_ENABLED */
+#endif // DTTR_MODS_ENABLED

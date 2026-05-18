@@ -1,6 +1,6 @@
 #include "gui_internal.h"
 
-static const char *const S_GAMEPAD_AXIS_TOOLTIPS[] = {
+static const char *const GAMEPAD_AXIS_TOOLTIPS[] = {
 	"Disables this gamepad axis mapping.",
 	"Uses the left stick horizontal axis.",
 	"Uses the left stick vertical axis.",
@@ -10,88 +10,120 @@ static const char *const S_GAMEPAD_AXIS_TOOLTIPS[] = {
 	"Uses the right trigger axis.",
 };
 
-static const char *S_TOOLTIP_GAMEPAD_ENABLED = "Whether to enable gamepad input. Set to "
-											   "false to disable all gamepad support. "
-											   "Default: true.";
-static const char *S_TOOLTIP_GAMEPAD_INDEX = "The index of the gamepad to use (starting "
-											 "at 0). Default: 0.";
-static const char *S_TOOLTIP_GAMEPAD_AXIS
+static const char *TOOLTIP_GAMEPAD_ENABLED = "Whether to enable gamepad input. Set to "
+											 "false to disable all gamepad support. "
+											 "Default: true.";
+static const char *TOOLTIP_GAMEPAD_INDEX = "The index of the gamepad to use (starting "
+										   "at 0). Default: 0.";
+static const char *TOOLTIP_GAMEPAD_AXIS
 	= "The SDL gamepad axis used for this DttR control axis. Default: stick axes use the "
 	  "left stick; camera RZ uses the right stick horizontal axis.";
-static const char *S_TOOLTIP_GAMEPAD_DEADZONE = "Per-axis deadzone (scaled axis units, "
-												"default 700). Default: 700.";
-static const char *S_TOOLTIP_GAMEPAD_BUTTONS
+static const char *TOOLTIP_GAMEPAD_DEADZONE = "Per-axis deadzone in scaled axis units. "
+											  "Default: 700.";
+static const char *TOOLTIP_GAMEPAD_BUTTONS
 	= "Each row maps what you press to what the game does. Click Bind, press a "
 	  "controller button, or Clear to leave that action unused.";
-static const char *S_TOOLTIP_GAMEPAD_SOUTH = "joy_1 is always used as the menu confirm "
-											 "button.";
-static const char *S_TOOLTIP_GAMEPAD_EAST = "joy_2 is always used as the menu back "
-											"button.";
-static const char *S_TOOLTIP_GAMEPAD_START = "joy_9 is always used as the start/pause "
-											 "button.";
-static const char *S_TOOLTIP_BIND_BUTTON = "Click, then press a gamepad button or "
-										   "trigger to remap this SDL source row.";
-static const char *S_TOOLTIP_CLEAR_BUTTON = "Set this SDL input mapping to none.";
-static const char *S_TOOLTIP_RESET_BUTTON = "Reset this game action to its default "
-											"controller input.";
+static const char *TOOLTIP_GAMEPAD_SOUTH = "Default menu confirm action.";
+static const char *TOOLTIP_GAMEPAD_EAST = "Default menu back action.";
+static const char *TOOLTIP_GAMEPAD_START = "Default start/pause action.";
+static const char *TOOLTIP_BIND_BUTTON = "Click, then press a gamepad button or "
+										 "trigger to remap this SDL source row.";
+static const char *TOOLTIP_CLEAR_BUTTON = "Set this SDL input mapping to none.";
+static const char *TOOLTIP_RESET_BUTTON = "Reset this game action to its default "
+										  "controller input.";
+static const char *const GAMEPAD_SOURCE_UNKNOWN = "Unknown";
 
 typedef struct {
-	const char *m_label;
-	const char *m_id;
-	int m_axis_index;
-} S_GamepadAxisField;
+	const char *label;
+	const char *id;
+	int axis_index;
+} gamepad_axis_field;
 
-static const S_GamepadAxisField S_GAMEPAD_AXIS_FIELDS[] = {
+static const gamepad_axis_field GAMEPAD_AXIS_FIELDS[] = {
 	{"Stick X axis", "##axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
 	{"Stick Y axis", "##axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
 	{"Camera RZ axis", "##axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
 };
 
-static const S_GamepadAxisField S_GAMEPAD_DEADZONE_FIELDS[] = {
+static const gamepad_axis_field GAMEPAD_DEADZONE_FIELDS[] = {
 	{"Stick X deadzone", "##deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
 	{"Stick Y deadzone", "##deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
 	{"Camera RZ deadzone", "##deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
 };
 
-static void s_draw_gamepad_axis_choice(
-	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
-	const char *label,
-	const char *id,
+static config_label_state gamepad_axis_label_state(
+	const config_ui_state *state,
+	const int *saved_values,
+	const int *default_values,
 	int axis_index
 ) {
-	s_labeled_choice_combo(
-		ctx,
-		label,
-		id,
-		&state->m_config.m_gamepad_axes[axis_index],
-		DTTR_CONFIG_CHOICES_GAMEPAD_AXIS,
-		S_GAMEPAD_AXIS_TOOLTIPS,
-		S_TOOLTIP_GAMEPAD_AXIS,
-		S_FIELD_LABEL_STATE(state, m_gamepad_axes)
+	return make_config_label_state(
+		state->config.gamepad_axes[axis_index] != saved_values[axis_index],
+		state->config.gamepad_axes[axis_index] != default_values[axis_index]
 	);
 }
 
-static void s_draw_gamepad_deadzone_input(
+static config_label_state gamepad_deadzone_label_state(
+	const config_ui_state *state,
+	const int *saved_values,
+	const int *default_values,
+	int axis_index
+) {
+	return make_config_label_state(
+		state->config.gamepad_axis_deadzone[axis_index] != saved_values[axis_index],
+		state->config.gamepad_axis_deadzone[axis_index] != default_values[axis_index]
+	);
+}
+
+static void draw_gamepad_axis_choice(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *label,
 	const char *id,
 	int axis_index
 ) {
-	s_labeled_input_int(
+	labeled_choice_combo(
 		ctx,
 		label,
 		id,
-		&state->m_config.m_gamepad_axis_deadzone[axis_index],
+		&state->config.gamepad_axes[axis_index],
+		DTTR_CONFIG_CHOICES_GAMEPAD_AXIS,
+		GAMEPAD_AXIS_TOOLTIPS,
+		TOOLTIP_GAMEPAD_AXIS,
+		gamepad_axis_label_state(
+			state,
+			state->saved_config.gamepad_axes,
+			state->defaults.gamepad_axes,
+			axis_index
+		)
+	);
+}
+
+static void draw_gamepad_deadzone_input(
+	const DTTR_ImGuiDialogContext *ctx,
+	config_ui_state *state,
+	const char *label,
+	const char *id,
+	int axis_index
+) {
+	labeled_input_int(
+		ctx,
+		label,
+		id,
+		&state->config.gamepad_axis_deadzone[axis_index],
 		10,
 		100,
-		S_TOOLTIP_GAMEPAD_DEADZONE,
-		S_FIELD_LABEL_STATE(state, m_gamepad_axis_deadzone)
+		TOOLTIP_GAMEPAD_DEADZONE,
+		gamepad_deadzone_label_state(
+			state,
+			state->saved_config.gamepad_axis_deadzone,
+			state->defaults.gamepad_axis_deadzone,
+			axis_index
+		)
 	);
 }
 
-const char *s_source_label(int source) {
+const char *source_label(int source) {
 	switch (source) {
 	case DTTR_GAMEPAD_MAPPING_NONE:
 		return "none";
@@ -104,29 +136,29 @@ const char *s_source_label(int source) {
 	}
 
 	if (source < 0 || source >= SDL_GAMEPAD_BUTTON_COUNT) {
-		return "Unknown";
+		return GAMEPAD_SOURCE_UNKNOWN;
 	}
 
 	const char *label = SDL_GetGamepadStringForButton((SDL_GamepadButton)source);
-	return label ? label : "Unknown";
+	return label ? label : GAMEPAD_SOURCE_UNKNOWN;
 }
 
-const char *s_source_tooltip(int source) {
+const char *source_tooltip(int source) {
 	switch (source) {
 	case DTTR_GAMEPAD_MAPPING_NONE:
 		return "No controller input is bound to this game action.";
 	case SDL_GAMEPAD_BUTTON_SOUTH:
-		return S_TOOLTIP_GAMEPAD_SOUTH;
+		return TOOLTIP_GAMEPAD_SOUTH;
 	case SDL_GAMEPAD_BUTTON_EAST:
-		return S_TOOLTIP_GAMEPAD_EAST;
+		return TOOLTIP_GAMEPAD_EAST;
 	case SDL_GAMEPAD_BUTTON_START:
-		return S_TOOLTIP_GAMEPAD_START;
+		return TOOLTIP_GAMEPAD_START;
 	default:
-		return S_TOOLTIP_GAMEPAD_BUTTONS;
+		return TOOLTIP_GAMEPAD_BUTTONS;
 	}
 }
 
-int s_source_from_event(const SDL_Event *event) {
+int source_from_event(const SDL_Event *event) {
 	switch (event->type) {
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
 		return event->gbutton.button;
@@ -149,11 +181,8 @@ int s_source_from_event(const SDL_Event *event) {
 	}
 }
 
-static void s_draw_gamepad_axes(
-	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state
-) {
-	if (!s_begin_full_width_settings_table(
+static void draw_gamepad_axes(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	if (!begin_full_width_settings_table(
 			ctx,
 			"##gamepad_axes_table",
 			DTTR_CONFIG_UI_LABEL_W,
@@ -162,124 +191,124 @@ static void s_draw_gamepad_axes(
 		return;
 	}
 
-	s_labeled_checkbox(
+	labeled_checkbox(
 		ctx,
 		"Enable gamepad",
 		"##gamepad_enabled",
-		&state->m_config.m_gamepad_enabled,
-		S_TOOLTIP_GAMEPAD_ENABLED,
-		S_FIELD_LABEL_STATE(state, m_gamepad_enabled)
+		&state->config.gamepad_enabled,
+		TOOLTIP_GAMEPAD_ENABLED,
+		FIELD_LABEL_STATE(state, gamepad_enabled)
 	);
-	s_labeled_input_int(
+	labeled_input_int(
 		ctx,
 		"Gamepad index",
 		"##gamepad_index",
-		&state->m_config.m_gamepad_index,
+		&state->config.gamepad_index,
 		1,
 		1,
-		S_TOOLTIP_GAMEPAD_INDEX,
-		S_FIELD_LABEL_STATE(state, m_gamepad_index)
+		TOOLTIP_GAMEPAD_INDEX,
+		FIELD_LABEL_STATE(state, gamepad_index)
 	);
 
-	for (int i = 0; i < (int)SDL_arraysize(S_GAMEPAD_AXIS_FIELDS); i++) {
-		s_draw_gamepad_axis_choice(
+	for (int i = 0; i < (int)SDL_arraysize(GAMEPAD_AXIS_FIELDS); i++) {
+		draw_gamepad_axis_choice(
 			ctx,
 			state,
-			S_GAMEPAD_AXIS_FIELDS[i].m_label,
-			S_GAMEPAD_AXIS_FIELDS[i].m_id,
-			S_GAMEPAD_AXIS_FIELDS[i].m_axis_index
+			GAMEPAD_AXIS_FIELDS[i].label,
+			GAMEPAD_AXIS_FIELDS[i].id,
+			GAMEPAD_AXIS_FIELDS[i].axis_index
 		);
 	}
 
-	for (int i = 0; i < (int)SDL_arraysize(S_GAMEPAD_DEADZONE_FIELDS); i++) {
-		s_draw_gamepad_deadzone_input(
+	for (int i = 0; i < (int)SDL_arraysize(GAMEPAD_DEADZONE_FIELDS); i++) {
+		draw_gamepad_deadzone_input(
 			ctx,
 			state,
-			S_GAMEPAD_DEADZONE_FIELDS[i].m_label,
-			S_GAMEPAD_DEADZONE_FIELDS[i].m_id,
-			S_GAMEPAD_DEADZONE_FIELDS[i].m_axis_index
+			GAMEPAD_DEADZONE_FIELDS[i].label,
+			GAMEPAD_DEADZONE_FIELDS[i].id,
+			GAMEPAD_DEADZONE_FIELDS[i].axis_index
 		);
 	}
 
-	s_end_settings_table();
+	end_settings_table();
 }
 
-static void s_draw_gamepad_button_row(
+static void draw_gamepad_button_row(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	int row
 ) {
 	igPushID_Int(row);
 
-	const int action = state->m_button_actions[row];
-	const int source = state->m_button_sources[row];
+	const int action = state->button_actions[row];
+	const int source = state->button_sources[row];
 
 	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
 	igTableNextColumn();
 	igTableNextColumn();
 	igAlignTextToFramePadding();
-	s_draw_config_label(
-		s_gamepad_button_row_label(row),
-		s_game_action_tooltip(action),
-		s_gamepad_button_label_state(state, source, action)
+	draw_config_label(
+		gamepad_button_row_label(row),
+		game_action_tooltip(action),
+		gamepad_button_label_state(state, source, action)
 	);
 
 	igTableNextColumn();
 	igAlignTextToFramePadding();
-	igText("%s", s_source_label(source));
-	s_show_tooltip(s_source_tooltip(source));
+	igText("%s", source_label(source));
+	show_tooltip(source_tooltip(source));
 
 	igTableNextColumn();
-	if (s_themed_row_button(ctx, "##bind", "Bind", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
-		state->m_binding_row = row;
-		s_set_status(state, "Press a gamepad button or trigger. Press Esc to cancel.");
+	if (themed_row_button(ctx, "##bind", "Bind", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
+		state->binding_row = row;
+		set_status(state, "Press a gamepad button or trigger. Press Esc to cancel.");
 	}
 
-	s_show_tooltip(S_TOOLTIP_BIND_BUTTON);
+	show_tooltip(TOOLTIP_BIND_BUTTON);
 
 	igTableNextColumn();
-	if (s_themed_row_button(ctx, "##clear", "Clear", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
-		state->m_button_sources[row] = DTTR_GAMEPAD_MAPPING_NONE;
+	if (themed_row_button(ctx, "##clear", "Clear", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
+		state->button_sources[row] = DTTR_GAMEPAD_MAPPING_NONE;
 	}
 
-	s_show_tooltip(S_TOOLTIP_CLEAR_BUTTON);
+	show_tooltip(TOOLTIP_CLEAR_BUTTON);
 
 	igTableNextColumn();
-	if (s_themed_row_button(ctx, "##reset", "Reset", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
-		state->m_button_sources[row] = s_gamepad_default_source_for_action(state, action);
+	if (themed_row_button(ctx, "##reset", "Reset", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
+		state->button_sources[row] = gamepad_default_source_for_action(state, action);
 	}
 
-	s_show_tooltip(S_TOOLTIP_RESET_BUTTON);
+	show_tooltip(TOOLTIP_RESET_BUTTON);
 
 	igPopID();
 }
 
-static void s_draw_gamepad_buttons(
+static void draw_gamepad_buttons(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state
+	config_ui_state *state
 ) {
-	s_add_scaled_vertical_spacing(ctx, 6.0f);
+	add_scaled_vertical_spacing(ctx, 6.0f);
 	igSeparatorText("Button mappings");
-	s_show_tooltip(S_TOOLTIP_GAMEPAD_BUTTONS);
-	if (state->m_binding_row >= 0) {
+	show_tooltip(TOOLTIP_GAMEPAD_BUTTONS);
+	if (state->binding_row >= 0) {
 		igText(
 			"Waiting for input for %s...",
-			s_gamepad_button_row_label(state->m_binding_row)
+			gamepad_button_row_label(state->binding_row)
 		);
 	}
 
-	if (!s_begin_gamepad_button_table(ctx)) {
+	if (!begin_gamepad_button_table(ctx)) {
 		return;
 	}
 
-	for (int i = 0; i < s_gamepad_button_row_count(); i++) {
-		s_draw_gamepad_button_row(ctx, state, i);
+	for (int i = 0; i < gamepad_button_row_count(); i++) {
+		draw_gamepad_button_row(ctx, state, i);
 	}
 
-	s_end_settings_table();
+	end_settings_table();
 }
 
-void s_draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
-	s_draw_gamepad_axes(ctx, state);
-	s_draw_gamepad_buttons(ctx, state);
+void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	draw_gamepad_axes(ctx, state);
+	draw_gamepad_buttons(ctx, state);
 }

@@ -2,9 +2,9 @@
 
 #include <SDL3/SDL.h>
 
-#define S_STEREO_BYTE_MAX 128.0f
-#define S_MIN_FREQUENCY_RATIO 0.01f
-#define S_MAX_FREQUENCY_RATIO 100.0f
+#define STEREO_BYTE_MAX 128.0f
+#define MIN_FREQUENCY_RATIO 0.01f
+#define MAX_FREQUENCY_RATIO 100.0f
 
 float dttr_mss_track_gain(int volume, float master_gain, float headroom) {
 	if (volume <= 0) {
@@ -28,8 +28,8 @@ void dttr_mss_track_apply_pan(MIX_Track *track, int pan) {
 	int right = 128;
 	dttr_mss_pan_to_stereo_bytes(pan, &left, &right);
 	MIX_StereoGains gains = {
-		(float)left / S_STEREO_BYTE_MAX,
-		(float)right / S_STEREO_BYTE_MAX,
+		(float)left / STEREO_BYTE_MAX,
+		(float)right / STEREO_BYTE_MAX,
 	};
 	MIX_SetTrackStereo(track, &gains);
 }
@@ -56,12 +56,12 @@ float dttr_mss_track_frequency_ratio(int rate, int reference_rate) {
 	}
 
 	float ratio = (float)rate / (float)reference_rate;
-	if (ratio < S_MIN_FREQUENCY_RATIO) {
-		return S_MIN_FREQUENCY_RATIO;
+	if (ratio < MIN_FREQUENCY_RATIO) {
+		return MIN_FREQUENCY_RATIO;
 	}
 
-	if (ratio > S_MAX_FREQUENCY_RATIO) {
-		return S_MAX_FREQUENCY_RATIO;
+	if (ratio > MAX_FREQUENCY_RATIO) {
+		return MAX_FREQUENCY_RATIO;
 	}
 
 	return ratio;

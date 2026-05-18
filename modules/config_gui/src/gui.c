@@ -2,24 +2,64 @@
 
 #include <stdlib.h>
 
-static const char *const S_CONFIG_WINDOW_TITLE = "DttR Configuration";
-static const char *const S_CONFIG_DEBUG_SHORTCUTS_ENV = "DTTR_CONFIG_DEBUG_SHORTCUTS";
+static const char *const CONFIG_WINDOW_TITLE = "DttR Configuration";
+static const char *const CONFIG_DEBUG_SHORTCUTS_ENV = "DTTR_CONFIG_DEBUG_SHORTCUTS";
 
-static const char *s_config_path_from_args(int argc, char **argv) {
-	return argc > 1 && argv[1] && argv[1][0] ? argv[1] : DTTR_CONFIG_FILENAME;
+static sds config_path_from_args(int argc, char **argv) {
+	if (argc > 1 && argv[1] && argv[1][0]) {
+		return sdsnew(argv[1]);
+	}
+
+	return DTTR_Path_ModuleSibling(NULL, DTTR_CONFIG_FILENAME);
 }
 
-static void s_draw_toolbar(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
+static bool confirm_discard_changes(
+	const DTTR_ImGuiDialogContext *ctx,
+	const config_ui_state *state,
+	const char *action
+) {
+	if (!config_has_unsaved_changes(state)) {
+		return true;
+	}
+
+	char message[256];
+	snprintf(
+		message,
+		sizeof(message),
+		"This will discard unsaved configuration changes and %s. Continue?",
+		action
+	);
+
+	const SDL_MessageBoxButtonData buttons[] = {
+		{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Discard"},
+		{SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"},
+	};
+	const SDL_MessageBoxData message_box = {
+		SDL_MESSAGEBOX_WARNING,
+		ctx ? ctx->window : NULL,
+		"Discard unsaved changes?",
+		message,
+		(int)SDL_arraysize(buttons),
+		buttons,
+		NULL,
+	};
+
+	int button_id = 0;
+	return DTTR_SDL_ShowMessageBox(&message_box, &button_id) && button_id == 1;
+}
+
+static void draw_toolbar(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!igBeginMenuBar()) {
 		return;
 	}
 
 	if (igMenuItem_Bool("Save", "Ctrl+S", false, true)) {
-		s_save_config(state);
+		save_config(state);
 	}
 
-	if (igMenuItem_Bool("Load", "Ctrl+O", false, true)) {
-		s_load_config(state);
+	if (igMenuItem_Bool("Load", "Ctrl+O", false, true)
+		&& confirm_discard_changes(ctx, state, "reload the file from disk")) {
+		load_config(state);
 	}
 
 	const ImGuiStyle *style = igGetStyle();
@@ -32,28 +72,29 @@ static void s_draw_toolbar(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *
 	}
 
 	if (igMenuItem_Bool("Reset to Defaults", NULL, false, true)) {
-		s_request_reset_defaults(ctx, state);
+		request_reset_defaults(ctx, state);
 	}
 
 	igEndMenuBar();
 }
 
-static void s_handle_shortcuts(S_ConfigUIState *state) {
+static void handle_shortcuts(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (igShortcut_Nil(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal)) {
-		s_save_config(state);
+		save_config(state);
 	}
 
-	if (igShortcut_Nil(ImGuiMod_Ctrl | ImGuiKey_O, ImGuiInputFlags_RouteGlobal)) {
-		s_load_config(state);
+	if (igShortcut_Nil(ImGuiMod_Ctrl | ImGuiKey_O, ImGuiInputFlags_RouteGlobal)
+		&& confirm_discard_changes(ctx, state, "reload the file from disk")) {
+		load_config(state);
 	}
 }
 
-static bool s_env_flag_enabled(const char *name) {
+static bool env_flag_enabled(const char *name) {
 	const char *value = getenv(name);
 	return value && value[0] && strcmp(value, "0") != 0;
 }
 
-static void s_draw_shortcut_debug_row(const char *label, ImGuiKeyChord chord) {
+static void draw_shortcut_debug_row(const char *label, ImGuiKeyChord chord) {
 	const ImGuiKey key = (ImGuiKey)(chord & ~ImGuiMod_Mask_);
 	const ImGuiKeyRoutingData *route = igGetShortcutRoutingData(chord);
 	const ImGuiKeyData *key_data = igGetKeyData_Key(key);
@@ -79,8 +120,8 @@ static void s_draw_shortcut_debug_row(const char *label, ImGuiKeyChord chord) {
 	);
 }
 
-static void s_draw_shortcut_debug_window(const S_ConfigUIState *state) {
-	if (!state->m_show_shortcut_debug) {
+static void draw_shortcut_debug_window(const config_ui_state *state) {
+	if (!state->show_shortcut_debug) {
 		return;
 	}
 
@@ -105,43 +146,45 @@ static void s_draw_shortcut_debug_window(const S_ConfigUIState *state) {
 		igTableSetupColumn("Route", ImGuiTableColumnFlags_None, 0.0f, 0);
 		igTableSetupColumn("Input", ImGuiTableColumnFlags_None, 0.0f, 0);
 		igTableHeadersRow();
-		s_draw_shortcut_debug_row("Save", ImGuiMod_Ctrl | ImGuiKey_S);
-		s_draw_shortcut_debug_row("Load", ImGuiMod_Ctrl | ImGuiKey_O);
+		draw_shortcut_debug_row("Save", ImGuiMod_Ctrl | ImGuiKey_S);
+		draw_shortcut_debug_row("Load", ImGuiMod_Ctrl | ImGuiKey_O);
 		igEndTable();
 	}
 
 	igEnd();
 }
 
-static bool s_init_state_from_args(S_ConfigUIState *state, int argc, char **argv) {
-	const char *config_path = s_config_path_from_args(argc, argv);
-	if (!dttr_path_copy_string(state->m_path, sizeof(state->m_path), config_path)) {
-		dttr_sdl_show_simple_message_box(
+static bool init_state_from_args(config_ui_state *state, int argc, char **argv) {
+	sds config_path = config_path_from_args(argc, argv);
+	if (!DTTR_Path_CopySds(state->path, sizeof(state->path), config_path)) {
+		sdsfree(config_path);
+		DTTR_SDL_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
-			S_CONFIG_WINDOW_TITLE,
+			CONFIG_WINDOW_TITLE,
 			"Config path is too long.",
 			NULL
 		);
 		return false;
 	}
+	sdsfree(config_path);
 
-	state->m_show_shortcut_debug = s_env_flag_enabled(S_CONFIG_DEBUG_SHORTCUTS_ENV);
-	s_set_components_dir_from_config_path(state);
-	dttr_config_set_defaults(&state->m_defaults);
-	state->m_config = state->m_defaults;
-	state->m_saved_config = state->m_config;
-	s_sync_rows_from_config(state);
-	s_load_config(state);
+	state->show_shortcut_debug = env_flag_enabled(CONFIG_DEBUG_SHORTCUTS_ENV);
+	set_mods_dir_from_config_path(state);
+	DTTR_Config_SetDefaults(&state->defaults);
+	state->config = state->defaults;
+	state->saved_config = state->config;
+	sync_rows_from_config(state);
+	load_config(state);
 	return true;
 }
 
-static void s_draw_ui(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state) {
-	s_push_config_theme();
-	s_handle_shortcuts(state);
-	s_draw_toolbar(ctx, state);
-	s_add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_HEADER_TOP_SPACING);
+static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	push_config_theme();
+	handle_shortcuts(ctx, state);
+	draw_toolbar(ctx, state);
+	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_HEADER_TOP_SPACING);
 
-	dttr_imgui_dialog_draw_header(ctx, S_CONFIG_WINDOW_TITLE, DTTR_VERSION);
+	DTTR_ImGuiDialog_DrawHeader(ctx, CONFIG_WINDOW_TITLE, DTTR_VERSION);
 	igSeparator();
 
 	float panel_width = igGetContentRegionAvail().x;
@@ -149,64 +192,68 @@ static void s_draw_ui(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state
 		panel_width = 1.0f;
 	}
 
-	const bool panel_open = s_begin_padded_panel(ctx, panel_width);
+	const bool panel_open = begin_padded_panel(ctx, panel_width);
 	if (panel_open) {
-		const float content_margin_x = dttr_imgui_dialog_scaled_float(
+		const float content_margin_x = DTTR_ImGuiDialog_ScaledFloat(
 			ctx,
 			DTTR_CONFIG_UI_ROW_MARGIN_X
 		);
 		igIndent(content_margin_x);
-		s_draw_tabs(ctx, state);
+		draw_tabs(ctx, state);
 		igUnindent(content_margin_x);
 	}
 
-	s_end_padded_panel();
+	end_padded_panel();
 	if (panel_open) {
-		s_draw_bottom_status_text(ctx, state);
+		draw_bottom_status_text(ctx, state);
 	}
 
-	s_draw_shortcut_debug_window(state);
-	s_pop_config_theme();
+	draw_shortcut_debug_window(state);
+	pop_config_theme();
 }
 
-static void s_process_events(
+static void process_events(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	bool *running
 ) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		dttr_imgui_dialog_process_event(ctx, &event, running);
+		DTTR_ImGuiDialog_ProcessEvent(ctx, &event, running);
 		if (!*running) {
-			break;
-		}
-
-		if (s_event_cancels_binding(&event)) {
-			s_cancel_binding(state);
+			if (confirm_discard_changes(ctx, state, "close the configuration tool")) {
+				break;
+			}
+			*running = true;
 			continue;
 		}
 
-		const int source = s_source_from_event(&event);
+		if (event_cancels_binding(&event)) {
+			cancel_binding(state);
+			continue;
+		}
+
+		const int source = source_from_event(&event);
 		if (source >= 0) {
-			s_capture_source(state, source);
+			capture_source(state, source);
 		}
 	}
 }
 
 __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
-	S_ConfigUIState state = {
-		.m_binding_row = -1,
+	config_ui_state state = {
+		.binding_row = -1,
 	};
 
-	if (!s_init_state_from_args(&state, argc, argv)) {
+	if (!init_state_from_args(&state, argc, argv)) {
 		return 1;
 	}
 
 	DTTR_ImGuiDialogContext ctx;
-	if (!dttr_imgui_dialog_begin(
+	if (!DTTR_ImGuiDialog_Begin(
 			&ctx,
-			S_CONFIG_WINDOW_TITLE,
-			s_config_window_width(),
+			CONFIG_WINDOW_TITLE,
+			config_window_width(),
 			DTTR_CONFIG_UI_WINDOW_H
 		)) {
 		return 1;
@@ -216,24 +263,24 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 
 	bool running = true;
 	while (running) {
-		s_process_events(&ctx, &state, &running);
-		dttr_imgui_dialog_refresh_scale(&ctx);
-		dttr_imgui_dialog_new_frame(&ctx);
+		process_events(&ctx, &state, &running);
+		DTTR_ImGuiDialog_RefreshScale(&ctx);
+		DTTR_ImGuiDialog_NewFrame(&ctx);
 
-		if (dttr_imgui_dialog_begin_root(
+		if (DTTR_ImGuiDialog_BeginRoot(
 				&ctx,
-				S_CONFIG_WINDOW_TITLE,
+				CONFIG_WINDOW_TITLE,
 				ImGuiWindowFlags_MenuBar
 			)) {
-			s_draw_ui(&ctx, &state);
+			draw_ui(&ctx, &state);
 		}
 
-		dttr_imgui_dialog_end_root();
-		dttr_imgui_dialog_render(&ctx);
+		DTTR_ImGuiDialog_EndRoot();
+		DTTR_ImGuiDialog_Render(&ctx);
 	}
 
 	SDL_QuitSubSystem(SDL_INIT_GAMEPAD);
-	dttr_imgui_dialog_end(&ctx);
-	dttr_imgui_dialog_shutdown();
+	DTTR_ImGuiDialog_End(&ctx);
+	DTTR_ImGuiDialog_Shutdown();
 	return 0;
 }

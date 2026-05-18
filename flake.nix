@@ -9,6 +9,7 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
+      # Map package and shell outputs across supported host platforms.
       forEachSystem = f:
         nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
     in
@@ -40,9 +41,11 @@
             url = "https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.0-mingw.tar.gz";
             hash = "sha256-rgwPYQpO1IwCqT+gWtvlk3LzS9u00NxGqLS+A4kwv+8=";
           };
+          cmocka = mingw.cmocka;
           pkgConfigLibDir = lib.concatStringsSep ":" [
             "${sdl3}/i686-w64-mingw32/lib/pkgconfig"
             "${sdl3Mixer}/i686-w64-mingw32/lib/pkgconfig"
+            "${cmocka}/lib/pkgconfig"
           ];
           ffmpegFlags = [
             "--target-os=mingw32"
@@ -100,13 +103,13 @@
               runHook postConfigure
             '';
           };
-          mcfg = mingw.windows.mcfgthreads;
+          mcfgthreads = mingw.windows.mcfgthreads;
         in
         {
           default = pkgs.mkShell {
             packages = with pkgs;
               [
-                go-task
+                just
                 cmake
                 gnumake
                 ninja
@@ -115,16 +118,22 @@
                 clang-tools
                 nasm
                 perl
+                python3
+                python3Packages.black
+                python3Packages.mako
                 xxd
                 doxygen
                 zensical
                 curl
+                glab
                 zip
                 mingwCc
+                cmocka
               ]
               ++ lib.optionals stdenv.hostPlatform.isLinux [
                 sdl3-shadercross
                 shaderc
+                wineWowPackages.stable
               ];
 
             shellHook = ''
@@ -132,9 +141,12 @@
               mkdir -p "$toolchain_dir"
               ln -sfn "${sdl3}" "$toolchain_dir/sdl3"
               ln -sfn "${sdl3Mixer}" "$toolchain_dir/sdl3_mixer"
+              ln -sfn "${cmocka}" "$toolchain_dir/cmocka"
               ln -sfn "${ffmpeg}" "$toolchain_dir/ffmpeg"
 
+              # Keep CMake on the pinned cross tools.
               write_tool_wrapper() {
+                local wrapper tool
                 wrapper="$1"
                 tool="$2"
                 cat > "$toolchain_dir/i686-w64-mingw32-$wrapper" <<WRAPPER
@@ -172,7 +184,7 @@
               set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
               set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
               set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
-              add_link_options("-L${mcfg}/lib" -static-libgcc -static-libstdc++)
+              add_link_options("-L${mcfgthreads}/lib" -static-libgcc -static-libstdc++)
               set(CMAKE_CROSSCOMPILING_EMULATOR wine)
               CMAKE
             '';

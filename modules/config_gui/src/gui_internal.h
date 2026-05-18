@@ -46,101 +46,96 @@
 #endif
 
 typedef enum {
-	S_CONFIG_LABEL_DEFAULT,
-	S_CONFIG_LABEL_SAVED_CHANGED,
-	S_CONFIG_LABEL_UNSAVED,
-} S_ConfigLabelState;
+	CONFIG_LABEL_DEFAULT,
+	CONFIG_LABEL_SAVED_CHANGED,
+	CONFIG_LABEL_UNSAVED,
+} config_label_state;
 
 typedef struct {
-	DTTR_Config m_config;
-	DTTR_Config m_defaults;
-	DTTR_Config m_saved_config;
-	char m_path[MAX_PATH];
-	char m_components_dir[MAX_PATH];
-	char m_status[256];
-	Uint64 m_status_expires_at_ms;
-	int m_button_sources[DTTR_GAMEPAD_SOURCE_COUNT];
-	int m_button_actions[DTTR_GAMEPAD_SOURCE_COUNT];
-	int m_binding_row;
-	bool m_show_shortcut_debug;
-} S_ConfigUIState;
+	DTTR_Config config;
+	DTTR_Config defaults;
+	DTTR_Config saved_config;
+	char path[MAX_PATH];
+	char mods_dir[MAX_PATH];
+	char status[256];
+	Uint64 status_expires_at_ms;
+	int button_sources[DTTR_GAMEPAD_SOURCE_COUNT];
+	int button_actions[DTTR_GAMEPAD_SOURCE_COUNT];
+	int binding_row;
+	bool show_shortcut_debug;
+} config_ui_state;
 
-#define S_FIELD_DIFFERS(state, base, field)                                              \
-	(memcmp(                                                                             \
-		 &(state)->m_config.field,                                                       \
-		 &(state)->base.field,                                                           \
-		 sizeof((state)->m_config.field)                                                 \
-	 )                                                                                   \
+#define FIELD_DIFFERS(state, base, field)                                                \
+	(memcmp(&(state)->config.field, &(state)->base.field, sizeof((state)->config.field)) \
 	 != 0)
-#define S_FIELD_UNSAVED(state, field) S_FIELD_DIFFERS(state, m_saved_config, field)
-#define S_FIELD_DEFAULT_CHANGED(state, field) S_FIELD_DIFFERS(state, m_defaults, field)
-#define S_PATH_FIELD_DIFFERS(state, base, field)                                         \
-	(!dttr_path_matches_normalized((state)->m_config.field, (state)->base.field))
-#define S_PATH_FIELD_UNSAVED(state, field)                                               \
-	S_PATH_FIELD_DIFFERS(state, m_saved_config, field)
-#define S_PATH_FIELD_DEFAULT_CHANGED(state, field)                                       \
-	S_PATH_FIELD_DIFFERS(state, m_defaults, field)
-#define S_FIELD_LABEL_STATE(state, field)                                                \
-	s_config_label_state(                                                                \
-		S_FIELD_UNSAVED(state, field),                                                   \
-		S_FIELD_DEFAULT_CHANGED(state, field)                                            \
+#define FIELD_UNSAVED(state, field) FIELD_DIFFERS(state, saved_config, field)
+#define FIELD_DEFAULT_CHANGED(state, field) FIELD_DIFFERS(state, defaults, field)
+#define PATH_FIELD_DIFFERS(state, base, field)                                           \
+	(!DTTR_Path_MatchesNormalized((state)->config.field, (state)->base.field))
+#define PATH_FIELD_UNSAVED(state, field) PATH_FIELD_DIFFERS(state, saved_config, field)
+#define PATH_FIELD_DEFAULT_CHANGED(state, field)                                         \
+	PATH_FIELD_DIFFERS(state, defaults, field)
+#define FIELD_LABEL_STATE(state, field)                                                  \
+	make_config_label_state(                                                             \
+		FIELD_UNSAVED(state, field),                                                     \
+		FIELD_DEFAULT_CHANGED(state, field)                                              \
 	)
-#define S_PATH_FIELD_LABEL_STATE(state, field)                                           \
-	s_config_label_state(                                                                \
-		S_PATH_FIELD_UNSAVED(state, field),                                              \
-		S_PATH_FIELD_DEFAULT_CHANGED(state, field)                                       \
+#define PATH_FIELD_LABEL_STATE(state, field)                                             \
+	make_config_label_state(                                                             \
+		PATH_FIELD_UNSAVED(state, field),                                                \
+		PATH_FIELD_DEFAULT_CHANGED(state, field)                                         \
 	)
 
-float s_config_standard_input_width(void);
-int s_config_window_width(void);
-void s_same_path_button_row(const DTTR_ImGuiDialogContext *ctx);
-void s_add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height);
-void s_align_next_item_right(float item_width);
+float config_standard_input_width();
+int config_window_width();
+void same_path_button_row(const DTTR_ImGuiDialogContext *ctx);
+void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height);
+void align_next_item_right(float item_width);
 
-void s_set_status(S_ConfigUIState *state, const char *status);
-void s_set_components_dir_from_config_path(S_ConfigUIState *state);
-void s_sync_rows_from_config(S_ConfigUIState *state);
-void s_sync_config_from_rows(S_ConfigUIState *state);
-int s_gamepad_button_row_count(void);
-int s_gamepad_button_row_action(int row);
-const char *s_gamepad_button_row_label(int row);
-int s_gamepad_default_source_for_action(const S_ConfigUIState *state, int action);
-const char *s_game_action_tooltip(int action);
-void s_load_config(S_ConfigUIState *state);
-void s_save_config(S_ConfigUIState *state);
-void s_reset_defaults(S_ConfigUIState *state);
-void s_request_reset_defaults(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-S_ConfigLabelState s_config_label_state(bool unsaved_changed, bool default_changed);
-bool s_gamepad_button_rows_have_unsaved_changes(const S_ConfigUIState *state);
-S_ConfigLabelState s_gamepad_button_label_state(
-	const S_ConfigUIState *state,
+void set_status(config_ui_state *state, const char *status);
+void set_mods_dir_from_config_path(config_ui_state *state);
+void sync_rows_from_config(config_ui_state *state);
+void sync_config_from_rows(config_ui_state *state);
+int gamepad_button_row_count();
+int gamepad_button_row_action(int row);
+const char *gamepad_button_row_label(int row);
+int gamepad_default_source_for_action(const config_ui_state *state, int action);
+const char *game_action_tooltip(int action);
+void load_config(config_ui_state *state);
+void save_config(config_ui_state *state);
+void reset_defaults(config_ui_state *state);
+void request_reset_defaults(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+config_label_state make_config_label_state(bool unsaved_changed, bool default_changed);
+bool gamepad_button_rows_have_unsaved_changes(const config_ui_state *state);
+config_label_state gamepad_button_label_state(
+	const config_ui_state *state,
 	int source,
 	int action
 );
-bool s_config_has_unsaved_changes(const S_ConfigUIState *state);
+bool config_has_unsaved_changes(const config_ui_state *state);
 
-bool s_choice_combo(
+bool choice_combo(
 	const char *label,
 	int *value,
 	DTTR_ConfigChoiceList choices,
 	const char *const *tooltips
 );
-void s_show_tooltip(const char *text);
-bool s_themed_row_button(
+void show_tooltip(const char *text);
+bool themed_row_button(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	const char *label,
 	float width
 );
-void s_push_config_theme(void);
-void s_pop_config_theme(void);
-void s_draw_bottom_status_text(
+void push_config_theme();
+void pop_config_theme();
+void draw_bottom_status_text(
 	const DTTR_ImGuiDialogContext *ctx,
-	const S_ConfigUIState *state
+	const config_ui_state *state
 );
-bool s_begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width);
-void s_end_padded_panel(void);
-bool s_begin_settings_table_with_cell_padding_and_margins(
+bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width);
+void end_padded_panel();
+bool begin_settings_table_with_cell_padding_and_margins(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
@@ -150,66 +145,66 @@ bool s_begin_settings_table_with_cell_padding_and_margins(
 	float left_margin_width,
 	float right_margin_width
 );
-bool s_begin_settings_table_with_width(
+bool begin_settings_table_with_width(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width,
 	float table_width
 );
-bool s_begin_full_width_settings_table(
+bool begin_full_width_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width
 );
-bool s_begin_settings_table(
+bool begin_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width
 );
-void s_end_settings_table(void);
-float s_table_width_ignoring_scrollbar(void);
-bool s_begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx);
-void s_begin_setting_row(void);
-float s_table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width);
-float s_path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count);
-void s_draw_config_label(
+void end_settings_table();
+float table_width_ignoring_scrollbar();
+bool begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx);
+void begin_setting_row();
+float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width);
+float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count);
+void draw_config_label(
 	const char *label,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_input_text(
+bool labeled_input_text(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_path_picker(
+bool labeled_path_picker(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_log_path_picker(
+bool labeled_log_path_picker(
 	const DTTR_ImGuiDialogContext *ctx,
-	S_ConfigUIState *state,
+	config_ui_state *state,
 	const char *label,
 	const char *id,
 	char *buf,
 	size_t buf_size,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_input_int(
+bool labeled_input_int(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
@@ -217,25 +212,25 @@ bool s_labeled_input_int(
 	int step,
 	int step_fast,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_input_float(
+bool labeled_input_float(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
 	float *value,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_checkbox(
+bool labeled_checkbox(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
 	bool *value,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
-bool s_labeled_choice_combo(
+bool labeled_choice_combo(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
 	const char *id,
@@ -243,29 +238,29 @@ bool s_labeled_choice_combo(
 	DTTR_ConfigChoiceList choices,
 	const char *const *tooltips,
 	const char *tooltip,
-	S_ConfigLabelState label_state
+	config_label_state label_state
 );
 
-void s_open_pcdogs_dir_dialog(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_open_pcdogs_iso_dialog(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_open_log_file_dialog(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
+void open_pcdogs_dir_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void open_pcdogs_iso_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void open_log_file_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 
-const char *s_source_label(int source);
-const char *s_source_tooltip(int source);
-int s_source_from_event(const SDL_Event *event);
-bool s_event_cancels_binding(const SDL_Event *event);
-void s_cancel_binding(S_ConfigUIState *state);
-void s_capture_source(S_ConfigUIState *state, int new_source);
-bool s_begin_tab_settings_table(
+const char *source_label(int source);
+const char *source_tooltip(int source);
+int source_from_event(const SDL_Event *event);
+bool event_cancels_binding(const SDL_Event *event);
+void cancel_binding(config_ui_state *state);
+void capture_source(config_ui_state *state, int new_source);
+bool begin_tab_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float input_width
 );
-void s_draw_general_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
-void s_draw_tabs(const DTTR_ImGuiDialogContext *ctx, S_ConfigUIState *state);
+void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void draw_tabs(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 
 #endif

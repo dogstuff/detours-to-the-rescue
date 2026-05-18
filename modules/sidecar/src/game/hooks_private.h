@@ -1,0 +1,25 @@
+#ifndef DTTR_GAME_HOOKS_PRIVATE_H
+#define DTTR_GAME_HOOKS_PRIVATE_H
+
+#include <stdint.h>
+
+#include <dttr_mods.h>
+#include <dttr_pcdogs.h>
+#include <windows.h>
+
+// Replacement file-open callback that supports redirected saves and cached game data.
+DTTR_PCDOGS_T_File_Handle *__cdecl dttr_crt_hook_open_file_callback(
+	const char *path,
+	const char *mode
+);
+// Replacement bootstrap callback that points the game at the resolved PCDogs path.
+uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback();
+// Replacement title-screen cleanup callback that clears stale resource globals.
+BOOL __cdecl dttr_hook_cleanup_title_resources_callback();
+
+// Installs file, path, and title-resource cleanup hooks as one game patch group.
+bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx);
+// Releases the game patch group and saved callback pointers.
+void dttr_game_hooks_cleanup(const DTTR_Mods_Context *ctx);
+
+#endif // DTTR_GAME_HOOKS_PRIVATE_H

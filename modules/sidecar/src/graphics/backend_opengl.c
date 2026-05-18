@@ -8,10 +8,10 @@
 
 #include <dttr_config.h>
 
-#define S_DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
+#define DRIVER_DISPLAY_OPENGL "OpenGL 3.3"
 
-#ifdef DTTR_MODDING_ENABLED
-#include "../components/components_private.h"
+#ifdef DTTR_MODS_ENABLED
+#include "../mods/mods_private.h"
 #include "imgui_overlay_private.h"
 #endif
 
@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const DTTR_RendererVtbl s_renderer;
+static const DTTR_RendererVtbl renderer;
 
 #include "gen/opengl_shaders.h"
 
@@ -28,9 +28,9 @@ typedef struct {
 	int y;
 	int w;
 	int h;
-} S_OpenglPresentRect;
+} opengl_present_rect;
 
-static GLuint s_compile_shader(GLenum type, const char *source) {
+static GLuint compile_shader(GLenum type, const char *source) {
 	GLuint shader = glCreateShader(type);
 	glShaderSource(shader, 1, &source, NULL);
 	glCompileShader(shader);
@@ -53,14 +53,14 @@ static GLuint s_compile_shader(GLenum type, const char *source) {
 	return shader;
 }
 
-static GLuint s_create_program(void) {
-	GLuint vert = s_compile_shader(GL_VERTEX_SHADER, S_OPENGL_BASIC_VERT_SOURCE);
+static GLuint create_program() {
+	GLuint vert = compile_shader(GL_VERTEX_SHADER, OPENGL_BASIC_VERT_SOURCE);
 
 	if (!vert) {
 		return 0;
 	}
 
-	GLuint frag = s_compile_shader(GL_FRAGMENT_SHADER, S_OPENGL_BASIC_FRAG_SOURCE);
+	GLuint frag = compile_shader(GL_FRAGMENT_SHADER, OPENGL_BASIC_FRAG_SOURCE);
 
 	if (!frag) {
 		glDeleteShader(vert);
@@ -89,12 +89,12 @@ static GLuint s_create_program(void) {
 	return program;
 }
 
-static bool s_create_fbo(S_OpenglBackendData *gl, int width, int height) {
-	glGenFramebuffers(1, &gl->m_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, gl->m_fbo);
+static bool create_fbo(opengl_backend_data *gl, int width, int height) {
+	glGenFramebuffers(1, &gl->fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, gl->fbo);
 
-	glGenTextures(1, &gl->m_fbo_color_tex);
-	glBindTexture(GL_TEXTURE_2D, gl->m_fbo_color_tex);
+	glGenTextures(1, &gl->fbo_color_tex);
+	glBindTexture(GL_TEXTURE_2D, gl->fbo_color_tex);
 	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
@@ -112,18 +112,18 @@ static bool s_create_fbo(S_OpenglBackendData *gl, int width, int height) {
 		GL_FRAMEBUFFER,
 		GL_COLOR_ATTACHMENT0,
 		GL_TEXTURE_2D,
-		gl->m_fbo_color_tex,
+		gl->fbo_color_tex,
 		0
 	);
 
-	glGenRenderbuffers(1, &gl->m_fbo_depth_rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, gl->m_fbo_depth_rbo);
+	glGenRenderbuffers(1, &gl->fbo_depth_rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, gl->fbo_depth_rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 	glFramebufferRenderbuffer(
 		GL_FRAMEBUFFER,
 		GL_DEPTH_ATTACHMENT,
 		GL_RENDERBUFFER,
-		gl->m_fbo_depth_rbo
+		gl->fbo_depth_rbo
 	);
 
 	GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -134,38 +134,38 @@ static bool s_create_fbo(S_OpenglBackendData *gl, int width, int height) {
 		return false;
 	}
 
-	gl->m_fbo_width = width;
-	gl->m_fbo_height = height;
+	gl->fbo_width = width;
+	gl->fbo_height = height;
 	return true;
 }
 
-static void s_destroy_fbo(S_OpenglBackendData *gl) {
-	if (gl->m_fbo) {
-		glDeleteFramebuffers(1, &gl->m_fbo);
-		gl->m_fbo = 0;
+static void destroy_fbo(opengl_backend_data *gl) {
+	if (gl->fbo) {
+		glDeleteFramebuffers(1, &gl->fbo);
+		gl->fbo = 0;
 	}
 
-	if (gl->m_fbo_color_tex) {
-		glDeleteTextures(1, &gl->m_fbo_color_tex);
-		gl->m_fbo_color_tex = 0;
+	if (gl->fbo_color_tex) {
+		glDeleteTextures(1, &gl->fbo_color_tex);
+		gl->fbo_color_tex = 0;
 	}
 
-	if (gl->m_fbo_depth_rbo) {
-		glDeleteRenderbuffers(1, &gl->m_fbo_depth_rbo);
-		gl->m_fbo_depth_rbo = 0;
+	if (gl->fbo_depth_rbo) {
+		glDeleteRenderbuffers(1, &gl->fbo_depth_rbo);
+		gl->fbo_depth_rbo = 0;
 	}
 }
 
-static void s_create_samplers(S_OpenglBackendData *gl) {
-	glGenSamplers(DTTR_SAMPLER_COUNT, gl->m_gl_samplers);
+static void create_samplers(opengl_backend_data *gl) {
+	glGenSamplers(DTTR_SAMPLER_COUNT, gl->gl_samplers);
 
-	const GLint min_filter = g_dttr_config.m_generate_texture_mipmaps
+	const GLint min_filter = dttr_config.generate_texture_mipmaps
 								 ? GL_LINEAR_MIPMAP_LINEAR
 								 : GL_LINEAR;
 
 	for (int cu = 0; cu < 2; cu++) {
 		for (int cv = 0; cv < 2; cv++) {
-			GLuint s = gl->m_gl_samplers[cu * 2 + cv];
+			GLuint s = gl->gl_samplers[cu * 2 + cv];
 			GLint wrap_s = cu ? GL_CLAMP_TO_EDGE : GL_REPEAT;
 			GLint wrap_t = cv ? GL_CLAMP_TO_EDGE : GL_REPEAT;
 			glSamplerParameteri(s, GL_TEXTURE_WRAP_S, wrap_s);
@@ -176,8 +176,8 @@ static void s_create_samplers(S_OpenglBackendData *gl) {
 	}
 }
 
-static int s_select_gl_msaa_samples(void) {
-	int requested = g_dttr_config.m_msaa_samples;
+static int select_gl_msaa_samples() {
+	int requested = dttr_config.msaa_samples;
 
 	if (requested <= 1) {
 		return 0;
@@ -197,28 +197,28 @@ static int s_select_gl_msaa_samples(void) {
 	return requested;
 }
 
-static bool s_create_msaa_fbo(S_OpenglBackendData *gl, int w, int h, int samples) {
-	glGenFramebuffers(1, &gl->m_msaa_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, gl->m_msaa_fbo);
+static bool create_msaa_fbo(opengl_backend_data *gl, int w, int h, int samples) {
+	glGenFramebuffers(1, &gl->msaa_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, gl->msaa_fbo);
 
-	glGenRenderbuffers(1, &gl->m_msaa_color_rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, gl->m_msaa_color_rbo);
+	glGenRenderbuffers(1, &gl->msaa_color_rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, gl->msaa_color_rbo);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, w, h);
 	glFramebufferRenderbuffer(
 		GL_FRAMEBUFFER,
 		GL_COLOR_ATTACHMENT0,
 		GL_RENDERBUFFER,
-		gl->m_msaa_color_rbo
+		gl->msaa_color_rbo
 	);
 
-	glGenRenderbuffers(1, &gl->m_msaa_depth_rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, gl->m_msaa_depth_rbo);
+	glGenRenderbuffers(1, &gl->msaa_depth_rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, gl->msaa_depth_rbo);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24, w, h);
 	glFramebufferRenderbuffer(
 		GL_FRAMEBUFFER,
 		GL_DEPTH_ATTACHMENT,
 		GL_RENDERBUFFER,
-		gl->m_msaa_depth_rbo
+		gl->msaa_depth_rbo
 	);
 
 	GLenum fb_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -229,67 +229,67 @@ static bool s_create_msaa_fbo(S_OpenglBackendData *gl, int w, int h, int samples
 		return false;
 	}
 
-	gl->m_msaa_samples = samples;
+	gl->msaa_samples = samples;
 	return true;
 }
 
-static void s_destroy_msaa_fbo(S_OpenglBackendData *gl) {
-	if (gl->m_msaa_fbo) {
-		glDeleteFramebuffers(1, &gl->m_msaa_fbo);
-		gl->m_msaa_fbo = 0;
+static void destroy_msaa_fbo(opengl_backend_data *gl) {
+	if (gl->msaa_fbo) {
+		glDeleteFramebuffers(1, &gl->msaa_fbo);
+		gl->msaa_fbo = 0;
 	}
 
-	if (gl->m_msaa_color_rbo) {
-		glDeleteRenderbuffers(1, &gl->m_msaa_color_rbo);
-		gl->m_msaa_color_rbo = 0;
+	if (gl->msaa_color_rbo) {
+		glDeleteRenderbuffers(1, &gl->msaa_color_rbo);
+		gl->msaa_color_rbo = 0;
 	}
 
-	if (gl->m_msaa_depth_rbo) {
-		glDeleteRenderbuffers(1, &gl->m_msaa_depth_rbo);
-		gl->m_msaa_depth_rbo = 0;
+	if (gl->msaa_depth_rbo) {
+		glDeleteRenderbuffers(1, &gl->msaa_depth_rbo);
+		gl->msaa_depth_rbo = 0;
 	}
 
-	gl->m_msaa_samples = 0;
+	gl->msaa_samples = 0;
 }
 
-static void s_release_deferred_gl_destroys(
+static void release_deferred_gl_destroys(
 	DTTR_BackendState *state,
-	S_OpenglBackendData *gl
+	opengl_backend_data *gl
 ) {
-	if (!state->m_texture_mutex) {
+	if (!state->texture_mutex) {
 		return;
 	}
 
-	SDL_LockMutex(state->m_texture_mutex);
+	SDL_LockMutex(state->texture_mutex);
 
-	for (int i = 0; i < gl->m_deferred_gl_destroy_count; i++) {
-		if (gl->m_deferred_gl_destroys[i]) {
-			glDeleteTextures(1, &gl->m_deferred_gl_destroys[i]);
-			gl->m_deferred_gl_destroys[i] = 0;
+	for (int i = 0; i < gl->deferred_gl_destroy_count; i++) {
+		if (gl->deferred_gl_destroys[i]) {
+			glDeleteTextures(1, &gl->deferred_gl_destroys[i]);
+			gl->deferred_gl_destroys[i] = 0;
 		}
 	}
 
-	gl->m_deferred_gl_destroy_count = 0;
-	SDL_UnlockMutex(state->m_texture_mutex);
+	gl->deferred_gl_destroy_count = 0;
+	SDL_UnlockMutex(state->texture_mutex);
 }
 
-static void s_defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
-	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
+static void defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
+	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
 	if (!gl || texture_index < 0 || texture_index >= DTTR_MAX_STAGED_TEXTURES) {
 		return;
 	}
 
-	if (!gl->m_gl_textures[texture_index]) {
+	if (!gl->gl_textures[texture_index]) {
 		return;
 	}
 
-	if (gl->m_deferred_gl_destroy_count < DTTR_MAX_STAGED_TEXTURES) {
-		gl->m_deferred_gl_destroys[gl->m_deferred_gl_destroy_count++] = gl->m_gl_textures
-																			[texture_index];
+	if (gl->deferred_gl_destroy_count < DTTR_MAX_STAGED_TEXTURES) {
+		gl->deferred_gl_destroys[gl->deferred_gl_destroy_count++] = gl->gl_textures
+																		[texture_index];
 	}
 
-	gl->m_gl_textures[texture_index] = 0;
+	gl->gl_textures[texture_index] = 0;
 }
 
 bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
@@ -299,23 +299,23 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	S_OpenglBackendData *gl = calloc(1, sizeof(S_OpenglBackendData));
+	opengl_backend_data *gl = calloc(1, sizeof(opengl_backend_data));
 
 	if (!gl) {
 		return false;
 	}
 
-	gl->m_gl_context = SDL_GL_CreateContext(state->m_window);
+	gl->gl_context = SDL_GL_CreateContext(state->window);
 
-	if (!gl->m_gl_context) {
+	if (!gl->gl_context) {
 		DTTR_LOG_ERROR("SDL_GL_CreateContext failed: %s", SDL_GetError());
 		free(gl);
 		return false;
 	}
 
-	if (!SDL_GL_MakeCurrent(state->m_window, gl->m_gl_context)) {
+	if (!SDL_GL_MakeCurrent(state->window, gl->gl_context)) {
 		DTTR_LOG_ERROR("SDL_GL_MakeCurrent failed: %s", SDL_GetError());
-		SDL_GL_DestroyContext(gl->m_gl_context);
+		SDL_GL_DestroyContext(gl->gl_context);
 		free(gl);
 		return false;
 	}
@@ -324,36 +324,36 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 
 	if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress)) {
 		DTTR_LOG_ERROR("Failed to load OpenGL functions via glad");
-		SDL_GL_DestroyContext(gl->m_gl_context);
+		SDL_GL_DestroyContext(gl->gl_context);
 		free(gl);
 		return false;
 	}
 
-	gl->m_program = s_create_program();
+	gl->program = create_program();
 
-	if (!gl->m_program) {
-		SDL_GL_DestroyContext(gl->m_gl_context);
+	if (!gl->program) {
+		SDL_GL_DestroyContext(gl->gl_context);
 		free(gl);
 		return false;
 	}
 
-	glUseProgram(gl->m_program);
-	gl->m_loc_mvp = glGetUniformLocation(gl->m_program, "u_mvp");
-	gl->m_loc_screen_size = glGetUniformLocation(gl->m_program, "u_screen_size");
-	gl->m_loc_is_2d = glGetUniformLocation(gl->m_program, "u_is_2d");
-	gl->m_loc_has_texture = glGetUniformLocation(gl->m_program, "u_has_texture");
-	gl->m_loc_color_op = glGetUniformLocation(gl->m_program, "u_color_op");
-	gl->m_loc_color_arg1 = glGetUniformLocation(gl->m_program, "u_color_arg1");
-	gl->m_loc_color_arg2 = glGetUniformLocation(gl->m_program, "u_color_arg2");
-	gl->m_loc_alpha_op = glGetUniformLocation(gl->m_program, "u_alpha_op");
-	gl->m_loc_alpha_arg1 = glGetUniformLocation(gl->m_program, "u_alpha_arg1");
-	gl->m_loc_alpha_arg2 = glGetUniformLocation(gl->m_program, "u_alpha_arg2");
-	gl->m_loc_texture = glGetUniformLocation(gl->m_program, "u_texture");
+	glUseProgram(gl->program);
+	gl->loc_mvp = glGetUniformLocation(gl->program, "u_mvp");
+	gl->loc_screen_size = glGetUniformLocation(gl->program, "u_screen_size");
+	gl->loc_is_2d = glGetUniformLocation(gl->program, "u_is_2d");
+	gl->loc_has_texture = glGetUniformLocation(gl->program, "u_has_texture");
+	gl->loc_color_op = glGetUniformLocation(gl->program, "u_color_op");
+	gl->loc_color_arg1 = glGetUniformLocation(gl->program, "u_color_arg1");
+	gl->loc_color_arg2 = glGetUniformLocation(gl->program, "u_color_arg2");
+	gl->loc_alpha_op = glGetUniformLocation(gl->program, "u_alpha_op");
+	gl->loc_alpha_arg1 = glGetUniformLocation(gl->program, "u_alpha_arg1");
+	gl->loc_alpha_arg2 = glGetUniformLocation(gl->program, "u_alpha_arg2");
+	gl->loc_texture = glGetUniformLocation(gl->program, "u_texture");
 
-	glGenVertexArrays(1, &gl->m_vao);
-	glBindVertexArray(gl->m_vao);
-	glGenBuffers(1, &gl->m_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, gl->m_vbo);
+	glGenVertexArrays(1, &gl->vao);
+	glBindVertexArray(gl->vao);
+	glGenBuffers(1, &gl->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, gl->vbo);
 	glBufferData(
 		GL_ARRAY_BUFFER,
 		(GLsizeiptr)(DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE),
@@ -372,46 +372,46 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride, (void *)(8 * sizeof(float)));
 	glEnableVertexAttribArray(3);
 
-	if (!s_create_fbo(gl, state->m_width, state->m_height)) {
-		glDeleteProgram(gl->m_program);
-		glDeleteVertexArrays(1, &gl->m_vao);
-		glDeleteBuffers(1, &gl->m_vbo);
-		SDL_GL_DestroyContext(gl->m_gl_context);
+	if (!create_fbo(gl, state->width, state->height)) {
+		glDeleteProgram(gl->program);
+		glDeleteVertexArrays(1, &gl->vao);
+		glDeleteBuffers(1, &gl->vbo);
+		SDL_GL_DestroyContext(gl->gl_context);
 		free(gl);
 		return false;
 	}
 
-	s_create_samplers(gl);
+	create_samplers(gl);
 
-	int msaa = s_select_gl_msaa_samples();
+	int msaa = select_gl_msaa_samples();
 	if (msaa > 0) {
-		if (s_create_msaa_fbo(gl, state->m_width, state->m_height, msaa)) {
+		if (create_msaa_fbo(gl, state->width, state->height, msaa)) {
 			DTTR_LOG_INFO("OpenGL MSAA enabled (%dx samples)", msaa);
 		} else {
 			DTTR_LOG_WARN("OpenGL MSAA %dx failed, falling back to no MSAA", msaa);
-			s_destroy_msaa_fbo(gl);
+			destroy_msaa_fbo(gl);
 		}
 	}
 
 	// Create a 1-pixel white fallback texture.
-	glGenTextures(1, &gl->m_dummy_texture);
-	glBindTexture(GL_TEXTURE_2D, gl->m_dummy_texture);
+	glGenTextures(1, &gl->dummy_texture);
+	glBindTexture(GL_TEXTURE_2D, gl->dummy_texture);
 	const uint32_t white = 0xFFFFFFFF;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &white);
 
 	// Allocate the (CPU) vertex staging buffer.
-	gl->m_vertex_staging = malloc((size_t)DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE);
+	gl->vertex_staging = malloc((size_t)DTTR_MAX_FRAME_VERTICES * DTTR_VERTEX_SIZE);
 
-	if (!gl->m_vertex_staging) {
+	if (!gl->vertex_staging) {
 		DTTR_LOG_ERROR("Failed to allocate OpenGL vertex staging buffer");
-		SDL_GL_DestroyContext(gl->m_gl_context);
+		SDL_GL_DestroyContext(gl->gl_context);
 		free(gl);
 		return false;
 	}
 
-	state->m_backend_data = gl;
-	state->m_backend_type = DTTR_BACKEND_OPENGL;
-	state->m_renderer = &s_renderer;
+	state->backend_data = gl;
+	state->backend_type = DTTR_BACKEND_OPENGL;
+	state->renderer = &renderer;
 
 	DTTR_LOG_INFO(
 		"OpenGL 3.3 backend initialized (vendor: %s, renderer: %s)",
@@ -422,77 +422,74 @@ bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
 	return true;
 }
 
-static bool s_resize_fbo(DTTR_BackendState *state, int width, int height) {
-	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
+static bool resize_fbo(DTTR_BackendState *state, int width, int height) {
+	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
 	if (!gl) {
 		return false;
 	}
 
-	if (width == gl->m_fbo_width && height == gl->m_fbo_height) {
+	if (width == gl->fbo_width && height == gl->fbo_height) {
 		return true;
 	}
 
-	s_destroy_fbo(gl);
+	destroy_fbo(gl);
 
-	if (!s_create_fbo(gl, width, height)) {
+	if (!create_fbo(gl, width, height)) {
 		DTTR_LOG_ERROR("Failed to recreate OpenGL FBO at %dx%d", width, height);
 		return false;
 	}
 
-	if (gl->m_msaa_samples > 0) {
-		int prev_samples = gl->m_msaa_samples;
-		s_destroy_msaa_fbo(gl);
+	if (gl->msaa_samples > 0) {
+		int prev_samples = gl->msaa_samples;
+		destroy_msaa_fbo(gl);
 
-		if (!s_create_msaa_fbo(gl, width, height, prev_samples)) {
+		if (!create_msaa_fbo(gl, width, height, prev_samples)) {
 			DTTR_LOG_WARN("MSAA FBO resize failed, disabling MSAA");
 		}
 	}
 
-	state->m_width = width;
-	state->m_height = height;
+	state->width = width;
+	state->height = height;
 
 	DTTR_LOG_INFO("GL FBO resized to %dx%d", width, height);
 	return true;
 }
 
-static void s_upload_pending_textures_gl(
-	DTTR_BackendState *state,
-	S_OpenglBackendData *gl
-) {
-	if (!state->m_texture_mutex) {
+static void upload_pending_textures_gl(DTTR_BackendState *state, opengl_backend_data *gl) {
+	if (!state->texture_mutex) {
 		return;
 	}
 
-	SDL_LockMutex(state->m_texture_mutex);
-	const size_t queued_count = kv_size(state->m_pending_upload_indices);
+	SDL_LockMutex(state->texture_mutex);
+	const size_t queued_count = kv_size(state->pending_upload_indices);
 
-	gl->m_pending_mipmap_count = 0;
+	gl->pending_mipmap_count = 0;
 
 	for (size_t q = 0; q < queued_count; q++) {
-		const int idx = kv_A(state->m_pending_upload_indices, q);
+		const int idx = kv_A(state->pending_upload_indices, q);
 
-		if (idx < 0 || idx >= state->m_staged_texture_count) {
+		if (idx < 0 || idx >= state->staged_texture_count) {
 			continue;
 		}
 
-		DTTR_StagedTexture *st = &state->m_staged_textures[idx];
+		DTTR_StagedTexture *st = &state->staged_textures[idx];
 
-		if (!st->m_pixels) {
-			st->m_pending_upload = false;
+		if (!st->pixels) {
+			st->pending_upload = false;
 			continue;
 		}
 
-		st->m_pending_upload = false;
+		st->pending_upload = false;
 
 		bool new_texture = false;
 
-		if (!gl->m_gl_textures[idx]) {
-			glGenTextures(1, &gl->m_gl_textures[idx]);
+		if (!gl->gl_textures[idx]) {
+			glGenTextures(1, &gl->gl_textures[idx]);
 			new_texture = true;
 		}
 
-		glBindTexture(GL_TEXTURE_2D, gl->m_gl_textures[idx]);
+		glBindTexture(GL_TEXTURE_2D, gl->gl_textures[idx]);
 
 		if (new_texture) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -503,35 +500,34 @@ static void s_upload_pending_textures_gl(
 			GL_TEXTURE_2D,
 			0,
 			GL_RGBA8,
-			st->m_width,
-			st->m_height,
+			st->width,
+			st->height,
 			0,
 			GL_BGRA,
 			GL_UNSIGNED_BYTE,
-			st->m_pixels
+			st->pixels
 		);
 
-		if (g_dttr_config.m_generate_texture_mipmaps) {
-			gl->m_pending_mipmap_textures[gl->m_pending_mipmap_count++] = gl->m_gl_textures
-																			  [idx];
+		if (dttr_config.generate_texture_mipmaps) {
+			gl->pending_mipmap_textures[gl->pending_mipmap_count++] = gl->gl_textures[idx];
 		}
 
-		free(st->m_pixels);
-		st->m_pixels = NULL;
+		free(st->pixels);
+		st->pixels = NULL;
 	}
 
-	state->m_pending_upload_indices.n = 0;
-	SDL_UnlockMutex(state->m_texture_mutex);
+	state->pending_upload_indices.n = 0;
+	SDL_UnlockMutex(state->texture_mutex);
 
-	for (int i = 0; i < gl->m_pending_mipmap_count; i++) {
-		glBindTexture(GL_TEXTURE_2D, gl->m_pending_mipmap_textures[i]);
+	for (int i = 0; i < gl->pending_mipmap_count; i++) {
+		glBindTexture(GL_TEXTURE_2D, gl->pending_mipmap_textures[i]);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-	gl->m_pending_mipmap_count = 0;
+	gl->pending_mipmap_count = 0;
 }
 
-static S_OpenglPresentRect s_compute_present_rect(
+static opengl_present_rect compute_present_rect(
 	int dst_w,
 	int dst_h,
 	int src_w,
@@ -549,7 +545,7 @@ static S_OpenglPresentRect s_compute_present_rect(
 	const int present_w = (int)((float)src_w * scale);
 	const int present_h = (int)((float)src_h * scale);
 
-	return (S_OpenglPresentRect){
+	return (opengl_present_rect){
 		.x = (dst_w - present_w) / 2,
 		.y = (dst_h - present_h) / 2,
 		.w = present_w,
@@ -557,11 +553,11 @@ static S_OpenglPresentRect s_compute_present_rect(
 	};
 }
 
-static void s_component_before_present(
+static void mod_before_present(
 	DTTR_BackendState *state,
-	const S_OpenglPresentRect *present
+	const opengl_present_rect *present
 ) {
-	dttr_graphics_component_before_present(
+	dttr_graphics_mod_before_present(
 		state,
 		(uint32_t)present->x,
 		(uint32_t)present->y,
@@ -572,11 +568,11 @@ static void s_component_before_present(
 	);
 }
 
-static void s_component_after_present(
+static void mod_after_present(
 	DTTR_BackendState *state,
-	const S_OpenglPresentRect *present
+	const opengl_present_rect *present
 ) {
-	dttr_graphics_component_after_present(
+	dttr_graphics_mod_after_present(
 		state,
 		(uint32_t)present->x,
 		(uint32_t)present->y,
@@ -587,15 +583,15 @@ static void s_component_after_present(
 	);
 }
 
-static void s_upload_video_texture(
-	S_OpenglBackendData *gl,
+static void upload_video_texture(
+	opengl_backend_data *gl,
 	const uint8_t *pixels,
 	int width,
 	int height
 ) {
-	const bool resized = gl->m_video_width != width || gl->m_video_height != height;
+	const bool resized = gl->video_width != width || gl->video_height != height;
 
-	glBindTexture(GL_TEXTURE_2D, gl->m_video_texture);
+	glBindTexture(GL_TEXTURE_2D, gl->video_texture);
 	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
@@ -614,36 +610,36 @@ static void s_upload_video_texture(
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	gl->m_video_width = width;
-	gl->m_video_height = height;
+	gl->video_width = width;
+	gl->video_height = height;
 }
 
-static void s_begin_frame(DTTR_BackendState *state) {
-	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
+static void begin_frame(DTTR_BackendState *state) {
+	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
-	if (!gl || state->m_frame_active) {
+	if (!gl || state->frame_active) {
 		return;
 	}
 
-	state->m_frame_index++;
+	state->frame_index++;
 
-	s_release_deferred_gl_destroys(state, gl);
-	s_upload_pending_textures_gl(state, gl);
+	release_deferred_gl_destroys(state, gl);
+	upload_pending_textures_gl(state, gl);
 
-	state->m_batch_records.n = 0;
-	state->m_vertex_offset = 0;
-	state->m_transfer_mapped = gl->m_vertex_staging;
-	state->m_frame_active = true;
-	dttr_graphics_component_frame_begin(state);
+	state->batch_records.n = 0;
+	state->vertex_offset = 0;
+	state->transfer_mapped = gl->vertex_staging;
+	state->frame_active = true;
+	dttr_graphics_mod_frame_begin(state);
 }
 
-static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendData *gl) {
-	const GLuint render_fbo = (gl->m_msaa_samples > 0) ? gl->m_msaa_fbo : gl->m_fbo;
+static void replay_batch_records_gl(DTTR_BackendState *state, opengl_backend_data *gl) {
+	const GLuint render_fbo = (gl->msaa_samples > 0) ? gl->msaa_fbo : gl->fbo;
 	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-	glViewport(0, 0, gl->m_fbo_width, gl->m_fbo_height);
+	glViewport(0, 0, gl->fbo_width, gl->fbo_height);
 
-	glUseProgram(gl->m_program);
-	glBindVertexArray(gl->m_vao);
+	glUseProgram(gl->program);
+	glBindVertexArray(gl->vao);
 
 	int last_blend_mode = -1;
 	bool last_depth_test = false;
@@ -651,8 +647,8 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 	GLuint last_texture = 0;
 	int last_sampler_index = -1;
 
-	for (size_t i = 0; i < kv_size(state->m_batch_records); i++) {
-		const DTTR_BatchRecord *rec = &kv_A(state->m_batch_records, i);
+	for (size_t i = 0; i < kv_size(state->batch_records); i++) {
+		const DTTR_BatchRecord *rec = &kv_A(state->batch_records, i);
 
 		if (rec->type == DTTR_BATCH_CLEAR) {
 			GLbitfield clear_mask = 0;
@@ -721,27 +717,26 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 			last_depth_write = rec->draw.depth_write;
 		}
 
-		glUniformMatrix4fv(gl->m_loc_mvp, 1, GL_FALSE, rec->draw.uniforms.m_mvp);
+		glUniformMatrix4fv(gl->loc_mvp, 1, GL_FALSE, rec->draw.uniforms.mvp);
 		glUniform2f(
-			gl->m_loc_screen_size,
-			rec->draw.uniforms.m_screen_size[0],
-			rec->draw.uniforms.m_screen_size[1]
+			gl->loc_screen_size,
+			rec->draw.uniforms.screen_size[0],
+			rec->draw.uniforms.screen_size[1]
 		);
-		glUniform1f(gl->m_loc_is_2d, rec->draw.uniforms.m_is_2d);
-		glUniform1f(gl->m_loc_has_texture, rec->draw.uniforms.m_has_texture);
-		glUniform1f(gl->m_loc_color_op, rec->draw.uniforms.m_color_op);
-		glUniform1f(gl->m_loc_color_arg1, rec->draw.uniforms.m_color_arg1);
-		glUniform1f(gl->m_loc_color_arg2, rec->draw.uniforms.m_color_arg2);
-		glUniform1f(gl->m_loc_alpha_op, rec->draw.uniforms.m_alpha_op);
-		glUniform1f(gl->m_loc_alpha_arg1, rec->draw.uniforms.m_alpha_arg1);
-		glUniform1f(gl->m_loc_alpha_arg2, rec->draw.uniforms.m_alpha_arg2);
+		glUniform1f(gl->loc_is_2d, rec->draw.uniforms.is_2d);
+		glUniform1f(gl->loc_has_texture, rec->draw.uniforms.has_texture);
+		glUniform1f(gl->loc_color_op, rec->draw.uniforms.color_op);
+		glUniform1f(gl->loc_color_arg1, rec->draw.uniforms.color_arg1);
+		glUniform1f(gl->loc_color_arg2, rec->draw.uniforms.color_arg2);
+		glUniform1f(gl->loc_alpha_op, rec->draw.uniforms.alpha_op);
+		glUniform1f(gl->loc_alpha_arg1, rec->draw.uniforms.alpha_arg1);
+		glUniform1f(gl->loc_alpha_arg2, rec->draw.uniforms.alpha_arg2);
 
-		GLuint tex_id = gl->m_dummy_texture;
+		GLuint tex_id = gl->dummy_texture;
 
-		if (rec->draw.uniforms.m_has_texture > 0.5f
-			&& rec->draw.texture_index != UINT32_MAX
+		if (rec->draw.uniforms.has_texture > 0.5f && rec->draw.texture_index != UINT32_MAX
 			&& rec->draw.texture_index < DTTR_MAX_STAGED_TEXTURES) {
-			GLuint staged = gl->m_gl_textures[rec->draw.texture_index];
+			GLuint staged = gl->gl_textures[rec->draw.texture_index];
 
 			if (staged) {
 				tex_id = staged;
@@ -751,12 +746,12 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 		if (tex_id != last_texture) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, tex_id);
-			glUniform1i(gl->m_loc_texture, 0);
+			glUniform1i(gl->loc_texture, 0);
 			last_texture = tex_id;
 		}
 
 		if (rec->draw.sampler_index != last_sampler_index) {
-			glBindSampler(0, gl->m_gl_samplers[rec->draw.sampler_index]);
+			glBindSampler(0, gl->gl_samplers[rec->draw.sampler_index]);
 			last_sampler_index = rec->draw.sampler_index;
 		}
 
@@ -768,87 +763,87 @@ static void s_replay_batch_records_gl(DTTR_BackendState *state, S_OpenglBackendD
 	}
 }
 
-static void s_end_frame(DTTR_BackendState *state) {
-	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
+static void end_frame(DTTR_BackendState *state) {
+	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
-	if (!gl || !state->m_frame_active) {
+	if (!gl || !state->frame_active) {
 		return;
 	}
 
-	state->m_frame_active = false;
-	dttr_graphics_component_before_game_frame(state);
-	state->m_transfer_mapped = NULL;
+	state->frame_active = false;
+	dttr_graphics_mod_before_game_frame(state);
+	state->transfer_mapped = NULL;
 
-	if (state->m_vertex_offset > 0) {
-		glBindBuffer(GL_ARRAY_BUFFER, gl->m_vbo);
+	if (state->vertex_offset > 0) {
+		glBindBuffer(GL_ARRAY_BUFFER, gl->vbo);
 		glBufferSubData(
 			GL_ARRAY_BUFFER,
 			0,
-			(GLsizeiptr)(state->m_vertex_offset * DTTR_VERTEX_SIZE),
-			gl->m_vertex_staging
+			(GLsizeiptr)(state->vertex_offset * DTTR_VERTEX_SIZE),
+			gl->vertex_staging
 		);
 	}
 
-	if (kv_size(state->m_batch_records) > 0) {
-		s_replay_batch_records_gl(state, gl);
+	if (kv_size(state->batch_records) > 0) {
+		replay_batch_records_gl(state, gl);
 	}
 
-#ifdef DTTR_MODDING_ENABLED
+#ifdef DTTR_MODS_ENABLED
 	dttr_imgui_render_game_opengl();
 #endif
-	dttr_graphics_component_after_game_frame(state);
+	dttr_graphics_mod_after_game_frame(state);
 
-	if (gl->m_msaa_samples > 0) {
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->m_msaa_fbo);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gl->m_fbo);
+	if (gl->msaa_samples > 0) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->msaa_fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gl->fbo);
 		glBlitFramebuffer(
 			0,
 			0,
-			gl->m_fbo_width,
-			gl->m_fbo_height,
+			gl->fbo_width,
+			gl->fbo_height,
 			0,
 			0,
-			gl->m_fbo_width,
-			gl->m_fbo_height,
+			gl->fbo_width,
+			gl->fbo_height,
 			GL_COLOR_BUFFER_BIT,
 			GL_NEAREST
 		);
 	}
 
 	int window_w = 0, window_h = 0;
-	SDL_GetWindowSizeInPixels(state->m_window, &window_w, &window_h);
+	SDL_GetWindowSizeInPixels(state->window, &window_w, &window_h);
 
 	if (window_w <= 0) {
-		window_w = state->m_width;
+		window_w = state->width;
 	}
 
 	if (window_h <= 0) {
-		window_h = state->m_height;
+		window_h = state->height;
 	}
 
-	const S_OpenglPresentRect present = s_compute_present_rect(
+	const opengl_present_rect present = compute_present_rect(
 		window_w,
 		window_h,
-		gl->m_fbo_width,
-		gl->m_fbo_height,
+		gl->fbo_width,
+		gl->fbo_height,
 		1.0f
 	);
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->m_fbo);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 	glViewport(0, 0, window_w, window_h);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	const GLenum blit_filter = (g_dttr_config.m_present_filter == SDL_GPU_FILTER_NEAREST)
+	const GLenum blit_filter = (dttr_config.present_filter == SDL_GPU_FILTER_NEAREST)
 								   ? GL_NEAREST
 								   : GL_LINEAR;
 	glBlitFramebuffer(
 		0,
 		0,
-		gl->m_fbo_width,
-		gl->m_fbo_height,
+		gl->fbo_width,
+		gl->fbo_height,
 		present.x,
 		present.y,
 		present.x + present.w,
@@ -857,7 +852,7 @@ static void s_end_frame(DTTR_BackendState *state) {
 		blit_filter
 	);
 
-#ifdef DTTR_MODDING_ENABLED
+#ifdef DTTR_MODS_ENABLED
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	dttr_imgui_render_opengl(
 		(uint32_t)present.x,
@@ -866,38 +861,38 @@ static void s_end_frame(DTTR_BackendState *state) {
 		(uint32_t)present.h
 	);
 #endif
-	s_component_before_present(state, &present);
+	mod_before_present(state, &present);
 
-	SDL_GL_SwapWindow(state->m_window);
-	s_component_after_present(state, &present);
-	dttr_graphics_component_frame_end(state);
+	SDL_GL_SwapWindow(state->window);
+	mod_after_present(state, &present);
+	dttr_graphics_mod_frame_end(state);
 }
 
-static bool s_present_video_frame_bgra(
+static bool present_video_frame_bgra(
 	DTTR_BackendState *state,
 	const uint8_t *pixels,
 	int width,
 	int height,
 	int stride
 ) {
-	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
+	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
 	if (!gl || !pixels || width <= 0 || height <= 0) {
 		return false;
 	}
 
-	if (state->m_frame_active) {
+	if (state->frame_active) {
 		return false;
 	}
 
-	if (!gl->m_video_texture) {
-		glGenTextures(1, &gl->m_video_texture);
+	if (!gl->video_texture) {
+		glGenTextures(1, &gl->video_texture);
 	}
 
-	s_upload_video_texture(gl, pixels, width, height);
+	upload_video_texture(gl, pixels, width, height);
 
 	int window_w = 0, window_h = 0;
-	SDL_GetWindowSizeInPixels(state->m_window, &window_w, &window_h);
+	SDL_GetWindowSizeInPixels(state->window, &window_w, &window_h);
 
 	if (window_w <= 0 || window_h <= 0) {
 		return false;
@@ -911,10 +906,10 @@ static bool s_present_video_frame_bgra(
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
-	glUseProgram(gl->m_program);
-	glBindVertexArray(gl->m_vao);
+	glUseProgram(gl->program);
+	glBindVertexArray(gl->vao);
 
-	const S_OpenglPresentRect present = s_compute_present_rect(
+	const opengl_present_rect present = compute_present_rect(
 		window_w,
 		window_h,
 		width,
@@ -928,20 +923,20 @@ static bool s_present_video_frame_bgra(
 
 	float identity[16];
 	dttr_graphics_mat4_identity(identity);
-	glUniformMatrix4fv(gl->m_loc_mvp, 1, GL_FALSE, identity);
-	glUniform2f(gl->m_loc_screen_size, (float)window_w, (float)window_h);
-	glUniform1f(gl->m_loc_is_2d, 1.0f);
-	glUniform1f(gl->m_loc_has_texture, 1.0f);
-	glUniform1f(gl->m_loc_color_op, (float)DTTR_D3DTOP_MODULATE);
-	glUniform1f(gl->m_loc_color_arg1, (float)DTTR_D3DTA_TEXTURE);
-	glUniform1f(gl->m_loc_color_arg2, (float)DTTR_D3DTA_DIFFUSE);
-	glUniform1f(gl->m_loc_alpha_op, (float)DTTR_D3DTOP_SELECTARG1);
-	glUniform1f(gl->m_loc_alpha_arg1, (float)DTTR_D3DTA_TEXTURE);
-	glUniform1f(gl->m_loc_alpha_arg2, (float)DTTR_D3DTA_DIFFUSE);
+	glUniformMatrix4fv(gl->loc_mvp, 1, GL_FALSE, identity);
+	glUniform2f(gl->loc_screen_size, (float)window_w, (float)window_h);
+	glUniform1f(gl->loc_is_2d, 1.0f);
+	glUniform1f(gl->loc_has_texture, 1.0f);
+	glUniform1f(gl->loc_color_op, (float)DTTR_D3DTOP_MODULATE);
+	glUniform1f(gl->loc_color_arg1, (float)DTTR_D3DTA_TEXTURE);
+	glUniform1f(gl->loc_color_arg2, (float)DTTR_D3DTA_DIFFUSE);
+	glUniform1f(gl->loc_alpha_op, (float)DTTR_D3DTOP_SELECTARG1);
+	glUniform1f(gl->loc_alpha_arg1, (float)DTTR_D3DTA_TEXTURE);
+	glUniform1f(gl->loc_alpha_arg2, (float)DTTR_D3DTA_DIFFUSE);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gl->m_video_texture);
-	glUniform1i(gl->m_loc_texture, 0);
+	glBindTexture(GL_TEXTURE_2D, gl->video_texture);
+	glUniform1i(gl->loc_texture, 0);
 	glBindSampler(0, 0);
 
 	DTTR_Vertex verts[6] = {
@@ -953,71 +948,71 @@ static bool s_present_video_frame_bgra(
 		{x1, y1, 0, 1, 1, 1, 1, 1, 1, 1},
 	};
 
-	glBindBuffer(GL_ARRAY_BUFFER, gl->m_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, gl->vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-	SDL_GL_SwapWindow(state->m_window);
+	SDL_GL_SwapWindow(state->window);
 	return true;
 }
 
-static void s_cleanup(DTTR_BackendState *state) {
-	S_OpenglBackendData *gl = (S_OpenglBackendData *)state->m_backend_data;
+static void cleanup(DTTR_BackendState *state) {
+	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
 	if (!gl) {
 		return;
 	}
 
-	if (gl->m_program) {
-		glDeleteProgram(gl->m_program);
+	if (gl->program) {
+		glDeleteProgram(gl->program);
 	}
 
-	if (gl->m_vao) {
-		glDeleteVertexArrays(1, &gl->m_vao);
+	if (gl->vao) {
+		glDeleteVertexArrays(1, &gl->vao);
 	}
 
-	if (gl->m_vbo) {
-		glDeleteBuffers(1, &gl->m_vbo);
+	if (gl->vbo) {
+		glDeleteBuffers(1, &gl->vbo);
 	}
 
-	s_destroy_msaa_fbo(gl);
-	s_destroy_fbo(gl);
+	destroy_msaa_fbo(gl);
+	destroy_fbo(gl);
 
-	s_release_deferred_gl_destroys(state, gl);
+	release_deferred_gl_destroys(state, gl);
 
 	for (int i = 0; i < DTTR_MAX_STAGED_TEXTURES; i++) {
-		if (gl->m_gl_textures[i]) {
-			glDeleteTextures(1, &gl->m_gl_textures[i]);
+		if (gl->gl_textures[i]) {
+			glDeleteTextures(1, &gl->gl_textures[i]);
 		}
 	}
 
-	glDeleteSamplers(DTTR_SAMPLER_COUNT, gl->m_gl_samplers);
+	glDeleteSamplers(DTTR_SAMPLER_COUNT, gl->gl_samplers);
 
-	if (gl->m_dummy_texture) {
-		glDeleteTextures(1, &gl->m_dummy_texture);
+	if (gl->dummy_texture) {
+		glDeleteTextures(1, &gl->dummy_texture);
 	}
 
-	if (gl->m_video_texture) {
-		glDeleteTextures(1, &gl->m_video_texture);
+	if (gl->video_texture) {
+		glDeleteTextures(1, &gl->video_texture);
 	}
 
-	free(gl->m_vertex_staging);
+	free(gl->vertex_staging);
 
-	SDL_GL_DestroyContext(gl->m_gl_context);
+	SDL_GL_DestroyContext(gl->gl_context);
 	free(gl);
-	state->m_backend_data = NULL;
+	state->backend_data = NULL;
 }
 
-static const char *s_get_driver_name(const DTTR_BackendState *state) {
-	return S_DRIVER_DISPLAY_OPENGL;
+static const char *get_driver_name(const DTTR_BackendState *state) {
+	return DRIVER_DISPLAY_OPENGL;
 }
 
-static const DTTR_RendererVtbl s_renderer = {
-	.begin_frame = s_begin_frame,
-	.end_frame = s_end_frame,
-	.present_video_frame_bgra = s_present_video_frame_bgra,
-	.resize = s_resize_fbo,
-	.cleanup = s_cleanup,
-	.get_driver_name = s_get_driver_name,
-	.defer_texture_destroy = s_defer_texture_destroy,
+static const DTTR_RendererVtbl renderer = {
+	.begin_frame = begin_frame,
+	.end_frame = end_frame,
+	.present_video_frame_bgra = present_video_frame_bgra,
+	.resize = resize_fbo,
+	.cleanup = cleanup,
+	.get_driver_name = get_driver_name,
+	.defer_texture_destroy = defer_texture_destroy,
 };

@@ -4,6 +4,7 @@
 #include <d3d.h>
 #include <ddraw.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <windows.h>
 
@@ -94,12 +95,12 @@ typedef struct DTTR_Graphics_COM_Direct3D7 DTTR_Graphics_COM_Direct3D7;
 typedef struct DTTR_Graphics_COM_Direct3DDevice7 DTTR_Graphics_COM_Direct3DDevice7;
 typedef struct DTTR_Graphics_COM_DirectDraw7 DTTR_Graphics_COM_DirectDraw7;
 
-/// Creates an IDirectDraw7 translator instance
-DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7(void);
-/// Creates an IDirect3D7 translator instance
-DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7(void);
-/// Creates an IDirect3DDevice7 translator instance
-DTTR_Graphics_COM_Direct3DDevice7 *dttr_graphics_com_create_direct3ddevice7(void);
+/// Creates an IDirectDraw7 translator instance.
+DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7();
+/// Creates an IDirect3D7 translator instance.
+DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7();
+/// Creates an IDirect3DDevice7 translator instance.
+DTTR_Graphics_COM_Direct3DDevice7 *dttr_graphics_com_create_direct3ddevice7();
 
 typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 	HRESULT(__stdcall *QueryInterface)(
@@ -144,12 +145,12 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 	); // 0x28
 	HRESULT(__stdcall *SetTransform)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
-		DWORD m_type,
+		DWORD type,
 		void *mat
 	); // 0x2C
 	HRESULT(__stdcall *GetTransform)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
-		DWORD m_type,
+		DWORD type,
 		void *mat
 	); // 0x30
 	HRESULT(__stdcall *SetViewport)(
@@ -158,7 +159,7 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 	); // 0x34
 	HRESULT(__stdcall *MultiplyTransform)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
-		DWORD m_type,
+		DWORD type,
 		void *m
 	); // 0x38
 	HRESULT(__stdcall *GetViewport)(
@@ -349,7 +350,7 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 } DTTR_Graphics_COM_Direct3DDevice7_VT;
 
 typedef struct DTTR_Graphics_COM_Direct3DDevice7 {
-	DTTR_Graphics_COM_Direct3DDevice7_VT *m_vtbl;
+	DTTR_Graphics_COM_Direct3DDevice7_VT *vtbl;
 } DTTR_Graphics_COM_Direct3DDevice7;
 
 typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
@@ -441,7 +442,7 @@ typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
 		DTTR_Graphics_COM_DirectDraw7 *self,
 		DWORD w,
 		DWORD h,
-		DWORD m_bpp,
+		DWORD bpp,
 		DWORD hz,
 		DWORD f
 	); // 0x54
@@ -482,7 +483,7 @@ typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
 } DTTR_Graphics_COM_DirectDraw7_VT;
 
 typedef struct DTTR_Graphics_COM_DirectDraw7 {
-	DTTR_Graphics_COM_DirectDraw7_VT *m_vtbl;
+	DTTR_Graphics_COM_DirectDraw7_VT *vtbl;
 } DTTR_Graphics_COM_DirectDraw7;
 
 typedef struct DTTR_Graphics_COM_Direct3D7_VT {
@@ -520,7 +521,7 @@ typedef struct DTTR_Graphics_COM_Direct3D7_VT {
 } DTTR_Graphics_COM_Direct3D7_VT;
 
 typedef struct DTTR_Graphics_COM_Direct3D7 {
-	DTTR_Graphics_COM_Direct3D7_VT *m_vtbl;
+	DTTR_Graphics_COM_Direct3D7_VT *vtbl;
 } DTTR_Graphics_COM_Direct3D7;
 
 typedef struct DTTR_Graphics_COM_DirectDrawSurface7 DTTR_Graphics_COM_DirectDrawSurface7;
@@ -536,7 +537,7 @@ typedef struct DTTR_Graphics_COM_Direct3DTexture2_VT {
 	ULONG(__stdcall *Release)(DTTR_Graphics_COM_Direct3DTexture2 *self);
 	HRESULT(__stdcall *GetHandle)(
 		DTTR_Graphics_COM_Direct3DTexture2 *self,
-		void *m_device,
+		void *device,
 		DWORD *handle
 	);
 	HRESULT(__stdcall *PaletteChanged)(
@@ -548,8 +549,8 @@ typedef struct DTTR_Graphics_COM_Direct3DTexture2_VT {
 } DTTR_Graphics_COM_Direct3DTexture2_VT;
 
 typedef struct DTTR_Graphics_COM_Direct3DTexture2 {
-	DTTR_Graphics_COM_Direct3DTexture2_VT *m_vtbl;
-	DTTR_Graphics_COM_DirectDrawSurface7 *m_surface;
+	DTTR_Graphics_COM_Direct3DTexture2_VT *vtbl;
+	DTTR_Graphics_COM_DirectDrawSurface7 *surface;
 } DTTR_Graphics_COM_Direct3DTexture2;
 
 typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
@@ -573,14 +574,14 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 		void *dstRect,
 		void *srcSurf,
 		void *srcRect,
-		DWORD m_flags,
+		DWORD flags,
 		void *bltFx
 	);
 	HRESULT(__stdcall *BltBatch)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void *batch,
 		DWORD count,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *BltFast)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
@@ -588,11 +589,11 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 		DWORD y,
 		void *srcSurf,
 		void *srcRect,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *DeleteAttachedSurface)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags,
+		DWORD flags,
 		void *surf
 	);
 	HRESULT(__stdcall *EnumAttachedSurfaces)(
@@ -602,14 +603,14 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 	);
 	HRESULT(__stdcall *EnumOverlayZOrders)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags,
+		DWORD flags,
 		void *ctx,
 		void *cb
 	);
 	HRESULT(__stdcall *Flip)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void *target,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *GetAttachedSurface)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
@@ -618,7 +619,7 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 	);
 	HRESULT(__stdcall *GetBltStatus)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *GetCaps)(DTTR_Graphics_COM_DirectDrawSurface7 *self, void *caps);
 	HRESULT(__stdcall *GetClipper)(
@@ -627,13 +628,13 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 	);
 	HRESULT(__stdcall *GetColorKey)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags,
+		DWORD flags,
 		void *colorKey
 	);
 	HRESULT(__stdcall *GetDC)(DTTR_Graphics_COM_DirectDrawSurface7 *self, HDC *dc);
 	HRESULT(__stdcall *GetFlipStatus)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *GetOverlayPosition)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
@@ -662,7 +663,7 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void *rect,
 		void *desc,
-		DWORD m_flags,
+		DWORD flags,
 		HANDLE event
 	);
 	HRESULT(__stdcall *ReleaseDC)(DTTR_Graphics_COM_DirectDrawSurface7 *self, HDC dc);
@@ -673,7 +674,7 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 	);
 	HRESULT(__stdcall *SetColorKey)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags,
+		DWORD flags,
 		void *colorKey
 	);
 	HRESULT(__stdcall *SetOverlayPosition)(
@@ -691,41 +692,38 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 		void *srcRect,
 		void *dstSurf,
 		void *dstRect,
-		DWORD m_flags,
+		DWORD flags,
 		void *fx
 	);
 	HRESULT(__stdcall *UpdateOverlayDisplay)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *UpdateOverlayZOrder)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags,
+		DWORD flags,
 		void *refSurf
 	);
 	HRESULT(__stdcall *GetDDInterface)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void **dd
 	);
-	HRESULT(__stdcall *PageLock)(
-		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags
-	);
+	HRESULT(__stdcall *PageLock)(DTTR_Graphics_COM_DirectDrawSurface7 *self, DWORD flags);
 	HRESULT(__stdcall *PageUnlock)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *SetSurfaceDesc)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void *desc,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *SetPrivateData)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
 		void *tag,
 		void *data,
 		DWORD size,
-		DWORD m_flags
+		DWORD flags
 	);
 	HRESULT(__stdcall *GetPrivateData)(
 		DTTR_Graphics_COM_DirectDrawSurface7 *self,
@@ -755,45 +753,53 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7_VT {
 } DTTR_Graphics_COM_DirectDrawSurface7_VT;
 
 typedef struct DTTR_Graphics_COM_DirectDrawSurface7 {
-	DTTR_Graphics_COM_DirectDrawSurface7_VT *m_vtbl;
-	ULONG m_refcount;
-	DTTR_Graphics_COM_DirectDrawSurface7 *m_back_buffer;
-	DTTR_Graphics_COM_Direct3DTexture2 *m_texture;
-	uint32_t m_width, m_height;
-	uint32_t m_bpp;	  // This is either 16 or 32
-	uint32_t m_pitch; // Stores the number of bytes per row
-	uint32_t m_r_mask, m_g_mask, m_b_mask, m_a_mask;
-	void *m_pixels;			  // Points to the game-writable pixel buffer in native format
-	uint32_t m_dttr_texture;  // Holds the GPU texture handle, or 0 if not created
-	uint32_t m_content_width; // Stores the actual content region width from Blt, or 0 for
-							  // the full surface
-	uint32_t m_content_height;
-	bool m_locked;
-	bool m_dirty;
-	bool m_has_colorkey;
-	uint16_t m_colorkey; // Stores the RGB565 transparent color value
-	void *m_convert_rgba;
-	uint32_t m_convert_rgba_capacity;
-	bool m_last_upload_valid;
-	uint32_t m_last_upload_width;
-	uint32_t m_last_upload_height;
-	uint64_t m_last_upload_hash;
+	DTTR_Graphics_COM_DirectDrawSurface7_VT *vtbl;
+	ULONG refcount;
+	DTTR_Graphics_COM_DirectDrawSurface7 *back_buffer;
+	DTTR_Graphics_COM_Direct3DTexture2 *texture;
+	uint32_t width, height;
+	uint32_t bpp;	// Either 16 or 32.
+	uint32_t pitch; // Bytes per row.
+	uint32_t r_mask, g_mask, b_mask, a_mask;
+	void *pixels;			// Game-writable pixel buffer in native format.
+	uint32_t dttr_texture;	// GPU texture handle, or 0 until created.
+	uint32_t content_width; // Blt content width, or 0 for the full surface.
+	uint32_t content_height;
+	bool locked;
+	bool dirty;
+	bool has_colorkey;
+	uint16_t colorkey; // RGB565 transparent color value.
+	void *convert_rgba;
+	size_t convert_rgba_capacity;
+	bool last_upload_valid;
+	uint32_t last_upload_width;
+	uint32_t last_upload_height;
+	uint64_t last_upload_hash;
 } DTTR_Graphics_COM_DirectDrawSurface7;
 
-/// Creates an IDirectDrawSurface7 translator with the given pixel format
+/// Creates an IDirectDrawSurface7 translator with the given pixel format.
 DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface7(
-	uint32_t m_width,
-	uint32_t m_height,
-	uint32_t m_bpp,
-	uint32_t m_r_mask,
-	uint32_t m_g_mask,
-	uint32_t m_b_mask,
-	uint32_t m_a_mask
+	uint32_t width,
+	uint32_t height,
+	uint32_t bpp,
+	uint32_t r_mask,
+	uint32_t g_mask,
+	uint32_t b_mask,
+	uint32_t a_mask
 );
 
-/// Creates an IDirect3DTexture2 translator bound to a surface translator
+/// Validates DirectDraw surface dimensions and computes safe storage sizes.
+HRESULT dttr_graphics_com_validate_directdrawsurface7(
+	uint32_t width,
+	uint32_t height,
+	uint32_t bpp,
+	uint32_t *out_pitch,
+	size_t *out_pixel_size
+);
+
+/// Creates an IDirect3DTexture2 translator bound to a surface translator.
 DTTR_Graphics_COM_Direct3DTexture2 *dttr_graphics_com_create_direct3d_texture2(
-	DTTR_Graphics_COM_DirectDrawSurface7 *m_surface
+	DTTR_Graphics_COM_DirectDrawSurface7 *surface
 );
 
 #endif // DTTR_D3D_COM_H

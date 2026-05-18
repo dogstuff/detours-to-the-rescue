@@ -9,13 +9,22 @@
     {
       "name": "mingw32-nix",
       "displayName": "MinGW32 (Nix)",
-      "description": "Cross-compile for Windows with the Nix-provided MinGW32 toolchain",
-      "generator": "Ninja",
+      "description": "Cross-compile for Windows with the Nix MinGW32 toolchain",
+      "generator": "Ninja Multi-Config",
       "binaryDir": "${sourceDir}/build",
       "toolchainFile": "${sourceDir}/.toolchain/toolchain.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "DTTR_MODDING": "ON"
+        "DTTR_MODS_ENABLED": "OFF"
+      }
+    },
+    {
+      "name": "mingw32-nix-modding",
+      "displayName": "MinGW32 (Nix, modding)",
+      "description": "Reconfigure the MinGW32 build tree with modding enabled",
+      "inherits": "mingw32-nix",
+      "cacheVariables": {
+        "DTTR_MODS_ENABLED": "ON"
       }
     }
   ],
@@ -23,6 +32,10 @@
     {
       "name": "mingw32-nix",
       "configurePreset": "mingw32-nix"
+    },
+    {
+      "name": "mingw32-nix-modding",
+      "configurePreset": "mingw32-nix-modding"
     }
   ]
 }

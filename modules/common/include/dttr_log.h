@@ -11,18 +11,18 @@
 #undef log_error
 #undef log_fatal
 
-bool dttr_log_is_enabled(int level);
-void dttr_log(int level, const char *file, int line, const char *fmt, ...);
-void dttr_log_unchecked(int level, const char *file, int line, const char *fmt, ...);
-void dttr_log_set_level(int level);
-void dttr_log_set_quiet(bool enable);
-int dttr_log_add_callback(log_LogFn fn, void *udata, int level);
-int dttr_log_add_fp(FILE *fp, int level);
+bool DTTR_Log_IsEnabled(int level);
+void DTTR_Log(int level, const char *file, int line, const char *fmt, ...);
+void DTTR_Log_Unchecked(int level, const char *file, int line, const char *fmt, ...);
+void DTTR_Log_SetLevel(int level);
+void DTTR_Log_SetQuiet(bool enable);
+int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level);
+int DTTR_Log_AddFP(FILE *fp, int level);
 
 #define DTTR_LOG_AT(level, ...)                                                          \
 	do {                                                                                 \
-		if (dttr_log_is_enabled(level)) {                                                \
-			dttr_log_unchecked(level, __FILE__, __LINE__, __VA_ARGS__);                  \
+		if (DTTR_Log_IsEnabled(level)) {                                                 \
+			DTTR_Log_Unchecked(level, __FILE__, __LINE__, __VA_ARGS__);                  \
 		}                                                                                \
 	} while (0)
 

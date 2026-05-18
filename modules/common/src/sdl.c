@@ -4,21 +4,24 @@
 #include <dttr_path.h>
 #include <windows.h>
 
-typedef bool (*S_ShowSimpleMessageBox)(
+typedef bool (*show_simple_message_box_fn)(
 	SDL_MessageBoxFlags flags,
 	const char *title,
 	const char *message,
 	SDL_Window *window
 );
-typedef bool (*S_ShowMessageBox)(const SDL_MessageBoxData *messageboxdata, int *buttonid);
-typedef void (*S_ShowOpenFolderDialog)(
+typedef bool (*show_message_box_fn)(
+	const SDL_MessageBoxData *messageboxdata,
+	int *buttonid
+);
+typedef void (*show_open_folder_dialog_fn)(
 	SDL_DialogFileCallback callback,
 	void *userdata,
 	SDL_Window *window,
 	const char *default_location,
 	bool allow_many
 );
-typedef void (*S_ShowOpenFileDialog)(
+typedef void (*show_open_file_dialog_fn)(
 	SDL_DialogFileCallback callback,
 	void *userdata,
 	SDL_Window *window,
@@ -27,75 +30,75 @@ typedef void (*S_ShowOpenFileDialog)(
 	const char *default_location,
 	bool allow_many
 );
-typedef void (*S_PumpEvents)(void);
-typedef void (*S_Delay)(Uint32 ms);
+typedef void (*pump_events_fn)();
+typedef void (*delay_fn)(Uint32 ms);
 
-#define S_RESOLVE(module, type, name) ((type)GetProcAddress(module, name))
+#define RESOLVE(module, type, name) ((type)GetProcAddress(module, name))
 
-static const char s_sdl_module_path[] = "modules\\SDL3.dll";
-static const char s_sdl_module_name[] = "SDL3.dll";
+static const char sdl_module_path[] = "modules\\SDL3.dll";
+static const char sdl_module_name[] = "SDL3.dll";
 
-static bool s_load_attempted;
-static S_ShowSimpleMessageBox s_show_simple_message_box;
-static S_ShowMessageBox s_show_message_box;
-static S_ShowOpenFolderDialog s_show_open_folder_dialog;
-static S_ShowOpenFileDialog s_show_open_file_dialog;
-static S_PumpEvents s_pump_events;
-static S_Delay s_delay;
+static bool load_attempted;
+static show_simple_message_box_fn show_simple_message_box;
+static show_message_box_fn show_message_box;
+static show_open_folder_dialog_fn show_open_folder_dialog;
+static show_open_file_dialog_fn show_open_file_dialog;
+static pump_events_fn pump_events;
+static delay_fn delay;
 
-static void s_report_dialog_failure(SDL_DialogFileCallback callback, void *userdata) {
+static void report_dialog_failure(SDL_DialogFileCallback callback, void *userdata) {
 	callback(userdata, NULL, -1);
 }
 
-static bool s_resolve_sdl_dll_path(char *out, size_t out_size) {
-	sds path = dttr_path_module_sibling(NULL, s_sdl_module_path);
-	const bool copied = dttr_path_copy_sds(out, out_size, path);
+static bool resolve_sdl_dll_path(char *out, size_t out_size) {
+	sds path = DTTR_Path_ModuleSibling(NULL, sdl_module_path);
+	const bool copied = DTTR_Path_CopySds(out, out_size, path);
 	sdsfree(path);
 	return copied;
 }
 
-static HMODULE s_get_loaded_sdl_module(void) {
-	HMODULE module = GetModuleHandleA(s_sdl_module_path);
-	return module ? module : GetModuleHandleA(s_sdl_module_name);
+static HMODULE get_loaded_sdl_module() {
+	HMODULE module = GetModuleHandleA(sdl_module_path);
+	return module ? module : GetModuleHandleA(sdl_module_name);
 }
 
-static bool s_resolve_sdl_exports(HMODULE module) {
-	s_show_simple_message_box = S_RESOLVE(
+static bool resolve_sdl_exports(HMODULE module) {
+	show_simple_message_box = RESOLVE(
 		module,
-		S_ShowSimpleMessageBox,
+		show_simple_message_box_fn,
 		"SDL_ShowSimpleMessageBox"
 	);
-	s_show_message_box = S_RESOLVE(module, S_ShowMessageBox, "SDL_ShowMessageBox");
-	s_show_open_folder_dialog = S_RESOLVE(
+	show_message_box = RESOLVE(module, show_message_box_fn, "SDL_ShowMessageBox");
+	show_open_folder_dialog = RESOLVE(
 		module,
-		S_ShowOpenFolderDialog,
+		show_open_folder_dialog_fn,
 		"SDL_ShowOpenFolderDialog"
 	);
-	s_show_open_file_dialog = S_RESOLVE(
+	show_open_file_dialog = RESOLVE(
 		module,
-		S_ShowOpenFileDialog,
+		show_open_file_dialog_fn,
 		"SDL_ShowOpenFileDialog"
 	);
-	s_pump_events = S_RESOLVE(module, S_PumpEvents, "SDL_PumpEvents");
-	s_delay = S_RESOLVE(module, S_Delay, "SDL_Delay");
+	pump_events = RESOLVE(module, pump_events_fn, "SDL_PumpEvents");
+	delay = RESOLVE(module, delay_fn, "SDL_Delay");
 
-	return s_show_simple_message_box && s_show_message_box && s_show_open_folder_dialog
-		   && s_show_open_file_dialog && s_pump_events && s_delay;
+	return show_simple_message_box && show_message_box && show_open_folder_dialog
+		   && show_open_file_dialog && pump_events && delay;
 }
 
-static bool s_load_sdl(void) {
-	if (s_show_message_box) {
+static bool load_sdl() {
+	if (show_message_box) {
 		return true;
 	}
-	if (s_load_attempted) {
+	if (load_attempted) {
 		return false;
 	}
-	s_load_attempted = true;
+	load_attempted = true;
 
-	HMODULE module = s_get_loaded_sdl_module();
+	HMODULE module = get_loaded_sdl_module();
 	if (!module) {
 		char path[MAX_PATH];
-		if (!s_resolve_sdl_dll_path(path, sizeof(path))) {
+		if (!resolve_sdl_dll_path(path, sizeof(path))) {
 			DTTR_LOG_ERROR("Could not resolve SDL3.dll path");
 			return false;
 		}
@@ -107,47 +110,47 @@ static bool s_load_sdl(void) {
 		return false;
 	}
 
-	return s_resolve_sdl_exports(module);
+	return resolve_sdl_exports(module);
 }
 
-bool dttr_sdl_show_simple_message_box(
+bool DTTR_SDL_ShowSimpleMessageBox(
 	SDL_MessageBoxFlags flags,
 	const char *title,
 	const char *message,
 	SDL_Window *window
 ) {
-	if (!s_load_sdl()) {
+	if (!load_sdl()) {
 		MessageBoxA(NULL, message, title, MB_OK | MB_ICONERROR);
 		return false;
 	}
 
-	return s_show_simple_message_box(flags, title, message, window);
+	return show_simple_message_box(flags, title, message, window);
 }
 
-bool dttr_sdl_show_message_box(const SDL_MessageBoxData *messageboxdata, int *buttonid) {
-	if (!s_load_sdl()) {
+bool DTTR_SDL_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid) {
+	if (!load_sdl()) {
 		return false;
 	}
 
-	return s_show_message_box(messageboxdata, buttonid);
+	return show_message_box(messageboxdata, buttonid);
 }
 
-void dttr_sdl_show_open_folder_dialog(
+void DTTR_SDL_ShowOpenFolderDialog(
 	SDL_DialogFileCallback callback,
 	void *userdata,
 	SDL_Window *window,
 	const char *default_location,
 	bool allow_many
 ) {
-	if (!s_load_sdl()) {
-		s_report_dialog_failure(callback, userdata);
+	if (!load_sdl()) {
+		report_dialog_failure(callback, userdata);
 		return;
 	}
 
-	s_show_open_folder_dialog(callback, userdata, window, default_location, allow_many);
+	show_open_folder_dialog(callback, userdata, window, default_location, allow_many);
 }
 
-void dttr_sdl_show_open_file_dialog(
+void DTTR_SDL_ShowOpenFileDialog(
 	SDL_DialogFileCallback callback,
 	void *userdata,
 	SDL_Window *window,
@@ -156,12 +159,12 @@ void dttr_sdl_show_open_file_dialog(
 	const char *default_location,
 	bool allow_many
 ) {
-	if (!s_load_sdl()) {
-		s_report_dialog_failure(callback, userdata);
+	if (!load_sdl()) {
+		report_dialog_failure(callback, userdata);
 		return;
 	}
 
-	s_show_open_file_dialog(
+	show_open_file_dialog(
 		callback,
 		userdata,
 		window,
@@ -172,18 +175,18 @@ void dttr_sdl_show_open_file_dialog(
 	);
 }
 
-void dttr_sdl_pump_events(void) {
-	if (!s_load_sdl()) {
+void DTTR_SDL_PumpEvents() {
+	if (!load_sdl()) {
 		return;
 	}
 
-	s_pump_events();
+	pump_events();
 }
 
-void dttr_sdl_delay(Uint32 ms) {
-	if (!s_load_sdl()) {
+void DTTR_SDL_Delay(Uint32 ms) {
+	if (!load_sdl()) {
 		return;
 	}
 
-	s_delay(ms);
+	delay(ms);
 }

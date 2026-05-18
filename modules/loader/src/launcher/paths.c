@@ -7,26 +7,26 @@
 #include <stdio.h>
 #include <string.h>
 
-static const wchar_t *const S_GAME_SUBPATHS[] = {
+static const wchar_t *const GAME_SUBPATHS[] = {
 	L"pcdogs.exe",
 	L"Setup\\102Dalms\\pcdogs.exe",
 };
 
-static const wchar_t S_ISO_SUFFIX[] = L".iso";
-static const char *const S_ISO_CACHE_PATH = "DetoursToTheRescue\\cache\\iso";
-static const char *const S_ISO_GAME_ROOT = "Setup/102Dalms";
-static const char *const S_ISO_GAME_EXE_PATH = "Setup/102Dalms/pcdogs.exe";
-static const char *const S_ISO_GAME_PKG_PATH = "Setup/102Dalms/pcdogs.pkg";
-static const char *const S_ISO_GAME_DATA_PATH = "Setup/102Dalms/data";
+static const wchar_t ISO_SUFFIX[] = L".iso";
+static const char *const ISO_CACHE_PATH = "DetoursToTheRescue\\cache\\iso";
+static const char *const ISO_GAME_ROOT = "Setup/102Dalms";
+static const char *const ISO_GAME_EXE_PATH = "Setup/102Dalms/pcdogs.exe";
+static const char *const ISO_GAME_PKG_PATH = "Setup/102Dalms/pcdogs.pkg";
+static const char *const ISO_GAME_DATA_PATH = "Setup/102Dalms/data";
 
-static wchar_t s_ascii_lower_w(wchar_t ch) {
+static wchar_t ascii_lower_w(wchar_t ch) {
 	if (ch >= L'A' && ch <= L'Z') {
 		return (wchar_t)(ch - L'A' + L'a');
 	}
 	return ch;
 }
 
-static bool s_has_suffix_w(const wchar_t *path, const wchar_t *suffix) {
+static bool has_suffix_w(const wchar_t *path, const wchar_t *suffix) {
 	const size_t path_len = wcslen(path);
 	const size_t suffix_len = wcslen(suffix);
 	if (path_len < suffix_len) {
@@ -35,7 +35,7 @@ static bool s_has_suffix_w(const wchar_t *path, const wchar_t *suffix) {
 
 	const wchar_t *candidate = path + path_len - suffix_len;
 	for (size_t i = 0; i < suffix_len; i++) {
-		if (s_ascii_lower_w(candidate[i]) != S_ISO_SUFFIX[i]) {
+		if (ascii_lower_w(candidate[i]) != ascii_lower_w(suffix[i])) {
 			return false;
 		}
 	}
@@ -43,27 +43,27 @@ static bool s_has_suffix_w(const wchar_t *path, const wchar_t *suffix) {
 	return true;
 }
 
-bool dttr_loader_path_is_iso_w(const wchar_t *path) {
-	return path && s_has_suffix_w(path, S_ISO_SUFFIX);
+bool DTTR_LoaderPath_IsISOW(const wchar_t *path) {
+	return path && has_suffix_w(path, ISO_SUFFIX);
 }
 
-size_t dttr_loader_game_subpath_count(void) {
-	return sizeof(S_GAME_SUBPATHS) / sizeof(S_GAME_SUBPATHS[0]);
+size_t DTTR_Loader_GameSubpathCount() {
+	return sizeof(GAME_SUBPATHS) / sizeof(GAME_SUBPATHS[0]);
 }
 
-const wchar_t *dttr_loader_game_subpath_at(size_t index) {
-	return index < dttr_loader_game_subpath_count() ? S_GAME_SUBPATHS[index] : NULL;
+const wchar_t *DTTR_Loader_GameSubpathAt(size_t index) {
+	return index < DTTR_Loader_GameSubpathCount() ? GAME_SUBPATHS[index] : NULL;
 }
 
-const char *dttr_loader_iso_game_root(void) { return S_ISO_GAME_ROOT; }
+const char *DTTR_LoaderISO_GameRoot() { return ISO_GAME_ROOT; }
 
-const char *dttr_loader_iso_game_exe_path(void) { return S_ISO_GAME_EXE_PATH; }
+const char *DTTR_LoaderISO_GameEXEPath() { return ISO_GAME_EXE_PATH; }
 
-const char *dttr_loader_iso_game_pkg_path(void) { return S_ISO_GAME_PKG_PATH; }
+const char *DTTR_LoaderISO_GamePkgPath() { return ISO_GAME_PKG_PATH; }
 
-const char *dttr_loader_iso_game_data_path(void) { return S_ISO_GAME_DATA_PATH; }
+const char *DTTR_LoaderISO_GameDataPath() { return ISO_GAME_DATA_PATH; }
 
-static uint64_t s_hash_path(const char *path) {
+static uint64_t hash_path(const char *path) {
 	sds normalized = sdsnew(path);
 	if (!normalized) {
 		return 0;
@@ -77,12 +77,12 @@ static uint64_t s_hash_path(const char *path) {
 	return hash;
 }
 
-static bool s_path_needs_separator(const char *path) {
+static bool path_needs_separator(const char *path) {
 	const size_t len = strlen(path);
 	return len > 0 && path[len - 1] != '\\' && path[len - 1] != '/';
 }
 
-bool dttr_loader_iso_cache_root_for_path(
+bool DTTR_LoaderISO_CacheRootForPath(
 	const char *cache_base_dir,
 	const char *iso_path,
 	char *out_path,
@@ -93,8 +93,8 @@ bool dttr_loader_iso_cache_root_for_path(
 		return false;
 	}
 
-	const uint64_t hash = s_hash_path(iso_path);
-	const bool needs_separator = s_path_needs_separator(cache_base_dir);
+	const uint64_t hash = hash_path(iso_path);
+	const bool needs_separator = path_needs_separator(cache_base_dir);
 
 	const int written = snprintf(
 		out_path,
@@ -102,7 +102,7 @@ bool dttr_loader_iso_cache_root_for_path(
 		"%s%s%s\\%016llx",
 		cache_base_dir,
 		needs_separator ? "\\" : "",
-		S_ISO_CACHE_PATH,
+		ISO_CACHE_PATH,
 		(unsigned long long)hash
 	);
 	return written > 0 && (size_t)written < out_path_size;
