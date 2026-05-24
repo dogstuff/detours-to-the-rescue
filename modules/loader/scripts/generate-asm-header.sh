@@ -32,5 +32,7 @@ for asm_file in "$asm_dir"/*.asm; do
     echo
     echo "#endif // DTTR_GENERATED_ASM_H"
   } > "$output_file"
-  clang-format -i "$output_file"
+  if command -v clang-format >/dev/null 2>&1; then
+    clang-format -i "$output_file"
+  fi
 done
