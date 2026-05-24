@@ -1,8 +1,3 @@
-#include <cmocka.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-
 #include <dttr_config.h>
 #include <dttr_crashdump.h>
 #include <dttr_log.h>
@@ -11,10 +6,10 @@
 #include <string.h>
 #include <windows.h>
 
-#include <dttr_test_cmocka.h>
+#include <dttr_test_support.h>
 
 static void stack_trace_formatter_includes_marker(void **state) {
-	sds stack_trace = DTTR_Crashdump_FormatStackTrace(NULL, NULL, NULL);
+	sds stack_trace = DTTR_CrashDump_FormatStackTrace(NULL, NULL, NULL);
 
 	assert_non_null(stack_trace);
 	assert_non_null(strstr(stack_trace, "Stack trace:"));
@@ -76,6 +71,7 @@ static void config_load_rejects_invalid_values(void **state) {
 	for (int i = 0; i < MAX_PATH; i++) {
 		fputc('a', file);
 	}
+
 	fputs("\"}\n", file);
 	assert_int_equal(fclose(file), 0);
 

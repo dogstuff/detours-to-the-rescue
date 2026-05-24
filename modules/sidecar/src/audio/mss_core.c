@@ -114,6 +114,7 @@ bool dttr_mss_core_ensure_mixer() {
 		.channels = DTTR_MSS_MIXER_CHANNELS,
 		.freq = DTTR_MSS_MIXER_RATE,
 	};
+
 	const SDL_AudioSpec *desired = has_desired_spec ? &desired_spec : &fallback;
 	mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, desired);
 	if (!mixer) {

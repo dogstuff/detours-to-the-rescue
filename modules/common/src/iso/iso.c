@@ -386,6 +386,7 @@ done:
 		set_physfs_error("PHYSFS_seek failed");
 		return false;
 	}
+
 	return matches;
 }
 

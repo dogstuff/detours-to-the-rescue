@@ -12,6 +12,43 @@
 
 static char crash_dump_dir[MAX_PATH];
 
+static INIT_ONCE dbghelp_lock_once = INIT_ONCE_STATIC_INIT;
+static CRITICAL_SECTION dbghelp_lock;
+static DTTR_CrashDump_SymbolProvider crash_symbol_provider;
+static void *crash_symbol_provider_context;
+
+static BOOL CALLBACK init_dbghelp_lock(PINIT_ONCE, PVOID, PVOID *) {
+	InitializeCriticalSection(&dbghelp_lock);
+	return TRUE;
+}
+
+static void enter_dbghelp_lock() {
+	InitOnceExecuteOnce(&dbghelp_lock_once, init_dbghelp_lock, NULL, NULL);
+	EnterCriticalSection(&dbghelp_lock);
+}
+
+static void leave_dbghelp_lock() { LeaveCriticalSection(&dbghelp_lock); }
+
+static void invoke_symbol_provider(HANDLE process) {
+	if (crash_symbol_provider) {
+		crash_symbol_provider(process, crash_symbol_provider_context);
+	}
+}
+
+void DTTR_CrashDump_SetSymbolProvider(
+	DTTR_CrashDump_SymbolProvider provider,
+	void *context
+) {
+	enter_dbghelp_lock();
+	crash_symbol_provider = provider;
+	crash_symbol_provider_context = context;
+	leave_dbghelp_lock();
+}
+
+void DTTR_CrashDump_ClearSymbolProvider() {
+	DTTR_CrashDump_SetSymbolProvider(NULL, NULL);
+}
+
 #define MAX_STACK_FRAMES 32
 #define SYMBOL_NAME_CAPACITY 256
 #define SYMBOL_BUFFER_SIZE (sizeof(IMAGEHLP_SYMBOL) + SYMBOL_NAME_CAPACITY)
@@ -41,7 +78,7 @@ static sds build_crash_message(DWORD code, const char *filename) {
 	);
 }
 
-sds DTTR_Crashdump_Write(
+sds DTTR_CrashDump_Write(
 	HANDLE process,
 	DWORD pid,
 	DWORD tid,
@@ -83,6 +120,7 @@ sds DTTR_Crashdump_Write(
 		.ClientPointers = FALSE,
 	};
 
+	enter_dbghelp_lock();
 	const BOOL success = MiniDumpWriteDump(
 		process,
 		pid,
@@ -92,6 +130,7 @@ sds DTTR_Crashdump_Write(
 		NULL,
 		NULL
 	);
+	leave_dbghelp_lock();
 	CloseHandle(file);
 
 	if (!success) {
@@ -104,16 +143,20 @@ sds DTTR_Crashdump_Write(
 	return filename;
 }
 
-sds DTTR_Crashdump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context) {
+sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context) {
 	sds message = sdscat(sdsempty(), "\n\nStack trace:");
 	if (!process || !thread || !context) {
 		return sdscat(message, "\n  <unavailable>");
 	}
 
 	CONTEXT ctx = *context;
+	enter_dbghelp_lock();
 	if (!SymInitialize(process, NULL, TRUE)) {
+		leave_dbghelp_lock();
 		return sdscat(message, "\n  <symbols unavailable>");
 	}
+
+	invoke_symbol_provider(process);
 
 	STACKFRAME frame = {0};
 	frame.AddrPC.Offset = ctx.Eip;
@@ -171,9 +214,11 @@ sds DTTR_Crashdump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT
 	}
 
 	SymCleanup(process);
+	leave_dbghelp_lock();
 	if (frame_count == 0) {
 		message = sdscat(message, "\n  <unavailable>");
 	}
+
 	return message;
 }
 
@@ -182,10 +227,10 @@ static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exceptio
 	const HANDLE process = GetCurrentProcess();
 	const DWORD pid = GetCurrentProcessId();
 	const DWORD tid = GetCurrentThreadId();
-	sds filename = DTTR_Crashdump_Write(process, pid, tid, exception_info);
+	sds filename = DTTR_CrashDump_Write(process, pid, tid, exception_info);
 
 	sds message = build_crash_message(code, filename);
-	sds stack_trace = DTTR_Crashdump_FormatStackTrace(
+	sds stack_trace = DTTR_CrashDump_FormatStackTrace(
 		process,
 		GetCurrentThread(),
 		exception_info->ContextRecord
@@ -197,6 +242,7 @@ static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exceptio
 	if (!DTTR_ImGui_ErrorShow("DttR: Crash", message)) {
 		DTTR_SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Crash", message, NULL);
 	}
+
 	sdsfree(message);
 	sdsfree(filename);
 	ExitProcess(1);
@@ -228,7 +274,7 @@ static bool set_dump_dir(const char *base_dir) {
 	return true;
 }
 
-void DTTR_Crashdump_Init(const char *const dump_dir) {
+void DTTR_CrashDump_Init(const char *const dump_dir) {
 	if (!set_dump_dir(dump_dir)) {
 		DTTR_LOG_ERROR("Could not initialize crash dump directory");
 		crash_dump_dir[0] = '\0';

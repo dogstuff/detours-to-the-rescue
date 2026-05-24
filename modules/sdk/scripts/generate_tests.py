@@ -119,6 +119,7 @@ def load_blueprints(paths: list[Path]) -> list[tuple[str, object]]:
             )
         if blueprint is None:
             raise SystemExit(f"{path} does not define a blueprint")
+
         blueprints.append((c_ident(path.stem).upper(), blueprint))
     return blueprints
 

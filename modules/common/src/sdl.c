@@ -92,9 +92,11 @@ static bool load_sdl() {
 	if (show_message_box) {
 		return true;
 	}
+
 	if (load_attempted) {
 		return false;
 	}
+
 	load_attempted = true;
 
 	HMODULE module = get_loaded_sdl_module();
@@ -107,6 +109,7 @@ static bool load_sdl() {
 
 		module = LoadLibraryA(path);
 	}
+
 	if (!module) {
 		DTTR_LOG_ERROR("Could not load SDL3.dll");
 		return false;

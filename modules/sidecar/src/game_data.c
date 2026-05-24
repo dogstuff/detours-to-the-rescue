@@ -1,4 +1,4 @@
-#include "game_data_private.h"
+#include "sidecar_private.h"
 
 #include <dttr_iso.h>
 #include <dttr_path.h>
@@ -140,6 +140,7 @@ static const char *find_cached_segment(const char *path) {
 	if (!path) {
 		return NULL;
 	}
+
 	for (const char *p = path; *p;) {
 		const size_t segment_len = DTTR_Path_SegmentLen(p);
 		if (segment_len == 4 && DTTR_Path_AsciiIeqN(p, "data", 4)) {
@@ -152,6 +153,7 @@ static const char *find_cached_segment(const char *path) {
 
 		p = DTTR_Path_SkipSeparators(p + segment_len);
 	}
+
 	return NULL;
 }
 

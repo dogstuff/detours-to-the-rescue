@@ -12,12 +12,14 @@ static void create_frame_buffers(DTTR_BackendState *state) {
 		.usage = SDL_GPU_BUFFERUSAGE_VERTEX,
 		.size = frame_buffer_size,
 	};
+
 	state->vertex_buffer = SDL_CreateGPUBuffer(state->device, &vbuf_info);
 
 	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
 		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
 		.size = frame_buffer_size,
 	};
+
 	state->transfer_buffer = SDL_CreateGPUTransferBuffer(state->device, &tbuf_info);
 }
 
@@ -60,6 +62,7 @@ static void create_render_textures(DTTR_BackendState *state) {
 		.num_levels = 1,
 		.sample_count = SDL_GPU_SAMPLECOUNT_1,
 	};
+
 	state->render_target = SDL_CreateGPUTexture(state->device, &rt_info);
 
 	state->msaa_render_target = NULL;
@@ -75,6 +78,7 @@ static void create_render_textures(DTTR_BackendState *state) {
 			.num_levels = 1,
 			.sample_count = sample_count,
 		};
+
 		state->msaa_render_target = SDL_CreateGPUTexture(state->device, &msaa_rt_info);
 	}
 
@@ -88,6 +92,7 @@ static void create_render_textures(DTTR_BackendState *state) {
 		.num_levels = 1,
 		.sample_count = sample_count,
 	};
+
 	state->depth_texture = SDL_CreateGPUTexture(state->device, &depth_tex_info);
 }
 
@@ -102,6 +107,7 @@ static void create_dummy_texture(DTTR_BackendState *state) {
 		.layer_count_or_depth = 1,
 		.num_levels = 1,
 	};
+
 	state->dummy_texture = SDL_CreateGPUTexture(state->device, &dummy_tex_info);
 }
 
@@ -114,6 +120,7 @@ static void upload_dummy_white_pixel(DTTR_BackendState *state) {
 		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
 		.size = buf_size,
 	};
+
 	SDL_GPUTransferBuffer *tbuf = SDL_CreateGPUTransferBuffer(state->device, &tbuf_info);
 
 	if (!tbuf) {
@@ -144,12 +151,14 @@ static void upload_dummy_white_pixel(DTTR_BackendState *state) {
 			.transfer_buffer = tbuf,
 			.pixels_per_row = 1,
 		};
+
 		const SDL_GPUTextureRegion dst = {
 			.texture = state->dummy_texture,
 			.w = 1,
 			.h = 1,
 			.d = 1,
 		};
+
 		SDL_UploadToGPUTexture(copy, &src, &dst, false);
 		SDL_EndGPUCopyPass(copy);
 	}

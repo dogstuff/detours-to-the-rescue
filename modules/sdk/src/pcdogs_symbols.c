@@ -6,6 +6,7 @@ static void patch_report_init(DTTR_PCDOGS_T_Patch_Report *report) {
 	if (!report) {
 		return;
 	}
+
 	report->attempted = 0;
 	report->installed = 0;
 	report->skipped_optional = 0;
@@ -22,6 +23,7 @@ static void patch_report_fail(
 	if (!report) {
 		return;
 	}
+
 	report->failed_index = index;
 	report->status = result.status;
 	report->message = result.message;
@@ -49,6 +51,7 @@ static DTTR_Core_Result resolve_symbol(
 	if (!ctx || !out_addr || id >= count) {
 		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, invalid_message);
 	}
+
 	*out_addr = 0;
 	// Optional rows may be absent; check the requested row after bulk resolution.
 	DTTR_PCDOGS_SymbolsResolveAll(ctx);
@@ -56,6 +59,7 @@ static DTTR_Core_Result resolve_symbol(
 	if (!addr) {
 		return dttr_core_result(DTTR_ERR_NOT_FOUND, not_found_message);
 	}
+
 	*out_addr = addr;
 	return dttr_core_result(DTTR_OK, "ok");
 }
@@ -88,6 +92,7 @@ DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
 			"invalid PCDOGS function resolve arguments"
 		);
 	}
+
 	return DTTR_PCDOGS_SymbolFunctionResolve(ctx, symbol_id, out_addr);
 }
 
@@ -119,6 +124,7 @@ DTTR_Core_Result DTTR_PCDOGS_DataResolve(
 			"invalid PCDOGS global resolve arguments"
 		);
 	}
+
 	return DTTR_PCDOGS_SymbolDataResolve(ctx, symbol_id, out_addr);
 }
 
@@ -132,17 +138,20 @@ DTTR_Core_Result DTTR_PCDOGS_Hook_DataPointer(
 	if (out_hook) {
 		*out_hook = NULL;
 	}
+
 	if (!ctx || !out_hook) {
 		return dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
 			"invalid PCDOGS global pointer hook arguments"
 		);
 	}
+
 	uintptr_t address = 0;
 	DTTR_Core_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
 	if (!DTTR_Core_ResultOk(resolved)) {
 		return resolved;
 	}
+
 	return DTTR_Core_HookPointer(ctx, address, new_value, out_original, out_hook);
 }
 
@@ -158,6 +167,7 @@ static DTTR_Core_Result patch_group_hook_symbol_function(
 			"invalid PCDOGS patch group symbol function hook arguments"
 		);
 	}
+
 	const DTTR_PCDOGS_T_Symbol_Function *fn = DTTR_PCDOGS_SymbolFunctionAt((uint32_t)id);
 	if (!fn || fn->hook_kind != DTTR_PCDOGS_HOOK_REL32 || !fn->callable) {
 		return dttr_core_result(
@@ -165,12 +175,14 @@ static DTTR_Core_Result patch_group_hook_symbol_function(
 			"PCDOGS symbol function is not hookable"
 		);
 	}
+
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
 	DTTR_Core_Result resolved = DTTR_PCDOGS_SymbolFunctionResolve(ctx, id, &address);
 	if (!DTTR_Core_ResultOk(resolved)) {
 		return resolved;
 	}
+
 	return DTTR_Core_PatchGroupHookFunction(
 		group,
 		address,
@@ -194,6 +206,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 			"invalid PCDOGS patch group function hook arguments"
 		);
 	}
+
 	return patch_group_hook_symbol_function(group, symbol_id, detour, out_original);
 }
 
@@ -209,12 +222,14 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 			"invalid PCDOGS patch group global pointer hook arguments"
 		);
 	}
+
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
 	DTTR_Core_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
 	if (!DTTR_Core_ResultOk(resolved)) {
 		return resolved;
 	}
+
 	return DTTR_Core_PatchGroupHookPointer(group, address, new_value, out_original, NULL);
 }
 
@@ -228,6 +243,7 @@ static DTTR_Core_Result patch_spec_target(
 			"invalid PCDOGS patch spec target"
 		);
 	}
+
 	DTTR_Core_TargetSpec target = spec->target;
 	target.required = spec->required || target.required;
 	switch (spec->kind) {
@@ -258,6 +274,7 @@ static DTTR_Core_Result patch_spec_target(
 			"unsupported PCDOGS patch spec kind"
 		);
 	}
+
 	*out_target = target;
 	return dttr_core_result(DTTR_OK, "ok");
 }
@@ -295,17 +312,20 @@ static DTTR_Core_Result patch_spec_install(
 		if (!DTTR_Core_ResultOk(result)) {
 			return result;
 		}
+
 		DTTR_Core_TargetReport target_report = {0};
 		result = DTTR_Core_PatchGroupInstallTargets(group, &target, 1u, &target_report);
 		if (!DTTR_Core_ResultOk(result)) {
 			return result;
 		}
+
 		if (target_report.skipped_optional) {
 			return dttr_core_result(
 				DTTR_ERR_NOT_FOUND,
 				"optional PCDOGS patch spec skipped"
 			);
 		}
+
 		return dttr_core_result(DTTR_OK, "ok");
 	}
 	default:
@@ -332,6 +352,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 		patch_report_fail(out_report, 0, result);
 		return result;
 	}
+
 	if (*out_group) {
 		DTTR_Core_Result result = dttr_core_result(
 			DTTR_ERR_ALREADY_INSTALLED,
@@ -340,16 +361,19 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 		patch_report_fail(out_report, 0, result);
 		return result;
 	}
+
 	DTTR_Core_PatchGroup *group = NULL;
 	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(ctx, &group);
 	if (!DTTR_Core_ResultOk(result)) {
 		patch_report_fail(out_report, 0, result);
 		return result;
 	}
+
 	for (size_t i = 0; i < spec_count; i++) {
 		if (out_report) {
 			out_report->attempted++;
 		}
+
 		result = patch_spec_install(group, &specs[i]);
 		if (!DTTR_Core_ResultOk(result)) {
 			if (!specs[i].required
@@ -358,21 +382,26 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 				if (out_report) {
 					out_report->skipped_optional++;
 				}
+
 				continue;
 			}
+
 			DTTR_Core_Result cleanup = DTTR_Core_PatchGroupReleaseChecked(&group);
 			if (!DTTR_Core_ResultOk(cleanup)) {
 				*out_group = group;
 				patch_report_fail(out_report, i, cleanup);
 				return cleanup;
 			}
+
 			patch_report_fail(out_report, i, result);
 			return result;
 		}
+
 		if (out_report) {
 			out_report->installed++;
 		}
 	}
+
 	*out_group = group;
 	return dttr_core_result(DTTR_OK, "ok");
 }

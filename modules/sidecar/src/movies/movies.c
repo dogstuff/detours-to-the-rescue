@@ -1,7 +1,6 @@
 #include <dttr_pcdogs.h>
 
 #include "dttr_sidecar.h"
-#include "game_data_private.h"
 #include "hooks_private.h"
 #include "sidecar_private.h"
 #include <dttr_log.h>
@@ -70,6 +69,7 @@ static movie_state movie = {
 	.frame_duration = 1.0 / 15.0,
 	.result = DTTR_MOVIE_ENDED,
 };
+
 static AVFrame *video_frame = NULL;
 static AVFrame *audio_frame = NULL;
 static AVPacket *packet = NULL;
@@ -198,6 +198,7 @@ static bool prepare_audio() {
 		.channels = AUDIO_CHANNELS,
 		.freq = movie.audio_codec->sample_rate,
 	};
+
 	movie.audio_stream = SDL_OpenAudioDeviceStream(
 		SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
 		&spec,
@@ -296,6 +297,7 @@ static void set_next_video_time(const double pts) {
 	if (movie.next_video_time < 0.0) {
 		movie.next_video_time = 0.0;
 	}
+
 	movie.last_video_pts = pts;
 }
 
@@ -421,6 +423,7 @@ static bool queue_audio_frame(const AVFrame *frame) {
 	if (converted_size > 0) {
 		SDL_PutAudioStreamData(movie.audio_stream, out, converted_size);
 	}
+
 	av_free(out);
 
 	const int queue_limit = (movie.audio_codec->sample_rate * AUDIO_CHANNELS
@@ -441,6 +444,7 @@ static bool receive_video_frame() {
 		if (err == AVERROR(EAGAIN) || err == AVERROR_EOF) {
 			return false;
 		}
+
 		if (err < 0) {
 			DTTR_LOG_ERROR("Failed to decode movie video: %s", av_error(err));
 			movie.result = DTTR_MOVIE_ENDED;
@@ -450,6 +454,7 @@ static bool receive_video_frame() {
 		if (!queue_video_frame(video_frame)) {
 			movie.result = DTTR_MOVIE_ENDED;
 		}
+
 		av_frame_unref(video_frame);
 	}
 
@@ -467,6 +472,7 @@ static void receive_audio_frames() {
 		if (err == AVERROR(EAGAIN) || err == AVERROR_EOF) {
 			return;
 		}
+
 		if (err < 0) {
 			DTTR_LOG_WARN("Failed to decode movie audio: %s", av_error(err));
 			return;
@@ -477,6 +483,7 @@ static void receive_audio_frames() {
 			av_frame_unref(audio_frame);
 			return;
 		}
+
 		av_frame_unref(audio_frame);
 	}
 }
@@ -523,6 +530,7 @@ static void send_packet() {
 				set_next_video_time(packet_pts_seconds(packet));
 				movie.video_frame_ready = true;
 			}
+
 			return;
 		}
 
@@ -531,6 +539,7 @@ static void send_packet() {
 			DTTR_LOG_ERROR("Failed to submit movie video packet: %s", av_error(err));
 			movie.result = DTTR_MOVIE_ENDED;
 		}
+
 		return;
 	}
 
@@ -550,6 +559,7 @@ static bool decode_until_video_frame() {
 		if (receive_video_frame()) {
 			return true;
 		}
+
 		receive_audio_frames();
 
 		if (movie.hit_eof) {
@@ -565,6 +575,7 @@ static bool decode_until_video_frame() {
 			movie.hit_eof = true;
 			continue;
 		}
+
 		if (err < 0) {
 			DTTR_LOG_ERROR("Failed to read movie packet: %s", av_error(err));
 			movie.result = DTTR_MOVIE_ENDED;
@@ -595,6 +606,7 @@ bool dttr_movies_hooks_init(const DTTR_Mods_Context *ctx) {
 		DTTR_MODS_LOG_ERROR(ctx, "movie_playfile: hook failed");
 		return false;
 	}
+
 	return true;
 }
 
@@ -712,6 +724,7 @@ void DTTR_Movies_Tick() {
 			movie.buf_stride
 		);
 	}
+
 	movie.video_frame_ready = false;
 }
 

@@ -366,5 +366,6 @@ DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7() {
 			dd7->vtbl->QueryInterface
 		);
 	}
+
 	return dd7;
 }

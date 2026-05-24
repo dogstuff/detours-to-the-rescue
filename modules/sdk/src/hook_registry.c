@@ -463,6 +463,7 @@ uintptr_t DTTR_Core_HookCachedSigscan(HMODULE mod, const char *sig, const char *
 	if (!mod || !sig || !mask) {
 		return 0;
 	}
+
 	if (!cache) {
 		cache = kh_init(sigscan_cache);
 		if (!cache) {
@@ -484,6 +485,7 @@ uintptr_t DTTR_Core_HookCachedSigscan(HMODULE mod, const char *sig, const char *
 	if (ret < 0) {
 		return result;
 	}
+
 	kh_val(cache, it) = result;
 
 	return result;
@@ -504,6 +506,7 @@ static void hook_destroy(DTTR_Core_Hook *hook) {
 		if (hook->next_thunk) {
 			VirtualFree(hook->next_thunk, 0, MEM_RELEASE);
 		}
+
 		free(hook);
 		return;
 	}
@@ -520,9 +523,11 @@ static void hook_chain_destroy(hook_chain *chain) {
 	if (!chain) {
 		return;
 	}
+
 	if (chain->trampoline) {
 		VirtualFree(chain->trampoline, 0, MEM_RELEASE);
 	}
+
 	free(chain->original);
 	free(chain);
 }
@@ -664,6 +669,7 @@ static void *function_link_next_target(const DTTR_Core_Hook *hook) {
 	if (hook->next) {
 		return hook->next->detour;
 	}
+
 	return hook->chain ? hook->chain->trampoline : NULL;
 }
 
@@ -717,6 +723,7 @@ static bool function_chain_push_head(
 	} else {
 		chain->tail = hook;
 	}
+
 	chain->head = hook;
 
 	if (!write_function_jump(chain->addr, hook->detour)) {
@@ -726,6 +733,7 @@ static bool function_chain_push_head(
 		} else {
 			chain->tail = NULL;
 		}
+
 		hook->next = NULL;
 		return false;
 	}
@@ -733,6 +741,7 @@ static bool function_chain_push_head(
 	if (out_original) {
 		*out_original = hook->next_thunk;
 	}
+
 	return true;
 }
 
@@ -977,6 +986,7 @@ static DTTR_Core_Hook *hook_attach_function_common(
 		VirtualFree(trampoline, 0, MEM_RELEASE);
 		return NULL;
 	}
+
 	chain->original = (uint8_t *)malloc(DTTR_HOOK_PATCH_SIZE);
 	if (!chain->original) {
 		DTTR_LOG_ERROR(
@@ -987,6 +997,7 @@ static DTTR_Core_Hook *hook_attach_function_common(
 		free(chain);
 		return NULL;
 	}
+
 	memcpy(chain->original, prologue_bytes, DTTR_HOOK_PATCH_SIZE);
 	chain->addr = addr;
 	chain->patch_size = DTTR_HOOK_PATCH_SIZE;

@@ -28,6 +28,7 @@ static inline const uint8_t *DTTR_Sigscan_Bytes(
 			if (mask[j] != 'x') {
 				continue;
 			}
+
 			if (base[i + j] != sig_bytes[j]) {
 				break;
 			}

@@ -1,5 +1,6 @@
-#include "dttr_test_binary.h"
-#include "dttr_test_cmocka.h"
+#define DTTR_TEST_BINARY_SUPPORT
+#include "dttr_test_support.h"
+#undef DTTR_TEST_BINARY_SUPPORT
 
 #include <dttr_sigscan.h>
 
@@ -499,10 +500,12 @@ static size_t masked_sigscan_count(
 			if (mask[i] != 'x') {
 				continue;
 			}
+
 			if (bytes[offset + i] != sig[i]) {
 				break;
 			}
 		}
+
 		if (i == mask_len) {
 			matches++;
 		}

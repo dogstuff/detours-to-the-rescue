@@ -1,8 +1,120 @@
-#ifndef DTTR_TEST_BINARY_H
-#define DTTR_TEST_BINARY_H
+#ifndef DTTR_TEST_SUPPORT_H
+#define DTTR_TEST_SUPPORT_H
 
 #include <stdbool.h>
+#include <setjmp.h>
+#include <stdarg.h>
 #include <stddef.h>
+
+#include <cmocka.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+	const char *name;
+	CMUnitTestFunction fn;
+} DTTR_TestCase;
+
+#define DTTR_TEST_ARRAY_COUNT(TESTS) (sizeof(TESTS) / sizeof(*(TESTS)))
+#define DTTR_TEST_MAIN(TESTS)                                                            \
+	int main(int argc, char **argv) {                                                    \
+		return dttr_test_run_cases((TESTS), DTTR_TEST_ARRAY_COUNT(TESTS), argc, argv);   \
+	}
+
+// Runs one named cmocka case for focused local debugging.
+static inline int dttr_test_run_case(const DTTR_TestCase *test_case) {
+	if (!test_case) {
+		return 2;
+	}
+
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_case->fn),
+	};
+
+	return cmocka_run_group_tests_name(test_case->name, tests, NULL, NULL);
+}
+
+// Skips fixture-dependent tests when the external binary corpus is not present.
+static inline void dttr_test_require_available(bool available) {
+	if (available) {
+		return;
+	}
+
+	const char *required = getenv("DTTR_REQUIRE_PCDOGS_FIXTURES");
+	if (required && required[0] && strcmp(required, "0") != 0) {
+		fail_msg("required PCDOGS fixtures are unavailable");
+	}
+
+	skip();
+}
+
+// Looks up the optional command-line test name used for focused local debugging.
+static inline const DTTR_TestCase *dttr_test_find_case(
+	const DTTR_TestCase *test_cases,
+	size_t test_case_count,
+	const char *name
+) {
+	if (!test_cases || !name) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < test_case_count; i++) {
+		if (strcmp(name, test_cases[i].name) == 0) {
+			return &test_cases[i];
+		}
+	}
+
+	return NULL;
+}
+
+// Dispatches either the whole suite or one named case when requested directly.
+static inline int dttr_test_run_cases(
+	const DTTR_TestCase *test_cases,
+	size_t test_case_count,
+	int argc,
+	char **argv
+) {
+	if (!test_cases || !argv || argc < 1) {
+		return 2;
+	}
+
+	if (argc == 2) {
+		const DTTR_TestCase *test_case = dttr_test_find_case(
+			test_cases,
+			test_case_count,
+			argv[1]
+		);
+		if (test_case) {
+			return dttr_test_run_case(test_case);
+		}
+
+		fprintf(stderr, "unknown test case: %s\n", argv[1]);
+		return 2;
+	}
+
+	if (argc != 1) {
+		fprintf(stderr, "usage: %s [test-case]\n", argv[0]);
+		return 2;
+	}
+
+	int status = 0;
+	for (size_t i = 0; i < test_case_count; i++) {
+		const int test_status = dttr_test_run_case(&test_cases[i]);
+		if (test_status != 0) {
+			status = test_status;
+		}
+	}
+
+	return status;
+}
+
+#endif // DTTR_TEST_SUPPORT_H
+
+#if defined(DTTR_TEST_BINARY_SUPPORT) && !defined(DTTR_TEST_BINARY_SUPPORT_H)
+#define DTTR_TEST_BINARY_SUPPORT_H
+
 #include <stdint.h>
 
 #include <windows.h>
@@ -106,7 +218,7 @@ bool dttr_test_case_equal(const char *a, const char *b);
 // Tests whether a target expectation applies to the current binary fixture index.
 bool dttr_test_fixture_required(DTTR_TestFixtureMask required, size_t fixture_index);
 
-// Checks fixture availability before cmocka cases decide whether to run or skip.
+// Checks fixture availability before fixture-dependent tests decide whether to run or skip.
 bool dttr_test_fixtures_available(
 	const DTTR_TestBinaryFixture *fixtures,
 	size_t fixture_count,
@@ -192,4 +304,4 @@ void dttr_test_assert_target_resolved(
 	const DTTR_TestPEImage *image
 );
 
-#endif // DTTR_TEST_BINARY_H
+#endif // DTTR_TEST_BINARY_SUPPORT_H

@@ -247,6 +247,7 @@ static inline const DTTR_PCDOGS_T_Pkg_CollisionShape *DTTR_Util_PkgVisit_AsColli
 			   ? (const DTTR_PCDOGS_T_Pkg_CollisionShape *)visit->ptr
 			   : NULL;
 }
+
 /// @}
 
 #ifdef __cplusplus

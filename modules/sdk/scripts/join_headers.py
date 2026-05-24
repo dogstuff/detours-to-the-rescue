@@ -23,6 +23,7 @@ def strip_internal_includes(text: str) -> str:
     for line in text.splitlines():
         if skip_following_blank and not line.strip():
             continue
+
         skip_following_blank = False
 
         stripped = line.strip()
@@ -31,6 +32,7 @@ def strip_internal_includes(text: str) -> str:
             if header in INTERNAL_INCLUDES:
                 skip_following_blank = bool(lines and not lines[-1].strip())
                 continue
+
         lines.append(line)
     return "\n".join(lines).rstrip() + "\n"
 

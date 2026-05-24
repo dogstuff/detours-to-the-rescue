@@ -1,11 +1,5 @@
 #define DTTR_SDK_ENABLE_UNSTABLE
 
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#include <cmocka.h>
-
 #include <stdint.h>
 #include <string.h>
 #include <windows.h>
@@ -13,7 +7,7 @@
 #include <dttr_core.h>
 #include <dttr_pcdogs.h>
 #include <dttr_pcdogs_unstable.h>
-#include <dttr_test_cmocka.h>
+#include <dttr_test_support.h>
 #include <dttr_util.h>
 #include <dttr_util_unstable.h>
 
@@ -58,10 +52,12 @@ static uintptr_t sigscan_bytes(
 				break;
 			}
 		}
+
 		if (matched) {
 			return (uintptr_t)&bytes[offset];
 		}
 	}
+
 	return 0;
 }
 
@@ -71,6 +67,7 @@ static uintptr_t sigscan(HMODULE mod, const char *sig, const char *mask) {
 	if (match) {
 		return match;
 	}
+
 	return sigscan_bytes(rel32_target, sizeof(rel32_target), sig, mask);
 }
 
@@ -91,6 +88,7 @@ static bool fail_next_unhook_checked(DTTR_Core_Hook *hook) {
 		fail_next_unhook_count--;
 		return false;
 	}
+
 	return DTTR_Core_HookDetachChecked(hook);
 }
 
@@ -114,6 +112,7 @@ static uintptr_t symbol_sigscan(HMODULE mod, const char *sig, const char *mask) 
 		&& strcmp(mask, symbol_sigscan_mask) == 0) {
 		return symbol_sigscan_match;
 	}
+
 	return 0;
 }
 
@@ -132,6 +131,7 @@ static DTTR_Core_Context symbol_runtime_context() {
 		.game_module = (HMODULE)1,
 		.api = &SYMBOL_RUNTIME,
 	};
+
 	return ctx;
 }
 
@@ -212,6 +212,7 @@ static DTTR_Core_Context runtime_context() {
 		.game_module = (HMODULE)1,
 		.api = &RUNTIME,
 	};
+
 	return ctx;
 }
 
@@ -220,6 +221,7 @@ static DTTR_Core_Context runtime_context_with_unhook_failure() {
 		.game_module = (HMODULE)1,
 		.api = &RUNTIME_FAIL_NEXT_UNHOOK,
 	};
+
 	return ctx;
 }
 
@@ -351,6 +353,7 @@ static void test_patch_and_group_helpers_restore_memory(void **state) {
 			.patch_size = sizeof(sig_patch),
 		},
 	};
+
 	result = DTTR_Core_PatchGroupCreate(&ctx, &group);
 	assert_true(DTTR_Core_ResultOk(result));
 	result = DTTR_Core_PatchGroupInstallTargets(
@@ -469,6 +472,7 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 			.patch_size = sizeof(group_patch),
 		},
 	};
+
 	result = DTTR_Core_PatchGroupInstallTargets(
 		group,
 		targets,
@@ -537,6 +541,7 @@ static void test_patch_group_target_failure_rolls_back_only_new_entries(void **s
 			.patch_size = sizeof(added_patch),
 		},
 	};
+
 	result = DTTR_Core_PatchGroupInstallTargets(
 		group,
 		targets,
@@ -584,6 +589,7 @@ static void test_patch_group_target_failure_reports_rollback_failure(void **stat
 			.patch_size = sizeof(patch),
 		},
 	};
+
 	result = DTTR_Core_PatchGroupInstallTargets(
 		group,
 		targets,
@@ -680,6 +686,7 @@ static void test_pcdogs_patch_specs_install_custom_patches(void **state) {
 		DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(true, "40 41 42 43 44", 0, rel32_detour),
 		DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(false, "AA BB CC DD", 0, 0xCC),
 	};
+
 	DTTR_Core_Result result = DTTR_PCDOGS_PatchGroup_Install(
 		&ctx,
 		specs,
@@ -719,6 +726,7 @@ static void test_pcdogs_patch_specs_cleanup_failure_retains_group(void **state) 
 	const DTTR_PCDOGS_T_Patch_Spec unsupported_required = {
 		.required = true,
 	};
+
 	const DTTR_PCDOGS_T_Patch_Spec specs[] = {
 		DTTR_PCDOGS_PATCH_SPEC_ADDRESS_BYTES(
 			true,
@@ -846,6 +854,7 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 		DTTR_PCDOGS_F_TimerGetRawTickCount
 			->PatchSpec(true, pcdogs_chain_detour_a, &pcdogs_chain_original_a),
 	};
+
 	DTTR_Core_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_a, &group_a, &report);
 	assert_true(DTTR_Core_ResultOk(result));
 	assert_non_null(group_a);
@@ -857,6 +866,7 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 		DTTR_PCDOGS_F_TimerGetRawTickCount
 			->PatchSpec(true, pcdogs_chain_detour_b, &pcdogs_chain_original_b),
 	};
+
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_b, &group_b, &report);
 	assert_true(DTTR_Core_ResultOk(result));
 	assert_non_null(group_b);
@@ -961,6 +971,7 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	const DTTR_PCDOGS_T_Patch_Spec specs[] = {
 		DTTR_PCDOGS_D_DdrawObject->PatchSpec(true, NULL, &out_original),
 	};
+
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
 	assert_true(DTTR_Core_ResultOk(result));
 	assert_non_null(group);
@@ -1125,12 +1136,14 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 		.detour = rel32_detour,
 		.prologue_size = 5,
 	};
+
 	const DTTR_PCDOGS_T_Patch_Spec specs[] = {
 		DTTR_PCDOGS_PATCH_SPEC_TARGET(true, raw_target),
 		DTTR_PCDOGS_PATCH_SPEC_ADDRESS_BYTES(false, 0x1234u, 0x90),
 		DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(false, "90 90", 0, 0x90),
 		DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(false, "90 90", 0, rel32_detour),
 	};
+
 	assert_int_equal(specs[0].kind, DTTR_PCDOGS_PATCH_TARGET);
 	assert_int_equal(specs[1].kind, DTTR_PCDOGS_PATCH_ADDRESS_BYTES);
 	assert_int_equal(specs[2].kind, DTTR_PCDOGS_PATCH_AOB_BYTES);
@@ -1222,6 +1235,7 @@ static bool load_fixture_entry(
 		if (out_status) {
 			*out_status = DTTR_UTIL_PKG_STATUS_INVALID_ARGUMENT;
 		}
+
 		return false;
 	}
 
@@ -1248,6 +1262,7 @@ static bool fail_first_fixture_entry(
 		*out_status = DTTR_UTIL_PKG_STATUS_LOAD_FAILED;
 		return false;
 	}
+
 	return load_fixture_entry(
 		ctx,
 		toc_index,
@@ -1281,17 +1296,20 @@ static DTTR_Util_PkgVisitAction count_visits(
 	if ((int)visit->depth > state->max_depth) {
 		state->max_depth = (int)visit->depth;
 	}
+
 	state->status_visits += visit->status != DTTR_UTIL_PKG_STATUS_OK;
 	if (visit->kind == DTTR_UTIL_PKG_VISIT_TOC_ENTRY) {
 		state->toc_visits++;
 		return state->stop_after_first_toc ? DTTR_UTIL_PKG_VISIT_STOP
 										   : DTTR_UTIL_PKG_VISIT_RECURSE;
 	}
+
 	if (visit->kind == DTTR_UTIL_PKG_VISIT_LOADED_ENTRY) {
 		state->loaded_visits++;
 		assert_non_null(DTTR_Util_PkgVisit_AsLoadedEntry(visit));
 		return DTTR_UTIL_PKG_VISIT_RECURSE;
 	}
+
 	state->unsupported_visits += visit->kind == DTTR_UTIL_PKG_VISIT_UNSUPPORTED;
 	return DTTR_UTIL_PKG_VISIT_CONTINUE;
 }

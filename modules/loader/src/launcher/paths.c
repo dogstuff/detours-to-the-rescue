@@ -23,6 +23,7 @@ static wchar_t ascii_lower_w(wchar_t ch) {
 	if (ch >= L'A' && ch <= L'Z') {
 		return (wchar_t)(ch - L'A' + L'a');
 	}
+
 	return ch;
 }
 

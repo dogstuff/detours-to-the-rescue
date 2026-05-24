@@ -51,10 +51,12 @@ static inline void dttr_mss_reset_preferences(int *preferences, size_t count) {
 	if (!preferences) {
 		return;
 	}
+
 	memset(preferences, 0, sizeof(*preferences) * count);
 	if (count > DTTR_MSS_PREF_DIG_MIXER_CHANNELS) {
 		preferences[DTTR_MSS_PREF_DIG_MIXER_CHANNELS] = DTTR_MSS_DEFAULT_MIXER_CHANNELS;
 	}
+
 	if (count > DTTR_MSS_PREF_DIG_DEFAULT_VOLUME) {
 		preferences[DTTR_MSS_PREF_DIG_DEFAULT_VOLUME] = DTTR_MSS_DEFAULT_VOLUME;
 	}
@@ -73,6 +75,7 @@ static inline void dttr_mss_pan_to_stereo_bytes(int pan, int *left_out, int *rig
 	if (left_out) {
 		*left_out = dttr_mss_pan_table_byte(127 - clamped_pan);
 	}
+
 	if (right_out) {
 		*right_out = dttr_mss_pan_table_byte(clamped_pan);
 	}
@@ -82,6 +85,7 @@ static inline int dttr_mss_loops_to_sdl(int mss_loop_count) {
 	if (mss_loop_count <= 0) {
 		return mss_loop_count == 0 ? -1 : 0;
 	}
+
 	return mss_loop_count - 1;
 }
 

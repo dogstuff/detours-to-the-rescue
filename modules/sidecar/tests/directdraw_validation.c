@@ -1,7 +1,3 @@
-#include <cmocka.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +8,7 @@
 #include "graphics/graphics_com_private.h"
 #include "graphics/graphics_private.h"
 
-#include <dttr_test_cmocka.h>
+#include <dttr_test_support.h>
 
 DTTR_BackendState dttr_backend;
 

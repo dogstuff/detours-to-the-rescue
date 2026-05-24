@@ -200,6 +200,7 @@ static void unload_mod(loaded_mod *mod) {
 		if (mod->before_unload) {
 			MOD_WITH_OWNER(mod, mod->before_unload());
 		}
+
 		if (mod->cleanup) {
 			MOD_WITH_OWNER(mod, mod->cleanup());
 		}
@@ -213,6 +214,7 @@ static void unload_mod(loaded_mod *mod) {
 			mod->filename
 		);
 	}
+
 	FreeLibrary(mod->handle);
 	mod->handle = NULL;
 	delete_shadow_copy(mod);
@@ -685,12 +687,14 @@ static bool dispatch_event_until_consumed(const SDL_Event *event, bool before_ev
 		if (!event_fn) {
 			continue;
 		}
+
 		bool consumed = false;
 		MOD_WITH_OWNER(mod, consumed = event_fn(event));
 		if (consumed) {
 			return true;
 		}
 	}
+
 	return false;
 }
 

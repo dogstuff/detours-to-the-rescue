@@ -699,6 +699,7 @@ static void replay_batch_records_gl(DTTR_BackendState *state, opengl_backend_dat
 					);
 				}
 			}
+
 			last_blend_mode = rec->draw.blend_mode;
 		}
 
@@ -709,6 +710,7 @@ static void replay_batch_records_gl(DTTR_BackendState *state, opengl_backend_dat
 			} else {
 				glDisable(GL_DEPTH_TEST);
 			}
+
 			last_depth_test = rec->draw.depth_test;
 		}
 

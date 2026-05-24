@@ -534,8 +534,10 @@ def param_type_name(param: object) -> tuple[object, object] | None:
 
     if hasattr(param, "type") and hasattr(param, "name"):
         return param.type, param.name
+
     if isinstance(param, tuple) and len(param) == 2:
         return param
+
     return None
 
 
@@ -545,6 +547,7 @@ def param_decl_with(param: object, c_type_fn: Callable[[object], str]) -> str:
     if pair := param_type_name(param):
         type_, name = pair
         return f"{c_type_fn(type_)} {name}"
+
     return str(param)
 
 
@@ -559,6 +562,7 @@ def arg_name(param: object) -> str:
 
     if pair := param_type_name(param):
         return str(pair[1])
+
     param = str(param)
     param = param.strip()
     while param.endswith("]"):
@@ -571,6 +575,7 @@ def param_args(params: list[object]) -> list[str]:
 
     if params == ["void"]:
         return []
+
     return [arg_name(param) for param in params]
 
 
@@ -579,6 +584,7 @@ def try_params(ret: str, params: list[object]) -> list[object]:
 
     if ret == "void":
         return [("const DTTR_Core_Context*", "ctx"), *params]
+
     return [
         ("const DTTR_Core_Context*", "ctx"),
         *params,
@@ -614,6 +620,7 @@ def normalize_param(param: object) -> object:
 
     if hasattr(param, "type") and hasattr(param, "name"):
         return ParamRow(param.type, param.name, getattr(param, "doc", None))
+
     return param
 
 
@@ -897,6 +904,7 @@ def check_unique(rows: list[object], label: str) -> None:
         name = row.name
         if name in seen:
             raise ValueError(f"duplicate {label}: {name}")
+
         seen.add(name)
 
 
@@ -911,6 +919,7 @@ def validate_blueprint(blueprint: BlueprintRows) -> None:
     for row in blueprint.function_xrefs:
         if row.function not in functions:
             raise ValueError(f"function XRef has unknown target: {row.function}")
+
         # The reference may point at the stable header when generating an
         # unstable extension header.
 
@@ -921,6 +930,7 @@ def write_or_check(path: Path, text: str, check: bool) -> bool:
     old = path.read_text() if path.exists() else ""
     if old == text:
         return True
+
     if check:
         diff = difflib.unified_diff(
             old.splitlines(),
@@ -931,6 +941,7 @@ def write_or_check(path: Path, text: str, check: bool) -> bool:
         )
         print("\n".join(diff), file=sys.stderr)
         return False
+
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return True
@@ -949,6 +960,7 @@ def clang_format_header(path: Path, text: str) -> str:
         )
     except (FileNotFoundError, subprocess.CalledProcessError):
         return text
+
     return result.stdout
 
 
@@ -972,6 +984,7 @@ def build_mask_bits(value: object) -> int:
         for item in value:
             bits |= build_mask_bits(item)
         return bits
+
     return BUILD_MASK_BITS[str(value)]
 
 
@@ -982,6 +995,7 @@ def c_build_mask(value: object) -> str:
     for key, key_bits in BUILD_MASK_BITS.items():
         if bits == key_bits:
             return BUILD_MASK_ENUM[key]
+
     parts = [
         BUILD_MASK_ENUM[key]
         for key in ("en", "eu", "sc")
@@ -1023,6 +1037,7 @@ def c_int(value: object) -> str:
 
     if isinstance(value, int):
         return str(value)
+
     return str(value).removesuffix("u")
 
 
@@ -1031,6 +1046,7 @@ def c_uint(value: object) -> str:
 
     if isinstance(value, int):
         return f"{value}u"
+
     text = str(value)
     return text if text.endswith("u") else f"{text}u"
 
@@ -1051,6 +1067,7 @@ def c_array_type_parts(value: object) -> tuple[str, str] | None:
     match = ARRAY_TYPE_RE.match(text)
     if match is None:
         return None
+
     return match.group("base").strip(), match.group("count").strip()
 
 
@@ -1066,6 +1083,7 @@ def c_array_type_count(value: object) -> str:
     parts = c_array_type_parts(value)
     if parts is None:
         raise ValueError(f"not a C array type: {value}")
+
     return c_uint(parts[1])
 
 
@@ -1075,6 +1093,7 @@ def c_data_ptr_decl(value: object, declarator: str) -> str:
     parts = c_array_type_parts(value)
     if parts is None:
         return f"{c_type(value)}* {declarator}"
+
     base, count = parts
     return f"{base} (*{declarator})[{count}]"
 
@@ -1085,6 +1104,7 @@ def c_data_read_param(value: object, name: str) -> str:
     parts = c_array_type_parts(value)
     if parts is None:
         return f"{c_type(value)}* {name}"
+
     base, count = parts
     return f"{base} (*{name})[{count}]"
 
@@ -1095,6 +1115,7 @@ def c_data_write_param(value: object, name: str) -> str:
     parts = c_array_type_parts(value)
     if parts is None:
         return f"{c_type(value)} {name}"
+
     base, count = parts
     return f"const {base} (*{name})[{count}]"
 
@@ -1105,6 +1126,7 @@ def c_data_ptr_cast(value: object) -> str:
     parts = c_array_type_parts(value)
     if parts is None:
         return f"({c_type(value)}*)"
+
     base, count = parts
     return f"({base} (*)[{count}])"
 
@@ -1120,6 +1142,7 @@ def pcdogs_type_name(name: str) -> str:
 
     if name.startswith("DTTR_PCDOGS_T_"):
         return name
+
     return f"DTTR_PCDOGS_T_{name}"
 
 
@@ -1128,10 +1151,13 @@ def type_row_kind(row: object) -> TypeRowKind:
 
     if isinstance(row, TypeAliasRow):
         return TypeRowKind.TYPE_ALIAS
+
     if isinstance(row, FunctionTypeAliasRow):
         return TypeRowKind.FUNCTION_TYPE_ALIAS
+
     if isinstance(row, StructRow):
         return TypeRowKind.STRUCT
+
     if isinstance(row, EnumRow):
         return TypeRowKind.ENUM
 
@@ -1186,8 +1212,10 @@ def inner_parens(value: str) -> str:
     value = value.strip()
     if value == "()":
         return ""
+
     if value.startswith("(") and value.endswith(")"):
         return value[1:-1].strip()
+
     return value
 
 
@@ -1196,9 +1224,11 @@ def c_list(value: object) -> list[str]:
 
     if isinstance(value, list):
         return [str(item) for item in value]
+
     inner = inner_parens(str(value))
     if not inner or inner == "void":
         return []
+
     return [part.strip() for part in inner.split(",")]
 
 
@@ -1252,6 +1282,7 @@ def struct_doc(name: str) -> str:
     for prefix, domain in _DOMAIN_PREFIXES:
         if name.startswith(prefix):
             return f"Used in {_DOMAIN_USE[domain]}. {_kind_sentence(name)}"
+
     if "_" in name:
         domain = name.split("_", 1)[0]
     else:
@@ -1266,6 +1297,7 @@ def struct_doc(name: str) -> str:
 
     if domain == "PCDOGS" or domain not in _DOMAIN_USE:
         return f"Used by game code. {_kind_sentence(name)}"
+
     return f"Used in {_DOMAIN_USE[domain]}. {_kind_sentence(name)}"
 
 
@@ -1286,8 +1318,10 @@ def row_doc(row: object) -> str | None:
 
     if isinstance(row, StructRow):
         return doxy_text(struct_doc(row.name))
+
     if type(row).__name__ == BlueprintTypeKind.STRUCT:
         return doxy_text(struct_doc(getattr(row, "name", "")))
+
     return None
 
 
@@ -1313,10 +1347,13 @@ def fallback_param_doc(name: str) -> str:
 
     if name == "ctx":
         return "Runtime context for resolution and calls."
+
     if name == "out_ret":
         return "Receives the return value on success."
+
     if name.startswith("out_"):
         return "Receives the value on success."
+
     return "Unnamed argument."
 
 
@@ -1325,6 +1362,7 @@ def param_doc_pairs(params: object, *, fallback: bool = False) -> list[tuple[str
 
     if not isinstance(params, list):
         return []
+
     pairs: list[tuple[str, str]] = []
     for param in params:
         name = arg_name(param)
@@ -1348,6 +1386,7 @@ def doxy_comment(
     text = doxy_text(brief)
     if not text:
         return ""
+
     lines = [*([""] if not indent else [])]
     for i, line in enumerate(text.splitlines()):
         lines.append(f"{indent}/// {line}" if line else f"{indent}///")
@@ -1377,6 +1416,7 @@ def auto_impl_params(row: TypedFunctionRow, ctx_name: str) -> str:
     params = inner_parens(row.params)
     if not params:
         return f"(const DTTR_Core_Context*{ctx_name})"
+
     return f"(const DTTR_Core_Context*{ctx_name}, {params})"
 
 
@@ -1387,6 +1427,7 @@ def auto_impl_args(row: TypedFunctionRow, ctx_expr: str | None = None) -> str:
     args = inner_parens(row.args)
     if not args:
         return f"({ctx_expr})"
+
     return f"({ctx_expr}, {args})"
 
 
@@ -1401,6 +1442,7 @@ def auto_return(
     call = f"{impl_name}{auto_impl_args(row, ctx_expr)}"
     if row.ret == "void":
         return f"\t{call};"
+
     return f"\treturn {call};"
 
 
@@ -1598,6 +1640,7 @@ def split_type_rows(rows: list[object]) -> tuple[list[object], list[object]]:
     for index, row in enumerate(rows):
         if type_row_kind(row) == TypeRowKind.STRUCT:
             return rows[:index], rows[index:]
+
     return rows, []
 
 
@@ -1625,6 +1668,7 @@ def sort_struct_rows_by_value_dependencies(rows: list[object]) -> list[object]:
             member_type = str(member.type)
             if "*" in member_type:
                 continue
+
             dep = base_type_name(member_type)
             if dep in structs and dep != row.name:
                 deps.add(dep)
@@ -1638,6 +1682,7 @@ def sort_struct_rows_by_value_dependencies(rows: list[object]) -> list[object]:
         if not ready:
             ordered_names.extend(pending)
             break
+
         ordered_names.extend(ready)
         for name in ready:
             del pending[name]
@@ -1652,6 +1697,7 @@ def is_struct_ref(name: str, excluded_names: set[str]) -> bool:
 
     if not name or name in excluded_names or name.startswith("DTTR_"):
         return False
+
     return name[0].isupper() and any(ch.islower() for ch in name)
 
 
@@ -1674,6 +1720,7 @@ def param_base_type(param: object) -> str:
 
     if pair := param_type_name(param):
         return base_type_name(str(pair[0]))
+
     return base_type_name(str(param))
 
 
@@ -1682,6 +1729,7 @@ def add_param_type_refs(params: object, add: object) -> None:
 
     if not isinstance(params, list):
         return
+
     for param in params:
         add(param_base_type(param))
 
@@ -1703,12 +1751,14 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
     for row in rows:
         if type_row_kind(row) != TypeRowKind.STRUCT:
             continue
+
         add(row.name)
         for member in row.members:
             add(base_type_name(member.type))
     for row in rows:
         if type_row_kind(row) != TypeRowKind.FUNCTION_TYPE_ALIAS:
             continue
+
         add(base_type_name(row.ret))
         for param in row.params:
             add(param_base_type(param))
@@ -1716,6 +1766,7 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
         typed = fn.typed
         if not typed:
             continue
+
         add(base_type_name(str(typed.return_type)))
         add_param_type_refs(typed.params, add)
         add_param_type_refs(typed.try_params, add)
@@ -1919,6 +1970,7 @@ def public_header_from_full(full: str) -> str:
                 if depth == 0:
                     i += 1
                     break
+
                 depth -= 1
             i += 1
 
@@ -1938,6 +1990,7 @@ def default_blueprint_paths(args: argparse.Namespace, sdk_root: Path) -> list[Pa
 
     if args.blueprints is not None:
         return [Path(args.blueprints)]
+
     return [
         sdk_root / "blueprints/dttr_pcdogs.py",
         sdk_root / "blueprints/dttr_pcdogs_unstable.py",
@@ -1973,6 +2026,7 @@ def header_names(is_unstable: bool) -> tuple[str, str]:
 
     if is_unstable:
         return "dttr_pcdogs_unstable.h", "dttr_pcdogs_unstable_full.h"
+
     return "dttr_pcdogs.h", "dttr_pcdogs_full.h"
 
 
@@ -2047,6 +2101,7 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+
     return 0
 
 

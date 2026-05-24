@@ -24,6 +24,7 @@ set(DTTR_USE_CACHED_SDL3GPU_SHADERS_DEFAULT OFF)
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     set(DTTR_USE_CACHED_SDL3GPU_SHADERS_DEFAULT ON)
 endif()
+
 option(
     DTTR_USE_CACHED_SDL3GPU_SHADERS
     "Copy cached SDL3 GPU shader blobs instead of compiling them with host shader tools"
@@ -126,6 +127,7 @@ set(DTTR_MSS_SOURCES
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
     src/impl.c
+    src/crash.c
 
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c
@@ -174,6 +176,7 @@ dttr_set_target_version(dttr_sidecar)
 
 target_link_libraries(dttr_sidecar PRIVATE
     kernel32
+    dbghelp
     PkgConfig::SDL3
     PkgConfig::SDL3_MIXER
     ${DTTR_FFMPEG_TARGETS}
@@ -204,5 +207,5 @@ dttr_copy_runtime_files(dttr_sidecar "$<TARGET_FILE_DIR:dttr_sidecar>"
 )
 
 if(BUILD_TESTING)
-    include("${CMAKE_CURRENT_LIST_DIR}/test/tests.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/tests/tests.cmake")
 endif()

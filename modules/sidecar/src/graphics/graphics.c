@@ -180,6 +180,7 @@ static HWND get_hwnd(SDL_Window *window) {
 	if (!window) {
 		return NULL;
 	}
+
 	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
 	return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 }
@@ -199,6 +200,7 @@ static void graphics_window_size(const DTTR_BackendState *state, uint32_t *w, ui
 	if (state && state->window) {
 		SDL_GetWindowSizeInPixels(state->window, &win_w, &win_h);
 	}
+
 	*w = (uint32_t)((win_w > 0) ? win_w : (state ? state->width : 0));
 	*h = (uint32_t)((win_h > 0) ? win_h : (state ? state->height : 0));
 }
@@ -268,6 +270,7 @@ static DTTR_Mods_GraphicsBackend graphics_backend(const DTTR_BackendState *state
 	if (!state) {
 		return DTTR_MODS_GRAPHICS_BACKEND_UNKNOWN;
 	}
+
 	switch (state->backend_type) {
 	case DTTR_BACKEND_SDL_GPU:
 		return DTTR_MODS_GRAPHICS_BACKEND_SDL_GPU;

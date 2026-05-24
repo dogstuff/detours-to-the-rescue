@@ -243,6 +243,7 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 		release_window_device(state);
 		return false;
 	}
+
 	state->backend_data = bd;
 	state->backend_type = DTTR_BACKEND_SDL_GPU;
 	state->renderer = &renderer;
@@ -368,6 +369,7 @@ static SDL_GPUTransferBuffer *create_upload_buffer(
 		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
 		.size = bytes,
 	};
+
 	return SDL_CreateGPUTransferBuffer(state->device, &info);
 }
 
@@ -448,6 +450,7 @@ static void bind_frame_vertex_buffer(
 	const SDL_GPUBufferBinding vbuf_binding = {
 		.buffer = state->vertex_buffer,
 	};
+
 	SDL_BindGPUVertexBuffers(render_pass, 0, &vbuf_binding, 1);
 }
 
@@ -506,6 +509,7 @@ static bool ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *
 		.layer_count_or_depth = 1,
 		.num_levels = dttr_graphics_calc_mip_levels(st->width, st->height),
 	};
+
 	st->gpu_tex = SDL_CreateGPUTexture(state->device, &tex_info);
 
 	if (!st->gpu_tex) {
@@ -565,6 +569,7 @@ static bool upload_texture_data(
 		} else {
 			SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
 		}
+
 		free(pixels);
 		return false;
 	}
@@ -576,12 +581,14 @@ static bool upload_texture_data(
 		.transfer_buffer = tbuf,
 		.pixels_per_row = (Uint32)width,
 	};
+
 	const SDL_GPUTextureRegion dst = {
 		.texture = tex,
 		.w = (Uint32)width,
 		.h = (Uint32)height,
 		.d = 1,
 	};
+
 	SDL_UploadToGPUTexture(copy, &src, &dst, false);
 
 	if (from_pool) {
@@ -671,9 +678,11 @@ static int collect_and_upload_pending(
 			.bytes = bytes,
 			.generate_mips = dttr_config.generate_texture_mipmaps,
 		};
+
 		st->pixels = NULL;
 		pending_count++;
 	}
+
 	state->pending_upload_indices.n = deferred_write;
 	SDL_UnlockMutex(state->texture_mutex);
 
@@ -857,6 +866,7 @@ static void set_default_viewport(const DTTR_BackendState *state) {
 		.min_depth = 0.0f,
 		.max_depth = 1.0f,
 	};
+
 	SDL_SetGPUViewport(state->render_pass, &viewport);
 
 	const SDL_Rect scissor = {
@@ -865,6 +875,7 @@ static void set_default_viewport(const DTTR_BackendState *state) {
 		.w = state->width,
 		.h = state->height,
 	};
+
 	SDL_SetGPUScissor(state->render_pass, &scissor);
 }
 
@@ -884,11 +895,13 @@ static bool begin_draw_pass_if_needed(DTTR_BackendState *state) {
 		.resolve_mip_level = 0,
 		.resolve_layer = 0,
 	};
+
 	const SDL_GPUDepthStencilTargetInfo depth_target = {
 		.texture = state->depth_texture,
 		.load_op = SDL_GPU_LOADOP_LOAD,
 		.store_op = SDL_GPU_STOREOP_DONT_CARE,
 	};
+
 	state->render_pass = SDL_BeginGPURenderPass(
 		state->cmd,
 		&color_target,
@@ -937,6 +950,7 @@ static void begin_clear_pass(
 		.resolve_mip_level = 0,
 		.resolve_layer = 0,
 	};
+
 	const SDL_GPUDepthStencilTargetInfo depth_target = {
 		.texture = state->depth_texture,
 		.clear_depth = rec->clear.depth,
@@ -1010,6 +1024,7 @@ static void draw_batch_record(
 			.texture = rec->draw.texture,
 			.sampler = rec->draw.sampler,
 		};
+
 		SDL_BindGPUFragmentSamplers(state->render_pass, 0, &tex_binding, 1);
 
 		if (replay_state) {
@@ -1055,6 +1070,7 @@ static graphics_replay_stats replay_batch_records(DTTR_BackendState *state) {
 			replay_stats.clear_count++;
 			continue;
 		}
+
 		draw_batch_record(state, rec, &replay_state, &replay_stats);
 	}
 
@@ -1140,10 +1156,12 @@ static void end_frame(DTTR_BackendState *state) {
 			const SDL_GPUTransferBufferLocation src = {
 				.transfer_buffer = state->transfer_buffer,
 			};
+
 			const SDL_GPUBufferRegion dst = {
 				.buffer = state->vertex_buffer,
 				.size = state->vertex_offset * DTTR_VERTEX_SIZE,
 			};
+
 			SDL_UploadToGPUBuffer(copy, &src, &dst, true);
 			SDL_EndGPUCopyPass(copy);
 		}
@@ -1171,6 +1189,7 @@ static void end_frame(DTTR_BackendState *state) {
 		.w = (Uint32)state->width,
 		.h = (Uint32)state->height,
 	};
+
 	bool overlay_rendered = false;
 	if (state->swapchain_tex) {
 		const Uint32 swap_w = (state->swapchain_width > 0) ? state->swapchain_width
@@ -1209,6 +1228,7 @@ static void end_frame(DTTR_BackendState *state) {
 				.load_op = SDL_GPU_LOADOP_CLEAR,
 			.filter = dttr_config.present_filter,
 		};
+
 		SDL_BlitGPUTexture(state->cmd, &blit);
 
 #ifdef DTTR_MODS_ENABLED
@@ -1259,6 +1279,7 @@ static bool ensure_video_texture(DTTR_BackendState *state, int width, int height
 		.num_levels = 1,
 		.sample_count = SDL_GPU_SAMPLECOUNT_1,
 	};
+
 	state->video_texture = SDL_CreateGPUTexture(state->device, &tex_info);
 
 	if (!state->video_texture) {
@@ -1335,6 +1356,7 @@ static bool present_video_frame_bgra(
 			.pixels_per_row = (Uint32)(stride / 4),
 			.rows_per_layer = (Uint32)height,
 		};
+
 		const SDL_GPUTextureRegion dst = {
 			.texture = state->video_texture,
 			.mip_level = 0,
@@ -1346,6 +1368,7 @@ static bool present_video_frame_bgra(
 			.h = (Uint32)height,
 			.d = 1,
 		};
+
 		SDL_UploadToGPUTexture(copy, &src, &dst, false);
 		SDL_EndGPUCopyPass(copy);
 	}
@@ -1387,6 +1410,7 @@ static bool present_video_frame_bgra(
 			.filter = dttr_config.present_filter,
 			.cycle = false,
 		};
+
 		SDL_BlitGPUTexture(cmd, &blit);
 	}
 

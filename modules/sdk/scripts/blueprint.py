@@ -369,6 +369,7 @@ class Blueprint:
             ref = ref or (refs[0] if refs else None)
             if ref is None:
                 raise ValueError(f"typed global {name} needs a resolver XRef")
+
             typed = TypedData(
                 type,
                 ref.function,

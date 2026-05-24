@@ -41,6 +41,7 @@ static void init_event(log_Event *ev, void *udata) {
 		time_t t = time(NULL);
 		ev->time = localtime(&t);
 	}
+
 	ev->udata = udata;
 }
 
@@ -154,6 +155,7 @@ int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level) {
 		.udata = udata,
 		.level = level,
 	};
+
 	return 0;
 }
 
