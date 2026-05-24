@@ -45,8 +45,8 @@ test: test-all
 ci-compile-tests: setup-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-max-parallel }}" --target dttr_tests
 
-# Build the CI build tree shared by downstream test and docs jobs.
-ci-build-internal: ci-compile-tests
+# Build the CTest binaries used by downstream CI test and docs jobs.
+ci-build-ctest: ci-compile-tests
 
 # Run common, SDK, and sidecar tests from an existing build tree.
 ci-test:
