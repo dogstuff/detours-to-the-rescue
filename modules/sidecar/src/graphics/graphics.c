@@ -3,6 +3,7 @@
 
 #include <dttr_errors.h>
 #include <dttr_log.h>
+#include <dttr_sdl.h>
 
 #include <stddef.h>
 #include <windows.h>

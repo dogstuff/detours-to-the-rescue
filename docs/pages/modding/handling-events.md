@@ -8,7 +8,7 @@ Use callbacks for most mod work: setup, per-frame updates, input handling, overl
 | --- | --- |
 | `DTTR_MODS_LATE_INIT` | Runs after mods load for cross-mod setup or delayed checks. |
 | `DTTR_MODS_BEFORE_UNLOAD` | Runs before a mod unloads, so you can do final cleanup. |
-| `DTTR_MODS_TICK` | Runs each host tick for legacy tick work. Prefer frame callbacks when you need frame data. |
+| `DTTR_MODS_TICK` | Runs each host tick. Prefer frame callbacks when you need frame data. |
 | `DTTR_MODS_FRAME_BEGIN` | Runs at the start of each host frame for timers, polling, and lightweight state updates. |
 | `DTTR_MODS_BEFORE_GAME_FRAME` | Runs immediately before game image submission for render-backend work. This can also run on blocked presentation frames. |
 | `DTTR_MODS_AFTER_GAME_FRAME` | Runs immediately after game image submission for render-backend work. This can also run on blocked presentation frames. |
@@ -29,7 +29,7 @@ Use callbacks for most mod work: setup, per-frame updates, input handling, overl
 | `DTTR_MODS_GRAPHICS_DEVICE_DESTROYING` | Runs before the graphics device is destroyed. Release device-owned resources here. |
 | `DTTR_MODS_BEFORE_EVENT` | Observes input before normal processing and can consume events for hotkeys or input blocking. |
 | `DTTR_MODS_AFTER_EVENT` | Observes input after normal processing with the final consumed state for diagnostics or bookkeeping. |
-| `DTTR_MODS_EVENT` | Observes legacy single-callback event flow. |
+| `DTTR_MODS_EVENT` | Observes the single-callback event flow. |
 | `DTTR_MODS_INPUT_MODE_CHANGED` | Reacts to game-input enable/disable behavior. |
 | `DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME` | Returns whether the host-loop game frame should advance while overlays keep presenting. |
 | `DTTR_MODS_GAME_FRAME_ADVANCED` | Runs after a host loop frame advances the game. |
@@ -40,7 +40,7 @@ Use callbacks for most mod work: setup, per-frame updates, input handling, overl
 A before-event callback returns whether it consumed the event:
 
 - If false, normal event processing continues
-- If true, the game does not receive the event
+- If true, DttR consumes the event before game delivery
 
 Events move through the runtime in this order:
 
@@ -70,7 +70,7 @@ DTTR_MODS_AFTER_EVENT {
 
 ## Per-Frame Work
 
-Frame callbacks receive the current render-frame dimensions and scale. Use those values instead of cached window-size guesses.
+Frame callbacks receive the current render-frame dimensions and scale. Use those values for render-frame sizing.
 
 ```c
 static uint64_t last_frame_index;

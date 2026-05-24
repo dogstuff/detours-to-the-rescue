@@ -68,7 +68,7 @@ struct DTTR_Core_API {
 };
 
 // Purpose-agnostic declaration/definition helpers for private consumer storage.
-// These do not install hooks, resolve targets, or hide runtime behavior.
+// These helpers only declare or define storage owned by the consumer.
 #define DTTR_DECLARE_STORAGE(type, name) extern type name;
 #define DTTR_DEFINE_STORAGE(type, name) type name;
 
@@ -141,9 +141,8 @@ bool DTTR_Core_HookDetachOwnerChecked(void *owner);
 /// @param owner Opaque owner pointer assigned to hooks or byte patches created after
 /// this call.
 ///
-/// The owner tag is process-global runtime state, not a thread-local stack. Save the
-/// returned owner and restore it before returning from a callback if you set it
-/// manually.
+/// The owner tag is process-global runtime state. Save the returned owner and
+/// restore it before returning from a callback if you set it manually.
 ///
 /// @return Previous owner pointer.
 void *DTTR_Core_HookSetOwner(void *owner);

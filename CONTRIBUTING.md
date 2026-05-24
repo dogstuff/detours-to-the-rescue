@@ -11,4 +11,4 @@ Use these rules for C sources, headers, and generated public SDK names.
   - Cross-file internal: `dttr_<area>_<name>`.
   - Public: avoid them. If one is unavoidable, use `DTTR_Pascal_Name`.
 - Macros and enum constants stay `DTTR_ALL_CAPS`.
-- Do not add scope prefixes like `s_`, `S_`, `m_`, or `g_`. Some older code still has them; don't copy that style.
+- Avoid scope prefixes like `s_`, `S_`, `m_`, or `g_`.

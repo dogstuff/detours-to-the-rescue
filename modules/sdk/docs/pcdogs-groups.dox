@@ -2,12 +2,31 @@
 /// Stable generated symbols and typed helper APIs for 102 Dalmatians: Puppies to the Rescue.
 ///
 /// PCDOGS generated symbols describe known game functions, globals, types, and
-/// patch targets for supported 102 Dalmatians executables.
+/// patch targets for supported 102 Dalmatians executables. Names come from SDK
+/// blueprints and recovered executable evidence. Stable APIs preserve the public
+/// SDK contract by keeping engine-owned state read/hook-only unless the symbol doc
+/// marks it writable. When recovery work renames a gameplay/runtime symbol, the
+/// new generated name is canonical.
 ///
-/// Use these symbols to read game state, call known functions, install typed hooks, or
-/// build patch specs without hand-written lookup logic. DttR resolves required
-/// PCDOGS symbols before loading mods; custom SDK hosts and tests can call
-/// `DTTR_PCDOGS_ResolveAll()` explicitly.
+/// These symbols cover game-state reads, known function calls, typed hooks, and
+/// patch specs without hand-written lookup logic. Engine-owned globals, including
+/// current level data, render-scoped player_actor, and native callback slots, are
+/// read/hook targets. Writes are limited to symbols whose docs mark them writable.
+/// Level-runtime entity arrays hold level-local runtime slots.
+///
+/// Callback-like PCDOGS names describe native dispatch tables/functions.
+/// `Resource_FixUp*` symbols rebase package-relative offsets into runtime-owned
+/// pointers.
+///
+/// Collision and level-geometry pointers are valid only for the owning node and
+/// current level. Polygons resolve through their owning `Collision_Node`. Use
+/// collision pointers only within the owning level/resource lifetime.
+///
+/// Source blueprints are authoritative for SDK names, layouts, and write policies;
+/// generated docs/build artifacts are derived outputs.
+///
+/// DttR resolves required PCDOGS symbols before loading mods; custom SDK hosts
+/// and tests can call `DTTR_PCDOGS_ResolveAll()` explicitly.
 ///
 /// @code{.c}
 /// #include <dttr_sdk.h>
@@ -49,7 +68,7 @@
 ///         DTTR_MODS_LOG_WARN(ctx, "unstable PCDOGS symbols were unavailable");
 ///     }
 ///
-///     // Probe or hook unstable symbols here, then keep cleanup explicit.
+///     // Unstable symbol hooks belong here; cleanup stays explicit.
 ///     return true;
 /// }
 /// @endcode

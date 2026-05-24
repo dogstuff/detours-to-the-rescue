@@ -1,6 +1,6 @@
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is a modern launcher for **102 Dalmatians: Puppies to the Rescue** on PC. It leaves the game data intact and replaces the old Windows support layer with a runtime that works better on current systems.
+DttR is a launcher and runtime for **102 Dalmatians: Puppies to the Rescue** that allows the PC verison of the game to run well on modern systems. This includes a modding SDK that significantly eases the process of both creating and installing game modifications.
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 

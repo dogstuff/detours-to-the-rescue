@@ -51,7 +51,7 @@ def hook_enum(kind: object) -> str:
 def typed_params(fn: object) -> list[object]:
     """Return typed parameters for ABI checks against recovered signatures."""
 
-    return list(fn.m_typed.m_params if fn.m_typed else [])
+    return list(fn.typed.params if fn.typed else [])
 
 
 def abi_stack_bytes(fn: object) -> int:
@@ -59,7 +59,7 @@ def abi_stack_bytes(fn: object) -> int:
 
     params = typed_params(fn)
     stack_bytes = len(params) * 4
-    if str(fn.m_cc) == "fastcall":
+    if str(fn.cc) == "fastcall":
         stack_bytes = max(0, stack_bytes - min(2, len(params)) * 4)
     return stack_bytes
 
@@ -69,16 +69,16 @@ ROWS_TEMPLATE = Template(
 
 % for symbol, blueprint in blueprints:
 static const blueprint_signature ${symbol}_SIGNATURES[] = {
-% for sig in blueprint.m_signatures:
-\t{"${sig.m_name}", (const uint8_t *)${c_sig(sig.m_pattern)}, ${c_mask(sig.m_pattern)}, ${required_enum(sig.m_required)}},
+% for sig in blueprint.signatures:
+\t{"${sig.name}", (const uint8_t *)${c_sig(sig.pattern)}, ${c_mask(sig.pattern)}, ${required_enum(sig.required)}},
 % endfor
 };
 
 static const blueprint_function ${symbol}_FUNCTIONS[] = {
-% for fn in blueprint.m_functions:
-<% patch_size = fn.m_hook.m_patch_size %>\
-<% entry_patch_size = fn.m_hook.m_entry_patch_size or patch_size %>\
-\t{"${fn.m_name}", (const uint8_t *)${c_sig(fn.m_pattern)}, ${c_mask(fn.m_pattern)}, ${required_enum(fn.m_required)}, ${int(fn.m_match_offset)}, ${cc_enum(fn.m_cc)}, ${hook_enum(fn.m_hook.m_kind)}, ${int(patch_size)}u, ${int(entry_patch_size)}u, ${len(typed_params(fn))}u, ${abi_stack_bytes(fn)}u},
+% for fn in blueprint.functions:
+<% patch_size = fn.hook.patch_size %>\
+<% entry_patch_size = fn.hook.entry_patch_size or patch_size %>\
+\t{"${fn.name}", (const uint8_t *)${c_sig(fn.pattern)}, ${c_mask(fn.pattern)}, ${required_enum(fn.required)}, ${int(fn.match_offset)}, ${cc_enum(fn.cc)}, ${hook_enum(fn.hook.kind)}, ${int(patch_size)}u, ${int(entry_patch_size)}u, ${len(typed_params(fn))}u, ${abi_stack_bytes(fn)}u},
 % endfor
 };
 
@@ -124,7 +124,7 @@ def load_blueprints(paths: list[Path]) -> list[tuple[str, object]]:
 
 
 def write_if_changed(path: Path, text: str) -> None:
-    """Avoid timestamp churn by writing generated test files only when content changes."""
+    """Avoid unnecessary rewrites by updating generated test files only when content changes."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
     old = path.read_text() if path.exists() else ""

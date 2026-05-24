@@ -14,10 +14,7 @@ from blueprint import (
     xref,
 )
 
-from pcdogs_docs import install_struct_docs
-
 stable = Blueprint("stable")
-install_struct_docs(stable)
 
 stable.type_alias("Audio_AIL_HSample", "void*")
 
@@ -91,7 +88,7 @@ stable.struct(
         "uint8_t",
         "reserved_07",
         7,
-        doc="Unused/pad byte after base RGB; Animation_ProcessVertexColor reads target bytes +0..+6 and does not read +7 in the audited path.",
+        doc="Unused/pad byte after base RGB; Animation_ProcessVertexColor target-byte reads cover +0..+6.",
     ),
     size=8,
 )
@@ -143,7 +140,7 @@ stable.struct(
         "uint8_t",
         "reserved_0d",
         13,
-        doc="Alignment byte between keyframe_count and vertex_count; no validated semantic use in audited vertex-color paths.",
+        doc="Alignment byte between keyframe_count and vertex_count; no validated semantic use in vertex-color paths.",
     ),
     member("int16_t", "vertex_count", 14),
     member(
@@ -199,13 +196,15 @@ stable.struct(
         "uint16_t",
         "reserved",
         6,
-        doc="Unused slot stride/alignment word; Animation_ProcessController reads +0x0/+0x4/+0x5/+0x8/+0xC and does not reference +0x6.",
+        doc=(
+            "Unused slot stride/alignment word; Animation_ProcessController reads cover +0x0/+0x4/+0x5/+0x8/+0xC (PC EN)."
+        ),
     ),
     member(
         "void*",
         "controller_payload_ptr",
         8,
-        doc="Variant controller payload pointer; Animation_ProcessController interprets this as type-specific byte/dword data, not an Animation_ControllerEntry.",
+        doc="Variant controller payload pointer containing type-specific byte/dword data interpreted by Animation_ProcessController.",
     ),
     member("Animation_FrameHeader*", "frame_sequence_ptr", 12),
     size=16,
@@ -233,7 +232,10 @@ stable.struct(
         "uint8_t",
         "reserved_06",
         6,
-        doc="Unreferenced byte before fixup_flags; Resource_FixUpAnimationData reads +0x7 and channel pointers, not +0x6.",
+        doc=(
+            "Unreferenced byte before fixup_flags; Resource_FixUpAnimationData reads +0x7 (PC EN) and "
+            "channel pointers, not +0x6 (PC EN)."
+        ),
     ),
     member(
         "uint8_t",
@@ -383,7 +385,7 @@ stable.struct(
         0,
         doc=(
             "Sampled spline keyframe table pointer, or exactly -1 for the constant/sentinel "
-            "case. A zero pointer is not a safe sentinel if the channel can be sampled."
+            "case. Sampled channels require a nonzero table pointer."
         ),
     ),
     member("int32_t", "packed_first_key", 4),
@@ -393,7 +395,7 @@ stable.struct(
         8,
         doc=(
             "Anim_CheckKeyframeActive indexes count - 1 on the sampled-channel path; "
-            "sampled channels must not carry a zero count."
+            "a zero count is invalid for sampled channels."
         ),
     ),
     member("uint8_t", "target_index", 9),
@@ -476,7 +478,10 @@ stable.struct(
         "uint8_t",
         "reserved_05",
         5,
-        doc="Reserved audio-definition byte; audited allocation/playback paths only consume flags at +0x4 and replacement_priority at +0x6.",
+        doc=(
+            "Reserved audio-definition byte; allocation/playback paths only consume flags at +0x4 "
+            "(PC EN) and replacement_priority at +0x6 (PC EN)."
+        ),
     ),
     member(
         "uint8_t",
@@ -488,7 +493,10 @@ stable.struct(
         "uint8_t",
         "reserved_07",
         7,
-        doc="Reserved audio-definition byte; audited allocation/playback paths only consume replacement_priority at +0x6 before volume/pitch.",
+        doc=(
+            "Reserved audio-definition byte; allocation/playback paths only consume "
+            "replacement_priority at +0x6 (PC EN) before volume/pitch."
+        ),
     ),
     member("int32_t", "volume_fp12", 8),
     member("int32_t", "pitch_fp12", 12),
@@ -603,7 +611,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Camera_RoomView",
+    "Camera_EntityView",
     member("uint32_t", "flags", 0),
     member("int32_t", "pos_x", 4),
     member("int32_t", "pos_y", 8),
@@ -611,8 +619,8 @@ stable.struct(
     member("uint32_t", "activation_radius", 16),
     member("uint32_t", "actor_activation_radius", 20),
     member("int16_t", "camera_def_index", 24),
-    member("int16_t", "room_index", 26),
-    member("uint8_t", "neighbor_room_links[8]", 28),
+    member("int16_t", "entity_index", 26),
+    member("uint8_t", "neighbor_entity_links[8]", 28),
     member("uint8_t", "zone_boundaries[32]", 36),
     member("Pkg_ActorTemplate*", "actor_template", 68),
     member("uint32_t", "action_data[2]", 72),
@@ -679,7 +687,7 @@ stable.struct(
         "int32_t",
         "distance_or_clip",
         8,
-        doc="Copied pose scalar at +0x08; exact distance/clip role is not isolated in this slice.",
+        doc="Copied pose scalar at +0x08 (PC EN) used by camera pose interpolation paths.",
     ),
     member(
         "int32_t",
@@ -719,8 +727,8 @@ stable.struct(
     ),
     size=36,
     doc=(
-        "Scratch camera pose for transition interpolation, stored at live camera "
-        "state +0x04 and copied to a stack target before easing back."
+        "Scratch camera pose for transition interpolation, stored at live camera state +0x04 (PC EN) "
+        "and copied to a stack target before easing back."
     ),
 )
 
@@ -811,16 +819,25 @@ stable.struct(
 stable.struct(
     "Collision_Polygon",
     member("Collision_Plane*", "plane_data", 0),
-    member("uint16_t", "vertex_index_0", 4),
-    member("uint16_t", "vertex_index_1", 6),
-    member("uint16_t", "vertex_index_2", 8),
-    member("uint16_t", "vertex_index_3", 10),
-    member("void*", "adj_face_ptr", 12),
+    member("uint16_t", "vertex_indices[4]", 4),
+    member(
+        "void*",
+        "adj_face_ptr",
+        12,
+        doc=(
+            "Face-plane/adjacency data owned by the Collision_Node query, matching "
+            "Pkg_CollisionFacePlane normal fields and packed adj_edge words."
+        ),
+    ),
     member("uint16_t", "flags", 16),
     member("int16_t", "material_index", 18),
     member("int16_t", "adj_edge_0", 20),
     member("int16_t", "padding_16", 22),
     size=24,
+    doc=(
+        "24-byte collision polygon array element owned by Collision_Node.polygons. Vertex indices "
+        "reference the owning node's vertex array."
+    ),
 )
 
 stable.struct(
@@ -890,7 +907,12 @@ stable.struct(
     member("int32_t", "particle_spread", 88),
     member("int32_t", "particle_lifetime", 92),
     member("int32_t", "particle_color", 96),
-    member("int32_t", "movement_mode", 100),
+    member(
+        "int32_t",
+        "movement_mode",
+        100,
+        doc="Actor/component movement behavior selector consumed by movement/update paths.",
+    ),
     member("int32_t", "visual_scale", 104),
     member("int32_t", "attachment_bone_id", 108),
     size=112,
@@ -1026,16 +1048,28 @@ stable.struct(
     member("int32_t", "rot_x", 12),
     member(
         "int32_t",
-        "rot_z",
+        "rot_y",
         16,
+        doc="DInput_JoystickState.lRy. Preserved so lRz and button offsets match DirectInput's DIJOYSTATE layout.",
+    ),
+    member(
+        "int32_t",
+        "rot_z",
+        20,
         doc="DInput_JoystickState.lRz. JoyState_GetAxisRz returns this raw value; Input_ReadGamepad thresholds it at +/-600.",
     ),
-    member("int32_t", "sliders[2]", 20),
-    member("uint32_t", "pov_hat[4]", 28),
-    size=44,
+    member("int32_t", "sliders[2]", 24),
+    member("uint32_t", "pov_hat[4]", 32),
+    member(
+        "uint8_t",
+        "rgb_buttons[32]",
+        48,
+        doc="DInput_JoystickState.rgbButtons prefix. JoyState_GetButtonByte reads byte offset 0x30 (PC EN) + button_index.",
+    ),
+    size=80,
     doc=(
         "DirectInput joystick snapshot read by Input_ReadGamepad and JoyState_GetAxis* "
-        "helpers. Treat values as frame-local input samples, not persistent gameplay state."
+        "helpers. Values are frame-local input samples."
     ),
 )
 
@@ -1079,6 +1113,7 @@ stable.struct(
     member("uint32_t", "scene_graph_offset", 4),
     member("uint32_t", "mesh_collision_offset", 8),
     size=12,
+    doc="Package level-blob header whose relative offsets are rebased from the loaded blob base. Only these offsets are modeled; the payload fields are not.",
 )
 
 
@@ -1088,6 +1123,7 @@ stable.struct(
     member("int32_t", "object_tree_offset", 4),
     member("int32_t", "level_data_offset", 8),
     size=12,
+    doc="Level data header containing relative offsets fixed up against the loaded level-data relocation base. Only these offsets are modeled.",
 )
 
 stable.struct(
@@ -1099,6 +1135,7 @@ stable.struct(
     member("uint32_t", "collision_off", 16),
     member("uint32_t", "data_size", 20),
     size=24,
+    doc="Level-file header for the material, object-tree, and collision relative offsets. The payload after the header is still undocumented.",
 )
 
 
@@ -1133,7 +1170,12 @@ stable.struct(
         "uint32_t",
         "average_transparent_color",
         112,
-        doc="Packed average RGB fill color for transparent/black pixels. Material_LoadTexture resets it to 0xffffffff, may store the material-table average color at +0x70, and Material_CopyPixelDataToTexture substitutes the computed average RGB when alpha processing sees fully black pixels.",
+        doc=(
+            "Packed average RGB fill color for transparent/black pixels. Material_LoadTexture resets it "
+            "to 0xffffffff, may store the material-table average color at +0x70 (PC EN), and "
+            "Material_CopyPixelDataToTexture substitutes the computed average RGB when alpha processing "
+            "sees fully black pixels."
+        ),
     ),
     size=116,
 )
@@ -1152,7 +1194,10 @@ stable.struct(
         "int16_t",
         "glyph_advance_adjust",
         14,
-        doc="Signed text/glyph advance adjustment read by UI_UpdateAndRenderSprites as the fallback/spacing word at sprite context +0x0E.",
+        doc=(
+            "Signed text/glyph advance adjustment read by UI_UpdateAndRenderSprites as the "
+            "fallback/spacing word at sprite context +0x0E (PC EN)."
+        ),
     ),
     member("uint8_t", "subrect_u", 16),
     member("uint8_t", "subrect_v", 17),
@@ -1160,7 +1205,11 @@ stable.struct(
         "uint8_t",
         "reserved_12[2]",
         18,
-        doc="Tail padding for the 0x14-byte runtime footprint; no independent semantic reads/writes observed. Render_TexturedSprite may read across these bytes via a masked dword load from +0x10.",
+        doc=(
+            "Tail padding for the 0x14-byte runtime footprint; no independent semantic reads/writes "
+            "observed. Render_TexturedSprite may read across these bytes via a masked dword load from "
+            "+0x10 (PC EN)."
+        ),
     ),
     size=20,
 )
@@ -1188,7 +1237,10 @@ stable.struct(
         "uint32_t",
         "reserved_04",
         4,
-        doc="Opaque material-section header word; audited material fixup/loading paths use offsets/counts at +0x0/+0x0C/+0x10/+0x12.",
+        doc=(
+            "Opaque material-section header word; material fixup/loading paths use offsets/counts "
+            "at +0x0 (PC EN)/+0x0C (PC EN)/+0x10 (PC EN)/+0x12 (PC EN)."
+        ),
     ),
     member(
         "uint32_t",
@@ -1203,7 +1255,7 @@ stable.struct(
         "uint32_t",
         "reserved_14",
         20,
-        doc="Opaque material-section header tail word; materialEntryCount at +0x12 controls audited loops.",
+        doc="Opaque material-section header tail word following materialEntryCount at +0x12 (PC EN).",
     ),
     size=24,
     doc="24-byte on-disk material section header, rebased before Material_LoadAllEntries walks node/material tables.",
@@ -1244,13 +1296,19 @@ stable.struct(
         "uint16_t",
         "reserved_00",
         0,
-        doc="Zero-initialized frame-set header word; audited material builders/lookups use frame_count at +0x2 and frame_ptr_array at +0x4.",
+        doc=(
+            "Zero-initialized frame-set header word; material builders/lookups use frame_count at "
+            "+0x2 (PC EN) and frame_ptr_array at +0x4 (PC EN)."
+        ),
     ),
     member(
         "int16_t",
         "frame_count",
         2,
-        doc="Number of frame pointers; Material_BuildStructure writes this at +0x2 and Material_FindTextureByFrame uses it to bound frame_ptr_array iteration.",
+        doc=(
+            "Number of frame pointers; Material_BuildStructure writes this at +0x2 (PC EN) and "
+            "Material_FindTextureByFrame uses it to bound frame_ptr_array iteration."
+        ),
     ),
     member("Material_FrameData**", "frame_ptr_array", 4),
     size=8,
@@ -1482,9 +1540,9 @@ stable.struct(
         "scale_xy",
         104,
         doc=(
-            "Packed XY visual scale. Runtime probes showed fabricated values can destabilize "
-            "Actor_ProcessRendering, so consumers should prefer engine-owned spawn/render "
-            "paths over direct writes."
+            "Packed XY visual scale. Fabricated values can destabilize "
+            "Actor_ProcessRendering, so engine-owned spawn/render paths are safer "
+            "than direct writes."
         ),
     ),
     member("Mesh_Object*", "mesh_data_ptr", 108),
@@ -1501,9 +1559,9 @@ stable.struct(
         "mesh_polygon_count_or_ground_y",
         140,
         doc=(
-            "Render-coupled word at actor+0x8c. Mesh rendering paths pass this value as "
-            "the count/limit for 24-byte records reached through mesh_data_ptr; do not "
-            "copy mesh_data_ptr without keeping this visual state coherent."
+            "Render-coupled word at actor+0x8C (PC EN); mesh rendering paths pass it as the "
+            "count/limit for 24-byte records reached through mesh_data_ptr, whose copies require coherent "
+            "visual state."
         ),
     ),
     member("int32_t", "reserved_90", 144),
@@ -1512,19 +1570,19 @@ stable.struct(
         "int32_t",
         "world_render_pos_x",
         152,
-        doc="Render-position mirror X used by camera/render paths; keep coherent with logical position when writing transforms.",
+        doc="Render-position mirror X used by camera/render paths; transform writes require logical-position coherence.",
     ),
     member(
         "int32_t",
         "world_render_pos_y",
         156,
-        doc="Render-position mirror Y used by camera/render paths; keep coherent with logical position when writing transforms.",
+        doc="Render-position mirror Y used by camera/render paths; transform writes require logical-position coherence.",
     ),
     member(
         "int32_t",
         "world_render_pos_z",
         160,
-        doc="Render-position mirror Z used by camera/render paths; keep coherent with logical position when writing transforms.",
+        doc="Render-position mirror Z used by camera/render paths; transform writes require logical-position coherence.",
     ),
     member("int32_t", "height_offset", 164),
     member("Actor_State*", "collision_next", 168),
@@ -1533,7 +1591,10 @@ stable.struct(
         "Animation_MorphTargetVertex**",
         "visual_morph_or_skin_target_table",
         176,
-        doc="Visual morph/skin target pointer table used by Bone_TransformVertices_Weighted at actor +0xb0; keep it paired with borrowed mesh/scene vertex resources.",
+        doc=(
+            "Visual morph/skin target pointer table used by Bone_TransformVertices_Weighted at actor+0xB0 "
+            "(PC EN); it is paired with borrowed mesh/scene vertex resources."
+        ),
     ),
     member("int32_t", "anim_tick", 180),
     member(
@@ -1541,9 +1602,8 @@ stable.struct(
         "animation_step_and_component_counts",
         184,
         doc=(
-            "Packed animation/component state: Model_AdvanceAnimation reads the low int16 "
-            "as per-tick animation advance, while trail/component paths use the high half "
-            "around actor+0xba. Do not clear the whole dword as visual-only state."
+            "Packed animation/component state: Model_AdvanceAnimation reads the low int16 as per-tick "
+            "animation advance, while trail/component paths use the high half around actor+0xBA (PC EN)."
         ),
     ),
     member("Component_TrailObject*", "trail_chain_ptr", 188),
@@ -1556,7 +1616,7 @@ stable.struct(
         198,
         doc=(
             "Actor/actor collision subtype byte. Nonzero paths dereference "
-            "collision_component_or_parent_component at actor+0xc8."
+            "collision_component_or_parent_component at actor+0xC8 (PC EN)."
         ),
     ),
     member("uint8_t", "collision_state_d", 199),
@@ -1572,8 +1632,8 @@ stable.struct(
         "scale_factor",
         206,
         doc=(
-            "Actor scale factor copied through runtime actor paths. Direct writes were "
-            "tolerated in probes but are not a complete visual-scaling API by themselves."
+            "Actor scale factor copied through runtime actor paths. Direct writes require "
+            "additional visual-state handling."
         ),
     ),
     member(
@@ -1582,8 +1642,7 @@ stable.struct(
         208,
         doc=(
             "NULL-terminated runtime render node list read by Scene_RenderNodeTree. "
-            "Runtime rendering fixes should iterate this list with pointer guards instead "
-            "of recursing through node link fields."
+            "Runtime rendering fixes iterate this list with pointer guards."
         ),
     ),
     member("int32_t", "velocity_x", 212),
@@ -1596,12 +1655,18 @@ stable.struct(
         "ground_collision_node",
         232,
         doc=(
-            "Ground/contact collision or scene-geometry node pointer. Runtime probes showed "
-            "this slot is not a standalone Collision_Polygon*; resolve polygons through the "
-            "node's polygon/vertex arrays and validate before mutation."
+            "Ground/contact collision or scene-geometry node pointer. Polygon access routes "
+            "through the node's polygon/vertex arrays."
         ),
     ),
-    member("void*", "ground_contact_ptr", 236),
+    member(
+        "void*",
+        "ground_contact_ptr",
+        236,
+        doc=(
+            "Ground-contact pointer paired with ground_collision_node and passed through polygon/contact helpers."
+        ),
+    ),
     member("int32_t", "rotation", 240),
     member("Pkg_ActorRecord*", "record_ptr", 244),
     member("Actor_State*", "child_actor", 248),
@@ -1613,7 +1678,7 @@ stable.struct(
         260,
         doc=(
             "Level-local LOD redirect record; Actor_ProcessRendering follows this record "
-            "to an alternate actor/render source, so it is not portable visual state."
+            "to an alternate actor/render source tied to the current level."
         ),
     ),
     member("Actor_State*", "parent_actor", 264),
@@ -1630,10 +1695,13 @@ stable.struct(
     member("int32_t", "camera_yaw", 308),
     member("int32_t", "reserved_138", 312),
     member("int32_t", "script_timer", 316),
-    member("uint8_t", "script_room_index", 320),
-    member("uint8_t", "script_room_stack_0", 321),
-    member("uint8_t", "script_room_stack_1", 322),
-    member("uint8_t", "script_room_stack_2", 323),
+    member("uint8_t", "script_entity_index", 320),
+    member(
+        "uint8_t",
+        "script_entity_stack[3]",
+        321,
+        doc="Three contiguous script-entity stack bytes used as an array.",
+    ),
     member("int32_t", "path_best_distance", 324),
     member("int32_t", "path_target_x", 328),
     member("int32_t", "path_target_y", 332),
@@ -1671,7 +1739,7 @@ stable.struct(
         "int16_t",
         "transition_timer",
         396,
-        doc="Transition/countdown timer set by camera/snap setup and decremented by Actor_ProcessSnapAndRoomUpdate.",
+        doc="Transition/countdown timer set by camera/snap setup and decremented by Actor_ProcessSnapAndEntityUpdate.",
     ),
     member(
         "int16_t",
@@ -1701,7 +1769,7 @@ stable.struct(
         "Component_Instance*",
         "runtime_component_array",
         408,
-        doc="Pointer to runtime Component_Instance array using 36-byte entries; initialized by Entity_SpawnActor.",
+        doc="Pointer to runtime Component_Instance array initialized by Entity_SpawnActor; entries use the 0x224-byte public Component_Instance layout.",
     ),
     member(
         "Actor_State*",
@@ -1877,7 +1945,7 @@ stable.struct(
         "uint16_t",
         "reserved_1a",
         26,
-        doc="Opaque entity record pad; no direct audited semantics have been isolated.",
+        doc="Opaque entity record pad.",
     ),
     member("int32_t*", "bonus_respawn_target_pos", 28),
     member("int16_t", "attach_offset_x", 32),
@@ -1920,7 +1988,7 @@ stable.struct(
         "uint8_t",
         "cached_actor_defaults[104]",
         192,
-        doc="Entity_SpawnActor caches 0x68 bytes here; Entity_CopyDataToActor copies this block into Pkg_ActorRecord+0x30.",
+        doc="Entity_SpawnActor caches 0x68 bytes here; Entity_CopyDataToActor copies this block into Pkg_ActorRecord+0x30 (PC EN).",
     ),
     member("Actor_State*", "active_actor", 296),
     member("uint8_t", "padding_12c[16]", 300),
@@ -1965,9 +2033,8 @@ stable.struct(
     ),
     size=384,
     doc=(
-        "Runtime entity/room slot record used by spawn and visibility paths. A slot "
-        "index is derived from its position in current_level_data->room_array; do not "
-        "confuse that level-local entity slot with package level_index."
+        "Runtime entity slot record used by spawn and visibility paths; current_level_data->entity_array "
+        "supplies the slot index."
     ),
 )
 
@@ -2027,7 +2094,11 @@ stable.struct(
         doc="Start of the command-specific payload bytes inside the 16-byte command prefix; type 0 passes this region to Animation_ProcessController and type 1 uses the same header as a vertex-color command.",
     ),
     size=16,
-    doc="16-byte-aligned, variable-sized mesh animation/render command prefix read by Render_ProcessMeshCommands and Render_UpdateMeshCommandFlags; audited code reads the common header through +0x0..+0x0f and treats payload as command-specific data.",
+    doc=(
+        "16-byte-aligned, variable-sized mesh animation/render command prefix read by "
+        "Render_ProcessMeshCommands and Render_UpdateMeshCommandFlags; both read the common "
+        "header through +0x0 (PC EN)..+0x0F (PC EN) and treats payload as command-specific data."
+    ),
 )
 
 stable.struct(
@@ -2047,10 +2118,7 @@ stable.struct(
         0,
         doc="Runtime material-table entry pointer; Resource_FixUpMaterialRefs rewrites material indices to 36-byte Material_TableEntry records.",
     ),
-    member("uint16_t", "vertex_index_0", 4),
-    member("uint16_t", "vertex_index_1", 6),
-    member("uint16_t", "vertex_index_2", 8),
-    member("uint16_t", "vertex_index_3", 10),
+    member("uint16_t", "vertex_indices[4]", 4),
     member("void*", "p_normal_plane", 12),
     member("uint16_t", "face_flags", 16),
     member("int16_t", "uv_index", 18),
@@ -2106,19 +2174,25 @@ stable.struct(
         "uint8_t",
         "reserved_00[10]",
         0,
-        doc="Unresolved prefix before render count/flags; Resource_FixUpMeshNode fixes descriptor data at +0x0C and relocated tail pointer at +0x1C.",
+        doc=(
+            "Unresolved prefix before render count/flags; Resource_FixUpMeshNode fixes descriptor data at "
+            "+0x0C (PC EN) and relocated tail pointer at +0x1C (PC EN)."
+        ),
     ),
     member(
         "uint8_t",
         "render_entry_count",
         10,
-        doc="Byte count read by Scene_RenderSubMesh from mesh render-node entry +0x0A before iterating/rendering the submesh span.",
+        doc=(
+            "Byte count read by Scene_RenderSubMesh from mesh render-node entry +0x0A (PC EN) before "
+            "iterating/rendering the submesh span."
+        ),
     ),
     member(
         "uint8_t",
         "render_entry_flags",
         11,
-        doc="Render-entry flag byte tested by Scene_RenderSubMesh at +0x0B.",
+        doc="Render-entry flag byte tested by Scene_RenderSubMesh at +0x0B (PC EN).",
     ),
     member(
         "Material_RefEntry",
@@ -2130,7 +2204,10 @@ stable.struct(
         "uint8_t",
         "reserved_18[4]",
         24,
-        doc="Opaque gap between the 0x0C material descriptor and the relocated tail pointer; Resource_FixUpMeshNode's 0x20-stride helper skips these bytes.",
+        doc=(
+            "Opaque gap between the 0x0C material descriptor and the relocated tail pointer; "
+            "Resource_FixUpMeshNode's 0x20-stride helper skips these bytes."
+        ),
     ),
     member(
         "void*",
@@ -2139,7 +2216,7 @@ stable.struct(
         doc="Entry tail pointer rebased by the 0x20-stride render-node fixup helper called from Resource_FixUpMeshNode.",
     ),
     size=32,
-    doc="32-byte mesh render-node entry, distinct from transform-oriented Mesh_Node records.",
+    doc="32-byte mesh render-node entry rebased by Resource_FixUpMeshNode's entry-table helper.",
 )
 
 stable.struct(
@@ -2265,7 +2342,7 @@ stable.struct(
         "void*",
         "group_list_0",
         132,
-        doc="First of six group-node fixup/list heads rebased by Resource_FixUpGroupNode from +0x84 through +0x98.",
+        doc="First of six group-node fixup/list heads rebased by Resource_FixUpGroupNode from +0x84 (PC EN) through +0x98 (PC EN).",
     ),
     member(
         "void*",
@@ -2302,7 +2379,11 @@ stable.struct(
         "int32_t",
         "group_reserved_a0",
         160,
-        doc="Opaque 32-bit slot between group_linked_list_a and group_linked_list_b; Resource_FixUpGroupNode rebases adjacent list pointers at +0x9C/+0xA4 but intentionally skips +0xA0.",
+        doc=(
+            "Opaque 32-bit slot between group_linked_list_a and group_linked_list_b; "
+            "Resource_FixUpGroupNode rebases adjacent list pointers at +0x9C (PC EN)/+0xA4 (PC EN) but "
+            "intentionally skips +0xA0 (PC EN)."
+        ),
     ),
     member("void*", "group_linked_list_b", 164),
     size=168,
@@ -2335,10 +2416,7 @@ stable.struct(
 stable.struct(
     "Mesh_Polygon",
     member("uint32_t", "material_ptr", 0),
-    member("uint16_t", "vertex_index_0", 4),
-    member("uint16_t", "vertex_index_1", 6),
-    member("uint16_t", "vertex_index_2", 8),
-    member("uint16_t", "vertex_index_3", 10),
+    member("uint16_t", "vertex_indices[4]", 4),
     member("uint32_t", "face_normal_ptr", 12),
     member("uint16_t", "flags", 16),
     member("int16_t", "uv_ambient_index", 18),
@@ -2525,12 +2603,23 @@ stable.struct(
     "Pkg_CollisionFace",
     member("int16_t", "material_index", 0),
     member("int16_t", "surface_type", 2),
-    member("int16_t", "vertex_index_0", 4),
-    member("int16_t", "vertex_index_1", 6),
-    member("int16_t", "vertex_index_3", 8),
+    member(
+        "int16_t",
+        "vertex_indices_front[3]",
+        4,
+        doc=(
+            "Storage-order vertex index run before face_flags. Native suffix order is "
+            "0, 1, 3 here; the remaining index lives after the flag bytes."
+        ),
+    ),
     member("uint8_t", "face_flags", 10),
     member("uint8_t", "face_flags_hi", 11),
-    member("int16_t", "vertex_index_2", 12),
+    member(
+        "int16_t",
+        "vertex_indices_after_flags[1]",
+        12,
+        doc="Final storage-order vertex index after the interleaved face flag bytes.",
+    ),
     member("int16_t", "adj_face_index", 14),
     member("int32_t", "plane_offset", 16),
     size=20,
@@ -2601,7 +2690,7 @@ stable.struct(
         "int16_t",
         "reserved_06",
         6,
-        doc="Opaque collision-vertex tail word; audited collision polygon tests consume x/y/z only.",
+        doc="Opaque collision-vertex tail word following x/y/z coordinates.",
     ),
     member(
         "int16_t",
@@ -2755,31 +2844,21 @@ stable.struct(
     member("uint32_t", "cam_default_offset", 0),
     member("int16_t", "actor_record_count", 4),
     member("int16_t", "padding_06", 6),
-    member("int16_t", "initial_room_index", 8),
-    member("int16_t", "room_count", 10),
-    member("uint32_t", "room_array_offset", 12),
+    member("int16_t", "initial_entity_index", 8),
+    member("int16_t", "entity_count", 10),
+    member("uint32_t", "entity_array_offset", 12),
     member("uint32_t", "sound_definition_list_offset", 16),
     member("int32_t", "sound_definition_count", 20),
     member("uint32_t", "var_list_offset", 24),
     member("int16_t", "powerup_count", 28),
     member("int16_t", "powerup_type_count", 30),
     member("uint32_t", "powerup_list_offset", 32),
-    member("uint32_t", "powerup_slot_0", 36),
-    member("uint32_t", "powerup_slot_1", 40),
-    member("uint32_t", "powerup_slot_2", 44),
-    member("uint32_t", "powerup_slot_3", 48),
-    member("uint32_t", "powerup_slot_4", 52),
-    member("uint32_t", "powerup_slot_5", 56),
-    member("uint32_t", "powerup_slot_6", 60),
-    member("uint32_t", "powerup_slot_7", 64),
-    member("uint32_t", "powerup_slot_8", 68),
-    member("uint32_t", "powerup_slot_9", 72),
-    member("uint32_t", "powerup_slot_10", 76),
-    member("uint32_t", "powerup_slot_11", 80),
-    member("uint32_t", "powerup_slot_12", 84),
-    member("uint32_t", "powerup_slot_13", 88),
-    member("uint32_t", "powerup_slot_14", 92),
-    member("uint32_t", "powerup_slot_15", 96),
+    member(
+        "uint32_t",
+        "powerup_slots[16]",
+        36,
+        doc="Fixed 16-slot powerup table following powerup_list_offset; entries retain the original 0x24..0x60 (PC EN) span.",
+    ),
     member("uint32_t", "theme_0_offset", 100),
     member("uint32_t", "theme_1_offset", 104),
     member("uint32_t", "theme_2_offset", 108),
@@ -2791,6 +2870,7 @@ stable.struct(
     member("uint32_t", "nav_net_offset", 132),
     member("uint32_t", "usable_materials_offset", 136),
     size=140,
+    doc="Package level header containing actor, entity-slot, sound, powerup, theme, trail, sprite, nav, and material relative offsets. Modeled fields cover this header's offset table.",
 )
 
 stable.struct(
@@ -2800,6 +2880,7 @@ stable.struct(
     member("uint32_t", "material_table_offset", 8),
     member("uint32_t", "material_count", 12),
     size=16,
+    doc="Package level-resource header used as the relocation base for resource-manager and material-table offsets. Only those offsets are modeled.",
 )
 
 stable.struct(
@@ -2874,10 +2955,7 @@ stable.struct(
 stable.struct(
     "Pkg_PolygonListEntry",
     member("uint32_t", "material_index", 0),
-    member("uint16_t", "vertex_index_0", 4),
-    member("uint16_t", "vertex_index_1", 6),
-    member("uint16_t", "vertex_index_2", 8),
-    member("uint16_t", "vertex_index_3", 10),
+    member("uint16_t", "vertex_indices[4]", 4),
     member("Pkg_FaceNormal*", "face_normal_ptr", 12),
     member("uint16_t", "flags", 16),
     member("uint16_t", "tex_coord_index", 18),
@@ -2893,6 +2971,10 @@ stable.struct(
     member("uint32_t", "mesh_node_root_offset", 4),
     member("uint32_t", "level_data_offset", 8),
     size=12,
+    doc=(
+        "Package resource directory of relative offsets to material, mesh-node, and level-data "
+        "sections. Payload data for those sections is not modeled here."
+    ),
 )
 
 stable.struct(
@@ -2907,6 +2989,7 @@ stable.struct(
     member("uint32_t", "info_2", 28),
     member("uint32_t", "reserved", 32),
     size=36,
+    doc="Package header for one resource: type, relative offsets, sizes, and flags. Resource-specific payloads are still undocumented.",
 )
 
 stable.struct(
@@ -2936,6 +3019,7 @@ stable.struct(
     member("uint32_t", "offset", 0),
     member("uint32_t", "size", 4),
     size=8,
+    doc="One 8-byte package TOC entry; the package table contains 0x8a file offset/size pairs, with size-lane aliases sharing this storage.",
 )
 
 
@@ -3096,11 +3180,19 @@ stable.struct(
 
 stable.struct(
     "Render_Polygon3D",
-    member("uint16_t", "vertex_index_0", 0),
-    member("uint16_t", "vertex_index_1", 2),
-    member("uint16_t", "vertex_index_2", 4),
+    member(
+        "uint16_t",
+        "vertex_indices_front[3]",
+        0,
+        doc="Storage-order vertex indices before the interleaved flags field.",
+    ),
     member("uint16_t", "flags", 6),
-    member("uint16_t", "vertex_index_3", 8),
+    member(
+        "uint16_t",
+        "vertex_indices_after_flags[1]",
+        8,
+        doc="Final storage-order vertex index after flags.",
+    ),
     member("uint16_t", "material_index", 10),
     size=12,
 )
@@ -3170,12 +3262,9 @@ stable.struct(
         "Material_TableEntry*",
         "material_entry",
         0,
-        doc="Runtime material-table entry pointer read by Render_PolygonBatch/Render_SetPolygonUVs; not a 20-byte Material_Entry.",
+        doc="Runtime material-table entry pointer read by Render_PolygonBatch/Render_SetPolygonUVs.",
     ),
-    member("uint16_t", "vertex_index_0", 4),
-    member("uint16_t", "vertex_index_1", 6),
-    member("uint16_t", "vertex_index_2", 8),
-    member("uint16_t", "vertex_index_3", 10),
+    member("uint16_t", "vertex_indices[4]", 4),
     member("uint32_t", "normal_offset", 12),
     member("uint16_t", "flags", 16),
     member("uint16_t", "uv_index", 18),
@@ -3210,7 +3299,11 @@ stable.struct(
         "uint16_t",
         "quad_padding",
         14,
-        doc="Alignment/pad word between texture dimensions and quad_state; Render_DrawQuad reads texture_width at +0x0C and texture_height at +0x0D, then skips to quad_state at +0x10.",
+        doc=(
+            "Alignment/pad word between texture dimensions and quad_state; Render_DrawQuad reads "
+            "texture_width at +0x0C (PC EN) and texture_height at +0x0D (PC EN), then skips to quad_state "
+            "at +0x10 (PC EN)."
+        ),
     ),
     member("uint32_t", "quad_state", 16),
     member("int16_t", "vertex_x[4]", 20),
@@ -3330,86 +3423,6 @@ stable.struct(
     member("float", "color_b3", 1652),
     size=1656,
 )
-
-stable.struct(
-    "Render_ListState",
-    member("int16_t", "yaw", 0),
-    member("int16_t", "pitch", 2),
-    member("int16_t", "roll", 4),
-    member("int16_t", "look_at_pitch", 6),
-    member("int16_t", "orbit_yaw", 8),
-    member("int16_t", "fov", 10),
-    member("int32_t", "focal_distance", 12),
-    member("int32_t", "eye_pos_x", 16),
-    member("int32_t", "eye_pos_z", 20),
-    member("int32_t", "eye_pos_y", 24),
-    member("int32_t", "target_x", 28),
-    member("int32_t", "target_z", 32),
-    member("int32_t", "target_y", 36),
-    member("Entity_State*", "active_entity_slot_ptr", 40),
-    member("int16_t", "screen_half_w", 44),
-    member("int16_t", "screen_half_h", 46),
-    member("Math_Matrix3x3i16", "view_matrix", 48),
-    member("int16_t", "view_matrix_padding", 66),
-    member(
-        "uint8_t",
-        "frustum_setup_prefix_44[20]",
-        68,
-        doc="Camera/frustum setup prefix before the five validated 12-byte clip-plane records; direct per-field semantics remain unresolved.",
-    ),
-    member(
-        "Render_FrustumClipPlane",
-        "frustum_plane_0",
-        88,
-        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
-    ),
-    member(
-        "Render_FrustumClipPlane",
-        "frustum_plane_1",
-        100,
-        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
-    ),
-    member(
-        "Render_FrustumClipPlane",
-        "frustum_plane_2",
-        112,
-        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
-    ),
-    member(
-        "Render_FrustumClipPlane",
-        "frustum_plane_3",
-        124,
-        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
-    ),
-    member(
-        "Render_FrustumClipPlane",
-        "frustum_plane_4",
-        136,
-        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
-    ),
-    member("Math_Matrix3x3i16", "node_view_matrix", 148),
-    member("int16_t", "node_view_matrix_padding", 166),
-    member("int32_t", "node_view_translation_x", 168),
-    member("int32_t", "node_view_translation_y", 172),
-    member("int32_t", "node_view_translation_z", 176),
-    member("int32_t", "projection_near_fp", 180),
-    member("int32_t", "dynamic_level_scale", 184),
-    member("Actor_State*", "render_actor_ptr", 188),
-    member("uint32_t", "render_pass_flags", 192),
-    member("void*", "post_sorted_callback", 196),
-    member("void*", "pre_shadow_callback", 200),
-    member("void*", "sorted_list_head", 204),
-    member("void*", "sorted_list_buckets[16384]", 208),
-    member(
-        "uint32_t",
-        "sorted_bucket_tail",
-        65744,
-        doc="End/tail dword after the 16384 sorted bucket pointers; not traversed as an active bucket in the audited Render_DrawSortedLists path.",
-    ),
-    size=65748,
-    doc="Validated camera/render-list runtime state with five 12-byte frustum planes.",
-)
-
 
 stable.struct(
     "SaveGame_Data",
@@ -3587,7 +3600,7 @@ stable.struct(
         "Scene_Node*",
         "next_in_resource_list",
         0,
-        doc="List link used by resource-side lists; distinct from the render node-list skip count at +0x4.",
+        doc="Resource-side list link used to chain Scene_Node records during load/fixup.",
     ),
     member(
         "int32_t",
@@ -3595,7 +3608,7 @@ stable.struct(
         4,
         doc=(
             "Scene_RenderNodeTree treats this as a node-list cursor skip count when traversal "
-            "flags hide a subtree. Do not dereference it as a runtime sibling pointer."
+            "flags hide a subtree."
         ),
     ),
     member(
@@ -3604,7 +3617,7 @@ stable.struct(
         8,
         doc=(
             "Parent transform node used by the renderer for traversal flags and parent world "
-            "matrix/position fields. Runtime render fixes must not treat it as a child-list head."
+            "matrix/position fields. Runtime render fixes cannot treat it as a child-list head."
         ),
     ),
     member(
@@ -3622,7 +3635,10 @@ stable.struct(
         "int16_t",
         "world_rot_reserved",
         62,
-        doc="Alignment/reserved word after world_rot_matrix; Scene_UpdateNodeAnimation writes the surrounding matrix fields, but no direct semantic access to +0x3E has been isolated.",
+        doc=(
+            "Alignment/reserved word after world_rot_matrix; Scene_UpdateNodeAnimation writes the "
+            "surrounding matrix fields, but no direct semantic access to +0x3E (PC EN) has been isolated."
+        ),
     ),
     member("int32_t", "world_pos_x", 64),
     member("int32_t", "world_pos_y", 68),
@@ -3698,7 +3714,7 @@ stable.struct(
         "int8_t",
         "render_entry_index_for_type_6",
         102,
-        doc="Type-specific signed render/model-entry index; node_type 6 render paths index actor+0x94 with this byte.",
+        doc="Type-specific signed render/model-entry index; node_type 6 render paths index actor+0x94 (PC EN) with this byte.",
     ),
     member(
         "int8_t",
@@ -3711,8 +3727,8 @@ stable.struct(
         "render_param_1",
         104,
         doc=(
-            "Type-specific render/collision parameter. For collision-style nodes, probes "
-            "show the low/high words can act as vertex and polygon counts."
+            "Type-specific render/collision parameter. For collision-style nodes, the low/high "
+            "words can act as vertex and polygon counts."
         ),
     ),
     member(
@@ -3741,35 +3757,34 @@ stable.struct(
         "uint8_t",
         "reserved_7e[2]",
         126,
-        doc="Reserved model-node tail bytes before rebased model pointers; no stable semantic accessor has been isolated.",
+        doc="Reserved model-node tail bytes before rebased model pointers.",
     ),
     member(
         "void*",
         "model_relocated_ptr_80",
         128,
-        doc="Model-node pointer rebased by Resource_FixUpModelNode at +0x80; pointed record semantics remain under validation.",
+        doc=("Model-node pointer rebased by Resource_FixUpModelNode at +0x80 (PC EN)."),
     ),
     member(
         "void*",
         "model_relocated_ptr_84",
         132,
-        doc="Model-node pointer rebased by Resource_FixUpModelNode at +0x84; pointed record semantics remain under validation.",
+        doc=("Model-node pointer rebased by Resource_FixUpModelNode at +0x84 (PC EN)."),
     ),
     member(
         "uint32_t",
         "model_runtime_flags",
         136,
         doc=(
-            "Flags read by traversal/render/fixup paths; Resource_FixUpModelNode tests "
-            "bit 1 at +0x88, and collision polygon tests use transformed coordinates "
-            "when bits 0x22 are set."
+            "Flags read by traversal/render/fixup paths; Resource_FixUpModelNode tests bit 1 at +0x88 (PC "
+            "EN), and collision polygon tests use transformed coordinates when bits 0x22 are set."
         ),
     ),
     member(
         "uint32_t",
         "variant_transform_tail",
         140,
-        doc="Opaque tail dword before trail_effects_ptr; previously overlapped by an inferred rot_matrix.",
+        doc="Opaque tail dword before trail_effects_ptr.",
     ),
     member("Trail_BoneEffect*", "trail_effects_ptr", 144),
     member("Submesh_Entry*", "submesh_entry_table", 148),
@@ -3777,7 +3792,7 @@ stable.struct(
         "uint8_t",
         "padding_98[4]",
         152,
-        doc="Opaque tail gap; audited render/finalize/bone paths did not produce a stable semantic.",
+        doc="Opaque tail gap used by render/finalize/bone paths.",
     ),
     member("int32_t", "sort_key_2", 156),
     member("int32_t", "sort_key_3", 160),
@@ -3804,7 +3819,7 @@ stable.struct(
         "int32_t",
         "child_rot_x",
         180,
-        doc="Name retained as unstable/inferred; current audit did not find a direct stable accessor for this variant-tail field.",
+        doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail field.",
     ),
     member(
         "uint16_t",
@@ -3822,13 +3837,16 @@ stable.struct(
         "Mesh_RenderNodeEntry*",
         "mesh_node_table",
         188,
-        doc="32-byte mesh render-node entry table; count is read from mesh_node_count at +0xBA and entries are fixed by Resource_FixUpMeshNode before Scene_RenderSubMesh indexes them.",
+        doc=(
+            "32-byte mesh render-node entry table; count is read from mesh_node_count at +0xBA (PC EN) "
+            "and entries are fixed by Resource_FixUpMeshNode before Scene_RenderSubMesh indexes them."
+        ),
     ),
     member(
         "int32_t",
         "child_scale_x",
         192,
-        doc="Name retained as unstable/inferred; current audit did not find a direct stable accessor for this variant-tail field.",
+        doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail field.",
     ),
     member(
         "uint8_t",
@@ -3858,7 +3876,7 @@ stable.struct(
         "int32_t",
         "child_scale_z",
         200,
-        doc="Name retained as unstable/inferred; current audit did not find a direct stable accessor for this variant-tail field.",
+        doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail field.",
     ),
     member(
         "int32_t",
@@ -3876,13 +3894,16 @@ stable.struct(
         "int32_t",
         "render_offset_z",
         212,
-        doc="Model render offset added to world_pos_z by Scene_TraverseNodeTree to produce render-space position; replaces stale is_active inference.",
+        doc=(
+            "Model render offset added to world_pos_z by Scene_TraverseNodeTree to produce render-space "
+            "position; has no confirmed is_active meaning."
+        ),
     ),
     member(
         "Scene_Node*",
         "lod_config_ptr",
         216,
-        doc="Name retained as unstable/inferred; current audit did not find a direct stable accessor for this variant-tail pointer.",
+        doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail pointer.",
     ),
     size=220,
 )
@@ -3900,7 +3921,23 @@ stable.struct(
     size=20,
 )
 
-stable.struct("Script_OpcodeTable", member("void*", "handlers[45]", 0), size=180)
+stable.struct(
+    "Script_OpcodeTable",
+    member(
+        "Script_CommandCallback",
+        "handlers[45]",
+        0,
+        doc=(
+            "45-entry script opcode handler array. Entry 0 is null in the "
+            "table; non-null entries use the Script_CommandCallback ABI."
+        ),
+    ),
+    size=180,
+    doc=(
+        "Script opcode dispatch table reached from ScriptCmd_WithActor at pcdogs.exe+0x51988 (PC EN). "
+        "Table shape is stable; individual handler slots dispatch native script opcodes."
+    ),
+)
 
 
 stable.struct(
@@ -3951,7 +3988,7 @@ stable.struct(
 )
 
 stable.struct(
-    "UI_FireworkEntry",
+    "UI_SpotEntry",
     member("int32_t", "x", 0),
     member("int32_t", "y", 4),
     member("int32_t", "timer", 8),
@@ -4014,6 +4051,99 @@ stable.callback_type(
     params=[],
     calling=CallingConvention.CDECL,
     doc="Default actor update callback signature, with no arguments.",
+)
+
+stable.callback_type(
+    "Script_CommandCallback",
+    ret="void",
+    params=[param("Actor_State*", "actor"), param("uint8_t**", "ip")],
+    calling=CallingConvention.CDECL,
+    doc=(
+        "ScriptCmd_WithActor uses this callback type for opcode handlers in the native script dispatch table."
+    ),
+)
+
+
+stable.callback_type(
+    "Sort_CompareCallback",
+    ret="int32_t",
+    params=[param("void const*", "lhs"), param("void const*", "rhs")],
+    calling=CallingConvention.CDECL,
+    doc="CRT qsort/shortsort comparator ABI; returns negative, zero, or positive for lhs vs rhs ordering.",
+)
+
+stable.callback_type(
+    "TreeMap_CompareCallback",
+    ret="int32_t",
+    params=[param("void*", "lhs_payload"), param("void*", "rhs_payload")],
+    calling=CallingConvention.CDECL,
+    doc="TreeMap payload comparator stored in the 12-byte tree header and called with two node payload pointers.",
+)
+
+stable.callback_type(
+    "Powerup_UpdateCallback",
+    ret="uint8_t",
+    params=[param("Actor_State*", "actor")],
+    calling=CallingConvention.CDECL,
+    doc="Powerup actor update callback slot initialized by Powerup_InitializeSystem.",
+)
+
+stable.callback_type(
+    "Powerup_CollisionCallback",
+    ret="int32_t",
+    params=[
+        param("Actor_State*", "powerup_actor"),
+        param("Actor_State*", "other_actor"),
+        param(
+            "int32_t",
+            "reserved_zero",
+            doc="Reserved argument slot observed as zero at the powerup collision dispatch site.",
+        ),
+        param("int32_t", "collision_result"),
+    ],
+    calling=CallingConvention.CDECL,
+    doc=(
+        "Four-argument powerup collision filter callback slot initialized by Powerup_InitializeSystem; "
+        "Powerup_CollisionFilter consumes the fourth collision_result argument and ignores the observed-zero third slot."
+    ),
+)
+
+stable.callback_type(
+    "Collision_ActorResponseCallback",
+    ret="int32_t",
+    params=[
+        param("Actor_State*", "actor"),
+        param("Actor_State*", "other_actor"),
+        param("Collision_Polygon*", "collision_poly"),
+        param("int32_t", "collision_depth"),
+    ],
+    calling=CallingConvention.CDECL,
+    doc="Actor-vs-actor collision response callback slot initialized to Actor_ProcessCollisionResponse.",
+)
+
+stable.callback_type(
+    "Collision_ComponentResponseCallback",
+    ret="int32_t",
+    params=[
+        param("Component_Instance*", "component"),
+        param("Actor_State*", "other_actor"),
+        param("Collision_Polygon*", "collision_poly"),
+        param("int32_t", "collision_depth"),
+    ],
+    calling=CallingConvention.CDECL,
+    doc="Component/projectile collision response callback slot initialized to Collision_ProcessProjectileHit.",
+)
+
+stable.callback_type(
+    "Collision_ProcessCallback",
+    ret="int32_t",
+    params=[
+        param("Actor_State*", "actor"),
+        param("Actor_State*", "other_actor"),
+        param("int32_t", "collision_depth"),
+    ],
+    calling=CallingConvention.CDECL,
+    doc="Engine-owned scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
 )
 
 
@@ -4133,9 +4263,8 @@ stable.fn(
     params=[param("Actor_State*", "actor")],
     doc=(
         "Returns TRUE when actor is non-null and its maximum saved-camera axis "
-        "distance is not filtered by the current game mode. Mode 0 rejects "
-        "distance 0x8381; mode 0x11 rejects distances in the open range "
-        "0x30d40..0x493e0."
+        "distance passes the current game-mode filter. Mode 0 rejects distance "
+        "0x8381; mode 0x11 rejects distances in the open range 0x30d40..0x493e0."
     ),
 )
 
@@ -4158,6 +4287,11 @@ stable.fn(
         param("Actor_State*", "actor"),
         param("Scene_Node*", "parent_node"),
     ],
+    doc=(
+        "Traverses the scene-node tree for rendering/visibility side effects, dispatching node_type "
+        "1..7 through scene_node_type_dispatch_table. Type 1 uses Scene_Node+0xC5 (PC EN) for "
+        "model-like variants, while +0x8 (PC EN) and +0x4 (PC EN) act as traversal links."
+    ),
 )
 
 stable.fn(
@@ -4175,7 +4309,10 @@ stable.fn(
     hook=6,
     ret="void",
     params=[param("Actor_State*", "actor")],
-    doc="Processes the actor trail chain at actor+0xbc for actor+0xba entries, refreshing pending Component_TrailObject records and clearing each processed_flag byte.",
+    doc=(
+        "Processes the actor trail chain at actor+0xBC (PC EN) for actor+0xBA (PC EN) entries, "
+        "refreshing pending Component_TrailObject records and clearing each processed_flag byte."
+    ),
 )
 
 stable.fn(
@@ -4189,12 +4326,15 @@ stable.fn(
         param(
             "Actor_State*",
             "actor",
-            doc="Actor supplying mesh vertex data at actor+0x70 when a live segment is written; null is only valid for inactive/expiry updates.",
+            doc=(
+                "Actor supplying mesh vertex data at actor+0x70 (PC EN) when a live segment is written; null "
+                "is only valid for inactive/expiry updates."
+            ),
         ),
         param(
             "void*",
             "component_record",
-            doc="Component/node record whose 16-bit fields at +0x4 and +0x0a select the start/end mesh vertices.",
+            doc="Component/node record whose 16-bit fields at +0x4 (PC EN) and +0x0A (PC EN) select the start/end mesh vertices.",
         ),
         param("char", "active"),
     ],
@@ -4228,8 +4368,9 @@ stable.fn(
     "A1 ?? ?? ?? ?? 56 57 C7",
     match=-35,
     hook=6,
-    ret="void* *",
+    ret="int32_t",
     params=[],
+    doc="Renders static scene geometry for side effects and returns the native status value.",
 )
 
 stable.fn(
@@ -4250,14 +4391,20 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "During actor rendering, sets player_actor, updates animation/visibility, renders "
+        "the actor scene-node tree, processes trail/mesh command flags, then clears the "
+        "render-scoped globals before return. player_actor is render-scoped state."
+    ),
 )
 
 stable.fn(
     "Scene_RenderNodeTree",
     "55 8B EC 81 EC 90 00 00 00 A1 ??",
     hook=9,
-    ret="int32_t*",
+    ret="void",
     params=[],
+    doc="Renders the active scene node tree and runs render/finalizer side effects.",
 )
 
 stable.fn(
@@ -4285,6 +4432,11 @@ stable.fn(
     hook=7,
     ret="void",
     params=[],
+    doc=(
+        "Walks the live projectile_actor_list_head runtime actor list, updates projectile "
+        "actors through physics/animation/render paths, and removes actors whose lifecycle "
+        "state indicates destruction."
+    ),
 )
 
 stable.fn(
@@ -4533,27 +4685,28 @@ stable.fn(
         ),
     ],
     doc=(
-        "Traces/selects an actor path target and mutates actor path fields around "
-        "+0x144..+0x170. Returns the selected path/actor index, or 0 when no valid path is found."
+        "Traces/selects an actor path target and mutates actor path fields around +0x144 (PC "
+        "EN)..+0x170 (PC EN). Returns the selected path/actor index, or 0 when no valid path is "
+        "found."
     ),
 )
 
 stable.fn(
-    "Room_IsInActiveList",
+    "Entity_IsInActiveList",
     "8B 44 24 04 8B 0D ?? ?? ?? ?? 48",
     hook=10,
     ret="int32_t",
     params=[
         param(
             "int32_t",
-            "room_index_one_based",
-            doc="1-based room index checked against the current level room table.",
+            "entity_index_one_based",
+            doc="1-based entity index checked against the current level entity table.",
         ),
     ],
     doc=(
-        "Returns 1 when room_index_1based is present in the active room list. "
-        "The function converts the 1-based index to a room pointer and compares it "
-        "against the active-room pointer list populated by Camera_UpdateFollow."
+        "Returns 1 when entity_index_one_based is present in the active entity work list. "
+        "The function converts the 1-based index to an entity-slot pointer and compares it "
+        "against the active-entity pointer list populated by Camera_UpdateFollow."
     ),
 )
 
@@ -4569,12 +4722,17 @@ stable.fn(
     "Actor_SetProperty",
     "00 00 83 F9 09 0F 87 ??",
     match=-51,
-    ret="int32_t*",
+    ret="void",
     params=[
-        param("Entity_State*", "entity"),
+        param(
+            "Entity_State*",
+            "entity",
+            doc="Entity-slot input; the routine bridges through the active actor/record link before writing actor property/default fields.",
+        ),
         param("Actor_PropId", "prop_id"),
         param("int32_t", "value"),
     ],
+    doc="Applies a property update through entity/active-actor state. Observed callers ignore the residual register value; no stable pointer return is modeled.",
 )
 
 stable.fn(
@@ -4618,9 +4776,9 @@ stable.fn(
         ),
     ],
     doc=(
-        "Tears down an actor's entity-slot state. It detaches or marks any linked actor, "
-        "clears attachment and script entity-slot fields, resets component_array to actor-local "
-        "storage, and optionally restores default collision state when restore_defaults is nonzero."
+        "Tears down an actor's entity-slot state. It detaches or marks any linked actor, clears "
+        "attachment and script entity-slot fields, resets component_array to actor-local storage, and "
+        "optionally restores default collision state when restore_defaults is nonzero."
     ),
 )
 
@@ -4674,6 +4832,11 @@ stable.fn(
         param("Entity_State*", "source_entity"),
         param("Actor_State*", "actor_list"),
     ],
+    doc=(
+        "Updates level-local Entity_State visibility/spawn state, active actor ownership, and active "
+        "entity work-list membership; native code at pcdogs.exe+0x06D50 (PC EN) reads "
+        "current_level_data entity slots and Entity_State.active_actor."
+    ),
 )
 
 stable.fn(
@@ -4682,6 +4845,11 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[param("Camera_Runtime*", "camera")],
+    doc=(
+        "Camera follow/update path that swaps active entity/navigation work-list buffers and queues "
+        "entity slots for visibility/update work; pcdogs.exe+0x55D30 (PC EN), pcdogs.exe+0x55D3C (PC "
+        "EN), pcdogs.exe+0x55ED8 (PC EN), and pcdogs.exe+0x56850 (PC EN) are engine-owned pointer cells."
+    ),
 )
 
 stable.fn(
@@ -4693,7 +4861,7 @@ stable.fn(
         param(
             "Camera_TransitionState*",
             "current_camera",
-            doc="Live camera state whose embedded pose at +0x04 is eased toward target_pose.",
+            doc="Live camera state whose embedded pose at +0x04 (PC EN) is eased toward target_pose.",
         ),
         param(
             "Camera_Pose*",
@@ -4708,7 +4876,7 @@ stable.fn(
         param(
             "int32_t",
             "recompute_eye_from_angles",
-            doc="Nonzero interpolates the first two angle words and recomputes eye position from target distance instead of directly interpolating eye components.",
+            doc="Nonzero interpolates the first two angle words and recomputes eye position from target distance.",
         ),
     ],
     doc=(
@@ -4789,10 +4957,10 @@ stable.fn(
         )
     ],
     doc=(
-        "Checks and updates the actor's ground-friction state. It reads the actor record "
-        "at actor +0xF4, calls Physics_CalculateFrictionForce when the record +0x71 byte "
-        "is clear, stores the friction result at record +0x10, and writes status 3 or 0 "
-        "to record +0x0E."
+        "Checks and updates the actor's ground-friction state. It reads the actor record at "
+        "actor+0xF4 (PC EN), calls Physics_CalculateFrictionForce when the record+0x71 (PC EN) byte "
+        "is clear, stores the friction result at record+0x10 (PC EN), and writes status 3 or 0 to "
+        "record+0x0E (PC EN)."
     ),
 )
 
@@ -4805,11 +4973,29 @@ stable.fn(
 )
 
 stable.fn(
-    "Entity_GetActiveActor",
-    "8B 15 ?? ?? ?? ?? 85 D2 74 ?? 66",
+    "Entity_GetActiveActorFromList",
+    "8B 15 ?? ?? ?? ?? 85 D2 74 42 66 83 7A 0A 00 76 3B",
     hook=6,
     ret="Actor_State*",
     params=[],
+    doc=(
+        "Returns the active actor from the current level entity slots; pcdogs.exe+0x09560 (PC "
+        "EN) checks current_level_data->current_entity_index and Entity_State.active_actor, then uses "
+        "pcdogs.exe+0x55D30 (PC EN) as a count bound."
+    ),
+)
+
+stable.fn(
+    "Camera_UpdateShakeOffset",
+    "55 8B EC 51 8B 4D 08 66 8B 81 D4 00 01 00",
+    hook=6,
+    ret="void",
+    params=[param("Camera_Runtime*", "camera")],
+    doc=(
+        "Applies late camera shake/offset state after Camera_UpdateFollow by using the camera+0x100D4 "
+        "(PC EN) countdown, +0x100D6 (PC EN) intensity, and shake lookup table before adjusting "
+        "camera/source and target vector components."
+    ),
 )
 
 stable.fn(
@@ -4837,24 +5023,32 @@ stable.fn(
         )
     ],
     doc=(
-        "Adjusts the global level/render scale from measured_fps during Render_Frame. "
-        "For eligible game modes and measured_fps in the 10..30 range, it stores "
-        "int(reciprocal_lookup_table * level_scale_factor * measured_fps) into the "
-        "global level scale and render_list_state +0xB8; above 30 FPS it restores "
-        "int(level_scale_factor)."
+        "Adjusts the global level/render scale from measured_fps during Render_Frame. For eligible "
+        "game modes and measured_fps in the 10..30 range, it stores int(reciprocal_lookup_table * "
+        "level_scale_factor * measured_fps) into the global level scale and render_list_state +0xB8 "
+        "(PC EN); above 30 FPS it restores int(level_scale_factor)."
     ),
 )
 
 stable.fn(
-    "Level_InitializeActorSystem", "51 53 33 DB 57 89 1D ??", ret="int16_t", params=[]
+    "Level_InitializeActorSystem",
+    "51 53 33 DB 57 89 1D ??",
+    ret="void",
+    params=[],
+    doc=(
+        "Initializes actor/entity runtime lists, dispatch/collision/movement callback globals, "
+        "and the active entity/navigation work-list backing buffers for the loaded level. "
+        "The pcdogs.exe+0x09750 (PC EN) path seeds the navigation/work-list pointer cells and clears the backing-buffer span."
+    ),
 )
 
 stable.fn(
-    "Actor_ProcessSnapAndRoomUpdate",
+    "Actor_ProcessSnapAndEntityUpdate",
     "00 00 00 75 ?? 51 E8 ??",
     match=-51,
     ret="int32_t*",
     params=[param("Actor_State*", "actor")],
+    doc=("Snap/entity update callback used by movement/render dispatch paths."),
 )
 
 stable.fn(
@@ -4867,19 +5061,15 @@ stable.fn(
             "Actor_State*",
             "actor",
             doc=(
-                "Actor whose input-driven movement state is processed. Hook users should "
-                "not treat this parameter alone as authoritative current-player identity; "
-                "cross-check gameplay timing with render/behavior/camera/collision signals."
+                "Actor whose input-driven movement state is processed. Gameplay timing is cross-checked "
+                "with render, behavior, camera, and collision signals."
             ),
         )
     ],
     doc=(
-        "Processes camera-relative player movement for actor. It uses actor->record_ptr "
-        "at +0xF4 for input/player state and room index, builds a movement vector from "
-        "player_facing_angle - camera_yaw_angle, updates room movement state, applies "
-        "friction/velocity, and handles landing or auto-move camera transitions. The "
-        "movement hook may fire for actor-like records that are not sufficient by "
-        "themselves to prove the live controllable player actor."
+        "Processes camera-relative player movement for actor using actor->record_ptr at +0xF4 (PC "
+        "EN), player_facing_angle - camera_yaw_angle movement, entity movement "
+        "state, friction/velocity integration, and collision/trigger transitions."
     ),
 )
 
@@ -4891,10 +5081,7 @@ stable.fn(
         param(
             "Actor_State*",
             "actor",
-            doc=(
-                "Actor being processed for player/AI behavior; hook users should validate "
-                "that this is the intended player before mutating state."
-            ),
+            doc="Actor being processed for player/AI behavior; state mutation depends on validating that this is the intended player.",
         )
     ],
 )
@@ -4934,10 +5121,8 @@ stable.fn(
     ],
     doc=(
         "Handles the player-death respawn transition. It decrements the record backup-puppy/life "
-        "count at +0x172 and saves it; a zero count triggers pause/game-over state and input flag "
-        "0x80000. Otherwise it clears loading/fade state, resets record death/respawn fields, "
-        "copies room spawn data back to actor, clears animation/velocity/spin state, and moves the "
-        "camera to either a bonus-reset target room or the current room spawn target."
+        "count at +0x172 (PC EN), saves it, and either enters pause/game-over state or clears "
+        "loading/fade/death fields before reinitializing player placement and sound."
     ),
 )
 
@@ -4976,6 +5161,11 @@ stable.fn(
         param("Collision_Polygon*", "collision_poly"),
         param("int32_t", "collision_depth"),
     ],
+    doc=(
+        "Actor-vs-actor collision response dispatcher. It receives a contextual "
+        "Collision_Polygon from the collision query, handles sentinel collision_depth "
+        "values, dispatches collision callback slots, and mutates actor response state."
+    ),
 )
 
 stable.fn(
@@ -4993,7 +5183,11 @@ stable.fn(
 )
 
 stable.fn(
-    "Level_CleanupActors", "A1 ?? ?? ?? ?? 57 85 C0 0F", ret="Level_Data*", params=[]
+    "Level_CleanupActors",
+    "A1 ?? ?? ?? ?? 57 85 C0 0F",
+    ret="void",
+    params=[],
+    doc="Destroys/cleans level actor state and returns transition status.",
 )
 
 stable.fn(
@@ -5094,11 +5288,10 @@ stable.fn(
         ),
     ],
     doc=(
-        "Computes the normalized Q12 spline/easing parameter between two animation keyframes. "
-        "sample_time is compared against the previous and next packed key times; the interval "
-        "reciprocal comes from a lookup table when possible. prev_key_packed and next_ease_index "
-        "select easing/control records stored before keyframe_data, and the returned Q12 weight is "
-        "used by vector/quaternion keyframe interpolation."
+        "Computes the normalized Q12 spline/easing parameter between two animation keyframes, using "
+        "the previous/next packed key times, an interval reciprocal lookup when available, and "
+        "easing/control records stored before keyframe_data. The returned Q12 weight feeds "
+        "vector/quaternion keyframe interpolation."
     ),
 )
 
@@ -5224,11 +5417,9 @@ stable.fn(
         ),
     ],
     doc=(
-        "Returns whether a spline channel is active at sample_time. Constant/sentinel channels "
-        "compare sample_time against packed_first_key as a start threshold. Keyed channels convert "
-        "sample_time into channel time, locate the active packed keyframe by linear scan or binary "
-        "search, and return that keyframe's high-bit active flag; low channel_flags bits control "
-        "wrapping at the end of the channel."
+        "Returns whether a spline channel is active at sample_time, with constant channels using "
+        "packed_first_key as a start threshold and keyed channels locating the active packed keyframe "
+        "by scan or binary search. Low channel_flags bits control end-of-channel wrapping."
     ),
 )
 
@@ -5252,11 +5443,10 @@ stable.fn(
         param("int16_t*", "out_value", doc="Receives the sampled int16 channel value."),
     ],
     doc=(
-        "Samples a scalar animation spline channel at sample_time, writes the int16 result to "
-        "out_value, and returns the same sample value when observed by callers. Constant/sentinel "
-        "channels write packed_first_key >> 12. Keyed channels find neighboring packed keyframes, "
-        "call Animation_CalculateSplineParameter for the Q12 easing parameter, then evaluate a cubic "
-        "Hermite-style fixed-point blend of key values and tangents."
+        "Samples a scalar animation spline channel at sample_time and writes the int16 result to "
+        "out_value. Constant channels write packed_first_key >> 12, while keyed channels find "
+        "neighboring keys, compute the Q12 easing parameter, and evaluate a cubic Hermite-style "
+        "fixed-point blend."
     ),
 )
 
@@ -5280,16 +5470,14 @@ stable.fn(
         param(
             "void*",
             "actor_or_mesh_state",
-            doc="Render/actor mesh state whose +0x100 morph table feeds output buffers at +0x90 and +0x70.",
+            doc="Render/actor mesh state whose +0x100 (PC EN) morph table feeds output buffers at +0x90 (PC EN) and +0x70 (PC EN).",
         ),
     ],
     doc=(
-        "Transforms or copies morphed vertex and normal buffers for a render/actor mesh state. "
-        "The sentinel path copies the base morph table selected through actor_or_mesh_state +0x100 "
-        "into output buffers at +0x90 and +0x70. Otherwise it evaluates active morph channel weights "
-        "with Animation_CalculateSplineParameter, resets the base buffers, and accumulates weighted "
-        "morph deltas into the same output vertex/normal buffers. Observed callers use this for side "
-        "effects and ignore any register value."
+        "Transforms or copies morphed vertex and normal buffers for a render/actor mesh state. The "
+        "sentinel path copies the base morph table selected through actor_or_mesh_state+0x100 (PC "
+        "EN), while the keyed path evaluates active morph weights and accumulates weighted deltas "
+        "into output buffers at +0x90 (PC EN) and +0x70 (PC EN)."
     ),
 )
 
@@ -5308,12 +5496,12 @@ stable.fn(
         param(
             "Animation_SplineChannel*",
             "bone_channels",
-            doc="Bone/skin channel array; channel_flags bit 0x40 enables this weighted vertex path.",
+            doc="Bone/skin channel array; channel_flags bit 0x40 selects this weighted vertex path.",
         ),
         param(
             "Actor_State*",
             "actor",
-            doc="Actor/render state whose skin table at +0xb0 and scene vertex buffer at +0x70 are updated.",
+            doc="Actor/render state whose skin table at +0xB0 (PC EN) and scene vertex buffer at +0x70 (PC EN) are updated.",
         ),
         param(
             "void*",
@@ -5322,13 +5510,10 @@ stable.fn(
         ),
     ],
     doc=(
-        "Transforms weighted/skinned vertices for a mesh piece using animation bone channels. A disabled "
-        "channel array returns without side effects. A keyframe_table_or_minus_one_sentinel == -1 sentinel selects one skin table "
-        "from actor->visual_morph_or_skin_target_table (+0xb0) and blends it at weight 0x1000. Otherwise the function "
-        "evaluates each active Animation_SplineChannel with Animation_CalculateSplineParameter, initializes "
-        "the mesh_piece vertex span from the base skin table, accumulates weighted xyz deltas into "
-        "actor->scene_vertex_data (+0x70), then recomputes normals with Bone_ComputeNormals_PostTransform. "
-        "Observed callers use it only for side effects."
+        "Transforms weighted/skinned vertices for a mesh piece using animation bone channels. The "
+        "sentinel path blends one skin table from actor->visual_morph_or_skin_target_table+0xB0 (PC "
+        "EN), while the keyed path evaluates active spline channels, updates "
+        "actor->scene_vertex_data+0x70 (PC EN), and recomputes normals."
     ),
 )
 
@@ -5342,7 +5527,10 @@ stable.fn(
         param(
             "Actor_State*",
             "actor",
-            doc="Actor/render state containing transformed vertices at +0x70, face records at +0x6c, and normal accumulators at +0x74.",
+            doc=(
+                "Actor/render state containing transformed vertices at +0x70 (PC EN), face records at +0x6C "
+                "(PC EN), and normal accumulators at +0x74 (PC EN)."
+            ),
         ),
         param(
             "void*",
@@ -5351,12 +5539,10 @@ stable.fn(
         ),
     ],
     doc=(
-        "Computes post-transform face normals for a mesh piece, and optionally accumulates and normalizes "
-        "per-vertex normals. For each face it reads transformed vertices from actor->scene_vertex_data "
-        "(+0x70), computes a cross-product normal, normalizes it with Math_Sqrt_FP12, updates the face "
-        "normal/depth record and flags, and when mesh_piece flags bit0 is set adds the face normal into "
-        "the actor normal accumulator (+0x74) before normalizing the affected vertex span. Observed callers "
-        "use this for side effects only."
+        "Computes post-transform face normals for a mesh piece, with transformed vertices from "
+        "actor->scene_vertex_data+0x70 (PC EN). When mesh_piece flags bit0 is set, face normals "
+        "accumulate into actor normal storage at +0x74 (PC EN) before affected vertices are "
+        "normalized."
     ),
 )
 
@@ -5374,7 +5560,7 @@ stable.fn(
         param(
             "Actor_State*",
             "actor",
-            doc="Actor/render state whose transformed vertex buffer at +0x70 and normal accumulator at +0x74 are updated.",
+            doc="Actor/render state whose transformed vertex buffer at +0x70 (PC EN) and normal accumulator at +0x74 (PC EN) are updated.",
         ),
         param(
             "int16_t**",
@@ -5388,12 +5574,11 @@ stable.fn(
         ),
     ],
     doc=(
-        "Blends up to four weighted skin/bone vertex tables into the actor transformed vertex buffer for "
-        "one mesh piece, then recomputes normals. If weights[1] is zero, it copies the first skin table "
-        "through Bone_InitVertexBuffer_FromSkin. Otherwise it writes the first weighted table, accumulates "
-        "subsequent nonzero weighted tables, clears touched vertex-normal accumulators for the first pass, "
-        "and finishes by calling Bone_ComputeNormals_PostTransform. Observed callers use this for side "
-        "effects only."
+        "Blends up to four weighted skin/bone vertex tables into the actor transformed vertex buffer "
+        "for one mesh piece, then recomputes normals. A zero second weight copies the first skin "
+        "table directly; otherwise the routine writes the first weighted table, accumulates remaining "
+        "nonzero weights, clears touched normal accumulators, and calls "
+        "Bone_ComputeNormals_PostTransform."
     ),
 )
 
@@ -5449,7 +5634,7 @@ stable.fn(
         param(
             "Scene_Node*",
             "parent_node",
-            doc="Parent node transform source; +0x2c matrix and +0x40 position are used for world composition.",
+            doc="Parent node transform source; +0x2C (PC EN) matrix and +0x40 (PC EN) position are used for world composition.",
         ),
         param(
             "Scene_Node*",
@@ -5458,11 +5643,11 @@ stable.fn(
         ),
     ],
     doc=(
-        "Updates one scene node's animated local channels and composes its world transform from the parent "
-        "node. It skips nodes with anim_seq_index == -1, samples position, rotation, scale/scalar channels "
-        "when present, handles type 1/6 weighted vertex animation through Bone_TransformVertices_Weighted, "
-        "handles type 8 scalar pairs, then writes the node world position, velocity delta, and world rotation "
-        "matrix from the parent transform."
+        "Updates one scene node's animated local channels and composes its world transform from the "
+        "parent node. It skips nodes with anim_seq_index == -1, samples position, rotation, "
+        "scale/scalar channels when present, handles type 1/6 weighted vertex animation through "
+        "Bone_TransformVertices_Weighted, handles type 8 scalar pairs, then writes the node world "
+        "position, velocity delta, and world rotation matrix from the parent transform."
     ),
 )
 
@@ -5500,11 +5685,9 @@ stable.fn(
         )
     ],
     doc=(
-        "Initializes the Windows MCI AVI video subsystem. It resets avi_movie_counter, sends the "
-        'global "open avivideo" command, stores and returns the success flag in '
-        "avi_player_initialized, and on success parses window_handle_text into avi_window_handle. "
-        "Observed MCI calls in this build pass null callback/window handles, so the parsed handle is "
-        "retained state rather than consumed by this routine."
+        "Initializes the Windows MCI AVI video subsystem by resetting avi_movie_counter, sending the "
+        "global open-avivideo command, and storing the success flag in avi_player_initialized. On "
+        "success it parses window_handle_text into retained AVI window-handle state."
     ),
 )
 
@@ -5515,6 +5698,7 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[],
+    doc='Sends the MCI "close avivideo" command, clears avi_player_initialized, and returns the MCI status/result.',
 )
 
 stable.fn(
@@ -5565,7 +5749,10 @@ stable.fn(
     "8B 44 24 08 8B 08 41 89 08 8B C1 8B 4C 24 04 8A 40 ?? 88 81 ?? ?? ?? ?? C3",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "script_cursor_inout")],
-    doc="Consumes one script byte from *script_cursor_inout and stores it in the actor entity-slot selector byte at offset 0x140.",
+    doc=(
+        "Consumes one script byte from *script_cursor_inout and stores it in the actor entity-slot "
+        "selector byte at offset +0x140 (PC EN)."
+    ),
 )
 
 stable.fn(
@@ -5574,8 +5761,9 @@ stable.fn(
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "script_cursor_inout")],
     doc=(
-        "Reads a 16-bit relative target and selector byte, then restores *script_cursor_inout to the target "
-        "when the selector does not match actor+0x140; an unset actor entity-slot selector compares as 1."
+        "Reads a 16-bit relative target and selector byte, then restores *script_cursor_inout to the "
+        "target when the selector differs from actor+0x140 (PC EN); an unset actor entity-slot "
+        "selector compares as 1."
     ),
 )
 
@@ -5608,7 +5796,7 @@ stable.fn(
         "Resolves and returns an animation/movement progress variable by selector. The selector is "
         "stored as a byte by Actor_ProcessMovementBehavior; this wrapper adds 9 and passes that refId "
         "to Script_ResolveVariableRef with a null actor, so selectors map to level/global script "
-        "variables rather than actor-local fields."
+        "variables."
     ),
 )
 
@@ -5632,9 +5820,9 @@ stable.fn(
     ],
     doc=(
         "Resolves an animation/movement progress variable by selector, writes progress_value to the "
-        "resolved int32 storage, and returns that resolved pointer. The selector is used as a byte, "
-        "offset by +9, and resolved through Script_ResolveVariableRef with a null actor, matching "
-        "Animation_GetProgress. Observed callers ignore the returned pointer."
+        "resolved int32 storage, and returns that resolved pointer. The selector is byte-sized, "
+        "offset by +9 (PC EN), and resolved through Script_ResolveVariableRef with a null actor, "
+        "matching Animation_GetProgress."
     ),
 )
 
@@ -5748,7 +5936,7 @@ stable.fn(
     match=-75,
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
-    doc="Parses a path-trace command from *ip, resolves special entity-slot/actor selectors against current_level_data->room_array, snapshots transient actor path-result state, and invokes Actor_TracePath before advancing the script pointer.",
+    doc="Parses a path-trace command from *ip, resolves special entity-slot/actor selectors against current_level_data->entity_array, snapshots transient actor path-result state, and invokes Actor_TracePath before advancing the script pointer.",
 )
 
 stable.fn(
@@ -5757,7 +5945,7 @@ stable.fn(
     match=-19,
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
-    doc="Parses one navigation opcode from *ip and forwards it into the actor navigation queue. Opcode 0x67 derives the target entity slot from the current actor entry in current_level_data->room_array before calling Navigation_AddCommand.",
+    doc="Parses one navigation opcode from *ip and forwards it into the actor navigation queue. Opcode 0x67 derives the target entity slot from the current actor entry in current_level_data->entity_array before calling Navigation_AddCommand.",
 )
 
 stable.fn(
@@ -5824,14 +6012,14 @@ stable.fn(
         param(
             "Entity_State*",
             "source_entity",
-            doc="Source entity whose active actor pointer at +0x128 is returned or spawned when camera activation requires it.",
+            doc="Source entity whose active actor pointer at +0x128 (PC EN) is returned or spawned when camera activation requires it.",
         )
     ],
     doc=(
-        "Ensures a source entity has an active actor for script/camera activation paths. If the "
-        "source entity already has an active actor pointer, it returns that actor. Otherwise, when source entity "
-        "flag bits 0x0c00 are not already 0x0400, it clears bit 0x0800, sets bit 0x0400, and calls "
-        "Entity_SpawnActor(source_entity). If the source entity is already marked 0x0400 but has no actor, it returns null."
+        "Ensures a source entity has an active actor for script/camera activation paths. Existing "
+        "active actors are returned directly; otherwise the function toggles the source entity "
+        "activation bits and calls Entity_SpawnActor(source_entity), returning null when the entity "
+        "is already marked active without an actor."
     ),
 )
 
@@ -5905,10 +6093,10 @@ stable.fn(
         param(
             "int16_t",
             "round_param",
-            doc="Round/minigame parameter stored in the global word at 0x00634416.",
+            doc="Round/minigame parameter stored in the global word at pcdogs.exe+0x234416 (PC EN).",
         ),
     ],
-    doc="Initializes mini-game round globals by setting the round counter/default at 0x00634414 to 10 and storing roundParam at 0x00634416.",
+    doc="Initializes mini-game round globals by setting the round counter/default at pcdogs.exe+0x234414 (PC EN) to 10 and storing roundParam at pcdogs.exe+0x234416 (PC EN).",
 )
 
 stable.fn(
@@ -6058,10 +6246,8 @@ stable.fn(
     ],
     doc=(
         "Enumerates legal moves from one checkers board coordinate into a cursor of "
-        "four-int move records. Validated against IDA and Ghidra decompilation at "
-        "0x4124e0: the function reads a board pointer, source row/column, and an "
-        "int32_t** cursor, copies the 32-byte board for recursive capture expansion, "
-        "and has no semantic return value."
+        "four-int move records. The function reads a board pointer, source row/column, and an "
+        "int32_t** cursor, then copies the 32-byte board for recursive capture expansion."
     ),
 )
 
@@ -6184,7 +6370,12 @@ stable.fn(
 )
 
 stable.fn(
-    "Resource_UnloadGameData", "56 33 F6 56 E8 ??", hook=9, ret="Level_Data*", params=[]
+    "Resource_UnloadGameData",
+    "56 33 F6 56 E8 ??",
+    hook=9,
+    ret="void",
+    params=[],
+    doc="Unloads active game data, clears runtime callbacks/flags, and returns cleanup status.",
 )
 
 stable.fn(
@@ -6233,10 +6424,10 @@ stable.fn(
         param("Mesh_NodeExtended*", "mesh_node"),
     ],
     doc=(
-        "Samples a vertex-color animation controller and writes clamped RGB bytes "
-        "to the Mesh_RuntimeVertex buffer at meshNode +0x70. Keyframes store signed "
-        "RGB deltas and Q12 interpolation factors; target rows provide vertex index, "
-        "optional frame offset, and base RGB."
+        "Samples a vertex-color animation controller and writes clamped RGB bytes to the "
+        "Mesh_RuntimeVertex buffer at meshNode+0x70 (PC EN). Keyframes store signed RGB deltas and "
+        "Q12 interpolation factors; target rows provide vertex index, optional frame offset, and base "
+        "RGB."
     ),
 )
 
@@ -6356,7 +6547,10 @@ stable.fn(
     "B8 48 00 08 00 E8 ??",
     ret="void",
     params=[param("Material_TableEntry*", "material_entry")],
-    doc="Loads a material table entry's runtime descriptor into DirectDraw texture surfaces; cdecl void despite stale decompiler return artifacts.",
+    doc=(
+        "Loads a material table entry's runtime descriptor into DirectDraw texture surfaces; cdecl "
+        "void despite decompiler return artifacts."
+    ),
 )
 
 stable.fn(
@@ -6457,7 +6651,10 @@ stable.fn(
             doc="Packed color used for the bottom two quad vertices after blend-byte insertion.",
         ),
     ],
-    doc="Draws a textured screen-space quad using the material's texture/frame dimensions as width and height; used by font rendering callers but not font-specific.",
+    doc=(
+        "Draws a textured screen-space quad using the material's texture/frame dimensions as width "
+        "and height; used by font rendering callers but not font-specific."
+    ),
 )
 
 stable.fn(
@@ -6532,7 +6729,11 @@ stable.fn(
         param("Render_ClipAttribute*", "output_attributes"),
         param("int32_t*", "in_out_vertex_count"),
     ],
-    doc="Clips a polygon against one plane. Reads and updates inOutVertexCount; copies inside vertices and emits interpolated edge intersections into the output vertex and attribute buffers. Returns 1 when at least three vertices remain, otherwise 0.",
+    doc=(
+        "Clips a polygon against one plane, updating inOutVertexCount while copying inside vertices "
+        "and emitting interpolated edge intersections into the output vertex and attribute buffers. "
+        "Returns 1 when at least three vertices remain, otherwise 0."
+    ),
 )
 
 stable.fn(
@@ -6603,7 +6804,11 @@ stable.fn(
         param("int32_t", "unused_or_mode"),
         param("int32_t", "brighten_colors"),
     ],
-    doc="Clipped quad helper used by Render_DrawQuad. Builds/clips vertices from batch data; brightenColors doubles/clamps vertex RGB when nonzero. The fourth argument is passed by callers but not observed to affect behavior.",
+    doc=(
+        "Clipped quad helper used by Render_DrawQuad, building and clipping vertices from batch data. "
+        "brightenColors doubles/clamps vertex RGB when nonzero; the fourth argument is passed by "
+        "callers but has no observed effect."
+    ),
 )
 
 stable.fn(
@@ -6613,7 +6818,7 @@ stable.fn(
     hook=8,
     ret="int32_t",
     params=[param("Render_PolygonBatchRecord*", "batch")],
-    doc="Issues or queues draw work for one transformed polygon batch and returns 1 on normal exit; the return is not an error/status code.",
+    doc="Issues or queues draw work for one transformed polygon batch and returns 1 on normal exit.",
 )
 
 stable.fn(
@@ -7115,7 +7320,7 @@ stable.fn(
         param("int32_t", "min_value"),
         param("int32_t", "max_value"),
     ],
-    doc="Sets DIPROP_RANGE for joystick Rz axis offset 0x14 and returns 1 on success.",
+    doc="Sets DIPROP_RANGE for joystick Rz axis offset +0x14 (PC EN) and returns 1 on success.",
 )
 
 stable.fn(
@@ -7159,7 +7364,7 @@ stable.fn(
     hook=9,
     ret="int32_t",
     params=[param("DInput_IDirectInputDevice*", "device")],
-    doc="Sets the device data format to the 0x50-byte joystick state DInput_DataFormat at 0x44D198.",
+    doc="Sets the device data format to the 0x50-byte joystick state DInput_DataFormat at pcdogs.exe+0x4D198 (PC EN).",
 )
 
 stable.fn(
@@ -7169,7 +7374,7 @@ stable.fn(
     hook=9,
     ret="int32_t",
     params=[param("DInput_IDirectInputDevice*", "device")],
-    doc="Sets the device data format to the 0x110-byte extended joystick state DInput_DataFormat at 0x44D1B0.",
+    doc="Sets the device data format to the 0x110-byte extended joystick state DInput_DataFormat at pcdogs.exe+0x4D1B0 (PC EN).",
 )
 
 stable.fn(
@@ -7204,7 +7409,10 @@ stable.fn(
     hook=7,
     ret="int32_t",
     params=[param("DInput_JoystickState*", "state")],
-    doc="Returns DInput_JoystickState.lRz (offset 0x14), the raw twist/alternate horizontal axis sampled by Input_ReadGamepad.",
+    doc=(
+        "Returns DInput_JoystickState.lRz (offset +0x14 (PC EN)), the raw twist/alternate horizontal "
+        "axis sampled by Input_ReadGamepad."
+    ),
 )
 
 stable.fn(
@@ -7316,7 +7524,7 @@ stable.fn(
         param("DDraw_IDirectDraw7*", "unused_ddraw"),
         param("char", "use_alt_video_rect"),
     ],
-    doc="Opens an RPL/movie file, selects the default or alternate video rectangle, initializes movie/video/playback/sound state, maps video, and starts the playback timer; the DirectDraw argument is not read by this wrapper.",
+    doc="Opens an RPL/movie file, selects the default or alternate video rectangle, initializes movie/video/playback/sound state, maps video, and starts the playback timer; the wrapper preserves the DirectDraw ABI argument.",
 )
 
 stable.fn(
@@ -7461,7 +7669,7 @@ stable.fn(
     hook=6,
     ret="void",
     params=[param("Component_TrailObject*", "trail")],
-    doc="Builds camera-facing animated trail polygon batches from Component_TrailObject/Trail_Segment data and links them into render buckets. Extra caller-pushed values are not read by the callee.",
+    doc="Builds camera-facing animated trail polygon batches from Component_TrailObject/Trail_Segment data and links them into render buckets.",
 )
 
 stable.fn(
@@ -7479,7 +7687,10 @@ stable.fn(
         ),
         param("int16_t*", "matrix"),
     ],
-    doc="Transforms weighted/skinned vertices for render using Scene_Node +0x90 runtime vertex records. Return is residual and ignored by callers.",
+    doc=(
+        "Transforms weighted/skinned vertices for render using Scene_Node+0x90 (PC EN) runtime vertex "
+        "records. Return is residual and ignored by callers."
+    ),
 )
 
 stable.fn(
@@ -7517,7 +7728,12 @@ stable.fn(
         param("Render_SpriteVertexData*", "transformed_vertices"),
         param("int32_t", "vertex_count"),
     ],
-    doc="When graphics bit 0x1000 is active, accumulates per-vertex normals for 0x18-byte render polygon refs into the 0x494848 Mesh_VertexNormal scratch array using transformed vertex positions. Quads average two triangle normals; triangles touch three vertices. The only observed caller ignores the residual return register.",
+    doc=(
+        "When graphics bit 0x1000 is active, accumulates per-vertex normals for 0x18-byte render "
+        "polygon refs into the Mesh_VertexNormal scratch array at pcdogs.exe+0x94848 (PC EN). Quads "
+        "average two triangle normals, triangles touch three vertices, and the only observed caller "
+        "ignores residual return state."
+    ),
 )
 
 stable.fn(
@@ -7564,7 +7780,11 @@ stable.fn(
         param("int16_t", "collision_radius"),
         param("int32_t", "collision_mode"),
     ],
-    doc="Builds a stack collision query from fromPos/toPos, optional matrix/basis fields at +0x2c, and radius thresholds, calls Collision_DetectActorCollisions, and returns 0x1000 minus the clipped travel fraction.",
+    doc=(
+        "Builds a stack collision query from fromPos/toPos, optional matrix/basis fields at +0x2C (PC "
+        "EN), and radius thresholds, calls Collision_DetectActorCollisions, and returns 0x1000 minus "
+        "the clipped travel fraction."
+    ),
 )
 
 stable.fn(
@@ -7585,7 +7805,11 @@ stable.fn(
         param("Actor_State*", "actor"),
         param("int32_t*", "out_world_pos"),
     ],
-    doc="Transforms an actor ground-contact barycentric state into world coordinates, writes outWorldPos[0..2], and returns outWorldPos.",
+    doc=(
+        "Transforms actor ground-contact barycentric state into world coordinates, writes "
+        "outWorldPos[0..2], and returns outWorldPos. actor+0xE8 (PC EN) ground_collision_node "
+        "and actor+0xEC (PC EN) ground_contact_ptr form paired native collision context."
+    ),
 )
 
 stable.fn(
@@ -7629,7 +7853,11 @@ stable.fn(
         param("Collision_Polygon*", "polygon"),
         param("int32_t*", "edge_index_in_out"),
     ],
-    doc="Decodes polygon edge adjacency. A zero adjacency clears edgeIndexInOut to -1 and returns NULL; otherwise returns the neighboring polygon only when its flags include bit 0x4.",
+    doc=(
+        "Decodes polygon edge adjacency from adj_face_ptr +0x0C (PC EN) + edge*2, where a zero "
+        "adjacency clears edgeIndexInOut to -1 and returns NULL. Nonzero adjacency returns the "
+        "neighboring polygon only when its flags include bit 0x4."
+    ),
 )
 
 stable.fn(
@@ -7642,9 +7870,8 @@ stable.fn(
         param("Collision_Polygon* *", "out_polygon"),
     ],
     doc=(
-        "Finds or walks to the ground/contact polygon under actor. Returns the actor "
-        "collision node/ground mesh pointer and optionally writes the resolved "
-        "polygon/contact record."
+        "Finds or walks to the ground/contact polygon under actor and returns "
+        "actor->ground_collision_node; the paired ground_contact_ptr context stays opaque."
     ),
 )
 
@@ -7674,7 +7901,7 @@ stable.fn(
         param("int16_t*", "from_point"),
         param("int16_t*", "to_point"),
     ],
-    doc="Returns the crossed polygon edge index in range 0..3, or -1 when the segment does not cross an eligible edge.",
+    doc="Returns the crossed polygon edge index in range 0..3, or -1 for no eligible edge crossing.",
 )
 
 stable.fn(
@@ -7686,6 +7913,10 @@ stable.fn(
         param("Actor_State*", "actor"),
         param("Collision_Polygon* *", "out_polygon"),
     ],
+    doc=(
+        "Thin wrapper around Collision_FindGroundPolygonUnderActor for actor/out_polygon. "
+        "This forwards directly to the ground-contact helper while Actor_State.ground_contact_ptr stays opaque."
+    ),
 )
 
 stable.fn(
@@ -7694,6 +7925,11 @@ stable.fn(
     hook=6,
     ret="void*",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Resolves actor collision against collision nodes, polygon arrays, and paired "
+        "ground/contact state. Native writes update actor+0xE8 (PC EN) and actor+0xEC (PC EN) together, "
+        "or clear both when contact ends; ground_contact_ptr stays opaque."
+    ),
 )
 
 stable.fn(
@@ -7851,9 +8087,9 @@ stable.fn(
     ret="void",
     params=[param("char", "include_current_puppy")],
     doc=(
-        "Commit the current level's completion, puppy, bone, and bonus-item progress into "
-        "the save-state globals. A zero includeCurrentPuppy value stores one less than the "
-        "current level puppy count; non-zero stores the full count."
+        "Commit the current level's completion, puppy, bone, and bonus-item progress into the "
+        "save-state globals. A zero includeCurrentPuppy value stores one less than the current level "
+        "puppy count; non-zero stores the full count."
     ),
 )
 
@@ -7886,8 +8122,9 @@ stable.fn(
     "?? ?? 8B F0 52 4E E8 ??",
     match=-51,
     hook=7,
-    ret="void*",
+    ret="void",
     params=[],
+    doc="Initializes level save/progress state and returns helper status.",
 )
 
 stable.fn(
@@ -7969,7 +8206,13 @@ stable.fn(
     params=[],
 )
 
-stable.fn("Menu_UpdatePauseMenu", "A1 ?? ?? ?? ?? 66 8B 0D", ret="int32_t*", params=[])
+stable.fn(
+    "Menu_UpdatePauseMenu",
+    "A1 ?? ?? ?? ?? 66 8B 0D",
+    ret="BOOL",
+    params=[],
+    doc="Updates in-level pause/save menu state and returns a scalar handled/continue status.",
+)
 
 stable.fn(
     "UI_UpdateBoneCounter",
@@ -8039,7 +8282,7 @@ stable.fn(
     required=Required.EN,
     ret="BOOL",
     params=[],
-    doc="EN-only standalone helper used by Menu_UpdatePauseMenu; returns true when menu_state is 11 or 12, the active in-level states used by pause/save UI paths. EU/SC use a different inlined/nearby state gate and do not contain this exact helper body.",
+    doc="EN-only standalone helper used by Menu_UpdatePauseMenu; returns true when menu_state is 11 or 12, the active in-level states used by pause/save UI paths. EU/SC use a different inlined/nearby state gate and omit this exact helper body.",
 )
 
 stable.fn(
@@ -8092,10 +8335,10 @@ stable.fn(
         param(
             "Pkg_ActorRecord*",
             "record",
-            doc="Player record whose +0x74 counter is reset to 4.",
+            doc="Player record whose +0x74 (PC EN) counter is reset to 4.",
         ),
     ],
-    doc="Reset the player record +0x74 counter to 4 and return the record pointer.",
+    doc="Resets the player record+0x74 (PC EN) counter to 4 and returns the record pointer.",
 )
 
 stable.fn(
@@ -8164,8 +8407,17 @@ stable.fn(
     params=[
         param("int32_t", "slot_index"),
         param("int32_t", "y"),
-        param("char*", "save_data"),
+        param(
+            "int32_t",
+            "allow_save",
+            doc="Save/load mode flag; slot data is read from the global save_game_buffer, not from this parameter.",
+        ),
     ],
+    doc=(
+        "Render the save/load slot list from the global save-file buffer. The third "
+        "argument is a mode flag, while the native return is render-helper status "
+        "ignored by known callers."
+    ),
 )
 
 stable.fn(
@@ -8189,6 +8441,11 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[],
+    doc=(
+        "Updates menu one-shot pulse dwords at pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) "
+        "and held/debounce bytes at pcdogs.exe+0x9BABC (PC EN)..pcdogs.exe+0x9BAC1 (PC EN) from "
+        "player-1 input and keyboard state."
+    ),
 )
 
 stable.fn(
@@ -8201,7 +8458,11 @@ stable.fn(
         param("int32_t", "selected_slot"),
         param("int32_t", "allow_save"),
     ],
-    doc="Advance save/load menu state, update outResult[0..2], and start or poll save-game file operations as needed.",
+    doc=(
+        "Advance the save/load menu state machine, update outResult[0..2], and "
+        "start or poll save-game file operations over the 0x1dc save-file span. "
+        "Returns the selected level id through the public result."
+    ),
 )
 
 stable.fn(
@@ -8213,7 +8474,11 @@ stable.fn(
         param("uint8_t*", "out_prompt_a"),
         param("uint8_t*", "out_prompt_b"),
     ],
-    doc="Compares configured button-mapping rows and fills two 2-byte prompt descriptors, or writes 0xff markers when no pairing is found.",
+    doc=(
+        "Compares configured button-mapping rows and fills two 2-byte prompt "
+        "descriptors, or writes 0xff markers when no pairing is found; the return "
+        "is matched-index/-1 helper result."
+    ),
 )
 
 stable.fn(
@@ -8221,9 +8486,14 @@ stable.fn(
     "F3 A5 6A ??",
     match=-86,
     hook=11,
-    ret="int32_t",
+    ret="BOOL",
     params=[param("int32_t", "slot_index")],
-    doc="Copies the active save-state and collectible values into one save slot, then starts save-game operation 9.",
+    doc=(
+        "Copies the active save-state and collectible values into one save slot, "
+        "marks it valid, then starts save operation 9 over the 0x1dc file span. "
+        "Known menu callers ignore the BOOL/native return metadata from the "
+        "operation initializer."
+    ),
 )
 
 stable.fn(
@@ -8231,7 +8501,7 @@ stable.fn(
     "A1 ?? ?? ?? ?? ?? 56 48 57 C6 05 ?? ?? ?? ?? FF 0F 84",
     ret="int32_t",
     params=[],
-    doc="Advance the controls-configuration submenu state and return non-zero when the options menu should exit.",
+    doc="Advance the controls-configuration submenu state and return non-zero when the options menu is exiting.",
 )
 
 stable.fn(
@@ -8248,8 +8518,19 @@ stable.fn(
     match=-11,
     hook=6,
     ret="void",
-    params=[param("char*", "out_result"), param("int32_t", "selected_row")],
-    doc="Process options-menu input for selectedRow and update the three-byte menu result buffer.",
+    params=[
+        param(
+            "char*",
+            "out_result",
+            doc="Three-byte menu result buffer updated as out_result[0..2].",
+        ),
+        param("int32_t", "selected_row", doc="Options-menu row being processed."),
+    ],
+    doc=(
+        "Process options-menu input for selected_row and update out_result[0..2]. "
+        ""
+        "the public SDK contract stays void."
+    ),
 )
 
 stable.fn(
@@ -8409,6 +8690,10 @@ stable.fn(
     "E8 ?? ?? ?? ?? 85 C0 75 ?? 32",
     ret="int32_t",
     params=[],
+    doc=(
+        "Initialize the core memory/resource and DirectDraw-backed game engine subsystems; returns nonzero on "
+        "initialization success even though native WinMain ignores the status."
+    ),
 )
 
 stable.fn(
@@ -8416,6 +8701,7 @@ stable.fn(
     "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 90 90 90 90 90 90 51",
     ret="int32_t",
     params=[],
+    doc="Shuts down core game resource subsystems by releasing the DirectDraw device and tail-calling the memory extent leak/free sweep.",
 )
 
 stable.fn(
@@ -8508,6 +8794,7 @@ stable.fn(
     "A1 ?? ?? ?? ?? 53 33 DB 3B C3 74",
     ret="BOOL",
     params=[],
+    doc="Unloads the latched level_resource_handle when present, runs the title/menu cleanup branch, clears object/current-level state including current_level_data, and resets the current level id.",
 )
 
 stable.fn(
@@ -8573,7 +8860,7 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc=(
-        "Top-level level/menu loading state machine driven by level_load_state. Dispatches "
+        "Top-level level/menu loading state machine driven by level_menu_load_state. Dispatches "
         "states 0..10 through level_load_state_dispatch_table: title/common-resource setup, "
         "inter-level menu, world select, splash loading, and Game_TransitionToLevel; state 9 "
         "falls through to the idle/return path."
@@ -8629,7 +8916,10 @@ stable.fn(
             doc="Optional output buffer for the 8-byte Material_FrameSet header followed by frame pointers and 0x10-byte frame records.",
         ),
     ],
-    doc="Builds a 12-byte Material_RefEntry and optional Material_FrameSet for one material; frame records are zero-initialized except for the packed material-node reference at +0x0C.",
+    doc=(
+        "Builds a 12-byte Material_RefEntry and optional Material_FrameSet for one material; frame "
+        "records are zero-initialized except for the packed material-node reference at +0x0C (PC EN)."
+    ),
 )
 
 stable.fn(
@@ -8641,7 +8931,7 @@ stable.fn(
         param(
             "Material_Table*",
             "material_table",
-            doc="Material table/base whose +0x0c material-entry offset addresses 36-byte material records.",
+            doc="Material table/base whose +0x0C (PC EN) material-entry offset addresses 36-byte material records.",
         ),
         param(
             "Material_RefEntry*",
@@ -8794,7 +9084,14 @@ stable.fn(
     "Resource_AllocateWithHeader",
     "8B 44 24 04 56 83 C0 04 50 E8 ??",
     ret="uint32_t*",
-    params=[param("int32_t", "size")],
+    params=[
+        param(
+            "int32_t",
+            "size",
+            doc="Requested resource data size, excluding the hidden leading handle dword.",
+        )
+    ],
+    doc="Allocates size + 4 bytes, stores the allocation handle in the hidden leading dword, and returns the resource data pointer after that header; returns null if pointer lookup fails.",
 )
 
 stable.fn(
@@ -8802,7 +9099,14 @@ stable.fn(
     "8B 44 24 04 85 C0 74 ?? 56 8B 70 FC 56 E8 ??",
     hook=6,
     ret="BOOL",
-    params=[param("void*", "mem_ptr")],
+    params=[
+        param(
+            "void*",
+            "mem_ptr",
+            doc="Resource data pointer returned after the hidden handle dword.",
+        )
+    ],
+    doc="Releases a resource data pointer allocated by Resource_AllocateMemory/Resource_AllocateWithHeader by reading the hidden handle at mem_ptr - 4.",
 )
 
 stable.fn(
@@ -8812,6 +9116,11 @@ stable.fn(
     hook=8,
     ret="int32_t",
     params=[param("Component_Instance*", "comp"), param("Actor_State*", "other_actor")],
+    doc=(
+        "Triggers the component/actor collision callback path for comp against other_actor. "
+        "Uses engine-owned callback globals and actor/component state; direct callback-slot "
+        "writes belong in hook/patch flows, not generated data Write()."
+    ),
 )
 
 stable.fn(
@@ -8887,7 +9196,7 @@ stable.fn(
         param(
             "Actor_State*",
             "other_actor",
-            doc="Optional target actor; when present, its world position at +0x98 is used as the probe position.",
+            doc="Optional target actor; when present, its world position at +0x98 (PC EN) is used as the probe position.",
         ),
         param(
             "int32_t*",
@@ -8971,6 +9280,11 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[param("Component_Instance*", "comp"), param("int32_t*", "spawn_vec")],
+    doc=(
+        "Initializes Component_Instance projectile runtime fields including projectile_state, "
+        "projectile_timer, and homing velocity slots before calling Component_CalculateOrientation. "
+        "Projectile tail layout stays opaque."
+    ),
 )
 
 stable.fn(
@@ -8991,11 +9305,11 @@ stable.fn(
     "C7 05 ?? ?? ?? ?? ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ?? C3 90",
     required=Required.EN,
     hook=10,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc=(
         "Initializes projectile/collision function pointer globals: projectile_logic_func, "
-        "collision_response_actor_func, and behavior_process_projectile_func."
+        "collision_response_actor_func, and behavior_process_projectile_func; return register is setup status."
     ),
 )
 
@@ -9010,6 +9324,13 @@ stable.fn(
         param("Collision_Polygon*", "collision_poly"),
         param("int32_t", "collision_depth"),
     ],
+    doc=(
+        "Component/projectile collision-response callback target. It consumes the contextual "
+        "Collision_Polygon and collision_depth from the collision query, handles sentinel "
+        "collisionDepth values -2/-1, updates projectile runtime state, records a six-entry "
+        "hit cache in spawn-context storage, and dispatches hit behavior; projectile tail "
+        "layout stays opaque."
+    ),
 )
 
 stable.fn(
@@ -9041,15 +9362,10 @@ stable.fn(
     match=-45,
     ret="int32_t",
     params=[param("Component_Instance*", "comp"), param("Actor_State*", "other_actor")],
-)
-
-stable.fn(
-    "Component_UpdateProjectileLogic",
-    "10 85 C0 74 ?? 57 E8 ??",
-    match=-52,
-    hook=6,
-    ret="Component_SpawnParams*",
-    params=[param("Component_Instance*", "comp")],
+    doc=(
+        "Handles component-to-actor collision side effects before the projectile/component "
+        "response callback path. Uses Component_Instance and Actor_State runtime fields."
+    ),
 )
 
 stable.fn(
@@ -9075,6 +9391,11 @@ stable.fn(
     match=-28,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Actor-level projectile lifecycle callback. Drives projectile state transitions, may "
+        "reinitialize via Component_InitializeProjectile, spawn follow-up projectiles, and "
+        "emit trails; callback slot remains engine-owned."
+    ),
 )
 
 stable.fn(
@@ -9087,6 +9408,11 @@ stable.fn(
         param("Actor_State*", "source_actor"),
         param("Actor_State*", "parent_actor"),
     ],
+    doc=(
+        "Spawns a follow-up projectile actor from a component definition and source actor, "
+        "optionally attaching it to parent_actor with Actor_AttachToParent. Copies source "
+        "direction into child yaw/pitch and transform state."
+    ),
 )
 
 stable.fn(
@@ -9115,19 +9441,19 @@ stable.fn(
             "Actor_State*",
             "actor",
             doc=(
-                "Actor/context pointer supplied by the collision pipeline. Validate identity "
-                "and mutability before writing actor fields from hooks."
+                "Actor/context pointer supplied by the collision pipeline. Validate identity and mutability "
+                "before writing actor fields from hooks."
             ),
         ),
         param(
             "int32_t*",
             "velocity",
-            doc="Caller-owned three-int velocity payload; hooks should preserve the native pointer unless mutation has been proven safe.",
+            doc="Caller-owned three-int velocity payload; preserving the native pointer is safest unless mutation has been proven safe.",
         ),
         param(
             "int16_t*",
             "surface_normal",
-            doc="Caller-owned surface-normal payload. Observed runtime magnitudes are not guaranteed to be Q12 unit normals.",
+            doc="Caller-owned surface-normal payload filled by the collision resolver.",
         ),
         param(
             "int16_t*",
@@ -9137,14 +9463,14 @@ stable.fn(
         param(
             "int32_t*",
             "result",
-            doc="Caller-owned result/contact payload. Its incoming value is distinct from this function's return value.",
+            doc="Caller-owned result/contact payload passed independently from this function's return value.",
         ),
     ],
     doc=(
         "Detects and resolves 3D collision for an actor/context and caller-supplied "
-        "scratch payloads. Hook detours should treat velocity, surfaceNormal, "
-        "contactPoint, and result as native raw payload pointers unless a specific "
-        "call site proves they are safe to dereference or mutate."
+        "scratch payloads. velocity, surfaceNormal, contactPoint, and result are "
+        "native raw payload pointers unless a specific call site proves they are "
+        "safe to dereference or mutate."
     ),
 )
 
@@ -9163,6 +9489,11 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Ground-check collision pass over actor collision nodes and contextual polygon/contact "
+        "state. Updates collision_ground_* globals as query output; the paired "
+        "actor ground-contact state remains contextual runtime collision data."
+    ),
 )
 
 stable.fn(
@@ -9239,6 +9570,11 @@ stable.fn(
     hook=10,
     ret="void",
     params=[],
+    doc=(
+        "Frame collision pass over live actor/entity runtime lists. It drives actor-to-actor "
+        "collision checks and dispatches response callbacks through engine-owned globals; "
+        "entity slots and actor pointers are level-local runtime identities."
+    ),
 )
 
 stable.fn(
@@ -9255,7 +9591,13 @@ stable.fn(
     "83 EC 1C A1 ?? ??",
     hook=8,
     ret="int32_t",
+    public=False,
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Scans the powerup actor list against actor and dispatches powerup_collision_handler as "
+        "(powerup_actor, actor, 0, -2). Unconsumed pairs may fall through to swept/sphere distance "
+        "tests and Collision_ResolveActorToActorCollision(actor, powerup_actor, -1, 0)."
+    ),
 )
 
 stable.fn(
@@ -9336,6 +9678,12 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[param("Actor_State*", "actor"), param("Actor_State*", "other_actor")],
+    doc=(
+        "Sentinel collision-depth condition gate used by Actor_ProcessCollisionResponse "
+        "when collision_depth is -1 and the other actor subtype requires condition "
+        "checks. Dispatches by other_actor subtype fields and selector masks; native "
+        "return values are 0 or -1 sentinel results."
+    ),
 )
 
 stable.fn(
@@ -9343,12 +9691,18 @@ stable.fn(
     "00 00 83 FF 06 0F 87 ??",
     match=-23,
     ret="int32_t",
+    public=False,
     params=[
         param("Actor_State*", "actor"),
         param("Actor_State*", "other_actor"),
         param("Collision_Polygon*", "collision_poly"),
         param("int32_t", "collision_slot"),
     ],
+    doc=(
+        "Subtype collision-response helper called by Actor_ProcessCollisionResponse; it updates "
+        "response vectors, normal fields, and selected actor record slots from the caller's "
+        "Collision_Polygon pointer, selected collision slot, and actor record state."
+    ),
 )
 
 stable.fn(
@@ -9445,11 +9799,9 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc=(
-        "Shuts down Miles audio when audio_digital_driver is active. Releases "
-        "non-null sample handles across the nine Audio_SoundSlot entries, clears "
-        "each slot's sample/base-rate fields, calls AIL_shutdown, clears "
-        "audio_digital_driver, and logs remaining active wave/theme counts. "
-        "Returns 0 when already inactive, otherwise the CRT_PrintFormat/printf result."
+        "Shuts down Miles audio when audio_digital_driver is active, releasing non-null sample "
+        "handles across Audio_SoundSlot entries, clearing slot sample/base-rate fields, calling "
+        "AIL_shutdown, and clearing audio_digital_driver. Returns 0 when already inactive."
     ),
 )
 
@@ -9505,7 +9857,10 @@ stable.fn(
     hook=7,
     ret="int32_t",
     params=[param("int32_t", "slot_index"), param("int32_t", "volume")],
-    doc="Set a sound slot's sample volume, scaling the game volume down to Miles' 0..128 range before calling AIL_set_sample_volume.",
+    doc=(
+        "Set a sound slot's sample volume, scaling the game volume down to Miles' 0..128 range before "
+        "calling AIL_set_sample_volume."
+    ),
 )
 
 stable.fn(
@@ -9522,7 +9877,7 @@ stable.fn(
 stable.fn(
     "Audio_OpenStream",
     "A1 ?? ?? ?? ?? 81 EC 04",
-    ret="void*",
+    ret="void",
     params=[
         param(
             "int32_t*",
@@ -9532,7 +9887,7 @@ stable.fn(
     ],
     doc=(
         "Open streamRecord[0] from the music filename stored at streamRecord+4 under the data/music directory; "
-        "clears the handle when audio is not initialized or the filename is empty."
+        "clears the handle when audio is unavailable or the filename is empty."
     ),
 )
 
@@ -9550,13 +9905,16 @@ stable.fn(
     hook=6,
     ret="void",
     params=[param("int32_t", "volume")],
-    doc="Set the current music stream volume, scaling the game volume down to Miles' 0..128 range before calling AIL_set_stream_volume.",
+    doc=(
+        "Set the current music stream volume, scaling the game volume down to Miles' 0..128 range "
+        "before calling AIL_set_stream_volume."
+    ),
 )
 
 stable.fn(
     "Audio_PlayMusicStream",
     "56 8B 74 24 08 85 F6 74 ?? 56 E8 ?? ?? ?? ?? 8B 06 83 C4 04 A3 ?? ?? ?? ?? A1 ?? ?? ?? ?? 5E 85 C0 74 ?? 8B 4C 24 08 51 E8 ?? ?? ?? ??",
-    ret="void*",
+    ret="void",
     params=[param("int32_t*", "stream_record"), param("int32_t", "volume")],
     doc="Optionally opens streamRecord, publishes its handle as the active music stream, sets volume, starts playback, and sets the stream loop count to zero.",
 )
@@ -9564,19 +9922,25 @@ stable.fn(
 stable.fn(
     "Audio_PauseStream",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 6A 01 50 FF 15 ?? ?? ?? ?? C3",
-    ret="void*",
+    ret="void",
     params=[],
+    doc="Pauses the active Miles music stream when one is published.",
 )
 
 stable.fn(
-    "Audio_ResumeStream", "A1 ?? ?? ?? ?? 85 C0 74 ?? 6A 00 50", ret="void*", params=[]
+    "Audio_ResumeStream",
+    "A1 ?? ?? ?? ?? 85 C0 74 ?? 6A 00 50",
+    ret="void",
+    params=[],
+    doc="Resumes the active Miles music stream when one is published.",
 )
 
 stable.fn(
     "Audio_CloseMusicStream",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 6A 01 50 FF 15 ?? ?? ?? ?? A1",
-    ret="void*",
+    ret="void",
     params=[],
+    doc="Pauses and closes the active Miles music stream, clears music_stream_handle, and decrements open_stream_count; residual Miles/counter return is ignored.",
 )
 
 stable.fn(
@@ -9625,26 +9989,33 @@ stable.fn(
     "8A 0D ?? ?? ?? ?? B0 02 84 C8 75 ?? 0A C8 88 0D ?? ?? ?? ?? E9 ?? ?? ?? ?? C3 90 90 90 90 90 90 8B 44 24 04 A3 ??",
     required=Required.EN,
     hook=6,
-    ret="int32_t",
+    ret="void",
     params=[],
+    doc="Sets the music stop/pause flag and closes the active music stream; tail-call/counter residual is ignored by observed callers.",
 )
 
 stable.fn(
     "Audio_ResetMusicState",
     "8B 44 24 04 A3 ?? ?? ?? ?? A0",
     hook=9,
-    ret="int32_t",
-    params=[param("Audio_AIL_HStream", "stream_handle")],
-    doc="Sets the active music stream handle and clears the low nibble of the sound-system flags.",
+    ret="void",
+    params=[param("int32_t*", "stream_record")],
+    doc=(
+        "Stores the selected music stream record pointer for the fade/playback path and "
+        "clears the low nibble of sound_system_flags; the previous scalar return was flag status."
+    ),
 )
 
 stable.fn(
     "Audio_StartMusicWithFade",
     "6A 1E 68 00 10 00 00 66 C7 05 ??",
     hook=7,
-    ret="int32_t",
-    params=[param("Audio_AIL_HStream", "stream_handle")],
-    doc="Starts music playback from streamHandle with a 0x1000 target volume over 31 fade frames, then resets music state.",
+    ret="void",
+    params=[param("int32_t*", "stream_record")],
+    doc=(
+        "Arms faded playback for the selected music stream record with a 0x1000 target "
+        "volume over 31 fade frames, then resets music state; residual flag return is ignored."
+    ),
 )
 
 stable.fn(
@@ -9653,35 +10024,46 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[param("Audio_AIL_HStream*", "stream_handle_ptr")],
+    doc="Returns nonzero when stream_handle_ptr is non-null and the pointed Miles stream is currently playing.",
 )
 
 stable.fn(
     "Audio_ProcessMusicFade",
     "55 8B EC 83 EC 08 E8 ??",
     hook=6,
-    ret="int16_t",
+    ret="void",
     params=[],
+    doc="Processes one frame of music fade/stream state: advances the fade target, starts playback when allowed, pauses at zero volume, and recalculates stream volume; observed callers use side effects only.",
 )
 
 stable.fn(
     "Audio_UpdateSoundSystemWrapper",
     "E9 ?? ?? ?? ?? 90 90 90 90 90 90 90 90 90 90 90 A1",
-    ret="int32_t",
+    ret="void",
     params=[],
+    doc="Tail wrapper around the audio system update path; observed callers use side effects only and model no public return.",
 )
 
 stable.fn(
     "BoneTrail_CheckAvailable", "A1 ?? ?? ?? ?? 8B 88 84", ret="int32_t", params=[]
 )
 
-stable.fn("BoneTrail_Reset", "33 C9 C7 05 ?? ??", hook=12, ret="int32_t*", params=[])
+stable.fn(
+    "BoneTrail_Reset",
+    "33 C9 C7 05 ?? ??",
+    hook=12,
+    ret="void",
+    params=[],
+    doc="Clears bone-trail state and entry buffers.",
+)
 
 stable.fn(
     "BoneTrail_UpdateAndRender",
     "55 8B EC 83 EC 34 A1 ??",
     hook=6,
-    ret="Level_Data*",
+    ret="void",
     params=[param("Actor_State*", "actor"), param("int32_t*", "movement_vec")],
+    doc="Updates/renders bone-trail movement effects; movement_vec carries the output and caller overwrites native return metadata.",
 )
 
 stable.fn(
@@ -9780,8 +10162,8 @@ stable.fn(
             "Actor_State*",
             "source_actor_template",
             doc=(
-                "Source actor/template whose pointer fields must be relative to the cloned "
-                "actor allocation; fixed-up package or borrowed runtime pointers are unsafe."
+                "Source actor/template whose pointer fields are relative to the cloned actor allocation; "
+                "fixed-up package or borrowed runtime pointers are unsafe."
             ),
         ),
         param(
@@ -9792,8 +10174,8 @@ stable.fn(
     ],
     doc=(
         "Allocates/copies an Actor_State template, then rewrites selected pointer fields as "
-        "cloned_actor + source_field - source_actor. This is a template-relative clone path, "
-        "not a generic actor deep-copy routine; external package pointers can become invalid."
+        "cloned_actor + source_field - source_actor. This template-relative clone path leaves "
+        "external package pointers subject to source lifetime."
     ),
 )
 
@@ -9847,8 +10229,9 @@ stable.fn(
     "Actor_UpdateFadeOut",
     "BF C0 6A 00 50 56 E8 ??",
     match=-32,
-    ret="Actor_State*",
+    ret="BOOL",
     params=[param("Actor_State*", "actor"), param("int16_t", "fade_ticks")],
+    doc="Advances an actor fade-out/lifecycle step and returns a low-byte boolean completion/status value.",
 )
 
 stable.fn(
@@ -9872,23 +10255,28 @@ stable.fn(
     "7E ?? 6A 00 51 57 E8 ??",
     match=-43,
     hook=9,
-    ret="Scene_Node*",
+    ret="void",
     params=[],
+    doc="Renders queued shadows; Scene_RenderFrame calls it for side effects and ignores render-list status.",
 )
 
 stable.fn(
     "Resource_FixUpObjectNode",
     "56 8B 74 24 08 8B 46 04 85 C0 74 ?? 8B 0D ??",
-    ret="int32_t*",
+    ret="void",
     params=[param("Scene_Node*", "node")],
-    doc="Rebases node sibling/child links, dispatches by node_type at +0x64, and recurses child siblings.",
+    doc=(
+        "Rebases the node+0x04 (PC EN) sibling/cursor link, dispatches by node_type at node+0x64 (PC "
+        "EN), and recurses child siblings. Type 2 returns before the node+0x08 (PC EN) child-link "
+        "rebase, while handled non-type-2 payloads are fixed before recursion."
+    ),
 )
 
 stable.fn(
     "Resource_FixUpModelNode",
     "?? ?? ?? 03 C2 89 86 80",
     match=-78,
-    ret="int32_t*",
+    ret="void",
     params=[
         param(
             "void*",
@@ -9896,12 +10284,13 @@ stable.fn(
             doc="Type-1 model node record; fields are level-blob-relative offsets rebased in place.",
         )
     ],
+    doc="Type-1 mesh/actor-like object-node fixup; mutates model-node fields in place.",
 )
 
 stable.fn(
     "Resource_FixUpAnimationData",
     "51 8B 4C 24 08 8A 41 07 A8 02 0F 85 ??",
-    ret="void*",
+    ret="void",
     params=[
         param(
             "Animation_DataBlock*",
@@ -9914,13 +10303,14 @@ stable.fn(
             doc="Base added to relative animation/table offsets.",
         ),
     ],
+    doc="Marks/fixes animation channel tables in place; return was loop/flag status propagated by decompilers, not public data.",
 )
 
 stable.fn(
     "Resource_FixUpMaterialRefs",
     "8B 54 24 08 8B 44 24 04 56 8B 08 8B 35 ??",
     hook=8,
-    ret="int32_t*",
+    ret="void",
     params=[
         param(
             "int32_t*",
@@ -9933,6 +10323,7 @@ stable.fn(
             doc="Number of material-reference records to process.",
         ),
     ],
+    doc="Walks and fixes ref_count 0x18-byte material-reference records in place.",
 )
 
 stable.fn(
@@ -9943,25 +10334,31 @@ stable.fn(
         param(
             "char*",
             "index_block",
-            doc="Pointer-list block with count at +2 and relative list pointer at +4.",
+            doc="Pointer-list block with flag byte at +0 (PC EN), count at +0x02 (PC EN), and relative list pointer at +0x04 (PC EN).",
         )
     ],
+    doc=(
+        "Fixes a material index/pointer-list block in place. Flag bit 0x80 skips the block; "
+        "otherwise the routine reads the count at +0x02 (PC EN), rebases the pointer list at +0x04 (PC EN), "
+        "and fixes type-1 entries by rebasing their +0x10 (PC EN)/+0x14 (PC EN) side pointers."
+    ),
 )
 
 stable.fn(
-    "Resource_FixUpVertexNormals",
+    "Resource_FixUpRenderNodeEntries",
     "72 ?? 8D 46 F0 50 E8 ??",
     match=-21,
     hook=6,
-    ret="int32_t* *",
+    ret="void",
     params=[
         param(
-            "void*",
-            "entry_array",
-            doc="Array base; each 0x20-byte entry has a sprite material descriptor at +0x0C.",
+            "Mesh_RenderNodeEntry*",
+            "entries",
+            doc="Array base; each 0x20-byte entry has a sprite/material descriptor at +0x0C (PC EN) and a tail pointer at +0x1C (PC EN) rebased by the level blob base.",
         ),
-        param("int32_t", "entry_count", doc="Number of entries to fix."),
+        param("int32_t", "entry_count", doc="Number of render-node entries to fix."),
     ],
+    doc="Formerly misidentified as a vertex-normal fixup; walks render-node entries, fixes sprite/material descriptors, and rebases the entry tail pointer at +0x1C (PC EN) in place.",
 )
 
 stable.fn(
@@ -9983,52 +10380,56 @@ stable.fn(
     "Resource_FixUpMeshNode",
     "8E 84 00 00 00 8B 15 ??",
     match=-73,
-    ret="void*",
+    ret="void",
     params=[
         param("void*", "node", doc="Type-3 scene mesh node record fixed in place.")
     ],
+    doc="Type-3/complex object-node fixup; mutates node sidecars in place.",
 )
 
 stable.fn(
     "Resource_FixUpSimpleNode",
     "8B 4C 24 04 8B 41 6C 85 C0 74 ?? 8B 15 ??",
     hook=7,
-    ret="void*",
+    ret="void",
     params=[
         param(
             "void*",
             "node",
-            doc="Type-8 simple node; only the payload pointer at +0x6C is rebased.",
+            doc="Type-8 simple node; only the payload pointer at +0x6C (PC EN) is rebased.",
         )
     ],
+    doc="Type-8 pointer-only object-node fixup; mutates node +0x6C (PC EN) in place.",
 )
 
 stable.fn(
-    "Resource_FixUpFacePointer",
+    "Resource_FixUpObjectNode_Type7_SpriteEntry",
     "8B 44 24 04 83 C0 6C 50 E8 ??",
     hook=7,
-    ret="int32_t* *",
+    ret="void",
     params=[
         param(
-            "int32_t* *",
-            "sprite_material_desc",
-            doc="0x0C sprite material descriptor: section pointer, material entry/index, optional index block.",
+            "void*",
+            "node",
+            doc="Type-7 compact object node; passes the sprite/material descriptor payload at node +0x6C (PC EN) to Resource_FixUpSpriteEntry.",
         )
     ],
+    doc="Formerly misidentified as a face-pointer/descriptor helper; this wrapper fixes the type-7 object-node sprite/material payload at node +0x6C (PC EN) in place.",
 )
 
 stable.fn(
     "Resource_FixUpGroupNode",
     "56 57 8B 7C 24 0C 8B 47 70 85 C0 74 ?? 8B 0D ??",
     hook=6,
-    ret="int32_t*",
+    ret="void",
     params=[
         param(
             "void*",
             "node",
-            doc="Group node record; rebases nested lists and fixes child/object/polygon sidecars.",
+            doc="Group/type-0 hierarchy node record; rebases nested lists and fixes child/object/polygon sidecars.",
         )
     ],
+    doc="Type-0 hierarchy object-node fixup; mutates linked child/object/polygon sidecars in place.",
 )
 
 stable.fn(
@@ -10054,7 +10455,7 @@ stable.fn(
     "Resource_FixUpLevelPointers",
     "?? ?? ?? ?? 83 C4 08 53",
     match=-17,
-    ret="int32_t",
+    ret="void",
     params=[
         param(
             "Pkg_LevelHeader*",
@@ -10062,19 +10463,21 @@ stable.fn(
             doc="Level header whose relative resource lists are rebased in place.",
         )
     ],
+    doc="Rebases package level-header pointers in place; Level_LoadStateMachine ignores the debug-log/status native return value.",
 )
 
 stable.fn(
     "Resource_FixUpActorPointers",
     "56 8B 74 24 08 57 8B 46 10 85 C0 74 ?? 8B 0D ??",
-    ret="void*",
+    ret="void",
     params=[
         param(
             "Pkg_ActorTemplate*",
             "actor_template",
-            doc="Actor template with three node refs at +0/+4/+8 and a 43-entry animation state table at +0x10.",
+            doc="Actor template with three node refs at +0/+4/+8 and a 43-entry animation state table at +0x10 (PC EN).",
         )
     ],
+    doc="Fixes actor-template animation and object-node references in place.",
 )
 
 stable.fn(
@@ -10082,14 +10485,15 @@ stable.fn(
     "06 85 C0 74 ?? 8B 0D ??",
     match=-16,
     hook=7,
-    ret="void*",
+    ret="void",
     params=[
         param(
             "Pkg_ComponentData*",
             "component_data",
-            doc="Component record; fixes four sub-node pointers at +0x60.",
+            doc="Component record; fixes four sub-node pointers at +0x60 (PC EN).",
         )
     ],
+    doc="Fixes four component sub-node pointers, owner back-links, and optional animation data in place.",
 )
 
 stable.fn(
@@ -10167,7 +10571,11 @@ stable.fn(
         param("void*", "buffer"),
         param("uint32_t", "size"),
     ],
-    doc="Initialize, reset, or free the global save-game operation state for the requested operation code.",
+    doc=(
+        "Initialize, reset, or free the global save-game operation state for the requested operation code. "
+        "Operation 0x0b frees the verify-buffer scratch allocation; other operations allocate or reuse it, "
+        "store the active buffer and size globals, and leave only verify-buffer/allocation native return metadata."
+    ),
 )
 
 stable.fn(
@@ -10270,7 +10678,7 @@ stable.fn(
     hook=9,
     ret="int32_t",
     params=[],
-    doc="Loads pcdogs.ini when present and checksum-valid, clamps the display setting, restores default special-button binding when missing, reads player control bindings, then applies the resulting input mapping. The return value is a legacy status/result, not a retained file handle.",
+    doc="Loads pcdogs.ini when present and checksum-valid, clamps the display setting, restores default special-button binding when missing, reads player control bindings, then applies the resulting input mapping.",
 )
 
 stable.fn(
@@ -10290,6 +10698,10 @@ stable.fn(
     match=-50,
     ret="int32_t",
     params=[],
+    doc=(
+        "Free and rebuild the keyboard mapping arrays, register the default control masks, and initialize the "
+        "player binding blocks."
+    ),
 )
 
 stable.fn(
@@ -10298,6 +10710,10 @@ stable.fn(
     hook=9,
     ret="int32_t",
     params=[],
+    doc=(
+        "Initialize built-in controller preset names and 10-button mapping tables for Hammerhead FX, "
+        "Microsoft Sidewinder, Gravis Gamepad Pro, and Wingman RumblePad."
+    ),
 )
 
 stable.fn(
@@ -10324,7 +10740,7 @@ stable.fn(
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 90 A1",
     ret="int32_t",
     params=[],
-    doc="Alternate config-loading entry point that initializes controller and button mappings before tail-calling Config_LoadFromINI and returning its legacy settings-apply status/result.",
+    doc="Alternate config-loading entry point that initializes controller and button mappings before tail-calling Config_LoadFromINI.",
 )
 
 stable.fn(
@@ -10338,14 +10754,18 @@ stable.fn(
             doc="Input state structure updated from keyboard state.",
         )
     ],
-    doc="Sample keyboard input into the per-frame input state record.",
+    doc=(
+        "Sample keyboard mappings into the per-frame input state record, ORing mapped masks into button_bits; "
+        "F10/VK121 triggers the screenshot path and the int32_t return is GetAsyncKeyState/screenshot "
+        "native return metadata ignored by Input_ReadDevices."
+    ),
 )
 
 stable.fn(
     "Input_ReadGamepad",
     "A0 ?? ?? ?? ?? 83 EC 08 84 C0 0F 84 ??",
     required=Required.EN,
-    ret="int32_t",
+    ret="void",
     params=[
         param(
             "Input_State*",
@@ -10354,9 +10774,9 @@ stable.fn(
         )
     ],
     doc=(
-        "Samples DirectInput gamepad state into the per-frame input record. Axis thresholds "
-        "are lX/lY +/-700 and lRz +/-600; live hooks that need analog values should sample "
-        "JoyState_GetAxis* in the same frame as this update to avoid stale input."
+        "Samples DirectInput gamepad state into the per-frame input record with lX/lY +/-700 and lRz "
+        "+/-600 thresholds. Live analog hooks sample JoyState_GetAxis* in the same frame to keep input "
+        "frame-local, and native callers ignore the return register."
     ),
 )
 
@@ -10369,7 +10789,7 @@ stable.fn(
         param(
             "int32_t",
             "player_index",
-            doc="Player/input slot index passed by Input_Update; not read by this function.",
+            doc="Player/input slot index preserved for the Input_Update ABI.",
         ),
         param(
             "Input_State*",
@@ -10377,7 +10797,7 @@ stable.fn(
             doc="Input state structure cleared, then updated from keyboard and gamepad devices.",
         ),
     ],
-    doc="Clears one Input_State and combines keyboard and gamepad sampling into it.",
+    doc="Clears one Input_State and combines keyboard and gamepad sampling into it; player_index is preserved for the ABI.",
 )
 
 stable.fn(
@@ -10396,7 +10816,7 @@ stable.fn(
         param(
             "int32_t",
             "effect_source_id",
-            doc="Caller-supplied actor/type id; preserved by the ABI but not read by the original body.",
+            doc="Caller-supplied actor/type id preserved by the ABI.",
         ),
         param(
             "int32_t",
@@ -10449,8 +10869,9 @@ stable.fn(
         ),
     ],
     doc=(
-        "Caches the localized display name for a control binding in the slot selected by "
-        "button_mask and lazily allocates the shared 'No key assigned' string."
+        "Caches the localized display name for a control binding in the slot selected by button_mask "
+        "and lazily allocates the shared 'No key assigned' string. Known native callers use the side "
+        "effect and ignore the mixed pointer/sprintf-count native return value."
     ),
 )
 
@@ -10532,6 +10953,7 @@ stable.fn(
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E9",
     ret="int32_t",
     params=[],
+    doc="Final game shutdown chain: shuts down audio, closes the package file handle, then tail-calls Resource_ShutdownGameSubsystems.",
 )
 
 stable.fn(
@@ -10561,6 +10983,7 @@ stable.fn(
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1",
     ret="int32_t",
     params=[],
+    doc="Bootstraps package/resource startup by opening and reading the package TOC, initializing audio, initializing render dispatch tables, and seeding graphics flags/capabilities; returns the resulting graphics capability word/status value.",
 )
 
 stable.fn(
@@ -10662,7 +11085,14 @@ stable.fn(
     "8B 44 24 04 6A 01 6A 00 50 E8 ??",
     hook=6,
     ret="void*",
-    params=[param("int32_t", "toc_index")],
+    params=[
+        param(
+            "int32_t",
+            "toc_index",
+            doc="Package TOC index to load with destination allocation enabled.",
+        )
+    ],
+    doc="Wrapper around PKG_LoadEntry(toc_index, NULL) that allocates destination storage for one package TOC entry and returns the loaded buffer pointer.",
 )
 
 stable.fn(
@@ -10672,10 +11102,10 @@ stable.fn(
     ret="uint32_t*",
     params=[param("int32_t", "level_index")],
     doc=(
-        "Incremental level package loader keyed by package level_index, not a room/entity "
-        "slot. Level resources are loaded from TOC entries 0x24 + level_index * 3 + {0,1,2}; "
+        "Incremental level package loader keyed by package level_index. Level resources are "
+        "loaded from TOC entries 0x24 + level_index * 3 + {0,1,2}; "
         "stages 0,1,2,4,5,7 load texture A, wait, load texture B, wait, load the level blob, "
-        "then fix up materials/nodes/level pointers and reset level_load_state to 0."
+        "then fix up materials/nodes/level pointers and reset level_stream_load_state to 0."
     ),
 )
 
@@ -10716,7 +11146,7 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[],
-    doc="Package-file lookup/open routine. EN enters directly into the shared body; EU/SC include a nearby pre-open path-resolution divergence that the sidecar patches via its game hook AOB, so the SDK entry signature anchors the common function prologue rather than that patched helper site.",
+    doc="Package-file lookup/open routine. EN enters directly into the shared body; EU/SC include a nearby pre-open path-resolution divergence that the sidecar patches via its game hook AOB. The SDK entry signature anchors the common function prologue.",
 )
 
 stable.fn(
@@ -10734,6 +11164,7 @@ stable.fn(
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 50 E8 ?? ?? ?? ?? 83 C4 04 C7 05 ?? ?? ?? ?? 00 00 00 00 C3 90 90 90 83",
     ret="File_Handle*",
     params=[],
+    doc="Closes the open package file handle when present and clears pkg_file_handle.",
 )
 
 stable.fn(
@@ -10828,24 +11259,18 @@ stable.fn(
     ret="Actor_State*",
     params=[
         param(
-            "Actor_State**",
-            "actor_template_slot",
-            doc="Pointer to an actor-template pointer; nullptr or a failed clone returns nullptr.",
+            "Pkg_ActorTemplate*",
+            "actor_template",
+            doc=(
+                "Powerup actor-template/clone-source selected from "
+                "Level_RuntimeData.powerup_actor_slots[0..15]; nullptr or a failed clone returns nullptr."
+            ),
         )
     ],
-    doc="Clones the actor template referenced by actor_template_slot into the powerup actor list.",
-)
-
-stable.fn(
-    "Powerup_UpdateSpawnLogic",
-    "83 EC 0C A1 ?? ??",
-    hook=8,
-    ret="int32_t",
-    params=[],
     doc=(
-        "Walks current Level_RuntimeData.powerup_list definitions and updates the fixed "
-        "powerup actor slots. Returns the residual/update loop value in EAX; this is "
-        "not a Level_Data pointer and callers normally ignore it."
+        "Clones a level-owned powerup actor template into the live powerup actor list. "
+        "The source template comes from the fixed 16-slot powerup_actor_slot table; "
+        "spawned live actors are linked through powerup_actor_list_head."
     ),
 )
 
@@ -11071,7 +11496,7 @@ stable.fn(
             doc="Size of each user payload; the stored allocation size is payload_size + 0x14.",
         ),
         param(
-            "void*",
+            "TreeMap_CompareCallback",
             "compare_func",
             doc="Compare callback stored in the tree header and later called with two payload pointers.",
         ),
@@ -11142,8 +11567,9 @@ stable.fn(
     "Game_UpdateAndRenderScene",
     "A0 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? E8",
     required=Required.EN,
-    ret="Actor_State*",
+    ret="BOOL",
     params=[],
+    doc="Top-level per-frame scene/update/render driver returning native scalar status.",
 )
 
 stable.fn(
@@ -11333,8 +11759,8 @@ stable.fn(
             "Math_Vec3i*",
             "position_or_actor_position_ptr",
             doc=(
-                "Position pointer for 3D playback. Actor sound-node calls often pass "
-                "&actor->position_x, but script/cutscene paths may pass non-actor globals."
+                "Position pointer for 3D playback. Actor sound-node calls often pass &actor->position_x, but "
+                "script/cutscene paths may pass non-actor globals."
             ),
         ),
     ],
@@ -11481,10 +11907,26 @@ stable.fn(
     match=-30,
     ret="int32_t",
     params=[
-        param("int32_t*", "out_move_vec"),
+        param(
+            "int32_t*",
+            "out_move_vec",
+            doc="Output vector with at least three int32_t components written by this helper.",
+        ),
         param("int32_t", "player_index"),
-        param("int32_t", "heading_angle"),
+        param(
+            "int32_t",
+            "heading_angle",
+            doc=(
+                "Camera-relative heading angle consumed by Math_SinCos_FP12; observed callers use the low 16 "
+                "bits / 12-bit fixed-point angle domain, while the ABI remains int32_t."
+            ),
+        ),
     ],
+    doc=(
+        "Writes out_move_vec[0..2] from D-pad or analog movement input, using heading_angle in the "
+        "low-16-bit / 12-bit fixed-point angle domain for Math_SinCos_FP12. The native return is "
+        "ignored arithmetic status."
+    ),
 )
 
 stable.fn(
@@ -11511,6 +11953,11 @@ stable.fn(
     hook=7,
     ret="int32_t",
     params=[],
+    doc=(
+        "Per-frame input updater: copies current/previous player input state, reads "
+        "keyboard/gamepad devices, applies toggles, and handles replay input. The "
+        "return register is loop/replay status ignored by the observed caller."
+    ),
 )
 
 stable.fn(
@@ -11519,6 +11966,11 @@ stable.fn(
     match=-17,
     ret="int32_t",
     params=[param("Actor_State*", "actor"), param("int32_t", "direction_mode")],
+    doc=(
+        "Movement/input gate for actor-local direction processing. It validates the "
+        "requested direction mode against actor movement state and funnels accepted input "
+        "through movement-vector processing."
+    ),
 )
 
 stable.fn(
@@ -11531,7 +11983,7 @@ stable.fn(
     doc=(
         "Initializes render/behavior dispatch globals after setting the default 640x480 "
         "camera viewport: actor_default_update_handler, movement_handler_table, "
-        "physics_time_step, behavior_target_actor, and behavior_param0..2, then builds "
+        "model_physics_callback_table, behavior_target_actor, and behavior_param0..2, then builds "
         "direction/collision plane tables."
     ),
 )
@@ -11555,6 +12007,7 @@ stable.fn(
     hook=10,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc="Vertical movement callback for actor runtime physics/movement state; return is native movement status.",
 )
 
 stable.fn(
@@ -11563,6 +12016,10 @@ stable.fn(
     match=-24,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Attached/follow movement callback for actors whose runtime transform follows "
+        "another actor/component context."
+    ),
 )
 
 stable.fn(
@@ -11571,6 +12028,11 @@ stable.fn(
     match=-12,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Processes actor-local movement command opcodes through the 11-entry "
+        "movement_command_opcode_dispatch_table for opcode values 0..10. Per-opcode "
+        "record layout and enum names stay internal."
+    ),
 )
 
 stable.fn(
@@ -11579,6 +12041,11 @@ stable.fn(
     match=-37,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
+    doc=(
+        "Behavior/movement callback installed by Render_InitDispatchTables. Coordinates "
+        "vertical movement, animation progress, and input-validation flow for the actor; "
+        "the return is native movement behavior status."
+    ),
 )
 
 stable.fn(
@@ -11608,7 +12075,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Fireworks_Initialize",
+    "Spots_Initialize",
     "51 53 55 56 33 DB 57 66 89 1D ??",
     cc=CallingConvention.FASTCALL,
     hook=6,
@@ -11617,7 +12084,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Fireworks_Update",
+    "Spots_Update",
     "53 55 8B 6C 24 0C 85 ED 75 ?? 66 A1 ??",
     hook=6,
     ret="void",
@@ -11655,7 +12122,7 @@ stable.fn(
             doc="Normal update callers pass nullptr; (void*)-1 forces the title-screen shutdown/reset path. The stack slot is reused internally as a Render_SpriteContext* scratch.",
         ),
     ],
-    doc="Advances the title-screen state machine, draws title sprites/text/fireworks, and returns nonzero while the title screen remains active.",
+    doc="Advances the title-screen state machine, draws title sprites/text/spots, and returns nonzero while the title screen remains active.",
 )
 
 stable.fn(
@@ -11732,7 +12199,10 @@ stable.fn(
             doc="Camera runtime initialized with default clip distance, viewport, and fade fields.",
         )
     ],
-    doc="Initializes camera defaults, applies the 640x480 viewport, and clears the two fade/transition counters at +0x100d4/+0x100d8.",
+    doc=(
+        "Initializes camera defaults, applies the 640x480 viewport, and clears the two "
+        "fade/transition counters at +0x100D4 (PC EN)/+0x100D8 (PC EN)."
+    ),
 )
 
 stable.fn(
@@ -11818,8 +12288,9 @@ stable.fn(
     "57 B9 40 00 00 00 33 C0 BF ?? ?? ?? ?? F3 AB 5F C3 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 A1 ??",
     required=Required.EN,
     hook=6,
-    ret="int32_t",
+    ret="void",
     params=[],
+    doc="Zeros the 0x100-byte input_state_buffer raw input/VK clear buffer; native callers ignore the constant-zero native return metadata.",
 )
 
 stable.fn(
@@ -12197,25 +12668,25 @@ stable.fn(
         param("uint32_t", "count"),
         param("uint32_t", "element_size"),
         param(
-            "void*",
+            "Sort_CompareCallback",
             "compare",
             doc="Comparator callback used by the CRT qsort implementation.",
         ),
     ],
-    doc="CRT qsort-style quicksort over count elements of elementSize bytes using compare.",
+    doc="CRT qsort-style quicksort over count elements of elementSize bytes using the comparator callback.",
 )
 
 stable.fn(
     "Sort_InsertionSort",
     "55 8B EC 8B 45 08 57 8B 7D 0C 3B F8 76 ?? 8B 4D 10 53 03 C1 56 89 45 0C",
-    ret="void",
+    ret="char*",
     params=[
         param("char*", "first_element"),
         param("char*", "last_element"),
         param("uint32_t", "element_size"),
-        param("void*", "compare"),
+        param("Sort_CompareCallback", "compare"),
     ],
-    doc="Insertion-sort helper used by Sort_QuickSort for small partitions.",
+    doc="Insertion-sort helper used by Sort_QuickSort for small partitions; returns a residual element/swap cursor ignored by the qsort caller.",
 )
 
 stable.fn(
@@ -12370,7 +12841,7 @@ stable.fn(
         param("char*", "buffer", doc="Destination NUL-terminated output buffer."),
         param("int32_t", "precision", doc="Number of digits after the decimal point."),
     ],
-    doc="Wrapper that enables the shared fixed-format flag around Float_ConvertToFixed and returns buffer.",
+    doc="Sets the shared fixed-format flag, calls Float_ConvertToFixed, and returns buffer.",
 )
 
 stable.fn(
@@ -12447,21 +12918,22 @@ stable.fn(
             doc="Stack-passed NLG notification code popped by ret 4. The helper also consumes EAX as the handler/continuation address and EBP as the establisher frame.",
         ),
     ],
-    doc="MSVC _NLG_Notify-style unwind helper; saves EAX, EBP, and *(EBP+8) into the CRT NLG context. Not a normal C-callable function; EAX and EBP are implicit inputs, while the stack notification code is popped by ret 4.",
+    doc="MSVC _NLG_Notify-style unwind helper; saves EAX, EBP, and *(EBP+8) into the CRT NLG context. EAX and EBP are implicit inputs, while the stack notification code is popped by ret 4.",
 )
 
 stable.fn(
     "Exception_IsAccessViolation",
     "8B 45 EC 8B 00 8B 00 33 C9 3D 05 00 00 C0 0F 94 C1 8B C1 C3 8B 65 E8 ??",
+    callable=False,
     ret="BOOL",
     params=[
         param(
             "void*",
             "exception_frame",
-            doc="SEH filter frame addressed via EBP; contains exception pointers at -0x14.",
+            doc="Implicit EBP-framed SEH filter state containing exception pointers at -0x14 (PC EN).",
         )
     ],
-    doc="SEH filter fragment used by _rt_probe_read4; returns true when the exception code is 0xC0000005 (access violation).",
+    doc="Non-normal-callable SEH filter fragment inside _rt_probe_read4; returns true when the exception code is 0xC0000005 (access violation).",
 )
 
 stable.fn(
@@ -12577,7 +13049,7 @@ stable.fn(
         param(
             "void*",
             "float_state",
-            doc="CRT float conversion state; +4 is adjusted when rounding carries and +0x0c points at source digits.",
+            doc="CRT float conversion state; +4 is adjusted when rounding carries and +0x0C (PC EN) points at source digits.",
         ),
     ],
     doc="Copies digit_count decimal digits from the CRT float state, rounds on the next digit, shifts away the leading guard zero, and bumps the decimal exponent on carry.",
@@ -12683,13 +13155,7 @@ stable.data(
     "should_quit",
     xref("Input_ProcessWindowMessages", 0, 1),
     type="int32_t",
-    doc="Flag set by window-message processing when the game should exit.",
-)
-stable.data(
-    "directory",
-    xref("PKG_FindAndOpenFile", 7, 1),
-    type="char",
-    doc="NUL-terminated base directory buffer used by package file lookup routines.",
+    doc="Flag set by window-message processing for game exit.",
 )
 stable.data(
     "audio_digital_driver",
@@ -12700,14 +13166,13 @@ stable.data(
 stable.data(
     "movie_file_names",
     xref("Movie_PlayIntro", 15, 3),
-    type="char*",
-    doc="Movie filename table used by intro and movie playback routines.",
+    doc="First entry/base of the four-entry movie filename pointer table used by intro and movie playback routines.",
 )
 stable.data(
     "movie_path_prefix",
     xref("Movie_PlayIntro", 23, 1),
     type="char",
-    doc="Directory prefix prepended when resolving movie files.",
+    doc="First byte/base of the NUL-terminated data/movies path prefix used by movie-loading routines.",
 )
 stable.data(
     "title_bonus_replay_resource",
@@ -12758,7 +13223,7 @@ stable.data(
     "scene_node_type_dispatch_table",
     xref("Scene_TraverseNodeTree", 890, 3),
     type="uint32_t",
-    doc="Seven-entry uint32_t jump table used by Scene_TraverseNodeTree to dispatch child scene-node type values 1..7 from node +0x64.",
+    doc="Seven-entry uint32_t jump table used by Scene_TraverseNodeTree to dispatch child scene-node type values 1..7 from node +0x64 (PC EN); node_type 3..5 share target pcdogs.exe+0x016D2 (PC EN) and out-of-range values default to pcdogs.exe+0x016D2 (PC EN).",
 )
 stable.data(
     "input_control_code_dispatch_table",
@@ -12827,7 +13292,7 @@ stable.data(
     type="uint32_t",
     doc=(
         "Four-entry uint32_t jump table used by Script_SetVariable for arithmetic opcode dispatch; "
-        "validated as data, not a callable function entry."
+        "validated as data."
     ),
 )
 stable.data(
@@ -13059,13 +13524,13 @@ stable.data(
     "movement_direction_dispatch_table",
     xref("Input_CalculateMovementVector", 41, 3),
     type="uint32_t",
-    doc="Ten-entry uint32_t jump table used by Input_CalculateMovementVector to map low-nibble direction masks to heading offsets.",
+    doc="Ten-entry uint32_t jump table used by Input_CalculateMovementVector to map low-nibble direction masks to heading offsets; kept as read-only scalar/base table metadata.",
 )
 stable.data(
     "movement_command_opcode_dispatch_table",
     xref("Actor_ProcessMovementCommands", 79, 3),
     type="uint32_t",
-    doc="Eleven-entry uint32_t jump table used by Actor_ProcessMovementCommands for movement command opcodes 0..10.",
+    doc="Eleven-entry uint32_t jump table used by Actor_ProcessMovementCommands for movement command opcodes 0..10; kept as read-only scalar/base table metadata.",
 )
 stable.data(
     "title_screen_state_dispatch_table",
@@ -13226,7 +13691,11 @@ stable.data(
     "ddraw_error_unknown_message",
     xref("D3D_FormatDirectXError", 1616, 1),
     type="char",
-    doc='NUL-terminated fallback DirectDraw error string "Unknown Error." used by D3D_FormatDirectXError; name aligned to Binary Ninja\'s ddraw_error_unknown_message data symbol.',
+    doc=(
+        'NUL-terminated fallback DirectDraw error string "Unknown Error." used by '
+        "D3D_FormatDirectXError; name aligned to Binary Ninja's ddraw_error_unknown_message data "
+        "symbol."
+    ),
 )
 stable.data("dd_err_ok", xref("D3D_FormatDirectXError", 1609, 1))
 stable.data("dd_err_not_initialized", xref("D3D_FormatDirectXError", 1574, 1))
@@ -13297,7 +13766,12 @@ stable.data(
 )
 stable.data("audio_emulated", xref("Audio_InitializeSystem", 154, 1))
 stable.data("audio_active_waves_themes", xref("Audio_ShutdownSystem", 74, 1))
-stable.data("audio_music_path", xref("Audio_OpenStream", 43, 1))
+stable.data(
+    "audio_music_path",
+    xref("Audio_OpenStream", 43, 1),
+    type="char",
+    doc="First byte/base of the data/music path format literal used by Audio_OpenStream.",
+)
 stable.data("fix_up_end", xref("Resource_FixUpLevelPointers", 1376, 1))
 stable.data("fix_up_usable_materials", xref("Resource_FixUpLevelPointers", 1239, 1))
 stable.data("fix_up_nav_net", xref("Resource_FixUpLevelPointers", 1126, 1))
@@ -13320,7 +13794,12 @@ stable.data("fix_up_cam_default_abs_addr", xref("Resource_FixUpLevelPointers", 8
 stable.data("fix_up_level_base_null", xref("Resource_FixUpLevelPointers", 59, 1))
 stable.data("fix_up_level_null", xref("Resource_FixUpLevelPointers", 35, 1))
 stable.data("fix_up_start", xref("Resource_FixUpLevelPointers", 11, 1))
-stable.data("savegame_dat", xref("SaveGame_ReadFile", 6, 1))
+stable.data(
+    "savegame_dat",
+    xref("SaveGame_ReadFile", 6, 1),
+    type="char",
+    doc='First byte/base of the "savegame.dat" path literal shared by SaveGame_ReadFile and SaveGame_WriteFile.',
+)
 stable.data("file_mode_write_binary", xref("SaveGame_WriteFile", 1, 1))
 stable.data("movie_err_play", xref("Movie_PlayIntro", 249, 1))
 stable.data("movie_err_open", xref("Movie_PlayIntro", 186, 1))
@@ -13329,8 +13808,21 @@ stable.data("debug_fps_format", xref("Debug_RenderOverlay", 163, 1))
 stable.data("debug_pos_format", xref("Debug_RenderOverlay", 117, 1))
 stable.data("max_primitives_per_batch", xref("Render_QuadClipped", 2004, 2))
 stable.data("window_class_pcdogs", xref("Config_SaveSettingsToINI", 64, 1))
-stable.data("config_file_checksum", xref("Config_LoadFromINI", 67, 1))
-stable.data("input_button_name_buffer", xref("Input_FormatButtonName", 60, 3))
+stable.data(
+    "config_file_checksum",
+    xref("Config_LoadFromINI", 67, 1),
+    type="int32_t",
+    doc="Scalar checksum/header accumulator used by Config_LoadFromINI to validate the PCDOGS pcdogs.ini header.",
+)
+stable.data(
+    "input_button_name_buffer",
+    xref("Input_FormatButtonName", 60, 3),
+    type="int32_t",
+    doc=(
+        "First entry/base of the input button-name string-id table consumed by Input_FormatButtonName and "
+        "Input_GetButtonString; not the heap-allocated input_button_name_buffers pointer array."
+    ),
+)
 stable.data("pcdogs_ini", xref("Config_LoadFromINI", 9, 1))
 stable.data(
     "controller_wingman_rumblepad",
@@ -13346,7 +13838,12 @@ stable.data(
 stable.data(
     "controller_hammerhead_fx", xref("Input_InitializeControllerMappings", 4, 1)
 )
-stable.data("input_no_key_assigned", xref("Input_FormatButtonName", 112, 1))
+stable.data(
+    "input_no_key_assigned",
+    xref("Input_FormatButtonName", 112, 1),
+    type="char",
+    doc='First byte/base of the inline "No key assigned" string literal used by Input_FormatButtonName.',
+)
 stable.data("game_title_102_dalmatians", xref("WinMain", 82, 4))
 stable.data(
     "window_height",
@@ -13372,15 +13869,23 @@ stable.data("file_dalms_setup_path", xref("PKG_FindAndOpenFile", 147, 1))
 stable.data("file_drive_letter", xref("PKG_FindAndOpenFile", 96, 1))
 stable.data("pcdogs_pkg", xref("PKG_FindAndOpenFile", 69, 1))
 stable.data("random_seed", xref("Math_GenerateRandom", 0, 2))
-stable.data("script_command_table", xref("ScriptCmd_WithActor", 174, 3))
+stable.data(
+    "script_command_table",
+    xref("ScriptCmd_WithActor", 174, 3),
+    type="Script_OpcodeTable",
+    doc=(
+        "45-entry script opcode handler table resolved through ScriptCmd_WithActor. "
+        "Table identity is cross-tool corroborated; per-opcode semantics still require "
+        "case-by-case audit before naming individual handlers."
+    ),
+)
 stable.data("input_landing_flags_ptr", xref("Player_ProcessMovement", 74, 1))
 stable.data("strin_no_string", xref("String_GetByIndex", 733, 1))
 stable.data("strin_two_strings", xref("String_GetByIndex", 428, 1))
 stable.data(
     "render_list_state",
     xref("Render_AdjustLevelScale", 101, 2),
-    type="Render_ListState*",
-    doc="Data pointer to active Render_ListState; Render_AdjustLevelScale writes dynamic level scale at +0xB8.",
+    doc="Data pointer to active Render_ListState; Render_AdjustLevelScale writes dynamic level scale at +0xB8 (PC EN).",
 )
 stable.data("debug_killed_by_player", xref("Memory_MallocWithRetry", 96, 1))
 stable.data("ui_confirm_stop_game", xref("Memory_MallocWithRetry", 78, 1))
@@ -13402,18 +13907,48 @@ stable.data("char_type_table", xref("String_ParseInt", 35, 2))
 stable.data("decimal_point_char", xref("String_FormatFloat", 64, 2))
 stable.data("scene_traversal_depth", xref("Scene_TraverseNodeTree", 1025, 2))
 stable.data("graphics_capability_flags", xref("Render_MeshNode", 3958, 1))
-stable.data("current_entity_camera", xref("Camera_UpdateFollow", 720, 2))
+stable.data(
+    "current_entity_camera",
+    xref("Camera_UpdateFollow", 720, 2),
+    doc=(
+        "Camera_UpdateFollow scratch/current entity-camera cell. This is transient "
+        "camera-owned runtime state used across level/entity transitions; current_level_data "
+        "entity slots are the actor/entity enumeration source, not this global."
+    ),
+)
 stable.data("screen_border_state_flag", xref("Script_PauseToggle", 102, 1))
 stable.data(
-    "active_room_list",
+    "active_entity_work_list",
     xref("Entity_UpdateVisibilityAndSpawn", 232, 1),
     xref("Camera_UpdateFollow", 2157, 1),
+    doc=(
+        "Active entity/navigation pointer cells: pcdogs.exe+0x55D30 (PC EN) is current, "
+        "pcdogs.exe+0x55D3C (PC EN) is staging, and pcdogs.exe+0x56850 (PC EN)/pcdogs.exe+0x55ED8 (PC "
+        "EN) are alternating 0x978-byte backing buffers. Entity_GetActiveActorFromList loads "
+        "pcdogs.exe+0x55D30 (PC EN) as an entity-array scan bound."
+    ),
 )
 stable.data("fade_counter", xref("Script_PauseToggle", 141, 1))
 stable.data("music_transition_volume", xref("Audio_TriggerMusicTransition", 153, 2))
-stable.data("navigation_command_queue", xref("Camera_UpdateFollow", 2147, 1))
+stable.data(
+    "navigation_command_queue",
+    xref("Camera_UpdateFollow", 2147, 1),
+    doc=(
+        "Camera_UpdateFollow navigation command/work queue pointer cell at pcdogs.exe+0x55D3C (PC "
+        "EN); writes are staged into the pcdogs.exe+0x55ED8 (PC EN)/pcdogs.exe+0x56850 (PC EN) "
+        "backing-buffer pair."
+    ),
+)
 stable.data("path_trace_work_buffer", xref("Actor_TracePath", 18, 1))
-stable.data("path_trace_state_2", xref("Actor_TracePath", 39, 2))
+stable.data(
+    "path_trace_state_2",
+    xref("Actor_TracePath", 39, 2),
+    doc=(
+        "Actor_TracePath byte/cell used when the source actor is NULL. Native evidence "
+        "initializes this to zero while using path_trace_work_buffer, current_level_data "
+        "entity slots, and active_entity_work_list; the exact byte meaning is still unknown."
+    ),
+)
 stable.data("path_trace_state_1", xref("Actor_TracePath", 29, 2))
 stable.data("path_trace_state_3", xref("Actor_TracePath", 23, 2))
 stable.data("camera_transition_trigger", xref("Camera_UpdateFollow", 668, 1))
@@ -13426,7 +13961,15 @@ stable.data(
 stable.data("music_fade_start_frame", xref("Audio_TriggerMusicTransition", 199, 1))
 stable.data("music_transition_end_frame", xref("Audio_TriggerMusicTransition", 226, 2))
 stable.data("music_transition_pending", xref("Audio_TriggerMusicTransition", 207, 2))
-stable.data("navigation_queue_head", xref("Camera_UpdateFollow", 2162, 1))
+stable.data(
+    "navigation_queue_head",
+    xref("Camera_UpdateFollow", 2162, 1),
+    doc=(
+        "Active entity/navigation backing buffer at pcdogs.exe+0x55ED8 (PC EN); Camera_UpdateFollow "
+        "selects pcdogs.exe+0x56850 (PC EN) as the alternate buffer while the shared backing-buffer "
+        "layout stays opaque."
+    ),
+)
 stable.data(
     "level_transition_flag",
     xref("Script_PauseToggle", 372, 2),
@@ -13466,7 +14009,7 @@ stable.data(
     "checkers_board",
     xref("Checkers_UpdateStateMachine", 225, 1),
     type="Checkers_Board",
-    doc="32-byte checkers board at 0x004572a0; passed to board init, move generation, move execution, and AI search.",
+    doc="32-byte checkers board at pcdogs.exe+0x572A0 (PC EN); passed to board init, move generation, move execution, and AI search.",
 )
 stable.data("checkers_ai_node_counter", xref("Checkers_UpdateStateMachine", 1470, 2))
 stable.data("checkers_move_result", xref("Checkers_UpdateStateMachine", 611, 1))
@@ -13603,8 +14146,8 @@ stable.data(
     type="DInput_JoystickState*",
     doc=(
         "Current DirectInput joystick state buffer read by Input_ReadGamepad and released "
-        "during input shutdown. Treat as a frame-local sample source; call JoyState_GetAxis* "
-        "near Input_ReadGamepad when live analog freshness matters."
+        "during input shutdown. This is a frame-local sample source; JoyState_GetAxis* "
+        "near Input_ReadGamepad gives live analog freshness."
     ),
 )
 stable.data(
@@ -13718,9 +14261,12 @@ stable.data(
 stable.data(
     "save_game_buffer",
     xref("Menu_HandleSaveGameLogic", 792, 2),
-    xref("SaveGame_ProcessOperation", 93, 2),
     type="SaveGame_Slot",
-    doc="First of four 0x5c-byte save-slot payloads immediately after the SaveGame_Data header; SaveGame_SaveToSlot copies active collectibles_data to save_game_buffer[slotIndex].",
+    doc=(
+        "First 0x5c-byte save-slot record immediately after the 0x10-byte "
+        "SaveGame_Data header. Native file operations cover 0x1dc bytes, consistent "
+        "with five slot-sized records."
+    ),
 )
 stable.data(
     "save_slot_valid_flags",
@@ -13728,10 +14274,38 @@ stable.data(
     type="uint8_t",
     doc="First save-slot valid byte at SaveGame_Slot+1; SaveGame_SaveToSlot sets saveSlots[slotIndex].is_valid to 1.",
 )
-stable.data("options_menu_backup_data", xref("Menu_HandleOptionsLogic", 169, 1))
-stable.data("keyboard_mappings", xref("Menu_HandleOptionsLogic", 1061, 3))
-stable.data("gamepad_mappings", xref("Menu_HandleOptionsLogic", 154, 1))
-stable.data("resource_data_buffer", xref("Shared_LoadCommonResources", 77, 1))
+stable.data(
+    "options_menu_backup_data",
+    xref("Menu_HandleOptionsLogic", 169, 1),
+    type="uint8_t[0x6c]",
+    doc="Editable 0x6c-byte options/config backup block copied before controls remapping and passed to Config_SaveSettingsToINI.",
+)
+stable.data(
+    "keyboard_mappings",
+    xref("Menu_HandleOptionsLogic", 1061, 3),
+    type="int32_t",
+    doc=(
+        "First entry/base of the 13-dword player-1/keyboard binding range inside "
+        "options_menu_backup_data at offset +4 (PC EN); options UI compares 11 keyboard-side "
+        "entries. Scalar alias only; the parent 0x6c block remains authoritative."
+    ),
+)
+stable.data(
+    "gamepad_mappings",
+    xref("Menu_HandleOptionsLogic", 154, 1),
+    type="int32_t",
+    doc=(
+        "First entry/base of the 13-dword player-2/gamepad binding range inside "
+        "options_menu_backup_data at offset +0x38 (PC EN); options UI uses 10 gamepad-side "
+        "entries. Scalar alias only; the parent 0x6c block remains authoritative."
+    ),
+)
+stable.data(
+    "resource_data_buffer",
+    xref("Shared_LoadCommonResources", 77, 1),
+    type="void*",
+    doc="Resource/common-data buffer pointer populated by Shared_LoadCommonResources.",
+)
 stable.data("menu_state", xref("Menu_ProcessMenuState", 160, 3))
 stable.data(
     "menu_selection",
@@ -13786,19 +14360,25 @@ stable.data(
     "bonus_level_data",
     xref("Level_InitializeBonusData", 6, 4),
     type="uint16_t",
-    doc="First entry of the active SaveGame_Slot+0x38 packed bonus-level parameter table read by Level_InitializeBonusData.",
+    doc=(
+        "First entry of the active SaveGame_Slot+0x38 (PC EN) packed bonus-level parameter table read "
+        "by Level_InitializeBonusData."
+    ),
 )
 stable.data(
     "level_best_time",
     xref("SaveGame_SaveLevelCompletion", 131, 3),
     type="uint16_t",
-    doc="Active SaveGame_Slot+0x42 best time/value for the TOB bonus level, written from menu_items by SaveGame_SaveLevelCompletion.",
+    doc=(
+        "Active SaveGame_Slot+0x42 (PC EN) best time/value for the TOB bonus level, written from "
+        "menu_items by SaveGame_SaveLevelCompletion."
+    ),
 )
 stable.data(
     "bonus_name_entry_buffer",
     xref("Level_InitializeBonusData", 18, 3),
     type="uint8_t",
-    doc="First byte of active SaveGame_Slot+0x44 bonus/name-entry payload copied with each 0x5c-byte save slot.",
+    doc="First byte of active SaveGame_Slot+0x44 (PC EN) bonus/name-entry payload copied with each 0x5c-byte save slot.",
 )
 stable.data("lives_ui_state", xref("UI_UpdateLives", 303, 3))
 stable.data("lives_ui_counter_1", xref("UI_UpdateLives", 81, 1))
@@ -13810,17 +14390,67 @@ stable.data("saved_world_1_completion_bits", xref("SaveGame_SaveBonusProgress", 
 stable.data("saved_world_2_completion_bits", xref("SaveGame_SaveBonusProgress", 39, 2))
 stable.data("saved_world_3_completion_bits", xref("SaveGame_SaveBonusProgress", 45, 1))
 stable.data("saved_world_4_completion_bits", xref("SaveGame_SaveBonusProgress", 50, 2))
-stable.data("save_operation_step", xref("Menu_RenderSaveGame", 269, 3))
-stable.data("save_load_mode_flag", xref("Menu_RenderSaveGame", 276, 1))
-stable.data("save_operation_result", xref("Menu_HandleSaveGameLogic", 147, 2))
-stable.data("save_menu_active", xref("Menu_RenderSaveGame", 24, 1))
-stable.data("save_overwrite_choice", xref("Menu_RenderSaveGame", 308, 3))
-stable.data("save_dialog_state", xref("Menu_RenderSaveGame", 197, 1))
-stable.data("save_game_dirty_flag", xref("Menu_HandleSaveGameLogic", 433, 2))
-stable.data("save_game_menu_state", xref("Menu_RenderSaveGame", 249, 2))
+stable.data(
+    "save_operation_step",
+    xref("Menu_RenderSaveGame", 269, 3),
+    type="uint8_t",
+    doc="Save/load async operation step byte used by Menu_RenderSaveGame, Menu_HandleSaveGameLogic, and SaveGame_SaveToSlot.",
+)
+stable.data(
+    "save_load_mode_flag",
+    xref("Menu_RenderSaveGame", 276, 1),
+    type="uint8_t",
+    doc="Save/load mode byte in the save-menu state cluster.",
+)
+stable.data(
+    "save_operation_result",
+    xref("Menu_HandleSaveGameLogic", 147, 2),
+    type="uint8_t",
+    doc="Save operation result/status byte written by Menu_HandleSaveGameLogic.",
+)
+stable.data(
+    "save_menu_active",
+    xref("Menu_RenderSaveGame", 24, 1),
+    type="uint8_t",
+    doc="Save-menu active byte flag read by Menu_RenderSaveGame.",
+)
+stable.data(
+    "save_overwrite_choice",
+    xref("Menu_RenderSaveGame", 308, 3),
+    type="uint8_t",
+    doc="Overwrite-confirmation choice byte in the save/load menu dialog state cluster.",
+)
+stable.data(
+    "save_dialog_state",
+    xref("Menu_RenderSaveGame", 197, 1),
+    type="uint8_t",
+    doc="Save/load dialog substate byte consumed by Menu_RenderSaveGame.",
+)
+stable.data(
+    "save_game_dirty_flag",
+    xref("Menu_HandleSaveGameLogic", 433, 2),
+    type="uint8_t",
+    doc="Async save dirty/completion byte set while save-slot data is copied and operation 9 is queued.",
+)
+stable.data(
+    "save_game_menu_state",
+    xref("Menu_RenderSaveGame", 249, 2),
+    type="int32_t",
+    doc="Packed save-menu transition/countdown dword; native code accesses individual byte lanes.",
+)
 stable.data("menu_pause_delay", xref("Menu_CheckPauseInput", 90, 1))
-stable.data("controls_menu_key_index", xref("Menu_HandleOptionsLogic", 164, 1))
-stable.data("controls_menu_button_index", xref("Menu_HandleOptionsLogic", 159, 1))
+stable.data(
+    "controls_menu_key_index",
+    xref("Menu_HandleOptionsLogic", 164, 1),
+    type="int16_t",
+    doc="Two-byte controls prompt descriptor filled by Menu_RenderButtonPrompt.",
+)
+stable.data(
+    "controls_menu_button_index",
+    xref("Menu_HandleOptionsLogic", 159, 1),
+    type="int16_t",
+    doc="Second two-byte controls prompt descriptor filled by Menu_RenderButtonPrompt for duplicate/conflict checks.",
+)
 stable.data(
     "backup_puppy_count",
     xref("Level_InitializeSaveState", 15, 1),
@@ -13828,28 +14458,145 @@ stable.data(
 )
 stable.data("menu_selection_2", xref("SaveGame_SaveLevelCompletion", 269, 2))
 stable.data("puppy_counter_ui_state", xref("Menu_UpdatePauseMenu", 248, 3))
-stable.data("menu_input_up", xref("Menu_UpdateInput", 18, 1))
-stable.data("menu_input_down", xref("Menu_UpdateInput", 23, 1))
-stable.data("menu_input_left", xref("Menu_UpdateInput", 13, 1))
-stable.data("menu_input_right", xref("Menu_UpdateInput", 8, 1))
-stable.data("menu_input_confirm", xref("Menu_UpdateInput", 33, 1))
-stable.data("menu_input_cancel", xref("Menu_UpdateInput", 28, 1))
-stable.data("menu_input_up_held", xref("Menu_UpdateInput", 190, 1))
-stable.data("menu_input_down_held", xref("Menu_UpdateInput", 165, 2))
-stable.data("menu_input_left_held", xref("Menu_UpdateInput", 53, 2))
-stable.data("menu_input_right_held", xref("Menu_UpdateInput", 90, 2))
-stable.data("menu_input_cancel_held", xref("Menu_UpdateInput", 115, 2))
-stable.data("menu_input_confirm_held", xref("Menu_UpdateInput", 140, 2))
-stable.data("options_menu_column", xref("Menu_HandleOptionsLogic", 225, 1))
+stable.data(
+    "menu_input_up",
+    xref("Menu_UpdateInput", 18, 1),
+    type="int32_t",
+    doc=(
+        "One-shot menu-input up pulse dword at pcdogs.exe+0x9BAA4 (PC EN) in the pcdogs.exe+0x9BAA4 "
+        "(PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
+    ),
+)
+stable.data(
+    "menu_input_down",
+    xref("Menu_UpdateInput", 23, 1),
+    type="int32_t",
+    doc=(
+        "One-shot menu-input down pulse dword at pcdogs.exe+0x9BAA8 (PC EN) in the pcdogs.exe+0x9BAA4 "
+        "(PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
+    ),
+)
+stable.data(
+    "menu_input_left",
+    xref("Menu_UpdateInput", 13, 1),
+    type="int32_t",
+    doc=(
+        "One-shot menu-input left pulse dword at pcdogs.exe+0x9BAAC (PC EN) in the pcdogs.exe+0x9BAA4 "
+        "(PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
+    ),
+)
+stable.data(
+    "menu_input_right",
+    xref("Menu_UpdateInput", 8, 1),
+    type="int32_t",
+    doc=(
+        "One-shot menu-input right pulse dword at pcdogs.exe+0x9BAB0 (PC EN) in the "
+        "pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
+    ),
+)
+stable.data(
+    "menu_input_confirm",
+    xref("Menu_UpdateInput", 33, 1),
+    type="int32_t",
+    doc=(
+        "One-shot menu-input confirm pulse dword at pcdogs.exe+0x9BAB4 (PC EN) in the "
+        "pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
+    ),
+)
+stable.data(
+    "menu_input_cancel",
+    xref("Menu_UpdateInput", 28, 1),
+    type="int32_t",
+    doc=(
+        "One-shot menu-input cancel pulse dword at pcdogs.exe+0x9BAB8 (PC EN) in the "
+        "pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
+    ),
+)
+stable.data(
+    "menu_input_up_held",
+    xref("Menu_UpdateInput", 190, 1),
+    doc=(
+        "Held/debounce up byte at pcdogs.exe+0x9BABE (PC EN) in the pcdogs.exe+0x9BABC (PC "
+        "EN)..pcdogs.exe+0x9BAC1 (PC EN) cluster."
+    ),
+)
+stable.data(
+    "menu_input_down_held",
+    xref("Menu_UpdateInput", 165, 2),
+    doc=(
+        "Held/debounce down byte at pcdogs.exe+0x9BABF (PC EN) in the pcdogs.exe+0x9BABC (PC "
+        "EN)..pcdogs.exe+0x9BAC1 (PC EN) cluster."
+    ),
+)
+stable.data(
+    "menu_input_left_held",
+    xref("Menu_UpdateInput", 53, 2),
+    doc=(
+        "Held/debounce left byte at pcdogs.exe+0x9BAC1 (PC EN) in the pcdogs.exe+0x9BABC (PC "
+        "EN)..pcdogs.exe+0x9BAC1 (PC EN) cluster."
+    ),
+)
+stable.data(
+    "menu_input_right_held",
+    xref("Menu_UpdateInput", 90, 2),
+    doc=(
+        "Held/debounce right byte at pcdogs.exe+0x9BAC0 (PC EN) in the pcdogs.exe+0x9BABC (PC "
+        "EN)..pcdogs.exe+0x9BAC1 (PC EN) cluster."
+    ),
+)
+stable.data(
+    "menu_input_cancel_held",
+    xref("Menu_UpdateInput", 115, 2),
+    doc=(
+        "Held/debounce cancel byte at pcdogs.exe+0x9BABD (PC EN) in the pcdogs.exe+0x9BABC (PC "
+        "EN)..pcdogs.exe+0x9BAC1 (PC EN) cluster."
+    ),
+)
+stable.data(
+    "menu_input_confirm_held",
+    xref("Menu_UpdateInput", 140, 2),
+    doc=(
+        "Held/debounce confirm byte at pcdogs.exe+0x9BABC (PC EN) in the pcdogs.exe+0x9BABC (PC "
+        "EN)..pcdogs.exe+0x9BAC1 (PC EN) cluster."
+    ),
+)
+stable.data(
+    "options_menu_column",
+    xref("Menu_HandleOptionsLogic", 225, 1),
+    type="int32_t",
+    doc="Options/control-remap column cursor dword used by Menu_HandleOptionsLogic.",
+)
 stable.data(
     "options_menu_selection",
     xref("Menu_HandleOptionsLogic", 58, 2),
     xref("Level_UpdateInterLevelMenu", 181, 3),
+    type="int32_t",
+    doc="Selected options-menu row dword at pcdogs.exe+0x9BAC8 (PC EN).",
 )
-stable.data("button_remapping_active", xref("Menu_HandleOptionsLogic", 515, 1))
-stable.data("options_menu_state", xref("Menu_HandleOptionsLogic", 327, 2))
-stable.data("menu_ui_state_5", xref("Menu_HandleOptionsLogic", 46, 2))
-stable.data("options_menu_sub_state", xref("Menu_HandleOptionsLogic", 0, 1))
+stable.data(
+    "button_remapping_active",
+    xref("Menu_HandleOptionsLogic", 515, 1),
+    type="int32_t",
+    doc="Control-remapping active/latch dword in the options submenu state cluster.",
+)
+stable.data(
+    "options_menu_state",
+    xref("Menu_HandleOptionsLogic", 327, 2),
+    type="int32_t",
+    doc="Auxiliary options-menu UI state dword at pcdogs.exe+0x9BADC (PC EN).",
+)
+stable.data(
+    "menu_ui_state_5",
+    xref("Menu_HandleOptionsLogic", 46, 2),
+    type="int32_t",
+    doc="Auxiliary options-menu UI state dword read by Menu_HandleOptionsLogic.",
+)
+stable.data(
+    "options_menu_sub_state",
+    xref("Menu_HandleOptionsLogic", 0, 1),
+    type="int32_t",
+    doc="Options/control-remap substate dword read at Menu_HandleOptionsLogic entry.",
+)
 stable.data("sorted_render_list_flags", xref("Render_DrawSortedLists", 10, 1))
 stable.data("menu_render_state", xref("Render_DrawSortedLists", 21, 1))
 stable.data("rendering_frame_counter", xref("Render_IncrementPassCounter", 0, 1))
@@ -13859,7 +14606,11 @@ stable.data("level_select_slot", xref("Level_UpdateWorldSelectMenu", 70, 3))
 stable.data("level_select_fade_counter", xref("Level_UpdateWorldSelectMenu", 10, 1))
 stable.data("cheat_code_progress", xref("Input_CheckCheatCodeSequence", 11, 1))
 stable.data("loading_blend_texture_ptr", xref("Pkg_LoadRandomSplashScreen", 67, 1))
-stable.data("level_resource_handle", xref("Resource_CleanupGameState", 0, 1))
+stable.data(
+    "level_resource_handle",
+    xref("Resource_CleanupGameState", 0, 1),
+    doc="Global latch for the completed level resource/blob handle returned by Level_LoadStateMachine; Resource_CleanupGameState passes the non-null handle to Level_UnloadResources and then clears it.",
+)
 stable.data("loading_fade_counter", xref("Pkg_LoadRandomSplashScreen", 79, 2))
 stable.data("main_menu_state", xref("Level_Load", 175, 2))
 stable.data("main_menu_selection", xref("Level_UpdateInterLevelMenu", 266, 1))
@@ -13924,26 +14675,55 @@ stable.data(
     xref("Collision_DetectAndResolve3DCollision", 6038, 3),
     type="Actor_DefaultUpdateCallback",
     doc=(
-        "Data actor-default update callback slot initialized to "
-        "Actor_DefaultUpdateHandler by Render_InitDispatchTables; renamed from "
-        "actor_default_update_handler in the SDK to avoid colliding with the "
-        "function wrapper for Actor_DefaultUpdateHandler."
+        "Slot 0 of the sparse collision-state callback vector, initialized to "
+        "Actor_DefaultUpdateHandler by Render_InitDispatchTables; slots at +8 (PC EN)/+12 (PC EN)/+16 (PC EN) "
+        "hold actor, component/projectile, and powerup collision callbacks."
     ),
 )
-stable.data("collision_dispatch_actor_func", xref("Level_InitializeActorSystem", 17, 2))
 stable.data(
-    "collision_response_actor_func", xref("Collision_InitializeFunctionPointers", 10, 2)
+    "collision_dispatch_actor_func",
+    xref("Level_InitializeActorSystem", 17, 2),
+    type="Collision_ActorResponseCallback",
+    doc="Actor collision response callback slot initialized to Actor_ProcessCollisionResponse; part of the sparse collision-state callback vector.",
 )
 stable.data(
-    "powerup_collision_handler", xref("Collision_ProcessPowerupCollisions", 3, 1)
+    "collision_response_actor_func",
+    xref("Collision_InitializeFunctionPointers", 10, 2),
+    type="Collision_ComponentResponseCallback",
+    doc="Component/projectile collision response callback slot initialized to Collision_ProcessProjectileHit.",
 )
-stable.data("audio_system_flag", xref("Audio_SetEnabledFlag", 4, 1))
-stable.data("open_stream_count", xref("Audio_ShutdownSystem", 61, 1))
+stable.data(
+    "powerup_collision_handler",
+    xref("Collision_ProcessPowerupCollisions", 3, 1),
+    type="Powerup_CollisionCallback",
+    doc=(
+        "Four-argument Powerup collision filter callback slot initialized by "
+        "Powerup_InitializeSystem; Collision_ProcessPowerupCollisions passes "
+        "(powerup_actor, actor, 0, -2)."
+    ),
+)
+stable.data(
+    "audio_system_flag",
+    xref("Audio_SetEnabledFlag", 4, 1),
+    type="uint8_t",
+    doc="Byte-sized audio enabled flag stored by Audio_SetEnabledFlag and read by Audio_GetEnabledFlag.",
+)
+stable.data(
+    "open_stream_count",
+    xref("Audio_ShutdownSystem", 61, 1),
+    type="int32_t",
+    doc="Count of open Miles streams, incremented by Audio_OpenStream and decremented by Audio_CloseMusicStream.",
+)
 stable.data(
     "sound_slots",
-    xref("Audio_InitializeSystem", 251, 1),
+    xref("Audio_StartSoundPlayback", 112, 2),
     type="Audio_SoundSlot",
-    doc="First entry of the nine-slot Audio_SoundSlot array allocated during audio initialization; SDK typed globals expose the base element type.",
+    doc=(
+        "Base entry of the nine-slot Audio_SoundSlot array at pcdogs.exe+0x9BDE0 (PC EN). "
+        "Audio_InitializeSystem seeds the allocation cursor at pcdogs.exe+0x9BDE8 (PC EN), eight bytes after base, "
+        "then writes the leading fields at cursor - 8/cursor - 4; SDK typed globals "
+        "resolve to the array base."
+    ),
 )
 stable.data(
     "sound_slot_0_sample_handle",
@@ -13954,8 +14734,14 @@ stable.data(
 stable.data(
     "music_stream_handle",
     xref("Audio_SetStreamVolume", 0, 2),
-    xref("Audio_ResetMusicState", 4, 1),
     type="Audio_AIL_HStream",
+    doc="Active Miles music stream handle consumed by set-volume/play/pause/resume/close helpers.",
+)
+stable.data(
+    "music_selected_stream_record",
+    xref("Audio_ResetMusicState", 4, 1),
+    type="int32_t*",
+    doc="Selected/pending music stream record pointer stored by Audio_ResetMusicState and later passed to Audio_PlayMusicStream by Audio_ProcessMusicFade.",
 )
 stable.data("active_wave_count", xref("Audio_ShutdownSystem", 66, 2))
 stable.data(
@@ -13964,10 +14750,33 @@ stable.data(
     type="uint8_t",
     doc="Byte-sized audio/music state flags used by music fade/transition routines.",
 )
-stable.data("music_transition_target", xref("Audio_ShutdownSystem", 47, 2))
-stable.data("music_transition_state", xref("Audio_StartMusicWithFade", 7, 3))
-stable.data("music_fade_target_volume", xref("Audio_SetMusicFadeTarget", 7, 3))
-stable.data("bone_trail_current_entity", xref("BoneTrail_Reset", 18, 2))
+stable.data(
+    "music_transition_target",
+    xref("Audio_ShutdownSystem", 47, 2),
+    type="int16_t",
+    doc="Signed 16-bit music transition target/state value cleared during audio shutdown.",
+)
+stable.data(
+    "music_transition_state",
+    xref("Audio_StartMusicWithFade", 7, 3),
+    type="int16_t",
+    doc="Signed 16-bit current music fade/transition volume state advanced by Audio_ProcessMusicFade.",
+)
+stable.data(
+    "music_fade_target_volume",
+    xref("Audio_SetMusicFadeTarget", 7, 3),
+    type="int16_t",
+    doc="Signed 16-bit target volume used by Audio_SetMusicFadeTarget and Audio_ProcessMusicFade.",
+)
+stable.data(
+    "bone_trail_current_entity",
+    xref("BoneTrail_Reset", 18, 2),
+    doc=(
+        "Bone-trail current nav/entity/powerup selector. BoneTrail_FindPath writes it from "
+        "nav node metadata, and BoneTrail_UpdateAndRender maps the value into current_level_data "
+        "powerup/entity runtime data."
+    ),
+)
 stable.data("bone_trail_path_node_count", xref("BoneTrail_Reset", 24, 2))
 stable.data("bone_trail_path_end", xref("BoneTrail_FindPath", 607, 1))
 stable.data("bone_trail_timer", xref("BoneTrail_CheckAvailable", 19, 2))
@@ -13984,11 +14793,50 @@ stable.data("bone_trail_path_buffer_x_2", xref("BoneTrail_FindPath", 154, 1))
 stable.data("bone_trail_path_buffer_y_2", xref("BoneTrail_FindPath", 1881, 1))
 stable.data("bone_trail_path_buffer_z_2", xref("BoneTrail_FindPath", 1888, 2))
 stable.data("special_node_processing_flag", xref("Resource_FixUpMeshNode", 573, 2))
-stable.data("save_game_operation_state", xref("SaveGame_ProcessOperation", 61, 2))
-stable.data("save_game_size", xref("SaveGame_ProcessOperation", 41, 1))
-stable.data("save_game_verify_buffer", xref("SaveGame_ProcessOperation", 46, 2))
-stable.data("video_skip_requested", xref("Movie_PlayFile", 60, 2))
-stable.data("avi_playback_started", xref("Movie_PlayIntro", 274, 2))
+stable.data(
+    "save_game_operation_state",
+    xref("SaveGame_ProcessOperation", 61, 2),
+    type="uint32_t",
+    doc=(
+        "Packed active save I/O operation/status word initialized by SaveGame_InitOperation "
+        "and polled by SaveGame_ProcessOperation; byte 0 carries the result/status, byte 1 the success flag, "
+        "byte 2 the requested operation, and byte 3 the file operation code."
+    ),
+)
+stable.data(
+    "save_game_operation_buffer",
+    xref("SaveGame_ProcessOperation", 93, 2),
+    type="uint8_t*",
+    doc=(
+        "Async save-operation buffer pointer at pcdogs.exe+0x9C41C (PC EN). The static "
+        "save-file/slot span rooted at pcdogs.exe+0x9B798 (PC EN) is consistent with "
+        "five slot-sized records."
+    ),
+)
+stable.data(
+    "save_game_size",
+    xref("SaveGame_ProcessOperation", 41, 1),
+    type="uint32_t",
+    doc="Byte count passed to save read/write/verify helpers by SaveGame_ProcessOperation.",
+)
+stable.data(
+    "save_game_verify_buffer",
+    xref("SaveGame_ProcessOperation", 46, 2),
+    type="uint8_t*",
+    doc="Comparison buffer used by SaveGame_ProcessOperation's operation 12 verify path.",
+)
+stable.data(
+    "video_skip_requested",
+    xref("Movie_PlayFile", 60, 2),
+    type="int32_t",
+    doc="Movie playback skip/shutdown flag cleared by Movie_PlayIntro and set by Movie_PlayFile when the user skips or closes playback.",
+)
+stable.data(
+    "avi_playback_started",
+    xref("Movie_PlayIntro", 274, 2),
+    type="int32_t",
+    doc="AVI playback-start latch toggled by Movie_PlayIntro around Video_IsAVIPlaying during the AVI fallback path.",
+)
 stable.data("window_message_state", xref("Game_WindowProc", 16, 2))
 stable.data("show_fps_counter", xref("Render_DrawSortedLists", 159, 1))
 stable.data(
@@ -14036,30 +14884,70 @@ stable.data(
     doc="Number of frames accumulated since the last current_fps refresh.",
 )
 stable.data(
-    "level_load_state",
+    "level_menu_load_state",
     xref("Resource_CleanupGameState", 29, 2),
+    type="uint8_t",
+    doc=(
+        "Top-level menu/load dispatch state byte used by Level_Load, UI_Update, Resource_CleanupGameState, "
+        "and transition helpers."
+    ),
+)
+stable.data(
+    "level_stream_load_state",
     xref("Level_LoadStateMachine", 12, 1),
-    doc="Shared loading-stage state used by Level_Load and Level_LoadStateMachine; Level_Load dispatches 0..10 and Level_LoadStateMachine uses 0,1,2,4,5,7.",
+    type="int32_t",
+    doc=(
+        "Async package-stream loader stage dword used only by Level_LoadStateMachine; stages 0,1,2,4,5,7 "
+        "load level TOC entries and then reset this state to zero."
+    ),
 )
 stable.data(
     "level_tex_data_a",
     xref("Level_LoadStateMachine", 32, 1),
-    doc="First texture package entry loaded by Level_LoadStateMachine stage 0.",
+    type="void*",
+    doc="Opaque first level package-entry buffer loaded from TOC entry 0x24 + level_index * 3 by Level_LoadStateMachine stage 0.",
 )
 stable.data(
     "level_tex_data_b",
     xref("Level_LoadStateMachine", 104, 1),
-    doc="Second texture package entry loaded by Level_LoadStateMachine stage 2.",
+    type="void*",
+    doc="Opaque second level package-entry buffer loaded from TOC entry 0x25 + level_index * 3 by Level_LoadStateMachine stage 2.",
 )
 stable.data("debug_logging_enabled", xref("Resource_FixUpLevelPointers", 0, 1))
-stable.data("pkg_file_handle", xref("PKG_LoadEntry", 76, 1))
-stable.data("pkg_toc", xref("PKG_LoadEntry", 69, 3))
-stable.data("package_toc_file_sizes", xref("PKG_LoadEntry", 7, 3))
+stable.data(
+    "pkg_file_handle",
+    xref("PKG_LoadEntry", 76, 1),
+    type="File_Handle*",
+    doc="Open package File_Handle consumed by PKG_LoadEntry while reading aligned package entries.",
+)
+stable.data(
+    "pkg_toc",
+    xref("PKG_LoadEntry", 69, 3),
+    type="Pkg_TocEntry",
+    doc=(
+        "Base of the 0x8a-entry / 0x450-byte package table of contents at "
+        "pcdogs.exe+0x9CA80 (PC EN); each 8-byte Pkg_TocEntry stores file offset and size."
+    ),
+)
+stable.data(
+    "package_toc_file_sizes",
+    xref("PKG_LoadEntry", 7, 3),
+    type="uint32_t",
+    doc=(
+        "Size-field view at pkg_toc + 4 (PC EN) used by PKG_LoadEntry; this overlaps the "
+        "Pkg_TocEntry.size lane within the package TOC allocation."
+    ),
+)
 stable.data("tree_map_buckets", xref("TreeMap_Rebalance", 21, 3))
 stable.data("timed_signal_list_head", xref("Timer_ClearEventList", 0, 2))
 stable.data("signal_queue_count", xref("Input_ClearEventQueue", 0, 2))
 stable.data("signal_queue", xref("Signal_Poll", 29, 1))
-stable.data("sound_volume_array", xref("Audio_ProcessSoundQueue", 498, 4))
+stable.data(
+    "sound_playback_rate_table",
+    xref("Audio_ProcessSoundQueue", 498, 4),
+    type="uint16_t",
+    doc="First halfword/base of the 9-entry sound pitch/playback-rate cache used before AIL_set_sample_playback_rate.",
+)
 stable.data(
     "sound_entries",
     xref("Audio_FreeSoundSlot", 10, 1),
@@ -14112,34 +15000,60 @@ stable.data(
     "input_system_flags",
     xref("Audio_TriggerMusicTransition", 12, 2),
     type="uint32_t",
-    doc="Shared input/audio/replay mode flags: bit 0x20 marks demo replay playback, bit 0x10 selects alternate 3D-audio listener camera data, and bit 0x400 is set by Audio_TriggerMusicTransition.",
+    doc=(
+        "Shared frame/input/audio transition bitfield: bit 0x20 marks demo replay playback, bit 0x10 selects "
+        "alternate 3D-audio listener camera data, bit 0x400 is set by Audio_TriggerMusicTransition, bit 0x08 "
+        "requests unload before being cleared after Resource_UnloadGameData, bit 0x1000 gates cleanup/load "
+        "rendering, bit 0x4000 requests Level_Load, bit 0x04 marks post-load actor/audio initialization, and "
+        "bit 0x02 gates active scene update/render."
+    ),
 )
 stable.data(
     "string_table",
-    xref("Menu_RenderFormattedText", 50, 3),
     xref("String_SetTable", 4, 1),
+    type="int16_t*",
+    doc="Active package/localization string table pointer consumed by String_GetByIndex; split from input button-name buffers.",
 )
-stable.data("fireworks_active_count", xref("Fireworks_Initialize", 14, 3))
-stable.data("title_music_data", xref("Pkg_LoadTitleScreenResources", 151, 2))
+stable.data(
+    "input_button_name_buffers",
+    xref("Menu_RenderFormattedText", 50, 3),
+    type="char*",
+    doc="First entry/base of the heap-allocated input button-name buffer pointer array.",
+)
+stable.data("spots_active_count", xref("Spots_Initialize", 14, 3))
+stable.data(
+    "title_music_data",
+    xref("Pkg_LoadTitleScreenResources", 151, 2),
+    type="int32_t*",
+    doc="Title-screen music stream-record pointer loaded from the title package and armed by Audio_StartMusicWithFade.",
+)
 stable.data("title_material_base", xref("Pkg_LoadTitleScreenResources", 85, 2))
-stable.data("fireworks_cycle_length", xref("Fireworks_Initialize", 422, 2))
+stable.data("spots_cycle_length", xref("Spots_Initialize", 422, 2))
 stable.data("title_screen_counter", xref("TitleScreen_UpdateAndRender", 130, 3))
-stable.data("fireworks_material_index", xref("Fireworks_Initialize", 63, 1))
+stable.data("spots_material_index", xref("Spots_Initialize", 63, 1))
 stable.data("title_resource_package", xref("Pkg_LoadTitleScreenResources", 62, 1))
 stable.data("title_screen_fade_level", xref("TitleScreen_UpdateAndRender", 168, 3))
-stable.data("fireworks_data_array", xref("Fireworks_Initialize", 23, 1))
-stable.data("fireworks_timer_array", xref("Fireworks_Initialize", 338, 4))
+stable.data("spots_data_array", xref("Spots_Initialize", 23, 1))
+stable.data("spots_timer_array", xref("Spots_Initialize", 338, 4))
 stable.data("title_bonus_replay_resource", xref("TitleScreen_CleanupResources", 12, 1))
 stable.data("title_screen_state", xref("TitleScreen_UpdateAndRender", 16, 3))
 stable.data("title_resource_handle_1", xref("Pkg_LoadTitleScreenResources", 36, 1))
 stable.data("title_resource_handle_0", xref("Pkg_LoadTitleScreenResources", 12, 1))
-stable.data("fireworks_sound_id", xref("Fireworks_Update", 92, 1))
-stable.data("fireworks_frame_counter", xref("Fireworks_Initialize", 7, 3))
+stable.data("spots_sound_id", xref("Spots_Update", 92, 1))
+stable.data("spots_frame_counter", xref("Spots_Initialize", 7, 3))
 stable.data("memory_handle_pool", xref("Memory_AllocateHandle", 82, 2))
 stable.data("mem_handle_pool_handle_id", xref("Memory_InitializeAllocator", 10, 1))
 stable.data("mem_allocator_initialized", xref("Memory_InitializeAllocator", 45, 2))
 stable.data("memory_handle_pool_head", xref("Memory_AllocateHandle", 1, 2))
-stable.data("input_state_buffer", xref("Input_ClearState", 8, 1))
+stable.data(
+    "input_state_buffer",
+    xref("Input_ClearState", 8, 1),
+    type="uint8_t[0x100]",
+    doc=(
+        "0x100-byte raw input/VK state clear buffer zeroed by Input_ClearState. "
+        "Public fixed-array accessors use pointer-to-array read/write signatures."
+    ),
+)
 stable.data("current_display_mode", xref("Display_IsActive", 0, 2))
 stable.data("float_format_precision", xref("Float_ConvertToExponential", 17, 1))
 stable.data("float_format_flags", xref("Float_ConvertToExponential", 3, 2))
@@ -14152,8 +15066,8 @@ stable.data(
     type="uint32_t",
     doc=(
         "Packed camera yaw global used by Player_ProcessMovement. The high 16 bits hold "
-        "the signed yaw angle; the low 16 bits are not a fallback angle, and a zero high "
-        "word is a valid yaw sample."
+        "the signed yaw angle; the low 16 bits are reserved, and a zero high word is "
+        "a valid yaw sample."
     ),
 )
 stable.data("camera_viewport_height", xref("Camera_SetViewport", 54, 2))
@@ -14162,39 +15076,97 @@ stable.data(
     "player_1_camera_pos",
     xref("Checkers_UpdateStateMachine", 115, 6),
     type="Math_Vec3i",
-    doc="Primary listener/camera position vector at 0x00624350; used by positional-audio panning when input_system_flags bit 0x10 is set.",
+    doc="Primary listener/camera position vector at pcdogs.exe+0x224350 (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is set.",
 )
 stable.data(
     "player_2_camera_pos",
     xref("Audio_PlaySoundDefinition3D", 103, 1),
     type="Math_Vec3i",
-    doc="Alternate listener/camera position vector at 0x0062435c; used by positional-audio panning when input_system_flags bit 0x10 is clear.",
+    doc="Alternate listener/camera position vector at pcdogs.exe+0x22435C (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is clear.",
 )
 stable.data("graphics_flags", xref("Pkg_InitializeSystem", 20, 2))
-stable.data("level_init_callback_2", xref("Resource_UnloadGameData", 67, 2))
-stable.data("level_init_callback_1", xref("Resource_UnloadGameData", 61, 2))
+stable.data(
+    "level_init_callback_2",
+    xref("Resource_UnloadGameData", 67, 2),
+    doc=(
+        "Untyped native level cleanup/init callback slot touched by Resource_UnloadGameData. "
+        "Kept engine-owned and untyped until the callback signature is proven."
+    ),
+)
+stable.data(
+    "level_init_callback_1",
+    xref("Resource_UnloadGameData", 61, 2),
+    doc=(
+        "Untyped native level cleanup/init callback slot touched by Resource_UnloadGameData. "
+        "Kept engine-owned and untyped until the callback signature is proven."
+    ),
+)
 stable.data("vertex_batch_buffer", xref("Scene_RenderFrame", 1402, 1))
-stable.data("input_state_previous_p_1", xref("Menu_UpdateInput", 0, 2))
+stable.data(
+    "input_state_previous_p_1",
+    xref("Menu_UpdateInput", 0, 2),
+    doc=(
+        "First/base byte of the two-player previous Input_State snapshot rows at pcdogs.exe+0x234420 "
+        "(PC EN); player 2 follows at +0x0C (PC EN). Scalar aliases overlap the row."
+    ),
+)
 stable.data("input_toggle_mask_p_1", xref("Menu_ProcessMenuState", 418, 2))
 stable.data("demo_replay_saved_random_seed", xref("Recording_StartPlayback", 30, 1))
-stable.data("input_state_current_p_1", xref("Camera_CalculateFollowAngles", 828, 2))
+stable.data(
+    "input_state_current_p_1",
+    xref("Camera_CalculateFollowAngles", 828, 2),
+    doc=(
+        "First/base byte of the two-player current Input_State snapshot rows at pcdogs.exe+0x234460 "
+        "(PC EN); player 2 follows at +0x0C (PC EN). Scalar aliases overlap the row."
+    ),
+)
 stable.data(
     "current_input_x",
     xref("Input_CalculateMovementVector", 173, 3),
     xref("Input_Update", 158, 1),
+    doc=(
+        "Input/movement scratch value referenced by Input_Update and "
+        "Input_CalculateMovementVector."
+    ),
 )
 stable.data("demo_replay_data", xref("DemoReplay_LoadBonusReplay", 36, 1))
 stable.data("render_color_adjustment_flag", xref("Render_MeshNode", 1752, 2))
-stable.data("script_current_actor", xref("Script_MoveToTarget", 135, 2))
+stable.data(
+    "script_current_actor",
+    xref("Script_MoveToTarget", 135, 2),
+    type="Actor_State*",
+    doc=(
+        "Script-dispatch current actor context written by Script_ExecuteBehaviorScript "
+        "and read by script command handlers; engine-owned transient state."
+    ),
+)
 stable.data("script_entity_index", xref("Script_CheckTerminator", 278, 1))
-stable.data("physics_time_step", xref("Model_UpdateTransformAndPhysics", 2297, 3))
-stable.data("behavior_process_actor_func", xref("Level_InitializeActorSystem", 47, 2))
+stable.data(
+    "model_physics_callback_table",
+    xref("Model_UpdateTransformAndPhysics", 2297, 3),
+    type="Actor_BehaviorCallback",
+    doc="First slot/base of the eight-slot model/physics callback vector at pcdogs.exe+0x2344A0 (PC EN)..pcdogs.exe+0x2344BC (PC EN).",
+)
+stable.data(
+    "behavior_process_actor_func",
+    xref("Level_InitializeActorSystem", 47, 2),
+    type="Actor_BehaviorCallback",
+    doc="Actor behavior dispatch callback initialized by Level_InitializeActorSystem.",
+)
 stable.data(
     "behavior_process_projectile_func",
     xref("Collision_InitializeFunctionPointers", 20, 2),
-    doc="Projectile behavior lifecycle callback initialized to Collision_ProcessProjectileLifecycle.",
+    type="Actor_BehaviorCallback",
+    doc=(
+        "Projectile behavior lifecycle callback slot initialized to "
+        "Collision_ProcessProjectileLifecycle; the native return is data-var status."
+    ),
 )
-stable.data("behavior_process_snap_func", xref("Level_InitializeActorSystem", 57, 2))
+stable.data(
+    "behavior_process_snap_func",
+    xref("Level_InitializeActorSystem", 57, 2),
+    doc="Snap/entity update callback slot initialized to Actor_ProcessSnapAndEntityUpdate.",
+)
 stable.data(
     "behavior_target_actor",
     xref("Render_InitDispatchTables", 49, 2),
@@ -14219,19 +15191,46 @@ stable.data(
     type="Actor_BehaviorCallback",
     doc="Behavior/movement callback slot initialized to Actor_ProcessMovementBehavior by Render_InitDispatchTables.",
 )
-stable.data("powerup_update_func", xref("Powerup_InitializeSystem", 9, 2))
-stable.data("movement_handler_table", xref("Physics_UpdateActorPreprocess", 141, 3))
-stable.data("player_movement_func", xref("Level_InitializeActorSystem", 37, 2))
+stable.data(
+    "powerup_update_func",
+    xref("Powerup_InitializeSystem", 9, 2),
+    type="Powerup_UpdateCallback",
+    doc="Powerup actor update callback slot initialized by Powerup_InitializeSystem.",
+)
+stable.data(
+    "movement_handler_table",
+    xref("Physics_UpdateActorPreprocess", 141, 3),
+    type="Actor_BehaviorCallback",
+    doc="Read-only base of the movement handler callback table indexed by actor movement/collision state at pcdogs.exe+0x2344D0 (PC EN). unload_delay_counter at pcdogs.exe+0x2344DC (PC EN) bounds the known range.",
+)
+stable.data(
+    "player_movement_func",
+    xref("Level_InitializeActorSystem", 37, 2),
+    type="Actor_BehaviorCallback",
+    doc="Player movement callback slot initialized by Level_InitializeActorSystem.",
+)
 stable.data(
     "projectile_logic_func",
     xref("Collision_InitializeFunctionPointers", 0, 2),
-    doc="Projectile component update callback initialized to Component_UpdateProjectileLogic.",
+    doc="Projectile behavior lifecycle callback slot initialized to Collision_ProcessProjectileLifecycle.",
 )
 stable.data("unload_delay_counter", xref("Menu_RenderSaveGame", 93, 1))
-stable.data("powerup_actor_list_head", xref("Collision_ProcessPowerupCollisions", 9, 2))
+stable.data(
+    "powerup_actor_list_head",
+    xref("Collision_ProcessPowerupCollisions", 9, 2),
+    doc=(
+        "Live powerup actor list head linked by Powerup_CloneActor. Powerup collision "
+        "handling and clone-source templates use separate SDK symbols."
+    ),
+)
 stable.data("powerup_spawn_delay", xref("Powerup_HandleCollection", 92, 2))
 stable.data("graphics_capabilities", xref("Render_ProcessMeshCommands", 59, 2))
-stable.data("pkg_base_path", xref("Audio_OpenStream", 34, 1))
+stable.data(
+    "pkg_base_path",
+    xref("Audio_OpenStream", 34, 1),
+    type="char[0x104]",
+    doc="Mutable NUL-terminated package base path buffer used to build package and data/music stream paths.",
+)
 stable.data("render_batch_triangle_count", xref("Render_QuadClipped", 2077, 2))
 stable.data("win_main_instance_handle", xref("WinMain", 540, 1))
 stable.data("render_batch_primitive_count", xref("Render_QuadClipped", 1999, 1))
@@ -14242,7 +15241,15 @@ stable.data("localization_language_id", xref("String_GetByIndex", 161, 1))
 stable.data("string_table_loaded", xref("String_GetByIndex", 124, 1))
 stable.data("string_buffer_ptr", xref("Menu_RenderConfirmPrompt", 80, 2))
 stable.data("string_table_size", xref("String_GetByIndex", 97, 2))
-stable.data("no_key_assigned_string", xref("Input_FormatButtonName", 92, 1))
+stable.data(
+    "no_key_assigned_string",
+    xref("Input_FormatButtonName", 92, 1),
+    type="char*",
+    doc=(
+        'Cached heap string for "No key assigned"; slot 12 of input_button_name_buffers aliases this '
+        "address, but the label remains a separate symbol."
+    ),
+)
 stable.data(
     "ui_initialized_flag", xref("Menu_AnimateSlots", 292, 1), xref("UI_Update", 0, 1)
 )
@@ -14377,7 +15384,10 @@ stable.data(
     "player_1_controls",
     xref("Config_ApplySettings", 119, 2),
     type="int32_t",
-    doc="First entry of the 10-control player-1 binding array saved to pcdogs.ini.",
+    doc=(
+        "First dword/base of the 13-dword player-1 pcdogs.ini binding block; Config_ApplySettings applies "
+        "the first 10 normal mappings."
+    ),
 )
 stable.data("player_1_down_key", xref("Input_InitializeButtonMappings", 359, 2))
 stable.data("input_button_map_0", xref("Input_InitializeButtonMappings", 369, 2))
@@ -14398,7 +15408,10 @@ stable.data(
     "player_2_controls",
     xref("Config_ApplySettings", 87, 2),
     type="int32_t",
-    doc="First entry of the 10-control player-2/gamepad binding array saved to pcdogs.ini.",
+    doc=(
+        "First dword/base of the 13-dword player-2/gamepad pcdogs.ini binding block; Config_ApplySettings "
+        "applies the first 10 normal mappings."
+    ),
 )
 stable.data("player_2_down_button", xref("Input_InitializeButtonMappings", 469, 2))
 stable.data("input_button_map_alt_0", xref("Input_InitializeButtonMappings", 479, 2))
@@ -14409,27 +15422,67 @@ stable.data("input_button_map_alt_4", xref("Input_InitializeButtonMappings", 519
 stable.data("input_button_map_alt_5", xref("Input_InitializeButtonMappings", 529, 2))
 stable.data("input_button_map_alt_6", xref("Input_InitializeButtonMappings", 539, 2))
 stable.data("input_button_map_alt_7", xref("Input_InitializeButtonMappings", 549, 2))
-stable.data("config_file_path", xref("Movie_PlayIntro", 142, 2))
-stable.data("level_material_section", xref("Resource_FixUpModelNode", 277, 1))
-stable.data("level_blob_ptr", xref("Resource_FixUpObjectNode", 12, 2))
+stable.data(
+    "config_file_path",
+    xref("Movie_PlayIntro", 142, 2),
+    type="int32_t",
+    doc="Post-config-block dword used as the exclusive end sentinel for pcdogs.ini control binding loops and zeroed on the AVI movie path.",
+)
+stable.data(
+    "level_material_section",
+    xref("Resource_FixUpModelNode", 277, 1),
+    type="Material_SectionHeader*",
+    doc="Active level material section header/base used while rebasing model-node material references.",
+)
+stable.data(
+    "level_blob_ptr",
+    xref("Resource_FixUpObjectNode", 12, 2),
+    type="uint32_t*",
+    doc=(
+        "Active level blob relocation base loaded from TOC entry 0x26 + level_index * 3; used while rebasing "
+        "material/object/level relative offsets and returned by Level_LoadStateMachine after final fixups."
+    ),
+)
 stable.data("shadow_render_list", xref("Shadow_ClearList", 0, 2))
 stable.data("powerup_collision_list_head", xref("Script_PauseToggle", 467, 1))
 stable.data(
     "collision_state_handler_table",
     xref("Collision_ProcessActorToActorCollisions", 198, 3),
+    type="Collision_ProcessCallback",
+    doc="Read-only first entry/base of the collision-state callback table indexed by actor collision subtype; slot 2 aliases collision_process_func.",
 )
-stable.data("collision_process_func", xref("Level_InitializeActorSystem", 27, 2))
+stable.data(
+    "collision_process_func",
+    xref("Level_InitializeActorSystem", 27, 2),
+    type="Collision_ProcessCallback",
+    doc="Engine-owned scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
+)
 stable.data("debug_polygon_counts", xref("Render_IsPolygonInDebugList", 0, 1))
 stable.data("powerup_active_list_head", xref("Render_IsPolygonInDebugList", 39, 3))
-stable.data("material_buffer_offset", xref("Shared_LoadCommonResources", 196, 2))
+stable.data(
+    "material_buffer_offset",
+    xref("Shared_LoadCommonResources", 196, 2),
+    type="Material_FrameSet*",
+    doc="Cursor into shared material frame-set storage advanced by Material_BuildTextureArray.",
+)
 stable.data("screen_fade_duration", xref("Player_RespawnAfterDeath", 105, 2))
 stable.data("screen_fade_counter", xref("Audio_ProcessMusicFade", 71, 1))
 stable.data("is_loading_level", xref("Player_RespawnAfterDeath", 88, 2))
 stable.data("level_index", xref("Menu_ProcessMenuTransition", 87, 2))
 stable.data("rendering_state_flag", xref("Level_InitializeActorSystem", 258, 3))
-stable.data("shared_material_section", xref("Shared_LoadCommonResources", 0, 1))
+stable.data(
+    "shared_material_section",
+    xref("Shared_LoadCommonResources", 0, 1),
+    type="Material_SectionHeader*",
+    doc="Shared/common material section header/base loaded by Shared_LoadCommonResources.",
+)
 stable.data("controller_hammerhead_name", xref("Menu_RenderMusicSelection", 26, 1))
-stable.data("controller_hammerhead_buttons", xref("Menu_HandleOptionsLogic", 340, 3))
+stable.data(
+    "controller_hammerhead_buttons",
+    xref("Menu_HandleOptionsLogic", 340, 3),
+    type="int32_t",
+    doc="First entry/base of the Hammerhead 10-button preset row inside a 0x8c-byte controller profile record.",
+)
 stable.data(
     "controller_hammerhead_btn_1", xref("Input_InitializeControllerMappings", 59, 2)
 )
@@ -14458,7 +15511,10 @@ stable.data(
     "controller_hammerhead_btn_9", xref("Input_InitializeControllerMappings", 127, 2)
 )
 stable.data(
-    "controller_sidewinder_buttons", xref("Input_InitializeControllerMappings", 148, 2)
+    "controller_sidewinder_buttons",
+    xref("Input_InitializeControllerMappings", 148, 2),
+    type="int32_t",
+    doc="First entry/base of the SideWinder 10-button preset row inside a 0x8c-byte controller profile record.",
 )
 stable.data(
     "controller_sidewinder_btn_1", xref("Input_InitializeControllerMappings", 158, 2)
@@ -14488,7 +15544,10 @@ stable.data(
     "controller_sidewinder_btn_9", xref("Input_InitializeControllerMappings", 222, 2)
 )
 stable.data(
-    "controller_gravis_buttons", xref("Input_InitializeControllerMappings", 247, 2)
+    "controller_gravis_buttons",
+    xref("Input_InitializeControllerMappings", 247, 2),
+    type="int32_t",
+    doc="First entry/base of the Gravis 10-button preset row inside a 0x8c-byte controller profile record.",
 )
 stable.data(
     "controller_gravis_btn_1", xref("Input_InitializeControllerMappings", 257, 2)
@@ -14518,7 +15577,10 @@ stable.data(
     "controller_gravis_btn_9", xref("Input_InitializeControllerMappings", 321, 2)
 )
 stable.data(
-    "controller_wingman_buttons", xref("Input_InitializeControllerMappings", 366, 2)
+    "controller_wingman_buttons",
+    xref("Input_InitializeControllerMappings", 366, 2),
+    type="int32_t",
+    doc="First entry/base of the WingMan 10-button preset row inside a 0x8c-byte controller profile record.",
 )
 stable.data(
     "controller_wingman_btn_1", xref("Input_InitializeControllerMappings", 376, 2)
@@ -14728,17 +15790,6 @@ stable.data("pause_target_rotation_angle", xref("Script_PauseToggle", 419, 2))
 stable.data("pause_target_y_offset", xref("Script_PauseToggle", 425, 2))
 stable.data("pause_target_distance", xref("Script_PauseToggle", 431, 2))
 stable.data("pause_camera_fov", xref("Script_PauseToggle", 451, 2))
-stable.data(
-    "level_data",
-    xref("Camera_UpdateFollow", 2571, 1),
-    type="int32_t",
-    doc=(
-        "Deprecated compatibility alias for dynamic_level_scale. This global is "
-        "the integer runtime level/render scale at 0x01A8A7A0; Camera_UpdateFollow "
-        "copies it into Render_ListState.dynamic_level_scale after shifting left "
-        "by 12. It is not a Level_Data*."
-    ),
-)
 stable.data("world_0_completion_bits", xref("Checkers_UpdateStateMachine", 1304, 2))
 stable.data("world_1_completion_bits", xref("SaveGame_SaveBonusProgress", 5, 2))
 stable.data("world_2_completion_bits", xref("SaveGame_SaveBonusProgress", 11, 2))
@@ -14753,7 +15804,11 @@ stable.data(
     "current_level_data",
     xref("Audio_TriggerMusicTransition", 65, 1),
     type="Level_Data*",
-    doc="Active stable Level_Data pointer at 0x01A8ADA0. Include dttr_pcdogs_unstable.h and use DTTR_Util_LevelDataAsRuntimeDataMutable or DTTR_Util_LevelDataAsRuntimeDataConst when code needs the audited Level_RuntimeData layout.",
+    doc=(
+        "Active stable Level_Data pointer at pcdogs.exe+0x168ADA0 (PC EN); actor enumeration uses "
+        "Level_RuntimeData.entity_array/entity_count plus Entity_State.active_actor through "
+        "dttr_pcdogs_unstable.h conversion helpers."
+    ),
 )
 stable.data("level_scale_factor", xref("Render_AdjustLevelScale", 63, 2))
 stable.data("level_render_distance", xref("Level_InitializeActorSystem", 389, 2))
@@ -14770,27 +15825,53 @@ stable.data(
     xref("Camera_UpdateFollow", 2571, 1),
     type="int32_t",
     doc=(
-        "Integer runtime level/render scale at 0x01A8A7A0. Camera_UpdateFollow "
-        "writes this value shifted left by 12 into Render_ListState.dynamic_level_scale "
-        "at offset 0xB8."
+        "Integer runtime level/render scale at pcdogs.exe+0x168A7A0 (PC EN). Camera_UpdateFollow "
+        "writes this value shifted left by 12 into Render_ListState.dynamic_level_scale at offset "
+        "+0xB8 (PC EN)."
     ),
 )
-stable.data("music_transition_active", xref("Audio_TriggerMusicTransition", 41, 2))
+stable.data(
+    "music_transition_active",
+    xref("Audio_TriggerMusicTransition", 41, 2),
+    type="uint8_t",
+    doc="Byte-sized music transition active/selected-state flag read by Audio_TriggerMusicTransition.",
+)
 stable.data("render_world_transform_ptr", xref("Render_MeshNode", 11, 2))
 stable.data(
     "player_actor",
     xref("Actor_ProcessRendering", 8, 2),
     type="Actor_State*",
     doc=(
-        "Rendering-time player actor pointer. It can be NULL or stale during movement and "
-        "collision hooks, so do not use it as the only current-player authority."
+        "Render-scoped actor pointer published and cleared by Actor_ProcessRendering. "
+        "Movement/collision hooks use DTTR_Util_GetActiveActor or "
+        "current_level_data->Level_RuntimeData.entity_array->Entity_State.active_actor for "
+        "current-player authority."
     ),
 )
 stable.data("script_pause_toggle_state", xref("Script_PauseToggle", 27, 1))
-stable.data("pause_saved_camera_x", xref("Script_PauseToggle", 41, 2))
-stable.data("pause_saved_camera_y", xref("Script_PauseToggle", 50, 2))
-stable.data("pause_saved_camera_z", xref("Script_PauseToggle", 59, 1))
-stable.data("projectile_actor_list_head", xref("Trail_SpawnFromEntry", 92, 1))
+stable.data(
+    "pause_saved_camera_x",
+    xref("Script_PauseToggle", 41, 2),
+    doc="Saved active actor world_render_pos_x used for pause/menu camera distance checks.",
+)
+stable.data(
+    "pause_saved_camera_y",
+    xref("Script_PauseToggle", 50, 2),
+    doc="Saved active actor world_render_pos_y used for pause/menu camera distance checks.",
+)
+stable.data(
+    "pause_saved_camera_z",
+    xref("Script_PauseToggle", 59, 1),
+    doc="Saved active actor world_render_pos_z used for pause/menu camera distance checks.",
+)
+stable.data(
+    "projectile_actor_list_head",
+    xref("Trail_SpawnFromEntry", 92, 1),
+    doc=(
+        "Live projectile actor linked-list head walked by Actor_UpdateProjectileList. "
+        "Use generated read access for inspection."
+    ),
+)
 stable.data("file_descriptor_table", xref("File_SeekAndGetPosition", 92, 3))
 stable.data("io_buffer_high_water_mark", xref("File_FlushToDisk", 4, 2))
 stable.data("heap_max_segments", xref("Heap_InitializeAllocator", 50, 2))

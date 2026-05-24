@@ -60,9 +60,9 @@ static DTTR_Core_Result resolve_symbol(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
+DTTR_Core_Result DTTR_PCDOGS_SymbolFunctionResolve(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_Id id,
 	uintptr_t *out_addr
 ) {
 	return resolve_symbol(
@@ -71,14 +71,29 @@ DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
 		DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT,
 		function_address_at,
 		out_addr,
-		"invalid PCDOGS function resolve arguments",
-		"PCDOGS function was not resolved"
+		"invalid PCDOGS symbol function resolve arguments",
+		"PCDOGS symbol function was not resolved"
 	);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_DataResolve(
+DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Function_Id id,
+	uintptr_t *out_addr
+) {
+	DTTR_PCDOGS_T_Symbol_Function_Id symbol_id;
+	if (!DTTR_PCDOGS_FunctionSymbolId(id, &symbol_id)) {
+		return dttr_core_result(
+			DTTR_ERR_INVALID_ARGUMENT,
+			"invalid PCDOGS function resolve arguments"
+		);
+	}
+	return DTTR_PCDOGS_SymbolFunctionResolve(ctx, symbol_id, out_addr);
+}
+
+DTTR_Core_Result DTTR_PCDOGS_SymbolDataResolve(
+	const DTTR_Core_Context *ctx,
+	DTTR_PCDOGS_T_Symbol_Data_Id id,
 	uintptr_t *out_addr
 ) {
 	return resolve_symbol(
@@ -87,9 +102,24 @@ DTTR_Core_Result DTTR_PCDOGS_DataResolve(
 		DTTR_PCDOGS_SYMBOL_DATA_COUNT,
 		global_address_at,
 		out_addr,
-		"invalid PCDOGS global resolve arguments",
-		"PCDOGS global was not resolved"
+		"invalid PCDOGS symbol global resolve arguments",
+		"PCDOGS symbol global was not resolved"
 	);
+}
+
+DTTR_Core_Result DTTR_PCDOGS_DataResolve(
+	const DTTR_Core_Context *ctx,
+	DTTR_PCDOGS_T_Data_Id id,
+	uintptr_t *out_addr
+) {
+	DTTR_PCDOGS_T_Symbol_Data_Id symbol_id;
+	if (!DTTR_PCDOGS_DataSymbolId(id, &symbol_id)) {
+		return dttr_core_result(
+			DTTR_ERR_INVALID_ARGUMENT,
+			"invalid PCDOGS global resolve arguments"
+		);
+	}
+	return DTTR_PCDOGS_SymbolDataResolve(ctx, symbol_id, out_addr);
 }
 
 DTTR_Core_Result DTTR_PCDOGS_Hook_DataPointer(
@@ -116,25 +146,28 @@ DTTR_Core_Result DTTR_PCDOGS_Hook_DataPointer(
 	return DTTR_Core_HookPointer(ctx, address, new_value, out_original, out_hook);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookSymbolFunction(
+static DTTR_Core_Result patch_group_hook_symbol_function(
 	DTTR_Core_PatchGroup *group,
-	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_Id id,
 	void *detour,
 	void **out_original
 ) {
 	if (!group || !detour) {
 		return dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
-			"invalid PCDOGS patch group function hook arguments"
+			"invalid PCDOGS patch group symbol function hook arguments"
 		);
 	}
 	const DTTR_PCDOGS_T_Symbol_Function *fn = DTTR_PCDOGS_SymbolFunctionAt((uint32_t)id);
 	if (!fn || fn->hook_kind != DTTR_PCDOGS_HOOK_REL32 || !fn->callable) {
-		return dttr_core_result(DTTR_ERR_UNSUPPORTED, "PCDOGS function is not hookable");
+		return dttr_core_result(
+			DTTR_ERR_UNSUPPORTED,
+			"PCDOGS symbol function is not hookable"
+		);
 	}
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
-	DTTR_Core_Result resolved = DTTR_PCDOGS_FunctionResolve(ctx, id, &address);
+	DTTR_Core_Result resolved = DTTR_PCDOGS_SymbolFunctionResolve(ctx, id, &address);
 	if (!DTTR_Core_ResultOk(resolved)) {
 		return resolved;
 	}
@@ -146,6 +179,22 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookSymbolFunction(
 		out_original,
 		NULL
 	);
+}
+
+DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookFunction(
+	DTTR_Core_PatchGroup *group,
+	DTTR_PCDOGS_T_Function_Id id,
+	void *detour,
+	void **out_original
+) {
+	DTTR_PCDOGS_T_Symbol_Function_Id symbol_id;
+	if (!DTTR_PCDOGS_FunctionSymbolId(id, &symbol_id)) {
+		return dttr_core_result(
+			DTTR_ERR_INVALID_ARGUMENT,
+			"invalid PCDOGS patch group function hook arguments"
+		);
+	}
+	return patch_group_hook_symbol_function(group, symbol_id, detour, out_original);
 }
 
 DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
@@ -224,7 +273,7 @@ static DTTR_Core_Result patch_spec_install(
 			"unsupported PCDOGS patch spec kind"
 		);
 	case DTTR_PCDOGS_PATCH_FUNCTION_HOOK:
-		return DTTR_PCDOGS_PatchGroup_HookSymbolFunction(
+		return DTTR_PCDOGS_PatchGroup_HookFunction(
 			group,
 			spec->function,
 			spec->detour,

@@ -80,7 +80,7 @@ Use `true` for required specs when a missing target should abort the install.
 
 ## Target Specs
 
-`DTTR_Core_TargetSpec` installs into an existing patch group. If you are not using `DTTR_PCDOGS_PatchGroup_Install()`, create the group during init and check the result before adding targets:
+`DTTR_Core_TargetSpec` installs into an existing patch group. For manual patch-group management, create the group during init and check the result before adding targets:
 
 ```c
 DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx->runtime, &patch_group);
@@ -139,7 +139,7 @@ const DTTR_PCDOGS_T_Patch_Spec specs[] = {
 };
 ```
 
-A skipped optional spec increments `DTTR_PCDOGS_T_Patch_Report::skipped_optional`. Treat that as expected compatibility behavior, not a hard failure.
+A skipped optional spec increments `DTTR_PCDOGS_T_Patch_Report::skipped_optional`; treat that as expected compatibility behavior.
 
 ## Cleanup
 
