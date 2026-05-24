@@ -34,6 +34,7 @@ static bool confirm_discard_changes(
 		{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Discard"},
 		{SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"},
 	};
+
 	const SDL_MessageBoxData message_box = {
 		SDL_MESSAGEBOX_WARNING,
 		ctx ? ctx->window : NULL,
@@ -159,6 +160,7 @@ static bool init_state_from_args(config_ui_state *state, int argc, char **argv) 
 		);
 		return false;
 	}
+
 	sdsfree(config_path);
 
 	state->show_shortcut_debug = env_flag_enabled(CONFIG_DEBUG_SHORTCUTS_ENV);
@@ -209,6 +211,7 @@ static void process_events(
 			if (confirm_discard_changes(ctx, state, "close the configuration tool")) {
 				break;
 			}
+
 			*running = true;
 			continue;
 		}

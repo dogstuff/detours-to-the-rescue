@@ -281,6 +281,7 @@ bool DTTR_Config_Load(const char *filename) {
 					filename
 				);
 			}
+
 			return true;
 		}
 

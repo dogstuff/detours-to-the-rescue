@@ -174,6 +174,7 @@ const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {
 		"x"
 	),
 };
+
 const size_t DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT = sizeof(
 														 DTTR_TEST_PCDOGS_SIDECAR_TARGETS
 													 )

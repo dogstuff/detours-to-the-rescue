@@ -30,6 +30,7 @@ static void d3d_device7_mat4_multiply_f(
 			}
 		}
 	}
+
 	memcpy(out, tmp, sizeof(tmp));
 }
 
@@ -101,6 +102,7 @@ static uint32_t d3d_device7_expand_strip(
 	if (count < 3) {
 		return 0;
 	}
+
 	uint32_t n = 0;
 	for (uint32_t i = 0; i < count - 2; i++) {
 		if (i & 1) {
@@ -113,6 +115,7 @@ static uint32_t d3d_device7_expand_strip(
 			out[n++] = in[i + 2];
 		}
 	}
+
 	return n;
 }
 
@@ -125,12 +128,14 @@ static uint32_t d3d_device7_expand_fan(
 	if (count < 3) {
 		return 0;
 	}
+
 	uint32_t n = 0;
 	for (uint32_t i = 0; i < count - 2; i++) {
 		out[n++] = in[0];
 		out[n++] = in[i + 1];
 		out[n++] = in[i + 2];
 	}
+
 	return n;
 }
 
@@ -231,6 +236,7 @@ static void d3d_device7_record_draw(
 		DTTR_LOG_WARN("DrawPrimitive: missing device/buffers");
 		return;
 	}
+
 	if (count > DTTR_MAX_FRAME_VERTICES)
 		count = DTTR_MAX_FRAME_VERTICES;
 
@@ -250,6 +256,7 @@ static void d3d_device7_record_draw(
 		);
 		return;
 	}
+
 	memcpy(
 		(uint8_t *)state->transfer_mapped + state->vertex_offset * DTTR_VERTEX_SIZE,
 		verts,
@@ -266,6 +273,7 @@ static void d3d_device7_record_draw(
 									   ? DTTR_BLEND_ADDITIVE
 									   : DTTR_BLEND_ALPHA;
 	}
+
 	draw_rec.draw.depth_test = state->depth_test;
 	draw_rec.draw.depth_write = state->depth_write;
 
@@ -274,6 +282,7 @@ static void d3d_device7_record_draw(
 		d3d_device7_mat4_multiply_f(mv, state->view, state->model);
 		d3d_device7_mat4_multiply_f(draw_rec.draw.uniforms.mvp, state->proj, mv);
 	}
+
 	draw_rec.draw.uniforms.screen_size[0] = (float)state->logical_width;
 	draw_rec.draw.uniforms.screen_size[1] = (float)state->logical_height;
 	draw_rec.draw.uniforms.is_2d = transformed ? (dttr_config.sprite_smooth ? 2.0f : 1.0f)
@@ -337,6 +346,7 @@ static bool d3d_device7_ensure_staged_texture(DTTR_StagedTexture *st) {
 		.layer_count_or_depth = 1,
 		.num_levels = dttr_graphics_calc_mip_levels(st->width, st->height),
 	};
+
 	st->gpu_tex = SDL_CreateGPUTexture(state->device, &tex_info);
 	return st->gpu_tex != NULL;
 }
@@ -354,6 +364,7 @@ static void d3d_device7_texture_bind(DTTR_Texture tex) {
 			&& !state->bound_texture) {
 			return;
 		}
+
 		d3d_device7_clear_bound_texture(state);
 		return;
 	}
@@ -378,6 +389,7 @@ static void d3d_device7_texture_bind(DTTR_Texture tex) {
 	if (dttr_graphics_is_gpu_thread()) {
 		d3d_device7_ensure_staged_texture(st);
 	}
+
 	state->bound_texture_handle = tex;
 	state->bound_texture = st->gpu_tex;
 	SDL_UnlockMutex(state->texture_mutex);
@@ -693,6 +705,7 @@ static HRESULT __stdcall d3ddevice7_setrenderstate(
 		d3d_device7_set_cull_mode((DTTR_CullMode)value);
 		break;
 	}
+
 	return S_OK;
 }
 
@@ -814,6 +827,7 @@ static HRESULT __stdcall d3ddevice7_drawprimitive(
 		} else if (dim_code == 3) {
 			dim = 1;
 		}
+
 		stride += (size_t)dim * sizeof(float);
 	}
 
@@ -874,6 +888,7 @@ static HRESULT __stdcall d3ddevice7_drawprimitive(
 				max_rhw = d3d_device7_verts[i].rhw;
 			}
 		}
+
 		if (max_rhw > 0.0f) {
 			const float inv_max = 1.0f / max_rhw;
 			for (DWORD i = 0; i < count; i++) {
@@ -1038,6 +1053,7 @@ static HRESULT __stdcall d3ddevice7_gettexturestagestate(
 		*out = 0;
 		break;
 	}
+
 	return S_OK;
 }
 
@@ -1078,6 +1094,7 @@ static HRESULT __stdcall d3ddevice7_settexturestagestate(
 		d3d_device7_set_texture_address_v((DTTR_TextureAddress)value);
 		break;
 	}
+
 	return S_OK;
 }
 
@@ -1225,5 +1242,6 @@ DTTR_Graphics_COM_Direct3DDevice7 *dttr_graphics_com_create_direct3ddevice7() {
 	if (dev) {
 		dev->vtbl = &vtbl;
 	}
+
 	return dev;
 }

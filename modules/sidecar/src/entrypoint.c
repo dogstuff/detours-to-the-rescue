@@ -16,7 +16,6 @@
 #include "dttr_errors.h"
 #include "dttr_hooks.h"
 #include "game/hooks_private.h"
-#include "game_data_private.h"
 #include "graphics/graphics_private.h"
 #include "graphics/hooks_private.h"
 #include "inputs/hooks_private.h"
@@ -166,6 +165,7 @@ static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 	for (size_t i = 0; i < DTTR_ARRAY_COUNT(required_symbols); ++i) {
 		ok = check_required_symbol(&required_symbols[i]) && ok;
 	}
+
 	return ok;
 }
 
@@ -337,6 +337,7 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 			after_sdl_event(event, true);
 			return;
 		}
+
 		break;
 
 	case SDL_EVENT_WINDOW_RESIZED:
@@ -363,6 +364,7 @@ void dttr_sidecar_poll_sdl_events() {
 
 // Releases modding runtime hooks and mod state before graphics and audio shutdown.
 static void cleanup_runtime(const DTTR_Mods_Context *ctx) {
+	dttr_pcdogs_crash_symbols_clear();
 	dttr_game_data_cleanup();
 
 #ifdef DTTR_MODS_ENABLED
@@ -387,6 +389,7 @@ static bool require_pcdogs_call(const char *name, bool called) {
 	if (!called) {
 		DTTR_LOG_ERROR("Required PCDOGS startup call failed: %s", name);
 	}
+
 	return called;
 }
 
@@ -478,6 +481,7 @@ static void attempt_play_startup_movies() {
 		if (!names[i]) {
 			break;
 		}
+
 		sds path = sdsnew(prefix);
 		if (!path || !DTTR_Path_AppendSegment(&path, names[i], '\\')) {
 			sdsfree(path);
@@ -544,7 +548,7 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 		goto cleanup;
 	}
 
-	DTTR_Crashdump_Init(dttr_loader_dir);
+	DTTR_CrashDump_Init(dttr_loader_dir);
 	OutputDebugStringA("DTTR_SIDECAR_ENTRYPOINT");
 
 	compute_exe_hash();
@@ -596,6 +600,8 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 		goto cleanup;
 	}
 
+	dttr_pcdogs_crash_symbols_register(&ctx->runtime);
+
 	if (!install_required_sidecar_hooks(ctx)) {
 		DTTR_LOG_ERROR("Failed to install required sidecar hooks - aborting");
 		exit_code = 1;
@@ -616,6 +622,7 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 		.overlay_visible = false,
 		.game_input_enabled = true,
 	};
+
 	dttr_mods_input_mode_changed(&input_ctx);
 	dttr_mods_overlay_visible_changed(false);
 #endif

@@ -1,12 +1,10 @@
-include("${CMAKE_SOURCE_DIR}/modules/common/tests/cmake/dttrcmocka.cmake")
-dttr_find_cmocka()
-
 set(DTTR_SDK_TEST_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 set(DTTR_SDK_TEST_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
 set(DTTR_SDK_TEST_INCLUDE_DIRS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
     "${DTTR_SDK_GENERATED_SRC_DIR}/generated"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/include"
 )
 
 dttr_add_object_compile_check(dttr_sdk_compile_checks
@@ -44,6 +42,7 @@ add_custom_target(dttr_sdk_tests
         dttr_sdk_compile_checks
         dttr_runtime_cpp_link_check
 )
+add_dependencies(dttr_tests dttr_sdk_tests)
 
 if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
     add_test(
@@ -76,6 +75,7 @@ if(NOT DTTR_CMOCKA_FOUND)
     if(DTTR_REQUIRE_TEST_DEPS)
         message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
     endif()
+
     message(WARNING "cmocka was not found; skipping DttR cmocka tests")
     return()
 endif()
@@ -103,26 +103,6 @@ dttr_add_cmocka_test_suite(dttr_core_sdk_tests
         dttr_sdk_runtime
     LABELS
         sdk
-    CASES
-        core-sdk-validation
-        core-sdk-signatures
-        core-sdk-patches-and-groups
-        core-sdk-patch-group
-        core-sdk-patch-group-rollback
-        core-sdk-patch-group-rollback-failure
-        core-sdk-patch-group-checked-release-failure
-        pkg-walk-core-behaviors
-        pkg-walk-accessors-and-status-names
-        pcdogs-patch-specs
-        pcdogs-patch-spec-cleanup-failure
-        pcdogs-patch-spec-install-macro
-        pcdogs-typed-patch-hook-spec
-        pcdogs-typed-patch-hook-chain
-        core-sdk-hook-chain-unsupported
-        pcdogs-data-pointer-null-hook
-        pcdogs-active-actor-helpers
-        pcdogs-reset-unhookable
-        pcdogs-symbol-facade
 )
 
 dttr_add_cmocka_test_suite(dttr_hook_registry_tests
@@ -134,18 +114,6 @@ dttr_add_cmocka_test_suite(dttr_hook_registry_tests
         dttr_sdk_runtime
     LABELS
         sdk
-    CASES
-        hook-registry-patch-bytes
-        hook-registry-pointer
-        hook-registry-owner-detach
-        hook-registry-cleanup-all
-        hook-registry-overlap
-        hook-registry-function-hook
-        hook-registry-function-chain
-        hook-registry-function-chain-middle-detach
-        hook-registry-function-chain-owner-detach
-        hook-registry-invalid-arguments
-        hook-registry-cached-sigscan-invalid-arguments
 )
 
 add_dependencies(dttr_sdk_tests
@@ -193,9 +161,6 @@ if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
             sdk
             pcdogs
             fixtures
-        CASES
-            signatures
-            blueprint-functions
         TIMEOUT 300
     )
 

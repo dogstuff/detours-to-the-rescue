@@ -1,5 +1,4 @@
 #include "dttr_sidecar.h"
-#include "game_data_private.h"
 #include "hooks_private.h"
 #include "sidecar_private.h"
 #include <dttr_log.h>
@@ -58,6 +57,7 @@ static void build_saves_dir(char *buf, size_t buf_size) {
 	if (!DTTR_Path_CopySds(buf, buf_size, dir)) {
 		buf[0] = '\0';
 	}
+
 	sdsfree(dir);
 }
 
@@ -70,6 +70,7 @@ static void build_save_slot_dir(char *buf, size_t buf_size) {
 		|| !DTTR_Path_CopySds(buf, buf_size, dir)) {
 		buf[0] = '\0';
 	}
+
 	sdsfree(dir);
 }
 
@@ -113,6 +114,7 @@ static const char *redirect_path(
 		sdsfree(redirected);
 		return path;
 	}
+
 	sdsfree(redirected);
 
 	if (IS_READ_ONLY_MODE(mode) && !DTTR_Path_ExactExists(buf)) {
@@ -242,6 +244,7 @@ DTTR_PCDOGS_T_File_Handle *__cdecl dttr_crt_hook_open_file_callback(
 				return result;
 			}
 		}
+
 		DTTR_LOG_ERROR("File \"%s\" does not exist; passing to game.", path);
 		return result;
 	}

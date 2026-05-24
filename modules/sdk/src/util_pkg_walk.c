@@ -111,6 +111,7 @@ static bool resolve_toc(
 	if (!out_entries || !out_count) {
 		return false;
 	}
+
 	*out_entries = NULL;
 	*out_count = 0;
 
@@ -149,6 +150,7 @@ static DTTR_Util_PkgVisitAction emit_visit(
 		result->visited_count++;
 		result->failed_count += visit && visit->status != DTTR_UTIL_PKG_STATUS_OK;
 	}
+
 	return visitor ? visitor(visit, visitor_userdata) : DTTR_UTIL_PKG_VISIT_CONTINUE;
 }
 
@@ -241,6 +243,7 @@ static bool emit_decode_boundary(
 		result->stopped = true;
 		return true;
 	}
+
 	return false;
 }
 

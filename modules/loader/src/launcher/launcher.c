@@ -159,7 +159,7 @@ __declspec(dllexport) int dttr_launcher_main(int argc, char *argv[]) {
 		DTTR_FATAL("Could not resolve loader directory");
 	}
 
-	DTTR_Crashdump_Init(exe_dir);
+	DTTR_CrashDump_Init(exe_dir);
 	DTTR_Errors_SetMessageHandler(DTTR_LoaderUI_ShowError);
 
 	resolve_config_path(argc, argv);
@@ -191,6 +191,7 @@ __declspec(dllexport) int dttr_launcher_main(int argc, char *argv[]) {
 	if (!set_env("DTTR_CONFIG_PATH", dttr_config_path)) {
 		DTTR_FATAL("Could not pass configuration path to game process");
 	}
+
 	prepend_modules_to_path();
 
 	if (iso_context.is_iso) {

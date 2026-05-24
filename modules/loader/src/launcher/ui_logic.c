@@ -14,6 +14,7 @@ bool DTTR_LoaderUI_ChoiceIsDisc(DTTR_LoaderUIChoice choice, size_t *out_index) {
 	if (out_index) {
 		*out_index = (size_t)index;
 	}
+
 	return true;
 }
 

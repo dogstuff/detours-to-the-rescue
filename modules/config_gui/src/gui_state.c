@@ -209,6 +209,7 @@ void load_config(config_ui_state *state) {
 		} else {
 			set_status(state, "Failed to load config.");
 		}
+
 		return;
 	}
 

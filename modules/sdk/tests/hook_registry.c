@@ -1,15 +1,9 @@
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#include <cmocka.h>
-
 #include <stdint.h>
 #include <string.h>
 #include <windows.h>
 
 #include <dttr_runtime.h>
-#include <dttr_test_cmocka.h>
+#include <dttr_test_support.h>
 
 static uint8_t patch_target[4] = {0x10, 0x20, 0x30, 0x40};
 static void *pointer_target = (void *)0x11112222u;

@@ -58,6 +58,7 @@ static bool surface_bgra_upload_size(uint32_t width, uint32_t height, size_t *ou
 	if (out_size) {
 		*out_size = size;
 	}
+
 	return true;
 }
 
@@ -71,6 +72,7 @@ HRESULT dttr_graphics_com_validate_directdrawsurface7(
 	if (out_pitch) {
 		*out_pitch = 0;
 	}
+
 	if (out_pixel_size) {
 		*out_pixel_size = 0;
 	}
@@ -92,9 +94,11 @@ HRESULT dttr_graphics_com_validate_directdrawsurface7(
 	if (out_pitch) {
 		*out_pitch = (uint32_t)pitch;
 	}
+
 	if (out_pixel_size) {
 		*out_pixel_size = (size_t)pitch * (size_t)height;
 	}
+
 	return S_OK;
 }
 
@@ -124,6 +128,7 @@ static HRESULT blit_rect_from_optional(
 		.w = (uint32_t)(rect->right - rect->left),
 		.h = (uint32_t)(rect->bottom - rect->top),
 	};
+
 	return S_OK;
 }
 
@@ -142,6 +147,7 @@ static bool blit_rect_clip_to_surface(
 	if (rect->w > max_w) {
 		rect->w = max_w;
 	}
+
 	if (rect->h > max_h) {
 		rect->h = max_h;
 	}
@@ -368,6 +374,7 @@ static uint64_t surface_hash_source_pixels(
 		const uint8_t *row = (const uint8_t *)self->pixels + (size_t)y * self->pitch;
 		XXH3_64bits_update(&hash_state, row, row_bytes);
 	}
+
 	return XXH3_64bits_digest(&hash_state);
 }
 
@@ -422,6 +429,7 @@ static bool surface_texture_retain(DTTR_Texture tex) {
 		st->refcount++;
 		retained = true;
 	}
+
 	SDL_UnlockMutex(state->texture_mutex);
 	return retained;
 }
@@ -463,14 +471,17 @@ static DTTR_Texture surface_texture_create_or_retain(
 		idx = i;
 		break;
 	}
+
 	if (idx < 0) {
 		if (state->staged_texture_count >= DTTR_MAX_STAGED_TEXTURES) {
 			SDL_UnlockMutex(state->texture_mutex);
 			DTTR_LOG_ERROR("Too many textures");
 			return DTTR_INVALID_TEXTURE;
 		}
+
 		idx = state->staged_texture_count++;
 	}
+
 	DTTR_StagedTexture *st = &state->staged_textures[idx];
 	st->gpu_tex = NULL;
 	st->width = width;
@@ -493,14 +504,17 @@ static DTTR_Texture surface_texture_create_or_retain(
 		SDL_UnlockMutex(state->texture_mutex);
 		return DTTR_INVALID_TEXTURE;
 	}
+
 	if (pixels) {
 		memcpy(st->pixels, pixels, size);
 	} else {
 		memset(st->pixels, 0, size);
 	}
+
 	if (st->cache_key_valid) {
 		surface_texture_cache_insert_locked(st->cache_key, (DTTR_Texture)(idx + 1));
 	}
+
 	surface_queue_pending_upload_locked(state, idx);
 
 	SDL_UnlockMutex(state->texture_mutex);
@@ -513,6 +527,7 @@ static void surface_texture_release(DTTR_Texture tex) {
 	if (!tex) {
 		return;
 	}
+
 	const int idx = (int)tex - 1;
 	if (idx < 0 || idx >= state->staged_texture_count) {
 		return;
@@ -525,6 +540,7 @@ static void surface_texture_release(DTTR_Texture tex) {
 		SDL_UnlockMutex(state->texture_mutex);
 		return;
 	}
+
 	if (st->refcount == 0) {
 		SDL_UnlockMutex(state->texture_mutex);
 		return;
@@ -536,10 +552,12 @@ static void surface_texture_release(DTTR_Texture tex) {
 		st->cache_key_valid = false;
 		st->cache_key = 0;
 	}
+
 	if (state->bound_texture == st->gpu_tex) {
 		state->bound_texture = NULL;
 		state->bound_texture_handle = DTTR_INVALID_TEXTURE;
 	}
+
 	state->renderer->defer_texture_destroy(state, idx);
 	st->gpu_tex = NULL;
 	free(st->pixels);
@@ -566,6 +584,7 @@ static bool surface_texture_update_unique(
 		|| !surface_bgra_upload_size((uint32_t)width, (uint32_t)height, &size)) {
 		return false;
 	}
+
 	const int idx = (int)tex - 1;
 	if (idx < 0 || idx >= state->staged_texture_count) {
 		return false;
@@ -590,6 +609,7 @@ static bool surface_texture_update_unique(
 		if (had_cache_key) {
 			surface_texture_cache_insert_locked(old_cache_key, tex);
 		}
+
 		SDL_UnlockMutex(state->texture_mutex);
 		return false;
 	}
@@ -600,6 +620,7 @@ static bool surface_texture_update_unique(
 	} else {
 		st->update_streak = 1;
 	}
+
 	st->last_update_frame = current_frame;
 
 	st->pixels = resized;
@@ -608,6 +629,7 @@ static bool surface_texture_update_unique(
 		state->renderer->defer_texture_destroy(state, idx);
 		st->gpu_tex = NULL;
 	}
+
 	st->width = width;
 	st->height = height;
 	st->cache_key = cache_key;
@@ -615,6 +637,7 @@ static bool surface_texture_update_unique(
 	if (st->cache_key_valid) {
 		surface_texture_cache_insert_locked(cache_key, tex);
 	}
+
 	surface_queue_pending_upload_locked(state, idx);
 	updated = true;
 
@@ -726,6 +749,7 @@ static void surface_upload_texture(DTTR_Graphics_COM_DirectDrawSurface7 *self) {
 		self->last_upload_height = upload_h;
 		self->last_upload_hash = source_hash;
 	}
+
 	self->dirty = !upload_ok;
 }
 
@@ -743,9 +767,11 @@ static HRESULT __stdcall ddrawsurface7_queryinterface(
 		if (!self->texture) {
 			self->texture = dttr_graphics_com_create_direct3d_texture2(self);
 		}
+
 		if (ppv) {
 			*ppv = self->texture;
 		}
+
 		return S_OK;
 	}
 
@@ -754,6 +780,7 @@ static HRESULT __stdcall ddrawsurface7_queryinterface(
 	if (ppv) {
 		*ppv = self;
 	}
+
 	return S_OK;
 }
 
@@ -772,10 +799,12 @@ static ULONG __stdcall ddrawsurface7_release(DTTR_Graphics_COM_DirectDrawSurface
 		surface_texture_release(self->dttr_texture);
 		self->dttr_texture = 0;
 	}
+
 	if (self->back_buffer) {
 		self->back_buffer->vtbl->Release(self->back_buffer);
 		self->back_buffer = NULL;
 	}
+
 	free(self->pixels);
 	self->pixels = NULL;
 	free(self->convert_rgba);
@@ -894,9 +923,11 @@ static HRESULT __stdcall ddrawsurface7_blt(
 				if (copy_w > dst_region.w) {
 					copy_w = dst_region.w;
 				}
+
 				if (copy_h > dst_region.h) {
 					copy_h = dst_region.h;
 				}
+
 				if (copy_w == 0 || copy_h == 0) {
 					return S_OK;
 				}
@@ -923,6 +954,7 @@ static HRESULT __stdcall ddrawsurface7_blt(
 					surface_texture_release(self->dttr_texture);
 					self->dttr_texture = DTTR_INVALID_TEXTURE;
 				}
+
 				if (surface_texture_retain(src->dttr_texture)) {
 					self->dttr_texture = src->dttr_texture;
 				}
@@ -1009,6 +1041,7 @@ static HRESULT __stdcall ddrawsurface7_getattachedsurface(
 		);
 		*surf = self->back_buffer;
 	}
+
 	return S_OK;
 }
 
@@ -1042,6 +1075,7 @@ static HRESULT __stdcall ddrawsurface7_getcolorkey(
 		ck->dwColorSpaceLowValue = self->has_colorkey ? self->colorkey : 0;
 		ck->dwColorSpaceHighValue = ck->dwColorSpaceLowValue;
 	}
+
 	return S_OK;
 }
 
@@ -1066,9 +1100,11 @@ static HRESULT __stdcall ddrawsurface7_getoverlayposition(
 	if (x) {
 		*x = 0;
 	}
+
 	if (y) {
 		*y = 0;
 	}
+
 	return S_OK;
 }
 
@@ -1211,6 +1247,7 @@ static HRESULT __stdcall ddrawsurface7_setcolorkey(
 		self->dirty = true;
 		surface_upload_texture(self);
 	}
+
 	return S_OK;
 }
 
@@ -1474,5 +1511,6 @@ DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface
 		surf->last_upload_height = 0;
 		surf->last_upload_hash = 0;
 	}
+
 	return surf;
 }

@@ -359,6 +359,7 @@ DTTR_Core_Result DTTR_Core_HookFunction(
 		if (hook_error.status == DTTR_ERR_HOOK_CHAIN_UNSUPPORTED) {
 			return hook_error;
 		}
+
 		return dttr_core_result(DTTR_ERR_MEMORY_PROTECTION, "failed to hook function");
 	}
 
@@ -508,6 +509,7 @@ DTTR_Core_Result DTTR_Core_UnpatchChecked(DTTR_Core_Patch *patch) {
 	if (!patch || DTTR_Core_HookDetachChecked(patch)) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
+
 	return dttr_core_result(DTTR_ERR_MEMORY_PROTECTION, "failed to detach patch");
 }
 
@@ -519,6 +521,7 @@ DTTR_Core_Result DTTR_Core_UnhookChecked(DTTR_Core_Hook *hook) {
 	if (!hook || DTTR_Core_HookDetachChecked(hook)) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
+
 	return dttr_core_result(DTTR_ERR_MEMORY_PROTECTION, "failed to detach hook");
 }
 
@@ -600,11 +603,13 @@ static DTTR_Core_Result patch_group_uninstall_from(
 				"failed to restore one or more patch group entries"
 			);
 		}
+
 		kv_pop(group->entries);
 		if (entry.out_original) {
 			*entry.out_original = NULL;
 		}
 	}
+
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
@@ -655,6 +660,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupDestroyChecked(DTTR_Core_PatchGroup *group)
 	if (!DTTR_Core_ResultOk(result)) {
 		return result;
 	}
+
 	kv_destroy(group->entries);
 	free(group);
 	return result;
@@ -675,6 +681,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupReleaseChecked(DTTR_Core_PatchGroup **group
 	if (!DTTR_Core_ResultOk(result)) {
 		return result;
 	}
+
 	*group = NULL;
 	return result;
 }
@@ -886,6 +893,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 				report_fail(out_report, i, rollback);
 				return rollback;
 			}
+
 			report_fail(out_report, i, reserved);
 			return reserved;
 		}
@@ -907,6 +915,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 				report_fail(out_report, i, rollback);
 				return rollback;
 			}
+
 			report_fail(out_report, i, result);
 			return result;
 		}

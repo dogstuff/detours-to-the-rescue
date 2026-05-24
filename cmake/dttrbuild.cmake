@@ -57,6 +57,7 @@ function(dttr_configure_ffmpeg)
                 "Missing FFmpeg import library: ${DTTR_FFMPEG_DIR}/lib/lib${DTTR_FFMPEG_LIB}.dll.a; run the toolchain/bootstrap setup first"
             )
     endif()
+
     if(NOT TARGET ${DTTR_FFMPEG_TARGET})
       add_library(${DTTR_FFMPEG_TARGET} SHARED IMPORTED)
       set_target_properties(${DTTR_FFMPEG_TARGET} PROPERTIES

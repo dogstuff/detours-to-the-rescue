@@ -1,17 +1,9 @@
 #ifndef DTTR_TEST_H
 #define DTTR_TEST_H
 
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#include <cmocka.h>
-
-#include <stdbool.h>
-#include <stdint.h>
-
-#include <dttr_test_binary.h>
-#include <dttr_test_cmocka.h>
+#define DTTR_TEST_BINARY_SUPPORT
+#include <dttr_test_support.h>
+#undef DTTR_TEST_BINARY_SUPPORT
 
 #define DTTR_TEST_PCDOGS_REQUIRED_ALL                                                    \
 	DTTR_TEST_FIXTURE_MASK_ALL(DTTR_TEST_PCDOGS_FIXTURE_COUNT)

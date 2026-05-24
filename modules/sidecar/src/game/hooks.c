@@ -40,6 +40,7 @@ bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
 		dttr_hook_cleanup_title_resources_original = NULL;
 		return false;
 	}
+
 	return true;
 }
 

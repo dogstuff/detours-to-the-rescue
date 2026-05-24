@@ -177,6 +177,7 @@ void show_tooltip(const char *text) {
 		igGetStyle()->WindowPadding.x,
 		DTTR_CONFIG_UI_TOOLTIP_PADDING_Y,
 	};
+
 	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, tooltip_padding);
 
 	if (!igBeginItemTooltip()) {
@@ -358,6 +359,7 @@ bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx) {
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_X),
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_Y),
 	};
+
 	const ImVec2_c item_spacing = {
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_ITEM_SPACING_X),
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_ITEM_SPACING_Y),

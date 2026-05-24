@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <dttr_mods.h>
 #include <dttr_pcdogs.h>
@@ -15,6 +16,41 @@ DTTR_STORAGE_SLOT(
 	DTTR_PCDOGS_F_TitleScreenCleanupResources_proto,
 	dttr_hook_cleanup_title_resources_original
 )
+
+void dttr_game_data_init();
+void dttr_game_data_cleanup();
+bool dttr_game_data_resolve_existing_read_path(
+	const char *path,
+	char *out_path,
+	size_t out_path_size
+);
+bool dttr_game_data_resolve_read_path(
+	const char *path,
+	char *out_path,
+	size_t out_path_size
+);
+
+static inline bool dttr_pcdogs_crash_symbol_should_add(
+	bool resolved,
+	uintptr_t address,
+	const char *name,
+	uintptr_t module_base,
+	uint32_t image_size
+) {
+	if (!resolved || !name || !name[0] || image_size == 0) {
+		return false;
+	}
+
+	const uintptr_t image_end = module_base + image_size;
+	if (image_end < module_base) {
+		return false;
+	}
+
+	return address >= module_base && address < image_end;
+}
+
+void dttr_pcdogs_crash_symbols_register(const DTTR_Core_Context *runtime);
+void dttr_pcdogs_crash_symbols_clear();
 
 const DTTR_Mods_Context *dttr_sidecar_context();
 const DTTR_Core_Context *dttr_sidecar_runtime_context();
@@ -50,6 +86,7 @@ static inline bool dttr_sidecar_install_pcdogs_patch_group(
 		DTTR_Core_PatchGroupRelease(group);
 		return false;
 	}
+
 	DTTR_MODS_LOG_DEBUG(
 		ctx,
 		"Installed %u %s patches (%u optional skipped)",

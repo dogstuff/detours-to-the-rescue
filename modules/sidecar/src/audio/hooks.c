@@ -105,6 +105,7 @@ static bool log_hook_result(const DTTR_Mods_Context *ctx, const char *name, bool
 		DTTR_MODS_LOG_ERROR(ctx, "%s: hook failed", name);
 		return false;
 	}
+
 	return true;
 }
 

@@ -14,6 +14,7 @@ uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback() {
 		DTTR_LOG_ERROR("PCDOGS package base path was unavailable");
 		return 0;
 	}
+
 	char *out_path = *path_buffer;
 
 	DWORD module_path_length = GetModuleFileNameA(

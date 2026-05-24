@@ -594,6 +594,12 @@ static DTTR_PCDOGS_T_Symbol_Function dttr_pcdogs_symbol_functions[DTTR_PCDOGS_SY
 #undef DTTR_PCDOGS_SYMBOL_ARRAY_FN
 };
 
+static const char* const dttr_pcdogs_symbol_function_names[DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT_VALUE] = {
+% for row in functions:
+	[DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id}] = "${c_pascal_token(row.name)}",
+% endfor
+};
+
 static DTTR_PCDOGS_T_Symbol_Data dttr_pcdogs_symbol_globals[DTTR_PCDOGS_SYMBOL_DATA_COUNT_VALUE] = {
 % for row in globals:
 	[DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_DATA(${data_write_policy(row)}, ${c_build_mask(row.supported_builds)}),
@@ -796,6 +802,7 @@ DTTR_PCDOGS_API uint32_t DTTR_PCDOGS_SymbolDataCount();
 DTTR_PCDOGS_API const DTTR_PCDOGS_T_Symbol_Function* DTTR_PCDOGS_SymbolFunctionAt(
 	uint32_t index
 );
+DTTR_PCDOGS_API const char* DTTR_PCDOGS_SymbolFunctionNameAt(uint32_t index);
 DTTR_PCDOGS_API const DTTR_PCDOGS_T_Symbol_Data* DTTR_PCDOGS_SymbolDataAt(
 	uint32_t index
 );
@@ -1050,6 +1057,13 @@ const DTTR_PCDOGS_T_Symbol_Function* DTTR_PCDOGS_SymbolFunctionAt(uint32_t index
 		return NULL;
 	}
 	return &dttr_pcdogs_symbol_functions[index];
+}
+
+const char* DTTR_PCDOGS_SymbolFunctionNameAt(uint32_t index) {
+	if (index >= DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT) {
+		return NULL;
+	}
+	return dttr_pcdogs_symbol_function_names[index];
 }
 
 const DTTR_PCDOGS_T_Symbol_Data* DTTR_PCDOGS_SymbolDataAt(uint32_t index) {

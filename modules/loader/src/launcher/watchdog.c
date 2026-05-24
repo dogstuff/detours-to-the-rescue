@@ -74,8 +74,8 @@ static void write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excepti
 		.ContextRecord = &thread_context,
 	};
 
-	sds filename = DTTR_Crashdump_Write(process, pid, tid, &ptrs);
-	sds stack_trace = DTTR_Crashdump_FormatStackTrace(process, thread, &thread_context);
+	sds filename = DTTR_CrashDump_Write(process, pid, tid, &ptrs);
+	sds stack_trace = DTTR_CrashDump_FormatStackTrace(process, thread, &thread_context);
 	CloseHandle(thread);
 
 	sds message = sdsempty();
@@ -184,6 +184,7 @@ bool DTTR_Loader_WatchdogWait(const PROCESS_INFORMATION *child_info) {
 				if (code != EXCEPTION_BREAKPOINT) {
 					continue_status = DBG_EXCEPTION_NOT_HANDLED;
 				}
+
 				break;
 			}
 
@@ -211,12 +212,14 @@ bool DTTR_Loader_WatchdogWait(const PROCESS_INFORMATION *child_info) {
 			if (evt.u.CreateProcessInfo.hFile) {
 				CloseHandle(evt.u.CreateProcessInfo.hFile);
 			}
+
 			break;
 
 		case LOAD_DLL_DEBUG_EVENT:
 			if (evt.u.LoadDll.hFile) {
 				CloseHandle(evt.u.LoadDll.hFile);
 			}
+
 			break;
 
 		case EXIT_PROCESS_DEBUG_EVENT:

@@ -42,6 +42,7 @@ typedef struct {
 		ULONG value;
 		PVOID value_ptr;
 	};
+
 	PSIZE_T return_length;
 } attribute;
 
@@ -122,6 +123,7 @@ static void resolve_nt_path_and_cwd(
 	if (!last_sep) {
 		DTTR_FATAL("Game path is missing a parent directory");
 	}
+
 	last_sep[1] = L'\0';
 }
 

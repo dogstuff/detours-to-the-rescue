@@ -44,9 +44,7 @@ target_compile_definitions(common PRIVATE
 # Builds binary-fixture support used by module test executables.
 if(BUILD_TESTING)
     add_custom_target(dttr_common_tests)
-
-    include("${CMAKE_CURRENT_SOURCE_DIR}/tests/cmake/dttrcmocka.cmake")
-    dttr_find_cmocka()
+    add_dependencies(dttr_tests dttr_common_tests)
 
     if(NOT DTTR_CMOCKA_FOUND AND DTTR_REQUIRE_TEST_DEPS)
         message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
@@ -60,11 +58,6 @@ if(BUILD_TESTING)
                 common
             LABELS
                 common
-            CASES
-                stack-trace-marker
-                set-level-filters-lower-priority-logs
-                safe-relative-rejects-absolute-and-traversal-paths
-                config-load-rejects-invalid-values
         )
         dttr_copy_runtime_files(
             dttr_common_core_tests

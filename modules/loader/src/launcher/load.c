@@ -265,6 +265,7 @@ static bool write_remote_payload(
 		VirtualFreeEx(process, remote_buffer, 0, MEM_RELEASE);
 		return false;
 	}
+
 	DTTR_LOG_DEBUG("Shellcode written to remote process");
 
 	DWORD old_protect = 0;
@@ -279,6 +280,7 @@ static bool write_remote_payload(
 		VirtualFreeEx(process, remote_buffer, 0, MEM_RELEASE);
 		return false;
 	}
+
 	DTTR_LOG_DEBUG("Remote memory protection set to PAGE_EXECUTE_READWRITE");
 
 	*out_remote_buffer = remote_buffer;
@@ -310,6 +312,7 @@ bool DTTR_Loader_InjectSidecar(const PROCESS_INFORMATION *child_info) {
 		)) {
 		return false;
 	}
+
 	const uintptr_t original_entry = image_base + entry_point_rva;
 
 	DTTR_LOG_DEBUG(
@@ -322,6 +325,7 @@ bool DTTR_Loader_InjectSidecar(const PROCESS_INFORMATION *child_info) {
 	if (!resolve_sidecar_dll_path(sidecar_dll_path, sizeof(sidecar_dll_path))) {
 		return false;
 	}
+
 	DTTR_LOG_DEBUG("Sidecar DLL path: %s", sidecar_dll_path);
 
 	DTTR_LoaderShellcodePayload payload = {0};
@@ -353,6 +357,7 @@ bool DTTR_Loader_InjectSidecar(const PROCESS_INFORMATION *child_info) {
 		VirtualFreeEx(child_info->hProcess, payload_buffer, 0, MEM_RELEASE);
 		return false;
 	}
+
 	DTTR_LOG_DEBUG(
 		"Thread context updated: EIP=0x%08X",
 		(unsigned)(uintptr_t)payload_buffer
@@ -363,6 +368,7 @@ bool DTTR_Loader_InjectSidecar(const PROCESS_INFORMATION *child_info) {
 		VirtualFreeEx(child_info->hProcess, payload_buffer, 0, MEM_RELEASE);
 		return false;
 	}
+
 	DTTR_LOG_DEBUG("Resumed thread; game process is running");
 	return true;
 }

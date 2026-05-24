@@ -31,6 +31,7 @@ void dttr_mss_track_apply_pan(MIX_Track *track, int pan) {
 		(float)left / STEREO_BYTE_MAX,
 		(float)right / STEREO_BYTE_MAX,
 	};
+
 	MIX_SetTrackStereo(track, &gains);
 }
 

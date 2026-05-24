@@ -41,9 +41,9 @@ build-release: prepare-build
 # Keep the short test entrypoint aligned with the full suite.
 test: test-all
 
-# Build common, SDK, and sidecar test executables for CI.
+# Build all first-party test executables for CI.
 ci-compile-tests: setup-build
-    cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-max-parallel }}" --target dttr_common_tests dttr_sdk_tests dttr_sidecar_tests
+    cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-max-parallel }}" --target dttr_tests
 
 # Build the CI build tree shared by downstream test and docs jobs.
 ci-build-internal: ci-compile-tests

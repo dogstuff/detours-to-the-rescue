@@ -40,6 +40,7 @@ static void compile_hook_helpers(const DTTR_Core_Context *ctx) {
 		|| symbol_id != DTTR_PCDOGS_SYMBOL_FUNCTION_ID_MOVIE_PLAY_FILE) {
 		return;
 	}
+
 	const DTTR_PCDOGS_T_Symbol_Function *function_meta = DTTR_PCDOGS_SymbolFunctionAt(
 		(uint32_t)function_id
 	);
@@ -47,6 +48,7 @@ static void compile_hook_helpers(const DTTR_Core_Context *ctx) {
 		|| !(function_meta->supported_builds & DTTR_PCDOGS_BUILD_MASK_ALL)) {
 		return;
 	}
+
 	DTTR_PCDOGS_F_MoviePlayFile->Hook(ctx, compile_movie_playfile_detour, &original);
 	DTTR_PCDOGS_F_MoviePlayFile->Unhook(ctx);
 
@@ -94,12 +96,14 @@ static void compile_global_helpers() {
 		|| symbol_id != DTTR_PCDOGS_SYMBOL_DATA_ID_PKG_BASE_PATH) {
 		return;
 	}
+
 	const DTTR_PCDOGS_T_Symbol_Data *data_meta = DTTR_PCDOGS_SymbolDataAt(
 		(uint32_t)symbol_id
 	);
 	if (!data_meta || !(data_meta->supported_builds & DTTR_PCDOGS_BUILD_MASK_ALL)) {
 		return;
 	}
+
 	DTTR_PCDOGS_D_PkgBasePath->Ptr();
 	DTTR_PCDOGS_D_PkgBasePath->Read(&value);
 	DTTR_PCDOGS_D_PkgBasePath->Write(&value);

@@ -57,5 +57,6 @@ DTTR_Graphics_COM_Direct3DTexture2 *dttr_graphics_com_create_direct3d_texture2(
 		tex->vtbl = &vtbl;
 		tex->surface = surface;
 	}
+
 	return tex;
 }

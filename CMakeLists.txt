@@ -30,18 +30,9 @@ option(DTTR_REQUIRE_PCDOGS_FIXTURES "Fail fixture-backed tests instead of skippi
 set(DTTR_PCDOGS_FIXTURE_DIR "fixture" CACHE PATH "Directory containing PCDOGS fixture executables for binary-backed tests")
 include(CTest)
 if(BUILD_TESTING)
-    find_program(DTTR_BASH_EXECUTABLE bash)
-    if(DTTR_BASH_EXECUTABLE)
-        add_test(
-            NAME dttr_generated_artifacts_source_tree_clean
-            COMMAND "${DTTR_BASH_EXECUTABLE}"
-                "${CMAKE_SOURCE_DIR}/scripts/check-generated-artifacts.sh"
-        )
-        set_tests_properties(dttr_generated_artifacts_source_tree_clean PROPERTIES
-            LABELS "generated"
-            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        )
-    endif()
+    include(dttrtests)
+    dttr_find_cmocka()
+    add_custom_target(dttr_tests)
 endif()
 
 if(NOT WIN32)
@@ -98,6 +89,7 @@ else()
         )
     endif()
 endif()
+
 if(NOT DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
     message(FATAL_ERROR
         "Support-stub generator unavailable; install Python or nix so "
@@ -115,7 +107,6 @@ add_custom_command(
     COMMENT "Generating support DLL stub sources"
     VERBATIM
 )
-
 
 foreach(DTTR_SUPPORT_STUB_NAME DTTR_SUPPORT_STUB_TARGET IN ZIP_LISTS
     DTTR_SUPPORT_STUB_NAMES

@@ -156,5 +156,6 @@ DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7() {
 	if (d3d) {
 		d3d->vtbl = &vtbl;
 	}
+
 	return d3d;
 }
