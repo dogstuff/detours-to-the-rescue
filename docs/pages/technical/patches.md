@@ -41,15 +41,15 @@ DttR installs these patches only when `vertex_precision` is `subpixel`.
 | Site | Signature | Bytes | Effect |
 | --- | --- | --- | --- |
 | `dttr_hook_precision_fast_path` | Signature `83 F8 ?? 7C ?? D9 43 ?? D8 1D ?? ?? ?? ?? DF E0 F6 C4 41 0F 85 ?? ?? ?? ??`, offset `+19` | `E9 BA 00 00 00 90` (`jmp +0xBA; nop`) | Skips the original fast-path conditional branch that collapses vertex precision. |
-| `dttr_hook_precision_batch_limit_a` | Signature `8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1`, offset `+17` | `90 90` (`nop; nop`) | Keeps the precision path from leaving through the old batch-limit check. |
+| `dttr_hook_precision_batch_limit_a` | Signature `8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1`, offset `+17` | `90 90` (`nop; nop`) | Keeps the precision path from leaving through the original batch-limit check. |
 | `dttr_hook_precision_batch_limit_b` | Signature `83 C1 14 4E 75 ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1`, offset `+19` | `90 90` (`nop; nop`) | Applies the same batch-limit fix for the second matched loop. |
-| `dttr_hook_precision_ftol_x` | Signature `DB 44 24 30 D9 1F`, offset `-15` | `D9 1F 90 90 90` (`fstp dword ptr [edi]; nop; nop; nop`) | Stores the x coordinate directly as float instead of converting through integer precision. |
-| `dttr_hook_precision_mov_x` | Signature `DB 44 24 30 D9 1F`, offset `-10` | `90 90 90 90` (`nop` x4) | Removes the integer move paired with the old x conversion. |
-| `dttr_hook_precision_fstp2_x` | Signature `8D AE ?? ?? ?? ?? DB 44 24 30 D9 1F`, offset `+10` | `90 90` (`nop; nop`) | Removes the second store from the old x conversion sequence. |
+| `dttr_hook_precision_ftol_x` | Signature `DB 44 24 30 D9 1F`, offset `-15` | `D9 1F 90 90 90` (`fstp dword ptr [edi]; nop; nop; nop`) | Stores the x coordinate directly as float, preserving subpixel precision. |
+| `dttr_hook_precision_mov_x` | Signature `DB 44 24 30 D9 1F`, offset `-10` | `90 90 90 90` (`nop` x4) | Removes the integer move paired with the original x conversion. |
+| `dttr_hook_precision_fstp2_x` | Signature `8D AE ?? ?? ?? ?? DB 44 24 30 D9 1F`, offset `+10` | `90 90` (`nop; nop`) | Removes the second store from the original x conversion sequence. |
 | `dttr_hook_precision_fild_x` | Signature `8D AE ?? ?? ?? ?? DB 44 24 30`, offset `+6` | `90 90 90 90` (`nop` x4) | Removes the integer reload for x. |
 | `dttr_hook_precision_ftol_y` | Signature `8B 54 24 18 89 44 24 30`, offset `-5` | `D9 5D 00 90 90` (`fstp dword ptr [ebp+0]; nop; nop`) | Stores the y coordinate directly as float. |
-| `dttr_hook_precision_mov_y` | Signature `8B 54 24 18 89 44 24 30`, offset `+4` | `90 90 90 90` (`nop` x4) | Removes the integer move paired with the old y conversion. |
-| `dttr_hook_precision_fstp2_y` | Signature `83 C0 14 50 55 D9 5D 00`, offset `+5` | `90 90 90` (`nop` x3) | Removes the second store from the old y conversion sequence. |
+| `dttr_hook_precision_mov_y` | Signature `8B 54 24 18 89 44 24 30`, offset `+4` | `90 90 90 90` (`nop` x4) | Removes the integer move paired with the original y conversion. |
+| `dttr_hook_precision_fstp2_y` | Signature `83 C0 14 50 55 D9 5D 00`, offset `+5` | `90 90 90` (`nop` x3) | Removes the second store from the original y conversion sequence. |
 | `dttr_hook_precision_fild_y` | Signature `52 DB 44 24 34`, offset `+1` | `90 90 90 90` (`nop` x4) | Removes the integer reload for y. |
 | `dttr_hook_render_quad_snap` | Signature `53 8B 5C 24 14 55 33 C9 56 57 85 DB`, offset `+0` | `C3` (`ret`) | Optional compatibility patch for the subpixel path; stops the original render-quad snap helper. |
 

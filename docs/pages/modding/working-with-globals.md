@@ -22,7 +22,7 @@ DTTR_MODS_FRAME_BEGIN {
 }
 ```
 
-A `false` return means the value was unavailable or the memory was not readable.
+A `false` return means the value was unavailable or the memory read failed.
 
 ## Writing Data
 
@@ -31,10 +31,10 @@ Typed writes check that the PCDOGS wrapper is available and that the target memo
 | Policy | Contract |
 | --- | --- |
 | `DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY` | Plain generated data slot. `Write()` may update it after availability and memory-permission checks. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY` | Dispatch, jump, lookup, opcode, or index table decoded as data. Use it for documentation or read-only inspection; do not rewrite table entries through `Write()`. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED` | Live pointer or state owned by the game engine. Read it or pass it to higher-level SDK helpers; replacing it directly is not a stable mod contract. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY` | Symbol intended for explicit patch/hook flows. Prefer the generated `PatchSpec()`/patch-group APIs when available. |
-| `DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN` | Untyped or insufficiently classified global. Use only for low-level investigation. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY` | Dispatch, jump, lookup, opcode, or index table decoded as data. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED` | Live pointer or state owned by the game engine. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY` | Symbol intended for explicit patch/hook flows. |
+| `DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN` | Untyped or insufficiently classified global. |
 
 ```c
 static bool write_save_file_player_lives(int32_t lives) {
@@ -50,4 +50,4 @@ static bool write_save_file_player_lives(int32_t lives) {
 
 `UnsafeWrite()` is intentionally named as an escape hatch. It bypasses `WritePolicy` but still requires writable process memory. Reserve it for one-off patching, reverse-engineering experiments, or SDK internals where the caller already accepts that risk.
 
-For engine-owned pointers (`DTTR_PCDOGS_D_CurrentLevelData`) and read-only tables (`DTTR_PCDOGS_D_WindowLowMessageDispatchTable`), use documented helpers, hook APIs, or patch-group APIs instead of writing the global directly.
+For engine-owned pointers (e.g. `DTTR_PCDOGS_D_CurrentLevelData`) and read-only tables (e.g. `DTTR_PCDOGS_D_WindowLowMessageDispatchTable`), use documented helpers, hook APIs, or patch-group APIs for changes.

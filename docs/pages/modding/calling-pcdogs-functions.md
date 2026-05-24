@@ -2,6 +2,8 @@
 
 The SDK provides typed PCDOGS wrappers for known game functions. Use those wrappers unless you are working on an unsupported patch that needs a raw address.
 
+**NOTE:** The PCDOGS SDK symbols have only been properly tested against the English version of the game. Other regional executables may not behave as expected.
+
 ## API Shape
 
 For the generated function `Movie_PlayFile`, the PCDOGS wrapper exposes:
@@ -41,14 +43,14 @@ DTTR_MODS_INIT {
 
 ## Fallback Calls
 
-`DTTR_PCDOGS_*->Call()` calls the game function when available. If the symbol is not callable, it returns the fallback value and leaves game-owned output parameters alone.
+`DTTR_PCDOGS_*->Call()` calls the game function when available. Missing or unavailable symbols return the fallback value and leave game-owned output parameters alone.
 
 ```c
 // Returns 0 when Timer_GetRawTickCount is unavailable.
 int32_t ticks = DTTR_PCDOGS_F_TimerGetRawTickCount->Call(&ctx->runtime, 0);
 ```
 
-Use `Try()` when a missing symbol should disable a feature or produce a log instead of quietly using a fallback value.
+Use `Try()` when a missing symbol should disable a feature or produce a log.
 
 ## Guarded Calls
 

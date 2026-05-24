@@ -3,8 +3,8 @@
 /// @ingroup sdk_util_unstable
 ///
 /// These declarations are available through dttr_sdk.h only when
-/// DTTR_SDK_ENABLE_UNSTABLE is defined. Expect source and ABI churn while package
-/// layouts are still being mapped.
+/// DTTR_SDK_ENABLE_UNSTABLE is defined. These declarations can change at source
+/// or ABI level while package layouts are still being mapped.
 
 #ifndef DTTR_UTIL_UNSTABLE_H
 #define DTTR_UTIL_UNSTABLE_H
@@ -28,7 +28,7 @@ extern "C" {
 /// @addtogroup sdk_util_unstable
 /// @{
 
-/// Cast a stable opaque Level_Data pointer to the unstable audited runtime layout.
+/// Cast a stable opaque Level_Data pointer to the unstable runtime layout.
 /// The stable API keeps Level_Data opaque; this helper makes the intentional
 /// bridge explicit for callers that opt into unstable layouts.
 /// @param ptr_ Stable opaque Level_Data pointer to cast.

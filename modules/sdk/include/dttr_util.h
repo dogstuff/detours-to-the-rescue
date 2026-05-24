@@ -24,7 +24,7 @@ static inline DTTR_PCDOGS_T_Actor_State *DTTR_Util_GetActiveActor(
 	const DTTR_Core_Context *ctx
 ) {
 	DTTR_PCDOGS_T_Actor_State *actor = NULL;
-	return DTTR_PCDOGS_F_EntityGetActiveActor->Try(ctx, &actor) ? actor : NULL;
+	return DTTR_PCDOGS_F_EntityGetActiveActorFromList->Try(ctx, &actor) ? actor : NULL;
 }
 
 /// Compare actor pointers using live pointer identity.

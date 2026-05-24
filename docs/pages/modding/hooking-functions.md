@@ -67,7 +67,7 @@ DTTR_MODS_CLEANUP {
 
 The SDK chains function hooks installed at the same address. The newest hook runs first. The `original` pointer returned to that hook calls the next installed hook, ending at the real trampoline.
 
-That pointer is valid only while the hook handle is installed. Do not store it for use after cleanup.
+That pointer is valid only while the hook handle is installed. Copy any data needed after cleanup into mod-owned storage.
 
 Other patch types still reject overlaps: byte patches, pointer hooks, raw rel32 jumps, and incompatible function-hook ranges. Result-returning hook APIs report unsupported function-hook chaining as `DTTR_ERR_HOOK_CHAIN_UNSUPPORTED`.
 

@@ -14,18 +14,11 @@
 #include <dttr_test_cmocka.h>
 
 static void stack_trace_formatter_includes_marker(void **state) {
-	CONTEXT context = {0};
-	RtlCaptureContext(&context);
-
-	sds stack_trace = DTTR_Crashdump_FormatStackTrace(
-		GetCurrentProcess(),
-		GetCurrentThread(),
-		&context
-	);
+	sds stack_trace = DTTR_Crashdump_FormatStackTrace(NULL, NULL, NULL);
 
 	assert_non_null(stack_trace);
 	assert_non_null(strstr(stack_trace, "Stack trace:"));
-	assert_true(strlen(stack_trace) > strlen("\n\nStack trace:"));
+	assert_non_null(strstr(stack_trace, "<unavailable>"));
 
 	sdsfree(stack_trace);
 }

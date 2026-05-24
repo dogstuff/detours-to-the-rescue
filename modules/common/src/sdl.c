@@ -46,6 +46,8 @@ static show_open_file_dialog_fn show_open_file_dialog;
 static pump_events_fn pump_events;
 static delay_fn delay;
 
+static bool load_sdl();
+
 static void report_dialog_failure(SDL_DialogFileCallback callback, void *userdata) {
 	callback(userdata, NULL, -1);
 }

@@ -12,10 +12,191 @@ from blueprint import (
     param,
     xref,
 )
-from pcdogs_docs import install_struct_docs
 
 unstable = Blueprint("unstable", unstable=True)
-install_struct_docs(unstable)
+
+unstable.fn(
+    "Component_UpdateProjectileLogic",
+    "10 85 C0 74 ?? 57 E8 ??",
+    match=-52,
+    hook=6,
+    ret="Component_SpawnParams*",
+    params=[param("Component_Instance*", "comp")],
+    doc=(
+        "Projectile component update logic over Component_Instance projectile_state, "
+        "projectile_timer, homing velocity fields, owner actor references, and spawn context."
+    ),
+)
+
+unstable.fn(
+    "Collision_ProcessPowerupCollisions",
+    "83 EC 1C A1 ?? ??",
+    hook=8,
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
+    doc=(
+        "Scans the powerup actor list against actor and dispatches powerup_collision_handler as "
+        "(powerup_actor, actor, 0, -2). Unconsumed pairs may fall through to swept/sphere distance "
+        "tests and Collision_ResolveActorToActorCollision(actor, powerup_actor, -1, 0)."
+    ),
+)
+
+unstable.fn(
+    "Actor_HandleCollisionResponse",
+    "00 00 83 FF 06 0F 87 ??",
+    match=-23,
+    ret="int32_t",
+    params=[
+        param("Actor_State*", "actor"),
+        param("Actor_State*", "other_actor"),
+        param("Collision_Polygon*", "collision_poly"),
+        param("int32_t", "collision_slot"),
+    ],
+    doc=(
+        "Subtype collision-response helper called by Actor_ProcessCollisionResponse; it updates "
+        "response vectors, normal fields, and selected actor record slots from the caller's "
+        "Collision_Polygon pointer, selected collision slot, and actor record state."
+    ),
+)
+
+unstable.fn(
+    "Powerup_UpdateSpawnLogic",
+    "83 EC 0C A1 ?? ??",
+    hook=8,
+    ret="int32_t",
+    params=[],
+    doc=(
+        "Walks current Level_RuntimeData.powerup_list definitions and updates the fixed powerup "
+        "actor-template/clone-source slots; recovered code shows 0x1C-stride Powerup_Entry records "
+        "with 0x10 spawn-pending, 0x20 slot-15 selection, and 0x40/0x42 spawn-blocking flags."
+    ),
+)
+
+
+# Internal resolver rows required by unstable typed data that is resolved through
+# stable functions. These stay out of the unstable public accessor surface.
+unstable.fn(
+    "Movie_PlayIntro",
+    "56 8B 74 24 08 C7 05 ??",
+    public=False,
+    ret="int32_t",
+    params=[
+        param(
+            "int32_t",
+            "movie_index",
+            doc="Index into the four-entry startup movie filename/type tables.",
+        )
+    ],
+    doc="Internal resolver row for movie_file_names; stable keeps the public callable wrapper.",
+)
+
+unstable.fn(
+    "Render_AdjustLevelScale",
+    "A1 ?? ?? ?? ?? 85 C0 7C",
+    public=False,
+    ret="int32_t",
+    params=[
+        param(
+            "float",
+            "measured_fps",
+            doc="Averaged frame rate measured by Render_Frame before adjusting the level/render scale.",
+        )
+    ],
+    doc="Internal resolver row for render_list_state; stable keeps the public callable wrapper.",
+)
+
+unstable.data(
+    "movie_file_names",
+    xref("Movie_PlayIntro", 15, 3),
+    type="char*",
+    doc="First entry/base of the four-entry movie filename pointer table used by intro and movie playback routines.",
+)
+
+unstable.data(
+    "render_list_state",
+    xref("Render_AdjustLevelScale", 101, 2),
+    type="Render_ListState*",
+    doc="Data pointer to active Render_ListState; Render_AdjustLevelScale writes dynamic level scale at +0xB8 (PC EN).",
+)
+
+unstable.struct(
+    "Render_ListState",
+    member("int16_t", "yaw", 0),
+    member("int16_t", "pitch", 2),
+    member("int16_t", "roll", 4),
+    member("int16_t", "look_at_pitch", 6),
+    member("int16_t", "orbit_yaw", 8),
+    member("int16_t", "fov", 10),
+    member("int32_t", "focal_distance", 12),
+    member("int32_t", "eye_pos_x", 16),
+    member("int32_t", "eye_pos_z", 20),
+    member("int32_t", "eye_pos_y", 24),
+    member("int32_t", "target_x", 28),
+    member("int32_t", "target_z", 32),
+    member("int32_t", "target_y", 36),
+    member("Entity_State*", "active_entity_slot_ptr", 40),
+    member("int16_t", "screen_half_w", 44),
+    member("int16_t", "screen_half_h", 46),
+    member("Math_Matrix3x3i16", "view_matrix", 48),
+    member("int16_t", "view_matrix_padding", 66),
+    member(
+        "uint8_t",
+        "frustum_setup_prefix_44[20]",
+        68,
+        doc="Camera/frustum setup prefix before the five validated 12-byte clip-plane records.",
+    ),
+    member(
+        "Render_FrustumClipPlane",
+        "frustum_plane_0",
+        88,
+        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
+    ),
+    member(
+        "Render_FrustumClipPlane",
+        "frustum_plane_1",
+        100,
+        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
+    ),
+    member(
+        "Render_FrustumClipPlane",
+        "frustum_plane_2",
+        112,
+        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
+    ),
+    member(
+        "Render_FrustumClipPlane",
+        "frustum_plane_3",
+        124,
+        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
+    ),
+    member(
+        "Render_FrustumClipPlane",
+        "frustum_plane_4",
+        136,
+        doc="Plane record written by Scene_RenderFrame and read by Render_CheckActorVisibilityAndFrustum.",
+    ),
+    member("Math_Matrix3x3i16", "node_view_matrix", 148),
+    member("int16_t", "node_view_matrix_padding", 166),
+    member("int32_t", "node_view_translation_x", 168),
+    member("int32_t", "node_view_translation_y", 172),
+    member("int32_t", "node_view_translation_z", 176),
+    member("int32_t", "projection_near_fp", 180),
+    member("int32_t", "dynamic_level_scale", 184),
+    member("Actor_State*", "render_actor_ptr", 188),
+    member("uint32_t", "render_pass_flags", 192),
+    member("void*", "post_sorted_callback", 196),
+    member("void*", "pre_shadow_callback", 200),
+    member("void*", "sorted_list_head", 204),
+    member("void*", "sorted_list_buckets[16384]", 208),
+    member(
+        "uint32_t",
+        "sorted_bucket_tail",
+        65744,
+        doc="End/tail dword after the 16384 sorted bucket pointers.",
+    ),
+    size=65748,
+    doc="Validated camera/render-list runtime state with five 12-byte frustum planes.",
+)
 
 unstable.fn(
     "CRT_CodecvtAlwaysNoConversion",
@@ -25,7 +206,7 @@ unstable.fn(
     callable=False,
     ret="uint8_t",
     params=[],
-    doc="Unsupported C++ runtime std::codecvt_base::do_always_noconv helper; returns true and is not a game resource routine.",
+    doc="Unsupported C++ runtime std::codecvt_base::do_always_noconv helper returning the native true result.",
 )
 
 unstable.fn(
@@ -47,11 +228,11 @@ unstable.fn(
     callable=False,
     ret="int32_t",
     params=[param("void const*", "address")],
-    doc="MSVC __rt_probe_read4 helper reached from _longjmp; not a game exception no-op.",
+    doc="MSVC __rt_probe_read4 helper reached from _longjmp and used for guarded 4-byte reads.",
 )
 
-# Lower-confidence structured types: resolved, but layout confidence is not high enough
-# for the stable modder-facing surface.
+# Lower-confidence structured types: resolved, with layout confidence below the
+# stable modder-facing surface threshold.
 unstable.struct(
     "Level_State",
     member("void*", "collision_data", 0),
@@ -71,16 +252,23 @@ unstable.struct(
     "Level_RuntimeData",
     member("Camera_Runtime*", "cam_default", 0),
     member("Camera_Runtime*", "cam_current", 4),
-    member("int16_t", "current_room_index", 8),
-    member("int16_t", "room_count", 10),
+    member("int16_t", "current_entity_index", 8),
+    member(
+        "int16_t",
+        "entity_count",
+        10,
+        doc=(
+            "Number of valid level-local runtime entity slots in entity_array for the "
+            "currently loaded level."
+        ),
+    ),
     member(
         "Entity_State*",
-        "room_array",
+        "entity_array",
         12,
         doc=(
-            "Array of level-local runtime room/entity slots. Pointers into this array "
-            "identify an entity spawn slot for the currently loaded level only; they "
-            "are not package level indices or stable actor identities."
+            "Array of level-local runtime entity slots. Pointers into this array "
+            "identify entity spawn slots within the currently loaded level."
         ),
     ),
     member(
@@ -94,28 +282,22 @@ unstable.struct(
     member("int32_t*", "var_list", 24),
     member("int16_t", "powerup_count", 28),
     member("int16_t", "powerup_type_count", 30),
-    member("Powerup_Entry*", "powerup_list", 32),
     member(
-        "Actor_State*",
-        "powerup_actor_slot_0",
-        36,
-        doc="First entry of the fixed 16-slot powerup actor pointer table; Resource_FixUpLevelPointers fixes these as actor pointers, distinct from the 0x1c-stride powerup_list definitions.",
+        "Powerup_Entry*",
+        "powerup_list",
+        32,
+        doc="0x1c-stride current-level powerup spawn-record list keyed by powerup_count.",
     ),
-    member("Actor_State*", "powerup_actor_slot_1", 40),
-    member("Actor_State*", "powerup_actor_slot_2", 44),
-    member("Actor_State*", "powerup_actor_slot_3", 48),
-    member("Actor_State*", "powerup_actor_slot_4", 52),
-    member("Actor_State*", "powerup_actor_slot_5", 56),
-    member("Actor_State*", "powerup_actor_slot_6", 60),
-    member("Actor_State*", "powerup_actor_slot_7", 64),
-    member("Actor_State*", "powerup_actor_slot_8", 68),
-    member("Actor_State*", "powerup_actor_slot_9", 72),
-    member("Actor_State*", "powerup_actor_slot_10", 76),
-    member("Actor_State*", "powerup_actor_slot_11", 80),
-    member("Actor_State*", "powerup_actor_slot_12", 84),
-    member("Actor_State*", "powerup_actor_slot_13", 88),
-    member("Actor_State*", "powerup_actor_slot_14", 92),
-    member("Actor_State*", "powerup_actor_slot_15", 96),
+    member(
+        "Pkg_ActorTemplate*",
+        "powerup_actor_slots[16]",
+        36,
+        doc=(
+            "Fixed 16-slot powerup actor-template/clone-source table. "
+            "Resource_FixUpLevelPointers fixes each non-null slot with Resource_FixUpActorPointers; "
+            "Powerup_CloneActor reads these Pkg_ActorTemplate* sources when creating spawned powerup actors."
+        ),
+    ),
     member("char*", "theme_0", 100),
     member("char*", "theme_1", 104),
     member("char*", "theme_2", 108),
@@ -127,7 +309,7 @@ unstable.struct(
     member("Nav_Network*", "nav_net", 132),
     member("Material_Entry*", "usable_materials", 136),
     size=140,
-    doc="Unstable concrete runtime level-data block carried by stable Level_Data* APIs; renamed from Level_Data to avoid a LEVEL_DATA token collision with the stable level_data global. Kept unstable until pointee ownership and all layout semantics are stable.",
+    doc="Concrete runtime level-data block carried by Level_Data* APIs.",
 )
 
 unstable.struct(
@@ -139,7 +321,7 @@ unstable.struct(
         "int32_t",
         "runtime_value_08",
         8,
-        doc="Powerup-list dword; exact spawn/update semantic remains unresolved.",
+        doc="Powerup-list dword whose low 16 bits are used by attached/local-position paths.",
     ),
     member("uint8_t", "powerup_type", 12),
     member("uint8_t", "flags", 13),
@@ -148,7 +330,7 @@ unstable.struct(
     member("int32_t", "pos_y", 20),
     member("int32_t", "pos_z", 24),
     size=28,
-    doc="Unstable 0x1c-stride Level_RuntimeData.powerup_list entry walked by Powerup_UpdateSpawnLogic; IDA/BN validate template_record, flags, max_spawn_count, and pos_x/y/z offsets, while spawn_params_a/b and runtime_value_08 remain provisional.",
+    doc="0x1c-stride Level_RuntimeData.powerup_list entry walked by Powerup_UpdateSpawnLogic with template_record, flags, max_spawn_count, pos_x, pos_y, and pos_z fields.",
 )
 
 unstable.struct(
@@ -167,7 +349,7 @@ unstable.struct(
     member("uint32_t", "ref_count", 28),
     member("uint32_t", "reserved_04", 32),
     size=36,
-    doc="Unstable expanded/runtime material-entry form. Stable Material_Entry remains the 20-byte on-disk descriptor; this layout adds runtime DirectDraw/D3D texture handles and should not be treated as a replacement stable definition.",
+    doc="Expanded/runtime material-entry form with the 20-byte descriptor fields plus runtime DirectDraw/D3D texture handles.",
 )
 
 unstable.struct(
@@ -199,7 +381,10 @@ unstable.struct(
         "int16_t",
         "payload_word_0_c",
         12,
-        doc="Variant mesh-command payload start; type 0 passes cmd+0x0C to Animation_ProcessController, while other command types reinterpret the payload.",
+        doc=(
+            "Variant mesh-command payload start; type 0 passes cmd+0x0C (PC EN) to "
+            "Animation_ProcessController, while other command types reinterpret the payload."
+        ),
     ),
     member("int16_t", "effect_count", 14),
     member("int16_t", "scale_x", 16),
@@ -261,8 +446,7 @@ unstable.struct(
         "default_scale",
         160,
         doc=(
-            "Provisional authored/default visual scale slot. Do not write through an "
-            "actor-derived pointer without proving the pointer is a real Pkg_ActorRecord."
+            "Authored/default visual scale slot used by record-style actor initialization paths."
         ),
     ),
     member("int32_t", "default_prop_4", 164),
@@ -272,15 +456,14 @@ unstable.struct(
         "default_size",
         172,
         doc=(
-            "Provisional authored/default size slot. Runtime probes found record-style "
-            "scale/size writes unsafe when the record pointer was inferred incorrectly."
+            "Authored/default size slot used by record-style actor initialization paths."
         ),
     ),
     member("int32_t", "default_prop_7", 176),
     member("int32_t", "default_extra_0", 180),
     member("int32_t", "default_extra_1", 184),
     member("int32_t", "default_extra_2", 188),
-    member("Camera_RoomView*", "room_ref_pos_ptr", 192),
+    member("Camera_EntityView*", "entity_ref_pos_ptr", 192),
     member("int32_t", "live_ref_pos_x", 196),
     member("int32_t", "live_ref_pos_y", 200),
     member("int32_t", "live_ref_pos_z", 204),
@@ -296,7 +479,7 @@ unstable.struct(
         "int32_t",
         "live_facing_angle",
         240,
-        doc="Live mirror of default_facing_angle in the runtime actor-state block; not part of the default block.",
+        doc="Live mirror of default_facing_angle in the runtime actor-state block.",
     ),
     member("int32_t", "live_rotation", 244),
     member("int32_t", "live_anim_param_0", 248),
@@ -309,10 +492,7 @@ unstable.struct(
         "int32_t",
         "live_scale",
         264,
-        doc=(
-            "Provisional live visual scale slot. Treat as unstable and proof-gated; "
-            "direct writes through unvalidated records have crashed."
-        ),
+        doc=("Live visual scale slot used by runtime actor-state paths."),
     ),
     member("int32_t", "live_prop_4", 268),
     member("int32_t", "live_prop_5", 272),
@@ -320,10 +500,7 @@ unstable.struct(
         "int32_t",
         "live_size",
         276,
-        doc=(
-            "Provisional live size slot. Treat as unstable and proof-gated; direct "
-            "writes through unvalidated records have crashed."
-        ),
+        doc=("Live size slot used by runtime actor-state paths."),
     ),
     member("int32_t", "live_prop_7", 280),
     member("int32_t", "live_extra_0", 284),
@@ -332,10 +509,13 @@ unstable.struct(
     member("Actor_State*", "active_actor", 296),
     member("uint8_t", "team_bitmask[16]", 300),
     member("uint32_t", "spawn_timestamp", 316),
-    member("uint8_t", "script_room_index", 320),
-    member("uint8_t", "script_room_stack_0", 321),
-    member("uint8_t", "script_room_stack_1", 322),
-    member("uint8_t", "script_room_stack_2", 323),
+    member("uint8_t", "script_entity_index", 320),
+    member(
+        "uint8_t",
+        "script_entity_stack[3]",
+        321,
+        doc=("Three contiguous script-entity stack bytes."),
+    ),
     member("int32_t", "path_best_distance", 324),
     member("int32_t", "path_target_x", 328),
     member("int32_t", "path_target_y", 332),
@@ -365,11 +545,8 @@ unstable.struct(
     member("int32_t", "ai_scratch_padding[8]", 420),
     size=452,
     doc=(
-        "Provisional actor-record/default-runtime overlay. Stable APIs intentionally keep "
-        "Pkg_ActorRecord opaque because player-specific offsets such as +0x74 and +0x172 "
-        "conflict with this broad recovered layout. Do not infer this layout from an "
-        "actor-relative pointer without runtime proof; record-style scale/size writes from "
-        "an unvalidated pointer are known to be unsafe."
+        "Runtime actor overlay containing provisional player-specific offsets such as +0x74 "
+        "(PC EN) and +0x172 (PC EN). Field semantics may be unstable."
     ),
 )
 
@@ -429,7 +606,7 @@ unstable.struct(
         "uint8_t",
         "render_node_entry_count",
         186,
-        doc="0x20-stride render-node entry count at +0xBC, passed to render-entry fixup.",
+        doc="0x20-stride render-node entry count at +0xBC (PC EN), passed to render-entry fixup.",
     ),
     member(
         "uint8_t",
@@ -441,7 +618,7 @@ unstable.struct(
         "Mesh_RenderNodeEntry*",
         "render_node_entry_table_ptr",
         188,
-        doc="0x20-stride mesh render-node entry table, distinct from vertex-normal data.",
+        doc="0x20-stride mesh render-node entry table used by mesh-node fixup and render paths.",
     ),
     member("uint32_t", "lod_array_ptr", 192),
     member("uint32_t", "default_vertex_color", 196),
@@ -469,7 +646,11 @@ unstable.struct(
         "uint32_t",
         "relative_offset_list_ptr",
         256,
-        doc="Relative-offset list rebased in place by Resource_FixUpMeshNode; IDA/Ghidra show the function walking a dword list at +0x100 until a zero terminator and adding the rebased +0x100 base to each nonzero entry.",
+        doc=(
+            "Relative-offset list rebased in place by Resource_FixUpMeshNode; the function walks "
+            "a dword list at +0x100 (PC EN) until a zero terminator and adds the rebased "
+            "+0x100 (PC EN) base to each nonzero entry."
+        ),
     ),
     size=260,
 )
@@ -485,7 +666,7 @@ unstable.struct(
         "int16_t",
         "lod_reserved_0_c",
         12,
-        doc="Opaque LOD descriptor word; audited render selection consumes lod_level, sprite_layer_count, render_data_ptr, face_count/start, and threshold.",
+        doc="Opaque LOD descriptor word used by render selection with lod_level, sprite_layer_count, render_data_ptr, face_count/start, and threshold.",
     ),
     member("uint16_t", "lod_distance_threshold", 14),
     member("int16_t", "face_start_index", 16),
@@ -523,13 +704,13 @@ unstable.struct(
         "int16_t",
         "lod_padding_22",
         34,
-        doc="Alignment/pad word before the relocated +0x24 slot; no stable independent semantics have been isolated.",
+        doc="Alignment/pad word before the relocated +0x24 (PC EN) slot; no stable independent semantics have been isolated.",
     ),
     member(
         "int32_t",
         "lod_relocated_ptr_24",
         36,
-        doc="Relocated pointer/offset slot in LOD data. Resource_FixUpMeshNode and Actor_CloneTemplateWithTemplateRelativeFixups rebase this field at stride 0x28; target purpose remains opaque.",
+        doc="Relocated pointer/offset slot in LOD data rebased by Resource_FixUpMeshNode and Actor_CloneTemplateWithTemplateRelativeFixups at stride 0x28.",
     ),
     size=40,
 )
@@ -859,7 +1040,7 @@ unstable.struct(
     member("uint16_t", "padding", 28),
     member("uint8_t", "padding_1e[2]", 30),
     size=32,
-    doc="Unstable compact scene-node payload/resource-record prefix shared by older recovered Group/Model/Object shapes; no direct loader/parser owner has been validated yet.",
+    doc="Compact scene-node payload/resource-record prefix shared by older recovered Group/Model/Object shapes; no direct loader/parser owner has been validated yet.",
 )
 
 unstable.struct(
@@ -874,6 +1055,6 @@ unstable.struct(
     member("uint8_t", "padding_1e[2]", 30),
     member("int32_t", "extra_data", 32),
     size=36,
-    doc="Unstable compact scene sub-node payload/resource-record variant; no direct loader/parser owner has been validated yet.",
+    doc="Compact scene sub-node payload/resource-record variant; no direct loader/parser owner has been validated yet.",
 )
 BLUEPRINT = unstable

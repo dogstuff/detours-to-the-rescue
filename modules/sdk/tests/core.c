@@ -835,7 +835,7 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 	pcdogs_chain_original_b = NULL;
 
 	assert_true(resolve_symbol_to_address(
-		DTTR_PCDOGS_SYMBOL_FUNCTION_ID_POWERUP_UPDATE_SPAWN_LOGIC,
+		DTTR_PCDOGS_SYMBOL_FUNCTION_ID_TIMER_GET_RAW_TICK_COUNT,
 		(uintptr_t)pcdogs_chain_target
 	));
 
@@ -843,7 +843,7 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 	DTTR_Core_PatchGroup *group_b = NULL;
 	DTTR_PCDOGS_T_Patch_Report report = {0};
 	const DTTR_PCDOGS_T_Patch_Spec spec_a[] = {
-		DTTR_PCDOGS_F_PowerupUpdateSpawnLogic
+		DTTR_PCDOGS_F_TimerGetRawTickCount
 			->PatchSpec(true, pcdogs_chain_detour_a, &pcdogs_chain_original_a),
 	};
 	DTTR_Core_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_a, &group_a, &report);
@@ -854,7 +854,7 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 
 	memset(&report, 0, sizeof(report));
 	const DTTR_PCDOGS_T_Patch_Spec spec_b[] = {
-		DTTR_PCDOGS_F_PowerupUpdateSpawnLogic
+		DTTR_PCDOGS_F_TimerGetRawTickCount
 			->PatchSpec(true, pcdogs_chain_detour_b, &pcdogs_chain_original_b),
 	};
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_b, &group_b, &report);
@@ -1000,10 +1000,10 @@ static void test_pcdogs_active_actor_helpers(void **state) {
 	assert_null(DTTR_Util_GetActiveActor(&ctx));
 	assert_true(resolve_typed_function_to_address(
 		&ctx,
-		DTTR_PCDOGS_SYMBOL_FUNCTION_ID_ENTITY_GET_ACTIVE_ACTOR,
+		DTTR_PCDOGS_SYMBOL_FUNCTION_ID_ENTITY_GET_ACTIVE_ACTOR_FROM_LIST,
 		(uintptr_t)active_actor_stub
 	));
-	assert_true(DTTR_PCDOGS_F_EntityGetActiveActor->IsResolved());
+	assert_true(DTTR_PCDOGS_F_EntityGetActiveActorFromList->IsResolved());
 	assert_ptr_equal(DTTR_Util_GetActiveActor(&ctx), actor);
 	active_actor_result = NULL;
 	assert_null(DTTR_Util_GetActiveActor(&ctx));
@@ -1053,10 +1053,10 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 		DTTR_PCDOGS_F_MoviePlayFile->SymbolId,
 		DTTR_PCDOGS_SYMBOL_FUNCTION_ID_MOVIE_PLAY_FILE
 	);
-	assert_int_equal(DTTR_PCDOGS_D_Directory->DataId, DTTR_PCDOGS_DATA_DIRECTORY);
+	assert_int_equal(DTTR_PCDOGS_D_PkgBasePath->DataId, DTTR_PCDOGS_DATA_PKG_BASE_PATH);
 	assert_int_equal(
-		DTTR_PCDOGS_D_Directory->SymbolId,
-		DTTR_PCDOGS_SYMBOL_DATA_ID_DIRECTORY
+		DTTR_PCDOGS_D_PkgBasePath->SymbolId,
+		DTTR_PCDOGS_SYMBOL_DATA_ID_PKG_BASE_PATH
 	);
 
 	const DTTR_PCDOGS_T_Symbol_Function *fn = DTTR_PCDOGS_SymbolFunctionAt(
@@ -1088,7 +1088,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 	assert_true(hotpatch_spec.required);
 
 	const DTTR_PCDOGS_T_Symbol_Data *data = DTTR_PCDOGS_SymbolDataAt(
-		(uint32_t)DTTR_PCDOGS_D_Directory->SymbolId
+		(uint32_t)DTTR_PCDOGS_D_PkgBasePath->SymbolId
 	);
 	assert_non_null(data);
 
@@ -1111,7 +1111,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 	);
 	assert_int_equal(result.status, DTTR_ERR_INVALID_ARGUMENT);
 
-	result = DTTR_PCDOGS_PatchGroup_HookSymbolFunction(
+	result = DTTR_PCDOGS_PatchGroup_HookFunction(
 		NULL,
 		DTTR_PCDOGS_F_MoviePlayFile->FunctionId,
 		rel32_detour,

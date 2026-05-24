@@ -6,9 +6,15 @@
 #include <dttr_log.h>
 #include <windows.h>
 
-// Writes the game directory expected by PCDogs from the loaded module path.
+// Writes the package base path expected by PCDogs from the loaded module path.
 uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback() {
-	char *out_path = DTTR_PCDOGS_D_Directory->Ptr();
+	char (*path_buffer)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PkgBasePath
+																 ->Ptr();
+	if (!path_buffer) {
+		DTTR_LOG_ERROR("PCDOGS package base path was unavailable");
+		return 0;
+	}
+	char *out_path = *path_buffer;
 
 	DWORD module_path_length = GetModuleFileNameA(
 		dttr_sidecar_runtime_context()->game_module,

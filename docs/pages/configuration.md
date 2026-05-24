@@ -80,7 +80,7 @@ Leave `texture_upload_sync` at its default unless you're debugging a renderer is
 
 ### Audio Output
 
-DttR routes the game's old Miles Sound System calls through SDL.
+DttR routes the game's Miles Sound System calls through SDL.
 
 ### Volume and Sample Tuning
 
@@ -115,7 +115,7 @@ Change values in small steps, save, then test in game.
 
 Button mappings connect a physical controller button to a game action: directions, confirm, back, and start/pause.
 
-To change a mapping, choose **Bind**, then press the controller button or trigger. If that button is already assigned to another action, the tool swaps the old source into the other row.
+To change a mapping, choose **Bind**, then press the controller button or trigger. If that button is already assigned to another action, the tool swaps the previous source into the other row.
 
 Change one binding at a time, then test in game. Use **Reset** to restore the default mapping, or **Clear** to leave it unbound.
 

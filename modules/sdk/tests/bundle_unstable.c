@@ -87,65 +87,57 @@ static void compile_unstable_hook_helpers(const DTTR_Core_Context *ctx) {
 
 // Compile generated global read, write, and policy helpers.
 static void compile_global_helpers() {
-	char value = 0;
-	DTTR_PCDOGS_T_Data_Write_Policy raw_policy = DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY;
-	DTTR_PCDOGS_T_Data_Write_Policy read_only_policy = DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY;
-	DTTR_PCDOGS_T_Data_Write_Policy engine_owned_policy
-		= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED;
-	DTTR_PCDOGS_T_Data_Write_Policy patch_only_policy
-		= DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY;
-	DTTR_PCDOGS_T_Data_Id data_id = DTTR_PCDOGS_D_Directory->DataId;
-	DTTR_PCDOGS_T_Symbol_Data_Id symbol_id = DTTR_PCDOGS_D_Directory->SymbolId;
-	if (data_id != DTTR_PCDOGS_DATA_DIRECTORY
-		|| symbol_id != DTTR_PCDOGS_SYMBOL_DATA_ID_DIRECTORY) {
+	char value[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = {0};
+	DTTR_PCDOGS_T_Data_Id data_id = DTTR_PCDOGS_D_PkgBasePath->DataId;
+	DTTR_PCDOGS_T_Symbol_Data_Id symbol_id = DTTR_PCDOGS_D_PkgBasePath->SymbolId;
+	if (data_id != DTTR_PCDOGS_DATA_PKG_BASE_PATH
+		|| symbol_id != DTTR_PCDOGS_SYMBOL_DATA_ID_PKG_BASE_PATH) {
 		return;
 	}
 	const DTTR_PCDOGS_T_Symbol_Data *data_meta = DTTR_PCDOGS_SymbolDataAt(
-		(uint32_t)data_id
+		(uint32_t)symbol_id
 	);
 	if (!data_meta || !(data_meta->supported_builds & DTTR_PCDOGS_BUILD_MASK_ALL)) {
 		return;
 	}
-	DTTR_PCDOGS_D_Directory->Ptr();
-	DTTR_PCDOGS_D_Directory->Read(&value);
-	DTTR_PCDOGS_D_Directory->Write(value);
-	DTTR_PCDOGS_D_Directory->UnsafeWrite(value);
-	if (DTTR_PCDOGS_D_Directory->WritePolicy != raw_policy) {
+	DTTR_PCDOGS_D_PkgBasePath->Ptr();
+	DTTR_PCDOGS_D_PkgBasePath->Read(&value);
+	DTTR_PCDOGS_D_PkgBasePath->Write(&value);
+	DTTR_PCDOGS_D_PkgBasePath->UnsafeWrite(&value);
+	if (DTTR_PCDOGS_D_PkgBasePath->WritePolicy
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_LevelData->WritePolicy != raw_policy) {
+	if (DTTR_PCDOGS_D_DynamicLevelScale->WritePolicy
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_CurrentLevelData->WritePolicy != engine_owned_policy) {
+	if (DTTR_PCDOGS_D_CurrentLevelData->WritePolicy
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_RenderListState->WritePolicy != engine_owned_policy) {
+	if (DTTR_PCDOGS_D_RenderListState->WritePolicy
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED) {
 		return;
 	}
 
 	DTTR_PCDOGS_T_Patch_Spec current_level_data_patch = DTTR_PCDOGS_D_CurrentLevelData
 															->PatchSpec(true, 0, 0);
 	if (current_level_data_patch.kind != DTTR_PCDOGS_PATCH_DATA_POINTER_HOOK
-		|| current_level_data_patch.global != DTTR_PCDOGS_DATA_CURRENT_LEVEL_DATA
-		|| patch_only_policy == DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN) {
+		|| current_level_data_patch.global != DTTR_PCDOGS_DATA_CURRENT_LEVEL_DATA) {
 		return;
 	}
 
-	DTTR_PCDOGS_T_Patch_Spec scalar_patch = DTTR_PCDOGS_D_SpecialButton
-												->PatchSpec(true, 0, 0);
-	if (scalar_patch.kind != DTTR_PCDOGS_PATCH_UNSUPPORTED
-		|| scalar_patch.global != DTTR_PCDOGS_DATA_SPECIAL_BUTTON) {
+	if (DTTR_PCDOGS_D_WindowLowMessageDispatchTable->WritePolicy
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_WindowLowMessageDispatchTable->WritePolicy != read_only_policy) {
-		return;
-	}
-
-	if (DTTR_PCDOGS_D_ScriptSetVariableOpJumpTable->WritePolicy != read_only_policy) {
+	if (DTTR_PCDOGS_D_ScriptSetVariableOpJumpTable->WritePolicy
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY) {
 		return;
 	}
 }
@@ -209,8 +201,8 @@ enum {
 											 / __builtin_types_compatible_p(
 												 __typeof__(((DTTR_PCDOGS_T_Level_RuntimeData
 																  *)0)
-																->powerup_actor_slot_0),
-												 DTTR_PCDOGS_T_Actor_State *
+																->powerup_actor_slots[0]),
+												 DTTR_PCDOGS_T_Pkg_ActorTemplate *
 											 ),
 	unstable_mesh_relative_offset_list_offset_check
 	= 1 / (offsetof(DTTR_PCDOGS_T_Pkg_MeshNodeHeader, relative_offset_list_ptr) == 0x100),

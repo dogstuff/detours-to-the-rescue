@@ -169,7 +169,6 @@ if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
-            "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/pcdogs_docs.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs_unstable.py"
         COMMENT "Generating PCDOGS blueprint test rows"

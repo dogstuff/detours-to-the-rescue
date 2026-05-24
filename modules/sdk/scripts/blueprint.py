@@ -64,9 +64,9 @@ class HookKind(StrEnum):
 
 @dataclass(frozen=True)
 class Param:
-    m_type: str
-    m_name: str
-    m_doc: str | None = None
+    type: str
+    name: str
+    doc: str | None = None
 
 
 UNKNOWN_PARAMS: list[Param] = [Param("uintptr_t", f"a{i}") for i in range(8)]
@@ -74,148 +74,140 @@ UNKNOWN_PARAMS: list[Param] = [Param("uintptr_t", f"a{i}") for i in range(8)]
 
 @dataclass(frozen=True)
 class Signature:
-    m_pattern: str
-    m_name: str | None = None
-    m_required: Required = Required.ALL
-    m_unstable: bool = False
-    m_doc: str | None = None
+    pattern: str
+    name: str | None = None
+    required: Required = Required.ALL
+    unstable: bool = False
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class TypeAlias:
-    m_source_type: str
-    m_name: str
-    m_unstable: bool = False
-    m_doc: str | None = None
+    source_type: str
+    name: str
+    unstable: bool = False
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class FunctionTypeAlias:
-    m_ret: str
-    m_name: str
-    m_params: list[Param]
-    m_calling: CallingConvention = CallingConvention.CALLBACK
-    m_unstable: bool = False
-    m_doc: str | None = None
+    ret: str
+    name: str
+    params: list[Param]
+    calling: CallingConvention = CallingConvention.CALLBACK
+    unstable: bool = False
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class StructMember:
-    m_type: str
-    m_name: str
-    m_offset: int | None = None
-    m_doc: str | None = None
+    type: str
+    name: str
+    offset: int | None = None
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class Struct:
-    m_name: str
-    m_members: list[StructMember]
-    m_size: int | None = None
-    m_incomplete: bool = True
-    m_unstable: bool = False
-    m_doc: str | None = None
+    name: str
+    members: list[StructMember]
+    size: int | None = None
+    incomplete: bool = True
+    unstable: bool = False
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class EnumValue:
-    m_name: str
-    m_value: int
-    m_doc: str | None = None
+    name: str
+    value: int
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class Enum:
-    m_name: str
-    m_values: list[EnumValue]
-    m_alias: str | None = None
-    m_unstable: bool = False
-    m_doc: str | None = None
+    name: str
+    values: list[EnumValue]
+    alias: str | None = None
+    unstable: bool = False
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class Hook:
-    m_patch_size: int
-    m_kind: HookKind = HookKind.REL32
-    m_entry_patch_size: int | None = None
+    patch_size: int
+    kind: HookKind = HookKind.REL32
+    entry_patch_size: int | None = None
 
 
 @dataclass(frozen=True)
 class TypedFunction:
-    m_ret: str
-    m_params: list[Param]
-    m_abi: CallingConvention | None = None
-    m_args: list[str] | None = None
-    m_try_params: list[Param] | None = None
-    m_try_args: list[str] | None = None
-    m_signature: str | None = None
-    m_delta: int | None = None
-    m_hook_kind: HookKind | None = None
-    m_hook_prologue_size: int | None = None
-    m_callable: bool | None = None
+    ret: str
+    params: list[Param]
+    abi: CallingConvention | None = None
+    args: list[str] | None = None
+    try_params: list[Param] | None = None
+    try_args: list[str] | None = None
+    signature: str | None = None
+    delta: int | None = None
+    hook_kind: HookKind | None = None
+    hook_prologue_size: int | None = None
+    callable: bool | None = None
 
 
 @dataclass(frozen=True)
 class XRef:
-    m_function: object
-    m_instr_off: int
-    m_addr_off: int
-    m_indirections: int = 0
+    function: object
+    instr_off: int
+    addr_off: int
+    indirections: int = 0
 
 
 @dataclass(frozen=True)
 class FunctionXRef:
-    m_ref_function: object
-    m_instr_off: int
-    m_addr_off: int
-    m_indirections: int = 0
+    ref_function: object
+    instr_off: int
+    addr_off: int
+    indirections: int = 0
 
 
 @dataclass(frozen=True)
 class Function:
-    m_pattern: str
-    m_name: str | None = None
-    m_match_offset: int = 0
-    m_cc: CallingConvention = CallingConvention.CDECL
-    m_callable: bool = True
-    m_hook: Hook = dc_field(default_factory=lambda: Hook(5))
-    m_required: Required = Required.ALL
-    m_typed: TypedFunction | None = None
-    m_xrefs: list[FunctionXRef] = dc_field(default_factory=list)
-    m_unstable: bool = False
-    m_doc: str | None = None
+    pattern: str
+    name: str | None = None
+    match_offset: int = 0
+    cc: CallingConvention = CallingConvention.CDECL
+    callable: bool = True
+    public: bool = True
+    hook: Hook = dc_field(default_factory=lambda: Hook(5))
+    required: Required = Required.ALL
+    typed: TypedFunction | None = None
+    xrefs: list[FunctionXRef] = dc_field(default_factory=list)
+    unstable: bool = False
+    doc: str | None = None
 
 
 @dataclass(frozen=True)
 class TypedData:
-    m_type: str
-    m_ref_function: object
-    m_instr_off: int
-    m_addr_off: int
-    m_resolver: Resolver = Resolver.XREF_U32
-    m_indirections: int = 0
+    type: str
+    ref_function: object
+    instr_off: int
+    addr_off: int
+    resolver: Resolver = Resolver.XREF_U32
+    indirections: int = 0
 
 
 @dataclass(frozen=True)
 class Data:
-    m_name: str | None = None
-    m_typed: TypedData | None = None
-    m_xrefs: list[XRef] = dc_field(default_factory=list)
-    m_unstable: bool = False
-    m_doc: str | None = None
+    name: str | None = None
+    typed: TypedData | None = None
+    xrefs: list[XRef] = dc_field(default_factory=list)
+    unstable: bool = False
+    doc: str | None = None
 
 
 FunctionRef: TypeAlias = Function | str
 HookLike: TypeAlias = Hook | int
-
-
-def _m_kwargs(overrides: dict[str, object]) -> dict[str, object]:
-    """Map public DSL override names onto dataclass fields so blueprint rows stay compact."""
-
-    return {
-        (key if key.startswith("m_") else f"m_{key}"): value
-        for key, value in overrides.items()
-    }
 
 
 def hook(
@@ -236,7 +228,7 @@ def typed(
     return TypedFunction(
         ret,
         UNKNOWN_PARAMS if params is None else params,
-        **_m_kwargs(overrides),
+        **overrides,
     )
 
 
@@ -278,27 +270,27 @@ def enum_value(name: str, value: int, *, doc: str | None = None) -> EnumValue:
 
 @dataclass(init=False)
 class Blueprint:
-    m_name: str
-    m_unstable: bool = False
-    m_signatures: list[Signature] = dc_field(default_factory=list)
-    m_functions: list[Function] = dc_field(default_factory=list)
-    m_globals: list[Data] = dc_field(default_factory=list)
-    m_types: list[object] = dc_field(default_factory=list)
+    name: str
+    unstable: bool = False
+    signatures: list[Signature] = dc_field(default_factory=list)
+    functions: list[Function] = dc_field(default_factory=list)
+    globals: list[Data] = dc_field(default_factory=list)
+    types: list[object] = dc_field(default_factory=list)
 
     def __init__(self, name: str, unstable: bool = False) -> None:
         """Start a symbol blueprint whose rows inherit the stable or unstable surface by default."""
 
-        self.m_name = name
-        self.m_unstable = unstable
-        self.m_signatures = []
-        self.m_functions = []
-        self.m_globals = []
-        self.m_types = []
+        self.name = name
+        self.unstable = unstable
+        self.signatures = []
+        self.functions = []
+        self.globals = []
+        self.types = []
 
     def row_unstable(self, unstable: bool | None) -> bool:
         """Apply per-row stability overrides without repeating the blueprint-wide default."""
 
-        return self.m_unstable if unstable is None else unstable
+        return self.unstable if unstable is None else unstable
 
     def sig(
         self,
@@ -312,7 +304,7 @@ class Blueprint:
         """Add a raw pattern signature that can later back generated symbol lookup."""
 
         row = Signature(pattern, name, required, self.row_unstable(unstable), doc)
-        self.m_signatures.append(row)
+        self.signatures.append(row)
         return row
 
     def fn(
@@ -323,6 +315,7 @@ class Blueprint:
         match: int = 0,
         cc: CallingConvention = CallingConvention.CDECL,
         callable: bool = True,
+        public: bool = True,
         hook: HookLike = 5,
         required: Required = Required.ALL,
         ret: str = "uintptr_t",
@@ -339,7 +332,7 @@ class Blueprint:
         typed_row = typed or TypedFunction(
             ret,
             UNKNOWN_PARAMS if params is None else params,
-            **_m_kwargs(typed_overrides),
+            **typed_overrides,
         )
         row = Function(
             pattern,
@@ -347,6 +340,7 @@ class Blueprint:
             match,
             cc,
             callable,
+            public,
             hook_row,
             required,
             typed_row,
@@ -354,7 +348,7 @@ class Blueprint:
             self.row_unstable(unstable),
             doc,
         )
-        self.m_functions.append(row)
+        self.functions.append(row)
         return row
 
     def data(
@@ -377,44 +371,44 @@ class Blueprint:
                 raise ValueError(f"typed global {name} needs a resolver XRef")
             typed = TypedData(
                 type,
-                ref.m_function,
-                ref.m_instr_off,
-                ref.m_addr_off,
+                ref.function,
+                ref.instr_off,
+                ref.addr_off,
                 resolver,
                 indirections,
             )
         row_unstable = self.row_unstable(unstable)
-        for i, existing in enumerate(self.m_globals):
-            if existing.m_name != name:
+        for i, existing in enumerate(self.globals):
+            if existing.name != name:
                 continue
 
-            merged_refs = list(existing.m_xrefs)
+            merged_refs = list(existing.xrefs)
             for data_ref in refs:
                 if data_ref not in merged_refs:
                     merged_refs.append(data_ref)
 
-            merged_typed = existing.m_typed
+            merged_typed = existing.typed
             if merged_typed is None:
                 merged_typed = typed
             elif typed is not None and typed != merged_typed:
                 raise ValueError(f"conflicting typed global metadata for {name}")
 
-            merged_doc = existing.m_doc or doc
-            if existing.m_doc and doc and existing.m_doc != doc:
+            merged_doc = existing.doc or doc
+            if existing.doc and doc and existing.doc != doc:
                 raise ValueError(f"conflicting global documentation for {name}")
 
             row = Data(
                 name,
                 merged_typed,
                 merged_refs,
-                existing.m_unstable or row_unstable,
+                existing.unstable or row_unstable,
                 merged_doc,
             )
-            self.m_globals[i] = row
+            self.globals[i] = row
             return row
 
         row = Data(name, typed, list(refs), row_unstable, doc)
-        self.m_globals.append(row)
+        self.globals.append(row)
         return row
 
     def type_alias(
@@ -428,7 +422,7 @@ class Blueprint:
         """Add a generated C alias for game-facing types."""
 
         row = TypeAlias(source_type, name, self.row_unstable(unstable), doc)
-        self.m_types.append(row)
+        self.types.append(row)
         return row
 
     def callback_type(
@@ -446,7 +440,7 @@ class Blueprint:
         row = FunctionTypeAlias(
             ret, name, params, calling, self.row_unstable(unstable), doc
         )
-        self.m_types.append(row)
+        self.types.append(row)
         return row
 
     def struct(
@@ -463,7 +457,7 @@ class Blueprint:
         row = Struct(
             name, list(members), size, incomplete, self.row_unstable(unstable), doc
         )
-        self.m_types.append(row)
+        self.types.append(row)
         return row
 
     def enum(
@@ -477,5 +471,5 @@ class Blueprint:
         """Add enum metadata and the public alias exposed in generated headers."""
 
         row = Enum(name, list(values), alias, self.row_unstable(unstable), doc)
-        self.m_types.append(row)
+        self.types.append(row)
         return row

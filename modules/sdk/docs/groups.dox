@@ -1,7 +1,7 @@
 /// @defgroup sdk_mods Mod API
 /// Mod DLL lifecycle, callbacks, logging, and exported entrypoints.
 ///
-/// Keep globals for mod-owned state only. A cached DTTR_Mods_Context pointer is
+/// Globals are for mod-owned state only. A cached DTTR_Mods_Context pointer is
 /// valid only until DTTR_Mod_Cleanup returns.
 ///
 /// @code{.c}
@@ -29,8 +29,12 @@
 /// @defgroup sdk_core Core SDK
 /// Result handling, AOB/signature scanning, patches, hooks, and patch groups.
 ///
-/// Use patch groups when related targets should install as one unit and roll back
-/// on required failures.
+/// Patch groups keep related targets in one install unit and roll back on
+/// required failures.
+///
+/// Generated PCDOGS `PatchSpec()` results describe install support: REL32 targets
+/// produce function-hook specs, HOTPATCH targets stay unsupported, and data
+/// helpers install only when the symbol is typed pointer data.
 ///
 /// @code{.c}
 /// static DTTR_Core_PatchGroup *patches;
@@ -63,14 +67,18 @@
 /// }
 /// @endcode
 
-/// @defgroup sdk_util SDK Utilities
+/// @defgroup sdk_util Utilities
 /// Small public helper APIs for common modding patterns.
 ///
-/// Utility APIs do not add new game symbol knowledge. They keep common checks
-/// short; use DTTR_Util_GetActiveActor with DTTR_Util_SameActor when a mod needs
-/// to compare a hook actor with the engine's current active actor.
+/// Utility APIs provide convenience wrappers for common checks; they do not
+/// introduce new game symbol knowledge. DTTR_Util_GetActiveActor and
+/// DTTR_Util_SameActor cover comparisons between a hook actor and the engine's
+/// current active actor. Direct
+/// level-runtime enumeration belongs with the unstable Level_RuntimeData entity
+/// array. Its slots are level-local runtime IDs, so pointers need
+/// reacquisition after level or resource transitions.
 
-/// @defgroup sdk_util_unstable Experimental SDK Utilities
+/// @defgroup sdk_util_unstable Utilities (Experimental)
 ///
 /// These APIs are included from the bundle header only when
 /// DTTR_SDK_ENABLE_UNSTABLE is defined.
@@ -78,7 +86,7 @@
 /// @defgroup sdk_runtime Runtime Hooking API
 /// Low-level hook, patch, storage, and sigscan helpers.
 ///
-/// Prefer the Core SDK from mods unless you need raw handles and manual cleanup.
+/// The Core SDK is the mod-facing layer; raw handles are mainly for manual cleanup.
 ///
 /// @code{.c}
 /// static DTTR_Core_Hook *hook;

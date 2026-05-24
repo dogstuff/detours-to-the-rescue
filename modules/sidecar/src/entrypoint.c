@@ -99,6 +99,26 @@ static bool check_required_symbol(const dttr_required_symbol *symbol) {
 	return false;
 }
 
+static const DTTR_PCDOGS_T_Symbol_Data *pcdogs_symbol_data(
+	DTTR_PCDOGS_T_Symbol_Data_Id id
+) {
+	return DTTR_PCDOGS_SymbolDataAt((uint32_t)id);
+}
+
+static bool movie_file_names_resolved() {
+	const DTTR_PCDOGS_T_Symbol_Data *symbol = pcdogs_symbol_data(
+		DTTR_PCDOGS_SYMBOL_DATA_ID_MOVIE_FILE_NAMES
+	);
+	return symbol && symbol->address != 0;
+}
+
+static char **movie_file_names_ptr() {
+	const DTTR_PCDOGS_T_Symbol_Data *symbol = pcdogs_symbol_data(
+		DTTR_PCDOGS_SYMBOL_DATA_ID_MOVIE_FILE_NAMES
+	);
+	return symbol && symbol->address ? (char **)symbol->address : NULL;
+}
+
 // Populates SDK symbol storage before enforcing the sidecar startup contract.
 static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 	DTTR_PCDOGS_ResolveAll(runtime);
@@ -131,9 +151,9 @@ static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 		{"MainWindowHandle2", DTTR_PCDOGS_D_MainWindowHandle2->IsResolved},
 		{"RenderingEnabled", DTTR_PCDOGS_D_RenderingEnabled->IsResolved},
 		{"ShouldQuit", DTTR_PCDOGS_D_ShouldQuit->IsResolved},
-		{"Directory", DTTR_PCDOGS_D_Directory->IsResolved},
+		{"PkgBasePath", DTTR_PCDOGS_D_PkgBasePath->IsResolved},
 		{"AudioDigitalDriver", DTTR_PCDOGS_D_AudioDigitalDriver->IsResolved},
-		{"MovieFileNames", DTTR_PCDOGS_D_MovieFileNames->IsResolved},
+		{"MovieFileNames", movie_file_names_resolved},
 		{"MoviePathPrefix", DTTR_PCDOGS_D_MoviePathPrefix->IsResolved},
 		{"TitleBonusReplayResource", DTTR_PCDOGS_D_TitleBonusReplayResource->IsResolved},
 		{"TitleResourceHandle1", DTTR_PCDOGS_D_TitleResourceHandle1->IsResolved},
@@ -449,9 +469,15 @@ static void attempt_play_startup_movies() {
 	}
 
 	const char *const prefix = DTTR_PCDOGS_D_MoviePathPrefix->Ptr();
-	char **const names = DTTR_PCDOGS_D_MovieFileNames->Ptr();
+	char **const names = movie_file_names_ptr();
+	if (!prefix || !names) {
+		return;
+	}
 
 	for (int i = 0; i < 4; i++) {
+		if (!names[i]) {
+			break;
+		}
 		sds path = sdsnew(prefix);
 		if (!path || !DTTR_Path_AppendSegment(&path, names[i], '\\')) {
 			sdsfree(path);

@@ -242,8 +242,8 @@ typedef void (*DTTR_Mods_GameFrameBlockedFn)();
 	DTTR_EXPORT void DTTR_Mod_BeforeGameFrame(const DTTR_Mods_FrameContext *ctx)
 
 // Called from the render backend after game image submission for a host frame. This
-// currently runs on blocked presentation frames too; it is not a strict RenderFrame
-// post-callback.
+// also runs on blocked presentation frames; use DTTR_MODS_GAME_FRAME_ADVANCED for
+// strictly advanced-frame work.
 #define DTTR_MODS_AFTER_GAME_FRAME                                                       \
 	DTTR_EXPORT void DTTR_Mod_AfterGameFrame(const DTTR_Mods_FrameContext *ctx)
 

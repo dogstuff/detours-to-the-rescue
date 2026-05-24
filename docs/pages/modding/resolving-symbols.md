@@ -2,6 +2,8 @@
 
 PCDOGS symbols describe known game functions, globals, patch sites, and types. Resolve them against the current executable before a feature uses typed wrappers or raw addresses.
 
+**NOTE:** The PCDOGS SDK symbols have only been properly tested against the English version of the game. Other regional executables may not behave as expected.
+
 ## Resolution in DttR
 
 DttR resolves the required PCDOGS symbols before loading mods. Most mods can use typed helpers directly and guard optional behavior with `IsCallable()`, `Try()`, `Read()`, or `Write()`.
@@ -48,7 +50,7 @@ uintptr_t address = DTTR_PCDOGS_D_SaveFilePlayerLives->Address();
 int32_t *save_file_player_lives = address ? (int32_t *)address : NULL;
 ```
 
-Keep copied values in mod state. Do not assume a game-memory pointer stays valid across executable changes or reload paths.
+Keep copied values in mod state. Game-memory pointer validity is tied to the current executable and reload path.
 
 ## ID-Based Resolution
 

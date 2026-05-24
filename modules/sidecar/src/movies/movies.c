@@ -615,7 +615,9 @@ void DTTR_Movies_Cleanup() {
 
 // Maps the game movie filename to an override path or bundled data-file path.
 static sds resolve_movie_path(const char *path) {
-	sds requested_path = sdsnew(DTTR_PCDOGS_D_Directory->Ptr());
+	char (*base_path)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PkgBasePath
+															   ->Ptr();
+	sds requested_path = sdsnew(base_path ? *base_path : NULL);
 	if (!requested_path || !DTTR_Path_AppendSegment(&requested_path, path, '\\')) {
 		sdsfree(requested_path);
 		return sdsempty();

@@ -1,7 +1,7 @@
-% if header_guard.endswith("UNSTABLE_H"):
+% if unstable:
 
 /// @file dttr_pcdogs_unstable.h
-/// Experimental PCDOGS symbols. Expect churn.
+/// Experimental PCDOGS symbols.
 /// @ingroup sdk_pcdogs_unstable
 /// These declarations may change as symbols get renamed or pinned down.
 % else:
@@ -20,7 +20,7 @@
 #include <windows.h>
 
 #include <dttr_core.h>
-% if header_guard.endswith("UNSTABLE_H"):
+% if unstable:
 // Public unstable users extend the stable surface. Include it first and keep
 // duplicate symbol metadata out of this header. The private implementation
 // stays standalone because the stable full header defines the same DTTR_* APIs.
@@ -29,7 +29,7 @@
 #endif
 % endif
 
-% if header_guard.endswith("UNSTABLE_H"):
+% if unstable:
 
 /// @addtogroup sdk_pcdogs_unstable
 /// @{
@@ -39,171 +39,40 @@
 /// @{
 % endif
 
-<%
-typed_fields = [
-    "name",
-    "public",
-    "cc",
-    "ret",
-    "return_kind",
-    "params",
-    "args",
-    "try_params",
-    "try_args",
-    "signature",
-    "delta",
-    "hook_kind",
-    "hook_prologue_size",
-    "callable",
-]
-explicit_signature_names = {c_symbol(row["name"]) for row in signatures}
-signature_entries = [
-    (c_symbol(row["name"]), c_sig(row["pattern"]), c_mask(row["pattern"]), c_enum(row["required"]))
-    for row in signatures
-]
-signature_entries.extend(
-    (
-        "FN_" + c_symbol(row["name"]),
-        c_sig(row["pattern"]),
-        c_mask(row["pattern"]),
-        c_enum(row["required"]),
-    )
-    for row in functions
-    if "FN_" + c_symbol(row["name"]) not in explicit_signature_names
-)
-typed_functions = [row for row in functions if row.get("typed")]
-
-def data_write_policy(row):
-    name = row["name"].lower()
-    if name.endswith((
-        "_dispatch_table",
-        "_index_table",
-        "_jump_table",
-        "_lookup_table",
-        "_opcode_table",
-        "_op_table",
-    )):
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY"
-    if name in {
-        "player_actor",
-        "current_entity_camera",
-        "render_list_state",
-        "current_level_data",
-        "d3d_device7",
-        "ddraw_back_buffer",
-        "ddraw_primary_surface",
-        "ddraw_z_buffer",
-    }:
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED"
-    if row.get("typed"):
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY"
-    return "DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN"
-
-def typed_data_is_pointer(row):
-    return str(row.get("typed", {}).get("type", "")).strip().endswith("*")
-
-def data_patch_spec_kind(row):
-    if typed_data_is_pointer(row):
-        return "DTTR_PCDOGS_PATCH_DATA_POINTER_HOOK"
-    return "DTTR_PCDOGS_PATCH_UNSUPPORTED"
-
-def typed_row(fn):
-    typed = fn["typed"]
-    ident = fn["name"].lower()
-    public = c_pascal_token(fn["name"])
-    display_name = fn["name"]
-    typedef_name = f"DTTR_PCDOGS_F_{public}_proto"
-    ret = c_type(typed["return"])
-    signature = c_symbol(typed["signature"])
-    if signature not in explicit_signature_names:
-        signature = "FN_" + c_symbol(fn["name"])
-    param_docs = param_doc_pairs(typed["params"], fallback=True)
-    return {
-        "name": ident,
-        "public": public,
-        "display_name": display_name,
-        "typedef_name": typedef_name,
-        "accessor_struct_name": f"dttr_pcdogs_function_accessor_{public}",
-        "cc": CC_KEYWORD[str(typed["abi"])],
-        "ret": ret,
-        "return_kind": "DTTR_PCDOGS_RETURN_VOID" if ret == "void" else "DTTR_PCDOGS_RETURN_VALUE",
-        "params": c_params(typed["params"]),
-        "args": c_args(typed["args"]),
-        "try_params": c_params(typed["try_params"]),
-        "try_args": c_args(typed["try_args"]),
-        "call_or_params": (
-            c_params([("const DTTR_Core_Context*", "ctx"), *typed["params"], (ret, "fallback_ret")])
-            if ret != "void"
-            else ""
-        ),
-        "call_or_args": (
-            "(" + ", ".join(["ctx", *typed["try_args"], "&ret_"]) + ")"
-            if ret != "void"
-            else ""
-        ),
-        "signature": signature,
-        "delta": c_int(typed["delta"]),
-        "hook_kind": HOOK_ENUM[str(typed["hook_kind"])],
-        "hook_prologue_size": c_uint(typed["hook_prologue_size"]),
-        "callable": c_bool(typed["callable"]),
-        "function_id": f"DTTR_PCDOGS_FUNCTION_{fn['symbol_id']}",
-        "symbol_id": f"DTTR_PCDOGS_SYMBOL_FUNCTION_ID_{fn['symbol_id']}",
-        "symbol_name": fn.get("display", fn["name"]),
-        "doc": symbol_doc("function", fn),
-        "group_doc": f"Helpers for `{display_name}`.",
-        "param_docs": param_docs,
-        "try_param_docs": param_doc_pairs(typed["try_params"], fallback=True),
-        "is_callable_param_docs": [("ctx", "Runtime context for this check.")],
-        "hook_param_docs": [
-            ("ctx", "Runtime context for hook install."),
-            ("detour", f"Replacement function with the `{typedef_name}` signature."),
-            ("out_original", "Receives the trampoline when requested."),
-        ],
-        "unhook_param_docs": [("ctx", "Runtime context for hook detach.")],
-        "call_or_param_docs": [
-            ("ctx", "Runtime context for symbol resolution."),
-            *param_docs,
-            ("fallback_ret", "Returned when no call is made."),
-        ],
-        "return_doc": "`true` when the call ran and wrote the return value." if typed["return"] != "void" else "`true` when the call ran.",
-    }
-
-typed_function_rows = [typed_row(fn) for fn in typed_functions]
-%>
 <%def name="render_type_row(row)">
-% if row.__class__.__name__ == "TypeAlias":
+% if type_row_kind(row) == TYPE_ROW.TYPE_ALIAS:
 ${doxy_brief(row_doc(row) or "PCDOGS value alias.")}
-typedef ${c_type(row.m_source_type)} ${alias_name(row.m_name)};
-% elif row.__class__.__name__ == "FunctionTypeAlias":
-${doxy_comment(row_doc(row) or "PCDOGS callback type.", params=param_doc_pairs(row.m_params))}
-typedef ${c_type(row.m_ret)}(${row.m_calling}*${function_type_name(row.m_name)})${c_params(row.m_params)};
-% elif row.__class__.__name__ == "Struct":
-% if row.m_incomplete and not unstable:
+typedef ${c_type(row.source_type)} ${alias_name(row.name)};
+% elif type_row_kind(row) == TYPE_ROW.FUNCTION_TYPE_ALIAS:
+${doxy_comment(row_doc(row) or "PCDOGS callback type.", params=param_doc_pairs(row.params))}
+typedef ${c_type(row.ret)}(${row.calling}*${function_type_name(row.name)})${c_params(row.params)};
+% elif type_row_kind(row) == TYPE_ROW.STRUCT:
+% if row.incomplete and not unstable:
 #ifdef DTTR_PCDOGS_IMPLEMENTATION
 ${doxy_brief(row_doc(row) or "Private incomplete PCDOGS layout.")}
 % else:
 ${doxy_brief(row_doc(row) or "PCDOGS struct layout.")}
 % endif
-% if row.m_incomplete and row.m_size is not None:
-// Size 0x${format(row.m_size, "X")}; layout is generated from currently known fields.
-% elif row.m_size is not None:
-// Size 0x${format(row.m_size, "X")}
+% if row.incomplete and row.size is not None:
+// Size 0x${format(row.size, "X")}; layout is generated from currently known fields.
+% elif row.size is not None:
+// Size 0x${format(row.size, "X")}
 % endif
-struct ${struct_name(row.m_name)} {
-% for member in row.m_members:
-	${c_type(member.m_type)} ${member.m_name};${" ///< " + member_doc(member) if member_doc(member) else ""}
+struct ${struct_name(row.name)} {
+% for member in row.members:
+	${c_type(member.type)} ${member.name};${" ///< " + member_doc(member) if member_doc(member) else ""}
 % endfor
 };
-% if row.m_incomplete and not unstable:
+% if row.incomplete and not unstable:
 #endif
 % endif
-% elif row.__class__.__name__ == "Enum":
+% elif type_row_kind(row) == TYPE_ROW.ENUM:
 ${doxy_brief(row_doc(row) or "PCDOGS enum.")}
-typedef enum ${enum_name(row.m_name)} {
-% for value in row.m_values:
-	${value.m_name} = ${value.m_value},${" ///< " + doxy_inline(row_doc(value)) if row_doc(value) else ""}
+typedef enum ${enum_name(row.name)} {
+% for value in row.values:
+	${value.name} = ${value.value},${" ///< " + doxy_inline(row_doc(value)) if row_doc(value) else ""}
 % endfor
-} ${enum_name(row.m_alias or row.m_name)};
+} ${enum_name(row.alias or row.name)};
 	% endif
 		</%def>
 		% if unstable and external_type_rows:
@@ -212,7 +81,7 @@ typedef enum ${enum_name(row.m_name)} {
 		% endfor
 		<% in_external_pack = False %>
 		% for row in external_type_rows:
-		<% is_external_struct = row.__class__.__name__ == "Struct" %>
+		<% is_external_struct = type_row_kind(row) == TYPE_ROW.STRUCT %>
 		% if is_external_struct and not in_external_pack:
 		#pragma pack(push, 1)
 		<% in_external_pack = True %>
@@ -241,7 +110,7 @@ typedef struct ${struct_name(name)} ${struct_name(name)};
 % if packed_type_rows:
 <% in_pack = False %>
 % for row in packed_type_rows:
-<% is_struct = row.__class__.__name__ == "Struct" %>
+<% is_struct = type_row_kind(row) == TYPE_ROW.STRUCT %>
 % if is_struct and not in_pack:
 #pragma pack(push, 1)
 <% in_pack = True %>
@@ -291,7 +160,7 @@ typedef enum DTTR_PCDOGS_T_Data_Resolver {
 /// is for symbols that should be changed through generated patch specs or patch groups.
 typedef enum DTTR_PCDOGS_T_Data_Write_Policy {
 	DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN = 0,     ///< Untyped or insufficiently classified symbol.
-	DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY = 1,   ///< Decoded table data; read or inspect, do not write through `Write`.
+	DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY = 1,   ///< Decoded table data for read-only inspection through `Read`.
 	DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED = 2, ///< Live game-owned pointer/state; use higher-level helpers or patch flows.
 	DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY = 3,  ///< Plain generated data slot writable through `Write`.
 	DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY = 4,  ///< Change through generated patch specs or patch groups.
@@ -364,6 +233,14 @@ enum {
 };
 
 enum {
+	DTTR_PCDOGS_FUNCTION_COUNT_VALUE = ${len(public_functions)}
+};
+
+enum {
+	DTTR_PCDOGS_DATA_COUNT_VALUE = ${len(globals)}
+};
+
+enum {
 	DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_COUNT_VALUE = ${len(function_xrefs)}
 };
 
@@ -373,6 +250,8 @@ enum {
 
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT ((uint32_t)DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT_VALUE)
 #define DTTR_PCDOGS_SYMBOL_DATA_COUNT ((uint32_t)DTTR_PCDOGS_SYMBOL_DATA_COUNT_VALUE)
+#define DTTR_PCDOGS_FUNCTION_COUNT ((uint32_t)DTTR_PCDOGS_FUNCTION_COUNT_VALUE)
+#define DTTR_PCDOGS_DATA_COUNT ((uint32_t)DTTR_PCDOGS_DATA_COUNT_VALUE)
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_COUNT ((uint32_t)DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_COUNT_VALUE)
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_STORAGE_COUNT \
 	(DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_COUNT_VALUE ? DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_COUNT_VALUE : 1u)
@@ -380,8 +259,8 @@ enum {
 
 /// Function symbol identifiers.
 typedef enum DTTR_PCDOGS_T_Symbol_Function_Id {
-% for row in functions:
-	DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row['symbol_id']}, ///< ${doxy_inline(symbol_doc('function', row))}
+% for row in public_functions:
+	DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id} = ${row.index}, ///< ${doxy_inline(symbol_doc(DOC_KIND.FUNCTION, row))}
 % endfor
 } DTTR_PCDOGS_T_Symbol_Function_Id;
 
@@ -391,7 +270,7 @@ typedef enum DTTR_PCDOGS_T_Symbol_Data_Id {
 	DTTR_PCDOGS_SYMBOL_DATA_ID_NONE = -1,
 % endif
 % for row in globals:
-	DTTR_PCDOGS_SYMBOL_DATA_ID_${row['symbol_id']}, ///< ${doxy_inline(symbol_doc('global', row))}
+	DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id}, ///< ${doxy_inline(symbol_doc(DOC_KIND.GLOBAL, row))}
 % endfor
 } DTTR_PCDOGS_T_Symbol_Data_Id;
 
@@ -399,8 +278,8 @@ typedef enum DTTR_PCDOGS_T_Symbol_Data_Id {
 
 /// Stable function identifiers for the public SDK facade.
 typedef enum DTTR_PCDOGS_T_Function_Id {
-% for row in functions:
-	DTTR_PCDOGS_FUNCTION_${row['symbol_id']} = DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row['symbol_id']}, ///< ${doxy_inline(symbol_doc('function', row))}
+% for row in public_functions:
+	DTTR_PCDOGS_FUNCTION_${row.symbol_id} = ${row.public_index}, ///< ${doxy_inline(symbol_doc(DOC_KIND.FUNCTION, row))}
 % endfor
 } DTTR_PCDOGS_T_Function_Id;
 
@@ -410,7 +289,7 @@ typedef enum DTTR_PCDOGS_T_Data_Id {
 	DTTR_PCDOGS_DATA_NONE = -1,
 % endif
 % for row in globals:
-	DTTR_PCDOGS_DATA_${row['symbol_id']} = DTTR_PCDOGS_SYMBOL_DATA_ID_${row['symbol_id']}, ///< ${doxy_inline(symbol_doc('global', row))}
+	DTTR_PCDOGS_DATA_${row.symbol_id} = ${row.public_index}, ///< ${doxy_inline(symbol_doc(DOC_KIND.GLOBAL, row))}
 % endfor
 } DTTR_PCDOGS_T_Data_Id;
 
@@ -500,9 +379,22 @@ typedef struct DTTR_PCDOGS_T_Patch_Report {
 extern "C" {
 #endif
 
+bool DTTR_PCDOGS_FunctionSymbolId(
+	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_Id* out_symbol_id
+);
+bool DTTR_PCDOGS_DataSymbolId(
+	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Symbol_Data_Id* out_symbol_id
+);
 DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
 	const DTTR_Core_Context* ctx,
 	DTTR_PCDOGS_T_Function_Id id,
+	uintptr_t* out_addr
+);
+DTTR_Core_Result DTTR_PCDOGS_SymbolFunctionResolve(
+	const DTTR_Core_Context* ctx,
+	DTTR_PCDOGS_T_Symbol_Function_Id id,
 	uintptr_t* out_addr
 );
 DTTR_Core_Result DTTR_PCDOGS_DataResolve(
@@ -510,7 +402,12 @@ DTTR_Core_Result DTTR_PCDOGS_DataResolve(
 	DTTR_PCDOGS_T_Data_Id id,
 	uintptr_t* out_addr
 );
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookSymbolFunction(
+DTTR_Core_Result DTTR_PCDOGS_SymbolDataResolve(
+	const DTTR_Core_Context* ctx,
+	DTTR_PCDOGS_T_Symbol_Data_Id id,
+	uintptr_t* out_addr
+);
+DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 	DTTR_Core_PatchGroup* group,
 	DTTR_PCDOGS_T_Function_Id id,
 	void* detour,
@@ -544,14 +441,23 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 % endif
 #ifdef DTTR_PCDOGS_IMPLEMENTATION
 
+% if hidden_functions:
+// Internal resolver-only function identifiers.
+enum {
+% for row in hidden_functions:
+	DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id} = ${row.index},
+% endfor
+};
+
+% endif
 // PCDOGS signature rows.
 #ifndef DTTR_PCDOGS_SIGNATURE_ROWS_DEF
 #define DTTR_PCDOGS_SIGNATURE_ROWS_DEF
 
 % if signature_entries:
 #define DTTR_PCDOGS_SIGNATURE_ROWS(SIGNATURE) \
-% for name, sig, mask, required in signature_entries:
-	SIGNATURE(${name}, ${sig}, ${mask}, ${required})${' \\' if loop.index != len(signature_entries) - 1 else ''}
+% for row in signature_entries:
+	SIGNATURE(${row.name}, ${row.sig}, ${row.mask}, ${row.required})${' \\' if loop.index != len(signature_entries) - 1 else ''}
 % endfor
 % else:
 #define DTTR_PCDOGS_SIGNATURE_ROWS(SIGNATURE)
@@ -566,8 +472,8 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 #define DTTR_PCDOGS_TYPED_FUNCTION_ROWS(FN) \
 % for row_i, row in enumerate(typed_function_rows):
 	FN( \
-% for value_i, field in enumerate(typed_fields):
-		${row[field]}${',' if value_i != len(typed_fields) - 1 else ''} \
+% for value_i, value in enumerate(row.macro_values()):
+		${value}${',' if value_i != len(row.macro_values()) - 1 else ''} \
 % endfor
 	)${' \\' if row_i != len(typed_function_rows) - 1 else ''}
 % endfor
@@ -584,7 +490,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 % if functions:
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_ROWS(FN) \
 % for row in functions:
-	FN(${row['symbol_id']}, ${CC_ENUM[str(row['calling_convention'])]}, ${HOOK_ENUM[str(row['hook']['kind'])]}, ${c_bool(row['callable'])}, ${c_build_mask(row['supported_builds'])}, ${c_sig(row['pattern'])}, ${c_mask(row['pattern'])}, ${c_int(row['match_offset'])}, ${c_uint(row['hook']['patch_size'])}, ${c_uint(row['hook']['entry_patch_size'])})${' \\' if loop.index != len(functions) - 1 else ''}
+	FN(${row.symbol_id}, ${CC_ENUM[str(row.calling_convention)]}, ${HOOK_ENUM[str(row.hook.kind)]}, ${c_bool(row.callable)}, ${c_build_mask(row.supported_builds)}, ${c_sig(row.pattern)}, ${c_mask(row.pattern)}, ${c_int(row.match_offset)}, ${c_uint(row.hook.patch_size)}, ${c_uint(row.hook.entry_patch_size)})${' \\' if loop.index != len(functions) - 1 else ''}
 % endfor
 % else:
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_ROWS(FN)
@@ -600,10 +506,10 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 % if globals:
 #define DTTR_PCDOGS_DATA_ROWS(TYPED_DATA, UNTYPED_DATA, CTX) \
 % for row in globals:
-% if row.get("typed"):
-	TYPED_DATA(CTX, ${row['name']}, ${c_pascal_token(row['name'])}, ${c_type(row['typed']['type'])}, DTTR_PCDOGS_DATA_${row['symbol_id']}, ${DATA_RESOLVER[str(row['typed']['resolver'])]}, ${row['typed']['ref_function'].lower()}, ${c_uint(row['typed']['instr_off'])}, ${c_uint(row['typed']['addr_off'])}, ${c_uint(row['typed']['indirections'])})${' \\' if loop.index != len(globals) - 1 else ''}
+% if row.typed:
+	TYPED_DATA(CTX, ${row.name}, ${c_pascal_token(row.name)}, ${c_type(row.typed.type)}, ${'DTTR_PCDOGS_SYMBOL_DATA_ID_' if unstable else 'DTTR_PCDOGS_DATA_'}${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
 % else:
-	UNTYPED_DATA(CTX, ${row['name']})${' \\' if loop.index != len(globals) - 1 else ''}
+	UNTYPED_DATA(CTX, ${row.name})${' \\' if loop.index != len(globals) - 1 else ''}
 % endif
 % endfor
 % else:
@@ -613,7 +519,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 % if globals:
 #define DTTR_PCDOGS_SYMBOL_DATA_ROWS(DATA) \
 % for row in globals:
-	DATA(${row['symbol_id']})${' \\' if loop.index != len(globals) - 1 else ''}
+	DATA(${row.symbol_id})${' \\' if loop.index != len(globals) - 1 else ''}
 % endfor
 % else:
 #define DTTR_PCDOGS_SYMBOL_DATA_ROWS(DATA)
@@ -635,7 +541,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 % if function_xrefs:
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_ROWS(FN_XREF) \
 % for row in function_xrefs:
-	FN_XREF(${loop.index}, ${row['function_symbol']}, ${row['ref_function_symbol']}, ${c_uint(row['instr_off'])}, ${c_uint(row['addr_off'])}, ${c_uint(row.get('indirections', 0))})${' \\' if loop.index != len(function_xrefs) - 1 else ''}
+	FN_XREF(${loop.index}, ${row.function_symbol}, ${row.ref_function_symbol}, ${c_uint(row.instr_off)}, ${c_uint(row.addr_off)}, ${c_uint(row.indirections)})${' \\' if loop.index != len(function_xrefs) - 1 else ''}
 % endfor
 % else:
 #define DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_ROWS(FN_XREF)
@@ -651,7 +557,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 % if xrefs:
 #define DTTR_PCDOGS_SYMBOL_XREF_ROWS(XREF) \
 % for row in xrefs:
-	XREF(${loop.index}, ${row['global_symbol']}, ${row['function_symbol']}, ${c_uint(row['instr_off'])}, ${c_uint(row['addr_off'])})${' \\' if loop.index != len(xrefs) - 1 else ''}
+	XREF(${loop.index}, ${row.global_symbol}, ${row.function_symbol}, ${c_uint(row.instr_off)}, ${c_uint(row.addr_off)})${' \\' if loop.index != len(xrefs) - 1 else ''}
 % endfor
 % else:
 #define DTTR_PCDOGS_SYMBOL_XREF_ROWS(XREF)
@@ -690,9 +596,24 @@ static DTTR_PCDOGS_T_Symbol_Function dttr_pcdogs_symbol_functions[DTTR_PCDOGS_SY
 
 static DTTR_PCDOGS_T_Symbol_Data dttr_pcdogs_symbol_globals[DTTR_PCDOGS_SYMBOL_DATA_COUNT_VALUE] = {
 % for row in globals:
-	[DTTR_PCDOGS_SYMBOL_DATA_ID_${row['symbol_id']}] = DTTR_PCDOGS_SYMBOL_DATA(${data_write_policy(row)}, ${c_build_mask(row['supported_builds'])}),
+	[DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_DATA(${data_write_policy(row)}, ${c_build_mask(row.supported_builds)}),
 % endfor
 };
+
+% if not unstable:
+static const DTTR_PCDOGS_T_Symbol_Function_Id dttr_pcdogs_public_function_symbol_ids[DTTR_PCDOGS_FUNCTION_COUNT_VALUE] = {
+% for row in public_functions:
+	[DTTR_PCDOGS_FUNCTION_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id},
+% endfor
+};
+
+static const DTTR_PCDOGS_T_Symbol_Data_Id dttr_pcdogs_public_data_symbol_ids[DTTR_PCDOGS_DATA_COUNT_VALUE] = {
+% for row in globals:
+	[DTTR_PCDOGS_DATA_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
+% endfor
+};
+
+% endif
 
 static const DTTR_PCDOGS_T_Symbol_Function_XRef dttr_pcdogs_symbol_function_xrefs
 	[DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_STORAGE_COUNT] = {
@@ -771,14 +692,14 @@ static bool dttr_pcdogs_unhook_checked(
 
 % for row in typed_function_rows:
 
-/// @name ${row["display_name"]}
-/// Typed symbol object for `${row["display_name"]}`.
+/// @name ${row.display_name}
+/// Typed symbol object for `${row.display_name}`.
 /// @{
-${doxy_comment(row["doc"], params=row["param_docs"])}
-typedef ${row["ret"]}(${row["cc"]}*${row["typedef_name"]}) ${row["params"]};
+${doxy_comment(row.doc, params=row.param_docs)}
+typedef ${row.ret}(${row.cc}*${row.typedef_name}) ${row.params};
 
-/// Accessor table for the generated `${row["display_name"]}` symbol object.
-struct ${row["accessor_struct_name"]} {
+/// Accessor table for the generated `${row.display_name}` symbol object.
+struct ${row.accessor_struct_name} {
 	/// Stable generated symbol ID.
 	DTTR_PCDOGS_T_Symbol_Function_Id SymbolId;
 % if not unstable:
@@ -796,39 +717,43 @@ struct ${row["accessor_struct_name"]} {
 	/// Returns the REL32 trampoline size or HOTPATCH entry-window size.
 	uint32_t (*HookPrologueSize)();
 	/// Calls the resolved function; value-returning wrappers write through `out_ret`.
-	bool (*Try) ${row["try_params"]};
+	bool (*Try) ${row.try_params};
 	/// Installs generated REL32 hooks; HOTPATCH metadata returns false.
 	bool (*Hook)(
 		const DTTR_Core_Context* ctx,
-		${row["typedef_name"]} detour,
-		${row["typedef_name"]}* out_original
+		${row.typedef_name} detour,
+		${row.typedef_name}* out_original
 	);
 % if not unstable:
 	/// Builds a REL32 function-hook spec; HOTPATCH metadata returns an unsupported spec.
 	DTTR_PCDOGS_T_Patch_Spec (*PatchSpec)(
 		bool required,
-		${row["typedef_name"]} detour,
-		${row["typedef_name"]}* out_original
+		${row.typedef_name} detour,
+		${row.typedef_name}* out_original
 	);
 % endif
 	/// Detaches the hook installed through this accessor, if any.
 	void (*Unhook)(const DTTR_Core_Context* ctx);
-% if row["ret"] != "void":
+% if row.ret != "void":
 	/// Calls the resolved function, or returns `fallback_ret`.
-	${row["ret"]} (*Call) ${row["call_or_params"]};
+	${row.ret} (*Call) ${row.call_or_params};
 % endif
 };
 
-/// Generated accessor object for `${row["display_name"]}`.
-DTTR_PCDOGS_API const struct ${row["accessor_struct_name"]}* const DTTR_PCDOGS_F_${row["public"]};
+/// Generated accessor object for `${row.display_name}`.
+DTTR_PCDOGS_API const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${row.public};
 
 /// @}
 
 % endfor
 % for row in globals:
-% if row.get("typed"):
-${doxy_comment(symbol_doc("global", row), returns="Typed data symbol object.")}
-struct DTTR_PCDOGS_D_${c_pascal_token(row['name'])}_type {
+% if row.typed:
+% if is_c_array_type(row.typed.type):
+#define DTTR_PCDOGS_D_${row.symbol_id}_COUNT ${c_array_type_count(row.typed.type)}
+
+% endif
+${doxy_comment(symbol_doc(DOC_KIND.GLOBAL, row), returns="Typed data symbol object.")}
+struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type {
 	DTTR_PCDOGS_T_Symbol_Data_Id SymbolId;
 % if not unstable:
 	DTTR_PCDOGS_T_Data_Id DataId;
@@ -836,12 +761,12 @@ struct DTTR_PCDOGS_D_${c_pascal_token(row['name'])}_type {
 	DTTR_PCDOGS_T_Data_Write_Policy WritePolicy;
 	bool (*IsResolved)();
 	uintptr_t (*Address)();
-	${c_type(row['typed']['type'])}* (*Ptr)();
-	bool (*Read)(${c_type(row['typed']['type'])}* out_value);
+	${c_data_ptr_decl(row.typed.type, '(*Ptr)()')};
+	bool (*Read)(${c_data_read_param(row.typed.type, 'out_value')});
 		/// Policy-gated writer. Returns false unless WritePolicy is RAW_MEMORY.
-	bool (*Write)(${c_type(row['typed']['type'])} value);
+	bool (*Write)(${c_data_write_param(row.typed.type, 'value')});
 		/// Bypasses WritePolicy; still requires resolved writable memory.
-	bool (*UnsafeWrite)(${c_type(row['typed']['type'])} value);
+	bool (*UnsafeWrite)(${c_data_write_param(row.typed.type, 'value')});
 % if not unstable:
 		// Builds a pointer-hook spec for pointer data; scalar data returns unsupported.
 	DTTR_PCDOGS_T_Patch_Spec (*PatchSpec)(
@@ -852,7 +777,7 @@ struct DTTR_PCDOGS_D_${c_pascal_token(row['name'])}_type {
 % endif
 };
 
-DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_pascal_token(row['name'])}_type* const DTTR_PCDOGS_D_${c_pascal_token(row['name'])};
+DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type* const DTTR_PCDOGS_D_${c_pascal_token(row.name)};
 
 % endif
 % endfor
@@ -1090,6 +1015,30 @@ static uintptr_t dttr_pcdogs_resolve_global_address(
 	}
 }
 
+% if not unstable:
+bool DTTR_PCDOGS_FunctionSymbolId(
+	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_Id* out_symbol_id
+) {
+	if (!out_symbol_id || (int)id < 0 || (uint32_t)id >= DTTR_PCDOGS_FUNCTION_COUNT) {
+		return false;
+	}
+	*out_symbol_id = dttr_pcdogs_public_function_symbol_ids[(uint32_t)id];
+	return true;
+}
+
+bool DTTR_PCDOGS_DataSymbolId(
+	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Symbol_Data_Id* out_symbol_id
+) {
+	if (!out_symbol_id || (int)id < 0 || (uint32_t)id >= DTTR_PCDOGS_DATA_COUNT) {
+		return false;
+	}
+	*out_symbol_id = dttr_pcdogs_public_data_symbol_ids[(uint32_t)id];
+	return true;
+}
+
+% endif
 uint32_t DTTR_PCDOGS_SymbolFunctionCount() {
 	return DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT;
 }
@@ -1215,193 +1164,198 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 
 
 % for row in typed_function_rows:
-static bool dttr_pcdogs_${row["name"]}_IsResolved() {
-	return dttr_pcdogs_${row["name"]}_addr != 0;
+static bool dttr_pcdogs_${row.name}_IsResolved() {
+	return dttr_pcdogs_${row.name}_addr != 0;
 }
 
-static bool dttr_pcdogs_${row["name"]}_IsCallable(const DTTR_Core_Context* ctx) {
-	return ${row["callable"]}
+static bool dttr_pcdogs_${row.name}_IsCallable(const DTTR_Core_Context* ctx) {
+	return ${row.callable}
 		   && dttr_pcdogs_function_address_valid(
 			   ctx,
-			   dttr_pcdogs_${row["name"]}_addr,
-			   DTTR_PCDOGS_SIG(${row["signature"]}),
-			   DTTR_PCDOGS_MASK(${row["signature"]}),
-			   ${row["delta"]}
+			   dttr_pcdogs_${row.name}_addr,
+			   DTTR_PCDOGS_SIG(${row.signature}),
+			   DTTR_PCDOGS_MASK(${row.signature}),
+			   ${row.delta}
 		   );
 }
 
-static uintptr_t dttr_pcdogs_${row["name"]}_Address() {
-	return dttr_pcdogs_${row["name"]}_addr;
+static uintptr_t dttr_pcdogs_${row.name}_Address() {
+	return dttr_pcdogs_${row.name}_addr;
 }
 
-static DTTR_PCDOGS_T_Hook_Kind dttr_pcdogs_${row["name"]}_HookKind() {
-	return ${row["hook_kind"]};
+static DTTR_PCDOGS_T_Hook_Kind dttr_pcdogs_${row.name}_HookKind() {
+	return ${row.hook_kind};
 }
 
-static uint32_t dttr_pcdogs_${row["name"]}_HookPrologueSize() {
-	return ${row["hook_prologue_size"]};
+static uint32_t dttr_pcdogs_${row.name}_HookPrologueSize() {
+	return ${row.hook_prologue_size};
 }
 
-static bool dttr_pcdogs_${row["name"]}_Try ${row["try_params"]} {
-	if (!dttr_pcdogs_${row["name"]}_IsCallable(ctx)) {
+static bool dttr_pcdogs_${row.name}_Try ${row.try_params} {
+	if (!dttr_pcdogs_${row.name}_IsCallable(ctx)) {
 		return false;
 	}
-% if row["ret"] == "void":
-	((${row["typedef_name"]})dttr_pcdogs_${row["name"]}_addr)${row["args"]};
+% if row.ret == "void":
+	((${row.typedef_name})dttr_pcdogs_${row.name}_addr)${row.args};
 % else:
 	if (!out_ret) {
 		return false;
 	}
-	*out_ret = ((${row["typedef_name"]})dttr_pcdogs_${row["name"]}_addr)${row["args"]};
+	*out_ret = ((${row.typedef_name})dttr_pcdogs_${row.name}_addr)${row.args};
 % endif
 	return true;
 }
 
-static bool dttr_pcdogs_${row["name"]}_Hook(
+static bool dttr_pcdogs_${row.name}_Hook(
 	const DTTR_Core_Context* ctx,
-	${row["typedef_name"]} detour,
-	${row["typedef_name"]}* out_original
+	${row.typedef_name} detour,
+	${row.typedef_name}* out_original
 ) {
-	if (dttr_pcdogs_${row["name"]}_hook
-		&& !dttr_pcdogs_hook_is_active(ctx, dttr_pcdogs_${row["name"]}_hook)) {
-		dttr_pcdogs_${row["name"]}_hook = 0;
+	if (dttr_pcdogs_${row.name}_hook
+		&& !dttr_pcdogs_hook_is_active(ctx, dttr_pcdogs_${row.name}_hook)) {
+		dttr_pcdogs_${row.name}_hook = 0;
 	}
 
-	if (!dttr_pcdogs_${row["name"]}_IsCallable(ctx) || !detour
-		|| dttr_pcdogs_${row["name"]}_hook || !ctx->api->hook_function
-		|| ${row["hook_kind"]} != DTTR_PCDOGS_HOOK_REL32) {
+	if (!dttr_pcdogs_${row.name}_IsCallable(ctx) || !detour
+		|| dttr_pcdogs_${row.name}_hook || !ctx->api->hook_function
+		|| ${row.hook_kind} != DTTR_PCDOGS_HOOK_REL32) {
 		return false;
 	}
 	void* original = 0;
-	dttr_pcdogs_${row["name"]}_hook = ctx->api->hook_function(
-		dttr_pcdogs_${row["name"]}_addr,
-		(int)${row["hook_prologue_size"]},
+	dttr_pcdogs_${row.name}_hook = ctx->api->hook_function(
+		dttr_pcdogs_${row.name}_addr,
+		(int)${row.hook_prologue_size},
 		detour,
 		&original
 	);
-	if (!dttr_pcdogs_${row["name"]}_hook) {
+	if (!dttr_pcdogs_${row.name}_hook) {
 		return false;
 	}
 	if (out_original) {
-		*out_original = (${row["typedef_name"]})original;
+		*out_original = (${row.typedef_name})original;
 	}
 	return true;
 }
 
 % if not unstable:
-static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row["name"]}_PatchSpec(
+static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name}_PatchSpec(
 	bool required,
-	${row["typedef_name"]} detour,
-	${row["typedef_name"]}* out_original
+	${row.typedef_name} detour,
+	${row.typedef_name}* out_original
 ) {
 	DTTR_PCDOGS_T_Patch_Spec spec_;
 	memset(&spec_, 0, sizeof(spec_));
-	if (${row["hook_kind"]} != DTTR_PCDOGS_HOOK_REL32) {
+	if (!${row.callable} || ${row.hook_kind} != DTTR_PCDOGS_HOOK_REL32) {
 		spec_.required = required;
 		return spec_;
 	}
 	spec_.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK;
 	spec_.required = required;
-	spec_.function = ${row["function_id"]};
+	spec_.function = ${row.function_id};
 	spec_.detour = (void*)detour;
 	spec_.out_original = (void**)out_original;
 	return spec_;
 }
 
 % endif
-static void dttr_pcdogs_${row["name"]}_Unhook(const DTTR_Core_Context* ctx) {
-	if (!ctx || !ctx->api || !dttr_pcdogs_${row["name"]}_hook) {
+static void dttr_pcdogs_${row.name}_Unhook(const DTTR_Core_Context* ctx) {
+	if (!ctx || !ctx->api || !dttr_pcdogs_${row.name}_hook) {
 		return;
 	}
 
-	if (dttr_pcdogs_unhook_checked(ctx, dttr_pcdogs_${row["name"]}_hook)) {
-		dttr_pcdogs_${row["name"]}_hook = 0;
+	if (dttr_pcdogs_unhook_checked(ctx, dttr_pcdogs_${row.name}_hook)) {
+		dttr_pcdogs_${row.name}_hook = 0;
 	}
 }
 
-% if row["ret"] != "void":
-static ${row["ret"]} dttr_pcdogs_${row["name"]}_Call${row["call_or_params"]} {
-	${row["ret"]} ret_ = fallback_ret;
-	dttr_pcdogs_${row["name"]}_Try${row["call_or_args"]};
+% if row.ret != "void":
+static ${row.ret} dttr_pcdogs_${row.name}_Call${row.call_or_params} {
+	${row.ret} ret_ = fallback_ret;
+	dttr_pcdogs_${row.name}_Try${row.call_or_args};
 	return ret_;
 }
 
 % endif
-static const struct ${row["accessor_struct_name"]} dttr_pcdogs_${row["name"]}_symbol = {
-	.SymbolId = ${row["symbol_id"]},
+static const struct ${row.accessor_struct_name} dttr_pcdogs_${row.name}_symbol = {
+	.SymbolId = ${row.symbol_id},
 % if not unstable:
-	.FunctionId = ${row["function_id"]},
+	.FunctionId = ${row.function_id},
 % endif
-	.IsResolved = dttr_pcdogs_${row["name"]}_IsResolved,
-	.IsCallable = dttr_pcdogs_${row["name"]}_IsCallable,
-	.Address = dttr_pcdogs_${row["name"]}_Address,
-	.HookKind = dttr_pcdogs_${row["name"]}_HookKind,
-	.HookPrologueSize = dttr_pcdogs_${row["name"]}_HookPrologueSize,
-	.Try = dttr_pcdogs_${row["name"]}_Try,
-	.Hook = dttr_pcdogs_${row["name"]}_Hook,
+	.IsResolved = dttr_pcdogs_${row.name}_IsResolved,
+	.IsCallable = dttr_pcdogs_${row.name}_IsCallable,
+	.Address = dttr_pcdogs_${row.name}_Address,
+	.HookKind = dttr_pcdogs_${row.name}_HookKind,
+	.HookPrologueSize = dttr_pcdogs_${row.name}_HookPrologueSize,
+	.Try = dttr_pcdogs_${row.name}_Try,
+	.Hook = dttr_pcdogs_${row.name}_Hook,
 % if not unstable:
-	.PatchSpec = dttr_pcdogs_${row["name"]}_PatchSpec,
+	.PatchSpec = dttr_pcdogs_${row.name}_PatchSpec,
 % endif
-	.Unhook = dttr_pcdogs_${row["name"]}_Unhook,
-% if row["ret"] != "void":
-	.Call = dttr_pcdogs_${row["name"]}_Call,
+	.Unhook = dttr_pcdogs_${row.name}_Unhook,
+% if row.ret != "void":
+	.Call = dttr_pcdogs_${row.name}_Call,
 % endif
 };
 
-const struct ${row["accessor_struct_name"]}* const DTTR_PCDOGS_F_${row["public"]} =
-	&dttr_pcdogs_${row["name"]}_symbol;
+const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${row.public} =
+	&dttr_pcdogs_${row.name}_symbol;
 
 % endfor
 % for row in globals:
-% if row.get("typed"):
-static bool dttr_pcdogs_${row['name'].lower()}_IsResolved() {
-	return dttr_pcdogs_${row['name'].lower()}_addr != 0;
+% if row.typed:
+static bool dttr_pcdogs_${row.name.lower()}_IsResolved() {
+	return dttr_pcdogs_${row.name.lower()}_addr != 0;
 }
 
-static uintptr_t dttr_pcdogs_${row['name'].lower()}_Address() {
-	return dttr_pcdogs_${row['name'].lower()}_addr;
+static uintptr_t dttr_pcdogs_${row.name.lower()}_Address() {
+	return dttr_pcdogs_${row.name.lower()}_addr;
 }
 
-static ${c_type(row['typed']['type'])}* dttr_pcdogs_${row['name'].lower()}_Ptr() {
-	return (${c_type(row['typed']['type'])}*)dttr_pcdogs_${row['name'].lower()}_addr;
+static ${c_data_ptr_decl(row.typed.type, 'dttr_pcdogs_' + row.name.lower() + '_Ptr()')} {
+	return ${c_data_ptr_cast(row.typed.type)}dttr_pcdogs_${row.name.lower()}_addr;
 }
 
-static bool dttr_pcdogs_${row['name'].lower()}_Read(${c_type(row['typed']['type'])}* out_value) {
+static bool dttr_pcdogs_${row.name.lower()}_Read(${c_data_read_param(row.typed.type, 'out_value')}) {
 	if (!out_value
 		|| !dttr_pcdogs_region_has(
-			dttr_pcdogs_${row['name'].lower()}_addr,
-			sizeof(${c_type(row['typed']['type'])}),
+			dttr_pcdogs_${row.name.lower()}_addr,
+			sizeof(${c_type(row.typed.type)}),
 			false,
 			false
 		)) {
 		return false;
 	}
-	memcpy(out_value, (const void*)dttr_pcdogs_${row['name'].lower()}_addr, sizeof(${c_type(row['typed']['type'])}));
+	memcpy(out_value, (const void*)dttr_pcdogs_${row.name.lower()}_addr, sizeof(${c_type(row.typed.type)}));
 	return true;
 }
 
-static bool dttr_pcdogs_${row['name'].lower()}_UnsafeWrite(${c_type(row['typed']['type'])} value) {
+static bool dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_param(row.typed.type, 'value')}) {
+% if is_c_array_type(row.typed.type):
+	if (!value) {
+		return false;
+	}
+% endif
 	if (!dttr_pcdogs_region_has(
-			dttr_pcdogs_${row['name'].lower()}_addr,
-			sizeof(${c_type(row['typed']['type'])}),
+			dttr_pcdogs_${row.name.lower()}_addr,
+			sizeof(${c_type(row.typed.type)}),
 			true,
 			false
 		)) {
 		return false;
 	}
-	memcpy((void*)dttr_pcdogs_${row['name'].lower()}_addr, &value, sizeof(${c_type(row['typed']['type'])}));
+	memcpy((void*)dttr_pcdogs_${row.name.lower()}_addr, ${c_data_write_source(row.typed.type, 'value')}, sizeof(${c_type(row.typed.type)}));
 	return true;
 }
 
-static bool dttr_pcdogs_${row['name'].lower()}_Write(${c_type(row['typed']['type'])} value) {
+static bool dttr_pcdogs_${row.name.lower()}_Write(${c_data_write_param(row.typed.type, 'value')}) {
 	if (${data_write_policy(row)} != DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY) {
 		return false;
 	}
-	return dttr_pcdogs_${row['name'].lower()}_UnsafeWrite(value);
+	return dttr_pcdogs_${row.name.lower()}_UnsafeWrite(value);
 }
 
 % if not unstable:
-static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row['name'].lower()}_PatchSpec(
+static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name.lower()}_PatchSpec(
 	bool required,
 	void* new_value,
 	void** out_original
@@ -1410,46 +1364,42 @@ static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row['name'].lower()}_PatchSpec(
 	memset(&spec_, 0, sizeof(spec_));
 	spec_.kind = ${data_patch_spec_kind(row)};
 	spec_.required = required;
-	spec_.global = DTTR_PCDOGS_DATA_${row['symbol_id']};
+	spec_.global = DTTR_PCDOGS_DATA_${row.symbol_id};
 	spec_.new_value = new_value;
 	spec_.out_original = out_original;
 	return spec_;
 }
 
 % endif
-static const struct DTTR_PCDOGS_D_${c_pascal_token(row['name'])}_type dttr_pcdogs_${row['name'].lower()}_symbol = {
-	.SymbolId = DTTR_PCDOGS_SYMBOL_DATA_ID_${row['symbol_id']},
+static const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type dttr_pcdogs_${row.name.lower()}_symbol = {
+	.SymbolId = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
 % if not unstable:
-	.DataId = DTTR_PCDOGS_DATA_${row['symbol_id']},
+	.DataId = DTTR_PCDOGS_DATA_${row.symbol_id},
 % endif
 	.WritePolicy = ${data_write_policy(row)},
-	.IsResolved = dttr_pcdogs_${row['name'].lower()}_IsResolved,
-	.Address = dttr_pcdogs_${row['name'].lower()}_Address,
-	.Ptr = dttr_pcdogs_${row['name'].lower()}_Ptr,
-	.Read = dttr_pcdogs_${row['name'].lower()}_Read,
-	.Write = dttr_pcdogs_${row['name'].lower()}_Write,
-	.UnsafeWrite = dttr_pcdogs_${row['name'].lower()}_UnsafeWrite,
+	.IsResolved = dttr_pcdogs_${row.name.lower()}_IsResolved,
+	.Address = dttr_pcdogs_${row.name.lower()}_Address,
+	.Ptr = dttr_pcdogs_${row.name.lower()}_Ptr,
+	.Read = dttr_pcdogs_${row.name.lower()}_Read,
+	.Write = dttr_pcdogs_${row.name.lower()}_Write,
+	.UnsafeWrite = dttr_pcdogs_${row.name.lower()}_UnsafeWrite,
 % if not unstable:
-	.PatchSpec = dttr_pcdogs_${row['name'].lower()}_PatchSpec,
+	.PatchSpec = dttr_pcdogs_${row.name.lower()}_PatchSpec,
 % endif
 };
 
-const struct DTTR_PCDOGS_D_${c_pascal_token(row['name'])}_type* const DTTR_PCDOGS_D_${c_pascal_token(row['name'])} =
-	&dttr_pcdogs_${row['name'].lower()}_symbol;
+const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type* const DTTR_PCDOGS_D_${c_pascal_token(row.name)} =
+	&dttr_pcdogs_${row.name.lower()}_symbol;
 
 % endif
 % endfor
 
 
 uint32_t DTTR_PCDOGS_FunctionCount() {
-	return 0u
-DTTR_PCDOGS_TYPED_FUNCTION_ROWS(DTTR_PCDOGS_COUNT_ONE)
-	;
+	return DTTR_PCDOGS_FUNCTION_COUNT;
 }
 uint32_t DTTR_PCDOGS_DataCount() {
-	return 0u
-DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_COUNT_ONE)
-	;
+	return DTTR_PCDOGS_DATA_COUNT;
 }
 
 bool DTTR_PCDOGS_ResolveAll(const DTTR_Core_Context* ctx) {
@@ -1510,18 +1460,22 @@ DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_CLEAR_DATA)
 	addr_off,                                                                            \
 	indirections                                                                         \
 )                                                                                        \
-	if (dttr_pcdogs_##ref_fn##_addr) {                                                 \
-		dttr_pcdogs_##name##_addr = dttr_pcdogs_resolve_global_address(                \
-			resolver,                                                                    \
-			dttr_pcdogs_##ref_fn##_addr,                                               \
-			instr_off,                                                                   \
-			addr_off,                                                                    \
-			indirections                                                                 \
-		);                                                                               \
-	}                                                                                    \
-	if (!dttr_pcdogs_##name##_addr) {                                                  \
-		all_ok = false;                                                                  \
-	}
+	do {                                                                                 \
+% if unstable:
+		const DTTR_PCDOGS_T_Symbol_Data* symbol_data_ =                                  \
+			DTTR_PCDOGS_SymbolDataAt((uint32_t)data_id);                                 \
+% else:
+		DTTR_PCDOGS_T_Symbol_Data_Id symbol_id_;                                       \
+		const DTTR_PCDOGS_T_Symbol_Data* symbol_data_ =                                  \
+			DTTR_PCDOGS_DataSymbolId((DTTR_PCDOGS_T_Data_Id)data_id, &symbol_id_)         \
+				? DTTR_PCDOGS_SymbolDataAt((uint32_t)symbol_id_)                           \
+				: NULL;                                                                     \
+% endif
+		dttr_pcdogs_##name##_addr = symbol_data_ ? symbol_data_->address : 0;            \
+		if (!dttr_pcdogs_##name##_addr) {                                                \
+			all_ok = false;                                                              \
+		}                                                                                \
+	} while (0);
 DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_RESOLVE_DATA)
 #undef DTTR_PCDOGS_RESOLVE_DATA
 	return all_ok;
