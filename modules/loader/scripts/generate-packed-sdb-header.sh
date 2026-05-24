@@ -28,4 +28,6 @@ xxd -i "$input_file" > "$tmp_header"
   echo
   echo "#endif // DTTR_GENERATED_PACKED_SDB_H"
 } > "$output_file"
-clang-format -i "$output_file"
+if command -v clang-format >/dev/null 2>&1; then
+  clang-format -i "$output_file"
+fi

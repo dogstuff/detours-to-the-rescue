@@ -1,7 +1,8 @@
 {
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-  outputs = { nixpkgs, ... }:
+  outputs =
+    { nixpkgs, ... }:
     let
       systems = [
         "x86_64-linux"
@@ -10,23 +11,28 @@
         "aarch64-darwin"
       ];
       # Map package and shell outputs across supported host platforms.
-      forEachSystem = f:
-        nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
+      forEachSystem = f: nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
     in
     {
-      packages = forEachSystem (pkgs: {
-        shader-tools = pkgs.buildEnv {
-          name = "shader-tools";
-          paths = with pkgs; [
-            sdl3-shadercross
-            shaderc
-            gnused
-            xxd
-          ];
-        };
-      });
+      formatter = forEachSystem (pkgs: pkgs.nixfmt-tree);
 
-      devShells = forEachSystem (pkgs:
+      packages = forEachSystem (
+        pkgs:
+        pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          shader-tools = pkgs.buildEnv {
+            name = "shader-tools";
+            paths = with pkgs; [
+              sdl3-shadercross
+              shaderc
+              gnused
+              xxd
+            ];
+          };
+        }
+      );
+
+      devShells = forEachSystem (
+        pkgs:
         let
           lib = pkgs.lib;
           mingw = pkgs.pkgsCross.mingw32;
@@ -85,7 +91,10 @@
             pname = "ffmpeg-rpl-i686";
             version = pkgs.ffmpeg-headless.version;
             src = pkgs.ffmpeg-headless.src;
-            nativeBuildInputs = [ pkgs.nasm pkgs.perl ];
+            nativeBuildInputs = [
+              pkgs.nasm
+              pkgs.perl
+            ];
             configurePhase = ''
               runHook preConfigure
               ./configure \
@@ -104,93 +113,154 @@
             '';
           };
           mcfgthreads = mingw.windows.mcfgthreads;
+          baseShellPackages = with pkgs; [
+            just
+            cmake
+            gnumake
+            ninja
+            stb
+            pkg-config
+            nasm
+            perl
+            python3
+            python3Packages.mako
+            xxd
+            mingwCc
+            cmocka
+          ];
+          formatPackages = with pkgs; [
+            clang-tools
+            python3Packages.black
+          ];
+          docsPackages = with pkgs; [
+            just
+            doxygen
+            zensical
+          ];
+          secureFilesPackages = with pkgs; [ glab ];
+          archivePackages = with pkgs; [ zip ];
+          uploadPackages = with pkgs; [
+            curl
+          ];
+          shaderToolPackages = lib.optionals pkgs.stdenv.hostPlatform.isLinux (
+            with pkgs;
+            [
+              sdl3-shadercross
+              shaderc
+              gnused
+            ]
+          );
+          shaderCheckPackages =
+            (with pkgs; [
+              just
+              xxd
+            ])
+            ++ shaderToolPackages;
+          mkDttrShell =
+            {
+              includeFormat ? false,
+              includeDocs ? false,
+              includeSecureFiles ? false,
+              includePackageTools ? false,
+              includeShaderTools ? false,
+              includeWine ? false,
+              extraPackages ? [ ],
+            }:
+            pkgs.mkShell {
+              packages =
+                baseShellPackages
+                ++ extraPackages
+                ++ lib.optionals includeFormat formatPackages
+                ++ lib.optionals includeDocs docsPackages
+                ++ lib.optionals includeSecureFiles secureFilesPackages
+                ++ lib.optionals includePackageTools (archivePackages ++ uploadPackages)
+                ++ lib.optionals includeShaderTools shaderToolPackages
+                ++ lib.optionals (includeWine && pkgs.stdenv.hostPlatform.system == "x86_64-linux") [
+                  pkgs.wineWowPackages.stable
+                ];
+
+              shellHook = ''
+                toolchain_dir="''${DTTR_TOOLCHAIN_DIR:-.toolchain}"
+                mkdir -p "$toolchain_dir"
+                ln -sfn "${sdl3}" "$toolchain_dir/sdl3"
+                ln -sfn "${sdl3Mixer}" "$toolchain_dir/sdl3_mixer"
+                ln -sfn "${cmocka}" "$toolchain_dir/cmocka"
+                ln -sfn "${ffmpeg}" "$toolchain_dir/ffmpeg"
+
+                # Keep CMake on the pinned cross tools.
+                write_tool_wrapper() {
+                  local wrapper tool
+                  wrapper="$1"
+                  tool="$2"
+                  cat > "$toolchain_dir/i686-w64-mingw32-$wrapper" <<WRAPPER
+                #!/usr/bin/env bash
+                exec "${crossBinPrefix}$tool" "\$@"
+                WRAPPER
+                  chmod +x "$toolchain_dir/i686-w64-mingw32-$wrapper"
+                }
+
+                for wrapper in gcc g++ windres; do
+                  write_tool_wrapper "$wrapper" "$wrapper"
+                done
+                write_tool_wrapper gcc-ar ar
+                write_tool_wrapper gcc-ranlib ranlib
+
+                cat > "$toolchain_dir/i686-w64-mingw32-pkg-config" <<WRAPPER
+                #!/usr/bin/env bash
+                set -e
+                export PKG_CONFIG_LIBDIR="${pkgConfigLibDir}"
+                exec "${pkgConfigBin}" "\$@"
+                WRAPPER
+                chmod +x "$toolchain_dir/i686-w64-mingw32-pkg-config"
+
+                cat > "$toolchain_dir/toolchain.cmake" <<CMAKE
+                get_filename_component(TOOLCHAIN_DIR "\''${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+                set(CMAKE_SYSTEM_NAME Windows)
+                set(CMAKE_SYSTEM_PROCESSOR i686)
+                set(CMAKE_C_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc")
+                set(CMAKE_CXX_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-g++")
+                set(CMAKE_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
+                set(CMAKE_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
+                set(CMAKE_C_COMPILER_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
+                set(CMAKE_C_COMPILER_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
+                set(CMAKE_RC_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-windres")
+                set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+                set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+                set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
+                add_link_options("-L${mcfgthreads}/lib" -static-libgcc -static-libstdc++)
+                set(CMAKE_CROSSCOMPILING_EMULATOR wine)
+                CMAKE
+              '';
+            };
         in
         {
-          default = pkgs.mkShell {
-            packages = with pkgs;
-              [
-                just
-                cmake
-                gnumake
-                ninja
-                stb
-                pkg-config
-                clang-tools
-                nasm
-                perl
-                python3
-                python3Packages.black
-                python3Packages.mako
-                xxd
-                doxygen
-                zensical
-                curl
-                glab
-                zip
-                mingwCc
-                cmocka
-              ]
-              ++ lib.optionals stdenv.hostPlatform.isLinux [
-                sdl3-shadercross
-                shaderc
-              ]
-              ++ lib.optionals (stdenv.hostPlatform.system == "x86_64-linux") [
-                wineWowPackages.stable
-              ];
-
-            shellHook = ''
-              toolchain_dir="''${DTTR_TOOLCHAIN_DIR:-.toolchain}"
-              mkdir -p "$toolchain_dir"
-              ln -sfn "${sdl3}" "$toolchain_dir/sdl3"
-              ln -sfn "${sdl3Mixer}" "$toolchain_dir/sdl3_mixer"
-              ln -sfn "${cmocka}" "$toolchain_dir/cmocka"
-              ln -sfn "${ffmpeg}" "$toolchain_dir/ffmpeg"
-
-              # Keep CMake on the pinned cross tools.
-              write_tool_wrapper() {
-                local wrapper tool
-                wrapper="$1"
-                tool="$2"
-                cat > "$toolchain_dir/i686-w64-mingw32-$wrapper" <<WRAPPER
-              #!/usr/bin/env bash
-              exec "${crossBinPrefix}$tool" "\$@"
-              WRAPPER
-                chmod +x "$toolchain_dir/i686-w64-mingw32-$wrapper"
-              }
-
-              for wrapper in gcc g++ windres; do
-                write_tool_wrapper "$wrapper" "$wrapper"
-              done
-              write_tool_wrapper gcc-ar ar
-              write_tool_wrapper gcc-ranlib ranlib
-
-              cat > "$toolchain_dir/i686-w64-mingw32-pkg-config" <<WRAPPER
-              #!/usr/bin/env bash
-              set -e
-              export PKG_CONFIG_LIBDIR="${pkgConfigLibDir}"
-              exec "${pkgConfigBin}" "\$@"
-              WRAPPER
-              chmod +x "$toolchain_dir/i686-w64-mingw32-pkg-config"
-
-              cat > "$toolchain_dir/toolchain.cmake" <<CMAKE
-              get_filename_component(TOOLCHAIN_DIR "\''${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
-              set(CMAKE_SYSTEM_NAME Windows)
-              set(CMAKE_SYSTEM_PROCESSOR i686)
-              set(CMAKE_C_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc")
-              set(CMAKE_CXX_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-g++")
-              set(CMAKE_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
-              set(CMAKE_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
-              set(CMAKE_C_COMPILER_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
-              set(CMAKE_C_COMPILER_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
-              set(CMAKE_RC_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-windres")
-              set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-              set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-              set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
-              add_link_options("-L${mcfgthreads}/lib" -static-libgcc -static-libstdc++)
-              set(CMAKE_CROSSCOMPILING_EMULATOR wine)
-              CMAKE
-            '';
+          default = mkDttrShell {
+            includeFormat = true;
+            includeDocs = true;
+            includeSecureFiles = true;
+            includePackageTools = true;
+            includeShaderTools = true;
+            includeWine = true;
           };
-        });
+
+          ci-build = mkDttrShell { };
+          ci-test = mkDttrShell {
+            includeSecureFiles = true;
+            includeWine = true;
+          };
+          ci-docs = pkgs.mkShell {
+            packages = docsPackages;
+          };
+          ci-package = mkDttrShell {
+            extraPackages = archivePackages;
+          };
+          ci-upload = pkgs.mkShell {
+            packages = uploadPackages;
+          };
+          ci-shaders = pkgs.mkShell {
+            packages = shaderCheckPackages;
+          };
+        }
+      );
     };
 }

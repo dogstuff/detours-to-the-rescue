@@ -5,6 +5,7 @@ test-max-parallel := env_var_or_default("TEST_JOBS", "8")
 toolchain-dir := ".toolchain"
 toolchain-file := ".toolchain/toolchain.cmake"
 shader-output-dir := env_var_or_default("SHADER_OUTPUT_DIR", build-dir + "/modules/sidecar/generated/include/gen")
+cached-sdl3gpu-shader-dir := "modules/sidecar/shaders/cache/sdl3gpu"
 format-dirs := "./modules/loader ./modules/sidecar ./modules/common ./modules/sdk"
 docs-build-dir := "docs/build"
 docs-config := "docs/zensical.toml"
@@ -15,6 +16,8 @@ dttr-modding := env_var_or_default("DTTR_MODS_ENABLED", "OFF")
 require-test-deps := env_var_or_default("DTTR_REQUIRE_TEST_DEPS", "OFF")
 require-pcdogs-fixtures := env_var_or_default("DTTR_REQUIRE_PCDOGS_FIXTURES", "OFF")
 pcdogs-fixture-dir := env_var_or_default("DTTR_PCDOGS_FIXTURE_DIR", "fixture")
+host-cached-sdl3gpu-default := `test "$(uname -s)" = Darwin && printf ON || printf OFF`
+use-cached-sdl3gpu-shaders := env_var_or_default("DTTR_USE_CACHED_SDL3GPU_SHADERS", host-cached-sdl3gpu-default)
 docker := "podman"
 container-image := "dttr-toolchain"
 container-platform := env_var_or_default("DTTR_CONTAINER_PLATFORM", "linux/amd64")
@@ -38,11 +41,20 @@ build-release: prepare-build
 # Keep the short test entrypoint aligned with the full suite.
 test: test-all
 
-# Build and run common, SDK, and sidecar tests.
-test-all: setup-build
+# Build common, SDK, and sidecar test executables for CI.
+ci-compile-tests: setup-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-max-parallel }}" --target dttr_common_tests dttr_sdk_tests dttr_sidecar_tests
+
+# Build the CI build tree shared by downstream test and docs jobs.
+ci-build-internal: ci-compile-tests
+
+# Run common, SDK, and sidecar tests from an existing build tree.
+ci-test:
     ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" \
       --output-on-failure --parallel "{{ test-max-parallel }}" -L "common|sdk|sidecar"
+
+# Build and run common, SDK, and sidecar tests.
+test-all: ci-compile-tests ci-test
 
 # Build and run SDK-only tests.
 test-sdk: setup-build
@@ -62,7 +74,8 @@ setup-build:
       -DDTTR_MODS_ENABLED={{ dttr-modding }} \
       -DDTTR_REQUIRE_TEST_DEPS={{ require-test-deps }} \
       -DDTTR_REQUIRE_PCDOGS_FIXTURES={{ require-pcdogs-fixtures }} \
-      -DDTTR_PCDOGS_FIXTURE_DIR="{{ pcdogs-fixture-dir }}"
+      -DDTTR_PCDOGS_FIXTURE_DIR="{{ pcdogs-fixture-dir }}" \
+      -DDTTR_USE_CACHED_SDL3GPU_SHADERS={{ use-cached-sdl3gpu-shaders }}
 
 # Remove generated build and toolchain state.
 clean:
@@ -83,6 +96,29 @@ build-shaders:
 # Regenerate SDK blueprint artifacts.
 build-sdk-blueprints: setup-build
     just --justfile modules/sdk/justfile blueprints
+
+# Regenerate the local SDL3 GPU shader cache.
+update-cached-sdl3gpu-shaders:
+    rm -rf "{{ cached-sdl3gpu-shader-dir }}"
+    bash ./modules/sidecar/scripts/build-shaders.sh "{{ cached-sdl3gpu-shader-dir }}"
+
+# Build and check the SDL3 GPU shader cache for CI artifacts.
+ci-shader-build: update-cached-sdl3gpu-shaders
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cache_dir="{{ cached-sdl3gpu-shader-dir }}"
+    expected=(
+      sdl3gpu_shaders.h
+      shaders/basic.frag.dxil
+      shaders/basic.frag.spv
+      shaders/basic.vert.dxil
+      shaders/basic.vert.spv
+      shaders/buf2tex.comp.dxil
+      shaders/buf2tex.comp.spv
+    )
+    for artifact in "${expected[@]}"; do
+      test -s "$cache_dir/$artifact"
+    done
 
 # Compile sidecar shaders inside the container.
 build-shaders-container:
@@ -121,8 +157,14 @@ format:
 
 # Build the Zensical site and Doxygen output.
 build-docs: setup-build
-    rm -rf "{{ docs-build-dir }}"
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --target dttr_pcdogs_generated_headers
+    just build-docs-from-build
+
+# Build documentation from an existing CI build tree.
+build-docs-from-build:
+    test -s "{{ build-dir }}/modules/sdk/generated/include/dttr_pcdogs.h"
+    test -s "{{ build-dir }}/modules/sdk/generated/include/dttr_pcdogs_unstable.h"
+    rm -rf "{{ docs-build-dir }}"
     bash ./scripts/update-latest-release-link.sh
     zensical build --clean --config-file "{{ docs-config }}"
     DTTR_SDK_GENERATED_INCLUDE_DIR="{{ build-dir }}/modules/sdk/generated/include" doxygen "docs/doxyfile-sdk.ini"
