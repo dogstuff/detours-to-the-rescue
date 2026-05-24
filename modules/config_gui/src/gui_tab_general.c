@@ -14,21 +14,17 @@ static const char *const MINIDUMP_TYPE_TOOLTIPS[] = {
 	"Writes a larger crash minidump with additional details.",
 };
 
-static const char *TOOLTIP_PCDOGS_PATH = "The extracted/installed game directory or "
-										 "original game ISO.";
-static const char *TOOLTIP_SAVES_PATH
-	= "Path for redirected saves/logs reads and writes, relative to the DttR directory. "
-	  "Files are stored in subdirectories unique to the version of the game being run. "
-	  "Set to null or \"\" to disable redirection. Default: saves.";
-static const char *TOOLTIP_LOG_LEVEL = "The minimum log level to output. Default: "
-									   "info (Release), debug (Debug).";
-static const char *TOOLTIP_LOG_FILE_PATH = "Path to the DttR log file. Default: "
-										   "dttr.log.";
-static const char *TOOLTIP_MINIDUMP_TYPE = "The type of minidump to write on crash. "
-										   "Default: normal (Release), detailed "
-										   "(Debug).";
-static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Whether to skip the "
-											   "intro movies at launch. Default: false.";
+static const char *TOOLTIP_PCDOGS_PATH = "Installed game directory or original ISO.";
+static const char *TOOLTIP_SAVES_PATH = "Redirect saves and logs under the DttR "
+										"directory. Use null or \"\" to disable. "
+										"Default: saves.";
+static const char *TOOLTIP_LOG_LEVEL = "Minimum log level. Default: info (Release), "
+									   "debug (Debug).";
+static const char *TOOLTIP_LOG_FILE_PATH = "DttR log file path. Default: dttr.log.";
+static const char *TOOLTIP_MINIDUMP_TYPE = "Crash dump detail. Default: normal "
+										   "(Release), detailed (Debug).";
+static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip intro movies at launch. Default: "
+											   "false.";
 
 void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!begin_tab_settings_table(

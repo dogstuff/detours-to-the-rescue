@@ -30,33 +30,29 @@ static const char *const VERTEX_PRECISION_TOOLTIPS[] = {
 	"resolutions.",
 };
 
-static const char *TOOLTIP_GRAPHICS_API = "The GPU backend to use. Default: auto.";
-static const char *TOOLTIP_WINDOW_WIDTH = "The initial width of the game window in "
-										  "pixels. Default: 640.";
-static const char *TOOLTIP_WINDOW_HEIGHT = "The initial height of the game window in "
-										   "pixels. Default: 480.";
-static const char *TOOLTIP_SCALING_FIT = "How the game should scale to fit the window. "
-										 "Default: letterbox.";
-static const char *TOOLTIP_SCALING_METHOD = "The type of scaling to use when the "
-											"window size exceeds the game resolution. "
-											"Default: logical.";
-static const char *TOOLTIP_PRESENT_FILTER = "The filtering algorithm used when scaling "
-											"the rendered frame to the display. "
+static const char *TOOLTIP_GRAPHICS_API = "GPU backend. Default: auto.";
+static const char *TOOLTIP_WINDOW_WIDTH = "Initial game window width in pixels. Default: "
+										  "640.";
+static const char *TOOLTIP_WINDOW_HEIGHT = "Initial game window height in pixels. "
+										   "Default: 480.";
+static const char *TOOLTIP_SCALING_FIT = "Fit mode for the game image. Default: "
+										 "letterbox.";
+static const char *TOOLTIP_SCALING_METHOD = "Scaling mode when the window is larger than "
+											"the game resolution. Default: logical.";
+static const char *TOOLTIP_PRESENT_FILTER = "Filter used when presenting scaled frames. "
 											"Default: linear.";
-static const char *TOOLTIP_VERTEX_PRECISION = "How vertex coordinates are computed "
-											  "during 3D rendering. Default: native.";
-static const char *TOOLTIP_SPRITE_SMOOTH = "Use smoothing for 2D sprites if true, else "
-										   "use nearest-neighbor. Default: true.";
-static const char *TOOLTIP_MSAA_SAMPLES = "Number of multisample anti-aliasing "
-										  "samples. Set to 1 to disable. Default: 2.";
-static const char *TOOLTIP_TEXTURE_UPLOAD_SYNC = "Wait for each texture upload to "
-												 "finish before continuing. Default: "
-												 "false.";
+static const char *TOOLTIP_VERTEX_PRECISION = "Vertex coordinate precision during 3D "
+											  "rendering. Default: native.";
+static const char *TOOLTIP_SPRITE_SMOOTH = "Smooth 2D sprites; disable for "
+										   "nearest-neighbor. Default: true.";
+static const char *TOOLTIP_MSAA_SAMPLES = "Multisample anti-aliasing samples. Set to 1 "
+										  "to disable. Default: 2.";
+static const char *TOOLTIP_TEXTURE_UPLOAD_SYNC = "Wait for each texture upload before "
+												 "continuing. Default: false.";
 static const char *TOOLTIP_GENERATE_TEXTURE_MIPMAPS
 	= "Generate mipmaps for textures to reduce aliasing at smaller sizes. Default: true.";
-static const char *TOOLTIP_FULLSCREEN = "Whether to start the game in fullscreen mode. "
-										"Press F11 to toggle at runtime. Default: "
-										"false.";
+static const char *TOOLTIP_FULLSCREEN = "Start in fullscreen. F11 toggles at runtime. "
+										"Default: false.";
 
 void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!begin_tab_settings_table(

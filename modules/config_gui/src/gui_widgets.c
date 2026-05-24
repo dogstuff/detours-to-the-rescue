@@ -11,16 +11,6 @@ void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float heigh
 	igDummy((ImVec2_c){0.0f, DTTR_ImGuiDialog_ScaledFloat(ctx, height)});
 }
 
-void align_next_item_right(float item_width) {
-	const float available_width = igGetContentRegionAvail().x;
-
-	if (available_width <= item_width) {
-		return;
-	}
-
-	igSetCursorPosX(igGetCursorPosX() + available_width - item_width);
-}
-
 static float config_max_float(float a, float b) { return a > b ? a : b; }
 
 typedef void (*config_path_dialog_fn)(
@@ -39,7 +29,8 @@ static const ImGuiTableFlags CONFIG_TABLE_FLAGS = ImGuiTableFlags_BordersInnerH
 												  | ImGuiTableFlags_BordersOuterH
 												  | ImGuiTableFlags_SizingStretchProp
 												  | ImGuiTableFlags_NoSavedSettings
-												  | ImGuiTableFlags_NoPadOuterX;
+												  | ImGuiTableFlags_PadOuterX;
+static const char *const FOOTER_HINT_TEXT = "Ctrl+S to save your changes.";
 
 static float config_path_control_width() {
 	return DTTR_CONFIG_UI_PATH_INPUT_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING
@@ -52,23 +43,21 @@ float config_standard_input_width() {
 }
 
 static float config_standard_content_width() {
-	return DTTR_CONFIG_UI_ROW_MARGIN_X * 2.0f + DTTR_CONFIG_UI_LABEL_W
-		   + config_standard_input_width();
+	return DTTR_CONFIG_UI_LABEL_W + config_standard_input_width();
 }
 
 static float config_gamepad_content_width() {
-	return DTTR_CONFIG_UI_ROW_MARGIN_X * 8.0f + DTTR_CONFIG_UI_GAMEPAD_SOURCE_W
-		   + config_standard_input_width()
+	return DTTR_CONFIG_UI_GAMEPAD_SOURCE_W + config_standard_input_width()
 		   + (DTTR_CONFIG_UI_GAMEPAD_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
 				 * 3.0f;
 }
 
 int config_window_width() {
-	float content_width = config_max_float(
+	const float content_width = config_max_float(
 		config_standard_content_width(),
 		config_gamepad_content_width()
 	);
-	return (int)((DTTR_CONFIG_UI_PANEL_PADDING_X * 2.0f + content_width) * 0.833333f);
+	return (int)(DTTR_CONFIG_UI_PANEL_PADDING_X * 2.0f + content_width);
 }
 
 static int choice_index(const DTTR_ConfigChoice *choices, int choice_count, int value) {
@@ -91,8 +80,16 @@ bool choice_combo(
 	const DTTR_ConfigChoice *choice_list = DTTR_Config_Choices(choices, &choice_count);
 	const int current = choice_index(choice_list, choice_count, *value);
 	const char *preview = choice_count > 0 ? choice_list[current].label : "Unknown";
+	const ImVec2_c combo_popup_padding = {
+		igGetStyle()->WindowPadding.x,
+		DTTR_CONFIG_UI_COMBO_POPUP_PADDING_Y,
+	};
 
-	if (!igBeginCombo(label, preview, ImGuiComboFlags_None)) {
+	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, combo_popup_padding);
+	const bool open = igBeginCombo(label, preview, ImGuiComboFlags_None);
+	igPopStyleVar(1);
+
+	if (!open) {
 		return false;
 	}
 
@@ -118,19 +115,24 @@ bool choice_combo(
 	return changed;
 }
 
-static void draw_tooltip_text_segment(const char *start, const char *end, bool same_line) {
+static void draw_wrapped_tooltip_segment(const char *start, const char *end) {
 	if (!start || start == end) {
 		return;
 	}
 
-	if (same_line) {
-		igSameLine(0.0f, 0.0f);
+	igTextWrapped("%.*s", (int)(end - start), start);
+}
+
+static void draw_inline_tooltip_segment(const char *start, const char *end) {
+	if (!start || start == end) {
+		return;
 	}
 
+	igSameLine(0.0f, 0.0f);
 	igTextUnformatted(start, end);
 }
 
-static void draw_green_inline_text(const char *start, const char *end) {
+static void draw_default_inline_text(const char *start, const char *end) {
 	if (!start || start == end) {
 		return;
 	}
@@ -155,15 +157,15 @@ static void draw_default_tooltip_value(
 		const char *debug_suffix = strstr(debug_start, " (Debug)");
 
 		if (debug_suffix && debug_suffix < default_value_end) {
-			draw_green_inline_text(default_value_start, release_suffix);
-			draw_tooltip_text_segment(release_suffix, debug_start, true);
-			draw_green_inline_text(debug_start, debug_suffix);
-			draw_tooltip_text_segment(debug_suffix, default_value_end, true);
+			draw_default_inline_text(default_value_start, release_suffix);
+			draw_inline_tooltip_segment(release_suffix, debug_start);
+			draw_default_inline_text(debug_start, debug_suffix);
+			draw_inline_tooltip_segment(debug_suffix, default_value_end);
 			return;
 		}
 	}
 
-	draw_green_inline_text(default_value_start, default_value_end);
+	draw_default_inline_text(default_value_start, default_value_end);
 }
 
 void show_tooltip(const char *text) {
@@ -171,7 +173,14 @@ void show_tooltip(const char *text) {
 		return;
 	}
 
+	const ImVec2_c tooltip_padding = {
+		igGetStyle()->WindowPadding.x,
+		DTTR_CONFIG_UI_TOOLTIP_PADDING_Y,
+	};
+	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, tooltip_padding);
+
 	if (!igBeginItemTooltip()) {
+		igPopStyleVar(1);
 		return;
 	}
 
@@ -185,13 +194,19 @@ void show_tooltip(const char *text) {
 			default_value_start++;
 		}
 
+		const char *description_end = default_text;
+		while (description_end > text && description_end[-1] == ' ') {
+			description_end--;
+		}
+
 		const char *default_value_end = default_value_start + strlen(default_value_start);
 
 		if (default_value_end > default_value_start && default_value_end[-1] == '.') {
 			default_value_end--;
 		}
 
-		draw_tooltip_text_segment(text, default_value_start, false);
+		draw_wrapped_tooltip_segment(text, description_end);
+		draw_wrapped_tooltip_segment(default_text, default_value_start);
 		draw_default_tooltip_value(default_value_start, default_value_end);
 
 		if (*default_value_end) {
@@ -204,6 +219,7 @@ void show_tooltip(const char *text) {
 
 	igPopTextWrapPos();
 	igEndTooltip();
+	igPopStyleVar(1);
 }
 
 bool themed_row_button(
@@ -221,10 +237,6 @@ bool themed_row_button(
 }
 
 void push_config_theme() {
-	igPushStyleVar_Float(
-		ImGuiStyleVar_ScrollbarSize,
-		igGetStyle()->ScrollbarSize * DTTR_CONFIG_UI_SCROLLBAR_WIDTH_SCALE
-	);
 	igPushStyleColor_Vec4(ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
 	igPushStyleColor_Vec4(ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
 	igPushStyleColor_Vec4(ImGuiCol_FrameBgActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
@@ -241,12 +253,15 @@ void push_config_theme() {
 	igPushStyleColor_Vec4(ImGuiCol_TabDimmedSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG);
 	igPushStyleColor_Vec4(ImGuiCol_MenuBarBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
 	igPushStyleColor_Vec4(ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
+	igPushStyleColor_Vec4(ImGuiCol_Border, DTTR_CONFIG_UI_BORDER_COLOR);
+	igPushStyleColor_Vec4(ImGuiCol_Separator, DTTR_CONFIG_UI_SEPARATOR_COLOR);
+	igPushStyleColor_Vec4(ImGuiCol_SeparatorHovered, DTTR_CONFIG_UI_SEPARATOR_COLOR);
+	igPushStyleColor_Vec4(ImGuiCol_SeparatorActive, DTTR_CONFIG_UI_SEPARATOR_COLOR);
+	igPushStyleColor_Vec4(ImGuiCol_TableBorderStrong, DTTR_CONFIG_UI_TABLE_BORDER_COLOR);
+	igPushStyleColor_Vec4(ImGuiCol_TableBorderLight, DTTR_CONFIG_UI_BORDER_COLOR);
 }
 
-void pop_config_theme() {
-	igPopStyleColor(16);
-	igPopStyleVar(1);
-}
+void pop_config_theme() { igPopStyleColor(22); }
 
 static bool format_status_text(
 	const config_ui_state *state,
@@ -276,58 +291,93 @@ static bool format_status_text(
 	return true;
 }
 
-void draw_bottom_status_text(
+static float status_text_height(const char *status_text) {
+	if (!status_text || !status_text[0]) {
+		return 0.0f;
+	}
+
+	int line_count = 1;
+
+	for (const char *p = status_text; *p; p++) {
+		if (*p == '\n') {
+			line_count++;
+		}
+	}
+
+	return igGetTextLineHeight()
+		   + (float)(line_count - 1) * igGetTextLineHeightWithSpacing();
+}
+
+float config_footer_height(
 	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state
 ) {
 	char status_text[sizeof(state->status) + sizeof("Unsaved changes.\n")];
+	const bool has_status = format_status_text(state, status_text, sizeof(status_text));
+	float height = igGetTextLineHeight();
 
-	if (!format_status_text(state, status_text, sizeof(status_text))) {
-		return;
+	if (has_status) {
+		height += igGetStyle()->ItemSpacing.y + status_text_height(status_text);
 	}
 
-	const int line_count = strchr(status_text, '\n') ? 2 : 1;
-	const float status_height = igGetTextLineHeight()
-								+ (float)(line_count - 1)
-									  * igGetTextLineHeightWithSpacing();
-	const float bottom_margin = DTTR_ImGuiDialog_ScaledFloat(
-		ctx,
-		DTTR_CONFIG_UI_STATUS_BOTTOM_MARGIN
-	);
-	const ImVec2_c window_pos = igGetWindowPos();
-	const ImVec2_c text_pos = {
-		window_pos.x + DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_STATUS_X),
-		window_pos.y + igGetWindowHeight() - status_height - bottom_margin,
-	};
+	return height;
+}
 
-	ImDrawList *draw_list = igGetForegroundDrawList_ViewportPtr(igGetMainViewport());
-	ImDrawList_AddText_Vec2(
-		draw_list,
-		text_pos,
-		igGetColorU32_Vec4(DTTR_CONFIG_UI_STATUS_TEXT_COLOR),
-		status_text,
-		NULL
+bool begin_config_content_region(
+	const DTTR_ImGuiDialogContext *ctx,
+	const config_ui_state *state
+) {
+	const float footer_height = config_footer_height(ctx, state);
+	const ImGuiWindowFlags content_flags = ImGuiWindowFlags_NoScrollbar
+										   | ImGuiWindowFlags_NoScrollWithMouse;
+	return igBeginChild_Str(
+		"##config_content",
+		(ImVec2_c){0.0f, -footer_height},
+		ImGuiChildFlags_None,
+		content_flags
 	);
 }
 
-bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width) {
+void end_config_content_region() { igEndChild(); }
+
+void draw_footer_text(const DTTR_ImGuiDialogContext *ctx, const config_ui_state *state) {
+	char status_text[sizeof(state->status) + sizeof("Unsaved changes.\n")];
+	if (format_status_text(state, status_text, sizeof(status_text))) {
+		igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_STATUS_TEXT_COLOR);
+		igTextWrapped("%s", status_text);
+		igPopStyleColor(1);
+	}
+
+	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_HINT_TEXT_COLOR);
+	igTextWrapped("%s", FOOTER_HINT_TEXT);
+	igPopStyleColor(1);
+}
+
+bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx) {
 	const ImVec2_c padding = {
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_X),
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_Y),
 	};
+	const ImVec2_c item_spacing = {
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_ITEM_SPACING_X),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_ITEM_SPACING_Y),
+	};
 
 	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, padding);
+	igPushStyleVar_Vec2(ImGuiStyleVar_ItemSpacing, item_spacing);
+	const ImGuiWindowFlags panel_flags = ImGuiWindowFlags_NoScrollbar
+										 | ImGuiWindowFlags_NoScrollWithMouse;
 	return igBeginChild_Str(
 		"##config_panel",
-		(ImVec2_c){width, 0.0f},
-		ImGuiChildFlags_None,
-		ImGuiWindowFlags_None
+		(ImVec2_c){0.0f, 0.0f},
+		ImGuiChildFlags_AlwaysUseWindowPadding,
+		panel_flags
 	);
 }
 
 void end_padded_panel() {
 	igEndChild();
-	igPopStyleVar(1);
+	igPopStyleVar(2);
 }
 
 static ImVec2_c table_cell_padding(const DTTR_ImGuiDialogContext *ctx, float padding_x) {
@@ -348,6 +398,10 @@ static bool begin_config_table(
 		ImGuiStyleVar_CellPadding,
 		table_cell_padding(ctx, cell_padding_x)
 	);
+	igPushStyleVar_Vec2(
+		ImGuiStyleVar_ItemSpacing,
+		(ImVec2_c){igGetStyle()->ItemSpacing.x, 0.0f}
+	);
 
 	if (igBeginTable(
 			id,
@@ -359,7 +413,7 @@ static bool begin_config_table(
 		return true;
 	}
 
-	igPopStyleVar(1);
+	igPopStyleVar(2);
 	return false;
 }
 
@@ -372,45 +426,59 @@ static void setup_scaled_table_column(
 	igTableSetupColumn(id, flags, DTTR_ImGuiDialog_ScaledFloat(ctx, width), 0);
 }
 
-bool begin_settings_table_with_cell_padding_and_margins(
+static void append_table_header_text(
+	const DTTR_ImGuiDialogContext *ctx,
+	int column,
+	const char *text
+) {
+	if (!igTableSetColumnIndex(column)) {
+		return;
+	}
+
+	igSetCursorPosX(
+		igGetCursorPosX()
+		+ DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_HEADER_TEXT_INSET_X)
+	);
+	igTextUnformatted(text, NULL);
+}
+
+static void begin_table_header_row() {
+	igTableNextRow(ImGuiTableRowFlags_Headers, 0.0f);
+	igTableSetBgColor(
+		ImGuiTableBgTarget_RowBg0,
+		igGetColorU32_Col(ImGuiCol_TableHeaderBg, 1.0f),
+		-1
+	);
+}
+
+static bool begin_settings_table_with_cell_padding(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width,
 	float table_width,
-	float cell_padding_x,
-	float left_margin_width,
-	float right_margin_width
+	float cell_padding_x
 ) {
-	if (!begin_config_table(ctx, id, 4, cell_padding_x, table_width)) {
+	if (!begin_config_table(ctx, id, 2, cell_padding_x, table_width)) {
 		return false;
 	}
 
 	setup_scaled_table_column(
 		ctx,
-		"##left_margin",
-		ImGuiTableColumnFlags_WidthFixed,
-		left_margin_width
-	);
-	setup_scaled_table_column(
-		ctx,
 		"Setting",
-		ImGuiTableColumnFlags_WidthFixed,
+		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_IndentDisable
+			| ImGuiTableColumnFlags_NoHeaderLabel,
 		label_width
 	);
 	setup_scaled_table_column(
 		ctx,
 		"Value",
-		ImGuiTableColumnFlags_WidthStretch,
+		ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderLabel,
 		input_width
 	);
-	setup_scaled_table_column(
-		ctx,
-		"##right_margin",
-		ImGuiTableColumnFlags_WidthFixed,
-		right_margin_width
-	);
-	igTableHeadersRow();
+	begin_table_header_row();
+	append_table_header_text(ctx, 0, "Setting");
+	append_table_header_text(ctx, 1, "Value");
 	return true;
 }
 
@@ -421,15 +489,13 @@ bool begin_settings_table_with_width(
 	float input_width,
 	float table_width
 ) {
-	return begin_settings_table_with_cell_padding_and_margins(
+	return begin_settings_table_with_cell_padding(
 		ctx,
 		id,
 		label_width,
 		input_width,
 		table_width,
-		DTTR_CONFIG_UI_PATH_BUTTON_SPACING * 0.5f,
-		0.0f,
-		DTTR_CONFIG_UI_ROW_MARGIN_X * 4.0f
+		DTTR_CONFIG_UI_TABLE_CELL_PADDING_X
 	);
 }
 
@@ -442,92 +508,66 @@ bool begin_settings_table(
 	return begin_settings_table_with_width(ctx, id, label_width, input_width, 0.0f);
 }
 
-bool begin_full_width_settings_table(
-	const DTTR_ImGuiDialogContext *ctx,
-	const char *id,
-	float label_width,
-	float input_width
-) {
-	return begin_settings_table_with_width(
-		ctx,
-		id,
-		label_width,
-		input_width,
-		table_width_ignoring_scrollbar()
-	);
-}
-
 void end_settings_table() {
 	igEndTable();
-	igPopStyleVar(1);
-}
-
-float table_width_ignoring_scrollbar() {
-	const ImGuiStyle *style = igGetStyle();
-	const float width = igGetContentRegionAvail().x + style->ScrollbarSize;
-	return width > 1.0f ? width : 1.0f;
+	igPopStyleVar(2);
 }
 
 bool begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
 	if (!begin_config_table(
 			ctx,
 			"##gamepad_button_table",
-			7,
-			DTTR_CONFIG_UI_PATH_BUTTON_SPACING * 0.5f,
-			table_width_ignoring_scrollbar()
+			5,
+			DTTR_CONFIG_UI_TABLE_CELL_PADDING_X,
+			0.0f
 		)) {
 		return false;
 	}
 
 	setup_scaled_table_column(
 		ctx,
-		"##left_margin",
-		ImGuiTableColumnFlags_WidthFixed,
-		DTTR_CONFIG_UI_ROW_MARGIN_X * 4.0f
-	);
-	setup_scaled_table_column(
-		ctx,
-		"Game does",
-		ImGuiTableColumnFlags_WidthFixed,
+		"In-Game Action",
+		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_IndentDisable
+			| ImGuiTableColumnFlags_NoHeaderLabel,
 		DTTR_CONFIG_UI_GAMEPAD_SOURCE_W
 	);
 	setup_scaled_table_column(
 		ctx,
-		"You press",
-		ImGuiTableColumnFlags_WidthStretch,
+		"Gamepad Input",
+		ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderLabel,
 		config_standard_input_width()
 	);
 	setup_scaled_table_column(
 		ctx,
 		"Bind",
-		ImGuiTableColumnFlags_WidthFixed,
+		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel
+			| ImGuiTableColumnFlags_NoHeaderWidth,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
 	setup_scaled_table_column(
 		ctx,
 		"Clear",
-		ImGuiTableColumnFlags_WidthFixed,
+		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel
+			| ImGuiTableColumnFlags_NoHeaderWidth,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
 	setup_scaled_table_column(
 		ctx,
 		"Reset",
-		ImGuiTableColumnFlags_WidthFixed,
+		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel
+			| ImGuiTableColumnFlags_NoHeaderWidth,
 		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
 	);
-	setup_scaled_table_column(
-		ctx,
-		"##right_margin",
-		ImGuiTableColumnFlags_WidthFixed,
-		DTTR_CONFIG_UI_ROW_MARGIN_X * 4.0f
-	);
-	igTableHeadersRow();
+	begin_table_header_row();
+	append_table_header_text(ctx, 0, "In-Game Action");
+	append_table_header_text(ctx, 1, "Gamepad Input");
 	return true;
 }
 
+void begin_config_table_row() { igTableNextRow(ImGuiTableRowFlags_None, 0.0f); }
+
 void begin_setting_row() {
-	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
-	igTableNextColumn();
+	begin_config_table_row();
 	igTableNextColumn();
 }
 
@@ -757,14 +797,6 @@ bool labeled_log_path_picker(
 	);
 }
 
-static void push_spin_button_spacing(const DTTR_ImGuiDialogContext *ctx) {
-	const float spin_spacing = DTTR_ImGuiDialog_ScaledFloat(
-		ctx,
-		DTTR_CONFIG_UI_SPIN_BUTTON_SPACING
-	);
-	igPushStyleVar_Vec2(ImGuiStyleVar_ItemInnerSpacing, (ImVec2_c){spin_spacing, 0.0f});
-}
-
 bool labeled_input_int(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *label,
@@ -777,9 +809,7 @@ bool labeled_input_int(
 ) {
 	begin_setting_row();
 	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	push_spin_button_spacing(ctx);
 	const bool edited = igInputInt(id, value, step, step_fast, ImGuiInputTextFlags_None);
-	igPopStyleVar(1);
 	show_tooltip(tooltip);
 	return edited;
 }
@@ -794,7 +824,6 @@ bool labeled_input_float(
 ) {
 	begin_setting_row();
 	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	push_spin_button_spacing(ctx);
 	const bool edited = igInputFloat(
 		id,
 		value,
@@ -803,7 +832,6 @@ bool labeled_input_float(
 		"%.3f",
 		ImGuiInputTextFlags_None
 	);
-	igPopStyleVar(1);
 	show_tooltip(tooltip);
 	return edited;
 }
@@ -818,8 +846,6 @@ bool labeled_checkbox(
 ) {
 	begin_setting_row();
 	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	const float checkbox_width = igGetFrameHeight();
-	align_next_item_right(checkbox_width);
 	const bool edited = igCheckbox(id, value);
 	show_tooltip(tooltip);
 	return edited;
