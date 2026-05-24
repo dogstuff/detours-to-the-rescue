@@ -12,33 +12,38 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DTTR_CONFIG_UI_WINDOW_H 467
-#define DTTR_CONFIG_UI_LABEL_W 185.0f
-#define DTTR_CONFIG_UI_INPUT_W 300.0f
-#define DTTR_CONFIG_UI_PATH_INPUT_W 180.0f
-#define DTTR_CONFIG_UI_PATH_BUTTON_W 74.0f
-#define DTTR_CONFIG_UI_GAMEPAD_SOURCE_W 145.0f
-#define DTTR_CONFIG_UI_GAMEPAD_ACTION_W 155.0f
+#define DTTR_CONFIG_UI_WINDOW_H 550
+#define DTTR_CONFIG_UI_LABEL_W 170.0f
+#define DTTR_CONFIG_UI_INPUT_W 285.0f
+#define DTTR_CONFIG_UI_PATH_INPUT_W 160.0f
+#define DTTR_CONFIG_UI_PATH_BUTTON_W 70.0f
+#define DTTR_CONFIG_UI_GAMEPAD_SOURCE_W 135.0f
 #define DTTR_CONFIG_UI_GAMEPAD_BUTTON_W 58.0f
-#define DTTR_CONFIG_UI_PANEL_PADDING_X 18.0f
-#define DTTR_CONFIG_UI_PANEL_PADDING_Y 10.0f
+#define DTTR_CONFIG_UI_PANEL_PADDING_X 7.5f
+#define DTTR_CONFIG_UI_PANEL_PADDING_Y 14.0f
+#define DTTR_CONFIG_UI_ITEM_SPACING_X 8.0f
+#define DTTR_CONFIG_UI_ITEM_SPACING_Y 6.0f
+#define DTTR_CONFIG_UI_TABLE_CELL_PADDING_X 8.0f
+#define DTTR_CONFIG_UI_TABLE_CELL_PADDING_Y 4.0f
+#define DTTR_CONFIG_UI_HEADER_TEXT_INSET_X 2.0f
+#define DTTR_CONFIG_UI_COMBO_POPUP_PADDING_Y 0.0f
+#define DTTR_CONFIG_UI_SECTION_SPACING 10.0f
 #define DTTR_CONFIG_UI_LABEL_TEXT_COLOR ((ImVec4_c){0.72f, 0.50f, 0.95f, 1.0f})
 #define DTTR_CONFIG_UI_CHANGED_LABEL_TEXT_COLOR ((ImVec4_c){1.0f, 0.82f, 0.25f, 1.0f})
 #define DTTR_CONFIG_UI_SAVED_CHANGED_LABEL_TEXT_COLOR                                    \
 	((ImVec4_c){0.48f, 0.78f, 1.0f, 1.0f})
 #define DTTR_CONFIG_UI_TOOLTIP_DEFAULT_TEXT_COLOR ((ImVec4_c){0.48f, 0.90f, 0.48f, 1.0f})
 #define DTTR_CONFIG_UI_SELECTED_TAB_BG ((ImVec4_c){0.115f, 0.130f, 0.150f, 1.0f})
+#define DTTR_CONFIG_UI_BORDER_COLOR ((ImVec4_c){0.105f, 0.115f, 0.125f, 1.0f})
+#define DTTR_CONFIG_UI_TABLE_BORDER_COLOR ((ImVec4_c){0.135f, 0.145f, 0.155f, 1.0f})
+#define DTTR_CONFIG_UI_SEPARATOR_COLOR ((ImVec4_c){0.120f, 0.130f, 0.140f, 1.0f})
 #define DTTR_CONFIG_UI_PATH_BUTTON_SPACING 4.0f
-#define DTTR_CONFIG_UI_SPIN_BUTTON_SPACING 1.0f
-#define DTTR_CONFIG_UI_ROW_MARGIN_X 1.0f
-#define DTTR_CONFIG_UI_TABLE_CELL_PADDING_Y 2.0f
 #define DTTR_CONFIG_UI_STATUS_TEXT_COLOR ((ImVec4_c){1.0f, 0.82f, 0.25f, 1.0f})
+#define DTTR_CONFIG_UI_HINT_TEXT_COLOR ((ImVec4_c){0.72f, 0.74f, 0.78f, 1.0f})
 #define DTTR_CONFIG_UI_WARNING_TEXT_COLOR ((ImVec4_c){1.0f, 0.55f, 0.18f, 1.0f})
 #define DTTR_CONFIG_UI_STATUS_TIMEOUT_MS 5000
-#define DTTR_CONFIG_UI_STATUS_X 8.0f
-#define DTTR_CONFIG_UI_STATUS_BOTTOM_MARGIN 8.0f
-#define DTTR_CONFIG_UI_SCROLLBAR_WIDTH_SCALE 0.5f
 #define DTTR_CONFIG_UI_HEADER_TOP_SPACING 0.0f
+#define DTTR_CONFIG_UI_TOOLTIP_PADDING_Y 4.0f
 #define DTTR_CONFIG_UI_TOOLTIP_WRAP_W 360.0f
 
 #ifndef DTTR_VERSION
@@ -90,7 +95,6 @@ float config_standard_input_width();
 int config_window_width();
 void same_path_button_row(const DTTR_ImGuiDialogContext *ctx);
 void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height);
-void align_next_item_right(float item_width);
 
 void set_status(config_ui_state *state, const char *status);
 void set_mods_dir_from_config_path(config_ui_state *state);
@@ -129,34 +133,24 @@ bool themed_row_button(
 );
 void push_config_theme();
 void pop_config_theme();
-void draw_bottom_status_text(
+float config_footer_height(
 	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state
 );
-bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx, float width);
-void end_padded_panel();
-bool begin_settings_table_with_cell_padding_and_margins(
+bool begin_config_content_region(
 	const DTTR_ImGuiDialogContext *ctx,
-	const char *id,
-	float label_width,
-	float input_width,
-	float table_width,
-	float cell_padding_x,
-	float left_margin_width,
-	float right_margin_width
+	const config_ui_state *state
 );
+void end_config_content_region();
+void draw_footer_text(const DTTR_ImGuiDialogContext *ctx, const config_ui_state *state);
+bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx);
+void end_padded_panel();
 bool begin_settings_table_with_width(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width,
 	float table_width
-);
-bool begin_full_width_settings_table(
-	const DTTR_ImGuiDialogContext *ctx,
-	const char *id,
-	float label_width,
-	float input_width
 );
 bool begin_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
@@ -165,8 +159,8 @@ bool begin_settings_table(
 	float input_width
 );
 void end_settings_table();
-float table_width_ignoring_scrollbar();
 bool begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx);
+void begin_config_table_row();
 void begin_setting_row();
 float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width);
 float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count);

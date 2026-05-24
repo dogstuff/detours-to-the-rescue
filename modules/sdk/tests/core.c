@@ -981,7 +981,6 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 
 // Covers stateless actor utility helpers.
 static void test_pcdogs_active_actor_helpers(void **state) {
-	(void)state;
 	uint8_t actor_storage[1] = {0};
 	uint8_t other_actor_storage[1] = {0};
 	DTTR_PCDOGS_T_Actor_State *actor = (DTTR_PCDOGS_T_Actor_State *)actor_storage;

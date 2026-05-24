@@ -62,15 +62,6 @@ static void draw_toolbar(const DTTR_ImGuiDialogContext *ctx, config_ui_state *st
 		load_config(state);
 	}
 
-	const ImGuiStyle *style = igGetStyle();
-	const ImVec2_c reset_size = igCalcTextSize("Reset to Defaults", NULL, false, -1.0f);
-	const float reset_width = reset_size.x + style->FramePadding.x * 2.0f;
-	const float reset_x = igGetCursorPosX() + igGetContentRegionAvail().x - reset_width
-						  - style->ItemSpacing.x;
-	if (reset_x > igGetCursorPosX()) {
-		igSetCursorPosX(reset_x);
-	}
-
 	if (igMenuItem_Bool("Reset to Defaults", NULL, false, true)) {
 		request_reset_defaults(ctx, state);
 	}
@@ -105,11 +96,13 @@ static void draw_shortcut_debug_row(const char *label, ImGuiKeyChord chord) {
 	igTableNextColumn();
 	igTextUnformatted(igGetKeyChordName(chord), NULL);
 	igTableNextColumn();
+
 	if (route) {
 		igText("0x%08X / %u", route->RoutingCurr, route->RoutingCurrScore);
 	} else {
 		igTextDisabled("none");
 	}
+
 	igTableNextColumn();
 	igText(
 		"down=%d pressed=%d chord=%d duration=%.02f",
@@ -187,26 +180,18 @@ static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 	DTTR_ImGuiDialog_DrawHeader(ctx, CONFIG_WINDOW_TITLE, DTTR_VERSION);
 	igSeparator();
 
-	float panel_width = igGetContentRegionAvail().x;
-	if (panel_width < 1.0f) {
-		panel_width = 1.0f;
-	}
-
-	const bool panel_open = begin_padded_panel(ctx, panel_width);
+	const bool panel_open = begin_padded_panel(ctx);
 	if (panel_open) {
-		const float content_margin_x = DTTR_ImGuiDialog_ScaledFloat(
-			ctx,
-			DTTR_CONFIG_UI_ROW_MARGIN_X
-		);
-		igIndent(content_margin_x);
-		draw_tabs(ctx, state);
-		igUnindent(content_margin_x);
+		const bool content_open = begin_config_content_region(ctx, state);
+		if (content_open) {
+			draw_tabs(ctx, state);
+		}
+
+		end_config_content_region();
+		draw_footer_text(ctx, state);
 	}
 
 	end_padded_panel();
-	if (panel_open) {
-		draw_bottom_status_text(ctx, state);
-	}
 
 	draw_shortcut_debug_window(state);
 	pop_config_theme();
@@ -270,7 +255,8 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 		if (DTTR_ImGuiDialog_BeginRoot(
 				&ctx,
 				CONFIG_WINDOW_TITLE,
-				ImGuiWindowFlags_MenuBar
+				ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar
+					| ImGuiWindowFlags_NoScrollWithMouse
 			)) {
 			draw_ui(&ctx, &state);
 		}

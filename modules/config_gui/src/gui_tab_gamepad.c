@@ -10,19 +10,16 @@ static const char *const GAMEPAD_AXIS_TOOLTIPS[] = {
 	"Uses the right trigger axis.",
 };
 
-static const char *TOOLTIP_GAMEPAD_ENABLED = "Whether to enable gamepad input. Set to "
-											 "false to disable all gamepad support. "
-											 "Default: true.";
-static const char *TOOLTIP_GAMEPAD_INDEX = "The index of the gamepad to use (starting "
-										   "at 0). Default: 0.";
-static const char *TOOLTIP_GAMEPAD_AXIS
-	= "The SDL gamepad axis used for this DttR control axis. Default: stick axes use the "
-	  "left stick; camera RZ uses the right stick horizontal axis.";
+static const char *TOOLTIP_GAMEPAD_ENABLED = "Enable controller input. Default: true.";
+static const char *TOOLTIP_GAMEPAD_INDEX = "Controller index, starting at 0. Default: 0.";
+static const char *TOOLTIP_GAMEPAD_AXIS = "SDL axis for this DttR control. Default: "
+										  "movement uses the left stick; camera RZ "
+										  "uses the right stick X axis.";
 static const char *TOOLTIP_GAMEPAD_DEADZONE = "Per-axis deadzone in scaled axis units. "
 											  "Default: 700.";
-static const char *TOOLTIP_GAMEPAD_BUTTONS
-	= "Each row maps what you press to what the game does. Click Bind, press a "
-	  "controller button, or Clear to leave that action unused.";
+static const char *TOOLTIP_GAMEPAD_BUTTONS = "Map controller inputs to game actions. "
+											 "Bind waits for a button; Clear leaves the "
+											 "action unused.";
 static const char *TOOLTIP_GAMEPAD_SOUTH = "Default menu confirm action.";
 static const char *TOOLTIP_GAMEPAD_EAST = "Default menu back action.";
 static const char *TOOLTIP_GAMEPAD_START = "Default start/pause action.";
@@ -182,7 +179,7 @@ int source_from_event(const SDL_Event *event) {
 }
 
 static void draw_gamepad_axes(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
-	if (!begin_full_width_settings_table(
+	if (!begin_settings_table(
 			ctx,
 			"##gamepad_axes_table",
 			DTTR_CONFIG_UI_LABEL_W,
@@ -243,8 +240,7 @@ static void draw_gamepad_button_row(
 	const int action = state->button_actions[row];
 	const int source = state->button_sources[row];
 
-	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
-	igTableNextColumn();
+	begin_config_table_row();
 	igTableNextColumn();
 	igAlignTextToFramePadding();
 	draw_config_label(
@@ -259,6 +255,7 @@ static void draw_gamepad_button_row(
 	show_tooltip(source_tooltip(source));
 
 	igTableNextColumn();
+
 	if (themed_row_button(ctx, "##bind", "Bind", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
 		state->binding_row = row;
 		set_status(state, "Press a gamepad button or trigger. Press Esc to cancel.");
@@ -267,6 +264,7 @@ static void draw_gamepad_button_row(
 	show_tooltip(TOOLTIP_BIND_BUTTON);
 
 	igTableNextColumn();
+
 	if (themed_row_button(ctx, "##clear", "Clear", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
 		state->button_sources[row] = DTTR_GAMEPAD_MAPPING_NONE;
 	}
@@ -274,6 +272,7 @@ static void draw_gamepad_button_row(
 	show_tooltip(TOOLTIP_CLEAR_BUTTON);
 
 	igTableNextColumn();
+
 	if (themed_row_button(ctx, "##reset", "Reset", DTTR_CONFIG_UI_GAMEPAD_BUTTON_W)) {
 		state->button_sources[row] = gamepad_default_source_for_action(state, action);
 	}
@@ -287,9 +286,10 @@ static void draw_gamepad_buttons(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
 ) {
-	add_scaled_vertical_spacing(ctx, 6.0f);
+	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_SECTION_SPACING);
 	igSeparatorText("Button mappings");
 	show_tooltip(TOOLTIP_GAMEPAD_BUTTONS);
+
 	if (state->binding_row >= 0) {
 		igText(
 			"Waiting for input for %s...",
@@ -309,6 +309,17 @@ static void draw_gamepad_buttons(
 }
 
 void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+	if (!igBeginChild_Str(
+			"##gamepad_scroll",
+			(ImVec2_c){0.0f, 0.0f},
+			ImGuiChildFlags_None,
+			ImGuiWindowFlags_None
+		)) {
+		igEndChild();
+		return;
+	}
+
 	draw_gamepad_axes(ctx, state);
 	draw_gamepad_buttons(ctx, state);
+	igEndChild();
 }
