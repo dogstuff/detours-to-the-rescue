@@ -49,7 +49,7 @@ void DTTR_CrashDump_ClearSymbolProvider() {
 	DTTR_CrashDump_SetSymbolProvider(NULL, NULL);
 }
 
-#define MAX_STACK_FRAMES 32
+#define MAX_STACK_FRAMES 64
 #define SYMBOL_NAME_CAPACITY 256
 #define SYMBOL_BUFFER_SIZE (sizeof(IMAGEHLP_SYMBOL) + SYMBOL_NAME_CAPACITY)
 
@@ -141,6 +141,16 @@ sds DTTR_CrashDump_Write(
 
 	DTTR_LOG_INFO("Crash dump written to %s", filename);
 	return filename;
+}
+
+void DTTR_CrashDump_LogAndTraceReport(const char *message) {
+	if (!message) {
+		return;
+	}
+
+	DTTR_LOG_ERROR("%s", message);
+	OutputDebugStringA(message);
+	OutputDebugStringA("\n");
 }
 
 sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context) {
@@ -238,7 +248,8 @@ static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exceptio
 	message = sdscatsds(message, stack_trace);
 	sdsfree(stack_trace);
 	message = sdscat(message, DTTR_REPORT_SUFFIX);
-	DTTR_LOG_ERROR("%s", message);
+	DTTR_CrashDump_LogAndTraceReport(message);
+
 	if (!DTTR_ImGui_ErrorShow("DttR: Crash", message)) {
 		DTTR_SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Crash", message, NULL);
 	}
