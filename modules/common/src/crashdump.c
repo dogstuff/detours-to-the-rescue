@@ -143,16 +143,6 @@ sds DTTR_CrashDump_Write(
 	return filename;
 }
 
-void DTTR_CrashDump_LogAndTraceReport(const char *message) {
-	if (!message) {
-		return;
-	}
-
-	DTTR_LOG_ERROR("%s", message);
-	OutputDebugStringA(message);
-	OutputDebugStringA("\n");
-}
-
 sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context) {
 	sds message = sdscat(sdsempty(), "\n\nStack trace:");
 	if (!process || !thread || !context) {
@@ -248,8 +238,7 @@ static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exceptio
 	message = sdscatsds(message, stack_trace);
 	sdsfree(stack_trace);
 	message = sdscat(message, DTTR_REPORT_SUFFIX);
-	DTTR_CrashDump_LogAndTraceReport(message);
-
+	DTTR_LOG_ERROR("%s", message);
 	if (!DTTR_ImGui_ErrorShow("DttR: Crash", message)) {
 		DTTR_SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DttR: Crash", message, NULL);
 	}

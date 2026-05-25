@@ -2,7 +2,6 @@
 #include <dttr_crashdump.h>
 #include <dttr_log.h>
 #include <dttr_path.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
@@ -17,30 +16,6 @@ static void stack_trace_formatter_includes_marker(void **state) {
 	assert_non_null(strstr(stack_trace, "<unavailable>"));
 
 	sdsfree(stack_trace);
-}
-
-static char crash_report_log_message[256];
-
-static void capture_error_log(log_Event *event) {
-	vsnprintf(
-		crash_report_log_message,
-		sizeof(crash_report_log_message),
-		event->fmt,
-		event->ap
-	);
-}
-
-static void crash_report_details_are_logged(void **state) {
-	assert_non_null(state);
-	crash_report_log_message[0] = '\0';
-	assert_int_equal(DTTR_Log_AddCallback(capture_error_log, NULL, LOG_ERROR), 0);
-
-	DTTR_CrashDump_LogAndTraceReport("Exception 0xC0000005\n\nStack trace:\n  pc=0x1");
-
-	assert_string_equal(
-		crash_report_log_message,
-		"Exception 0xC0000005\n\nStack trace:\n  pc=0x1"
-	);
 }
 
 static void set_level_filters_lower_priority_logs(void **state) {
@@ -106,7 +81,6 @@ static void config_load_rejects_invalid_values(void **state) {
 
 static const DTTR_TestCase TEST_CASES[] = {
 	{"stack-trace-marker", stack_trace_formatter_includes_marker},
-	{"crash-report-details-are-logged", crash_report_details_are_logged},
 	{"set-level-filters-lower-priority-logs", set_level_filters_lower_priority_logs},
 	{"safe-relative-rejects-absolute-and-traversal-paths",
 	 safe_relative_rejects_absolute_and_traversal_paths},

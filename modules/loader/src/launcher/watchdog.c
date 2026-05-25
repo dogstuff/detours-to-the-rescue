@@ -98,8 +98,7 @@ static void write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excepti
 	message = sdscatsds(message, stack_trace);
 	sdsfree(stack_trace);
 	message = sdscat(message, DTTR_REPORT_SUFFIX);
-	DTTR_CrashDump_LogAndTraceReport(message);
-	DTTR_Errors_ShowMessage(DTTR_ERROR_TITLE, message);
+	DTTR_ERROR("%s", message);
 	sdsfree(message);
 }
 

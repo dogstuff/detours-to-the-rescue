@@ -10,7 +10,6 @@
 #define DTTR_MODS_H
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 
 #include <windows.h>
@@ -24,31 +23,7 @@ typedef union SDL_Event SDL_Event;
 /// @{
 
 // Reject incompatible hosts by comparing ctx->api_version against this value.
-#define DTTR_MODS_API_VERSION 10
-#define DTTR_MODS_EXCEPTION_REPORT_STACK_TRACE_CAPACITY 4096u
-
-typedef struct {
-	uint32_t struct_size;
-	DWORD exception_code;
-	EXCEPTION_RECORD exception_record;
-	CONTEXT context;
-	DWORD thread_id;
-	const char *tag;
-} DTTR_Mods_ExceptionReportRequest;
-
-typedef struct {
-	uint32_t struct_size;
-	bool dump_written;
-	bool stack_trace_written;
-	char dump_path[MAX_PATH];
-	char stack_trace[DTTR_MODS_EXCEPTION_REPORT_STACK_TRACE_CAPACITY];
-	DWORD win32_error;
-} DTTR_Mods_ExceptionReport;
-
-typedef bool (*DTTR_Mods_WriteExceptionReportFn)(
-	const DTTR_Mods_ExceptionReportRequest *request,
-	DTTR_Mods_ExceptionReport *report
-);
+#define DTTR_MODS_API_VERSION 9
 
 typedef void (*DTTR_Mods_LogFn)(
 	int level,
@@ -65,20 +40,8 @@ typedef struct {
 	uint32_t struct_size;
 	uint32_t api_version;
 	uint32_t flags;
-	DTTR_Mods_WriteExceptionReportFn write_exception_report;
+	const void *reserved[4];
 } DTTR_Mods_API;
-
-static inline DTTR_Mods_WriteExceptionReportFn DTTR_Mods_GetWriteExceptionReportFn(
-	const DTTR_Mods_API *api
-) {
-	if (!api || api->api_version < DTTR_MODS_API_VERSION
-		|| api->struct_size < offsetof(DTTR_Mods_API, write_exception_report)
-								  + sizeof(api->write_exception_report)) {
-		return NULL;
-	}
-
-	return api->write_exception_report;
-}
 
 // Host context passed to DTTR_Mod_Init. The pointer is valid until DTTR_Mod_Cleanup
 // returns, so mods may retain it for logging and runtime cleanup. Contained
