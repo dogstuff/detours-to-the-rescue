@@ -6,57 +6,98 @@ set(_DTTRSDK_SIDECAR_DLL "${_DTTRSDK_DIST_DIR}/modules/libdttr_sidecar.dll")
 set(_DTTRSDK_SIDECAR_IMPLIB "${CMAKE_CURRENT_LIST_DIR}/lib/libdttr_sidecar.dll.a")
 set(_DTTRSDK_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/include")
 set(_DTTRSDK_BUNDLE_HEADER "${_DTTRSDK_INCLUDE_DIR}/dttr_sdk.h")
+set(_DTTRSDK_THIRD_PARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/third_party")
+set(_DTTRSDK_SDL3_INCLUDE_DIR "${_DTTRSDK_THIRD_PARTY_DIR}/SDL3/include")
+set(_DTTRSDK_CIMGUI_DIR "${_DTTRSDK_THIRD_PARTY_DIR}/cimgui")
+set(_DTTRSDK_DEAR_IMGUI_DIR "${_DTTRSDK_CIMGUI_DIR}/imgui")
+set(_DTTRSDK_DEAR_IMGUI_BACKENDS_DIR "${_DTTRSDK_DEAR_IMGUI_DIR}/backends")
+set(_DTTRSDK_SDL3_HEADER "${_DTTRSDK_SDL3_INCLUDE_DIR}/SDL3/SDL.h")
+set(_DTTRSDK_CIMGUI_HEADER "${_DTTRSDK_CIMGUI_DIR}/cimgui.h")
+set(_DTTRSDK_DEAR_IMGUI_HEADER "${_DTTRSDK_DEAR_IMGUI_DIR}/imgui.h")
 
 foreach(_DTTRSDK_PATH IN ITEMS
-    "${_DTTRSDK_SIDECAR_DLL}"
-    "${_DTTRSDK_SIDECAR_IMPLIB}"
-    "${_DTTRSDK_INCLUDE_DIR}"
-    "${_DTTRSDK_BUNDLE_HEADER}"
+	"${_DTTRSDK_SIDECAR_DLL}"
+	"${_DTTRSDK_SIDECAR_IMPLIB}"
+	"${_DTTRSDK_INCLUDE_DIR}"
+	"${_DTTRSDK_BUNDLE_HEADER}"
+	"${_DTTRSDK_SDL3_HEADER}"
+	"${_DTTRSDK_CIMGUI_HEADER}"
+	"${_DTTRSDK_DEAR_IMGUI_HEADER}"
 )
-    if(NOT EXISTS "${_DTTRSDK_PATH}")
-        message(FATAL_ERROR "DttR SDK package is missing required path: ${_DTTRSDK_PATH}")
-    endif()
+	if(NOT EXISTS "${_DTTRSDK_PATH}")
+		message(FATAL_ERROR "DttR SDK package is missing required path: ${_DTTRSDK_PATH}")
+	endif()
 endforeach()
 
 function(_dttrsdk_expect_target_property target property expected)
-    get_target_property(_DTTRSDK_ACTUAL "${target}" "${property}")
-    if(NOT _DTTRSDK_ACTUAL STREQUAL "${expected}")
-        message(FATAL_ERROR
-            "${target} already exists with ${property}='${_DTTRSDK_ACTUAL}', "
-            "but this DttR SDK package requires '${expected}'"
-        )
-    endif()
+	get_target_property(_DTTRSDK_ACTUAL "${target}" "${property}")
+	if(NOT _DTTRSDK_ACTUAL STREQUAL "${expected}")
+		message(FATAL_ERROR
+			"${target} already exists with ${property}='${_DTTRSDK_ACTUAL}', "
+			"but this DttR SDK package requires '${expected}'"
+		)
+	endif()
 endfunction()
 
 if(TARGET DTTR::sidecar)
-    _dttrsdk_expect_target_property(DTTR::sidecar IMPORTED_LOCATION "${_DTTRSDK_SIDECAR_DLL}")
-    _dttrsdk_expect_target_property(DTTR::sidecar IMPORTED_IMPLIB "${_DTTRSDK_SIDECAR_IMPLIB}")
-    _dttrsdk_expect_target_property(DTTR::sidecar INTERFACE_INCLUDE_DIRECTORIES "${_DTTRSDK_INCLUDE_DIR}")
+	_dttrsdk_expect_target_property(DTTR::sidecar IMPORTED_LOCATION "${_DTTRSDK_SIDECAR_DLL}")
+	_dttrsdk_expect_target_property(DTTR::sidecar IMPORTED_IMPLIB "${_DTTRSDK_SIDECAR_IMPLIB}")
+	_dttrsdk_expect_target_property(DTTR::sidecar INTERFACE_INCLUDE_DIRECTORIES "${_DTTRSDK_INCLUDE_DIR}")
 else()
-    add_library(DTTR::sidecar SHARED IMPORTED)
-    set_target_properties(DTTR::sidecar PROPERTIES
-        IMPORTED_LOCATION "${_DTTRSDK_SIDECAR_DLL}"
-        IMPORTED_IMPLIB "${_DTTRSDK_SIDECAR_IMPLIB}"
-        INTERFACE_INCLUDE_DIRECTORIES "${_DTTRSDK_INCLUDE_DIR}"
-    )
+	add_library(DTTR::sidecar SHARED IMPORTED)
+	set_target_properties(DTTR::sidecar PROPERTIES
+		IMPORTED_LOCATION "${_DTTRSDK_SIDECAR_DLL}"
+		IMPORTED_IMPLIB "${_DTTRSDK_SIDECAR_IMPLIB}"
+		INTERFACE_INCLUDE_DIRECTORIES "${_DTTRSDK_INCLUDE_DIR}"
+	)
 endif()
 
-if(TARGET DTTR::sdk)
-    get_target_property(_DTTRSDK_SDK_ALIAS_TARGET DTTR::sdk ALIASED_TARGET)
-    if(NOT _DTTRSDK_SDK_ALIAS_TARGET STREQUAL "DTTR::sidecar")
-        message(FATAL_ERROR
-            "DTTR::sdk already exists but is not an alias for DTTR::sidecar "
-            "from this DttR SDK package"
-        )
-    endif()
-else()
-    add_library(DTTR::sdk ALIAS DTTR::sidecar)
-endif()
+foreach(_DTTRSDK_INTERFACE_TARGET IN ITEMS
+	DTTR::SDL3_headers
+	DTTR::DearImGui_headers
+	DTTR::cimgui_headers
+	DTTR::sdk
+)
+	if(NOT TARGET "${_DTTRSDK_INTERFACE_TARGET}")
+		add_library("${_DTTRSDK_INTERFACE_TARGET}" INTERFACE IMPORTED)
+	endif()
+endforeach()
+
+set_target_properties(DTTR::SDL3_headers PROPERTIES
+	INTERFACE_INCLUDE_DIRECTORIES "${_DTTRSDK_SDL3_INCLUDE_DIR}"
+)
+
+set_target_properties(DTTR::DearImGui_headers PROPERTIES
+	INTERFACE_INCLUDE_DIRECTORIES
+		"${_DTTRSDK_DEAR_IMGUI_DIR};${_DTTRSDK_DEAR_IMGUI_BACKENDS_DIR}"
+)
+
+set_target_properties(DTTR::cimgui_headers PROPERTIES
+	INTERFACE_COMPILE_DEFINITIONS
+		"$<$<COMPILE_LANGUAGE:C>:CIMGUI_USE_SDL3>;$<$<COMPILE_LANGUAGE:C>:CIMGUI_USE_OPENGL3>;$<$<COMPILE_LANGUAGE:C>:CIMGUI_NO_EXPORT>;$<$<COMPILE_LANGUAGE:C>:CIMGUI_DEFINE_ENUMS_AND_STRUCTS>"
+	INTERFACE_INCLUDE_DIRECTORIES
+		"${_DTTRSDK_CIMGUI_DIR};${_DTTRSDK_DEAR_IMGUI_DIR};${_DTTRSDK_DEAR_IMGUI_BACKENDS_DIR};${_DTTRSDK_SDL3_INCLUDE_DIR}"
+	INTERFACE_LINK_LIBRARIES
+		"DTTR::DearImGui_headers;DTTR::SDL3_headers"
+)
+
+set_target_properties(DTTR::sdk PROPERTIES
+	INTERFACE_LINK_LIBRARIES
+		"DTTR::sidecar;DTTR::cimgui_headers"
+)
 
 unset(_DTTRSDK_DIST_DIR)
 unset(_DTTRSDK_SIDECAR_DLL)
 unset(_DTTRSDK_SIDECAR_IMPLIB)
 unset(_DTTRSDK_INCLUDE_DIR)
 unset(_DTTRSDK_BUNDLE_HEADER)
+unset(_DTTRSDK_THIRD_PARTY_DIR)
+unset(_DTTRSDK_SDL3_INCLUDE_DIR)
+unset(_DTTRSDK_CIMGUI_DIR)
+unset(_DTTRSDK_DEAR_IMGUI_DIR)
+unset(_DTTRSDK_DEAR_IMGUI_BACKENDS_DIR)
+unset(_DTTRSDK_SDL3_HEADER)
+unset(_DTTRSDK_CIMGUI_HEADER)
+unset(_DTTRSDK_DEAR_IMGUI_HEADER)
 unset(_DTTRSDK_PATH)
-unset(_DTTRSDK_SDK_ALIAS_TARGET)
+unset(_DTTRSDK_INTERFACE_TARGET)

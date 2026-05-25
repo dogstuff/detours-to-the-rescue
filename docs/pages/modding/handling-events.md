@@ -35,6 +35,19 @@ Use callbacks for most mod work: setup, per-frame updates, input handling, overl
 | `DTTR_MODS_GAME_FRAME_ADVANCED` | Runs after a host loop frame advances the game. |
 | `DTTR_MODS_GAME_FRAME_BLOCKED` | Runs after a host frame presents overlays without advancing the game. |
 
+## ImGui Ownership
+
+DttR owns the ImGui context, frame flow, SDL backend, and renderer backend. Mods only submit widgets during `DTTR_MODS_IMGUI_BEGIN` and `DTTR_MODS_IMGUI_END`; they must not manage the ImGui context, frames, or backends.
+
+Do not call lifecycle or backend ownership functions such as:
+
+- `igCreateContext` / `igDestroyContext`
+- `igNewFrame` / `igRender`
+- `ImGui_ImplSDL3_Init` / `ImGui_ImplSDL3_Shutdown`
+- `ImGui_ImplOpenGL3_Init` / `ImGui_ImplOpenGL3_Shutdown`
+
+Use bundled headers only for widgets and types. For SDL events, include `SDL3/SDL.h` and read callbacks directly; do not forward events to ImGui backend APIs.
+
 ## Input Events
 
 A before-event callback returns whether it consumed the event:
