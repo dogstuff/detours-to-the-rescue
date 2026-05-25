@@ -29,6 +29,9 @@ sds DTTR_CrashDump_Write(
 	EXCEPTION_POINTERS *exception_info
 );
 
+/// Emits a complete crash report to the log and Windows debug trace stream.
+void DTTR_CrashDump_LogAndTraceReport(const char *message);
+
 /// Installs an exception filter that writes dumps under the given directory and shows a
 /// crash dialog.
 void DTTR_CrashDump_Init(const char *dump_dir);
