@@ -37,12 +37,104 @@ char dttr_exe_hash[DTTR_EXE_HASH_LENGTH + 1];
 static HMODULE pc_dogs_module;
 static DTTR_Mods_Context sidecar_ctx;
 
+static bool dttr_sidecar_store_sds(char *dst, size_t dst_size, sds src) {
+	if (!src) {
+		return false;
+	}
+
+	if (dst_size > 0) {
+		size_t copy_len = sdslen(src);
+		if (copy_len >= dst_size) {
+			copy_len = dst_size - 1u;
+		}
+		memcpy(dst, src, copy_len);
+		dst[copy_len] = '\0';
+	}
+
+	sdsfree(src);
+	return true;
+}
+
+static bool dttr_sidecar_write_exception_report(
+	const DTTR_Mods_ExceptionReportRequest *request,
+	DTTR_Mods_ExceptionReport *report
+) {
+	if (!request || !report
+		|| request->struct_size < sizeof(DTTR_Mods_ExceptionReportRequest)
+		|| report->struct_size < sizeof(DTTR_Mods_ExceptionReport)) {
+		return false;
+	}
+
+	memset(report, 0, sizeof(*report));
+	report->struct_size = sizeof(*report);
+
+	EXCEPTION_RECORD exception_record = request->exception_record;
+	if (exception_record.ExceptionCode == 0) {
+		exception_record.ExceptionCode = request->exception_code;
+	}
+
+	CONTEXT context = request->context;
+	EXCEPTION_POINTERS exception_pointers = {
+		.ExceptionRecord = &exception_record,
+		.ContextRecord = &context,
+	};
+	const DWORD current_thread_id = GetCurrentThreadId();
+	const DWORD thread_id = request->thread_id ? request->thread_id : current_thread_id;
+
+	sds dump_path = DTTR_CrashDump_Write(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		thread_id,
+		&exception_pointers
+	);
+	report->dump_written = dttr_sidecar_store_sds(
+		report->dump_path,
+		sizeof(report->dump_path),
+		dump_path
+	);
+	if (!report->dump_written) {
+		report->win32_error = GetLastError();
+	}
+
+	HANDLE thread = GetCurrentThread();
+	bool close_thread = false;
+	if (thread_id != current_thread_id) {
+		thread = OpenThread(
+			THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION,
+			FALSE,
+			thread_id
+		);
+		close_thread = thread != NULL;
+		if (!thread && report->win32_error == ERROR_SUCCESS) {
+			report->win32_error = GetLastError();
+		}
+	}
+
+	sds stack_trace = DTTR_CrashDump_FormatStackTrace(
+		GetCurrentProcess(),
+		thread,
+		&context
+	);
+	if (close_thread) {
+		CloseHandle(thread);
+	}
+
+	report->stack_trace_written = dttr_sidecar_store_sds(
+		report->stack_trace,
+		sizeof(report->stack_trace),
+		stack_trace
+	);
+
+	return report->dump_written || report->stack_trace_written;
+}
+
 static const DTTR_Mods_API MOD_API = {
 	.log = DTTR_Log,
 	.log_is_enabled = DTTR_Log_IsEnabled,
 	.log_unchecked = DTTR_Log_Unchecked,
 	.struct_size = sizeof(DTTR_Mods_API),
 	.api_version = DTTR_MODS_API_VERSION,
+	.write_exception_report = dttr_sidecar_write_exception_report,
 };
 
 static const DTTR_Core_API RUNTIME_API = {
