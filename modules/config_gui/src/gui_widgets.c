@@ -150,11 +150,11 @@ static void draw_default_tooltip_value(
 	const char *default_value_start,
 	const char *default_value_end
 ) {
-	const char *release_suffix = strstr(default_value_start, " (Release), ");
+	const char *release_suffix = strstr(default_value_start, " (release), ");
 
 	if (release_suffix && release_suffix < default_value_end) {
-		const char *debug_start = release_suffix + strlen(" (Release), ");
-		const char *debug_suffix = strstr(debug_start, " (Debug)");
+		const char *debug_start = release_suffix + strlen(" (release), ");
+		const char *debug_suffix = strstr(debug_start, " (debug)");
 
 		if (debug_suffix && debug_suffix < default_value_end) {
 			draw_default_inline_text(default_value_start, release_suffix);

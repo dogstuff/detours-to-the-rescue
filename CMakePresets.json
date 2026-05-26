@@ -31,11 +31,13 @@
   "buildPresets": [
     {
       "name": "mingw32-nix",
-      "configurePreset": "mingw32-nix"
+      "configurePreset": "mingw32-nix",
+      "configuration": "debug"
     },
     {
       "name": "mingw32-nix-modding",
-      "configurePreset": "mingw32-nix-modding"
+      "configurePreset": "mingw32-nix-modding",
+      "configuration": "debug"
     }
   ]
 }

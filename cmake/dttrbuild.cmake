@@ -79,7 +79,7 @@ function(dttr_use_windows_static_runtime target)
 
 	target_link_options("${target}" PRIVATE -static)
 	if(DTTR_TARGET_WIN32_RELEASE)
-		target_link_options("${target}" PRIVATE $<$<CONFIG:Release>:-mwindows>)
+		target_link_options("${target}" PRIVATE $<$<CONFIG:release>:-mwindows>)
 	endif()
 endfunction()
 
@@ -159,7 +159,7 @@ function(dttr_copy_modding_sdk_distribution target output_dir)
 			$<TARGET_LINKER_FILE:dttr_sidecar>
 			"${output_dir}/sdk/lib"
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"${CMAKE_SOURCE_DIR}/modules/sdk/dttrsdk-config.cmake"
+			"${CMAKE_SOURCE_DIR}/modules/sdk/DTTRSDKConfig.cmake"
 			"${output_dir}/sdk"
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"${DTTR_CIMGUI_DIR}/cimgui.h"

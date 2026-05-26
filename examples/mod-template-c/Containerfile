@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1.7
+
+FROM docker.io/debian:stable-slim AS build
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    cmake \
+    curl \
+    gcc-mingw-w64-i686 \
+    ninja-build \
+    unzip \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /mod
+COPY . /mod
+
+# By default the container downloads the SDK version requested by dttr-version.txt.
+# Setting DTTR_FETCH_SDK=0 to build with a pre-populated SDK at DTTRSDK_DIR instead.
+ARG DTTR_FETCH_SDK=1
+ARG DTTRSDK_DIR=.dttr/sdk
+ENV DTTRSDK_DIR=${DTTRSDK_DIR}
+
+RUN if [ "$DTTR_FETCH_SDK" = "1" ]; then \
+      ./scripts/fetch-dttr.sh; \
+    else \
+      test -f "$DTTRSDK_DIR/DTTRSDKConfig.cmake" \
+        || test -f "$DTTRSDK_DIR/dttrsdk-config.cmake"; \
+    fi \
+ && cmake \
+    -S . \
+    -B build \
+    -G "Ninja Multi-Config" \
+    -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+    -DDTTRSDK_DIR="$DTTRSDK_DIR" \
+ && cmake --build build --config debug \
+ && test -f build/debug/minimal-mod.dll
+
+FROM scratch AS artifact
+
+COPY --from=build /mod/build/debug/minimal-mod.dll /build/debug/minimal-mod.dll

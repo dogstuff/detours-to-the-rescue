@@ -1,0 +1,8 @@
+/build/
+/.dttr/
+/.dttr-download/
+/.toolchain/
+/.direnv/
+/result
+/CMakeUserPresets.json
+/build-container/

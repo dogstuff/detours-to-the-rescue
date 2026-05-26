@@ -1,0 +1,12 @@
+.git
+.direnv
+.dttr/*
+!.dttr/sdk/
+!.dttr/sdk/**
+!.dttr/modules/
+!.dttr/modules/libdttr_sidecar.dll
+.dttr-download
+build
+CMakeUserPresets.json
+result
+build-container

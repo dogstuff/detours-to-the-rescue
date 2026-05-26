@@ -42,6 +42,13 @@ upload_build() {
     "${package_registry_url}/${archive}"
 }
 
+upload_artifacts() {
+  local archive
+  for archive in "$@"; do
+    upload_build "$archive"
+  done
+}
+
 build_and_package() {
   local recipe=$1
   local modding=$2
@@ -50,22 +57,21 @@ build_and_package() {
 
   DTTR_VERSION="$version" DTTR_MODS_ENABLED="$modding" just "$recipe"
   package_build "$archive" "$dist_name"
-  upload_build "$archive"
 }
 
 case "$mode" in
   debug)
     package_matrix=(
-      "build OFF dttr Debug debug"
-      "build ON dttr-modding Debug-modding debug"
+      "build OFF dttr debug debug"
+      "build ON dttr-modding debug-modding debug"
     )
     ;;
   release)
     package_matrix=(
-      "build OFF dttr Debug debug"
-      "build-release OFF dttr Release release"
-      "build ON dttr-modding Debug-modding debug"
-      "build-release ON dttr-modding Release-modding release"
+      "build OFF dttr debug debug"
+      "build-release OFF dttr release release"
+      "build ON dttr-modding debug-modding debug"
+      "build-release ON dttr-modding release-modding release"
     )
     ;;
   *)
@@ -74,11 +80,23 @@ case "$mode" in
     ;;
 esac
 
+
+archives=()
 for package_entry in "${package_matrix[@]}"; do
   read -r recipe modding archive_prefix dist_name archive_kind <<<"$package_entry"
+  archive="${archive_prefix}-${archive_id}-${archive_kind}.zip"
   build_and_package \
     "$recipe" \
     "$modding" \
-    "${archive_prefix}-${archive_id}-${archive_kind}.zip" \
+    "$archive" \
     "$dist_name"
+  archives+=("$archive")
 done
+
+if [ "$mode" = "release" ]; then
+  template_archive="dttr-mod-template-c.tar.gz"
+  scripts/package-mod-template-c.sh "$version" "$template_archive"
+  archives+=("$template_archive")
+fi
+
+upload_artifacts "${archives[@]}"
