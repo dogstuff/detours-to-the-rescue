@@ -13,7 +13,7 @@ Enter the development shell, then build the debug distribution:
 ```sh
 nix develop
 just build
-# Output: build/dist/Debug/
+# Output: build/dist/debug/
 ```
 
 To configure the default local build, run:
@@ -31,7 +31,7 @@ To build with modding enabled, set `DTTR_MODS_ENABLED=ON` and run the same `just
 
 ```sh
 DTTR_MODS_ENABLED=ON just build
-# Output: build/dist/Debug-modding/
+# Output: build/dist/debug-modding/
 ```
 
 ## Container Build
@@ -40,7 +40,7 @@ Use the project container when you need a clean toolchain:
 
 ```sh
 just build-container
-# Output: build-container/dist/Debug/
+# Output: build-container/dist/debug/
 ```
 
 Before sharing a build, run the local tests:

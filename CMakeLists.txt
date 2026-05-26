@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
+
+set(CMAKE_CONFIGURATION_TYPES "debug;release" CACHE STRING "Available build configurations" FORCE)
+
 project(dttr VERSION 0.0.1 LANGUAGES C CXX ASM)
 
 set(CMAKE_C_STANDARD 17)
@@ -9,34 +12,34 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(dttrbuild)
 
 if(NOT DEFINED DTTR_VERSION)
-    set(DTTR_VERSION "${PROJECT_VERSION}")
-    if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-        execute_process(
+  set(DTTR_VERSION "${PROJECT_VERSION}")
+  if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
             COMMAND git rev-parse --short HEAD
             WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
             OUTPUT_VARIABLE DTTR_GIT_COMMIT
             OUTPUT_STRIP_TRAILING_WHITESPACE
             ERROR_QUIET
         )
-        if(DTTR_GIT_COMMIT)
-            string(APPEND DTTR_VERSION "-${DTTR_GIT_COMMIT}")
-        endif()
+    if(DTTR_GIT_COMMIT)
+      string(APPEND DTTR_VERSION "-${DTTR_GIT_COMMIT}")
     endif()
+  endif()
 endif()
 
-option(DTTR_MODS_ENABLED "Enable modding build with mod loading system" OFF)
+option(DTTR_MODS_ENABLED "Enable modding/mod loading build" OFF)
 option(DTTR_REQUIRE_TEST_DEPS "Fail configure when optional test dependencies are missing" OFF)
 option(DTTR_REQUIRE_PCDOGS_FIXTURES "Fail fixture-backed tests instead of skipping when PCDOGS fixtures are missing" OFF)
 set(DTTR_PCDOGS_FIXTURE_DIR "fixture" CACHE PATH "Directory containing PCDOGS fixture executables for binary-backed tests")
 include(CTest)
 if(BUILD_TESTING)
-    include(dttrtests)
-    dttr_find_cmocka()
-    add_custom_target(dttr_tests)
+  include(dttrtests)
+  dttr_find_cmocka()
+  add_custom_target(dttr_tests)
 endif()
 
 if(NOT WIN32)
-    message(FATAL_ERROR "Windows only. Enter the Nix dev shell and use .toolchain/toolchain.cmake")
+  message(FATAL_ERROR "Windows only. Enter the Nix dev shell and use .toolchain/toolchain.cmake")
 endif()
 
 dttr_configure_runtime_dependencies()
@@ -74,24 +77,24 @@ list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS APPEND ">")
 find_package(Python3 COMPONENTS Interpreter QUIET)
 set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
 if(Python3_Interpreter_FOUND)
-    set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
+  set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
         "${CMAKE_COMMAND}" -E env
             PYTHONDONTWRITEBYTECODE=1
             "${Python3_EXECUTABLE}"
     )
 else()
-    find_program(DTTR_NIX_EXECUTABLE nix)
-    if(DTTR_NIX_EXECUTABLE)
-        set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
+  find_program(DTTR_NIX_EXECUTABLE nix)
+  if(DTTR_NIX_EXECUTABLE)
+    set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
             "${DTTR_NIX_EXECUTABLE}" develop "${CMAKE_SOURCE_DIR}" --command
                 "${CMAKE_COMMAND}" -E env
                     PYTHONDONTWRITEBYTECODE=1
         )
-    endif()
+  endif()
 endif()
 
 if(NOT DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
-    message(FATAL_ERROR
+  message(FATAL_ERROR
         "Support-stub generator unavailable; install Python or nix so "
         "support DLL stub sources can be produced"
     )
@@ -112,19 +115,19 @@ foreach(DTTR_SUPPORT_STUB_NAME DTTR_SUPPORT_STUB_TARGET IN ZIP_LISTS
     DTTR_SUPPORT_STUB_NAMES
     DTTR_SUPPORT_STUB_TARGETS
 )
-    add_library(${DTTR_SUPPORT_STUB_TARGET} SHARED
+  add_library(${DTTR_SUPPORT_STUB_TARGET} SHARED
         "${DTTR_SUPPORT_STUB_ASM}"
         "${DTTR_SUPPORT_STUB_GENERATED_DIR}/${DTTR_SUPPORT_STUB_NAME}.def"
     )
 
-    set_target_properties(${DTTR_SUPPORT_STUB_TARGET} PROPERTIES
+  set_target_properties(${DTTR_SUPPORT_STUB_TARGET} PROPERTIES
         PREFIX ""
         OUTPUT_NAME "${DTTR_SUPPORT_STUB_NAME}"
         RUNTIME_OUTPUT_DIRECTORY "${DTTR_SUPPORT_STUB_OUTPUT_DIR}"
         LIBRARY_OUTPUT_DIRECTORY "${DTTR_SUPPORT_STUB_OUTPUT_DIR}"
     )
 
-    target_link_options(${DTTR_SUPPORT_STUB_TARGET} PRIVATE
+  target_link_options(${DTTR_SUPPORT_STUB_TARGET} PRIVATE
         -nostdlib
         -Wl,--entry,_DllMainCRTStartup@12
     )
@@ -132,7 +135,7 @@ endforeach()
 
 set(DTTR_DIST_DIR "${CMAKE_BINARY_DIR}/dist/$<CONFIG>")
 if(DTTR_MODS_ENABLED)
-    string(APPEND DTTR_DIST_DIR "-modding")
+  string(APPEND DTTR_DIST_DIR "-modding")
 endif()
 
 set(DTTR_DIST_MODULES_DIR "${DTTR_DIST_DIR}/modules")
@@ -168,5 +171,5 @@ add_custom_target(dttr_dist ALL
 )
 
 if(DTTR_MODS_ENABLED)
-    dttr_copy_modding_sdk_distribution(dttr_dist "${DTTR_DIST_DIR}")
+  dttr_copy_modding_sdk_distribution(dttr_dist "${DTTR_DIST_DIR}")
 endif()

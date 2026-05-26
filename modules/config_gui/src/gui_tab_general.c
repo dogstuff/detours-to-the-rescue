@@ -18,11 +18,11 @@ static const char *TOOLTIP_PCDOGS_PATH = "Installed game directory or original I
 static const char *TOOLTIP_SAVES_PATH = "Redirect saves and logs under the DttR "
 										"directory. Use null or \"\" to disable. "
 										"Default: saves.";
-static const char *TOOLTIP_LOG_LEVEL = "Minimum log level. Default: info (Release), "
-									   "debug (Debug).";
+static const char *TOOLTIP_LOG_LEVEL = "Minimum log level. Default: info (release), "
+									   "debug (debug).";
 static const char *TOOLTIP_LOG_FILE_PATH = "DttR log file path. Default: dttr.log.";
 static const char *TOOLTIP_MINIDUMP_TYPE = "Crash dump detail. Default: normal "
-										   "(Release), detailed (Debug).";
+										   "(release), detailed (debug).";
 static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip intro movies at launch. Default: "
 											   "false.";
 

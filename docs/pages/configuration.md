@@ -33,9 +33,9 @@ Turn on **Skip intro movies** to skip the opening videos.
 
 Use **Log file path** to move `dttr.log`. Relative paths resolve from the DttR directory.
 
-Use **Log level** when troubleshooting. Release builds default to `info`; debug builds default to `debug`.
+Use **Log level** when troubleshooting. Release builds default to `info` and debug builds default to `debug`.
 
-Use **Minidump type** to choose how much detail crash dumps include. Release builds default to `normal`; debug builds default to `detailed`.
+Use **Minidump type** to choose how much detail crash dumps include. Release builds default to `normal` and debug builds default to `detailed`.
 
 ## Graphics
 

@@ -1,5 +1,5 @@
 build-dir := env_var_or_default("BUILD_DIR", "build")
-build-config-debug := env_var_or_default("BUILD_CONFIG_DEBUG", "Debug")
+build-config-debug := env_var_or_default("BUILD_CONFIG_DEBUG", "debug")
 test-max-parallel := env_var_or_default("TEST_JOBS", "8")
 
 blueprints:

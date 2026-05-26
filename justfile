@@ -1,6 +1,6 @@
 build-dir := env_var_or_default("BUILD_DIR", "build")
-build-config-debug := "Debug"
-build-config-release := "Release"
+build-config-debug := "debug"
+build-config-release := "release"
 test-max-parallel := env_var_or_default("TEST_JOBS", "8")
 toolchain-dir := ".toolchain"
 toolchain-file := ".toolchain/toolchain.cmake"
