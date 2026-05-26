@@ -328,7 +328,8 @@ void DTTR_ImGuiDialog_DrawHeader(
 ) {
 	offset_cursor_y(ctx, 3.0f);
 	const ImGuiStyle *style = igGetStyle();
-	igPushFont(NULL, style->FontSizeBase * 1.35f);
+	const float title_font_size = (style ? style->FontSizeBase : 0.0f) * 1.35f;
+	igPushFont(NULL, title_font_size);
 	draw_centered_text(title);
 	igPopFont();
 	offset_cursor_y(ctx, 4.0f);

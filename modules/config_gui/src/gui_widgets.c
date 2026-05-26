@@ -575,12 +575,7 @@ void begin_setting_row() {
 
 float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width) {
 	const float available = igGetContentRegionAvail().x;
-
-	if (available > 1.0f) {
-		return available;
-	}
-
-	return DTTR_ImGuiDialog_ScaledFloat(ctx, input_width);
+	return available > 1.0f ? available : DTTR_ImGuiDialog_ScaledFloat(ctx, input_width);
 }
 
 float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count) {
@@ -591,11 +586,9 @@ float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count
 			+ (float)button_count * DTTR_CONFIG_UI_PATH_BUTTON_SPACING
 	);
 
-	if (width > trailing_width + 1.0f) {
-		width -= trailing_width;
-	}
-
-	return width > 1.0f ? width : 1.0f;
+	const float text_width = width > trailing_width + 1.0f ? width - trailing_width
+														   : width;
+	return text_width > 1.0f ? text_width : 1.0f;
 }
 
 static ImVec4_c config_label_text_color(config_label_state label_state) {

@@ -11,6 +11,10 @@ static SDL_Window *window;
 static DTTR_ImGuiDesktopScaleState imgui_scale;
 static bool initialized;
 
+static const float MODDING_BADGE_FONT_FACTOR = 0.90f;
+static const float MODDING_BADGE_MIN_FONT_SIZE = 6.0f;
+static const float MODDING_BADGE_DEFAULT_FONT_SIZE = 13.0f;
+
 // Selects the SDL GPU ImGui backend only when the active renderer is SDL GPU.
 static bool uses_sdl_gpu() { return backend_type == DTTR_BACKEND_SDL_GPU; }
 
@@ -176,7 +180,6 @@ static ImDrawData *render_game_frame(uint32_t w, uint32_t h) {
 static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	const float game_scale = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 	const float desktop_scale = DTTR_ImGui_GetCurrentDesktopScale(&imgui_scale);
-	const float badge_scale = 0.09f * game_scale;
 	const float margin = 4.0f * game_scale * desktop_scale;
 	const ImVec2_c pos = {
 		(float)ctx->game_x + (float)ctx->game_w - margin,
@@ -187,6 +190,8 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 
 	igSetNextWindowPos(pos, ImGuiCond_Always, pivot);
 	igSetNextWindowBgAlpha(0.3f);
+	igPushStyleVar_Float(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	igPushStyleVar_Float(ImGuiStyleVar_WindowRounding, 0.0f);
 
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
 								   | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav
@@ -202,7 +207,22 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	}
 
 	if (font) {
-		igPushFont(font, igGetFontSize() * badge_scale);
+		const ImGuiStyle *style = igGetStyle();
+		const float style_font_size = style ? style->FontSizeBase : 0.0f;
+
+		const float font_size = font->LegacySize > 0.0f ? font->LegacySize
+														: MODDING_BADGE_DEFAULT_FONT_SIZE;
+
+		const float base_font_size = style_font_size > 0.0f ? style_font_size : font_size;
+
+		const float scaled_font_size = base_font_size * MODDING_BADGE_FONT_FACTOR
+									   * game_scale;
+
+		const float badge_font_size = scaled_font_size > MODDING_BADGE_MIN_FONT_SIZE
+										  ? scaled_font_size
+										  : MODDING_BADGE_MIN_FONT_SIZE;
+
+		igPushFont(font, badge_font_size);
 	}
 
 	if (igBegin("##modding_overlay", NULL, flags)) {
@@ -210,6 +230,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	}
 
 	igEnd();
+	igPopStyleVar(2);
 
 	if (font) {
 		igPopFont();
