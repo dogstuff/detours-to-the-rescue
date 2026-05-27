@@ -14,24 +14,24 @@ extra_css = ["assets/stylesheets/site.css"]
 nav = [
   { "Home" = "index.md" },
   { "Configuration" = "configuration.md" },
-  { "Releases" = "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases" },
+  { "Advanced" = [
+    { "Modding SDK" = [
+      { "Project Setup" = "modding/creating-a-mod.md" },
+      { "Handling Mod Callbacks" = "modding/handling-events.md" },
+      { "Working with Game Globals" = "modding/working-with-globals.md" },
+      { "Calling Game Functions" = "modding/calling-pcdogs-functions.md" },
+      { "Applying Game Patches" = "modding/applying-patches.md" },
+      { "Hooking Game Functions" = "modding/hooking-functions.md" },
+      { "Manually Resolving Symbols" = "modding/resolving-symbols.md" },
+      { "SDK API Reference" = "sdk-ref/" },
+    ] },
 
-  { "Modding SDK" = [
-    { "Project Setup" = "modding/creating-a-mod.md" },
-    { "Handling Mod Callbacks" = "modding/handling-events.md" },
-    { "Working with Game Globals" = "modding/working-with-globals.md" },
-    { "Calling Game Functions" = "modding/calling-pcdogs-functions.md" },
-    { "Applying Game Patches" = "modding/applying-patches.md" },
-    { "Hooking Game Functions" = "modding/hooking-functions.md" },
-    { "Manually Resolving Symbols" = "modding/resolving-symbols.md" },
-    { "SDK API Reference" = "sdk-ref/" },
-  ] },
-
-  { "Technical Reference" = [
-    { "Configuration" = "technical/configuration.md" },
-    { "Patches" = "technical/patches.md" },
-    { "Building" = "technical/building.md" },
-    { "Internal API" = "internal/" },
+    { "Technical Reference" = [
+      { "Configuration" = "technical/configuration.md" },
+      { "Patches" = "technical/patches.md" },
+      { "Building" = "technical/building.md" },
+      { "Internal API" = "internal/" },
+    ] },
   ] },
 ]
 

@@ -19,3 +19,9 @@
 .md-typeset :not(pre) > code {
     color: #77bfff;
 }
+
+.md-nav--primary > .md-nav__list > .md-nav__item--section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--md-default-fg-color--lightest);
+}
