@@ -545,7 +545,7 @@ unstable.struct(
     member("int32_t", "ai_scratch_padding[8]", 420),
     size=452,
     doc=(
-        "Runtime actor overlay containing provisional player-specific offsets such as +0x74 "
+        "Runtime actor overlay containing provisional player-specific offsets like +0x74 "
         "(PC EN) and +0x172 (PC EN). Field semantics may be unstable."
     ),
 )

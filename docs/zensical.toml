@@ -2,6 +2,7 @@
 site_name = "102 Patches: Detours to the Rescue!"
 site_description = "Documentation for DttR, an alternate entrypoint for 102 Dalmatians: Puppies to the Rescue."
 site_author = "dogstuff"
+site_url = "https://dogstuff.gitlab.io/detours-to-the-rescue"
 copyright = "Copyright &copy; 2026 dogstuff"
 
 docs_dir = "pages"
@@ -34,12 +35,28 @@ nav = [
   ] },
 ]
 
+plugins = [
+  { "search" = { "enabled" = true } },
+]
+
 [project.theme]
 language = "en"
 features = [
+  "announce.dismiss",
+  "content.action.view",
+  "content.code.annotate",
   "content.code.copy",
+  "content.code.select",
+  "content.tabs.link",
+  "navigation.footer",
   "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.path",
+  "navigation.sections",
   "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
   "toc.follow",
 ]
 
@@ -60,3 +77,19 @@ scheme = "slate"
 [project.markdown_extensions.pymdownx.highlight]
 anchor_linenums = true
 linenums_style = "pymdownx-inline"
+[project.markdown_extensions.toc]
+permalink = true
+
+[project.markdown_extensions.tables]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+combine_header_slug = true
+
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true

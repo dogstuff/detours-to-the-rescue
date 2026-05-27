@@ -82,7 +82,7 @@ typedef struct DTTR_Core_TargetReport {
 
 /// Return a stable text token for SDK status values used by logs and tests.
 /// @param status Status value to name.
-/// @return Static string such as `DTTR_OK` or `DTTR_ERR_INVALID_ARGUMENT`.
+/// @return Static string like `DTTR_OK` or `DTTR_ERR_INVALID_ARGUMENT`.
 const char *DTTR_Core_StatusName(DTTR_Core_Status status);
 
 /// Report whether an SDK result represents success.

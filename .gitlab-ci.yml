@@ -115,7 +115,19 @@ stages:
 "build:debug":
   extends: .package-build-job
   script:
-    - nix develop "$CI_NIX_SHELL" --command just package-debug "${CI_COMMIT_TAG:-dev}" "${CI_COMMIT_SHORT_SHA}"
+    - |
+      package_registry_url=""
+      job_token=""
+      if [ "${CI_PIPELINE_SOURCE}" != "merge_request_event" ]; then
+        package_registry_url="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_REF_SLUG}"
+        job_token="${CI_JOB_TOKEN}"
+      fi
+      nix develop "$CI_NIX_SHELL" --command \
+        just package-debug \
+        "${CI_COMMIT_TAG:-dev}" \
+        "${CI_COMMIT_REF_SLUG}" \
+        "$package_registry_url" \
+        "$job_token"
   artifacts:
     paths:
       - dttr-*-debug.zip
@@ -179,8 +191,10 @@ stages:
       - docs/build
     expire_in: 1 day
   rules:
+    - if: $CI_COMMIT_TAG
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
 
 "package:release":
   extends: .upload-job
@@ -209,20 +223,43 @@ stages:
   rules:
     - if: $CI_COMMIT_TAG
 
-"deploy:pages":
+.pages-deploy-job: &pages-deploy-job
   stage: deploy
   needs:
     - job: "test:docs"
       artifacts: true
   script:
     - test -d docs/build
-  pages:
+  pages: &pages-settings
     publish: docs/build
+    expire_in: never
   artifacts:
     paths:
       - docs/build
+
+"deploy:pages:tag":
+  <<: *pages-deploy-job
+  pages:
+    <<: *pages-settings
+    path_prefix: "$CI_COMMIT_TAG"
   rules:
+    - if: $CI_COMMIT_TAG
+
+"deploy:pages:latest":
+  <<: *pages-deploy-job
+  rules:
+    - if: "$CI_COMMIT_TAG =~ /^v/"
+
+"deploy:pages:branch":
+  <<: *pages-deploy-job
+  pages:
+    <<: *pages-settings
+    path_prefix: "branch-$CI_COMMIT_REF_SLUG"
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
 
 "release:gitlab":
   stage: release
@@ -251,7 +288,7 @@ stages:
           link_type: package
         - name: "dttr-modding-${CI_COMMIT_TAG}-release.zip"
           url: "${PACKAGE_REGISTRY_URL}/dttr-modding-${CI_COMMIT_TAG}-release.zip"
-          filepath: "/dttr-modding-${CI_COMMIT_TAG}-release.zip"
+          filepath: "/dttr-modding-release.zip"
           link_type: package
         - name: "dttr-modding-${CI_COMMIT_TAG}-debug.zip"
           url: "${PACKAGE_REGISTRY_URL}/dttr-modding-${CI_COMMIT_TAG}-debug.zip"
