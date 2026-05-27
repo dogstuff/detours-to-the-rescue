@@ -1,19 +1,44 @@
 # Working with Game Globals
 
-PCDOGS globals expose typed helpers for known game data. Prefer them over raw addresses.
+PCDOGS globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.
 
-## Read and Write
+A global helper can tell you whether the symbol was found, read the value with the right type, and decide whether normal writes are allowed.
 
-Use `Read()` for normal access. A `false` return means the symbol was unavailable or the memory read failed.
+## Read a global
 
-Check `WritePolicy` before exposing a feature that edits game memory:
+Use `Read()` for normal access. It returns `false` if the symbol is unavailable or if the memory read fails.
 
-- `RAW_MEMORY`: `Write()` may update the slot after availability and memory-permission checks.
-- `READ_ONLY`: The symbol is a decoded table, dispatch slot, jump, opcode, or index.
-- `ENGINE_OWNED`: The game owns the live pointer or state.
-- `PATCH_ONLY`: Change it through patch or hook flows.
-- `UNKNOWN`: The symbol is not classified enough for ordinary writes.
+```c
+static int32_t last_lives;
 
-Use `UnsafeWrite()` only for one-off patching, reverse-engineering experiments, or SDK internals where the caller accepts the risk. It bypasses `WritePolicy` but still requires writable process memory.
+DTTR_MODS_FRAME_BEGIN {
+    int32_t lives = 0;
+    if (DTTR_PCDOGS_D_SaveFilePlayerLives->Read(&lives)) {
+        last_lives = lives;
+    }
+}
+```
 
-For raw addresses or ID-based lookup, see [Manually Resolving Symbols](resolving-symbols.md).
+## Write only when the policy allows it
+
+Writing game memory is not always safe. Check `WritePolicy` before exposing a feature that edits a global.
+
+- `RAW_MEMORY`: `Write()` may update the value after availability and memory-permission checks.
+- `READ_ONLY`: Use for inspection only. These are usually decoded tables, dispatch slots, jumps, opcodes, or indexes.
+- `ENGINE_OWNED`: The game owns this pointer or state and may replace or overwrite it.
+- `PATCH_ONLY`: Change this through patch or hook flows, not direct writes.
+- `UNKNOWN`: The symbol has not been classified enough for normal writes.
+
+`Write()` only succeeds for `RAW_MEMORY` globals. For every other policy, design the feature around reading, patching, or hooking instead.
+
+## Avoid `UnsafeWrite()` in normal mods
+
+`UnsafeWrite()` bypasses `WritePolicy`. It still requires writable process memory, but it does not mean the write is safe.
+
+Use it only for reverse-engineering experiments, explicit patching work, or SDK internals. Most mods generally should not need to use this.
+
+## Use raw addresses only at API boundaries
+
+Most mods should not need a global's raw address. Use typed helpers first.
+
+If another SDK API requires an address, or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](resolving-symbols.md).
