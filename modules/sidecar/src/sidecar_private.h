@@ -54,9 +54,7 @@ void dttr_pcdogs_crash_symbols_clear();
 
 const DTTR_Mods_Context *dttr_sidecar_context();
 const DTTR_Core_Context *dttr_sidecar_runtime_context();
-// Routes SDL events through the shared sidecar runtime path.
 void dttr_sidecar_handle_sdl_event(const SDL_Event *event);
-// Pumps SDL events through the shared sidecar runtime path.
 void dttr_sidecar_poll_sdl_events();
 
 // Installs a PCDogs patch group with common sidecar logging and cleanup.

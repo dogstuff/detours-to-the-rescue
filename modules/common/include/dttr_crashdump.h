@@ -15,13 +15,18 @@ void DTTR_CrashDump_SetSymbolProvider(
 	void *context
 );
 
-/// Clears the registered crash stack symbol provider.
 void DTTR_CrashDump_ClearSymbolProvider();
 
-/// Formats a stack trace from a thread context; caller frees the returned sds.
+/// Formats a stack trace from a thread context. Caller frees the returned sds.
 sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context);
 
-/// Writes a process minidump and returns the dump filename; caller frees the returned sds.
+sds DTTR_CrashDump_BuildReportMessage(
+	const char *summary,
+	const char *stack_trace,
+	bool include_stack_trace
+);
+
+/// Writes a process minidump and returns the dump filename. The caller should free the returned sds.
 sds DTTR_CrashDump_Write(
 	HANDLE process,
 	DWORD pid,
@@ -29,7 +34,6 @@ sds DTTR_CrashDump_Write(
 	EXCEPTION_POINTERS *exception_info
 );
 
-/// Emits a complete crash report to the log and Windows debug trace stream.
 void DTTR_CrashDump_LogAndTraceReport(const char *message);
 
 /// Installs an exception filter that writes dumps under the given directory and shows a

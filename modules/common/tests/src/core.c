@@ -78,6 +78,47 @@ static void assert_config_rejected(const char *path, const char *contents) {
 	remove(path);
 }
 
+static void config_load_save_round_trips_show_crash_stack_trace(void **state) {
+	(void)state;
+	const char *path = "dttr-test-crash-stack-roundtrip.json";
+
+	write_text_file(path, "{\"schema_major_version\":1}\n");
+	assert_true(DTTR_Config_Load(path));
+	assert_true(dttr_config.show_crash_stack_trace);
+
+	write_text_file(
+		path,
+		"{\"schema_major_version\":1,\"show_crash_stack_trace\":false}\n"
+	);
+	assert_true(DTTR_Config_Load(path));
+	assert_false(dttr_config.show_crash_stack_trace);
+	assert_true(DTTR_Config_Save(path, &dttr_config));
+
+	assert_true(DTTR_Config_Load(path));
+	assert_false(dttr_config.show_crash_stack_trace);
+	remove(path);
+}
+
+static void crash_report_message_respects_popup_stack_trace_setting(void **state) {
+	(void)state;
+	const char *summary = "Exception 0xDEADBEEF\n\nDump written to:\ndttr.dmp";
+	const char *stack_trace = "\n\nStack trace:\n  game!crash+0x1";
+
+	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, true);
+	sds short_popup = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, false);
+
+	assert_non_null(log_message);
+	assert_non_null(short_popup);
+	assert_non_null(strstr(log_message, "Stack trace:"));
+	assert_non_null(strstr(log_message, "Feel free to report this error"));
+	assert_null(strstr(short_popup, "Stack trace:"));
+	assert_non_null(strstr(short_popup, "Exception 0xDEADBEEF"));
+	assert_non_null(strstr(short_popup, "Feel free to report this error"));
+
+	sdsfree(log_message);
+	sdsfree(short_popup);
+}
+
 static void config_load_rejects_invalid_values(void **state) {
 
 	assert_config_rejected(
@@ -111,6 +152,10 @@ static const DTTR_TestCase TEST_CASES[] = {
 	{"safe-relative-rejects-absolute-and-traversal-paths",
 	 safe_relative_rejects_absolute_and_traversal_paths},
 	{"config-load-rejects-invalid-values", config_load_rejects_invalid_values},
+	{"config-load-save-round-trips-show-crash-stack-trace",
+	 config_load_save_round_trips_show_crash_stack_trace},
+	{"crash-report-message-respects-popup-stack-trace-setting",
+	 crash_report_message_respects_popup_stack_trace_setting},
 };
 
 DTTR_TEST_MAIN(TEST_CASES)

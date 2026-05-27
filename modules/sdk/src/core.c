@@ -49,15 +49,12 @@ const char *DTTR_Core_StatusName(DTTR_Core_Status status) {
 	}
 }
 
-// Treat only DTTR_OK as success so callers can keep guard clauses compact.
 bool DTTR_Core_ResultOk(DTTR_Core_Result result) { return result.status == DTTR_OK; }
 
-// Validate the host runtime context required for scans, patches, and hooks.
 static bool runtime_context_valid(const DTTR_Core_Context *ctx) {
 	return ctx && ctx->game_module && ctx->api;
 }
 
-// Decode one AOB hex digit while rejecting malformed signature text early.
 static int hex_value(char ch) {
 	if (ch >= '0' && ch <= '9') {
 		return ch - '0';
@@ -74,7 +71,6 @@ static int hex_value(char ch) {
 	return -1;
 }
 
-// Release partially parsed AOB buffers and return the parser failure.
 static DTTR_Core_Result parse_aob_fail(
 	char *sig,
 	char *mask,
@@ -185,7 +181,6 @@ static DTTR_Core_Result parse_aob(const char *aob, char **out_sig, char **out_ma
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Parse an AOB pattern and run it through the selected module scanner.
 static DTTR_Core_Result aob_scan_with(
 	HMODULE mod,
 	DTTR_Core_SigscanFn sigscan,
@@ -212,7 +207,6 @@ static DTTR_Core_Result aob_scan_with(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Find an AOB in an explicit module when no SDK context is available.
 DTTR_Core_Result DTTR_Core_AOBFindInModule(
 	HMODULE mod,
 	const char *aob,
@@ -226,7 +220,6 @@ DTTR_Core_Result DTTR_Core_AOBFindInModule(
 	return aob_scan_with(mod, DTTR_Core_HookSigscan, aob, out_addr);
 }
 
-// Find an AOB in the game module through the runtime context scanner.
 DTTR_Core_Result DTTR_Core_AOBFind(
 	const DTTR_Core_Context *ctx,
 	const char *aob,
@@ -249,7 +242,6 @@ DTTR_Core_Result DTTR_Core_AOBFind(
 	return aob_scan_with(ctx->game_module, runtime->sigscan, aob, out_addr);
 }
 
-// Resolve a raw signature and mask through the runtime context scanner.
 DTTR_Core_Result DTTR_Core_SignatureFind(
 	const DTTR_Core_Context *ctx,
 	const char *sig,
@@ -283,7 +275,6 @@ DTTR_Core_Result DTTR_Core_SignatureFind(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Patch bytes through the runtime and return the handle to the caller.
 DTTR_Core_Result DTTR_Core_PatchBytes(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
@@ -318,7 +309,6 @@ DTTR_Core_Result DTTR_Core_PatchBytes(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Install a function detour through the runtime and preserve the trampoline handle.
 DTTR_Core_Result DTTR_Core_HookFunction(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
@@ -367,7 +357,6 @@ DTTR_Core_Result DTTR_Core_HookFunction(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Resolve an AOB target before installing a function detour at the requested offset.
 DTTR_Core_Result DTTR_Core_HookAOB(
 	const DTTR_Core_Context *ctx,
 	const char *aob,
@@ -398,7 +387,6 @@ DTTR_Core_Result DTTR_Core_HookAOB(
 	);
 }
 
-// Compute a 32-bit jump displacement and reject targets outside rel32 range.
 static bool rel32_displacement(uintptr_t site, void *detour, int32_t *out_rel) {
 	const int64_t rel = (int64_t)(intptr_t)detour - (int64_t)(site + 5u);
 
@@ -410,7 +398,6 @@ static bool rel32_displacement(uintptr_t site, void *detour, int32_t *out_rel) {
 	return true;
 }
 
-// Patch a five-byte relative JMP when the detour is reachable from the site.
 DTTR_Core_Result DTTR_Core_PatchRel32Jump(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
@@ -436,7 +423,6 @@ DTTR_Core_Result DTTR_Core_PatchRel32Jump(
 	return DTTR_Core_PatchBytes(ctx, address, jmp, sizeof(jmp), out_patch);
 }
 
-// Resolve an AOB target before patching it with a relative JMP.
 DTTR_Core_Result DTTR_Core_PatchAOBRel32Jump(
 	const DTTR_Core_Context *ctx,
 	const char *aob,
@@ -463,7 +449,6 @@ DTTR_Core_Result DTTR_Core_PatchAOBRel32Jump(
 	);
 }
 
-// Patch a pointer-sized slot through the runtime and optionally return the previous value.
 DTTR_Core_Result DTTR_Core_HookPointer(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
@@ -501,10 +486,8 @@ DTTR_Core_Result DTTR_Core_HookPointer(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Detach a byte patch through the shared runtime hook registry.
 void DTTR_Core_Unpatch(DTTR_Core_Patch *patch) { DTTR_Core_HookDetach(patch); }
 
-// Detach a byte patch through the checked runtime path when callers need teardown proof.
 DTTR_Core_Result DTTR_Core_UnpatchChecked(DTTR_Core_Patch *patch) {
 	if (!patch || DTTR_Core_HookDetachChecked(patch)) {
 		return dttr_core_result(DTTR_OK, "ok");
@@ -513,10 +496,8 @@ DTTR_Core_Result DTTR_Core_UnpatchChecked(DTTR_Core_Patch *patch) {
 	return dttr_core_result(DTTR_ERR_MEMORY_PROTECTION, "failed to detach patch");
 }
 
-// Detach a function or pointer hook through the shared runtime hook registry.
 void DTTR_Core_Unhook(DTTR_Core_Hook *hook) { DTTR_Core_HookDetach(hook); }
 
-// Detach a function or pointer hook through the checked runtime path.
 DTTR_Core_Result DTTR_Core_UnhookChecked(DTTR_Core_Hook *hook) {
 	if (!hook || DTTR_Core_HookDetachChecked(hook)) {
 		return dttr_core_result(DTTR_OK, "ok");
@@ -613,7 +594,6 @@ static DTTR_Core_Result patch_group_uninstall_from(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Create a patch group that groups installed SDK hooks for rollback or teardown.
 DTTR_Core_Result DTTR_Core_PatchGroupCreate(
 	const DTTR_Core_Context *ctx,
 	DTTR_Core_PatchGroup **out_group
@@ -641,7 +621,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupCreate(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Detach every hook currently owned by a patch group while keeping the group reusable.
 DTTR_Core_Result DTTR_Core_PatchGroupUninstall(DTTR_Core_PatchGroup *group) {
 	if (!group) {
 		return dttr_core_result(DTTR_OK, "ok");
@@ -650,7 +629,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupUninstall(DTTR_Core_PatchGroup *group) {
 	return patch_group_uninstall_from(group, 0u);
 }
 
-// Uninstall a patch group and release its storage.
 DTTR_Core_Result DTTR_Core_PatchGroupDestroyChecked(DTTR_Core_PatchGroup *group) {
 	if (!group) {
 		return dttr_core_result(DTTR_OK, "ok");
@@ -666,12 +644,10 @@ DTTR_Core_Result DTTR_Core_PatchGroupDestroyChecked(DTTR_Core_PatchGroup *group)
 	return result;
 }
 
-// Uninstall a patch group and release its storage.
 void DTTR_Core_PatchGroupDestroy(DTTR_Core_PatchGroup *group) {
 	DTTR_Core_PatchGroupDestroyChecked(group);
 }
 
-// Destroy a patch group pointer and clear the caller slot to prevent reuse.
 DTTR_Core_Result DTTR_Core_PatchGroupReleaseChecked(DTTR_Core_PatchGroup **group) {
 	if (!group || !*group) {
 		return dttr_core_result(DTTR_OK, "ok");
@@ -686,7 +662,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupReleaseChecked(DTTR_Core_PatchGroup **group
 	return result;
 }
 
-// Destroy a patch group pointer and clear the caller slot to prevent reuse.
 void DTTR_Core_PatchGroupRelease(DTTR_Core_PatchGroup **group) {
 	DTTR_Core_PatchGroupReleaseChecked(group);
 }
@@ -712,7 +687,6 @@ static DTTR_Core_Result patch_group_adopt_hook(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Patch bytes and adopt the handle so later patch-group rollback restores them.
 DTTR_Core_Result DTTR_Core_PatchGroupPatchBytes(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
@@ -746,7 +720,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupPatchBytes(
 	return patch_group_adopt_hook(group, patch, NULL, (DTTR_Core_Hook **)out_patch);
 }
 
-// Install a function hook and adopt the handle into a patch group.
 DTTR_Core_Result DTTR_Core_PatchGroupHookFunction(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
@@ -782,7 +755,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookFunction(
 	return patch_group_adopt_hook(group, hook, out_original, out_hook);
 }
 
-// Install a pointer hook and adopt the handle into a patch group.
 DTTR_Core_Result DTTR_Core_PatchGroupHookPointer(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
@@ -816,7 +788,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookPointer(
 	return patch_group_adopt_hook(group, hook, out_original, out_hook);
 }
 
-// Patch a rel32 jump and adopt the patch handle into a patch group.
 DTTR_Core_Result DTTR_Core_PatchGroupPatchRel32Jump(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
@@ -933,7 +904,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-// Initialize install-report counters before patch-group work begins.
 static void report_init(DTTR_Core_TargetReport *report) {
 	if (!report) {
 		return;

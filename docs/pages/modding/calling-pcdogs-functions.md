@@ -99,6 +99,6 @@ static BOOL actor_is_close(
 | Kind | Generated helper support | Prologue meaning |
 | --- | --- | --- |
 | `DTTR_PCDOGS_HOOK_REL32` | `Hook()` and `PatchSpec()` install a trampoline `E9 <rel32>` hook. | Decoded trampoline prologue size. |
-| `DTTR_PCDOGS_HOOK_HOTPATCH` | Metadata only; generated helpers fail closed. | Entry-window size, not the five-byte pre-entry slot. |
+| `DTTR_PCDOGS_HOOK_HOTPATCH` | Metadata only, with generated helpers failing closed. | Entry-window size, not the five-byte pre-entry slot. |
 
 For same-address hook chaining rules, see [Hooking Game Functions](hooking-functions.md). Before passing a generated address to a low-level core hook API, check `HookKind()`.

@@ -27,7 +27,6 @@ static const DTTR_PCDOGS_T_Patch_Spec inputs_patches[] = {
 
 static DTTR_Core_PatchGroup *inputs_targets;
 
-// Opens the configured SDL gamepad index and logs when the selected controller is missing.
 static void try_open_configured_gamepad() {
 	int count = 0;
 	SDL_JoystickID *const joysticks = SDL_GetGamepads(&count);
@@ -53,7 +52,6 @@ static void try_open_configured_gamepad() {
 	SDL_free(joysticks);
 }
 
-// Releases the current SDL gamepad before another pad is opened.
 static void close_gamepad() {
 	DTTR_PCDOGS_D_JoystickAvailable->Write(0);
 	if (!dttr_gamepad) {
@@ -64,7 +62,6 @@ static void close_gamepad() {
 	dttr_gamepad = NULL;
 }
 
-// Starts SDL gamepad support and opens the configured controller before hooks read input.
 void DTTR_Inputs_Init() {
 	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
 		DTTR_LOG_ERROR("SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
@@ -75,7 +72,6 @@ void DTTR_Inputs_Init() {
 	}
 }
 
-// Installs input patches that translate the game's legacy polling APIs to SDL state.
 bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 	return dttr_sidecar_install_pcdogs_patch_group(
 		ctx,
@@ -132,10 +128,8 @@ void DTTR_Inputs_LateInit() {
 	DTTR_LOG_DEBUG("Joystick is available");
 }
 
-// Releases installed input patches before the sidecar unloads.
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_PatchGroupRelease(&inputs_targets);
 }
 
-// Closes the SDL gamepad handle during final sidecar cleanup.
 void DTTR_Inputs_Cleanup() { close_gamepad(); }

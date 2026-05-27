@@ -27,13 +27,10 @@ enum {
 	DTTR_DINPUT_AXIS_FULL_DEFLECTION = 1000,
 };
 
-/// DirectInput sentinel for a centered/neutral POV hat switch.
 #define DINPUT_POV_CENTERED 0xFFFFFFFF
 
-/// DirectInput uses this byte value to indicate a button is pressed.
 #define DINPUT_BUTTON_PRESSED 0x80
 
-// Starts each emulated DirectInput poll with neutral axes, POV hats, and buttons.
 static void init_poll_state(di_joy_state *state) {
 	memset(state, 0, sizeof(*state));
 
@@ -42,7 +39,6 @@ static void init_poll_state(di_joy_state *state) {
 	}
 }
 
-// Maps digital direction bindings to DirectInput axis deflection for the game poll result.
 static void apply_direction_state(
 	di_joy_state *state,
 	bool dir_up,
@@ -67,7 +63,6 @@ static void apply_direction_state(
 	}
 }
 
-// Reads one configured SDL button or trigger source for the DirectInput button map.
 static bool is_source_pressed(int source) {
 	if (!dttr_gamepad) {
 		return false;
@@ -85,7 +80,6 @@ static bool is_source_pressed(int source) {
 	return SDL_GetGamepadButton(dttr_gamepad, (SDL_GamepadButton)source);
 }
 
-// Reads one configured SDL axis and applies the per-axis deadzone.
 static LONG read_axis(int axis_idx) {
 	const int sdl_axis = dttr_config.gamepad_axes[axis_idx];
 
@@ -100,7 +94,6 @@ static LONG read_axis(int axis_idx) {
 	return (value > -deadzone && value < deadzone) ? 0 : value;
 }
 
-// Fills the joystick state block expected by the game from SDL gamepad input.
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	di_joy_state *state = DTTR_PCDOGS_F_CRTMalloc->Call(
 		dttr_sidecar_runtime_context(),

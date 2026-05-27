@@ -272,11 +272,8 @@ struct DTTR_BackendState {
 
 extern DTTR_BackendState dttr_backend;
 
-/// Begins a new GPU frame and prepares transfer resources.
 void dttr_graphics_begin_frame();
-/// Submits queued GPU work and presents the current frame.
 void dttr_graphics_end_frame();
-/// Uploads and presents one BGRA video frame directly to the swapchain.
 bool DTTR_Graphics_PresentVideoFrameBGRA(
 	const uint8_t *pixels,
 	int width,
@@ -284,7 +281,6 @@ bool DTTR_Graphics_PresentVideoFrameBGRA(
 	int stride
 );
 
-/// Returns true when called from the renderer's GPU thread.
 bool dttr_graphics_is_gpu_thread();
 
 #ifdef DTTR_MODS_ENABLED
@@ -361,36 +357,24 @@ static inline void dttr_graphics_mod_device_restored(DTTR_BackendState *) {}
 static inline void dttr_graphics_mod_device_destroying(DTTR_BackendState *) {}
 #endif
 
-/// Computes the number of mip levels needed for a texture size.
 int dttr_graphics_calc_mip_levels(int w, int h);
-/// Writes an identity matrix into a 4x4 float matrix buffer.
 void dttr_graphics_mat4_identity(float *m);
 
-/// Returns a readable name for an SDL shader-format bit.
 const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format);
-/// Returns the shader formats embedded in this build.
 SDL_GPUShaderFormat dttr_graphics_requested_shader_formats();
-/// Chooses the preferred shader format from an available format mask.
 SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat formats);
-/// Returns the preferred shader format for a specific backend driver.
 SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver);
-/// Chooses a shader format using driver preference with mask validation.
 SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 	const char *driver,
 	SDL_GPUShaderFormat formats
 );
 
-/// Updates logical resolution and optionally render size based on scaling method.
 void dttr_graphics_set_logical_resolution(int width, int height);
-/// Applies runtime window resize to rendering policy.
 void DTTR_Graphics_HandleWindowResize(int width, int height);
 
-/// Clears shared surface-texture cache state.
 void dttr_graphics_surface_texture_cache_reset();
 
-/// Initializes the SDL3 GPU backend (device, pipelines, resources).
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state);
-/// Initializes the OpenGL 3.3 backend (context, shaders, FBO, samplers).
 bool dttr_graphics_opengl_init(DTTR_BackendState *state);
 
 #endif
