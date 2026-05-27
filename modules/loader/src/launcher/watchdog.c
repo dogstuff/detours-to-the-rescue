@@ -1,3 +1,4 @@
+#include <dttr_config.h>
 #include <dttr_crashdump.h>
 #include <dttr_errors.h>
 #include <dttr_loader.h>
@@ -78,29 +79,35 @@ static void write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excepti
 	sds stack_trace = DTTR_CrashDump_FormatStackTrace(process, thread, &thread_context);
 	CloseHandle(thread);
 
-	sds message = sdsempty();
+	sds summary = sdsempty();
 	if (filename) {
-		message = sdscatprintf(
-			message,
+		summary = sdscatprintf(
+			summary,
 			"Game crashed (exception 0x%08lX). Crash dump written to %s.",
 			exception_code,
 			filename
 		);
 		sdsfree(filename);
 	} else {
-		message = sdscatprintf(
-			message,
+		summary = sdscatprintf(
+			summary,
 			"Game crashed (exception 0x%08lX). Failed to write crash dump.",
 			exception_code
 		);
 	}
 
-	message = sdscatsds(message, stack_trace);
+	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, true);
+	sds popup_message = DTTR_CrashDump_BuildReportMessage(
+		summary,
+		stack_trace,
+		dttr_config.show_crash_stack_trace
+	);
 	sdsfree(stack_trace);
-	message = sdscat(message, DTTR_REPORT_SUFFIX);
-	DTTR_CrashDump_LogAndTraceReport(message);
-	DTTR_Errors_ShowMessage(DTTR_ERROR_TITLE, message);
-	sdsfree(message);
+	DTTR_CrashDump_LogAndTraceReport(log_message);
+	DTTR_Errors_ShowMessage(DTTR_ERROR_TITLE, popup_message);
+	sdsfree(popup_message);
+	sdsfree(log_message);
+	sdsfree(summary);
 }
 
 void DTTR_Loader_WatchdogAttach(const PROCESS_INFORMATION *child_info) {

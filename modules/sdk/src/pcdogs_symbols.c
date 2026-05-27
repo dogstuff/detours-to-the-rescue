@@ -53,7 +53,6 @@ static DTTR_Core_Result resolve_symbol(
 	}
 
 	*out_addr = 0;
-	// Optional rows may be absent; check the requested row after bulk resolution.
 	DTTR_PCDOGS_SymbolsResolveAll(ctx);
 	const uintptr_t addr = address_at(id);
 	if (!addr) {

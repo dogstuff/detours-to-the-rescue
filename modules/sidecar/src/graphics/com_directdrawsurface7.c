@@ -658,7 +658,6 @@ static void surface_upload_texture(DTTR_Graphics_COM_DirectDrawSurface7 *self) {
 		return;
 	}
 
-	// Blt content dimensions narrow uploads; untouched surfaces upload in full.
 	const uint32_t upload_w = self->content_width ? self->content_width : self->width;
 	const uint32_t upload_h = self->content_height ? self->content_height : self->height;
 	const uint64_t source_hash = surface_hash_source_pixels(self, upload_w, upload_h);

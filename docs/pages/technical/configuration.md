@@ -19,6 +19,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
   "schema_major_version": 1,
   "log_level": "info",
   "minidump_type": "normal",
+  "show_crash_stack_trace": true,
   "log_file_path": "dttr.log",
   "pcdogs_path": "",
   "saves_path": "saves",
@@ -65,6 +66,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
 | `schema_major_version` | Integer | `1` | Config schema version. Must be `1`. |
 | `log_level` | String | `debug` in debug builds, `info` in release builds | Minimum log level: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. |
 | `minidump_type` | String | `detailed` in debug builds, `normal` in release builds | Crash minidump detail level: `normal` or `detailed`. |
+| `show_crash_stack_trace` | Boolean | `true` | Show stack traces in crash popups. Full stack traces are still written to `dttr.log` when this is `false`. |
 | `log_file_path` | String | `dttr.log` | Log file path, or `null` to clear it. Relative paths resolve from the DttR directory. |
 | `pcdogs_path` | String | Empty | Extracted/installed game directory or ISO path. |
 | `saves_path` | String | `saves` | Save-redirection root. Relative paths resolve from the DttR directory. Empty or `null` disables save redirection. |

@@ -23,6 +23,9 @@ static const char *TOOLTIP_LOG_LEVEL = "Minimum log level. Default: info (releas
 static const char *TOOLTIP_LOG_FILE_PATH = "DttR log file path. Default: dttr.log.";
 static const char *TOOLTIP_MINIDUMP_TYPE = "Crash dump detail. Default: normal "
 										   "(release), detailed (debug).";
+static const char *TOOLTIP_SHOW_CRASH_STACK_TRACE
+	= "Whether crash popups include the stack trace. The full stack trace is still "
+	  "written to dttr.log. Default: true.";
 static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip intro movies at launch. Default: "
 											   "false.";
 
@@ -83,6 +86,14 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		MINIDUMP_TYPE_TOOLTIPS,
 		TOOLTIP_MINIDUMP_TYPE,
 		FIELD_LABEL_STATE(state, minidump_type)
+	);
+	labeled_checkbox(
+		ctx,
+		"Show crash stack trace in popup",
+		"##show_crash_stack_trace",
+		&state->config.show_crash_stack_trace,
+		TOOLTIP_SHOW_CRASH_STACK_TRACE,
+		FIELD_LABEL_STATE(state, show_crash_stack_trace)
 	);
 	labeled_checkbox(
 		ctx,

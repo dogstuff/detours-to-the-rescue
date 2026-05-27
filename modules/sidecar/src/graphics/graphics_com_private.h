@@ -95,11 +95,8 @@ typedef struct DTTR_Graphics_COM_Direct3D7 DTTR_Graphics_COM_Direct3D7;
 typedef struct DTTR_Graphics_COM_Direct3DDevice7 DTTR_Graphics_COM_Direct3DDevice7;
 typedef struct DTTR_Graphics_COM_DirectDraw7 DTTR_Graphics_COM_DirectDraw7;
 
-/// Creates an IDirectDraw7 translator instance.
 DTTR_Graphics_COM_DirectDraw7 *dttr_graphics_com_create_directdraw7();
-/// Creates an IDirect3D7 translator instance.
 DTTR_Graphics_COM_Direct3D7 *dttr_graphics_com_create_direct3d7();
-/// Creates an IDirect3DDevice7 translator instance.
 DTTR_Graphics_COM_Direct3DDevice7 *dttr_graphics_com_create_direct3ddevice7();
 
 typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
@@ -777,7 +774,6 @@ typedef struct DTTR_Graphics_COM_DirectDrawSurface7 {
 	uint64_t last_upload_hash;
 } DTTR_Graphics_COM_DirectDrawSurface7;
 
-/// Creates an IDirectDrawSurface7 translator with the given pixel format.
 DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface7(
 	uint32_t width,
 	uint32_t height,
@@ -788,7 +784,6 @@ DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface
 	uint32_t a_mask
 );
 
-/// Validates DirectDraw surface dimensions and computes safe storage sizes.
 HRESULT dttr_graphics_com_validate_directdrawsurface7(
 	uint32_t width,
 	uint32_t height,
@@ -797,7 +792,6 @@ HRESULT dttr_graphics_com_validate_directdrawsurface7(
 	size_t *out_pixel_size
 );
 
-/// Creates an IDirect3DTexture2 translator bound to a surface translator.
 DTTR_Graphics_COM_Direct3DTexture2 *dttr_graphics_com_create_direct3d_texture2(
 	DTTR_Graphics_COM_DirectDrawSurface7 *surface
 );

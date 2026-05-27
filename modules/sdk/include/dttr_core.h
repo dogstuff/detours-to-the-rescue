@@ -92,7 +92,7 @@ bool DTTR_Core_ResultOk(DTTR_Core_Result result);
 
 /// Resolve a textual AOB pattern through the context runtime scanner.
 /// @param ctx Runtime context that supplies the runtime scanner and target module.
-/// @param aob Space-separated byte pattern; wildcard syntax follows the runtime scanner.
+/// @param aob Space-separated byte pattern. Wildcards follow the runtime scanner.
 /// @param out_addr Receives the resolved address on success.
 /// @return `DTTR_OK` when the pattern is found, otherwise an error status.
 DTTR_Core_Result DTTR_Core_AOBFind(
@@ -143,8 +143,7 @@ DTTR_Core_Result DTTR_Core_PatchBytes(
 /// Install a function detour and return both the trampoline and hook handle.
 /// @param ctx Runtime context used to install the hook.
 /// @param address Function entry or instruction site to hook.
-/// @param prologue_size Minimum prologue bytes before instruction-boundary alignment;
-/// pass `0` for automatic sizing.
+/// @param prologue_size Minimum prologue bytes before instruction-boundary alignment, or `0` for automatic sizing.
 /// @param detour Replacement function to call.
 /// @param out_original Optional output receiving the original trampoline.
 /// @param out_hook Required output receiving the hook handle.
@@ -162,7 +161,7 @@ DTTR_Core_Result DTTR_Core_HookFunction(
 /// @param ctx Runtime context used to resolve and install the hook.
 /// @param aob Space-separated byte pattern to resolve.
 /// @param offset Offset added to the resolved match before installing the hook.
-/// @param prologue_size Minimum prologue bytes; pass `0` for automatic sizing.
+/// @param prologue_size Minimum prologue bytes, or `0` for automatic sizing.
 /// @param detour Replacement function to call.
 /// @param out_original Optional output receiving the original trampoline.
 /// @param out_hook Required output receiving the hook handle.
@@ -208,7 +207,7 @@ DTTR_Core_Result DTTR_Core_PatchAOBRel32Jump(
 /// Patch a pointer slot and optionally return the previous slot value.
 /// @param ctx Runtime context used to patch the pointer slot.
 /// @param address Address of the pointer slot to replace.
-/// @param new_value Replacement pointer value; may be `NULL` to clear the slot.
+/// @param new_value Replacement pointer value, or `NULL` to clear the slot.
 /// @param out_original Optional output receiving the previous pointer value.
 /// @param out_hook Required output receiving the hook handle.
 /// @return `DTTR_OK` when the slot is patched, otherwise an error status.
@@ -221,21 +220,21 @@ DTTR_Core_Result DTTR_Core_HookPointer(
 );
 
 /// Detach a byte patch created by the SDK runtime.
-/// @param patch Patch handle returned by an SDK patching call; may be `NULL`.
+/// @param patch Patch handle returned by an SDK patching call, or `NULL`.
 void DTTR_Core_Unpatch(DTTR_Core_Patch *patch);
 
 /// Detach a byte patch and report whether runtime memory restoration succeeded.
-/// @param patch Patch handle returned by an SDK patching call; may be `NULL`.
-/// @return `DTTR_OK` when the handle is detached or already null; an error otherwise.
+/// @param patch Patch handle returned by an SDK patching call, or `NULL`.
+/// @return `DTTR_OK` when detached or already null, otherwise an error.
 DTTR_Core_Result DTTR_Core_UnpatchChecked(DTTR_Core_Patch *patch);
 
 /// Detach a function or pointer hook created by the SDK runtime.
-/// @param hook Hook handle returned by an SDK hook call; may be `NULL`.
+/// @param hook Hook handle returned by an SDK hook call, or `NULL`.
 void DTTR_Core_Unhook(DTTR_Core_Hook *hook);
 
 /// Detach a function or pointer hook and report whether restoration succeeded.
-/// @param hook Hook handle returned by an SDK hook call; may be `NULL`.
-/// @return `DTTR_OK` when the handle is detached or already null; an error otherwise.
+/// @param hook Hook handle returned by an SDK hook call, or `NULL`.
+/// @return `DTTR_OK` when detached or already null, otherwise an error.
 DTTR_Core_Result DTTR_Core_UnhookChecked(DTTR_Core_Hook *hook);
 
 /// Create a patch group for rollback and teardown.
@@ -253,21 +252,21 @@ DTTR_Core_Result DTTR_Core_PatchGroupCreate(
 DTTR_Core_Result DTTR_Core_PatchGroupUninstall(DTTR_Core_PatchGroup *group);
 
 /// Uninstall a patch group and release its storage.
-/// @param group Patch group to destroy; may be `NULL`.
+/// @param group Patch group to destroy, or `NULL`.
 void DTTR_Core_PatchGroupDestroy(DTTR_Core_PatchGroup *group);
 
 /// Uninstall a patch group, release its storage, and report restore failures.
-/// @param group Patch group to destroy; may be `NULL`.
+/// @param group Patch group to destroy, or `NULL`.
 /// @return `DTTR_OK` when all tracked handles detached and storage was released.
 /// On restore failure, the group is retained so callers can retry or diagnose.
 DTTR_Core_Result DTTR_Core_PatchGroupDestroyChecked(DTTR_Core_PatchGroup *group);
 
 /// Destroy a patch group pointer and clear the caller slot.
-/// @param group Address of the caller-owned patch group pointer; may be `NULL`.
+/// @param group Address of the caller-owned patch group pointer, or `NULL`.
 void DTTR_Core_PatchGroupRelease(DTTR_Core_PatchGroup **group);
 
 /// Destroy a patch group pointer, clear it, and report restore failures.
-/// @param group Address of the caller-owned patch group pointer; may be `NULL`.
+/// @param group Address of the caller-owned patch group pointer, or `NULL`.
 /// @return `DTTR_OK` when all tracked handles detached and `*group` was cleared.
 /// On restore failure, `*group` is retained so callers can retry or diagnose.
 DTTR_Core_Result DTTR_Core_PatchGroupReleaseChecked(DTTR_Core_PatchGroup **group);
@@ -290,7 +289,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupPatchBytes(
 /// Install a function hook and adopt the handle into a patch group.
 /// @param group Patch group that will own the hook handle.
 /// @param address Function entry or instruction site to hook.
-/// @param prologue_size Minimum prologue bytes; pass `0` for automatic sizing.
+/// @param prologue_size Minimum prologue bytes, or `0` for automatic sizing.
 /// @param detour Replacement function to call.
 /// @param out_original Optional output receiving the original trampoline.
 /// @param out_hook Optional output receiving the hook handle.
@@ -307,7 +306,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookFunction(
 /// Install a pointer hook and adopt the handle into a patch group.
 /// @param group Patch group that will own the hook handle.
 /// @param address Address of the pointer slot to replace.
-/// @param new_value Replacement pointer value; may be `NULL` to clear the slot.
+/// @param new_value Replacement pointer value, or `NULL` to clear the slot.
 /// @param out_original Optional output receiving the previous pointer value.
 /// @param out_hook Optional output receiving the hook handle.
 /// @return `DTTR_OK` when the slot is patched and adopted.
@@ -337,7 +336,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupPatchRel32Jump(
 /// @param targets Array of target specifications to install.
 /// @param target_count Number of entries in `targets`.
 /// @param out_report Optional output receiving install counts and failure details.
-/// @return `DTTR_OK` when all required targets install; required-target failure rolls
+/// @return `DTTR_OK` when all required targets install. Required-target failure rolls
 /// back installed handles.
 DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 	DTTR_Core_PatchGroup *group,

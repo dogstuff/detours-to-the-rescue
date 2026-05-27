@@ -85,7 +85,7 @@ struct DTTR_Core_API {
 /// Install a JMP hook and optionally return the trampoline.
 /// @param addr Function entry or instruction site to hook.
 /// @param prologue_size Minimum prologue bytes before instruction-boundary
-/// alignment; pass `0` for automatic sizing.
+/// alignment, or `0` for automatic sizing.
 /// @param handler Replacement function to call.
 /// @param out_original Optional output receiving the original trampoline.
 /// @return Hook handle on success, or `NULL` on failure.
@@ -119,16 +119,16 @@ DTTR_Core_Hook *DTTR_Core_HookPatchBytes(
 );
 
 /// Detach one hook or patch.
-/// @param hook Hook or patch handle returned by this runtime; may be `NULL`.
+/// @param hook Hook or patch handle returned by this runtime, or `NULL`.
 void DTTR_Core_HookDetach(DTTR_Core_Hook *hook);
 
 /// Detach one hook or patch and report restore failure.
-/// @param hook Hook or patch handle returned by this runtime; may be `NULL`.
+/// @param hook Hook or patch handle returned by this runtime, or `NULL`.
 /// @return `true` when the hook is detached, already stale, or NULL.
 bool DTTR_Core_HookDetachChecked(DTTR_Core_Hook *hook);
 
 /// Report whether a hook handle is still registered with the runtime.
-/// @param hook Hook or patch handle returned by this runtime; may be `NULL`.
+/// @param hook Hook or patch handle returned by this runtime, or `NULL`.
 /// @return `true` while the hook is still active.
 bool DTTR_Core_HookIsActive(DTTR_Core_Hook *hook);
 

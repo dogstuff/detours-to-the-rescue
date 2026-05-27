@@ -40,13 +40,11 @@ static DTTR_Mods_Context mod_context(const DTTR_Mods_Context *base_ctx) {
 	};
 }
 
-// Compares timestamp and size metadata so hot reload can detect real DLL changes.
 static bool file_id_equal(const mod_file_id *lhs, const mod_file_id *rhs) {
 	return CompareFileTime(&lhs->write_time, &rhs->write_time) == 0
 		   && lhs->size_high == rhs->size_high && lhs->size_low == rhs->size_low;
 }
 
-// Captures file identity from a directory scan for later reload stability checks.
 static mod_file_id make_mod_file_id(const WIN32_FIND_DATAA *find_data) {
 	return (mod_file_id){
 		.write_time = find_data->ftLastWriteTime,
@@ -89,7 +87,6 @@ static void log_mod_info(const char *filename, DTTR_Mods_InfoFn info_fn) {
 	);
 }
 
-// Releases the per-mod context after all callbacks that may retain it are done.
 static void destroy_mod_context(loaded_mod *mod) {
 	free(mod->context);
 	mod->context = NULL;
@@ -221,7 +218,6 @@ static void unload_mod(loaded_mod *mod) {
 	destroy_mod_context(mod);
 }
 
-// Removes one loaded mod slot while keeping the dense mod vector ordered.
 static void remove_mod_at(int index) {
 	if (index < 0 || (size_t)index >= kv_size(loaded_mods)) {
 		return;

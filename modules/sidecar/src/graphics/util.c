@@ -4,7 +4,6 @@
 
 DTTR_BackendState dttr_backend;
 
-// Calculates the total mip level count for a 2D texture size.
 int dttr_graphics_calc_mip_levels(int w, int h) {
 	int d = w > h ? w : h;
 	int levels = 1;
@@ -17,13 +16,11 @@ int dttr_graphics_calc_mip_levels(int w, int h) {
 	return levels;
 }
 
-// Writes a 4x4 identity matrix into the provided float array.
 void dttr_graphics_mat4_identity(float *m) {
 	memset(m, 0, DTTR_MAT4_SIZE);
 	m[0] = m[5] = m[10] = m[15] = 1.0f;
 }
 
-// Returns a stable string name for a shader format enum value.
 const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
@@ -39,12 +36,10 @@ const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 	}
 }
 
-// Returns the union of shader formats that this build embeds.
 SDL_GPUShaderFormat dttr_graphics_requested_shader_formats() {
 	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL;
 }
 
-// Picks the best supported shader format from an availability bitmask.
 SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat formats) {
 	if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
 		return SDL_GPU_SHADERFORMAT_DXIL;
@@ -57,7 +52,6 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat forma
 	return SDL_GPU_SHADERFORMAT_INVALID;
 }
 
-// Maps a known SDL GPU driver name to its preferred shader format.
 SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver) {
 	if (!driver || !driver[0]) {
 		return SDL_GPU_SHADERFORMAT_INVALID;
@@ -88,7 +82,6 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 	return dttr_graphics_select_shader_format(formats);
 }
 
-// Reports whether the caller is running on the backend's GPU thread.
 bool dttr_graphics_is_gpu_thread() {
 	const DTTR_BackendState *state = &dttr_backend;
 

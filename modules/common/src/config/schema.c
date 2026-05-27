@@ -52,6 +52,7 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 
 	FIELD_TOP("log_level", log_level, CONFIG_LOG_LEVEL),
 	FIELD_TOP("minidump_type", minidump_type, CONFIG_MINIDUMP_TYPE),
+	FIELD_TOP("show_crash_stack_trace", show_crash_stack_trace, CONFIG_BOOL),
 	FIELD_TOP("log_file_path", log_file_path, CONFIG_STRING),
 	FIELD_TOP("pcdogs_path", pcdogs_path, CONFIG_STRING),
 	FIELD_TOP("saves_path", saves_path, CONFIG_STRING),
