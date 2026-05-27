@@ -1,8 +1,11 @@
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is a launcher and runtime for **102 Dalmatians: Puppies to the Rescue** that allows the PC verison of the game to run well on modern systems. This includes a modding SDK that significantly eases the process of both creating and installing game modifications.
+DttR is a launcher and runtime for 102 Dalmatians: Puppies to the Rescue that allows the PC version of the game to run well on modern systems. This includes a modding SDK that significantly eases the process of both creating and installing game modifications.
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
+
+<!-- docs-download:start -->
+<!-- docs-download:end -->
 
 ## Highlights
 
@@ -24,8 +27,7 @@ DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.do
 
 ## Quick Start
 
-1. Download the latest release build:
-   <https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip>
+1. On release docs, use the Vanilla or Modding Enabled download buttons above. On branch docs, pick a tagged release from [GitLab Releases](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases).
 2. Extract the archive to a writable directory.
 3. Run `dttr.exe`.
 4. When DttR asks for the original game files, pick one source:
@@ -34,19 +36,19 @@ DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.do
 
 ### Original CD
 
-Insert the original **102 Dalmatians: Puppies to the Rescue** CD, then select the disc.
+Insert the original 102 Dalmatians: Puppies to the Rescue CD, then select the disc.
 
 ![DttR loader showing an inserted game disc](assets/load-disc.png)
 
 ### Installed Copy
 
-Choose **Open Directory**, then select the installed game directory with `pcdogs.exe`.
+Choose Open Directory, then select the installed game directory with `pcdogs.exe`.
 
 ![Windows directory picker selecting an installed 102 Dalmatians directory](assets/load-install.png)
 
 ### ISO
 
-Choose **Open ISO**, select the original disc image, then choose **Open**.
+Choose Open ISO, select the original disc image, then choose Open.
 
 ![Windows file picker selecting a 102 Puppies ISO image](assets/load-iso.png)
 

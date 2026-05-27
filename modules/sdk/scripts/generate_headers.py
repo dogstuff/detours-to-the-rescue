@@ -1061,7 +1061,7 @@ ARRAY_TYPE_RE = re.compile(r"^(?P<base>.+)\[(?P<count>[^\]]+)\]$")
 
 
 def c_array_type_parts(value: object) -> tuple[str, str] | None:
-    """Return the base type and element count for blueprint C arrays such as char[N]."""
+    """Return the base type and element count for blueprint C arrays like char[N]."""
 
     text = c_type(value)
     match = ARRAY_TYPE_RE.match(text)

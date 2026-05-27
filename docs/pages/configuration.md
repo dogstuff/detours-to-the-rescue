@@ -10,7 +10,7 @@ Save your changes before closing the tool. DttR reads the saved `dttr.json` the 
 
 ### Game Directory or ISO
 
-Use **Game directory or ISO** to switch discs, choose another installed copy, or fix a moved path.
+Use Game directory or ISO to switch discs, choose another installed copy, or fix a moved path.
 
 ### Saves Directory
 
@@ -27,15 +27,15 @@ redirection and let the game use its original paths.
 
 ### Intro Movies
 
-Turn on **Skip intro movies** to skip the opening videos.
+Turn on Skip intro movies to skip the opening videos.
 
 ### Logs and Crash Reports
 
-Use **Log file path** to move `dttr.log`. Relative paths resolve from the DttR directory.
+Use Log file path to move `dttr.log`. Relative paths resolve from the DttR directory.
 
-Use **Log level** when troubleshooting. Release builds default to `info` and debug builds default to `debug`.
+Use Log level when troubleshooting. Release builds default to `info` and debug builds default to `debug`.
 
-Use **Minidump type** to choose how much detail crash dumps include. Release builds default to `normal` and debug builds default to `detailed`.
+Use Minidump type to choose how much detail crash dumps include. Release builds default to `normal` and debug builds default to `detailed`.
 
 ## Graphics
 
@@ -43,36 +43,36 @@ Use **Minidump type** to choose how much detail crash dumps include. Release bui
 
 Leave this on `logical` unless you're comparing renderers or debugging scaling.
 
-- `logical` is the normal choice.
-- `present` scales the final image instead. Set `present_scaling_algorithm` in `dttr.json` to choose nearest-neighbor or linear sampling.
+- Use `logical` for the normal choice.
+- Use `present` to scale the final image instead. Set `present_scaling_algorithm` in `dttr.json` to choose nearest-neighbor or linear sampling.
 
 ### Scaling Fit
 
-- `letterbox` keeps the correct aspect ratio and adds borders when needed.
-- `stretch` fills the whole window, even when that distorts the image.
-- `integer` scales in whole-number steps for sharper pixels.
+- Use `letterbox` to keep the correct aspect ratio and add borders when needed.
+- Use `stretch` to fill the whole window, even when that distorts the image.
+- Use `integer` to scale in whole-number steps for sharper pixels.
 
 Start with `letterbox` unless you want a different look.
 
 ### Vertex Precision
 
-- `native` keeps the original-style vertex positioning.
-- `subpixel` smooths polygon movement, though some models may show seams.
+- Use `native` to keep the original-style vertex positioning.
+- Use `subpixel` to smooth polygon movement, though some models may show seams.
 
 ### Graphics API
 
 Keep this on `auto` unless DttR has startup or rendering problems.
 
-- `auto` lets DttR choose the best graphics API for the machine.
-- `vulkan`, `direct3d12`, and `opengl` force a backend.
+- Use `auto` to let DttR choose the best graphics API for the machine.
+- Use `vulkan`, `direct3d12`, or `opengl` to force a backend.
 
 ### Other Video Options
 
-- `window_width` and `window_height` set the startup window size.
-- `fullscreen` starts DttR fullscreen. You can also toggle fullscreen in game with ++f11++.
-- `sprite_smooth` smooths scaled sprites. Turn it off for sharper pixels.
-- `msaa_samples` smooths 3D edges at some performance cost. Use `1` to disable MSAA.
-- `generate_texture_mipmaps` may make scaled textures look smoother.
+- Set `window_width` and `window_height` for the startup window size.
+- Set `fullscreen` to start DttR fullscreen. You can also toggle fullscreen in game with ++f11++.
+- Set `sprite_smooth` to smooth scaled sprites. Turn it off for sharper pixels.
+- Set `msaa_samples` to smooth 3D edges at some performance cost. Use `1` to disable MSAA.
+- Set `generate_texture_mipmaps` to make scaled textures look smoother.
 
 Leave `texture_upload_sync` at its default unless you're debugging a renderer issue.
 
@@ -84,8 +84,8 @@ DttR routes the game's Miles Sound System calls through SDL.
 
 ### Volume and Sample Tuning
 
-- `mss_sample_gain` makes game audio louder or quieter. Use small changes because high values can clip.
-- `mss_sample_preemphasis` changes how samples are filtered before playback. Leave it at the default unless you're deliberately comparing audio output.
+- Set `mss_sample_gain` to make game audio louder or quieter. Use small changes because high values can clip.
+- Set `mss_sample_preemphasis` to change how samples are filtered before playback. Leave it at the default unless you're deliberately comparing audio output.
 
 ## Gamepad
 
@@ -115,15 +115,15 @@ Change values in small steps, save, then test in game.
 
 Button mappings connect a physical controller button to a game action: directions, confirm, back, and start/pause.
 
-To change a mapping, choose **Bind**, then press the controller button or trigger. If that button is already assigned to another action, the tool swaps the previous source into the other row.
+To change a mapping, choose Bind, then press the controller button or trigger. If that button is already assigned to another action, the tool swaps the previous source into the other row.
 
-Change one binding at a time, then test in game. Use **Reset** to restore the default mapping, or **Clear** to leave it unbound.
+Change one binding at a time, then test in game. Use Reset to restore the default mapping, or Clear to leave it unbound.
 
 ## Modding
 
-The **Modding** tab is experimental.
+The Modding tab is experimental.
 
-- **Hot reload** reloads mod DLLs while DttR runs.
+- Hot reload lets DttR reload mod DLLs while it runs.
 - The mod list shows DLLs in the `mods` directory. Uncheck a DLL to add it to
   `modding.disabled_mods` so DttR skips it on the next launch.
 

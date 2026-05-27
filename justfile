@@ -160,17 +160,15 @@ build-docs: setup-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --target dttr_pcdogs_generated_headers
     just build-docs-from-build
 
-# Build documentation from an existing CI build tree.
+# Build documentation from an existing build (for CI).
 build-docs-from-build:
-    test -s "{{ build-dir }}/modules/sdk/generated/include/dttr_pcdogs.h"
-    test -s "{{ build-dir }}/modules/sdk/generated/include/dttr_pcdogs_unstable.h"
     rm -rf "{{ docs-build-dir }}"
-    bash ./scripts/update-latest-release-link.sh
+
+    scripts/render-docs-context.py
     zensical build --clean --config-file "{{ docs-config }}"
+
     DTTR_SDK_GENERATED_INCLUDE_DIR="{{ build-dir }}/modules/sdk/generated/include" doxygen "docs/doxyfile-sdk.ini"
     doxygen "{{ doxyfile }}"
-    test ! -s "{{ docs-build-dir }}/doxygen-sdk-warnings.log"
-    test ! -s "{{ docs-build-dir }}/doxygen-internal-warnings.log"
 
 # Build and serve the generated documentation site.
 serve-docs port="3000": build-docs

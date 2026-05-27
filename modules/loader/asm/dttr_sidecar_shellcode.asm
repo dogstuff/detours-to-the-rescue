@@ -60,7 +60,7 @@ loader_entry:
     mov eax, [edi]
 
 .scan_next_module:
-    ; Reached the list head again: kernel32.dll was not found.
+    ; Reached the list head again; kernel32.dll not found.
     cmp eax, edi
     je .kernel32_not_found
 

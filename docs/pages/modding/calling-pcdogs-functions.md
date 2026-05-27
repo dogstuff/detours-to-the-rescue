@@ -1,104 +1,21 @@
 # Calling Game Functions
 
-The SDK provides typed PCDOGS wrappers for known game functions. Use those wrappers unless you are working on an unsupported patch that needs a raw address.
+Generated PCDOGS wrappers are the normal way to call known game functions. Use raw addresses only for unsupported reverse-engineering or patch work.
 
-**NOTE:** The PCDOGS SDK symbols have only been properly tested against the English version of the game. Other regional executables may not behave as expected.
+**NOTE:** PCDOGS SDK symbols have only been properly tested against the English game executable.
 
-## API Shape
+## Wrapper Rules
 
-For the generated function `Movie_PlayFile`, the PCDOGS wrapper exposes:
+For a generated function like `Movie_PlayFile`, the wrapper provides:
 
-- `DTTR_PCDOGS_F_MoviePlayFile->IsCallable(&ctx->runtime)`
-- `DTTR_PCDOGS_F_MoviePlayFile->Try(&ctx->runtime, args..., out_ret)`
-- `DTTR_PCDOGS_F_MoviePlayFile->Call(&ctx->runtime, args..., fallback_ret)`
-- `DTTR_PCDOGS_F_MoviePlayFile->HookKind()`
-- `DTTR_PCDOGS_F_MoviePlayFile->HookPrologueSize()`
-- `DTTR_PCDOGS_F_MoviePlayFile_proto`
+- `IsCallable(&ctx->runtime)` to check direct-call support.
+- `Try(&ctx->runtime, args..., out_ret)` to call only when available.
+- `Call(&ctx->runtime, args..., fallback_ret)` to return a fallback value when unavailable.
+- `HookKind()` and `HookPrologueSize()` for hook setup.
+- `DTTR_PCDOGS_F_<Name>_proto` for typed original-function pointers.
 
-For raw address lookup, see [Manually Resolving Symbols](resolving-symbols.md).
+Use `Try()` when a missing symbol should disable a feature or produce a log. Use `Call()` only when a simple fallback value is genuinely safe and game-owned output parameters do not need to change.
 
-```c
-#include <dttr_sdk.h>
-```
+When a wrapper needs a game-owned pointer, use the generated SDK type. Do not guess struct layout from a raw address.
 
-## Callable Checks
-
-Check callability before your mod relies on a direct call in the current executable.
-
-```c
-static bool can_call_movie_play_file;
-
-DTTR_MODS_INIT {
-    can_call_movie_play_file = DTTR_PCDOGS_F_MoviePlayFile->IsCallable(&ctx->runtime);
-
-    DTTR_MODS_LOG_INFO(
-        ctx,
-        "Movie_PlayFile callable: %s",
-        can_call_movie_play_file ? "yes" : "no"
-    );
-
-    return true;
-}
-```
-
-## Fallback Calls
-
-`DTTR_PCDOGS_*->Call()` calls the game function when available. Missing or unavailable symbols return the fallback value and leave game-owned output parameters alone.
-
-```c
-// Returns 0 when Timer_GetRawTickCount is unavailable.
-int32_t ticks = DTTR_PCDOGS_F_TimerGetRawTickCount->Call(&ctx->runtime, 0);
-```
-
-Use `Try()` when a missing symbol should disable a feature or produce a log.
-
-## Guarded Calls
-
-`DTTR_PCDOGS_*->Try()` returns whether the SDK called the game function.
-
-```c
-static bool try_play_movie_path(
-    const DTTR_Mods_Context *ctx,
-    const char *movie_path,
-    BOOL *out_played
-) {
-    if (!out_played) {
-        return false;
-    }
-
-    *out_played = FALSE;
-    return DTTR_PCDOGS_F_MoviePlayFile->Try(
-        &ctx->runtime,
-        movie_path,
-        0,
-        out_played
-    );
-}
-```
-
-## Game Pointers
-
-When a wrapper needs a game-owned pointer, check the SDK declaration for the expected pointer type.
-
-```c
-static BOOL actor_is_close(
-    const DTTR_Mods_Context *ctx,
-    DTTR_PCDOGS_T_Actor_State *actor
-) {
-    // Returns FALSE when Camera_CheckActorDistance is unavailable.
-    return DTTR_PCDOGS_F_CameraCheckActorDistance->Call(
-        &ctx->runtime,
-        actor,
-        FALSE
-    );
-}
-```
-
-## Hook Metadata
-
-| Kind | Generated helper support | Prologue meaning |
-| --- | --- | --- |
-| `DTTR_PCDOGS_HOOK_REL32` | `Hook()` and `PatchSpec()` install a trampoline `E9 <rel32>` hook. | Decoded trampoline prologue size. |
-| `DTTR_PCDOGS_HOOK_HOTPATCH` | Metadata only, with generated helpers failing closed. | Entry-window size, not the five-byte pre-entry slot. |
-
-For same-address hook chaining rules, see [Hooking Game Functions](hooking-functions.md). Before passing a generated address to a low-level core hook API, check `HookKind()`.
+For raw address lookup, see [Manually Resolving Symbols](resolving-symbols.md). For hook chaining, see [Hooking Game Functions](hooking-functions.md).
