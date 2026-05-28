@@ -8282,7 +8282,7 @@ stable.fn(
     required=Required.EN,
     ret="BOOL",
     params=[],
-    doc="EN-only standalone helper used by Menu_UpdatePauseMenu; returns true when menu_state is 11 or 12, the active in-level states used by pause/save UI paths. EU/SC use a different inlined/nearby state gate and omit this exact helper body.",
+    doc="EN-only standalone helper used by Menu_UpdatePauseMenu; returns true when menu_state is 11 or 12, the active in-level states used by pause/save UI paths. EU/SC use a different inlined/nearby state check and omit this exact helper body.",
 )
 
 stable.fn(
@@ -9659,7 +9659,7 @@ stable.fn(
         param("int32_t", "sound_key"),
         param("uint32_t", "packed_impact_cooldown"),
     ],
-    doc="Triggers a collision/impact sound for actor vs otherActor when the packed cooldown gate permits it.",
+    doc="Triggers a collision/impact sound for actor vs otherActor when the packed cooldown check permits it.",
 )
 
 stable.fn(
@@ -9679,7 +9679,7 @@ stable.fn(
     ret="int32_t",
     params=[param("Actor_State*", "actor"), param("Actor_State*", "other_actor")],
     doc=(
-        "Sentinel collision-depth condition gate used by Actor_ProcessCollisionResponse "
+        "Sentinel collision-depth condition check used by Actor_ProcessCollisionResponse "
         "when collision_depth is -1 and the other actor subtype requires condition "
         "checks. Dispatches by other_actor subtype fields and selector masks; native "
         "return values are 0 or -1 sentinel results."
@@ -9741,7 +9741,7 @@ stable.fn(
         param(
             "Math_Vec3i*",
             "steering_vector",
-            doc="Three-int caller-provided steering/environment vector used by the velocity integration gate.",
+            doc="Three-int caller-provided steering/environment vector used by the velocity integration check.",
         ),
     ],
     doc="Calculates and applies the actor velocity from physics state, caller velocity, steering, ground, and slope inputs.",
@@ -11967,7 +11967,7 @@ stable.fn(
     ret="int32_t",
     params=[param("Actor_State*", "actor"), param("int32_t", "direction_mode")],
     doc=(
-        "Movement/input gate for actor-local direction processing. It validates the "
+        "Movement/input check for actor-local direction processing. It validates the "
         "requested direction mode against actor movement state and funnels accepted input "
         "through movement-vector processing."
     ),
@@ -13128,7 +13128,7 @@ stable.data(
     "joystick_available",
     xref("Input_GetPressedButton", 31, 1),
     type="uint8_t",
-    doc="Non-zero when joystick/gamepad input is available; gates gamepad polling in Input_GetPressedButton.",
+    doc="Non-zero when joystick/gamepad input is available; allows gamepad polling in Input_GetPressedButton.",
 )
 stable.data(
     "main_window_handle",
@@ -15003,9 +15003,9 @@ stable.data(
     doc=(
         "Shared frame/input/audio transition bitfield: bit 0x20 marks demo replay playback, bit 0x10 selects "
         "alternate 3D-audio listener camera data, bit 0x400 is set by Audio_TriggerMusicTransition, bit 0x08 "
-        "requests unload before being cleared after Resource_UnloadGameData, bit 0x1000 gates cleanup/load "
+        "requests unload before being cleared after Resource_UnloadGameData, bit 0x1000 allows cleanup/load "
         "rendering, bit 0x4000 requests Level_Load, bit 0x04 marks post-load actor/audio initialization, and "
-        "bit 0x02 gates active scene update/render."
+        "bit 0x02 allows active scene update/render."
     ),
 )
 stable.data(
@@ -15652,7 +15652,7 @@ stable.data(
     "dinput_force_feedback_available",
     xref("DInput_EnumerateForceFeedbackJoysticks", 57, 2),
     type="int32_t",
-    doc="Set to 1 when force-feedback joystick enumeration finds at least one attached device; gates constant-force effect creation and playback.",
+    doc="Set to 1 when force-feedback joystick enumeration finds at least one attached device; allows constant-force effect creation and playback.",
 )
 stable.data(
     "window_handle",

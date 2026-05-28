@@ -282,6 +282,22 @@ bool DTTR_Graphics_PresentVideoFrameBGRA(
 );
 
 bool dttr_graphics_is_gpu_thread();
+/// Returns true when a draw call should receive subpixel logical-scaling seam fill.
+bool dttr_graphics_should_fill_mesh_seams(
+	DTTR_PrimitiveType type,
+	bool transformed,
+	bool depth_test,
+	bool blend_enabled
+);
+/// Expands triangle-list vertices by a tiny physical-pixel amount to hide mesh cracks.
+void dttr_graphics_fill_mesh_seams(
+	DTTR_Vertex *verts,
+	uint32_t count,
+	int logical_width,
+	int logical_height,
+	int render_width,
+	int render_height
+);
 
 #ifdef DTTR_MODS_ENABLED
 void dttr_graphics_mod_frame_begin(DTTR_BackendState *state);

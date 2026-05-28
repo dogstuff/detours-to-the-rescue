@@ -57,7 +57,7 @@ Start with `letterbox` unless you want a different look.
 ### Vertex Precision
 
 - Use `native` to keep the original-style vertex positioning.
-- Use `subpixel` to smooth polygon movement, though some models may show seams.
+- Use `subpixel` to smooth polygon movement.
 
 ### Graphics API
 

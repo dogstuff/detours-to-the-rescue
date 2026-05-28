@@ -153,7 +153,7 @@ typedef enum DTTR_PCDOGS_T_Data_Resolver {
 /// Generated data-symbol write policy.
 ///
 /// `Write` enforces this policy and only writes `RAW_MEMORY` symbols. `UnsafeWrite`
-/// bypasses the policy gate but still requires writable process memory. Reserve
+/// bypasses the policy check but still requires writable process memory. Reserve
 /// `UnsafeWrite` for explicit patching, reverse-engineering work, or SDK internals.
 /// `READ_ONLY` marks decoded dispatch/jump/lookup/opcode/index tables. `ENGINE_OWNED`
 /// marks live pointers or state that the game may replace or overwrite. `PATCH_ONLY`
@@ -769,7 +769,7 @@ struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type {
 	uintptr_t (*Address)();
 	${c_data_ptr_decl(row.typed.type, '(*Ptr)()')};
 	bool (*Read)(${c_data_read_param(row.typed.type, 'out_value')});
-		/// Policy-gated writer. Returns false unless WritePolicy is RAW_MEMORY.
+		/// Policy-checked writer. Returns false unless WritePolicy is RAW_MEMORY.
 	bool (*Write)(${c_data_write_param(row.typed.type, 'value')});
 		/// Bypasses WritePolicy; still requires resolved writable memory.
 	bool (*UnsafeWrite)(${c_data_write_param(row.typed.type, 'value')});

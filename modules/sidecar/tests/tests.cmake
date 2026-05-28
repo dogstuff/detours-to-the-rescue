@@ -49,6 +49,23 @@ dttr_add_cmocka_test_suite(dttr_sidecar_directdraw_validation_tests
         directdraw
 )
 
+dttr_add_cmocka_test_suite(dttr_sidecar_mesh_seam_fill_tests
+    SOURCES
+        "${DTTR_SIDECAR_TEST_SOURCE_DIR}/mesh_seam_fill.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/graphics/util.c"
+    INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/include"
+        "${CMAKE_SOURCE_DIR}/modules/sdk/include"
+    LINK_LIBRARIES
+        PkgConfig::SDL3
+        common
+        klib
+    LABELS
+        sidecar
+        graphics
+)
+
 dttr_copy_runtime_files(
     dttr_sidecar_directdraw_validation_tests
     "$<TARGET_FILE_DIR:dttr_sidecar_directdraw_validation_tests>"
@@ -56,7 +73,15 @@ dttr_copy_runtime_files(
         ${DTTR_SDL3_RUNTIME_DLL}
 )
 
+dttr_copy_runtime_files(
+    dttr_sidecar_mesh_seam_fill_tests
+    "$<TARGET_FILE_DIR:dttr_sidecar_mesh_seam_fill_tests>"
+    FILES
+        ${DTTR_SDL3_RUNTIME_DLL}
+)
+
 add_dependencies(dttr_sidecar_tests
     dttr_sidecar_pcdogs_tests
     dttr_sidecar_directdraw_validation_tests
+    dttr_sidecar_mesh_seam_fill_tests
 )
