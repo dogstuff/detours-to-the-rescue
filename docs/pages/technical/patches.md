@@ -36,7 +36,10 @@ DttR resolves most sites with `DTTR_Core_HookSigscan()` against the loaded game 
 
 ### Subpixel Vertex Precision Byte Patches
 
-DttR installs these patches only when `vertex_precision` is `subpixel`.
+DttR installs these patches only when `vertex_precision` is `subpixel`. When
+logical scaling is active, the sidecar also expands transformed opaque triangle
+meshes slightly on the CPU before backend submission. That small overlap hides
+subpixel cracks between adjacent mesh pieces.
 
 | Site | Signature | Bytes | Effect |
 | --- | --- | --- | --- |

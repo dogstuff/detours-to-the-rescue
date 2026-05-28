@@ -143,7 +143,8 @@ DTTR_Core_Result DTTR_Core_PatchBytes(
 /// Install a function detour and return both the trampoline and hook handle.
 /// @param ctx Runtime context used to install the hook.
 /// @param address Function entry or instruction site to hook.
-/// @param prologue_size Minimum prologue bytes before instruction-boundary alignment, or `0` for automatic sizing.
+/// @param prologue_size Minimum prologue bytes before instruction-boundary alignment, or
+/// `0` for automatic sizing.
 /// @param detour Replacement function to call.
 /// @param out_original Optional output receiving the original trampoline.
 /// @param out_hook Required output receiving the hook handle.

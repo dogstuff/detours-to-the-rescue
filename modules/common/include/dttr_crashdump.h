@@ -26,7 +26,8 @@ sds DTTR_CrashDump_BuildReportMessage(
 	bool include_stack_trace
 );
 
-/// Writes a process minidump and returns the dump filename. The caller should free the returned sds.
+/// Writes a process minidump and returns the dump filename. The caller should free the
+/// returned sds.
 sds DTTR_CrashDump_Write(
 	HANDLE process,
 	DWORD pid,

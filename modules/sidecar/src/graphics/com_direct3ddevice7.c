@@ -193,24 +193,47 @@ static void d3d_device7_record_clear(
 	kv_push(DTTR_BatchRecord, state->batch_records, clear_rec);
 }
 
-static uint32_t d3d_device7_expand_primitive(
-	DTTR_PrimitiveType *type,
-	const DTTR_Vertex **verts,
+static DTTR_PrimitiveType d3d_device7_uploaded_primitive_type(DTTR_PrimitiveType type) {
+	switch (type) {
+	case DTTR_PRIM_TRIANGLESTRIP:
+	case DTTR_PRIM_TRIANGLEFAN:
+		return DTTR_PRIM_TRIANGLELIST;
+	default:
+		return type;
+	}
+}
+
+static uint32_t d3d_device7_expanded_primitive_count(
+	DTTR_PrimitiveType type,
 	uint32_t count
+) {
+	switch (type) {
+	case DTTR_PRIM_TRIANGLESTRIP:
+	case DTTR_PRIM_TRIANGLEFAN:
+		return count < 3 ? 0 : (count - 2) * 3;
+	default:
+		return count;
+	}
+}
+
+static void d3d_device7_copy_or_expand_primitive(
+	DTTR_PrimitiveType *type,
+	const DTTR_Vertex *verts,
+	uint32_t count,
+	DTTR_Vertex *out
 ) {
 	switch (*type) {
 	case DTTR_PRIM_TRIANGLESTRIP:
-		count = d3d_device7_expand_strip(*verts, count, d3d_device7_expanded_verts);
-		*verts = d3d_device7_expanded_verts;
+		d3d_device7_expand_strip(verts, count, out);
 		*type = DTTR_PRIM_TRIANGLELIST;
-		return count;
+		break;
 	case DTTR_PRIM_TRIANGLEFAN:
-		count = d3d_device7_expand_fan(*verts, count, d3d_device7_expanded_verts);
-		*verts = d3d_device7_expanded_verts;
+		d3d_device7_expand_fan(verts, count, out);
 		*type = DTTR_PRIM_TRIANGLELIST;
-		return count;
+		break;
 	default:
-		return count;
+		memcpy(out, verts, count * DTTR_VERTEX_SIZE);
+		break;
 	}
 }
 
@@ -240,33 +263,51 @@ static void d3d_device7_record_draw(
 	if (count > DTTR_MAX_FRAME_VERTICES)
 		count = DTTR_MAX_FRAME_VERTICES;
 
-	count = d3d_device7_expand_primitive(&type, &verts, count);
-	if (count == 0) {
+	const DTTR_PrimitiveType upload_type = d3d_device7_uploaded_primitive_type(type);
+	const uint32_t upload_count = d3d_device7_expanded_primitive_count(type, count);
+	if (upload_count == 0) {
 		return;
 	}
 
+	const bool fill_mesh_seams = dttr_graphics_should_fill_mesh_seams(
+		upload_type,
+		transformed,
+		state->depth_test,
+		state->blend_enabled
+	);
+
 	if (!state->transfer_mapped)
 		return;
-	if (state->vertex_offset + count > DTTR_MAX_FRAME_VERTICES) {
+	if (state->vertex_offset + upload_count > DTTR_MAX_FRAME_VERTICES) {
 		DTTR_LOG_WARN(
 			"DrawPrimitive: frame vertex limit reached (%u + %u > %u)",
 			state->vertex_offset,
-			count,
+			upload_count,
 			DTTR_MAX_FRAME_VERTICES
 		);
 		return;
 	}
 
-	memcpy(
-		(uint8_t *)state->transfer_mapped + state->vertex_offset * DTTR_VERTEX_SIZE,
-		verts,
-		count * DTTR_VERTEX_SIZE
-	);
+	DTTR_Vertex *upload_verts = (DTTR_Vertex *)((uint8_t *)state->transfer_mapped
+												+ state->vertex_offset
+													  * DTTR_VERTEX_SIZE);
+	d3d_device7_copy_or_expand_primitive(&type, verts, count, upload_verts);
+
+	if (fill_mesh_seams) {
+		dttr_graphics_fill_mesh_seams(
+			upload_verts,
+			upload_count,
+			state->logical_width,
+			state->logical_height,
+			state->width,
+			state->height
+		);
+	}
 
 	DTTR_BatchRecord draw_rec = {0};
 	draw_rec.type = DTTR_BATCH_DRAW;
 	draw_rec.draw.first_vertex = state->vertex_offset;
-	draw_rec.draw.vertex_count = count;
+	draw_rec.draw.vertex_count = upload_count;
 	draw_rec.draw.blend_mode = DTTR_BLEND_OFF;
 	if (state->blend_enabled) {
 		draw_rec.draw.blend_mode = (state->blend_dst == DTTR_BLEND_ONE)
@@ -305,7 +346,7 @@ static void d3d_device7_record_draw(
 									  ? (uint32_t)(state->bound_texture_handle - 1)
 									  : UINT32_MAX;
 
-	state->vertex_offset += count;
+	state->vertex_offset += upload_count;
 
 	// Merge into previous record if state matches and vertices are contiguous
 	size_t n = kv_size(state->batch_records);
