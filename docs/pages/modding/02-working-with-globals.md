@@ -41,4 +41,4 @@ Use it only for reverse-engineering experiments, explicit patching work, or SDK 
 
 Most mods should not need a global's raw address. Use typed helpers first.
 
-If another SDK API requires an address, or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](06-resolving-symbols.md).
+If another SDK API requires an address or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](08-resolving-symbols.md).

@@ -72,5 +72,3 @@ Fail init for required functions and use `Try()` for optional functions.
 ## Use SDK types
 
 When a wrapper takes a game-owned pointer or struct, use the generated SDK type. Generally avoid guessing a struct layout unless you know what you're doing.
-
-For raw address lookup, see [Manually Resolving Symbols](06-resolving-symbols.md). For replacing or chaining game functions, see [Hooking Game Functions](05-hooking-functions.md).

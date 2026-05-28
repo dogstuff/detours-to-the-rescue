@@ -22,7 +22,8 @@ nav = [
       { "Calling Game Functions" = "modding/03-calling-pcdogs-functions.md" },
       { "Applying Game Patches" = "modding/04-applying-patches.md" },
       { "Hooking Game Functions" = "modding/05-hooking-functions.md" },
-      { "Manually Resolving Symbols" = "modding/06-resolving-symbols.md" },
+      { "Drawing a GUI" = "modding/07-imgui.md" },
+      { "Manually Resolving Symbols" = "modding/08-resolving-symbols.md" },
       { "SDK API Reference" = "sdk-ref/" },
     ] },
 

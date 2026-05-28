@@ -138,9 +138,9 @@ build-container:
       "{{ git-short-sha }}" \
       {{ dttr-modding }}
 
-# Build and archive debug distributions.
-package-debug version=dttr-version archive-id=git-short-sha:
-    bash ./scripts/package-builds.sh "{{ version }}" "{{ archive-id }}" debug
+# Build, archive, and optionally upload debug distributions.
+package-debug version=dttr-version archive-id=git-short-sha package-registry-url="" job-token="":
+    bash ./scripts/package-builds.sh "{{ version }}" "{{ archive-id }}" debug "{{ package-registry-url }}" "{{ job-token }}"
 
 # Build, archive, and optionally upload release distributions.
 package-release version=dttr-version archive-id=dttr-version package-registry-url="" job-token="":
