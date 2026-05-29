@@ -164,7 +164,6 @@ build-docs: setup-build
 build-docs-from-build:
     rm -rf "{{ docs-build-dir }}"
 
-    scripts/render-docs-context.py
     zensical build --clean --config-file "{{ docs-config }}"
 
     DTTR_SDK_GENERATED_INCLUDE_DIR="{{ build-dir }}/modules/sdk/generated/include" doxygen "docs/doxyfile-sdk.ini"

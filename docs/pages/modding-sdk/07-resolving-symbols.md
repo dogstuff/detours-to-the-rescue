@@ -1,5 +1,10 @@
 # Manually Resolving Symbols (Advanced)
 
+!!! warning "Cross-Region Compatibility Warning"
+
+    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+
+
 Most mods should not need to manually resolve PCDOGS symbols. Prefer the SDK-provided wrappers when possible.
 
 ## Using SDK wrappers

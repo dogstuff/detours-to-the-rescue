@@ -1,59 +1,58 @@
+!!! note "Quick Start Guide"
+
+    If this is your first time using DttR, the fastest way to get it running is by following the [Quick Start guide](quick-start/00-initial-setup.md).
+
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is a launcher and runtime for 102 Dalmatians: Puppies to the Rescue that allows the PC version of the game to run well on modern systems. This includes a modding SDK that significantly eases the process of both creating and installing game modifications.
+DttR is a compatibility layer and modding runtime for the PC version of *102 Dalmatians: Puppies to the Rescue* that allows the game to run well on modern systems.
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 
-<!-- docs-download:start -->
-<!-- docs-download:end -->
+## Features
 
-## Highlights
+By default, Detours to the Rescue includes:
 
-- Direct3D 12, Vulkan, and OpenGL 3.3 renderers
-- Windowed and fullscreen play
-- Native controller support
-- Keyboard input tied to the DttR window
-- FFmpeg playback for the game's MCI-era videos
-- Fixes for audio, crashes, compatibility, and filesystem behavior
-- Optional modding support
-
-DttR is built for the [102 Dalmatians Speedrunning Community](https://www.102.dog/). It prioritizes portability and stability. By default, gameplay stays unchanged.
+- Replacements for all legacy game dependencies
+- Native Direct3D 12, Vulkan, and OpenGL 3.3 support
+- Modern windowed and fullscreen modes (no DxWnd/dgVoodoo needed!)
+- Window-scoped/non-global keyboard inputs
+- Configurable controller support
+- Game fixes for audio, crashes, compatibility, and filesystem behavior
+- A comprehensive SDK and runtime for writing and running game mods
 
 ## Supported PC Releases
+
+!!! note "Version Compatibility Note"
+
+    If a version of the game isn't listed below, it may still work but has not been garanteed guaranteed to be stable.
+    For compatibility requests or contributions, feel free to create an issue or merge request on this project's [GitLab repository](https://gitlab.com/dogstuff/detours-to-the-rescue).
+
+The following releases of the game have been confirmed to be compatible with DttR:
 
 - English
 - French, German, Italian, Spanish, Dutch (European)
 - Norwegian, Danish, Swedish (Scandinavian)
 
-## Quick Start
+## License
 
-1. On release docs, use the Vanilla or Modding Enabled download buttons above. On branch docs, pick a tagged release from [GitLab Releases](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases).
-2. Extract the archive to a writable directory.
-3. Run `dttr.exe`.
-4. When DttR asks for the original game files, pick one source:
+MIT License
 
-![DttR prompt asking where to load game files from](assets/load-prompt.png)
+Copyright (c) 2026 Lentil
 
-### Original CD
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Insert the original 102 Dalmatians: Puppies to the Rescue CD, then select the disc.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-![DttR loader showing an inserted game disc](assets/load-disc.png)
-
-### Installed Copy
-
-Choose Open Directory, then select the installed game directory with `pcdogs.exe`.
-
-![Windows directory picker selecting an installed 102 Dalmatians directory](assets/load-install.png)
-
-### ISO
-
-Choose Open ISO, select the original disc image, then choose Open.
-
-![Windows file picker selecting a 102 Puppies ISO image](assets/load-iso.png)
-
-Once DttR finds the game files, the game starts normally.
-
-![102 Dalmatians title screen running through DttR](assets/done.png)
-
-Need renderer, window, audio, or controller settings? See [Configuration](configuration.md).
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

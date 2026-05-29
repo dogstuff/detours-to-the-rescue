@@ -20,8 +20,47 @@
     color: #77bfff;
 }
 
-.md-nav--primary > .md-nav__list > .md-nav__item--section {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--md-default-fg-color--lightest);
+/* Tighten the vertical gap introduced by top navigation tabs. */
+.md-main__inner {
+    margin-top: 0.5rem;
+}
+
+.md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis,
+.md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"],
+.md-typeset a[href*="/releases/permalink/latest/downloads/dttr-"] {
+    color: #77bfff;
+    font-weight: 500;
+}
+
+.md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis::before,
+.md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"]::before,
+.md-typeset a[href*="/releases/permalink/latest/downloads/dttr-"]::before {
+    content: "↓";
+    margin-right: 0.35em;
+    opacity: 0.8;
+}
+
+@media screen and (min-width: 76.25em) {
+    .md-main__inner:has(> .md-sidebar--primary .md-nav__item--active > .md-nav__link--active[href=""]) > .md-sidebar {
+        display: none;
+    }
+
+    [dir] .md-main__inner:has(> .md-sidebar--primary .md-nav__item--active > .md-nav__link--active[href=""]) > .md-content > .md-content__inner {
+        max-width: 50rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.md-nav__link[href$="sdk-ref/"] .md-ellipsis,
+.md-nav__link[href$="internal/"] .md-ellipsis {
+    color: #77bfff;
+    font-weight: 500;
+}
+
+.md-nav__link[href$="sdk-ref/"] .md-ellipsis::before,
+.md-nav__link[href$="internal/"] .md-ellipsis::before {
+    content: "↗";
+    margin-right: 0.35em;
+    opacity: 0.8;
 }

@@ -1,4 +1,4 @@
-# Building
+# Compilation
 
 Use the [Nix](https://github.com/NixOS/nix) shell for local Windows builds. It provides MinGW, project dependencies, and the expected build tools.
 

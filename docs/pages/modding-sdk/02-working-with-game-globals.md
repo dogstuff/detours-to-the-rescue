@@ -1,5 +1,10 @@
 # Working with Game Globals
 
+!!! warning "Cross-Region Compatibility Warning"
+
+    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+
+
 PCDOGS globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.
 
 A global helper can tell you whether the symbol was found, read the value with the right type, and decide whether normal writes are allowed.
@@ -41,4 +46,4 @@ Use it only for reverse-engineering experiments, explicit patching work, or SDK 
 
 Most mods should not need a global's raw address. Use typed helpers first.
 
-If another SDK API requires an address or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](08-resolving-symbols.md).
+If another SDK API requires an address or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](07-resolving-symbols.md).

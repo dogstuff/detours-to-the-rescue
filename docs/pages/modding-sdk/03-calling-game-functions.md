@@ -1,10 +1,14 @@
 # Calling Game Functions
 
+!!! warning "Cross-Region Compatibility Warning"
+
+    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+
+
 PCDOGS function helpers are the safe way to call known game functions. Use them instead of casting raw addresses.
 
 Raw addresses are only for unsupported reverse-engineering or low-level patch work.
 
-**Note:** PCDOGS SDK symbols have only been tested against the English game executable.
 
 ## Using the generated helpers
 

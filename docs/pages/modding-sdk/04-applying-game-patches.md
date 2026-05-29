@@ -1,8 +1,13 @@
 # Applying Game Patches
 
+!!! warning "Cross-Region Compatibility Warning"
+
+    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+
+
 A patch reversibly changes game code or data at runtime. Use this page for byte patches, pointer patches, and other non-function-hook changes.
 
-If you want to redirect a game function to your own code, see [Hooking Game Functions](05-hooking-functions.md).
+If you want to redirect a game function to your own code, see [Hooking Game Functions](05-hooking-game-functions.md).
 
 Patch through a `DTTR_Core_PatchGroup` whenever possible. A patch group keeps related changes together, rolls back partial installs, and simplifies cleanup.
 
