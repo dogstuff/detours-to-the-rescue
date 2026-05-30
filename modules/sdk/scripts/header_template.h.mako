@@ -2,13 +2,11 @@
 
 /// @file dttr_pcdogs_unstable.h
 /// Experimental PCDOGS symbols.
-/// @ingroup sdk_pcdogs_unstable
 /// These declarations may change as symbols get renamed or pinned down.
 % else:
 
 /// @file dttr_pcdogs.h
 /// Stable PCDOGS symbols and typed wrappers.
-/// @ingroup sdk_pcdogs
 % endif
 #ifndef ${header_guard}
 #define ${header_guard}
@@ -31,12 +29,8 @@
 
 % if unstable:
 
-/// @addtogroup sdk_pcdogs_unstable
-/// @{
 % else:
 
-/// @addtogroup sdk_pcdogs
-/// @{
 % endif
 
 <%def name="render_type_row(row)">
@@ -293,7 +287,6 @@ typedef enum DTTR_PCDOGS_T_Data_Id {
 % endfor
 } DTTR_PCDOGS_T_Data_Id;
 
-
 typedef enum DTTR_PCDOGS_T_Patch_Kind {
 	DTTR_PCDOGS_PATCH_UNSUPPORTED = 0,
 	DTTR_PCDOGS_PATCH_FUNCTION_HOOK = 1,
@@ -328,7 +321,6 @@ typedef struct DTTR_PCDOGS_T_Patch_Report {
 	DTTR_Core_Status status;
 	const char* message;
 } DTTR_PCDOGS_T_Patch_Report;
-
 
 #define DTTR_PCDOGS_PATCH_SPEC_TARGET(required_, target_) \
 	{                                                      \
@@ -373,7 +365,6 @@ typedef struct DTTR_PCDOGS_T_Patch_Report {
 		(out_group_),                                                  \
 		(out_report_)                                                  \
 	)
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -481,7 +472,6 @@ enum {
 #endif  // DTTR_PCDOGS_TYPED_FUNCTION_ROWS_DEF
 // DTTR_PCDOGS_TYPED_FUNCTIONS:END
 
-
 // PCDOGS function symbols.
 
 #ifndef DTTR_PCDOGS_FUNCTION_ROWS_DEF
@@ -581,8 +571,6 @@ enum {
 
 #define DTTR_PCDOGS_SYMBOL_DATA(policy, supported_builds) \
 	{0, false, policy, supported_builds}
-
-
 
 static DTTR_PCDOGS_T_Symbol_Function dttr_pcdogs_symbol_functions[DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT_VALUE] = {
 #define DTTR_PCDOGS_SYMBOL_ARRAY_FN(id, cc, hook_kind, callable, supported_builds, sig, mask, match_offset, patch_size, entry_patch_size) \
@@ -695,12 +683,8 @@ static bool dttr_pcdogs_unhook_checked(
 }
 #endif  // DTTR_PCDOGS_CORE_HOOK_HELPERS_DEFINED
 
-
 % for row in typed_function_rows:
 
-/// @name ${row.display_name}
-/// Typed symbol object for `${row.display_name}`.
-/// @{
 ${doxy_comment(row.doc, params=row.param_docs)}
 typedef ${row.ret}(${row.cc}*${row.typedef_name}) ${row.params};
 
@@ -748,8 +732,6 @@ struct ${row.accessor_struct_name} {
 
 /// Generated accessor object for `${row.display_name}`.
 DTTR_PCDOGS_API const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${row.public};
-
-/// @}
 
 % endfor
 % for row in globals:
@@ -1175,8 +1157,6 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 	return all_ok;
 }
 
-
-
 % for row in typed_function_rows:
 static bool dttr_pcdogs_${row.name}_IsResolved() {
 	return dttr_pcdogs_${row.name}_addr != 0;
@@ -1408,7 +1388,6 @@ const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type* const DTTR_PCDOGS_D
 % endif
 % endfor
 
-
 uint32_t DTTR_PCDOGS_FunctionCount() {
 	return DTTR_PCDOGS_FUNCTION_COUNT;
 }
@@ -1572,8 +1551,5 @@ DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_RESET_DATA)
 #undef DTTR_PCDOGS_COUNT_ONE
 
 #endif // DTTR_PCDOGS_IMPLEMENTATION
-
-
-/// @}
 
 #endif // ${header_guard}

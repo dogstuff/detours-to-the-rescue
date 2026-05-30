@@ -1,6 +1,5 @@
 /// @file dttr_mods.h
 /// Mod DLL API for modules loaded from `mods/`.
-/// @ingroup sdk_mods
 ///
 /// Mods must export `DTTR_Mod_Init` and `DTTR_Mod_Cleanup`;
 /// optional callbacks can be exported to observe frame, window, graphics, input,
@@ -19,9 +18,6 @@
 
 typedef struct SDL_Window SDL_Window;
 typedef union SDL_Event SDL_Event;
-
-/// @addtogroup sdk_mods
-/// @{
 
 // Reject incompatible hosts by comparing ctx->api_version against this value.
 #define DTTR_MODS_API_VERSION 12
@@ -363,7 +359,5 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 
 // Called after a host frame presented overlays without advancing the game.
 #define DTTR_MODS_GAME_FRAME_BLOCKED DTTR_EXPORT void DTTR_Mod_GameFrameBlocked()
-
-/// @}
 
 #endif // DTTR_MODS_H

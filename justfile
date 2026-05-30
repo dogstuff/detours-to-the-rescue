@@ -169,8 +169,7 @@ build-docs-from-build:
     zensical build --clean --config-file "{{ docs-source-dir }}/zensical.toml"
     cp -R "{{ docs-source-dir }}/build" "{{ docs-build-dir }}"
 
-    DTTR_SDK_GENERATED_INCLUDE_DIR="{{ build-dir }}/modules/sdk/generated/include" doxygen "docs/doxyfile-sdk.ini"
-    doxygen "{{ doxyfile }}"
+    DTTR_SDK_GENERATED_INCLUDE_DIR="{{ build-dir }}/modules/sdk/generated/include" doxygen "{{ doxyfile }}"
 
 # Build and serve the generated documentation site.
 serve-docs port="3000": build-docs

@@ -1,6 +1,5 @@
 /// @file dttr_runtime.h
 /// Low-level runtime hook, patch, storage, and signature scanning helpers.
-/// @ingroup sdk_runtime
 
 #ifndef DTTR_RUNTIME_H
 #define DTTR_RUNTIME_H
@@ -15,9 +14,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/// @addtogroup sdk_runtime
-/// @{
 
 #define DTTR_RUNTIME_API_VERSION 2
 
@@ -171,8 +167,6 @@ uintptr_t DTTR_Core_HookSigscan(HMODULE mod, const char *sig, const char *mask);
 /// @param mask Mask string where implementation-defined wildcard characters skip bytes.
 /// @return Matching address, or `0` when not found.
 uintptr_t DTTR_Core_HookCachedSigscan(HMODULE mod, const char *sig, const char *mask);
-
-/// @}
 
 #ifdef __cplusplus
 }

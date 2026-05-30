@@ -1,6 +1,5 @@
 /// @file dttr_util_unstable.h
 /// Experimental utility helpers for reverse-engineering package data.
-/// @ingroup sdk_util_unstable
 ///
 /// These declarations are available through dttr_sdk.h only when
 /// DTTR_SDK_ENABLE_UNSTABLE is defined. These declarations can change at source
@@ -24,9 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/// @addtogroup sdk_util_unstable
-/// @{
 
 /// Cast a stable opaque Level_Data pointer to the unstable runtime layout.
 /// The stable API keeps Level_Data opaque; this helper makes the intentional
@@ -247,8 +243,6 @@ static inline const DTTR_PCDOGS_T_Pkg_CollisionShape *DTTR_Util_PkgVisit_AsColli
 			   ? (const DTTR_PCDOGS_T_Pkg_CollisionShape *)visit->ptr
 			   : NULL;
 }
-
-/// @}
 
 #ifdef __cplusplus
 }

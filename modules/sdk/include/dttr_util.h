@@ -1,6 +1,5 @@
 /// @file dttr_util.h
 /// Public helper APIs for mod authors.
-/// @ingroup sdk_util
 
 #ifndef DTTR_UTIL_H
 #define DTTR_UTIL_H
@@ -13,9 +12,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/// @addtogroup sdk_util
-/// @{
 
 /// Resolve the current active actor from the game.
 /// @param ctx Runtime context for generated PCDOGS symbol calls.
@@ -37,8 +33,6 @@ static inline bool DTTR_Util_SameActor(
 ) {
 	return left && right && left == right;
 }
-
-/// @}
 
 #ifdef __cplusplus
 }

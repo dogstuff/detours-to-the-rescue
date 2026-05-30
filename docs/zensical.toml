@@ -32,7 +32,6 @@ nav = [
       { "Manually Resolving Symbols" = "modding-sdk/07-resolving-symbols.md" },
     ] },
     { "PCDOGS Reference" = "modding-sdk/generated/pcdogs/" },
-    { "SDK API Documentation" = "sdk-ref/" },
   ] },
   { "Technical Details" = [
     { "Configuration" = "technical-reference/00-configuration.md" },

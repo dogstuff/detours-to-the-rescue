@@ -52,13 +52,11 @@
     }
 }
 
-.md-nav__link[href$="sdk-ref/"] .md-ellipsis,
 .md-nav__link[href$="internal/"] .md-ellipsis {
     color: #77bfff;
     font-weight: 500;
 }
 
-.md-nav__link[href$="sdk-ref/"] .md-ellipsis::before,
 .md-nav__link[href$="internal/"] .md-ellipsis::before {
     content: "↗";
     margin-right: 0.35em;

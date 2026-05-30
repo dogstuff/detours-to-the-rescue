@@ -1,7 +1,6 @@
 /// @file dttr_core.h
 /// Core SDK APIs for status handling, signature scans, patches, hooks, and patch
 /// groups.
-/// @ingroup sdk_core
 
 #ifndef DTTR_Core_H
 #define DTTR_Core_H
@@ -21,9 +20,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/// @addtogroup sdk_core
-/// @{
 
 typedef struct DTTR_Core_PatchGroup DTTR_Core_PatchGroup;
 typedef DTTR_Core_Hook DTTR_Core_Patch;
@@ -345,8 +341,6 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 	size_t target_count,
 	DTTR_Core_TargetReport *out_report
 );
-
-/// @}
 
 #ifdef __cplusplus
 }
