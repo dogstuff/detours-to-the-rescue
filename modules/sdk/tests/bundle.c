@@ -36,6 +36,31 @@ static void runtime_storage_api_compile_check() {
 										 + dttr_test_storage_slot_beta_site);
 }
 
+#define SDK_READ_GROUPED_DATA(symbol, value)                                             \
+	do {                                                                                 \
+		(symbol)->Ptr();                                                                 \
+		(symbol)->Read(&(value));                                                        \
+	} while (0)
+
+static void stable_grouped_data_compile_check() {
+	int32_t input_map[DTTR_PCDOGS_D_INPUT_BUTTON_MAP_COUNT] = {0};
+	int32_t input_map_alt[DTTR_PCDOGS_D_INPUT_BUTTON_MAP_ALT_COUNT] = {0};
+	int32_t hammerhead[DTTR_PCDOGS_D_CONTROLLER_HAMMERHEAD_BUTTONS_COUNT] = {0};
+	int32_t sidewinder[DTTR_PCDOGS_D_CONTROLLER_SIDEWINDER_BUTTONS_COUNT] = {0};
+	int32_t gravis[DTTR_PCDOGS_D_CONTROLLER_GRAVIS_BUTTONS_COUNT] = {0};
+
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_InputButtonMap, input_map);
+	DTTR_PCDOGS_D_InputButtonMap->Write(&input_map);
+	DTTR_PCDOGS_D_InputButtonMap->UnsafeWrite(&input_map);
+
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_InputButtonMapAlt, input_map_alt);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_ControllerHammerheadButtons, hammerhead);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_ControllerSidewinderButtons, sidewinder);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_ControllerGravisButtons, gravis);
+}
+
+#undef SDK_READ_GROUPED_DATA
+
 static bool exception_report_compile_check(
 	const DTTR_Mods_ExceptionReportRequest *request,
 	DTTR_Mods_ExceptionReport *report
@@ -84,6 +109,7 @@ static int stable_compile_check() {
 	);
 
 	runtime_storage_api_compile_check();
+	stable_grouped_data_compile_check();
 
 	return DTTR_MODS_API_VERSION + DTTR_RUNTIME_API_VERSION
 		   + (int)exception_request.struct_size + (int)exception_report.struct_size

@@ -1024,12 +1024,51 @@ def c_symbol(value: object) -> str:
     return symbol.replace("D3" + "_D", "D3D").replace("D" + "_DRAW", "DDRAW")
 
 
+_PASCAL_ACRONYMS = {
+    "ail": "AIL",
+    "api": "API",
+    "argb": "ARGB",
+    "bgra": "BGRA",
+    "cpu": "CPU",
+    "d3d": "D3D",
+    "ddraw": "DDraw",
+    "dds": "DDS",
+    "dinput": "DInput",
+    "gpu": "GPU",
+    "guid": "GUID",
+    "io": "IO",
+    "lod": "LOD",
+    "obb": "OBB",
+    "rgb": "RGB",
+    "rgba": "RGBA",
+    "rhw": "RHW",
+    "sdl": "SDL",
+    "toc": "TOC",
+    "ui": "UI",
+    "uv": "UV",
+    "xzy": "XZY",
+    "xyz": "XYZ",
+}
+
+
+def c_pascal_part(part: str) -> str:
+    """Convert one snake-case part while preserving known SDK acronyms."""
+
+    lower = part.lower()
+    if lower in _PASCAL_ACRONYMS:
+        return _PASCAL_ACRONYMS[lower]
+
+    for acronym, rendered in _PASCAL_ACRONYMS.items():
+        if lower.startswith(acronym) and lower[len(acronym) :].isdigit():
+            return rendered + part[len(acronym) :]
+
+    return part[:1].upper() + part[1:]
+
+
 def c_pascal_token(value: object) -> str:
     """Convert generated symbol names to a public Pascal-style C token."""
 
-    return "".join(
-        part[:1].upper() + part[1:] for part in str(value).split("_") if part
-    )
+    return "".join(c_pascal_part(part) for part in str(value).split("_") if part)
 
 
 def c_int(value: object) -> str:

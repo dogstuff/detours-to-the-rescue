@@ -969,7 +969,7 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	DTTR_Core_PatchGroup *group = NULL;
 	DTTR_PCDOGS_T_Patch_Report report = {0};
 	const DTTR_PCDOGS_T_Patch_Spec specs[] = {
-		DTTR_PCDOGS_D_DdrawObject->PatchSpec(true, NULL, &out_original),
+		DTTR_PCDOGS_D_DDrawObject->PatchSpec(true, NULL, &out_original),
 	};
 
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
@@ -1207,7 +1207,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 }
 
 typedef struct {
-	DTTR_PCDOGS_T_Pkg_TocEntry toc[2];
+	DTTR_PCDOGS_T_Pkg_TOCEntry toc[2];
 	uint8_t payloads[2][8];
 	int load_count;
 	int free_count;
@@ -1224,7 +1224,7 @@ typedef struct {
 static bool load_fixture_entry(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TocEntry *entry,
+	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
 	void *userdata,
 	void **out_entry,
 	size_t *out_size,
@@ -1248,7 +1248,7 @@ static bool load_fixture_entry(
 static bool fail_first_fixture_entry(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TocEntry *entry,
+	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
 	void *userdata,
 	void **out_entry,
 	size_t *out_size,
@@ -1277,7 +1277,7 @@ static bool fail_first_fixture_entry(
 static void free_fixture_entry(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TocEntry *entry,
+	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
 	void *entry_data,
 	void *userdata
 ) {
@@ -1394,14 +1394,14 @@ static void test_pkg_walk_core_behaviors(void **test_state) {
 }
 
 static void test_pkg_visit_accessors_and_status_names(void **test_state) {
-	DTTR_PCDOGS_T_Pkg_TocEntry toc = {0};
+	DTTR_PCDOGS_T_Pkg_TOCEntry toc = {0};
 	DTTR_PCDOGS_T_Mesh_Node mesh = {0};
 	DTTR_PCDOGS_T_Level_RuntimeData level = {0};
 	DTTR_Util_PkgVisit visit = {0};
 
 	visit.kind = DTTR_UTIL_PKG_VISIT_TOC_ENTRY;
 	visit.ptr = &toc;
-	assert_ptr_equal(DTTR_Util_PkgVisit_AsTocEntry(&visit), &toc);
+	assert_ptr_equal(DTTR_Util_PkgVisit_AsTOCEntry(&visit), &toc);
 	assert_null(DTTR_Util_PkgVisit_AsMeshNode(&visit));
 
 	visit.kind = DTTR_UTIL_PKG_VISIT_MESH_NODE;
@@ -1412,7 +1412,7 @@ static void test_pkg_visit_accessors_and_status_names(void **test_state) {
 	visit.kind = DTTR_UTIL_PKG_VISIT_LEVEL_RUNTIME_DATA;
 	visit.ptr = &level;
 	assert_ptr_equal(DTTR_Util_PkgVisit_AsLevelRuntimeData(&visit), &level);
-	assert_null(DTTR_Util_PkgVisit_AsTocEntry(NULL));
+	assert_null(DTTR_Util_PkgVisit_AsTOCEntry(NULL));
 
 	assert_string_equal(DTTR_Util_PkgVisitStatusName(DTTR_UTIL_PKG_STATUS_OK), "ok");
 	assert_string_equal(

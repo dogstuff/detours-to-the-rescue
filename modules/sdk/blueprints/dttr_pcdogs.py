@@ -36,58 +36,57 @@ stable.type_alias("DInput_DeviceInstanceA", "void")
 
 stable.struct(
     "DInput_DeviceEnumContext",
-    member("uint32_t", "count", 0),
-    member("Win32_GUID*", "guid_list", 4),
+    member("uint32_t", "count", 0x0),
+    member("Win32_GUID*", "guid_list", 0x4),
     size=8,
 )
 
 
 stable.struct(
     "Animation_ChainEntry",
-    member("Animation_DataBlock*", "animation_data_ptr", 0),
-    member("void*", "bone_array_ptr", 4),
-    member("uint8_t", "chain_type", 8),
-    member("uint8_t", "state_flag_0", 9),
-    member("uint8_t", "state_flag_1", 10),
-    member("uint8_t", "blend_mode", 11),
-    member("Animation_FrameHeader*", "frame_data_ptr", 12),
-    member("int32_t", "blend_weight", 16),
-    member("int32_t", "playback_time", 20),
-    member("int16_t", "chain_index", 24),
-    member("int16_t", "frame_counter", 26),
-    member("int32_t", "transition_time", 28),
+    member("Animation_DataBlock*", "animation_data_ptr", 0x0),
+    member("void*", "bone_array_ptr", 0x4),
+    member("uint8_t", "chain_type", 0x8),
+    member("uint8_t", "state_flags[2]", 0x9),
+    member("uint8_t", "blend_mode", 0xB),
+    member("Animation_FrameHeader*", "frame_data_ptr", 0xC),
+    member("int32_t", "blend_weight", 0x10),
+    member("int32_t", "playback_time", 0x14),
+    member("int16_t", "chain_index", 0x18),
+    member("int16_t", "frame_counter", 0x1A),
+    member("int32_t", "transition_time", 0x1C),
     size=32,
 )
 
 stable.struct(
     "Animation_ChannelHeader",
-    member("uint8_t", "channel_params[7]", 0),
-    member("uint8_t", "loop_flags", 7),
-    member("int16_t", "start_keyframe", 8),
-    member("int16_t", "end_keyframe", 10),
+    member("uint8_t", "channel_params[7]", 0x0),
+    member("uint8_t", "loop_flags", 0x7),
+    member("int16_t", "start_keyframe", 0x8),
+    member("int16_t", "end_keyframe", 0xA),
     size=12,
 )
 
 stable.struct(
     "Animation_ColorKeyframe",
-    member("uint16_t", "frame_number", 0),
-    member("uint16_t", "interpolation_flag", 2),
-    member("uint32_t", "color", 4),
-    member("uint32_t", "interpolation_mode", 8),
+    member("uint16_t", "frame_number", 0x0),
+    member("uint16_t", "interpolation_flag", 0x2),
+    member("uint32_t", "color", 0x4),
+    member("uint32_t", "interpolation_mode", 0x8),
     size=12,
 )
 
 stable.struct(
     "Animation_VertexColorTarget",
-    member("int16_t", "vertex_index", 0),
-    member("int16_t", "frame_offset", 2),
-    member("uint8_t", "base_r", 4),
-    member("uint8_t", "base_g", 5),
-    member("uint8_t", "base_b", 6),
+    member("int16_t", "vertex_index", 0x0),
+    member("int16_t", "frame_offset", 0x2),
+    member("uint8_t", "base_r", 0x4),
+    member("uint8_t", "base_g", 0x5),
+    member("uint8_t", "base_b", 0x6),
     member(
         "uint8_t",
         "reserved_07",
-        7,
+        0x7,
         doc="Unused/pad byte after base RGB; Animation_ProcessVertexColor target-byte reads cover +0..+6.",
     ),
     size=8,
@@ -95,11 +94,11 @@ stable.struct(
 
 stable.struct(
     "Animation_VertexColorKeyframe",
-    member("int16_t", "delta_r", 0),
-    member("int16_t", "delta_g", 2),
-    member("int16_t", "delta_b", 4),
-    member("int16_t", "frame_number", 6),
-    member("int32_t", "inv_frame_delta_q12", 8),
+    member("int16_t", "delta_r", 0x0),
+    member("int16_t", "delta_g", 0x2),
+    member("int16_t", "delta_b", 0x4),
+    member("int16_t", "frame_number", 0x6),
+    member("int32_t", "inv_frame_delta_q12", 0x8),
     size=12,
 )
 
@@ -108,51 +107,51 @@ stable.struct(
     member(
         "uint8_t",
         "controller_type",
-        0,
+        0x0,
         doc="Observed value 1 for vertex-color controllers.",
     ),
     member(
         "uint8_t",
         "flags",
-        1,
+        0x1,
         doc="Bit 0x80 marks dirty/pending dispatch; low 3 bits select timing mode.",
     ),
     member(
         "uint16_t",
         "signal_id",
-        2,
+        0x2,
         doc="Signal id polled by Render_UpdateMeshCommandFlags, then used for controller updates.",
     ),
     member(
         "int32_t",
         "sample_time_q12",
-        4,
+        0x4,
         doc="Current Q12 playback sample time, advanced by mesh-command updates.",
     ),
     member(
         "uint32_t",
         "playback_limit_q12",
-        8,
+        0x8,
         doc="Q12 playback bound for sample_time_q12, used for clamping or wrapping.",
     ),
-    member("uint8_t", "keyframe_count", 12),
+    member("uint8_t", "keyframe_count", 0xC),
     member(
         "uint8_t",
         "reserved_0d",
-        13,
+        0xD,
         doc="Alignment byte between keyframe_count and vertex_count; no validated semantic use in vertex-color paths.",
     ),
-    member("int16_t", "vertex_count", 14),
+    member("int16_t", "vertex_count", 0xE),
     member(
         "Animation_VertexColorTarget*",
         "target_array",
-        16,
+        0x10,
         doc="Vertex-color target array with vertex index, frame offset, and base RGB bytes.",
     ),
     member(
         "Animation_VertexColorKeyframe*",
         "keyframe_array",
-        20,
+        0x14,
         doc="Signed RGB delta keyframe array, sampled by Animation_ProcessVertexColor.",
     ),
     size=24,
@@ -160,42 +159,42 @@ stable.struct(
 
 stable.struct(
     "Animation_ControllerEntry",
-    member("uint8_t", "controller_type", 0),
-    member("uint8_t", "flags", 1),
-    member("int16_t", "event_queue_id", 2),
-    member("int32_t", "playback_speed", 4),
-    member("int32_t", "current_time", 8),
-    member("Animation_DataBlock*", "animation_data_ptr", 12),
-    member("Animation_SplineChannel*", "param_data_ptr", 16),
-    member("Animation_FrameHeader*", "frame_sequence_ptr", 20),
-    member("int32_t", "blend_weight", 24),
-    member("int32_t", "target_data", 28),
+    member("uint8_t", "controller_type", 0x0),
+    member("uint8_t", "flags", 0x1),
+    member("int16_t", "event_queue_id", 0x2),
+    member("int32_t", "playback_speed", 0x4),
+    member("int32_t", "current_time", 0x8),
+    member("Animation_DataBlock*", "animation_data_ptr", 0xC),
+    member("Animation_SplineChannel*", "param_data_ptr", 0x10),
+    member("Animation_FrameHeader*", "frame_sequence_ptr", 0x14),
+    member("int32_t", "blend_weight", 0x18),
+    member("int32_t", "target_data", 0x1C),
     size=32,
 )
 
 stable.struct(
     "Animation_ControllerGroup",
-    member("uint8_t", "group_flags", 0),
+    member("uint8_t", "group_flags", 0x0),
     member(
         "uint8_t",
         "active_controller_count",
-        1,
+        0x1,
         doc="Temporary controller_count override used for one Render_ProcessMeshCommands call; the original 16-bit count is restored afterward.",
     ),
-    member("int16_t", "controller_count", 2),
-    member("Animation_ControllerSlot**", "controller_slot_array", 4),
+    member("int16_t", "controller_count", 0x2),
+    member("Animation_ControllerSlot**", "controller_slot_array", 0x4),
     size=8,
 )
 
 stable.struct(
     "Animation_ControllerSlot",
-    member("Animation_DataBlock*", "anim_data_ptr", 0),
-    member("uint8_t", "controller_type", 4),
-    member("uint8_t", "status_flags", 5),
+    member("Animation_DataBlock*", "anim_data_ptr", 0x0),
+    member("uint8_t", "controller_type", 0x4),
+    member("uint8_t", "status_flags", 0x5),
     member(
         "uint16_t",
         "reserved",
-        6,
+        0x6,
         doc=(
             "Unused slot stride/alignment word; Animation_ProcessController reads cover +0x0/+0x4/+0x5/+0x8/+0xC (PC EN)."
         ),
@@ -203,35 +202,35 @@ stable.struct(
     member(
         "void*",
         "controller_payload_ptr",
-        8,
+        0x8,
         doc="Variant controller payload pointer containing type-specific byte/dword data interpreted by Animation_ProcessController.",
     ),
-    member("Animation_FrameHeader*", "frame_sequence_ptr", 12),
+    member("Animation_FrameHeader*", "frame_sequence_ptr", 0xC),
     size=16,
 )
 
 stable.struct(
     "Animation_Data",
-    member("uint8_t", "frame_count", 0),
-    member("uint8_t", "bone_count", 1),
-    member("uint8_t", "flags", 2),
-    member("uint8_t", "reserved", 3),
-    member("uint32_t", "keyframe_data[6]", 4),
+    member("uint8_t", "frame_count", 0x0),
+    member("uint8_t", "bone_count", 0x1),
+    member("uint8_t", "flags", 0x2),
+    member("uint8_t", "reserved", 0x3),
+    member("uint32_t", "keyframe_data[6]", 0x4),
     size=28,
 )
 
 stable.struct(
     "Animation_DataBlock",
-    member("uint8_t", "num_position_channels", 0),
-    member("uint8_t", "num_rotation_channels", 1),
-    member("uint8_t", "num_visibility_channels", 2),
-    member("uint8_t", "num_scale_channels", 3),
-    member("uint8_t", "num_morph_channels", 4),
-    member("uint8_t", "num_scalar_channels", 5),
+    member("uint8_t", "num_position_channels", 0x0),
+    member("uint8_t", "num_rotation_channels", 0x1),
+    member("uint8_t", "num_visibility_channels", 0x2),
+    member("uint8_t", "num_scale_channels", 0x3),
+    member("uint8_t", "num_morph_channels", 0x4),
+    member("uint8_t", "num_scalar_channels", 0x5),
     member(
         "uint8_t",
         "reserved_06",
-        6,
+        0x6,
         doc=(
             "Unreferenced byte before fixup_flags; Resource_FixUpAnimationData reads +0x7 (PC EN) and "
             "channel pointers, not +0x6 (PC EN)."
@@ -240,44 +239,44 @@ stable.struct(
     member(
         "uint8_t",
         "fixup_flags",
-        7,
+        0x7,
         doc="Animation block fixup flags; bit 0x02 marks rebased channel pointer tables.",
     ),
-    member("int16_t", "start_keyframe", 8),
-    member("int16_t", "end_keyframe", 10),
-    member("Animation_SplineChannel*", "position_channels", 12),
-    member("Animation_SplineChannel*", "rotation_channels", 16),
-    member("Animation_SplineChannel*", "visibility_channels", 20),
-    member("Animation_SplineChannel*", "scale_channels", 24),
-    member("Animation_SplineChannel*", "morph_channels", 28),
-    member("Animation_SplineChannel*", "scalar_channels", 32),
+    member("int16_t", "start_keyframe", 0x8),
+    member("int16_t", "end_keyframe", 0xA),
+    member("Animation_SplineChannel*", "position_channels", 0xC),
+    member("Animation_SplineChannel*", "rotation_channels", 0x10),
+    member("Animation_SplineChannel*", "visibility_channels", 0x14),
+    member("Animation_SplineChannel*", "scale_channels", 0x18),
+    member("Animation_SplineChannel*", "morph_channels", 0x1C),
+    member("Animation_SplineChannel*", "scalar_channels", 0x20),
     size=36,
 )
 
 
 stable.struct(
     "Animation_FrameData",
-    member("uint8_t", "frame_type", 0),
+    member("uint8_t", "frame_type", 0x0),
     member(
         "uint8_t",
         "reserved_01",
-        1,
+        0x1,
         doc="Opaque/alignment byte; no stable meaning is known.",
     ),
-    member("int16_t", "normal_count", 2),
-    member("int16_t", "vertex_count", 4),
+    member("int16_t", "normal_count", 0x2),
+    member("int16_t", "vertex_count", 0x4),
     member(
         "uint8_t",
         "reserved_06[2]",
-        6,
+        0x6,
         doc="Opaque/alignment bytes before normal_data; no stable semantics have been isolated.",
     ),
-    member("Mesh_VertexNormal*", "normal_data", 8),
-    member("uint8_t", "frame_extra_data[10]", 12),
+    member("Mesh_VertexNormal*", "normal_data", 0x8),
+    member("uint8_t", "frame_extra_data[10]", 0xC),
     member(
         "uint8_t",
         "reserved_16[2]",
-        22,
+        0x16,
         doc="Opaque/alignment tail bytes; no stable semantics have been isolated.",
     ),
     size=24,
@@ -285,95 +284,72 @@ stable.struct(
 
 stable.struct(
     "Animation_FrameHeader",
-    member("uint8_t", "fixup_flags", 0),
-    member("uint8_t", "padding_01", 1),
-    member("int16_t", "frame_count", 2),
-    member("Animation_FrameData**", "frame_ptrs", 4),
+    member("uint8_t", "fixup_flags", 0x0),
+    member("uint8_t", "padding_01", 0x1),
+    member("int16_t", "frame_count", 0x2),
+    member("Animation_FrameData**", "frame_ptrs", 0x4),
     size=8,
 )
 
 stable.struct(
     "Animation_FrameVertex",
-    member("int16_t", "pos_x", 0),
-    member("int16_t", "pos_y", 2),
-    member("int16_t", "pos_z", 4),
-    member("int16_t", "padding", 6),
+    member("Math_Vec3i16", "pos", 0x0),
+    member("int16_t", "padding", 0x6),
     size=8,
 )
 
 stable.struct(
     "Animation_MorphKeyframe",
-    member("uint32_t", "timing_flags", 0),
-    member("int16_t", "morph_target_index", 4),
-    member("int16_t", "blend_weight", 6),
-    member("uint8_t", "keyframe_count", 8),
-    member("uint8_t", "target_id", 9),
-    member("int16_t", "flags", 10),
+    member("uint32_t", "timing_flags", 0x0),
+    member("int16_t", "morph_target_index", 0x4),
+    member("int16_t", "blend_weight", 0x6),
+    member("uint8_t", "keyframe_count", 0x8),
+    member("uint8_t", "target_id", 0x9),
+    member("int16_t", "flags", 0xA),
     size=12,
 )
 
 stable.struct(
     "Animation_MorphTargetVertex",
-    member("int16_t", "delta_x", 0),
-    member("int16_t", "delta_y", 2),
-    member("int16_t", "delta_z", 4),
-    member("int16_t", "flags", 6),
+    member("Math_Vec3i16", "delta", 0x0),
+    member("int16_t", "flags", 0x6),
     size=8,
 )
 
 stable.struct(
     "Animation_MorphVertex",
-    member("int16_t", "delta_x", 0),
-    member("int16_t", "delta_y", 2),
-    member("int16_t", "delta_z", 4),
-    member("int16_t", "flags", 6),
-    member("int16_t", "normal_x", 8),
-    member("int16_t", "normal_y", 10),
-    member("int16_t", "normal_z", 12),
-    member("int16_t", "vertex_index", 14),
+    member("Math_Vec3i16", "delta", 0x0),
+    member("int16_t", "flags", 0x6),
+    member("Math_Vec3i16", "normal", 0x8),
+    member("int16_t", "vertex_index", 0xE),
     size=16,
 )
 
 stable.struct(
     "Animation_PositionKeyframe",
-    member("uint32_t", "timing_flags", 0),
-    member("int32_t", "pos_x", 4),
-    member("int32_t", "pos_y", 8),
-    member("int32_t", "pos_z", 12),
-    member("int32_t", "tangent_out_x", 16),
-    member("int32_t", "tangent_out_y", 20),
-    member("int32_t", "tangent_out_z", 24),
-    member("int32_t", "tangent_in_x", 28),
-    member("int32_t", "tangent_in_y", 32),
-    member("int32_t", "tangent_in_z", 36),
+    member("uint32_t", "timing_flags", 0x0),
+    member("Math_Vec3i32", "pos", 0x4),
+    member("Math_Vec3i32", "tangent_out", 0x10),
+    member("Math_Vec3i32", "tangent_in", 0x1C),
     size=40,
 )
 
 stable.struct(
     "Animation_RotationKeyframe",
-    member("uint32_t", "timing_flags", 0),
-    member("int16_t", "quat_w", 4),
-    member("int16_t", "quat_x", 6),
-    member("int16_t", "quat_y", 8),
-    member("int16_t", "quat_z", 10),
-    member("uint32_t", "segment_flags", 12),
-    member("int16_t", "tangent_out_w", 16),
-    member("int16_t", "tangent_out_x", 18),
-    member("int16_t", "tangent_out_y", 20),
-    member("int16_t", "tangent_out_z", 22),
-    member("int16_t", "tangent_in_w", 24),
-    member("int16_t", "tangent_in_x", 26),
-    member("int16_t", "tangent_in_y", 28),
-    member("int16_t", "tangent_in_z", 30),
+    member("uint32_t", "timing_flags", 0x0),
+    member("Math_QuaternionI16", "quat", 0x4),
+    member("uint32_t", "segment_flags", 0xC),
+    member("Math_QuaternionI16", "tangent_out", 0x10),
+    member("Math_QuaternionI16", "tangent_in", 0x18),
     size=32,
 )
 
 stable.struct(
     "Animation_ScalarKeyframe",
-    member("uint32_t", "timing_flags", 0),
-    member("int32_t", "value", 4),
-    member("int32_t", "tangent_out", 8),
-    member("int32_t", "tangent_in", 12),
+    member("uint32_t", "timing_flags", 0x0),
+    member("int32_t", "value", 0x4),
+    member("int32_t", "tangent_out", 0x8),
+    member("int32_t", "tangent_in", 0xC),
     size=16,
 )
 
@@ -382,93 +358,89 @@ stable.struct(
     member(
         "void*",
         "keyframe_table_or_minus_one_sentinel",
-        0,
+        0x0,
         doc=(
             "Sampled spline keyframe table pointer, or exactly -1 for the constant/sentinel "
             "case. Sampled channels require a nonzero table pointer."
         ),
     ),
-    member("int32_t", "packed_first_key", 4),
+    member("int32_t", "packed_first_key", 0x4),
     member(
         "uint8_t",
         "keyframe_count_must_be_nonzero_when_sampled",
-        8,
+        0x8,
         doc=(
             "Anim_CheckKeyframeActive indexes count - 1 on the sampled-channel path; "
             "a zero count is invalid for sampled channels."
         ),
     ),
-    member("uint8_t", "target_index", 9),
-    member("int16_t", "channel_flags", 10),
+    member("uint8_t", "target_index", 0x9),
+    member("int16_t", "channel_flags", 0xA),
     size=12,
 )
 
 stable.struct(
-    "Animation_StateTable", member("Animation_DataBlock*", "anim_ptrs[43]", 0), size=172
+    "Animation_StateTable", member("Animation_DataBlock*", "anim_ptrs[43]", 0x0), size=172
 )
 
 
 stable.struct(
     "Animation_VisibilityKeyframe",
-    member("uint32_t", "timing_and_visibility", 0),
+    member("uint32_t", "timing_and_visibility", 0x0),
     size=4,
 )
 
 stable.struct(
     "Audio_SampleHandle",
-    member("int32_t", "sound_id", 0),
-    member("int32_t", "volume", 4),
-    member("int32_t", "frequency", 8),
-    member("int32_t*", "sample_handle", 12),
-    member("int32_t", "status_flags", 16),
+    member("int32_t", "sound_id", 0x0),
+    member("int32_t", "volume", 0x4),
+    member("int32_t", "frequency", 0x8),
+    member("int32_t*", "sample_handle", 0xC),
+    member("int32_t", "status_flags", 0x10),
     size=20,
 )
 
 stable.struct(
     "Audio_SampleHandleEntry",
-    member("Audio_SampleHandleEntry*", "prev_ptr", 0),
-    member("Audio_SampleHandleEntry*", "next_ptr", 4),
-    member("int32_t*", "ail_handle", 8),
-    member("Audio_SoundEntry*", "sound_entry", 12),
-    member("uint32_t", "additional_data", 16),
+    member("Audio_SampleHandleEntry*", "prev_ptr", 0x0),
+    member("Audio_SampleHandleEntry*", "next_ptr", 0x4),
+    member("int32_t*", "ail_handle", 0x8),
+    member("Audio_SoundEntry*", "sound_entry", 0xC),
+    member("uint32_t", "additional_data", 0x10),
     size=20,
 )
 
 
 stable.struct(
     "Audio_SoundDescriptor",
-    member("int32_t", "sound_id", 0),
-    member("int32_t", "flags", 4),
+    member("int32_t", "sound_id", 0x0),
+    member("int32_t", "flags", 0x4),
     size=8,
 )
 
 stable.struct(
     "Audio_SoundEntry",
-    member("Audio_SoundEntry*", "prev", 0),
-    member("Audio_SoundEntry*", "next", 4),
-    member("Audio_SoundDefinition*", "sound_def_ptr", 8),
-    member("Math_Vec3i*", "position_ptr", 12),
-    member("int32_t", "listener_x", 16),
-    member("int32_t", "listener_y", 20),
-    member("int32_t", "listener_z", 24),
-    member("int32_t", "sound_x", 28),
-    member("int32_t", "sound_y", 32),
-    member("int32_t", "sound_z", 36),
-    member("int16_t", "volume", 40),
-    member("int16_t", "pitch", 42),
-    member("int16_t", "pan", 44),
-    member("uint8_t", "flags", 46),
-    member("uint8_t", "padding_2f", 47),
+    member("Audio_SoundEntry*", "prev", 0x0),
+    member("Audio_SoundEntry*", "next", 0x4),
+    member("Audio_SoundDefinition*", "sound_def_ptr", 0x8),
+    member("Math_Vec3i32*", "position_ptr", 0xC),
+    member("Math_Vec3i32", "listener_pos", 0x10),
+    member("Math_Vec3i32", "sound_pos", 0x1C),
+    member("int16_t", "volume", 0x28),
+    member("int16_t", "pitch", 0x2A),
+    member("int16_t", "pan", 0x2C),
+    member("uint8_t", "flags", 0x2E),
+    member("uint8_t", "padding_2f", 0x2F),
     size=48,
 )
 
 stable.struct(
     "Audio_SoundDefinition",
-    member("void**", "sample_table_ptr", 0),
+    member("void**", "sample_table_ptr", 0x0),
     member(
         "uint8_t",
         "flags",
-        4,
+        0x4,
         doc=(
             "Audio definition flags. ScriptOp_PlaySoundBlockOrWait mutates bit 0x40 as "
             "a script_playback_active_or_wait_latch around direct playback."
@@ -477,7 +449,7 @@ stable.struct(
     member(
         "uint8_t",
         "reserved_05",
-        5,
+        0x5,
         doc=(
             "Reserved audio-definition byte; allocation/playback paths only consume flags at +0x4 "
             "(PC EN) and replacement_priority at +0x6 (PC EN)."
@@ -486,125 +458,106 @@ stable.struct(
     member(
         "uint8_t",
         "replacement_priority",
-        6,
+        0x6,
         doc="Priority byte used by Audio_AllocateSoundSlot when selecting a non-protected active sound to evict; a requested sound can replace an active sound when requested priority is less than or equal to the active definition priority.",
     ),
     member(
         "uint8_t",
         "reserved_07",
-        7,
+        0x7,
         doc=(
             "Reserved audio-definition byte; allocation/playback paths only consume "
             "replacement_priority at +0x6 (PC EN) before volume/pitch."
         ),
     ),
-    member("int32_t", "volume_fp12", 8),
-    member("int32_t", "pitch_fp12", 12),
-    member("void*", "spatial_data_ptr", 16),
+    member("int32_t", "volume_fp12", 0x8),
+    member("int32_t", "pitch_fp12", 0xC),
+    member("void*", "spatial_data_ptr", 0x10),
     size=20,
     doc="20-byte sound definition for Audio_PlaySoundDefinition3D and Audio_AllocateSoundSlot, with sample table, flags, replacement priority, fixed-point volume/pitch, optional spatial data, and script playback latch at flags bit 0x40.",
 )
 
 stable.struct(
     "Audio_SoundSlot",
-    member("int32_t", "cached_volume", 0),
-    member("int32_t", "cached_pan", 4),
-    member("int32_t", "cached_playback_rate", 8),
-    member("int32_t", "base_playback_rate", 12),
-    member("Audio_AIL_HSample", "sample_handle", 16),
+    member("int32_t", "cached_volume", 0x0),
+    member("int32_t", "cached_pan", 0x4),
+    member("int32_t", "cached_playback_rate", 0x8),
+    member("int32_t", "base_playback_rate", 0xC),
+    member("Audio_AIL_HSample", "sample_handle", 0x10),
     size=20,
 )
 
 stable.struct(
     "Audio_WaveFormat",
-    member("int16_t", "format_tag", 0),
-    member("int16_t", "channels", 2),
-    member("int16_t", "bits_per_sample", 4),
-    member("int16_t", "block_align", 6),
+    member("int16_t", "format_tag", 0x0),
+    member("int16_t", "channels", 0x2),
+    member("int16_t", "bits_per_sample", 0x4),
+    member("int16_t", "block_align", 0x6),
     size=8,
 )
 
 stable.struct(
     "Camera_Frustum",
-    member("int32_t", "clip_plane_a_nx", 0),
-    member("int32_t", "clip_plane_a_ny", 4),
-    member("int32_t", "clip_plane_a_nz", 8),
-    member("int32_t", "clip_plane_a_dist", 12),
-    member("int32_t", "clip_plane_b_nx", 16),
-    member("int32_t", "clip_plane_b_ny", 20),
-    member("int32_t", "clip_plane_b_nz", 24),
-    member("int32_t", "clip_plane_b_dist", 28),
-    member("int32_t", "clip_plane_c_nx", 32),
-    member("int32_t", "clip_plane_c_ny", 36),
-    member("int32_t", "clip_plane_c_nz", 40),
-    member("int32_t", "clip_plane_c_dist", 44),
-    member("int32_t", "clip_plane_d_nx", 48),
-    member("int32_t", "clip_plane_d_ny", 52),
-    member("int32_t", "clip_plane_d_nz", 56),
-    member("int32_t", "clip_plane_d_dist", 60),
-    member("int32_t", "clip_plane_e_nx", 64),
-    member("int32_t", "clip_plane_e_ny", 68),
-    member("int32_t", "clip_plane_e_nz", 72),
-    member("int32_t", "clip_plane_e_dist", 76),
-    member("int32_t", "state_flags_0", 80),
-    member("int32_t", "state_flags_1", 84),
-    member("D3D_IDirect3DDevice7*", "d3d_device", 88),
-    member("int32_t", "viewport_x", 92),
-    member("int32_t", "viewport_y", 96),
-    member("int32_t", "viewport_w", 100),
+    member("Camera_FrustumClipPlane", "clip_planes[5]", 0x0),
+    member("int32_t", "state_flags[2]", 0x50),
+    member("D3D_IDirect3DDevice7*", "d3d_device", 0x58),
+    member("Math_Vec2i32", "viewport_pos", 0x5C),
+    member("int32_t", "viewport_w", 0x64),
     size=104,
 )
 
 stable.struct(
+    "Camera_FrustumClipPlane",
+    member("Math_Vec3i32", "normal", 0x0),
+    member("int32_t", "distance", 0xC),
+    size=16,
+)
+
+stable.struct(
     "Camera_FrustumPlane",
-    member("int32_t", "normal_x", 0),
-    member("int32_t", "normal_y", 4),
-    member("int32_t", "normal_z", 8),
+    member("Math_Vec3i32", "normal", 0x0),
     size=12,
 )
 
 stable.struct(
     "Camera_RenderData",
-    member("uint8_t", "flags", 0),
-    member("uint8_t", "mode", 1),
-    member("int16_t", "state", 2),
-    member("int16_t", "pitch", 4),
-    member("int16_t", "yaw", 6),
-    member("int16_t", "roll", 8),
-    member("int16_t", "fov_angle", 10),
-    member("int32_t", "clip_distance", 12),
-    member("int32_t", "position_x", 16),
-    member("int32_t", "position_y", 20),
-    member("int32_t", "target_x", 24),
-    member("int32_t", "target_z", 28),
-    member("int16_t", "viewport_x", 32),
-    member("int16_t", "viewport_y", 34),
-    member("int16_t", "view_matrix[20]", 36),
-    member("uint8_t", "combined_view_matrix[48]", 76),
-    member("uint8_t", "viewport_clip_data[12]", 124),
+    member("uint8_t", "flags", 0x0),
+    member("uint8_t", "mode", 0x1),
+    member("int16_t", "state", 0x2),
+    member("int16_t", "pitch", 0x4),
+    member("int16_t", "yaw", 0x6),
+    member("int16_t", "roll", 0x8),
+    member("int16_t", "fov_angle", 0xA),
+    member("int32_t", "clip_distance", 0xC),
+    member("Math_Vec2i32", "position_xy", 0x10),
+    member("int32_t", "target_x", 0x18),
+    member("int32_t", "target_z", 0x1C),
+    member("Math_Vec2i16", "viewport_pos", 0x20),
+    member("int16_t", "view_matrix[20]", 0x24),
+    member("uint8_t", "combined_view_matrix[48]", 0x4C),
+    member("uint8_t", "viewport_clip_data[12]", 0x7C),
     member(
         "int16_t",
         "world_rot_reserved",
-        136,
+        0x88,
         doc="Opaque/pad word after camera view matrix data; no stable meaning is known.",
     ),
     member(
         "uint8_t",
         "reserved_8a[2]",
-        138,
+        0x8A,
         doc="Opaque/pad bytes before view translation fields; no stable semantics have been isolated.",
     ),
-    member("int32_t", "view_translation_x", 140),
-    member("int32_t", "view_translation_y", 144),
-    member("int32_t", "position_z", 148),
-    member("int32_t", "near_clip_distance", 152),
-    member("int32_t", "max_render_distance", 156),
-    member("uint8_t", "projection_extra[8]", 160),
-    member("void*", "scene_setup_callback", 168),
+    member("Math_Vec2i32", "view_translation_xy", 0x8C),
+    member("int32_t", "position_z", 0x94),
+    member("int32_t", "near_clip_distance", 0x98),
+    member("int32_t", "max_render_distance", 0x9C),
+    member("uint8_t", "projection_extra[8]", 0xA0),
+    member("void*", "scene_setup_callback", 0xA8),
     member(
         "uint8_t",
         "reserved_ac[24]",
-        172,
+        0xAC,
         doc="Opaque trailing camera-render scratch/reserved block after scene_setup_callback; no stable semantic split has been isolated.",
     ),
     size=196,
@@ -612,48 +565,40 @@ stable.struct(
 
 stable.struct(
     "Camera_EntityView",
-    member("uint32_t", "flags", 0),
-    member("int32_t", "pos_x", 4),
-    member("int32_t", "pos_y", 8),
-    member("int32_t", "pos_z", 12),
-    member("uint32_t", "activation_radius", 16),
-    member("uint32_t", "actor_activation_radius", 20),
-    member("int16_t", "camera_def_index", 24),
-    member("int16_t", "entity_index", 26),
-    member("uint8_t", "neighbor_entity_links[8]", 28),
-    member("uint8_t", "zone_boundaries[32]", 36),
-    member("Pkg_ActorTemplate*", "actor_template", 68),
-    member("uint32_t", "action_data[2]", 72),
-    member("int32_t*", "camera_path_data", 80),
-    member("uint8_t", "path_parameters[16]", 84),
-    member("uint8_t", "camera_collision_volume[84]", 100),
-    member("int32_t*", "transform_pointer", 184),
-    member("uint8_t", "view_transform_matrix[44]", 188),
-    member("int32_t", "rotation_calc", 232),
-    member("uint8_t", "camera_anim_state[52]", 236),
-    member("Actor_State*", "spawned_actor", 288),
-    member("uint8_t", "linked_actor_data[16]", 292),
-    member("uint32_t", "timestamp", 308),
-    member("uint8_t", "transition_timers[20]", 312),
-    member("int32_t", "target_pos_x", 332),
-    member("int32_t", "target_pos_y", 336),
-    member("int32_t", "target_pos_z", 340),
-    member("uint8_t", "look_at_target_data[32]", 344),
+    member("uint32_t", "flags", 0x0),
+    member("Math_Vec3i32", "pos", 0x4),
+    member("uint32_t", "activation_radius", 0x10),
+    member("uint32_t", "actor_activation_radius", 0x14),
+    member("int16_t", "camera_def_index", 0x18),
+    member("int16_t", "entity_index", 0x1A),
+    member("uint8_t", "neighbor_entity_links[8]", 0x1C),
+    member("uint8_t", "zone_boundaries[32]", 0x24),
+    member("Pkg_ActorTemplate*", "actor_template", 0x44),
+    member("uint32_t", "action_data[2]", 0x48),
+    member("int32_t*", "camera_path_data", 0x50),
+    member("uint8_t", "path_parameters[16]", 0x54),
+    member("uint8_t", "camera_collision_volume[84]", 0x64),
+    member("int32_t*", "transform_pointer", 0xB8),
+    member("uint8_t", "view_transform_matrix[44]", 0xBC),
+    member("int32_t", "rotation_calc", 0xE8),
+    member("uint8_t", "camera_anim_state[52]", 0xEC),
+    member("Actor_State*", "spawned_actor", 0x120),
+    member("uint8_t", "linked_actor_data[16]", 0x124),
+    member("uint32_t", "timestamp", 0x134),
+    member("uint8_t", "transition_timers[20]", 0x138),
+    member("Math_Vec3i32", "target_pos", 0x14C),
+    member("uint8_t", "look_at_target_data[32]", 0x158),
     size=376,
 )
 
 stable.struct(
     "Camera_State",
-    member("int32_t", "mode", 0),
-    member("int32_t", "cam_offset_x", 4),
-    member("int32_t", "cam_offset_y", 8),
-    member("int32_t", "cam_offset_z", 12),
-    member("int32_t", "target_offset_x", 16),
-    member("int32_t", "target_offset_y", 20),
-    member("int32_t", "target_offset_z", 24),
-    member("int16_t", "fov_distance", 28),
-    member("int16_t", "transition_speed", 30),
-    member("int32_t", "flags", 32),
+    member("int32_t", "mode", 0x0),
+    member("Math_Vec3i32", "cam_offset", 0x4),
+    member("Math_Vec3i32", "target_offset", 0x10),
+    member("int16_t", "fov_distance", 0x1C),
+    member("int16_t", "transition_speed", 0x1E),
+    member("int32_t", "flags", 0x20),
     size=36,
 )
 
@@ -662,68 +607,44 @@ stable.struct(
     member(
         "int16_t",
         "angle_vertical",
-        0,
+        0x0,
         doc="First wrapped 12-bit camera angle used by Camera_CalculatePosition.",
     ),
     member(
         "int16_t",
         "angle_horizontal",
-        2,
+        0x2,
         doc="Second wrapped 12-bit camera angle used by Camera_CalculatePosition.",
     ),
     member(
         "int16_t",
         "orbit_yaw",
-        4,
+        0x4,
         doc="Wrapped 12-bit orbit yaw interpolated by Camera_InterpolateTransition.",
     ),
     member(
         "int16_t",
         "fov",
-        6,
+        0x6,
         doc="Field-of-view value interpolated during camera transitions.",
     ),
     member(
         "int32_t",
         "distance_or_clip",
-        8,
+        0x8,
         doc="Copied pose scalar at +0x08 (PC EN) used by camera pose interpolation paths.",
     ),
     member(
-        "int32_t",
-        "eye_pos_0",
-        12,
-        doc="Eye/source position component interpolated directly or recomputed from target distance.",
+        "Math_Vec3i32",
+        "eye_pos",
+        0xC,
+        doc="Eye/source position interpolated directly or recomputed from target distance.",
     ),
     member(
-        "int32_t",
-        "eye_pos_1",
-        16,
-        doc="Eye/source position component interpolated directly or recomputed from target distance.",
-    ),
-    member(
-        "int32_t",
-        "eye_pos_2",
-        20,
-        doc="Eye/source position component interpolated directly or recomputed from target distance.",
-    ),
-    member(
-        "int32_t",
-        "target_pos_0",
-        24,
-        doc="Look-at/target position component interpolated during camera transitions.",
-    ),
-    member(
-        "int32_t",
-        "target_pos_1",
-        28,
-        doc="Look-at/target position component interpolated during camera transitions.",
-    ),
-    member(
-        "int32_t",
-        "target_pos_2",
-        32,
-        doc="Look-at/target position component interpolated during camera transitions.",
+        "Math_Vec3i32",
+        "target_pos",
+        0x18,
+        doc="Look-at/target position interpolated during camera transitions.",
     ),
     size=36,
     doc=(
@@ -737,13 +658,13 @@ stable.struct(
     member(
         "uint32_t",
         "flags_and_state",
-        0,
+        0x0,
         doc="Low byte has transition bit 0 cleared by Camera_InterpolateTransition.",
     ),
     member(
         "Camera_Pose",
         "pose",
-        4,
+        0x4,
         doc="Embedded live camera pose interpolated toward a target pose.",
     ),
     size=40,
@@ -752,87 +673,52 @@ stable.struct(
 
 stable.struct(
     "Checkers_Board",
-    member("uint8_t", "row_0_col_0", 0),
-    member("uint8_t", "row_0_col_1", 1),
-    member("uint8_t", "row_0_col_2", 2),
-    member("uint8_t", "row_0_col_3", 3),
-    member("uint8_t", "row_1_col_0", 4),
-    member("uint8_t", "row_1_col_1", 5),
-    member("uint8_t", "row_1_col_2", 6),
-    member("uint8_t", "row_1_col_3", 7),
-    member("uint8_t", "row_2_col_0", 8),
-    member("uint8_t", "row_2_col_1", 9),
-    member("uint8_t", "row_2_col_2", 10),
-    member("uint8_t", "row_2_col_3", 11),
-    member("uint8_t", "row_3_col_0", 12),
-    member("uint8_t", "row_3_col_1", 13),
-    member("uint8_t", "row_3_col_2", 14),
-    member("uint8_t", "row_3_col_3", 15),
-    member("uint8_t", "row_4_col_0", 16),
-    member("uint8_t", "row_4_col_1", 17),
-    member("uint8_t", "row_4_col_2", 18),
-    member("uint8_t", "row_4_col_3", 19),
-    member("uint8_t", "row_5_col_0", 20),
-    member("uint8_t", "row_5_col_1", 21),
-    member("uint8_t", "row_5_col_2", 22),
-    member("uint8_t", "row_5_col_3", 23),
-    member("uint8_t", "row_6_col_0", 24),
-    member("uint8_t", "row_6_col_1", 25),
-    member("uint8_t", "row_6_col_2", 26),
-    member("uint8_t", "row_6_col_3", 27),
-    member("uint8_t", "row_7_col_0", 28),
-    member("uint8_t", "row_7_col_1", 29),
-    member("uint8_t", "row_7_col_2", 30),
-    member("uint8_t", "row_7_col_3", 31),
+    member("uint8_t", "cells[8][4]", 0x0),
     size=32,
 )
 
 stable.struct(
     "Collision_BoundingSphere",
-    member("int32_t", "x", 0),
-    member("int32_t", "y", 4),
-    member("int32_t", "z", 8),
-    member("int32_t", "radius", 12),
+    member("Math_Vec3i32", "center", 0x0),
+    member("int32_t", "radius", 0xC),
     size=16,
 )
 
 stable.struct(
     "Collision_HitEvent",
-    member("Actor_State*", "actor", 0),
-    member("uint32_t", "start_frame", 4),
-    member("uint32_t", "expire_frame", 8),
+    member("Actor_State*", "actor", 0x0),
+    member("uint32_t", "start_frame", 0x4),
+    member("uint32_t", "expire_frame", 0x8),
     size=12,
 )
 
 stable.struct(
     "Collision_Plane",
-    member("int32_t", "normal_x", 0),
-    member("int32_t", "normal_y", 4),
-    member("int32_t", "normal_z", 8),
-    member("int32_t", "distance", 12),
-    member("int32_t", "edge_index", 16),
-    member("int32_t", "polygon_index", 20),
-    member("int32_t", "surface_type", 24),
+    member("Math_Vec3i32", "normal", 0x0),
+    member("int32_t", "distance", 0xC),
+    member("int32_t", "edge_index", 0x10),
+    member("int32_t", "polygon_index", 0x14),
+    member("int32_t", "surface_type", 0x18),
     size=28,
 )
 
 stable.struct(
     "Collision_Polygon",
-    member("Collision_Plane*", "plane_data", 0),
-    member("uint16_t", "vertex_indices[4]", 4),
+    member("Collision_Plane*", "plane_data", 0x0),
+    member("uint16_t", "vertex_indices[4]", 0x4),
     member(
         "void*",
         "adj_face_ptr",
-        12,
+        0xC,
         doc=(
             "Face-plane/adjacency data owned by the Collision_Node query, matching "
             "Pkg_CollisionFacePlane normal fields and packed adj_edge words."
         ),
     ),
-    member("uint16_t", "flags", 16),
-    member("int16_t", "material_index", 18),
-    member("int16_t", "adj_edge_0", 20),
-    member("int16_t", "padding_16", 22),
+    member("uint16_t", "flags", 0x10),
+    member("int16_t", "material_index", 0x12),
+    member("int16_t", "adj_edge_0", 0x14),
+    member("int16_t", "padding_16", 0x16),
     size=24,
     doc=(
         "24-byte collision polygon array element owned by Collision_Node.polygons. Vertex indices "
@@ -842,150 +728,136 @@ stable.struct(
 
 stable.struct(
     "Collision_Response",
-    member("int16_t", "surface_normal_x", 0),
-    member("int16_t", "surface_normal_y", 2),
-    member("int16_t", "surface_normal_z", 4),
-    member("int16_t", "padding", 6),
-    member("int32_t", "response_vel_x", 8),
-    member("int32_t", "response_vel_y", 12),
-    member("int32_t", "response_vel_z", 16),
-    member("int16_t", "penetration_depth", 20),
-    member("uint16_t", "landing_state", 22),
+    member("Math_Vec3i16", "surface_normal", 0x0),
+    member("int16_t", "padding", 0x6),
+    member("Math_Vec3i32", "response_vel", 0x8),
+    member("int16_t", "penetration_depth", 0x14),
+    member("uint16_t", "landing_state", 0x16),
     size=24,
 )
 
 stable.struct(
     "Collision_Slot",
-    member("int32_t", "normal_x", 0),
-    member("int32_t", "normal_y", 4),
-    member("int32_t", "normal_z", 8),
-    member("uint8_t", "contact_position[4]", 12),
-    member("uint8_t", "response_data[20]", 16),
+    member("Math_Vec3i32", "normal", 0x0),
+    member("uint8_t", "contact_position[4]", 0xC),
+    member("uint8_t", "response_data[20]", 0x10),
     size=36,
 )
 
 
 stable.struct(
     "Component_CollisionBox",
-    member("int16_t", "half_width_x", 0),
-    member("int16_t", "half_width_y", 2),
-    member("int16_t", "half_width_z", 4),
-    member("uint8_t", "is_box", 6),
-    member("uint8_t", "padding_07[1]", 7),
+    member("Math_Vec3i16", "half_width", 0x0),
+    member("uint8_t", "is_box", 0x6),
+    member("uint8_t", "padding_07[1]", 0x7),
     size=8,
 )
 
 stable.struct(
     "Component_Definition",
-    member("uint32_t", "flags", 0),
-    member("int32_t", "initial_vel_x", 4),
-    member("int32_t", "initial_vel_z", 8),
-    member("int32_t", "gravity", 12),
-    member("int32_t", "homing_strength", 16),
-    member("int32_t", "lifetime_range", 20),
-    member("int16_t", "speed_min", 24),
-    member("int16_t", "speed_variance", 26),
-    member("int32_t", "speed_max", 28),
-    member("int32_t", "collision_damage_type", 32),
-    member("int32_t", "scatter_angle_x", 36),
-    member("int32_t", "scatter_angle_z", 40),
-    member("int32_t", "bounce_factor", 44),
-    member("int32_t", "trail_effect_id", 48),
-    member("int32_t", "return_to_owner", 52),
-    member("int32_t", "collision_radius", 56),
-    member("int32_t", "collision_height", 60),
-    member("int32_t", "minigame_params", 64),
-    member("int32_t", "sound_effect_id", 68),
-    member("uint8_t", "team_id", 72),
-    member("uint8_t", "spawn_limit_counter", 73),
-    member("uint8_t", "collision_layer", 74),
-    member("uint8_t", "render_priority", 75),
-    member("int32_t", "spawn_offset_x", 76),
-    member("int16_t", "damage_amount", 80),
-    member("int16_t", "damage_cooldown", 82),
-    member("int32_t", "particle_count", 84),
-    member("int32_t", "particle_spread", 88),
-    member("int32_t", "particle_lifetime", 92),
-    member("int32_t", "particle_color", 96),
+    member("uint32_t", "flags", 0x0),
+    member("int32_t", "initial_vel_x", 0x4),
+    member("int32_t", "initial_vel_z", 0x8),
+    member("int32_t", "gravity", 0xC),
+    member("int32_t", "homing_strength", 0x10),
+    member("int32_t", "lifetime_range", 0x14),
+    member("int16_t", "speed_min", 0x18),
+    member("int16_t", "speed_variance", 0x1A),
+    member("int32_t", "speed_max", 0x1C),
+    member("int32_t", "collision_damage_type", 0x20),
+    member("int32_t", "scatter_angle_x", 0x24),
+    member("int32_t", "scatter_angle_z", 0x28),
+    member("int32_t", "bounce_factor", 0x2C),
+    member("int32_t", "trail_effect_id", 0x30),
+    member("int32_t", "return_to_owner", 0x34),
+    member("int32_t", "collision_radius", 0x38),
+    member("int32_t", "collision_height", 0x3C),
+    member("int32_t", "minigame_params", 0x40),
+    member("int32_t", "sound_effect_id", 0x44),
+    member("uint8_t", "team_id", 0x48),
+    member("uint8_t", "spawn_limit_counter", 0x49),
+    member("uint8_t", "collision_layer", 0x4A),
+    member("uint8_t", "render_priority", 0x4B),
+    member("int32_t", "spawn_offset_x", 0x4C),
+    member("int16_t", "damage_amount", 0x50),
+    member("int16_t", "damage_cooldown", 0x52),
+    member("int32_t", "particle_count", 0x54),
+    member("int32_t", "particle_spread", 0x58),
+    member("int32_t", "particle_lifetime", 0x5C),
+    member("int32_t", "particle_color", 0x60),
     member(
         "int32_t",
         "movement_mode",
-        100,
+        0x64,
         doc="Actor/component movement behavior selector consumed by movement/update paths.",
     ),
-    member("int32_t", "visual_scale", 104),
-    member("int32_t", "attachment_bone_id", 108),
+    member("int32_t", "visual_scale", 0x68),
+    member("int32_t", "attachment_bone_id", 0x6C),
     size=112,
 )
 
 
 stable.struct(
     "Component_MeshHeader",
-    member("uint32_t", "mesh_flags", 0),
-    member("Mesh_Node*", "mesh_instance_ptr", 4),
-    member("Animation_DataBlock*", "animation_data_ptr", 8),
-    member("uint16_t", "lod_flags", 12),
-    member("uint16_t", "lod_distance_threshold", 14),
-    member("uint8_t", "mesh_block_data[108]", 16),
-    member("Animation_ControllerSlot*", "animation_controller_ptr", 124),
+    member("uint32_t", "mesh_flags", 0x0),
+    member("Mesh_Node*", "mesh_instance_ptr", 0x4),
+    member("Animation_DataBlock*", "animation_data_ptr", 0x8),
+    member("uint16_t", "lod_flags", 0xC),
+    member("uint16_t", "lod_distance_threshold", 0xE),
+    member("uint8_t", "mesh_block_data[108]", 0x10),
+    member("Animation_ControllerSlot*", "animation_controller_ptr", 0x7C),
     size=128,
 )
 
 stable.struct(
     "Component_SpawnParams",
-    member("Actor_State*", "owner", 0),
-    member("Component_Definition*", "definition", 4),
-    member("int32_t", "initial_pos_x", 8),
-    member("int32_t", "initial_pos_y", 12),
-    member("int32_t", "initial_pos_z", 16),
-    member("Actor_State*", "target_actor", 20),
-    member("int32_t", "spawn_flags", 24),
+    member("Actor_State*", "owner", 0x0),
+    member("Component_Definition*", "definition", 0x4),
+    member("Math_Vec3i32", "initial_pos", 0x8),
+    member("Actor_State*", "target_actor", 0x14),
+    member("int32_t", "spawn_flags", 0x18),
     size=28,
 )
 
 stable.struct(
     "Component_TrailObject",
-    member("int16_t", "bone_offsets", 0),
-    member("int16_t", "bone_offset_y", 2),
-    member("int16_t", "bone_offset_z", 4),
-    member("int16_t", "bone_index", 6),
-    member("uint8_t", "max_segments", 8),
-    member("uint8_t", "processed_flag", 9),
-    member("uint8_t", "active_count", 10),
-    member("uint8_t", "flags", 11),
-    member("uint8_t", "color_data", 12),
-    member("uint8_t", "color_g", 13),
-    member("uint8_t", "color_b", 14),
-    member("uint8_t", "color_a", 15),
-    member("int16_t", "width_start", 16),
-    member("int16_t", "width_end", 18),
-    member("int16_t", "fade_rate", 20),
-    member("int16_t", "lifetime", 22),
-    member("int16_t", "head_index", 24),
-    member("int16_t", "segment_index", 26),
-    member("Trail_Segment*", "segment_array", 28),
+    member("Math_Vec3i16", "bone_offset", 0x0),
+    member("int16_t", "bone_index", 0x6),
+    member("uint8_t", "max_segments", 0x8),
+    member("uint8_t", "processed_flag", 0x9),
+    member("uint8_t", "active_count", 0xA),
+    member("uint8_t", "flags", 0xB),
+    member("uint8_t", "color_data", 0xC),
+    member("uint8_t", "color_g", 0xD),
+    member("uint8_t", "color_b", 0xE),
+    member("uint8_t", "color_a", 0xF),
+    member("int16_t", "width_start", 0x10),
+    member("int16_t", "width_end", 0x12),
+    member("int16_t", "fade_rate", 0x14),
+    member("int16_t", "lifetime", 0x16),
+    member("int16_t", "head_index", 0x18),
+    member("int16_t", "segment_index", 0x1A),
+    member("Trail_Segment*", "segment_array", 0x1C),
     size=32,
 )
 
 stable.struct(
     "D3D_DriverInfo",
-    member("uint8_t", "driver_guid[40]", 0),
-    member("uint8_t*", "driver_guid_ptr", 40),
-    member("uint8_t", "device_capabilities[236]", 44),
-    member("uint32_t", "has_hardware_accel", 280),
-    member("uint8_t", "display_mode_list[888]", 284),
-    member("uint32_t", "next_driver_offset", 1172),
-    member("uint8_t", "driver_flags[4]", 1176),
-    member("char*", "driver_description", 1180),
-    member("uint8_t", "driver_extra_data[12]", 1184),
-    member("uint32_t", "colorkey_capability", 1196),
-    member("uint32_t", "capability_flags_1", 1200),
-    member("uint32_t", "capability_flags_2", 1204),
-    member("uint32_t", "capability_flags_3", 1208),
+    member("uint8_t", "driver_guid[40]", 0x0),
+    member("uint8_t*", "driver_guid_ptr", 0x28),
+    member("uint8_t", "device_capabilities[236]", 0x2C),
+    member("uint32_t", "has_hardware_accel", 0x118),
+    member("uint8_t", "display_mode_list[888]", 0x11C),
+    member("uint32_t", "next_driver_offset", 0x494),
+    member("uint8_t", "driver_flags[4]", 0x498),
+    member("char*", "driver_description", 0x49C),
+    member("uint8_t", "driver_extra_data[12]", 0x4A0),
+    member("uint32_t", "colorkey_capability", 0x4AC),
+    member("uint32_t", "capability_flags[3]", 0x4B0),
     member(
         "uint8_t",
         "display_mode_workspace[9936]",
-        1212,
+        0x4BC,
         doc="DDraw_SurfaceDesc2 display-mode workspace and tail counters populated by DirectDraw enumeration callbacks; not reserved.",
     ),
     size=11148,
@@ -994,21 +866,21 @@ stable.struct(
 
 stable.struct(
     "File_Handle",
-    member("char*", "ptr", 0),
-    member("int32_t", "cnt", 4),
-    member("char*", "base", 8),
-    member("int32_t", "flag", 12),
-    member("int32_t", "file", 16),
-    member("int32_t", "charbuf", 20),
-    member("int32_t", "bufsiz", 24),
-    member("char*", "tmpfname", 28),
+    member("char*", "ptr", 0x0),
+    member("int32_t", "cnt", 0x4),
+    member("char*", "base", 0x8),
+    member("int32_t", "flag", 0xC),
+    member("int32_t", "file", 0x10),
+    member("int32_t", "charbuf", 0x14),
+    member("int32_t", "bufsiz", 0x18),
+    member("char*", "tmpfname", 0x1C),
     size=32,
 )
 
 stable.struct(
     "File_OpenMode",
-    member("int32_t", "access", 0),
-    member("int32_t", "share", 4),
+    member("int32_t", "access", 0x0),
+    member("int32_t", "share", 0x4),
     size=8,
 )
 
@@ -1017,13 +889,13 @@ stable.struct(
     member(
         "int32_t",
         "type",
-        0,
+        0x0,
         doc="Input event type discriminator used by keyboard, gamepad, and menu/event handling.",
     ),
     member(
         "int32_t",
         "value",
-        4,
+        0x4,
         doc="Input event payload, usually a button/key value associated with the event type.",
     ),
     size=8,
@@ -1033,37 +905,23 @@ stable.struct(
 stable.struct(
     "Input_JoystickState",
     member(
-        "int32_t",
-        "pos_x",
-        0,
-        doc="DInput_JoystickState.lX. Input_ReadGamepad thresholds this at +/-700 for horizontal gamepad controls.",
+        "Math_Vec3i32",
+        "pos",
+        0x0,
+        doc="DInput_JoystickState lX/lY/lZ axes; input paths threshold X/Y for gamepad controls.",
     ),
     member(
-        "int32_t",
-        "pos_y",
-        4,
-        doc="DInput_JoystickState.lY. JoyState_GetAxisY returns this raw value; Input_ReadGamepad thresholds it at +/-700.",
+        "Math_Vec3i32",
+        "rot",
+        0xC,
+        doc="DInput_JoystickState lRx/lRy/lRz axes; Rz is thresholded for gamepad controls.",
     ),
-    member("int32_t", "pos_z", 8),
-    member("int32_t", "rot_x", 12),
-    member(
-        "int32_t",
-        "rot_y",
-        16,
-        doc="DInput_JoystickState.lRy. Preserved so lRz and button offsets match DirectInput's DIJOYSTATE layout.",
-    ),
-    member(
-        "int32_t",
-        "rot_z",
-        20,
-        doc="DInput_JoystickState.lRz. JoyState_GetAxisRz returns this raw value; Input_ReadGamepad thresholds it at +/-600.",
-    ),
-    member("int32_t", "sliders[2]", 24),
-    member("uint32_t", "pov_hat[4]", 32),
+    member("int32_t", "sliders[2]", 0x18),
+    member("uint32_t", "pov_hat[4]", 0x20),
     member(
         "uint8_t",
         "rgb_buttons[32]",
-        48,
+        0x30,
         doc="DInput_JoystickState.rgbButtons prefix. JoyState_GetButtonByte reads byte offset 0x30 (PC EN) + button_index.",
     ),
     size=80,
@@ -1076,30 +934,30 @@ stable.struct(
 stable.struct(
     "Input_State",
     member(
-        "uint32_t", "button_bits", 0, doc="Current sampled button/control bitfield."
+        "uint32_t", "button_bits", 0x0, doc="Current sampled button/control bitfield."
     ),
     member(
         "int16_t",
         "axis_x",
-        4,
+        0x4,
         doc="Primary horizontal analog axis in signed Q12-style units.",
     ),
     member(
         "int16_t",
         "axis_y",
-        6,
+        0x6,
         doc="Primary vertical analog axis in signed Q12-style units.",
     ),
     member(
         "int16_t",
         "axis_aux_0",
-        8,
+        0x8,
         doc="Secondary/alternate analog axis slot read by extended control codes.",
     ),
     member(
         "int16_t",
         "axis_aux_1",
-        10,
+        0xA,
         doc="Secondary/alternate analog axis slot read by extended control codes.",
     ),
     size=12,
@@ -1109,9 +967,9 @@ stable.struct(
 
 stable.struct(
     "Level_BlobHeader",
-    member("uint32_t", "material_section_offset", 0),
-    member("uint32_t", "scene_graph_offset", 4),
-    member("uint32_t", "mesh_collision_offset", 8),
+    member("uint32_t", "material_section_offset", 0x0),
+    member("uint32_t", "scene_graph_offset", 0x4),
+    member("uint32_t", "mesh_collision_offset", 0x8),
     size=12,
     doc="Package level-blob header whose relative offsets are rebased from the loaded blob base. Only these offsets are modeled; the payload fields are not.",
 )
@@ -1119,21 +977,21 @@ stable.struct(
 
 stable.struct(
     "Level_DataHeader",
-    member("int32_t", "resource_manager_offset", 0),
-    member("int32_t", "object_tree_offset", 4),
-    member("int32_t", "level_data_offset", 8),
+    member("int32_t", "resource_manager_offset", 0x0),
+    member("int32_t", "object_tree_offset", 0x4),
+    member("int32_t", "level_data_offset", 0x8),
     size=12,
     doc="Level data header containing relative offsets fixed up against the loaded level-data relocation base. Only these offsets are modeled.",
 )
 
 stable.struct(
     "Level_Header",
-    member("uint32_t", "magic", 0),
-    member("uint32_t", "version", 4),
-    member("uint32_t", "material_table_off", 8),
-    member("uint32_t", "object_tree_off", 12),
-    member("uint32_t", "collision_off", 16),
-    member("uint32_t", "data_size", 20),
+    member("uint32_t", "magic", 0x0),
+    member("uint32_t", "version", 0x4),
+    member("uint32_t", "material_table_off", 0x8),
+    member("uint32_t", "object_tree_off", 0xC),
+    member("uint32_t", "collision_off", 0x10),
+    member("uint32_t", "data_size", 0x14),
     size=24,
     doc="Level-file header for the material, object-tree, and collision relative offsets. The payload after the header is still undocumented.",
 )
@@ -1141,35 +999,30 @@ stable.struct(
 
 stable.struct(
     "Material_BlendTextureSet",
-    member("DDraw_IDirectDrawSurface7*", "quadrant_0", 0),
-    member("DDraw_IDirectDrawSurface7*", "quadrant_1", 4),
-    member("DDraw_IDirectDrawSurface7*", "quadrant_2", 8),
-    member("DDraw_IDirectDrawSurface7*", "quadrant_3", 12),
+    member("DDraw_IDirectDrawSurface7*", "quadrants[4]", 0x0),
     size=16,
 )
 
 stable.struct(
     "Material_Descriptor",
-    member("uint16_t", "flags", 0),
-    member("uint8_t", "width_minus_1", 2),
-    member("uint8_t", "height_minus_1", 3),
-    member("uint32_t", "pixel_data_ofs", 4),
-    member("uint32_t", "palette_ofs", 8),
+    member("uint16_t", "flags", 0x0),
+    member("Math_SizeU8", "dimensions_minus_1", 0x2),
+    member("uint32_t", "pixel_data_ofs", 0x4),
+    member("uint32_t", "palette_ofs", 0x8),
     size=12,
 )
 
 stable.struct(
     "Material_RuntimeDescriptor",
-    member("uint16_t", "flags", 0),
-    member("uint8_t", "width_minus_1", 2),
-    member("uint8_t", "height_minus_1", 3),
-    member("uint8_t*", "pixel_data", 4),
-    member("uint16_t*", "palette", 8),
-    member("DDraw_IDirectDrawSurface7*", "texture_handles[25]", 12),
+    member("uint16_t", "flags", 0x0),
+    member("Math_SizeU8", "dimensions_minus_1", 0x2),
+    member("uint8_t*", "pixel_data", 0x4),
+    member("uint16_t*", "palette", 0x8),
+    member("DDraw_IDirectDrawSurface7*", "texture_handles[25]", 0xC),
     member(
         "uint32_t",
         "average_transparent_color",
-        112,
+        0x70,
         doc=(
             "Packed average RGB fill color for transparent/black pixels. Material_LoadTexture resets it "
             "to 0xffffffff, may store the material-table average color at +0x70 (PC EN), and "
@@ -1182,29 +1035,29 @@ stable.struct(
 
 stable.struct(
     "Render_SpriteContext",
-    member("uint32_t", "flags", 0),
-    member("Material_RuntimeDescriptor*", "texture_descriptor", 4),
+    member("uint32_t", "flags", 0x0),
+    member("Material_RuntimeDescriptor*", "texture_descriptor", 0x4),
     member(
         "uint8_t",
         "reserved_08[6]",
-        8,
+        0x8,
         doc="Opaque sprite context gap before the validated glyph advance adjustment; no stable per-byte semantics have been isolated.",
     ),
     member(
         "int16_t",
         "glyph_advance_adjust",
-        14,
+        0xE,
         doc=(
             "Signed text/glyph advance adjustment read by UI_UpdateAndRenderSprites as the "
             "fallback/spacing word at sprite context +0x0E (PC EN)."
         ),
     ),
-    member("uint8_t", "subrect_u", 16),
-    member("uint8_t", "subrect_v", 17),
+    member("uint8_t", "subrect_u", 0x10),
+    member("uint8_t", "subrect_v", 0x11),
     member(
         "uint8_t",
         "reserved_12[2]",
-        18,
+        0x12,
         doc=(
             "Tail padding for the 0x14-byte runtime footprint; no independent semantic reads/writes "
             "observed. Render_TexturedSprite may read across these bytes via a masked dword load from "
@@ -1216,27 +1069,25 @@ stable.struct(
 
 stable.struct(
     "Material_Entry",
-    member("uint8_t", "pixel_format", 0),
-    member("uint8_t", "flags_byte_1", 1),
-    member("uint8_t", "width_minus_1", 2),
-    member("uint8_t", "height_minus_1", 3),
-    member("uint32_t", "texture_offset", 4),
-    member("uint32_t", "palette_offset", 8),
-    member("uint16_t", "width", 12),
-    member("uint16_t", "height", 14),
-    member("uint8_t", "format", 16),
-    member("uint8_t", "mipmap_count", 17),
-    member("uint16_t", "reserved", 18),
+    member("uint8_t", "pixel_format", 0x0),
+    member("uint8_t", "flags_byte_1", 0x1),
+    member("Math_SizeU8", "dimensions_minus_1", 0x2),
+    member("uint32_t", "texture_offset", 0x4),
+    member("uint32_t", "palette_offset", 0x8),
+    member("Math_SizeU16", "dimensions", 0xC),
+    member("uint8_t", "format", 0x10),
+    member("uint8_t", "mipmap_count", 0x11),
+    member("uint16_t", "reserved", 0x12),
     size=20,
 )
 
 stable.struct(
     "Material_SectionHeader",
-    member("uint32_t", "node_table_offset", 0),
+    member("uint32_t", "node_table_offset", 0x0),
     member(
         "uint32_t",
         "reserved_04",
-        4,
+        0x4,
         doc=(
             "Opaque material-section header word; material fixup/loading paths use offsets/counts "
             "at +0x0 (PC EN)/+0x0C (PC EN)/+0x10 (PC EN)/+0x12 (PC EN)."
@@ -1245,16 +1096,16 @@ stable.struct(
     member(
         "uint32_t",
         "reserved_08",
-        8,
+        0x8,
         doc="Opaque material-section header word; material loading/fixup has no validated consumer for it.",
     ),
-    member("uint32_t", "material_entries_offset", 12),
-    member("int16_t", "node_count", 16),
-    member("int16_t", "material_entry_count", 18),
+    member("uint32_t", "material_entries_offset", 0xC),
+    member("int16_t", "node_count", 0x10),
+    member("int16_t", "material_entry_count", 0x12),
     member(
         "uint32_t",
         "reserved_14",
-        20,
+        0x14,
         doc="Opaque material-section header tail word following materialEntryCount at +0x12 (PC EN).",
     ),
     size=24,
@@ -1266,25 +1117,25 @@ stable.struct(
     member(
         "uint32_t",
         "reserved_00",
-        0,
+        0x0,
         doc="Zeroed by Material_BuildStructure before the 16-byte frame record is copied; no stable consumer has been observed.",
     ),
     member(
         "uint32_t",
         "reserved_04",
-        4,
+        0x4,
         doc="Zeroed by Material_BuildStructure before the 16-byte frame record is copied; no stable consumer has been observed.",
     ),
     member(
         "uint32_t",
         "reserved_08",
-        8,
+        0x8,
         doc="Zeroed by Material_BuildStructure before the 16-byte frame record is copied; no stable consumer has been observed.",
     ),
     member(
         "uint32_t",
         "material_node_ref_packed",
-        12,
+        0xC,
         doc="Packed material-node reference written by Material_BuildStructure and masked by Material_FindTextureByFrame to index material nodes.",
     ),
     size=16,
@@ -1295,7 +1146,7 @@ stable.struct(
     member(
         "uint16_t",
         "reserved_00",
-        0,
+        0x0,
         doc=(
             "Zero-initialized frame-set header word; material builders/lookups use frame_count at "
             "+0x2 (PC EN) and frame_ptr_array at +0x4 (PC EN)."
@@ -1304,13 +1155,13 @@ stable.struct(
     member(
         "int16_t",
         "frame_count",
-        2,
+        0x2,
         doc=(
             "Number of frame pointers; Material_BuildStructure writes this at +0x2 (PC EN) and "
             "Material_FindTextureByFrame uses it to bound frame_ptr_array iteration."
         ),
     ),
-    member("Material_FrameData**", "frame_ptr_array", 4),
+    member("Material_FrameData**", "frame_ptr_array", 0x4),
     size=8,
     doc="8-byte material animation frame-set header, built for Material_FindTextureByFrame lookups.",
 )
@@ -1318,21 +1169,21 @@ stable.struct(
 
 stable.struct(
     "Material_DataRef",
-    member("uint32_t", "level_base_address", 0),
-    member("uint32_t", "material_id", 4),
-    member("uint32_t", "actual_dimensions", 8),
-    member("uint8_t", "reserved[12]", 12),
+    member("uint32_t", "level_base_address", 0x0),
+    member("uint32_t", "material_id", 0x4),
+    member("Math_SizeU16", "actual_dimensions", 0x8),
+    member("uint8_t", "reserved[12]", 0xC),
     size=24,
 )
 
 stable.struct(
     "Material_NodeRef",
-    member("int32_t", "material_index", 0),
-    member("DDraw_IDirectDrawSurface7*", "texture_surface", 4),
-    member("uint8_t*", "palette_ptr", 8),
-    member("int16_t", "frame_index", 12),
-    member("int16_t", "blend_mode", 14),
-    member("uint32_t", "runtime_flags", 16),
+    member("int32_t", "material_index", 0x0),
+    member("DDraw_IDirectDrawSurface7*", "texture_surface", 0x4),
+    member("uint8_t*", "palette_ptr", 0x8),
+    member("int16_t", "frame_index", 0xC),
+    member("int16_t", "blend_mode", 0xE),
+    member("uint32_t", "runtime_flags", 0x10),
     size=20,
 )
 
@@ -1341,19 +1192,19 @@ stable.struct(
     member(
         "Material_SectionHeader*",
         "material_section",
-        0,
+        0x0,
         doc="Material section pointer written by Material_BuildStructure and read by Material_FindTextureByFrame.",
     ),
     member(
         "Material_TableEntry*",
         "material_table_entry",
-        4,
+        0x4,
         doc="36-byte material table entry pointer written by Material_BuildStructure.",
     ),
     member(
         "Material_FrameSet*",
         "frame_set",
-        8,
+        0x8,
         doc="Optional frame-set table written by Material_BuildStructure and searched by Material_FindTextureByFrame.",
     ),
     size=12,
@@ -1362,275 +1213,240 @@ stable.struct(
 
 stable.struct(
     "Material_State",
-    member("uint32_t", "flags", 0),
-    member("uint32_t", "material_id", 4),
-    member("uint8_t", "actual_width", 8),
-    member("uint8_t", "actual_height", 9),
-    member("uint16_t", "padding", 10),
-    member("DDraw_IDirectDrawSurface7*", "texture_handles[4]", 12),
-    member("DDraw_IDirectDrawSurface7*", "backface_handles[4]", 28),
-    member("uint32_t", "ambient_color", 44),
-    member("uint32_t", "diffuse_color", 48),
+    member("uint32_t", "flags", 0x0),
+    member("uint32_t", "material_id", 0x4),
+    member("Math_SizeU8", "actual_dimensions", 0x8),
+    member("uint16_t", "padding", 0xA),
+    member("DDraw_IDirectDrawSurface7*", "texture_handles[4]", 0xC),
+    member("DDraw_IDirectDrawSurface7*", "backface_handles[4]", 0x1C),
+    member("uint32_t", "ambient_color", 0x2C),
+    member("uint32_t", "diffuse_color", 0x30),
     size=52,
 )
 
 stable.struct(
     "Material_Table",
-    member("uint16_t", "material_count", 0),
-    member("uint16_t", "flags", 2),
-    member("Pkg_MaterialTableEntry*", "entries_ptr", 4),
-    member("uint32_t", "reserved", 8),
-    member("uint32_t", "materials_offset", 12),
-    member("uint16_t", "secondary_count", 16),
-    member("uint16_t", "entry_count", 18),
+    member("uint16_t", "material_count", 0x0),
+    member("uint16_t", "flags", 0x2),
+    member("Pkg_MaterialTableEntry*", "entries_ptr", 0x4),
+    member("uint32_t", "reserved", 0x8),
+    member("uint32_t", "materials_offset", 0xC),
+    member("uint16_t", "secondary_count", 0x10),
+    member("uint16_t", "entry_count", 0x12),
     size=20,
 )
 
 stable.struct(
     "Material_TableEntry",
-    member("uint16_t", "flags", 0),
-    member("uint8_t", "flags_byte_2", 2),
-    member("uint8_t", "flags_byte_3", 3),
+    member("uint16_t", "flags", 0x0),
+    member("uint8_t", "flags_bytes[2]", 0x2),
     member(
         "Material_Entry*",
         "material_ptr",
-        4,
+        0x4,
         doc="Runtime/fixed-up texture descriptor or material entry pointer for this 36-byte render material record.",
     ),
     member(
         "uint32_t",
         "material_tint",
-        8,
+        0x8,
         doc="Tint/color word copied into render batches by Render_SetPolygonUVs.",
     ),
     member(
-        "uint32_t",
-        "texture_info_packed",
-        12,
-        doc="Packed texture info word copied into render batches; Render_DrawQuad consumes the low width/height bytes.",
+        "Material_TextureInfo",
+        "texture_info",
+        0xC,
+        doc="Texture width/height plus reserved upper bytes copied into render batches.",
     ),
-    member("uint8_t", "uv_tile_offset_u", 16),
-    member("uint8_t", "uv_tile_offset_v", 17),
+    member("Pkg_UVCoord", "uv_tile_offset", 0x10),
     member(
         "uint8_t",
         "texture_info_hi_reserved[2]",
-        18,
+        0x12,
         doc="Upper bytes of the packed texture/UV info area; no stable semantic read has been isolated.",
     ),
     member(
         "uint8_t",
         "color_adjust_r",
-        20,
+        0x14,
         doc="RGB adjustment byte read by ComputeVertexColors.",
     ),
     member(
         "uint8_t",
         "color_adjust_g",
-        21,
+        0x15,
         doc="RGB adjustment byte read by ComputeVertexColors.",
     ),
     member(
         "uint8_t",
         "color_adjust_b",
-        22,
+        0x16,
         doc="RGB adjustment byte read by ComputeVertexColors.",
     ),
-    member("uint8_t", "reserved_17", 23),
+    member("uint8_t", "reserved_17", 0x17),
     member(
         "Material_TableEntry*",
         "next_material_entry",
-        24,
+        0x18,
         doc="Chained 36-byte material-table entry pointer fixed up by Material_FixupAndLoad.",
     ),
-    member("uint16_t", "explicit_uv_0", 28),
-    member("uint16_t", "explicit_uv_1", 30),
-    member("uint16_t", "explicit_uv_2", 32),
-    member("uint16_t", "explicit_uv_3", 34),
+    member("uint16_t", "explicit_uv[4]", 0x1C),
     size=36,
 )
 
 stable.struct(
     "Material_TextureHashEntry",
-    member("Material_Entry*", "material_entry_ptr", 0),
-    member("int16_t", "width", 4),
-    member("int16_t", "height", 6),
-    member("DDraw_IDirectDrawSurface7*", "texture_data", 8),
-    member("Animation_FrameData*", "anim_frame_data", 12),
+    member("Material_Entry*", "material_entry_ptr", 0x0),
+    member("Math_SizeI16", "dimensions", 0x4),
+    member("DDraw_IDirectDrawSurface7*", "texture_data", 0x8),
+    member("Animation_FrameData*", "anim_frame_data", 0xC),
     size=16,
 )
 
 stable.struct(
     "Math_AABB",
-    member("int32_t", "min_x", 0),
-    member("int32_t", "min_y", 4),
-    member("int32_t", "min_z", 8),
+    member("Math_Vec3i32", "min", 0x0),
     size=12,
 )
 
 stable.struct(
     "Math_Matrix3x3i16",
-    member("int16_t", "m00", 0),
-    member("int16_t", "m01", 2),
-    member("int16_t", "m02", 4),
-    member("int16_t", "m10", 6),
-    member("int16_t", "m11", 8),
-    member("int16_t", "m12", 10),
-    member("int16_t", "m20", 12),
-    member("int16_t", "m21", 14),
-    member("int16_t", "m22", 16),
+    member("int16_t", "m00", 0x0),
+    member("int16_t", "m01", 0x2),
+    member("int16_t", "m02", 0x4),
+    member("int16_t", "m10", 0x6),
+    member("int16_t", "m11", 0x8),
+    member("int16_t", "m12", 0xA),
+    member("int16_t", "m20", 0xC),
+    member("int16_t", "m21", 0xE),
+    member("int16_t", "m22", 0x10),
     size=18,
 )
 
 stable.struct(
+    "Actor_AnimationComponentState",
+    member("int16_t", "animation_step", 0x0),
+    member("int16_t", "component_counts", 0x2),
+    size=4,
+)
+
+stable.struct(
     "Actor_State",
-    member("Actor_State*", "list_next", 0),
-    member("Actor_State*", "next_actor", 4),
-    member("Entity_State*", "owner_entity", 8),
-    member("int16_t", "anim_state", 12),
-    member("int16_t", "anim_flags", 14),
-    member("int16_t", "contact_tangent", 16),
-    member("int16_t", "contact_tangent_1", 18),
-    member("int16_t", "contact_tangent_2", 20),
-    member("int16_t", "contact_tangent_3", 22),
-    member("int16_t", "contact_tangent_4", 24),
-    member("int16_t", "contact_tangent_5", 26),
-    member("int16_t", "contact_normal_z", 28),
-    member("int16_t", "contact_normal_z_hi", 30),
-    member("int32_t", "attach_offset_x", 32),
-    member("int32_t", "attach_offset_y", 36),
-    member("int32_t", "attach_offset_z", 40),
+    member("Actor_State*", "list_next", 0x0),
+    member("Actor_State*", "next_actor", 0x4),
+    member("Entity_State*", "owner_entity", 0x8),
+    member("int16_t", "anim_state", 0xC),
+    member("int16_t", "anim_flags", 0xE),
+    member("int16_t", "contact_tangent[6]", 0x10),
+    member("int16_t", "contact_normal_z", 0x1C),
+    member("int16_t", "contact_normal_z_hi", 0x1E),
+    member("Math_Vec3i32", "attach_offset", 0x20),
     member(
         "Math_Matrix3x3i16",
         "rot_mat",
-        44,
+        0x2C,
         doc="Actor-local rotation/render transform matrix initialized by Entity_SpawnActor.",
     ),
-    member("int16_t", "rot_mat_padding", 62),
+    member("int16_t", "rot_mat_padding", 0x3E),
     member(
-        "int32_t",
-        "position_x",
-        64,
-        doc="Logical actor position X in game fixed-point units.",
+        "Math_Vec3i32",
+        "position",
+        0x40,
+        doc="Logical actor position in game fixed-point units.",
     ),
+    member("Math_Vec3i32", "sub_pos", 0x4C),
+    member("int32_t", "attach_flags", 0x58),
+    member("int16_t", "anim_seq_index", 0x5C),
+    member("int16_t", "anim_seq_timer", 0x5E),
+    member("int32_t", "anim_frame_time", 0x60),
+    member("uint8_t", "actor_type", 0x64),
+    member("uint8_t", "lifecycle_flags", 0x65),
+    member("uint8_t", "attach_slot_index", 0x66),
+    member("uint8_t", "render_layer", 0x67),
     member(
-        "int32_t",
-        "position_y",
-        68,
-        doc="Logical actor position Y in game fixed-point units.",
-    ),
-    member(
-        "int32_t",
-        "position_z",
-        72,
-        doc="Logical actor position Z in game fixed-point units.",
-    ),
-    member("int32_t", "sub_pos_x", 76),
-    member("int32_t", "sub_pos_y", 80),
-    member("int32_t", "sub_pos_z", 84),
-    member("int32_t", "attach_flags", 88),
-    member("int16_t", "anim_seq_index", 92),
-    member("int16_t", "anim_seq_timer", 94),
-    member("int32_t", "anim_frame_time", 96),
-    member("uint8_t", "actor_type", 100),
-    member("uint8_t", "lifecycle_flags", 101),
-    member("uint8_t", "attach_slot_index", 102),
-    member("uint8_t", "render_layer", 103),
-    member(
-        "int32_t",
-        "scale_xy",
-        104,
+        "Math_Vec2i16",
+        "visual_scale",
+        0x68,
         doc=(
-            "Packed XY visual scale. Fabricated values can destabilize "
+            "Unpacked XY visual scale. Fabricated values can destabilize "
             "Actor_ProcessRendering, so engine-owned spawn/render paths are safer "
             "than direct writes."
         ),
     ),
-    member("Mesh_Object*", "mesh_data_ptr", 108),
-    member("void*", "scene_vertex_data", 112),
-    member("void*", "scene_anim_data", 116),
-    member("int16_t", "chain_timer", 120),
-    member("int16_t", "chain_state", 122),
-    member("Animation_ControllerGroup*", "anim_ctrl_ptr", 124),
-    member("void*", "anim_controller_root", 128),
-    member("void*", "collision_list_heads", 132),
-    member("int32_t", "behavior_flags", 136),
+    member("Mesh_Object*", "mesh_data_ptr", 0x6C),
+    member("void*", "scene_vertex_data", 0x70),
+    member("void*", "scene_anim_data", 0x74),
+    member("int16_t", "chain_timer", 0x78),
+    member("int16_t", "chain_state", 0x7A),
+    member("Animation_ControllerGroup*", "anim_ctrl_ptr", 0x7C),
+    member("void*", "anim_controller_root", 0x80),
+    member("void*", "collision_list_heads", 0x84),
+    member("int32_t", "behavior_flags", 0x88),
     member(
         "int32_t",
         "mesh_polygon_count_or_ground_y",
-        140,
+        0x8C,
         doc=(
             "Render-coupled word at actor+0x8C (PC EN); mesh rendering paths pass it as the "
             "count/limit for 24-byte records reached through mesh_data_ptr, whose copies require coherent "
             "visual state."
         ),
     ),
-    member("int32_t", "reserved_90", 144),
-    member("void*", "attach_point_table", 148),
+    member("int32_t", "reserved_90", 0x90),
+    member("void*", "attach_point_table", 0x94),
     member(
-        "int32_t",
-        "world_render_pos_x",
-        152,
-        doc="Render-position mirror X used by camera/render paths; transform writes require logical-position coherence.",
+        "Math_Vec3i32",
+        "world_render_pos",
+        0x98,
+        doc="Render-position mirror used by camera/render paths; transform writes require logical-position coherence.",
     ),
-    member(
-        "int32_t",
-        "world_render_pos_y",
-        156,
-        doc="Render-position mirror Y used by camera/render paths; transform writes require logical-position coherence.",
-    ),
-    member(
-        "int32_t",
-        "world_render_pos_z",
-        160,
-        doc="Render-position mirror Z used by camera/render paths; transform writes require logical-position coherence.",
-    ),
-    member("int32_t", "height_offset", 164),
-    member("Actor_State*", "collision_next", 168),
-    member("Animation_StateTable*", "anim_asset_table", 172),
+    member("int32_t", "height_offset", 0xA4),
+    member("Actor_State*", "collision_next", 0xA8),
+    member("Animation_StateTable*", "anim_asset_table", 0xAC),
     member(
         "Animation_MorphTargetVertex**",
         "visual_morph_or_skin_target_table",
-        176,
+        0xB0,
         doc=(
             "Visual morph/skin target pointer table used by Bone_TransformVertices_Weighted at actor+0xB0 "
             "(PC EN); it is paired with borrowed mesh/scene vertex resources."
         ),
     ),
-    member("int32_t", "anim_tick", 180),
+    member("int32_t", "anim_tick", 0xB4),
     member(
-        "int32_t",
-        "animation_step_and_component_counts",
-        184,
+        "Actor_AnimationComponentState",
+        "animation_component_state",
+        0xB8,
         doc=(
-            "Packed animation/component state: Model_AdvanceAnimation reads the low int16 as per-tick "
+            "Unpacked animation/component state: Model_AdvanceAnimation reads the low int16 as per-tick "
             "animation advance, while trail/component paths use the high half around actor+0xBA (PC EN)."
         ),
     ),
-    member("Component_TrailObject*", "trail_chain_ptr", 188),
-    member("Component_Instance*", "component_array", 192),
-    member("uint8_t", "collision_state_a", 196),
-    member("uint8_t", "collision_state_b", 197),
+    member("Component_TrailObject*", "trail_chain_ptr", 0xBC),
+    member("Component_Instance*", "component_array", 0xC0),
+    member("uint8_t", "collision_state_a", 0xC4),
+    member("uint8_t", "collision_state_b", 0xC5),
     member(
         "uint8_t",
         "actor_collision_subtype_or_zero",
-        198,
+        0xC6,
         doc=(
             "Actor/actor collision subtype byte. Nonzero paths dereference "
             "collision_component_or_parent_component at actor+0xC8 (PC EN)."
         ),
     ),
-    member("uint8_t", "collision_state_d", 199),
+    member("uint8_t", "collision_state_d", 0xC7),
     member(
         "Component_Instance*",
         "collision_component_or_parent_component",
-        200,
+        0xC8,
         doc="Collision component pointer used when actor_collision_subtype_or_zero is nonzero; preserve it with collision state bytes.",
     ),
-    member("int16_t", "fade_timer", 204),
+    member("int16_t", "fade_timer", 0xCC),
     member(
         "int16_t",
         "scale_factor",
-        206,
+        0xCE,
         doc=(
             "Actor scale factor copied through runtime actor paths. Direct writes require "
             "additional visual-state handling."
@@ -1639,21 +1455,19 @@ stable.struct(
     member(
         "Scene_Node**",
         "render_node_list",
-        208,
+        0xD0,
         doc=(
             "NULL-terminated runtime render node list read by Scene_RenderNodeTree. "
             "Runtime rendering fixes iterate this list with pointer guards."
         ),
     ),
-    member("int32_t", "velocity_x", 212),
-    member("int32_t", "velocity_y", 216),
-    member("int32_t", "velocity_z", 220),
-    member("int32_t", "spin_angle", 224),
-    member("int32_t", "spin_speed", 228),
+    member("Math_Vec3i32", "velocity", 0xD4),
+    member("int32_t", "spin_angle", 0xE0),
+    member("int32_t", "spin_speed", 0xE4),
     member(
         "Collision_Node*",
         "ground_collision_node",
-        232,
+        0xE8,
         doc=(
             "Ground/contact collision or scene-geometry node pointer. Polygon access routes "
             "through the node's polygon/vertex arrays."
@@ -1662,155 +1476,153 @@ stable.struct(
     member(
         "void*",
         "ground_contact_ptr",
-        236,
+        0xEC,
         doc=(
             "Ground-contact pointer paired with ground_collision_node and passed through polygon/contact helpers."
         ),
     ),
-    member("int32_t", "rotation", 240),
-    member("Pkg_ActorRecord*", "record_ptr", 244),
-    member("Actor_State*", "child_actor", 248),
-    member("int32_t", "fade_alpha", 252),
-    member("int32_t", "path_trace_mode", 256),
+    member("int32_t", "rotation", 0xF0),
+    member("Pkg_ActorRecord*", "record_ptr", 0xF4),
+    member("Actor_State*", "child_actor", 0xF8),
+    member("int32_t", "fade_alpha", 0xFC),
+    member("int32_t", "path_trace_mode", 0x100),
     member(
         "Pkg_LODEntry*",
         "level_local_lod_redirect_record",
-        260,
+        0x104,
         doc=(
             "Level-local LOD redirect record; Actor_ProcessRendering follows this record "
             "to an alternate actor/render source tied to the current level."
         ),
     ),
-    member("Actor_State*", "parent_actor", 264),
-    member("int32_t", "collision_push_xz", 268),
-    member("int32_t", "collision_response_xz", 272),
-    member("int32_t", "alloc_size", 276),
-    member("int32_t", "camera_mat_xz", 280),
-    member("int32_t", "camera_mat_yz", 284),
-    member("int32_t", "camera_pitch", 288),
-    member("Math_Matrix3x3i16*", "camera_rot_matrix_ptr", 292),
-    member("Actor_State*", "linked_actor", 296),
-    member("int32_t", "camera_cos_factor", 300),
-    member("void*", "camera_scratch_vec_ptr", 304),
-    member("int32_t", "camera_yaw", 308),
-    member("int32_t", "reserved_138", 312),
-    member("int32_t", "script_timer", 316),
-    member("uint8_t", "script_entity_index", 320),
+    member("Actor_State*", "parent_actor", 0x108),
+    member("int32_t", "collision_push_xz", 0x10C),
+    member("int32_t", "collision_response_xz", 0x110),
+    member("int32_t", "alloc_size", 0x114),
+    member("int32_t", "camera_mat_xz", 0x118),
+    member("int32_t", "camera_mat_yz", 0x11C),
+    member("int32_t", "camera_pitch", 0x120),
+    member("Math_Matrix3x3i16*", "camera_rot_matrix_ptr", 0x124),
+    member("Actor_State*", "linked_actor", 0x128),
+    member("int32_t", "camera_cos_factor", 0x12C),
+    member("void*", "camera_scratch_vec_ptr", 0x130),
+    member("int32_t", "camera_yaw", 0x134),
+    member("int32_t", "reserved_138", 0x138),
+    member("int32_t", "script_timer", 0x13C),
+    member("uint8_t", "script_entity_index", 0x140),
     member(
         "uint8_t",
         "script_entity_stack[3]",
-        321,
+        0x141,
         doc="Three contiguous script-entity stack bytes used as an array.",
     ),
-    member("int32_t", "path_best_distance", 324),
-    member("int32_t", "path_target_x", 328),
-    member("int32_t", "path_target_y", 332),
-    member("int32_t", "path_target_z", 336),
-    member("int32_t", "path_result_x", 340),
-    member("int32_t", "camera_sin_factor", 344),
-    member("int32_t", "path_result_z", 348),
-    member("int32_t", "path_waypoint_x", 352),
-    member("int32_t", "path_waypoint_z", 356),
-    member("int32_t", "path_waypoint_y_2", 360),
-    member("int32_t", "path_facing", 364),
-    member("int32_t", "live_velocity", 368),
-    member("int32_t", "default_coll_radius", 372),
-    member("int32_t", "default_coll_height", 376),
-    member("uint32_t", "default_flags", 380),
+    member("int32_t", "path_best_distance", 0x144),
+    member("Math_Vec3i32", "path_target", 0x148),
+    member("int32_t", "path_result_x", 0x154),
+    member("int32_t", "camera_sin_factor", 0x158),
+    member("int32_t", "path_result_z", 0x15C),
+    member("int32_t", "path_waypoint_x", 0x160),
+    member("int32_t", "path_waypoint_z", 0x164),
+    member("int32_t", "path_waypoint_y_2", 0x168),
+    member("int32_t", "path_facing", 0x16C),
+    member("int32_t", "live_velocity", 0x170),
+    member("int32_t", "default_coll_radius", 0x174),
+    member("int32_t", "default_coll_height", 0x178),
+    member("uint32_t", "default_flags", 0x17C),
     member(
         "int32_t",
         "transition_saved_velocity_x",
-        384,
+        0x180,
         doc="Saved pre-transition velocity_x copied from the live actor and restored by Actor_SnapToPosition.",
     ),
     member(
         "int32_t",
         "transition_saved_velocity_y",
-        388,
+        0x184,
         doc="Saved pre-transition velocity_y copied from the live actor and restored by Actor_SnapToPosition.",
     ),
     member(
         "int32_t",
         "transition_saved_velocity_z",
-        392,
+        0x188,
         doc="Saved pre-transition velocity_z copied from the live actor and restored by Actor_SnapToPosition.",
     ),
     member(
         "int16_t",
         "transition_timer",
-        396,
+        0x18C,
         doc="Transition/countdown timer set by camera/snap setup and decremented by Actor_ProcessSnapAndEntityUpdate.",
     ),
     member(
         "int16_t",
         "transition_target_angle",
-        398,
+        0x18E,
         doc="Target facing angle passed into Actor_CalculateRotation during snap/transition updates.",
     ),
     member(
         "int32_t",
         "transition_rotation_param",
-        400,
+        0x190,
         doc="Rotation step/speed parameter passed as Actor_CalculateRotation third argument; the callee scales it before applying the facing update.",
     ),
     member(
         "int16_t",
         "behavior_state",
-        404,
+        0x194,
         doc="Player/AI behavior substate switched by Actor_ProcessPlayerBehavior; nonzero suppresses selected collision/despawn paths.",
     ),
     member(
         "int16_t",
         "behavior_timer",
-        406,
+        0x196,
         doc="Behavior phase timer/frame counter set to animation/countdown durations and decremented by player/AI behavior paths.",
     ),
     member(
         "Component_Instance*",
         "runtime_component_array",
-        408,
+        0x198,
         doc="Pointer to runtime Component_Instance array initialized by Entity_SpawnActor; entries use the 0x224-byte public Component_Instance layout.",
     ),
     member(
         "Actor_State*",
         "tracked_actor_0",
-        412,
+        0x19C,
         doc="Tracked/attached actor pointer slot released by Actor_ReleaseBindings with target refcount decrement.",
     ),
     member(
         "Actor_State*",
         "tracked_actor_1",
-        416,
+        0x1A0,
         doc="Tracked/attached actor pointer slot released by Actor_ReleaseBindings/Actor_ReleaseAttachment with target refcount decrement.",
     ),
     member(
         "int32_t",
         "candidate_actor_distance_0",
-        420,
+        0x1A4,
         doc="Nearest/candidate actor distance for tracked slot 0 used by player behavior and collision scans.",
     ),
     member(
         "Actor_State*",
         "candidate_actor_0",
-        424,
+        0x1A8,
         doc="Candidate actor pointer for tracked slot 0 used by player behavior and collision scans.",
     ),
     member(
         "int32_t",
         "candidate_actor_distance_1",
-        428,
+        0x1AC,
         doc="Nearest/candidate actor distance for tracked slot 1 used by collision scans.",
     ),
     member(
         "Actor_State*",
         "candidate_actor_1",
-        432,
+        0x1B0,
         doc="Candidate actor pointer for tracked slot 1 used by collision scans.",
     ),
     member(
         "int32_t",
         "scratch_reserved[4]",
-        436,
+        0x1B4,
         doc="Zeroed actor scratch tail; no direct semantic references have been isolated for these four dwords.",
     ),
     size=452,
@@ -1818,217 +1630,188 @@ stable.struct(
 
 stable.struct(
     "Component_Instance",
-    member("Component_Instance*", "parent_comp", 0),
-    member("int32_t", "timer_packed", 4),
-    member("Component_Instance*", "next_in_chain", 8),
-    member("Component_Instance*", "prev_in_chain", 12),
-    member("Scene_Node*", "scene_node_ptr", 16),
-    member("Component_Definition*", "definition_ptr", 20),
-    member("Actor_State*", "target_actor", 24),
-    member("int32_t", "state_word", 28),
-    member("int16_t", "flags", 32),
-    member("int16_t", "flags_hi", 34),
-    member("int32_t", "collision_flags", 36),
-    member("int32_t", "behavior_state", 40),
-    member("int32_t", "local_rot", 44),
-    member("int16_t", "local_rot_02", 48),
-    member("int16_t", "local_rot_hi", 50),
-    member("int32_t", "local_rot_11", 52),
-    member("int32_t", "local_rot_20", 56),
-    member("int32_t", "local_rot_22", 60),
-    member("int32_t", "local_pos_x", 64),
-    member("int32_t", "local_pos_y", 68),
-    member("uint8_t", "spawn_count_byte_0", 72),
-    member("uint8_t", "active_count", 73),
-    member("uint8_t", "spawn_count_byte_2", 74),
-    member("uint8_t", "active_max", 75),
-    member("int32_t", "spawn_interval", 76),
-    member("int16_t", "spawn_delay", 80),
-    member("int16_t", "lifetime", 82),
-    member("int32_t", "spawn_offset_x", 84),
-    member("int32_t", "spawn_offset_y", 88),
-    member("int32_t", "spawn_offset_z", 92),
-    member("Scene_Node*", "lod_node_ptr_0", 96),
-    member("Scene_Node*", "lod_node_ptr_1", 100),
-    member("Scene_Node*", "lod_node_ptr_2", 104),
-    member("Scene_Node*", "shadow_node_ptr", 108),
-    member("void*", "sound_slot_table", 112),
-    member("int32_t", "local_scale_x", 116),
-    member("int32_t", "local_scale_y", 120),
-    member("int32_t", "local_scale_z", 124),
-    member("int32_t", "bone_offset_x", 128),
-    member("int32_t", "bone_offset_y", 132),
-    member("int32_t", "bone_offset_z", 136),
-    member("int32_t", "transform_flags", 140),
-    member("int32_t", "render_distance_sq", 144),
-    member("int32_t", "visibility_mask", 148),
-    member("int32_t", "world_pos_x", 152),
-    member("int32_t", "world_pos_y", 156),
-    member("int32_t", "world_pos_z", 160),
-    member("int32_t", "prev_world_pos_x", 164),
-    member("int32_t", "prev_world_pos_y", 168),
-    member("int32_t", "prev_world_pos_z", 172),
-    member("int32_t", "velocity_x", 176),
-    member("int32_t", "velocity_y", 180),
-    member("int32_t", "velocity_z", 184),
-    member("int32_t", "acceleration", 188),
-    member("int32_t", "ground_height", 192),
-    member("int32_t", "projectile_state", 196),
-    member("int32_t", "world_pos_ref", 200),
-    member("int32_t", "projectile_timer", 204),
+    member("Component_Instance*", "parent_comp", 0x0),
+    member("int32_t", "timer_packed", 0x4),
+    member("Component_Instance*", "next_in_chain", 0x8),
+    member("Component_Instance*", "prev_in_chain", 0xC),
+    member("Scene_Node*", "scene_node_ptr", 0x10),
+    member("Component_Definition*", "definition_ptr", 0x14),
+    member("Actor_State*", "target_actor", 0x18),
+    member("int32_t", "state_word", 0x1C),
+    member("int16_t", "flags", 0x20),
+    member("int16_t", "flags_hi", 0x22),
+    member("int32_t", "collision_flags", 0x24),
+    member("int32_t", "behavior_state", 0x28),
+    member("int32_t", "local_rot", 0x2C),
+    member("int16_t", "local_rot_02", 0x30),
+    member("int16_t", "local_rot_hi", 0x32),
+    member("int32_t", "local_rot_11", 0x34),
+    member("int32_t", "local_rot_20", 0x38),
+    member("int32_t", "local_rot_22", 0x3C),
+    member("Math_Vec2i32", "local_pos_xy", 0x40),
+    member("uint8_t", "spawn_count_byte_0", 0x48),
+    member("uint8_t", "active_count", 0x49),
+    member("uint8_t", "spawn_count_byte_2", 0x4A),
+    member("uint8_t", "active_max", 0x4B),
+    member("int32_t", "spawn_interval", 0x4C),
+    member("int16_t", "spawn_delay", 0x50),
+    member("int16_t", "lifetime", 0x52),
+    member("Math_Vec3i32", "spawn_offset", 0x54),
+    member("Scene_Node*", "lod_node_ptrs[3]", 0x60),
+    member("Scene_Node*", "shadow_node_ptr", 0x6C),
+    member("void*", "sound_slot_table", 0x70),
+    member("Math_Vec3i32", "local_scale", 0x74),
+    member("Math_Vec3i32", "bone_offset", 0x80),
+    member("int32_t", "transform_flags", 0x8C),
+    member("int32_t", "render_distance_sq", 0x90),
+    member("int32_t", "visibility_mask", 0x94),
+    member("Math_Vec3i32", "world_pos", 0x98),
+    member("Math_Vec3i32", "prev_world_pos", 0xA4),
+    member("Math_Vec3i32", "velocity", 0xB0),
+    member("int32_t", "acceleration", 0xBC),
+    member("int32_t", "ground_height", 0xC0),
+    member("int32_t", "projectile_state", 0xC4),
+    member("int32_t", "world_pos_ref", 0xC8),
+    member("int32_t", "projectile_timer", 0xCC),
     member(
         "Actor_State**",
         "owner_actor_ref",
-        208,
+        0xD0,
         doc="Pointer to an Actor_State* slot; projectile logic dereferences it and checks the owner's lifecycle_flags.",
     ),
-    member("int32_t", "homing_vel_x", 212),
-    member("int32_t", "homing_vel_y", 216),
-    member("int32_t", "homing_vel_z", 220),
-    member("int16_t", "yaw_angle", 224),
-    member("int16_t", "yaw_angle_prev", 226),
-    member("int16_t", "pitch_angle", 228),
-    member("int16_t", "pitch_angle_prev", 230),
-    member("int32_t", "angular_vel_yaw", 232),
-    member("int32_t", "angular_vel_pitch", 236),
-    member("int32_t", "spin_rate", 240),
-    member("Component_SpawnParams*", "spawn_context", 244),
-    member("int32_t", "height_ref_comp", 248),
-    member("Component_TrailObject*", "trail_effect_ptr", 252),
-    member("int32_t", "collision_group", 256),
-    member("int32_t", "damage_cooldown_timer", 260),
-    member("int32_t", "script_vars[71]", 264),
+    member("Math_Vec3i32", "homing_vel", 0xD4),
+    member("int16_t", "yaw_angle", 0xE0),
+    member("int16_t", "yaw_angle_prev", 0xE2),
+    member("int16_t", "pitch_angle", 0xE4),
+    member("int16_t", "pitch_angle_prev", 0xE6),
+    member("int32_t", "angular_vel_yaw", 0xE8),
+    member("int32_t", "angular_vel_pitch", 0xEC),
+    member("int32_t", "spin_rate", 0xF0),
+    member("Component_SpawnParams*", "spawn_context", 0xF4),
+    member("int32_t", "height_ref_comp", 0xF8),
+    member("Component_TrailObject*", "trail_effect_ptr", 0xFC),
+    member("int32_t", "collision_group", 0x100),
+    member("int32_t", "damage_cooldown_timer", 0x104),
+    member("int32_t", "script_vars[71]", 0x108),
     size=548,
 )
 
 stable.struct(
     "Entity_State",
-    member("uint32_t", "flags", 0),
+    member("uint32_t", "flags", 0x0),
     member(
-        "int32_t",
-        "bonus_respawn_pos_x",
-        4,
-        doc="Inactive/pre-spawn entity position x; also mirrors Entity_State bonus respawn position.",
-    ),
-    member(
-        "int32_t",
-        "bonus_respawn_pos_y",
-        8,
-        doc="Inactive/pre-spawn entity position y; also mirrors Entity_State bonus respawn position.",
-    ),
-    member(
-        "int32_t",
-        "bonus_respawn_pos_z",
-        12,
-        doc="Inactive/pre-spawn entity position z; also mirrors Entity_State bonus respawn position.",
+        "Math_Vec3i32",
+        "bonus_respawn_pos",
+        0x4,
+        doc="Inactive/pre-spawn entity position; also mirrors Entity_State bonus respawn position.",
     ),
     member(
         "int32_t",
         "collision_radius_sq",
-        16,
+        0x10,
         doc="Squared visibility/collision radius used by Entity_UpdateVisibilityAndSpawn.",
     ),
     member(
         "int32_t",
         "collision_height_sq",
-        20,
+        0x14,
         doc="Squared visibility/collision height used by Entity_UpdateVisibilityAndSpawn.",
     ),
-    member("uint8_t", "active_flag", 24),
+    member("uint8_t", "active_flag", 0x18),
     member(
         "uint8_t",
         "bonus_respawn_mode",
-        25,
+        0x19,
         doc="Entity respawn mode byte; Player_RespawnAfterDeath checks entity-slot state at this offset.",
     ),
     member(
         "uint16_t",
         "reserved_1a",
-        26,
+        0x1A,
         doc="Opaque entity record pad.",
     ),
-    member("int32_t*", "bonus_respawn_target_pos", 28),
-    member("int16_t", "attach_offset_x", 32),
+    member("int32_t*", "bonus_respawn_target_pos", 0x1C),
+    member("int16_t", "attach_offset_x", 0x20),
     member(
         "int16_t",
         "default_anim_state",
-        34,
+        0x22,
         doc="Default animation state reset to 0xFFFF by Entity_UpdateVisibilityAndSpawn/despawn paths.",
     ),
-    member("int32_t", "local_vars[9]", 36),
-    member("void*", "script_base_ptr", 72),
-    member("void*", "actor_template_header_ref", 76),
-    member("void*", "shared_ref_50", 80),
-    member("void*", "shared_ref_54", 84),
+    member("int32_t", "local_vars[9]", 0x24),
+    member("void*", "script_base_ptr", 0x48),
+    member("void*", "actor_template_header_ref", 0x4C),
+    member("void*", "shared_ref_50", 0x50),
+    member("void*", "shared_ref_54", 0x54),
     member(
         "int32_t*",
         "runtime_target_pos",
-        88,
+        0x58,
         doc="Runtime/default target-position pointer copied into cached_actor_defaults by Entity_SpawnActor.",
     ),
     member(
         "uint8_t",
         "reserved_5c[44]",
-        92,
+        0x5C,
         doc="Opaque portion of the 0x68 source block copied by Entity_SpawnActor into cached_actor_defaults; no stable per-field semantics have been isolated.",
     ),
     member(
         "int32_t",
         "respawn_transition_speed",
-        136,
+        0x88,
         doc="Default/source-block transition speed mirrored from Entity_State layout.",
     ),
     member(
         "uint8_t",
         "reserved_8c[52]",
-        140,
+        0x8C,
         doc="Continuation of the copied actor-default block; no stable per-field semantics have been isolated.",
     ),
     member(
         "uint8_t",
         "cached_actor_defaults[104]",
-        192,
+        0xC0,
         doc="Entity_SpawnActor caches 0x68 bytes here; Entity_CopyDataToActor copies this block into Pkg_ActorRecord+0x30 (PC EN).",
     ),
-    member("Actor_State*", "active_actor", 296),
-    member("uint8_t", "padding_12c[16]", 300),
-    member("int32_t", "script_timer", 316),
-    member("uint8_t", "behavior_index", 320),
-    member("uint8_t", "behavior_stack[3]", 321),
+    member("Actor_State*", "active_actor", 0x128),
+    member("uint8_t", "padding_12c[16]", 0x12C),
+    member("int32_t", "script_timer", 0x13C),
+    member("uint8_t", "behavior_index", 0x140),
+    member("uint8_t", "behavior_stack[3]", 0x141),
     member(
         "uint8_t",
         "reserved_144[40]",
-        324,
+        0x144,
         doc="Runtime entity scratch before target_offset_phase; no stable per-field semantics have been isolated.",
     ),
     member(
         "int32_t",
         "target_offset_phase",
-        364,
+        0x16C,
         doc="Runtime target-offset accumulator advanced by Entity_UpdateVisibilityAndSpawn.",
     ),
     member(
         "int32_t",
         "target_offset_step",
-        368,
+        0x170,
         doc="Signed per-update target-offset delta; Entity_UpdateVisibilityAndSpawn negates it at bounds.",
     ),
     member(
         "int32_t",
         "default_collision_radius_sq",
-        372,
+        0x174,
         doc="Default collision radius restored into collision_radius_sq by Actor_SetProperty/despawn reset paths.",
     ),
     member(
         "int32_t",
         "default_collision_height_sq",
-        376,
+        0x178,
         doc="Default collision height restored into collision_height_sq by Actor_SetProperty/despawn reset paths.",
     ),
     member(
         "uint32_t",
         "default_flags",
-        380,
+        0x17C,
         doc="Default flags restored by despawn/reset and used as the default flag mask by Actor_SetProperty.",
     ),
     size=384,
@@ -2040,57 +1823,139 @@ stable.struct(
 
 stable.struct(
     "Math_QuaternionI16",
-    member("int16_t", "w", 0, doc="Scalar component in signed Q14 fixed-point form."),
-    member("int16_t", "x", 2, doc="X vector component in signed Q14 fixed-point form."),
-    member("int16_t", "y", 4, doc="Y vector component in signed Q14 fixed-point form."),
-    member("int16_t", "z", 6, doc="Z vector component in signed Q14 fixed-point form."),
+    member("int16_t", "w", 0x0, doc="Scalar component in signed Q14 fixed-point form."),
+    member("int16_t", "x", 0x2, doc="X vector component in signed Q14 fixed-point form."),
+    member("int16_t", "y", 0x4, doc="Y vector component in signed Q14 fixed-point form."),
+    member("int16_t", "z", 0x6, doc="Z vector component in signed Q14 fixed-point form."),
     size=8,
     doc="Four signed Q14 fixed-point quaternion components, used by animation rotation tracks.",
 )
 
 stable.struct(
     "Math_OBB",
-    member("int32_t", "center_x", 0),
-    member("int32_t", "center_y", 4),
-    member("int32_t", "center_z", 8),
-    member("int32_t", "half_x", 12),
-    member("int32_t", "half_y", 16),
-    member("int32_t", "half_z", 20),
-    member("int32_t", "axis_0_x", 24),
-    member("int32_t", "axis_0_y", 28),
-    member("int32_t", "axis_0_z", 32),
-    member("int32_t", "axis_1_x", 36),
-    member("int32_t", "axis_1_y", 40),
+    member("Math_Vec3i32", "center", 0x0),
+    member("Math_Vec3i32", "half", 0xC),
+    member("Math_Vec3i32", "axis_0", 0x18),
+    member("int32_t", "axis_1_x", 0x24),
+    member("int32_t", "axis_1_y", 0x28),
     size=44,
 )
 
 stable.struct(
-    "Math_Vec3i",
-    member("int32_t", "x", 0),
-    member("int32_t", "y", 4),
-    member("int32_t", "z", 8),
+    "Math_Vec3i32",
+    member("int32_t", "x", 0x0),
+    member("int32_t", "y", 0x4),
+    member("int32_t", "z", 0x8),
     size=12,
 )
 
 stable.struct(
+    "Math_Vec3i32XZY",
+    member("int32_t", "x", 0x0),
+    member("int32_t", "z", 0x4),
+    member("int32_t", "y", 0x8),
+    size=12,
+    doc="Three signed 32-bit vector components stored in the engine's X/Z/Y camera order.",
+)
+
+
+stable.struct(
+    "Math_Vec3u",
+    member("uint32_t", "x", 0x0),
+    member("uint32_t", "y", 0x4),
+    member("uint32_t", "z", 0x8),
+    size=12,
+)
+
+stable.struct(
+    "Math_Vec3f",
+    member("float", "x", 0x0),
+    member("float", "y", 0x4),
+    member("float", "z", 0x8),
+    size=12,
+)
+
+
+stable.struct(
     "Math_Vec3i16",
-    member("int16_t", "x", 0),
-    member("int16_t", "y", 2),
-    member("int16_t", "z", 4),
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    member("int16_t", "z", 0x4),
     size=6,
+)
+
+
+stable.struct(
+    "Math_Vec2i16",
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    size=4,
+)
+
+stable.struct(
+    "Math_Vec2i32",
+    member("int32_t", "x", 0x0),
+    member("int32_t", "y", 0x4),
+    size=8,
+)
+
+stable.struct(
+    "Math_BoundingSphereU16",
+    member("uint16_t", "x", 0x0),
+    member("uint16_t", "y", 0x2),
+    member("uint16_t", "z", 0x4),
+    member("uint16_t", "radius", 0x6),
+    size=8,
+)
+
+stable.struct(
+    "Math_SizeU8",
+    member("uint8_t", "width", 0x0),
+    member("uint8_t", "height", 0x1),
+    size=2,
+)
+
+stable.struct(
+    "Math_SizeI16",
+    member("int16_t", "width", 0x0),
+    member("int16_t", "height", 0x2),
+    size=4,
+)
+
+stable.struct(
+    "Math_RectI16",
+    member("int16_t", "min_x", 0x0),
+    member("int16_t", "min_y", 0x2),
+    member("int16_t", "max_x", 0x4),
+    member("int16_t", "max_y", 0x6),
+    size=8,
+)
+
+stable.struct(
+    "Math_SizeU16",
+    member("uint16_t", "width", 0x0),
+    member("uint16_t", "height", 0x2),
+    size=4,
+)
+
+stable.struct(
+    "Math_SizeU32",
+    member("uint32_t", "width", 0x0),
+    member("uint32_t", "height", 0x4),
+    size=8,
 )
 
 stable.struct(
     "Mesh_Command",
-    member("uint8_t", "type", 0),
-    member("uint8_t", "flags", 1),
-    member("int16_t", "signal_id", 2),
-    member("int32_t", "progress_q12", 4),
-    member("int32_t", "limit_q12", 8),
+    member("uint8_t", "type", 0x0),
+    member("uint8_t", "flags", 0x1),
+    member("int16_t", "signal_id", 0x2),
+    member("int32_t", "progress_q12", 0x4),
+    member("int32_t", "limit_q12", 0x8),
     member(
         "uint8_t",
         "payload[4]",
-        12,
+        0xC,
         doc="Start of the command-specific payload bytes inside the 16-byte command prefix; type 0 passes this region to Animation_ProcessController and type 1 uses the same header as a vertex-color command.",
     ),
     size=16,
@@ -2103,10 +1968,10 @@ stable.struct(
 
 stable.struct(
     "Mesh_CmdList",
-    member("char", "type", 0),
-    member("char", "flags", 1),
-    member("int16_t", "count", 2),
-    member("Mesh_Command**", "cmd_ptrs", 4),
+    member("char", "type", 0x0),
+    member("char", "flags", 0x1),
+    member("int16_t", "count", 0x2),
+    member("Mesh_Command**", "cmd_ptrs", 0x4),
     size=8,
 )
 
@@ -2115,56 +1980,54 @@ stable.struct(
     member(
         "Material_TableEntry*",
         "material_entry",
-        0,
+        0x0,
         doc="Runtime material-table entry pointer; Resource_FixUpMaterialRefs rewrites material indices to 36-byte Material_TableEntry records.",
     ),
-    member("uint16_t", "vertex_indices[4]", 4),
-    member("void*", "p_normal_plane", 12),
-    member("uint16_t", "face_flags", 16),
-    member("int16_t", "uv_index", 18),
-    member("uint16_t", "reserved_14", 20),
-    member("int16_t", "normal_offset", 22),
+    member("uint16_t", "vertex_indices[4]", 0x4),
+    member("void*", "p_normal_plane", 0xC),
+    member("uint16_t", "face_flags", 0x10),
+    member("int16_t", "uv_index", 0x12),
+    member("uint16_t", "reserved_14", 0x14),
+    member("int16_t", "normal_offset", 0x16),
     size=24,
 )
 
 stable.struct(
     "Mesh_RuntimeVertex",
-    member("int16_t", "x", 0),
-    member("int16_t", "y", 2),
-    member("int16_t", "z", 4),
-    member("int16_t", "normal_group_index", 6),
-    member("uint8_t", "r", 8),
-    member("uint8_t", "g", 9),
-    member("uint8_t", "b", 10),
-    member("uint8_t", "padding", 11),
+    member("Math_Vec3i16", "pos", 0x0),
+    member("int16_t", "normal_group_index", 0x6),
+    member("uint8_t", "r", 0x8),
+    member("uint8_t", "g", 0x9),
+    member("uint8_t", "b", 0xA),
+    member("uint8_t", "padding", 0xB),
     size=12,
 )
 
 stable.struct(
     "Mesh_AccumulatedNormal",
-    member("int32_t", "nx", 0),
-    member("int32_t", "ny", 4),
+    member("int32_t", "nx", 0x0),
+    member("int32_t", "ny", 0x4),
     size=8,
 )
 
 stable.struct(
     "Mesh_FaceNormal",
-    member("int32_t", "plane_dist", 0),
-    member("int16_t", "nx", 4),
-    member("int16_t", "ny", 6),
-    member("int16_t", "nz", 8),
-    member("int16_t", "padding", 10),
+    member("int32_t", "plane_dist", 0x0),
+    member("int16_t", "nx", 0x4),
+    member("int16_t", "ny", 0x6),
+    member("int16_t", "nz", 0x8),
+    member("int16_t", "padding", 0xA),
     size=12,
 )
 
 stable.struct(
     "Mesh_MaterialRef",
-    member("Material_Table*", "material_table_ptr", 0),
-    member("int32_t", "uv_offset", 4),
-    member("int32_t", "color_index", 8),
-    member("void*", "texture_data_ptr", 12),
-    member("int32_t", "blend_mode", 16),
-    member("int32_t", "render_flags", 20),
+    member("Material_Table*", "material_table_ptr", 0x0),
+    member("int32_t", "uv_offset", 0x4),
+    member("int32_t", "color_index", 0x8),
+    member("void*", "texture_data_ptr", 0xC),
+    member("int32_t", "blend_mode", 0x10),
+    member("int32_t", "render_flags", 0x14),
     size=24,
 )
 
@@ -2173,7 +2036,7 @@ stable.struct(
     member(
         "uint8_t",
         "reserved_00[10]",
-        0,
+        0x0,
         doc=(
             "Unresolved prefix before render count/flags; Resource_FixUpMeshNode fixes descriptor data at "
             "+0x0C (PC EN) and relocated tail pointer at +0x1C (PC EN)."
@@ -2182,7 +2045,7 @@ stable.struct(
     member(
         "uint8_t",
         "render_entry_count",
-        10,
+        0xA,
         doc=(
             "Byte count read by Scene_RenderSubMesh from mesh render-node entry +0x0A (PC EN) before "
             "iterating/rendering the submesh span."
@@ -2191,19 +2054,19 @@ stable.struct(
     member(
         "uint8_t",
         "render_entry_flags",
-        11,
+        0xB,
         doc="Render-entry flag byte tested by Scene_RenderSubMesh at +0x0B (PC EN).",
     ),
     member(
         "Material_RefEntry",
         "material_descriptor",
-        12,
+        0xC,
         doc="0x0C material/command descriptor fixed by Resource_FixUpSpriteEntry when Resource_FixUpMeshNode walks the 0x20-stride render-node table.",
     ),
     member(
         "uint8_t",
         "reserved_18[4]",
-        24,
+        0x18,
         doc=(
             "Opaque gap between the 0x0C material descriptor and the relocated tail pointer; "
             "Resource_FixUpMeshNode's 0x20-stride helper skips these bytes."
@@ -2212,7 +2075,7 @@ stable.struct(
     member(
         "void*",
         "relocated_tail_ptr",
-        28,
+        0x1C,
         doc="Entry tail pointer rebased by the 0x20-stride render-node fixup helper called from Resource_FixUpMeshNode.",
     ),
     size=32,
@@ -2221,487 +2084,437 @@ stable.struct(
 
 stable.struct(
     "Mesh_Node",
-    member("uint32_t", "node_type", 0),
-    member("Mesh_Node*", "next_sibling", 4),
-    member("Mesh_Node*", "first_child", 8),
-    member("Mesh_Node*", "parent", 12),
-    member("int16_t", "position_x", 16),
-    member("int16_t", "position_y", 18),
-    member("int16_t", "position_z", 20),
-    member("int16_t", "rotation_x", 22),
-    member("int16_t", "rotation_y", 24),
-    member("int16_t", "rotation_z", 26),
-    member("uint16_t", "flags", 28),
-    member("uint16_t", "reserved", 30),
+    member("uint32_t", "node_type", 0x0),
+    member("Mesh_Node*", "next_sibling", 0x4),
+    member("Mesh_Node*", "first_child", 0x8),
+    member("Mesh_Node*", "parent", 0xC),
+    member("Math_Vec3i16", "position", 0x10),
+    member("Math_Vec3i16", "rotation", 0x16),
+    member("uint16_t", "flags", 0x1C),
+    member("uint16_t", "reserved", 0x1E),
     size=32,
 )
 
 stable.struct(
     "Mesh_NodeExtended",
-    member("uint32_t", "node_type", 0),
-    member("Mesh_Node*", "next_sibling", 4),
-    member("Mesh_Node*", "first_child", 8),
-    member("Mesh_Node*", "parent", 12),
-    member("int16_t", "position_x", 16),
-    member("int16_t", "position_y", 18),
-    member("int16_t", "position_z", 20),
-    member("int16_t", "rotation_x", 22),
-    member("int16_t", "rotation_y", 24),
-    member("uint16_t", "node_flags_2", 26),
-    member("Mesh_Node*", "child_ptr", 28),
-    member("Mesh_Node*", "parent_ref", 32),
-    member("Mesh_Node*", "sibling_ref", 36),
-    member("void*", "aux_ptr", 40),
-    member("int16_t", "rot_matrix[9]", 44),
-    member("int16_t", "matrix_padding", 62),
-    member("int32_t", "world_pos_x", 64),
-    member("int32_t", "world_pos_y", 68),
-    member("int32_t", "world_pos_z", 72),
-    member("int32_t", "velocity_x", 76),
-    member("int32_t", "velocity_y", 80),
-    member("int32_t", "velocity_z", 84),
-    member("int16_t", "material_flags", 88),
-    member("int16_t", "bound_extent_x", 90),
-    member("int16_t", "bound_extent_y", 92),
-    member("int16_t", "bound_extent_z", 94),
-    member("uint8_t", "node_flags", 96),
-    member("uint8_t", "padding_61[1]", 97),
-    member("int16_t", "scale_y", 98),
-    member("Mesh_RuntimePolygon*", "polygon_data_ptr", 100),
-    member("Mesh_RuntimeVertex*", "vertex_array_ptr", 104),
-    member("Resource_Manager*", "resource_manager_ref", 108),
-    member("Mesh_RuntimeVertex*", "scene_vertex_data", 112),
-    member("Mesh_VertexNormal*", "normal_source_ptr", 116),
-    member("uint8_t", "mesh_flags", 120),
-    member("uint8_t", "mesh_align_padding[3]", 121),
-    member("int32_t", "lod_distance_threshold", 124),
-    member("Material_Entry*", "material_entry_array", 128),
-    member("int32_t", "vertex_weights_data[6]", 132),
-    member("Animation_MorphTargetVertex**", "morph_target_array_ptr", 156),
-    member("Mesh_Node*", "parent_node_ptr", 160),
-    member("int32_t", "render_flags", 164),
-    member("Mesh_Node*", "linked_list_ptr", 168),
-    member("int32_t", "bounding_box_min_x", 172),
-    member("int32_t", "bounding_box_min_y", 176),
-    member("int32_t", "bounding_box_min_z", 180),
-    member("int32_t", "bounding_box_max_x", 184),
-    member("int32_t", "bounding_box_max_y", 188),
-    member("int32_t", "bounding_box_max_z", 192),
-    member("int32_t", "bounding_box_radius", 196),
-    member("int32_t", "bounding_box_flags", 200),
-    member("Mesh_Object*", "special_mesh_data_ptr", 204),
-    member("Material_DataRef*", "data_material_ptr", 208),
-    member("int32_t", "sort_key", 212),
-    member("Material_Entry*", "material_list_ptr", 216),
+    member("uint32_t", "node_type", 0x0),
+    member("Mesh_Node*", "next_sibling", 0x4),
+    member("Mesh_Node*", "first_child", 0x8),
+    member("Mesh_Node*", "parent", 0xC),
+    member("Math_Vec3i16", "position", 0x10),
+    member("int16_t", "rotation_x", 0x16),
+    member("int16_t", "rotation_y", 0x18),
+    member("uint16_t", "node_flags_2", 0x1A),
+    member("Mesh_Node*", "child_ptr", 0x1C),
+    member("Mesh_Node*", "parent_ref", 0x20),
+    member("Mesh_Node*", "sibling_ref", 0x24),
+    member("void*", "aux_ptr", 0x28),
+    member("int16_t", "rot_matrix[9]", 0x2C),
+    member("int16_t", "matrix_padding", 0x3E),
+    member("Math_Vec3i32", "world_pos", 0x40),
+    member("Math_Vec3i32", "velocity", 0x4C),
+    member("int16_t", "material_flags", 0x58),
+    member("Math_Vec3i16", "bound_extent", 0x5A),
+    member("uint8_t", "node_flags", 0x60),
+    member("uint8_t", "padding_61[1]", 0x61),
+    member("int16_t", "scale_y", 0x62),
+    member("Mesh_RuntimePolygon*", "polygon_data_ptr", 0x64),
+    member("Mesh_RuntimeVertex*", "vertex_array_ptr", 0x68),
+    member("Resource_Manager*", "resource_manager_ref", 0x6C),
+    member("Mesh_RuntimeVertex*", "scene_vertex_data", 0x70),
+    member("Mesh_VertexNormal*", "normal_source_ptr", 0x74),
+    member("uint8_t", "mesh_flags", 0x78),
+    member("uint8_t", "mesh_align_padding[3]", 0x79),
+    member("int32_t", "lod_distance_threshold", 0x7C),
+    member("Material_Entry*", "material_entry_array", 0x80),
+    member("int32_t", "vertex_weights_data[6]", 0x84),
+    member("Animation_MorphTargetVertex**", "morph_target_array_ptr", 0x9C),
+    member("Mesh_Node*", "parent_node_ptr", 0xA0),
+    member("int32_t", "render_flags", 0xA4),
+    member("Mesh_Node*", "linked_list_ptr", 0xA8),
+    member("Math_Vec3i32", "bounding_box_min", 0xAC),
+    member("Math_Vec3i32", "bounding_box_max", 0xB8),
+    member("int32_t", "bounding_box_radius", 0xC4),
+    member("int32_t", "bounding_box_flags", 0xC8),
+    member("Mesh_Object*", "special_mesh_data_ptr", 0xCC),
+    member("Material_DataRef*", "data_material_ptr", 0xD0),
+    member("int32_t", "sort_key", 0xD4),
+    member("Material_Entry*", "material_list_ptr", 0xD8),
     size=220,
 )
 
 stable.struct(
     "Mesh_NodeFull",
-    member("uint32_t", "node_type", 0),
-    member("Mesh_Node*", "next_sibling", 4),
-    member("Mesh_Node*", "first_child", 8),
-    member("Mesh_Node*", "parent", 12),
-    member("int16_t", "position_x", 16),
-    member("int16_t", "position_y", 18),
-    member("int16_t", "position_z", 20),
-    member("int16_t", "rotation_x", 22),
-    member("int16_t", "rotation_y", 24),
-    member("int16_t", "rotation_z", 26),
-    member("uint16_t", "flags", 28),
-    member("uint16_t", "material_count", 30),
-    member("Mesh_Node*", "parent_ref", 32),
-    member("Mesh_Node*", "sibling_ref", 36),
-    member("void*", "aux_ptr", 40),
-    member("int16_t", "rot_matrix[9]", 44),
-    member("int16_t", "matrix_padding", 62),
-    member("int32_t", "world_pos_x", 64),
-    member("int32_t", "world_pos_y", 68),
-    member("int32_t", "world_pos_z", 72),
-    member("int32_t", "velocity_x", 76),
-    member("int32_t", "velocity_y", 80),
-    member("int32_t", "velocity_z", 84),
-    member("int16_t", "material_flags", 88),
-    member("int16_t", "bound_extent_x", 90),
-    member("int16_t", "bound_extent_y", 92),
-    member("int16_t", "bound_extent_z", 94),
-    member("int16_t", "reserved_60", 96),
-    member("uint8_t", "node_flags", 98),
-    member("uint8_t", "render_mode", 99),
-    member("uint8_t", "subtype_id", 100),
-    member("uint8_t", "subtype_flags", 101),
-    member("int16_t", "subtype_count", 102),
-    member("Material_Entry*", "material_array", 104),
-    member("Mesh_RuntimeVertex*", "vertex_data", 108),
-    member("Mesh_VertexNormal*", "normal_data", 112),
-    member("Mesh_NodeFull*", "uv_array_ptr", 116),
-    member("Mesh_RuntimePolygon*", "polygon_data", 120),
-    member("uint8_t", "controller_slots[4]", 124),
-    member("Animation_DataBlock*", "animation_data", 128),
+    member("uint32_t", "node_type", 0x0),
+    member("Mesh_Node*", "next_sibling", 0x4),
+    member("Mesh_Node*", "first_child", 0x8),
+    member("Mesh_Node*", "parent", 0xC),
+    member("Math_Vec3i16", "position", 0x10),
+    member("Math_Vec3i16", "rotation", 0x16),
+    member("uint16_t", "flags", 0x1C),
+    member("uint16_t", "material_count", 0x1E),
+    member("Mesh_Node*", "parent_ref", 0x20),
+    member("Mesh_Node*", "sibling_ref", 0x24),
+    member("void*", "aux_ptr", 0x28),
+    member("int16_t", "rot_matrix[9]", 0x2C),
+    member("int16_t", "matrix_padding", 0x3E),
+    member("Math_Vec3i32", "world_pos", 0x40),
+    member("Math_Vec3i32", "velocity", 0x4C),
+    member("int16_t", "material_flags", 0x58),
+    member("Math_Vec3i16", "bound_extent", 0x5A),
+    member("int16_t", "reserved_60", 0x60),
+    member("uint8_t", "node_flags", 0x62),
+    member("uint8_t", "render_mode", 0x63),
+    member("uint8_t", "subtype_id", 0x64),
+    member("uint8_t", "subtype_flags", 0x65),
+    member("int16_t", "subtype_count", 0x66),
+    member("Material_Entry*", "material_array", 0x68),
+    member("Mesh_RuntimeVertex*", "vertex_data", 0x6C),
+    member("Mesh_VertexNormal*", "normal_data", 0x70),
+    member("Mesh_NodeFull*", "uv_array_ptr", 0x74),
+    member("Mesh_RuntimePolygon*", "polygon_data", 0x78),
+    member("uint8_t", "controller_slots[4]", 0x7C),
+    member("Animation_DataBlock*", "animation_data", 0x80),
     member(
         "void*",
         "group_list_0",
-        132,
+        0x84,
         doc="First of six group-node fixup/list heads rebased by Resource_FixUpGroupNode from +0x84 (PC EN) through +0x98 (PC EN).",
     ),
     member(
         "void*",
         "group_list_1",
-        136,
+        0x88,
         doc="Group-node fixup/list head rebased by Resource_FixUpGroupNode.",
     ),
     member(
         "void*",
         "group_list_2",
-        140,
+        0x8C,
         doc="Group-node fixup/list head rebased by Resource_FixUpGroupNode.",
     ),
     member(
         "void*",
         "group_list_3",
-        144,
+        0x90,
         doc="Group-node fixup/list head rebased by Resource_FixUpGroupNode.",
     ),
     member(
         "void*",
         "group_list_4",
-        148,
+        0x94,
         doc="Group-node fixup/list head rebased by Resource_FixUpGroupNode.",
     ),
     member(
         "void*",
         "group_list_5",
-        152,
+        0x98,
         doc="Sixth group-node fixup/list head rebased by Resource_FixUpGroupNode.",
     ),
-    member("void*", "group_linked_list_a", 156),
+    member("void*", "group_linked_list_a", 0x9C),
     member(
         "int32_t",
         "group_reserved_a0",
-        160,
+        0xA0,
         doc=(
             "Opaque 32-bit slot between group_linked_list_a and group_linked_list_b; "
             "Resource_FixUpGroupNode rebases adjacent list pointers at +0x9C (PC EN)/+0xA4 (PC EN) but "
             "intentionally skips +0xA0 (PC EN)."
         ),
     ),
-    member("void*", "group_linked_list_b", 164),
+    member("void*", "group_linked_list_b", 0xA4),
     size=168,
 )
 
 stable.struct(
     "Mesh_Object",
-    member("void*", "node_table_ptr", 0),
-    member("int16_t", "frame_range_lo", 4),
-    member("int16_t", "frame_range_hi", 6),
-    member("int16_t", "anim_frame_start", 8),
-    member("int16_t", "anim_frame_end", 10),
-    member("void*", "morph_target_table", 12),
-    member("uint16_t", "flags", 16),
-    member("uint16_t", "node_count", 18),
-    member("uint32_t", "reserved_14", 20),
+    member("void*", "node_table_ptr", 0x0),
+    member("int16_t", "frame_range_lo", 0x4),
+    member("int16_t", "frame_range_hi", 0x6),
+    member("int16_t", "anim_frame_start", 0x8),
+    member("int16_t", "anim_frame_end", 0xA),
+    member("void*", "morph_target_table", 0xC),
+    member("uint16_t", "flags", 0x10),
+    member("uint16_t", "node_count", 0x12),
+    member("uint32_t", "reserved_14", 0x14),
     size=24,
 )
 
 stable.struct(
     "Mesh_ObjectNodeEntry",
-    member("void*", "scene_node_ptr", 0),
-    member("int16_t", "index_a", 4),
-    member("int16_t", "index_b", 6),
-    member("int16_t", "index_c", 8),
-    member("int16_t", "index_d", 10),
+    member("void*", "scene_node_ptr", 0x0),
+    member("int16_t", "index_a", 0x4),
+    member("int16_t", "index_b", 0x6),
+    member("int16_t", "index_c", 0x8),
+    member("int16_t", "index_d", 0xA),
     size=12,
 )
 
 stable.struct(
     "Mesh_Polygon",
-    member("uint32_t", "material_ptr", 0),
-    member("uint16_t", "vertex_indices[4]", 4),
-    member("uint32_t", "face_normal_ptr", 12),
-    member("uint16_t", "flags", 16),
-    member("int16_t", "uv_ambient_index", 18),
-    member("int16_t", "uv_offset", 20),
-    member("int16_t", "normal_offset", 22),
+    member("uint32_t", "material_ptr", 0x0),
+    member("uint16_t", "vertex_indices[4]", 0x4),
+    member("uint32_t", "face_normal_ptr", 0xC),
+    member("uint16_t", "flags", 0x10),
+    member("int16_t", "uv_ambient_index", 0x12),
+    member("int16_t", "uv_offset", 0x14),
+    member("int16_t", "normal_offset", 0x16),
     size=24,
 )
 
 
 stable.struct(
     "Mesh_Vertex",
-    member("int32_t", "x", 0),
-    member("int32_t", "y", 4),
-    member("int32_t", "z", 8),
+    member("int32_t", "x", 0x0),
+    member("int32_t", "y", 0x4),
+    member("int32_t", "z", 0x8),
     size=12,
 )
 
 stable.struct(
     "Mesh_Vertex3D",
-    member("int16_t", "x", 0),
-    member("int16_t", "y", 2),
-    member("int16_t", "z", 4),
-    member("int16_t", "padding", 6),
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    member("int16_t", "z", 0x4),
+    member("int16_t", "padding", 0x6),
     size=8,
 )
 
 stable.struct(
     "Mesh_Vertex3DNormal",
-    member("float", "x", 0),
-    member("float", "y", 4),
-    member("float", "z", 8),
-    member("float", "nx", 12),
-    member("float", "ny", 16),
-    member("float", "nz", 20),
-    member("uint32_t", "color", 24),
+    member("float", "x", 0x0),
+    member("float", "y", 0x4),
+    member("float", "z", 0x8),
+    member("float", "nx", 0xC),
+    member("float", "ny", 0x10),
+    member("float", "nz", 0x14),
+    member("uint32_t", "color", 0x18),
     size=28,
 )
 
 stable.struct(
     "Mesh_VertexColorRGB",
-    member("int32_t", "r", 0),
-    member("int32_t", "g", 4),
-    member("int32_t", "b", 8),
+    member("int32_t", "r", 0x0),
+    member("int32_t", "g", 0x4),
+    member("int32_t", "b", 0x8),
     size=12,
 )
 
 stable.struct(
     "Mesh_VertexNormal",
-    member("int16_t", "nx", 0),
-    member("int16_t", "ny", 2),
-    member("int16_t", "nz", 4),
-    member("int16_t", "normal_count", 6),
+    member("int16_t", "nx", 0x0),
+    member("int16_t", "ny", 0x2),
+    member("int16_t", "nz", 0x4),
+    member("int16_t", "normal_count", 0x6),
     size=8,
 )
 
 stable.struct(
-    "Mesh_VertexUV", member("int16_t", "u", 0), member("int16_t", "v", 2), size=4
+    "Mesh_VertexUV", member("int16_t", "u", 0x0), member("int16_t", "v", 0x2), size=4
 )
 
 stable.struct(
     "Mesh_WorkingVertex",
-    member("int16_t", "pos_x", 0),
-    member("int16_t", "pos_y", 2),
-    member("int16_t", "pos_z", 4),
-    member("int16_t", "bone_index", 6),
-    member("int16_t", "normal_x", 8),
-    member("int16_t", "normal_y", 10),
-    member("int16_t", "normal_z", 12),
-    member("int16_t", "padding_0e", 14),
-    member("int16_t", "u", 16),
-    member("int16_t", "v", 18),
-    member("uint32_t", "color", 20),
+    member("Math_Vec3i16", "pos", 0x0),
+    member("int16_t", "bone_index", 0x6),
+    member("Math_Vec3i16", "normal", 0x8),
+    member("int16_t", "padding_0e", 0xE),
+    member("int16_t", "u", 0x10),
+    member("int16_t", "v", 0x12),
+    member("uint32_t", "color", 0x14),
     size=24,
 )
 
 
 stable.struct(
     "Nav_Command",
-    member("uint32_t", "command_type", 0),
-    member("int16_t", "target_x", 4),
-    member("int16_t", "target_y", 6),
-    member("int32_t", "target_z", 8),
-    member("int32_t", "pos_x", 12),
-    member("int32_t", "pos_y", 16),
-    member("int32_t", "pos_z", 20),
+    member("uint32_t", "command_type", 0x0),
+    member("int16_t", "target_x", 0x4),
+    member("int16_t", "target_y", 0x6),
+    member("int32_t", "target_z", 0x8),
+    member("Math_Vec3i32", "pos", 0xC),
     size=24,
 )
 
 stable.struct(
     "Nav_NeighborEntry",
-    member("uint16_t", "packed_id", 0),
-    member("int16_t", "cost", 2),
+    member("uint16_t", "packed_id", 0x0),
+    member("int16_t", "cost", 0x2),
     size=4,
 )
 
 stable.struct(
     "Nav_Network",
-    member("int32_t", "node_count", 0),
-    member("Nav_Node*", "nodes", 4),
+    member("int32_t", "node_count", 0x0),
+    member("Nav_Node*", "nodes", 0x4),
     size=8,
 )
 
 stable.struct(
     "Nav_Node",
-    member("int32_t", "pos_x", 0),
-    member("int32_t", "pos_y", 4),
-    member("int32_t", "pos_z", 8),
-    member("uint16_t", "parent_link", 12),
-    member("int16_t", "neighbor_count", 14),
-    member("int32_t*", "pathfind_state", 16),
-    member("Nav_NeighborEntry*", "neighbor_list", 20),
+    member("Math_Vec3i32", "pos", 0x0),
+    member("uint16_t", "parent_link", 0xC),
+    member("int16_t", "neighbor_count", 0xE),
+    member("int32_t*", "pathfind_state", 0x10),
+    member("Nav_NeighborEntry*", "neighbor_list", 0x14),
     size=24,
 )
 
 stable.struct(
     "Nav_PathState",
-    member("uint32_t", "cost", 0),
-    member("uint16_t", "node_id", 4),
-    member("uint16_t", "parent_backlink", 6),
-    member("int16_t", "step_count", 8),
-    member("int16_t", "reserved", 10),
+    member("uint32_t", "cost", 0x0),
+    member("uint16_t", "node_id", 0x4),
+    member("uint16_t", "parent_backlink", 0x6),
+    member("int16_t", "step_count", 0x8),
+    member("int16_t", "reserved", 0xA),
     size=12,
 )
 
 stable.struct(
     "Physics_State",
-    member("int32_t", "gravity", 0),
-    member("int32_t", "friction", 4),
-    member("int32_t", "max_velocity", 8),
-    member("int32_t", "max_fall_speed", 12),
-    member("int32_t", "acceleration_x", 16),
-    member("int32_t", "acceleration_y", 20),
-    member("int32_t", "acceleration_z", 24),
-    member("Actor_State*", "ground_object", 28),
-    member("Collision_Polygon*", "ground_polygon", 32),
+    member("int32_t", "gravity", 0x0),
+    member("int32_t", "friction", 0x4),
+    member("int32_t", "max_velocity", 0x8),
+    member("int32_t", "max_fall_speed", 0xC),
+    member("Math_Vec3i32", "acceleration", 0x10),
+    member("Actor_State*", "ground_object", 0x1C),
+    member("Collision_Polygon*", "ground_polygon", 0x20),
     size=36,
 )
 
 stable.struct(
     "Pkg_SplashScreen",
-    member("uint32_t", "format_tag", 0),
-    member("uint8_t", "pixel_data[1228800]", 4),
+    member("uint32_t", "format_tag", 0x0),
+    member("uint8_t", "pixel_data[1228800]", 0x4),
     size=1228804,
 )
 
 stable.struct(
     "Pkg_SplashScreenEx",
-    member("uint32_t", "type_tag", 0),
-    member("uint32_t", "data_offset", 4),
-    member("uint32_t", "reserved", 8),
-    member("char", "name[16]", 12),
-    member("uint8_t", "pixel_data[1228800]", 28),
+    member("uint32_t", "type_tag", 0x0),
+    member("uint32_t", "data_offset", 0x4),
+    member("uint32_t", "reserved", 0x8),
+    member("char", "name[16]", 0xC),
+    member("uint8_t", "pixel_data[1228800]", 0x1C),
     size=1228828,
 )
 
 stable.struct(
     "Pkg_ActorTemplate",
-    member("Mesh_Node*", "lod_0_node", 0),
-    member("Mesh_Node*", "lod_1_node", 4),
-    member("Mesh_Node*", "lod_2_node", 8),
-    member("uint32_t", "reserved_0c", 12),
-    member("Animation_StateTable*", "anim_table", 16),
+    member("Mesh_Node*", "lod_nodes[3]", 0x0),
+    member("uint32_t", "reserved_0c", 0xC),
+    member("Animation_StateTable*", "anim_table", 0x10),
     size=20,
 )
 
 stable.struct(
     "Pkg_CameraDef",
-    member("uint8_t", "camera_type", 0),
-    member("uint8_t", "flags", 1),
-    member("int16_t", "transition_speed", 2),
-    member("int16_t", "fov_distance", 4),
-    member("int16_t", "orbit_yaw", 6),
-    member("int32_t", "orbit_pitch", 8),
-    member("int32_t", "cam_offset_x", 12),
-    member("int32_t", "cam_offset_y", 16),
-    member("int32_t", "cam_offset_z", 20),
-    member("int32_t", "target_offset_x", 24),
-    member("int32_t", "target_offset_y", 28),
-    member("int32_t", "target_offset_z", 32),
+    member("uint8_t", "camera_type", 0x0),
+    member("uint8_t", "flags", 0x1),
+    member("int16_t", "transition_speed", 0x2),
+    member("int16_t", "fov_distance", 0x4),
+    member("int16_t", "orbit_yaw", 0x6),
+    member("int32_t", "orbit_pitch", 0x8),
+    member("Math_Vec3i32", "cam_offset", 0xC),
+    member("Math_Vec3i32", "target_offset", 0x18),
     size=36,
 )
 
 stable.struct(
     "Pkg_CollisionFace",
-    member("int16_t", "material_index", 0),
-    member("int16_t", "surface_type", 2),
+    member("int16_t", "material_index", 0x0),
+    member("int16_t", "surface_type", 0x2),
     member(
         "int16_t",
         "vertex_indices_front[3]",
-        4,
+        0x4,
         doc=(
             "Storage-order vertex index run before face_flags. Native suffix order is "
             "0, 1, 3 here; the remaining index lives after the flag bytes."
         ),
     ),
-    member("uint8_t", "face_flags", 10),
-    member("uint8_t", "face_flags_hi", 11),
+    member("uint8_t", "face_flags", 0xA),
+    member("uint8_t", "face_flags_hi", 0xB),
     member(
         "int16_t",
         "vertex_indices_after_flags[1]",
-        12,
+        0xC,
         doc="Final storage-order vertex index after the interleaved face flag bytes.",
     ),
-    member("int16_t", "adj_face_index", 14),
-    member("int32_t", "plane_offset", 16),
+    member("int16_t", "adj_face_index", 0xE),
+    member("int32_t", "plane_offset", 0x10),
     size=20,
 )
 
 stable.struct(
     "Pkg_CollisionFacePlane",
-    member("int32_t", "plane_distance", 0),
-    member("int16_t", "normal_x", 4),
-    member("int16_t", "normal_y", 6),
-    member("int16_t", "normal_z", 8),
-    member("int16_t", "padding_0a", 10),
-    member("int16_t", "adj_edge_0", 12),
-    member("int16_t", "adj_edge_1", 14),
-    member("int16_t", "adj_edge_2", 16),
-    member("int16_t", "adj_edge_3", 18),
+    member("int32_t", "plane_distance", 0x0),
+    member("Math_Vec3i16", "normal", 0x4),
+    member("int16_t", "padding_0a", 0xA),
+    member("int16_t", "adj_edges[4]", 0xC),
     size=20,
 )
 
 stable.struct(
     "Pkg_CollisionHeader",
-    member("uint32_t", "width", 0),
-    member("uint32_t", "height", 4),
-    member("uint32_t", "cell_size", 8),
-    member("uint32_t", "data_offset", 12),
-    member("uint8_t", "collision_reserved[16]", 16),
+    member("Math_SizeU32", "dimensions", 0x0),
+    member("uint32_t", "cell_size", 0x8),
+    member("uint32_t", "data_offset", 0xC),
+    member("uint8_t", "collision_reserved[16]", 0x10),
     size=32,
 )
 
 stable.struct(
     "Pkg_CollisionShape",
-    member("uint32_t", "face_count", 0),
-    member("uint32_t", "flags_packed", 4),
-    member("uint32_t", "grid_params", 8),
-    member("void*", "material_base_ptr", 12),
-    member("uint32_t", "type_flags", 16),
-    member("int32_t", "extent_x", 20),
-    member("int32_t", "extent_y", 24),
-    member("int32_t", "extent_z", 28),
-    member("void*", "grid_cell_array", 32),
-    member("Pkg_CollisionFace*", "face_array", 36),
-    member("Pkg_CollisionFacePlane*", "plane_array", 40),
-    member("Pkg_CollisionVertex*", "vertex_array", 44),
-    member("int32_t", "sentinel", 48),
-    member("int32_t", "face_array_count", 52),
-    member("int32_t", "vertex_count", 56),
-    member("uint32_t", "reserved_3c", 60),
+    member("uint32_t", "face_count", 0x0),
+    member("uint32_t", "flags_packed", 0x4),
+    member("uint32_t", "grid_params", 0x8),
+    member("void*", "material_base_ptr", 0xC),
+    member("uint32_t", "type_flags", 0x10),
+    member("Math_Vec3i32", "extent", 0x14),
+    member("void*", "grid_cell_array", 0x20),
+    member("Pkg_CollisionFace*", "face_array", 0x24),
+    member("Pkg_CollisionFacePlane*", "plane_array", 0x28),
+    member("Pkg_CollisionVertex*", "vertex_array", 0x2C),
+    member("int32_t", "sentinel", 0x30),
+    member("int32_t", "face_array_count", 0x34),
+    member("int32_t", "vertex_count", 0x38),
+    member("uint32_t", "reserved_3c", 0x3C),
     size=64,
 )
 
 stable.struct(
     "Pkg_CollisionVertex",
-    member("int16_t", "x", 0),
-    member("int16_t", "y", 2),
-    member("int16_t", "z", 4),
-    member("int16_t", "nx", 6),
-    member("int16_t", "ny", 8),
-    member("int16_t", "nz", 10),
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    member("int16_t", "z", 0x4),
+    member("int16_t", "nx", 0x6),
+    member("int16_t", "ny", 0x8),
+    member("int16_t", "nz", 0xA),
     size=12,
 )
 
 stable.struct(
     "Collision_Vertex",
-    member("int16_t", "x", 0),
-    member("int16_t", "y", 2),
-    member("int16_t", "z", 4),
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    member("int16_t", "z", 0x4),
     member(
         "int16_t",
         "reserved_06",
-        6,
+        0x6,
         doc="Opaque collision-vertex tail word following x/y/z coordinates.",
     ),
     member(
         "int16_t",
         "reserved_08",
-        8,
+        0x8,
         doc="Opaque collision-vertex tail word; no stable direct semantics have been isolated beyond xyz.",
     ),
     member(
         "int16_t",
         "reserved_0a",
-        10,
+        0xA,
         doc="Opaque collision-vertex tail word; no stable direct semantics have been isolated beyond xyz.",
     ),
     size=12,
@@ -2712,65 +2525,63 @@ stable.struct(
     member(
         "Collision_Node*",
         "next_in_list",
-        0,
+        0x0,
         doc="List link used by static collision-scene node lists.",
     ),
     member(
         "uint8_t",
         "reserved_04[40]",
-        4,
+        0x4,
         doc="Opaque prefix before the node transform matrix.",
     ),
     member(
         "Math_Matrix3x3i16",
         "transform_matrix",
-        44,
+        0x2C,
         doc="Q12 node rotation/scale matrix used when transformed-node flags are set.",
     ),
-    member("int16_t", "transform_padding", 62),
-    member("int32_t", "origin_x", 64),
-    member("int32_t", "origin_y", 68),
-    member("int32_t", "origin_z", 72),
+    member("int16_t", "transform_padding", 0x3E),
+    member("Math_Vec3i32", "origin", 0x40),
     member(
         "uint8_t",
         "reserved_4c[28]",
-        76,
+        0x4C,
         doc="Opaque collision-node payload before vertex and face counts.",
     ),
     member(
         "uint16_t",
         "vertex_count",
-        104,
+        0x68,
         doc="Number of 12-byte Collision_Vertex records in vertices.",
     ),
     member(
         "uint16_t",
         "polygon_count",
-        106,
+        0x6A,
         doc="Number of 24-byte Collision_Polygon records in polygons.",
     ),
     member(
         "Collision_Polygon*",
         "polygons",
-        108,
+        0x6C,
         doc="Collision polygon/face array; vertex indices live at offsets +4/+6/+8/+10 in each record.",
     ),
     member(
         "Collision_Vertex*",
         "vertices",
-        112,
+        0x70,
         doc="Collision vertex array with signed int16 x/y/z at offsets +0/+2/+4 and 12-byte stride.",
     ),
     member(
         "uint8_t",
         "reserved_74[20]",
-        116,
+        0x74,
         doc="Opaque node payload between geometry arrays and flags.",
     ),
     member(
         "uint32_t",
         "flags",
-        136,
+        0x88,
         doc="Node flags; collision polygon tests use transformed coordinates when bits 0x22 are set.",
     ),
     size=140,
@@ -2783,193 +2594,182 @@ stable.struct(
 
 stable.struct(
     "Pkg_ComponentData",
-    member("uint8_t", "flags", 0),
-    member("uint8_t", "component_bytes_01[51]", 1),
-    member("int32_t", "parent_ref_value", 52),
-    member("uint8_t", "component_bytes_38[10]", 56),
-    member("int16_t", "delay_base", 66),
-    member("uint8_t", "component_bytes_44[2]", 68),
-    member("int16_t", "delay_random", 70),
-    member("uint8_t", "component_byte_48", 72),
-    member("uint8_t", "spawn_count", 73),
-    member("uint8_t", "num_lod_variants", 74),
-    member("uint8_t", "component_byte_4_b", 75),
-    member("int16_t", "delay_between", 76),
-    member("uint8_t", "component_bytes_4_e[4]", 78),
-    member("int16_t", "init_value", 82),
-    member("uint8_t", "component_bytes_54[12]", 84),
-    member("Mesh_Node*", "sub_nodes[4]", 96),
+    member("uint8_t", "flags", 0x0),
+    member("uint8_t", "component_bytes_01[51]", 0x1),
+    member("int32_t", "parent_ref_value", 0x34),
+    member("uint8_t", "component_bytes_38[10]", 0x38),
+    member("int16_t", "delay_base", 0x42),
+    member("uint8_t", "component_bytes_44[2]", 0x44),
+    member("int16_t", "delay_random", 0x46),
+    member("uint8_t", "component_byte_48", 0x48),
+    member("uint8_t", "spawn_count", 0x49),
+    member("uint8_t", "num_lod_variants", 0x4A),
+    member("uint8_t", "component_byte_4_b", 0x4B),
+    member("int16_t", "delay_between", 0x4C),
+    member("uint8_t", "component_bytes_4_e[4]", 0x4E),
+    member("int16_t", "init_value", 0x52),
+    member("uint8_t", "component_bytes_54[12]", 0x54),
+    member("Mesh_Node*", "sub_nodes[4]", 0x60),
     size=112,
 )
 
 stable.struct(
     "Pkg_FaceNormal",
-    member("int32_t", "plane_distance", 0),
-    member("int16_t", "normal_x", 4),
-    member("int16_t", "normal_y", 6),
-    member("int16_t", "normal_z", 8),
-    member("uint8_t", "padding_0a[2]", 10),
+    member("int32_t", "plane_distance", 0x0),
+    member("Math_Vec3i16", "normal", 0x4),
+    member("uint8_t", "padding_0a[2]", 0xA),
     size=12,
 )
 
 stable.struct(
     "Pkg_GeometryChunk",
-    member("uint32_t", "vertex_offset", 0),
-    member("uint32_t", "vertex_count", 4),
-    member("uint32_t", "polygon_offset", 8),
-    member("uint32_t", "polygon_count", 12),
-    member("uint32_t", "material_ref", 16),
-    member("uint32_t", "flags", 20),
+    member("uint32_t", "vertex_offset", 0x0),
+    member("uint32_t", "vertex_count", 0x4),
+    member("uint32_t", "polygon_offset", 0x8),
+    member("uint32_t", "polygon_count", 0xC),
+    member("uint32_t", "material_ref", 0x10),
+    member("uint32_t", "flags", 0x14),
     size=24,
 )
 
 stable.struct(
     "Pkg_GeometryResource",
-    member("uint32_t", "node_count", 0),
-    member("uint32_t", "resource_mgr_offset", 4),
-    member("uint32_t", "material_table_offset", 8),
-    member("uint32_t", "material_data_size", 12),
-    member("uint32_t", "total_data_size", 16),
-    member("uint32_t", "geometry_flags", 20),
-    member("uint32_t", "secondary_data_size", 24),
-    member("uint32_t", "flags", 28),
-    member("uint32_t", "version", 32),
-    member("uint8_t", "geometry_reserved[12]", 36),
+    member("uint32_t", "node_count", 0x0),
+    member("uint32_t", "resource_mgr_offset", 0x4),
+    member("uint32_t", "material_table_offset", 0x8),
+    member("uint32_t", "material_data_size", 0xC),
+    member("uint32_t", "total_data_size", 0x10),
+    member("uint32_t", "geometry_flags", 0x14),
+    member("uint32_t", "secondary_data_size", 0x18),
+    member("uint32_t", "flags", 0x1C),
+    member("uint32_t", "version", 0x20),
+    member("uint8_t", "geometry_reserved[12]", 0x24),
     size=48,
 )
 
 
 stable.struct(
     "Pkg_LevelHeader",
-    member("uint32_t", "cam_default_offset", 0),
-    member("int16_t", "actor_record_count", 4),
-    member("int16_t", "padding_06", 6),
-    member("int16_t", "initial_entity_index", 8),
-    member("int16_t", "entity_count", 10),
-    member("uint32_t", "entity_array_offset", 12),
-    member("uint32_t", "sound_definition_list_offset", 16),
-    member("int32_t", "sound_definition_count", 20),
-    member("uint32_t", "var_list_offset", 24),
-    member("int16_t", "powerup_count", 28),
-    member("int16_t", "powerup_type_count", 30),
-    member("uint32_t", "powerup_list_offset", 32),
+    member("uint32_t", "cam_default_offset", 0x0),
+    member("int16_t", "actor_record_count", 0x4),
+    member("int16_t", "padding_06", 0x6),
+    member("int16_t", "initial_entity_index", 0x8),
+    member("int16_t", "entity_count", 0xA),
+    member("uint32_t", "entity_array_offset", 0xC),
+    member("uint32_t", "sound_definition_list_offset", 0x10),
+    member("int32_t", "sound_definition_count", 0x14),
+    member("uint32_t", "var_list_offset", 0x18),
+    member("int16_t", "powerup_count", 0x1C),
+    member("int16_t", "powerup_type_count", 0x1E),
+    member("uint32_t", "powerup_list_offset", 0x20),
     member(
         "uint32_t",
         "powerup_slots[16]",
-        36,
+        0x24,
         doc="Fixed 16-slot powerup table following powerup_list_offset; entries retain the original 0x24..0x60 (PC EN) span.",
     ),
-    member("uint32_t", "theme_0_offset", 100),
-    member("uint32_t", "theme_1_offset", 104),
-    member("uint32_t", "theme_2_offset", 108),
-    member("uint32_t", "theme_3_offset", 112),
-    member("uint32_t", "theme_4_offset", 116),
-    member("int32_t", "theme_count", 120),
-    member("uint32_t", "trail_list_offset", 124),
-    member("uint32_t", "sprite_list_offset", 128),
-    member("uint32_t", "nav_net_offset", 132),
-    member("uint32_t", "usable_materials_offset", 136),
+    member("uint32_t", "theme_0_offset", 0x64),
+    member("uint32_t", "theme_1_offset", 0x68),
+    member("uint32_t", "theme_2_offset", 0x6C),
+    member("uint32_t", "theme_3_offset", 0x70),
+    member("uint32_t", "theme_4_offset", 0x74),
+    member("int32_t", "theme_count", 0x78),
+    member("uint32_t", "trail_list_offset", 0x7C),
+    member("uint32_t", "sprite_list_offset", 0x80),
+    member("uint32_t", "nav_net_offset", 0x84),
+    member("uint32_t", "usable_materials_offset", 0x88),
     size=140,
     doc="Package level header containing actor, entity-slot, sound, powerup, theme, trail, sprite, nav, and material relative offsets. Modeled fields cover this header's offset table.",
 )
 
 stable.struct(
     "Pkg_LevelResource",
-    member("uint32_t", "node_count", 0),
-    member("uint32_t", "resource_mgr_offset", 4),
-    member("uint32_t", "material_table_offset", 8),
-    member("uint32_t", "material_count", 12),
+    member("uint32_t", "node_count", 0x0),
+    member("uint32_t", "resource_mgr_offset", 0x4),
+    member("uint32_t", "material_table_offset", 0x8),
+    member("uint32_t", "material_count", 0xC),
     size=16,
     doc="Package level-resource header used as the relocation base for resource-manager and material-table offsets. Only those offsets are modeled.",
 )
 
 stable.struct(
     "Pkg_MaterialRef",
-    member("uint32_t", "texture_id", 0),
-    member("Material_Descriptor*", "texture_desc_ptr", 4),
-    member("uint32_t", "properties", 8),
+    member("uint32_t", "texture_id", 0x0),
+    member("Material_Descriptor*", "texture_desc_ptr", 0x4),
+    member("uint32_t", "properties", 0x8),
     size=12,
 )
 
 stable.struct(
     "Pkg_MaterialTableEntry",
-    member("uint32_t", "texture_offset", 0),
-    member("Material_Descriptor*", "texture_desc_ptr", 4),
-    member("uint16_t", "width", 8),
-    member("uint16_t", "height", 10),
-    member("uint32_t", "runtime_surface", 12),
-    member("uint32_t", "pixel_data_offset", 16),
-    member("uint16_t", "format_flags", 20),
-    member("uint16_t", "mipmap_count", 22),
-    member("uint32_t", "palette_offset", 24),
-    member("uint32_t", "extra_flags", 28),
-    member("uint32_t", "extra_data", 32),
+    member("uint32_t", "texture_offset", 0x0),
+    member("Material_Descriptor*", "texture_desc_ptr", 0x4),
+    member("Math_SizeU16", "dimensions", 0x8),
+    member("uint32_t", "runtime_surface", 0xC),
+    member("uint32_t", "pixel_data_offset", 0x10),
+    member("uint16_t", "format_flags", 0x14),
+    member("uint16_t", "mipmap_count", 0x16),
+    member("uint32_t", "palette_offset", 0x18),
+    member("uint32_t", "extra_flags", 0x1C),
+    member("uint32_t", "extra_data", 0x20),
     size=36,
 )
 
 stable.struct(
     "Pkg_MenuTextureResource",
-    member("uint32_t", "format", 0),
-    member("uint32_t", "data_offset", 4),
-    member("uint32_t", "reserved", 8),
-    member("char", "filename[16]", 12),
+    member("uint32_t", "format", 0x0),
+    member("uint32_t", "data_offset", 0x4),
+    member("uint32_t", "reserved", 0x8),
+    member("char", "filename[16]", 0xC),
     size=28,
 )
 
 
 stable.struct(
     "Pkg_PolygonData",
-    member("uint32_t", "flags", 0),
-    member("Material_Entry*", "material_ptr", 4),
-    member("uint32_t", "material_tint", 8),
-    member("uint32_t", "texture_info_packed", 12),
-    member("uint8_t", "uv_tile_offset_u", 16),
-    member("uint8_t", "uv_tile_offset_v", 17),
-    member("uint8_t", "padding_12", 18),
-    member("uint8_t", "padding_13", 19),
-    member("uint8_t", "color_adjust_r", 20),
-    member("uint8_t", "color_adjust_g", 21),
-    member("uint8_t", "color_adjust_b", 22),
-    member("uint8_t", "padding_17", 23),
-    member("Pkg_PolygonData*", "next_polygon_data_ptr", 24),
-    member("uint16_t", "explicit_uv_0", 28),
-    member("uint16_t", "explicit_uv_1", 30),
-    member("uint16_t", "explicit_uv_2", 32),
-    member("uint16_t", "explicit_uv_3", 34),
+    member("uint32_t", "flags", 0x0),
+    member("Material_Entry*", "material_ptr", 0x4),
+    member("uint32_t", "material_tint", 0x8),
+    member("Material_TextureInfo", "texture_info", 0xC),
+    member("Pkg_UVCoord", "uv_tile_offset", 0x10),
+    member("uint8_t", "padding_12[2]", 0x12),
+    member("uint8_t", "color_adjust_r", 0x14),
+    member("uint8_t", "color_adjust_g", 0x15),
+    member("uint8_t", "color_adjust_b", 0x16),
+    member("uint8_t", "padding_17", 0x17),
+    member("Pkg_PolygonData*", "next_polygon_data_ptr", 0x18),
+    member("uint16_t", "explicit_uv[4]", 0x1C),
     size=36,
 )
 
 stable.struct(
     "Pkg_PolygonDataRaw",
-    member("uint32_t", "material_index", 0),
-    member("uint16_t", "vertex_0", 4),
-    member("uint16_t", "vertex_1", 6),
-    member("uint16_t", "vertex_2", 8),
-    member("uint16_t", "vertex_3", 10),
-    member("uint32_t", "uv_data_offset", 12),
-    member("uint32_t", "render_flags", 16),
-    member("uint32_t", "polygon_flags", 20),
+    member("uint32_t", "material_index", 0x0),
+    member("uint16_t", "vertex_indices[4]", 0x4),
+    member("uint32_t", "uv_data_offset", 0xC),
+    member("uint32_t", "render_flags", 0x10),
+    member("uint32_t", "polygon_flags", 0x14),
     size=24,
 )
 
 stable.struct(
     "Pkg_PolygonListEntry",
-    member("uint32_t", "material_index", 0),
-    member("uint16_t", "vertex_indices[4]", 4),
-    member("Pkg_FaceNormal*", "face_normal_ptr", 12),
-    member("uint16_t", "flags", 16),
-    member("uint16_t", "tex_coord_index", 18),
-    member("uint16_t", "reserved", 20),
-    member("int16_t", "sort_bias", 22),
+    member("uint32_t", "material_index", 0x0),
+    member("uint16_t", "vertex_indices[4]", 0x4),
+    member("Pkg_FaceNormal*", "face_normal_ptr", 0xC),
+    member("uint16_t", "flags", 0x10),
+    member("uint16_t", "tex_coord_index", 0x12),
+    member("uint16_t", "reserved", 0x14),
+    member("int16_t", "sort_bias", 0x16),
     size=24,
 )
 
 
 stable.struct(
     "Pkg_ResourceDirectory",
-    member("uint32_t", "material_blob_offset", 0),
-    member("uint32_t", "mesh_node_root_offset", 4),
-    member("uint32_t", "level_data_offset", 8),
+    member("uint32_t", "material_blob_offset", 0x0),
+    member("uint32_t", "mesh_node_root_offset", 0x4),
+    member("uint32_t", "level_data_offset", 0x8),
     size=12,
     doc=(
         "Package resource directory of relative offsets to material, mesh-node, and level-data "
@@ -2979,111 +2779,129 @@ stable.struct(
 
 stable.struct(
     "Pkg_ResourceHeader",
-    member("uint32_t", "resource_type", 0),
-    member("uint32_t", "data_offset", 4),
-    member("uint32_t", "data_size", 8),
-    member("uint32_t", "extra_offset", 12),
-    member("uint32_t", "flags", 16),
-    member("uint32_t", "secondary_size", 20),
-    member("uint32_t", "info_1", 24),
-    member("uint32_t", "info_2", 28),
-    member("uint32_t", "reserved", 32),
+    member("uint32_t", "resource_type", 0x0),
+    member("uint32_t", "data_offset", 0x4),
+    member("uint32_t", "data_size", 0x8),
+    member("uint32_t", "extra_offset", 0xC),
+    member("uint32_t", "flags", 0x10),
+    member("uint32_t", "secondary_size", 0x14),
+    member("uint32_t", "info_1", 0x18),
+    member("uint32_t", "info_2", 0x1C),
+    member("uint32_t", "reserved", 0x20),
     size=36,
     doc="Package header for one resource: type, relative offsets, sizes, and flags. Resource-specific payloads are still undocumented.",
 )
 
 stable.struct(
     "Pkg_ScriptHeader",
-    member("uint8_t", "size_b0", 0),
-    member("uint8_t", "size_b1", 1),
-    member("uint8_t", "size_b2", 2),
-    member("uint8_t", "size_b3", 3),
-    member("uint8_t", "end_b0", 4),
-    member("uint8_t", "end_b1", 5),
-    member("uint8_t", "end_b2", 6),
-    member("uint8_t", "end_b3", 7),
+    member("uint8_t", "size_b0", 0x0),
+    member("uint8_t", "size_b1", 0x1),
+    member("uint8_t", "size_b2", 0x2),
+    member("uint8_t", "size_b3", 0x3),
+    member("uint8_t", "end_b0", 0x4),
+    member("uint8_t", "end_b1", 0x5),
+    member("uint8_t", "end_b2", 0x6),
+    member("uint8_t", "end_b3", 0x7),
     size=8,
 )
 
-stable.struct("Pkg_SoundResource", member("uint32_t", "data_offset", 0), size=4)
+stable.struct("Pkg_SoundResource", member("uint32_t", "data_offset", 0x0), size=4)
 
-stable.struct("Pkg_SpriteAtlasResource", member("uint32_t", "data_offset", 0), size=4)
+stable.struct("Pkg_SpriteAtlasResource", member("uint32_t", "data_offset", 0x0), size=4)
 
 
-stable.struct("Pkg_StringEntry", member("uint32_t", "offset", 0), size=4)
+stable.struct("Pkg_StringEntry", member("uint32_t", "offset", 0x0), size=4)
 
-stable.struct("Pkg_TextureResource", member("uint32_t", "data_offset", 0), size=4)
+stable.struct("Pkg_TextureResource", member("uint32_t", "data_offset", 0x0), size=4)
 
 stable.struct(
-    "Pkg_TocEntry",
-    member("uint32_t", "offset", 0),
-    member("uint32_t", "size", 4),
+    "Pkg_TOCEntry",
+    member("uint32_t", "offset", 0x0),
+    member("uint32_t", "size", 0x4),
     size=8,
     doc="One 8-byte package TOC entry; the package table contains 0x8a file offset/size pairs, with size-lane aliases sharing this storage.",
 )
 
 
 stable.struct(
-    "Pkg_UiLayoutEntry",
-    member("uint32_t", "element_id", 0),
-    member("uint32_t", "element_type", 4),
-    member("int16_t", "param_a", 8),
-    member("int16_t", "param_b", 10),
-    member("uint32_t", "reserved", 12),
+    "Pkg_UILayoutEntry",
+    member("uint32_t", "element_id", 0x0),
+    member("uint32_t", "element_type", 0x4),
+    member("int16_t", "param_a", 0x8),
+    member("int16_t", "param_b", 0xA),
+    member("uint32_t", "reserved", 0xC),
     size=16,
 )
 
 
 stable.struct(
-    "Pkg_UvCoord", member("uint8_t", "u", 0), member("uint8_t", "v", 1), size=2
+    "Pkg_UVCoord", member("uint8_t", "u", 0x0), member("uint8_t", "v", 0x1), size=2
+)
+
+stable.struct(
+    "Material_TextureInfo",
+    member("Math_SizeU8", "dimensions", 0x0),
+    member(
+        "uint8_t",
+        "reserved[2]",
+        0x2,
+        doc="Upper bytes of the packed texture-info word; no stable semantic read has been isolated.",
+    ),
+    size=4,
+)
+
+stable.struct(
+    "Render_TexWrapMode",
+    member("Pkg_UVCoord", "mode", 0x0),
+    member(
+        "uint8_t",
+        "reserved[2]",
+        0x2,
+        doc="Upper bytes of the packed texture wrap/mode word; no stable semantic read has been isolated.",
+    ),
+    size=4,
 )
 
 stable.struct(
     "Pkg_VertexData",
-    member("int16_t", "x", 0),
-    member("int16_t", "y", 2),
-    member("int16_t", "z", 4),
-    member("int16_t", "normal_group_index", 6),
-    member("uint8_t", "r", 8),
-    member("uint8_t", "g", 9),
-    member("uint8_t", "b", 10),
-    member("uint8_t", "a", 11),
+    member("Math_Vec3i16", "pos", 0x0),
+    member("int16_t", "normal_group_index", 0x6),
+    member("uint8_t", "r", 0x8),
+    member("uint8_t", "g", 0x9),
+    member("uint8_t", "b", 0xA),
+    member("uint8_t", "a", 0xB),
     size=12,
 )
 
 stable.struct(
     "Pkg_VertexNormalGroup",
-    member("int16_t", "normal_x", 0),
-    member("int16_t", "normal_y", 2),
-    member("int16_t", "normal_z", 4),
-    member("int16_t", "padding", 6),
+    member("Math_Vec3i16", "normal", 0x0),
+    member("int16_t", "padding", 0x6),
     size=8,
 )
 
 
 stable.struct(
     "Render_Batch",
-    member("uint32_t", "flags", 0),
-    member("uint32_t", "material_index", 4),
-    member("uint32_t", "texture_id", 8),
-    member("uint32_t", "batch_flags", 12),
-    member("uint32_t", "screen_coords[12]", 16),
-    member("float", "view_space_pos[12]", 64),
-    member("float", "fog_depth", 112),
-    member("uint32_t", "vertex_colors[4]", 116),
+    member("uint32_t", "flags", 0x0),
+    member("uint32_t", "material_index", 0x4),
+    member("uint32_t", "texture_id", 0x8),
+    member("uint32_t", "batch_flags", 0xC),
+    member("uint32_t", "screen_coords[12]", 0x10),
+    member("float", "view_space_pos[12]", 0x40),
+    member("float", "fog_depth", 0x70),
+    member("uint32_t", "vertex_colors[4]", 0x74),
     size=132,
 )
 
 stable.struct(
     "Render_FrustumClipPlane",
-    member("int32_t", "distance", 0),
-    member("int16_t", "normal_x", 4),
-    member("int16_t", "normal_y", 6),
-    member("int16_t", "normal_z", 8),
+    member("int32_t", "distance", 0x0),
+    member("Math_Vec3i16", "normal", 0x4),
     member(
         "int16_t",
         "padding_0a",
-        10,
+        0xA,
         doc="Alignment/pad word in the 12-byte frustum/clip-plane record.",
     ),
     size=12,
@@ -3092,89 +2910,83 @@ stable.struct(
 
 stable.struct(
     "Render_ClipPlane",
-    member("float", "normal_x", 0),
-    member("float", "normal_y", 4),
-    member("float", "normal_z", 8),
-    member("float", "distance", 12),
+    member("Math_Vec3f", "normal", 0x0),
+    member("float", "distance", 0xC),
     size=16,
 )
 
 stable.struct(
     "Render_ClipUVData",
-    member("int32_t", "screen_x", 0),
-    member("int32_t", "screen_y", 4),
-    member("int32_t", "screen_z", 8),
-    member("int32_t", "rhw", 12),
-    member("uint32_t", "color", 16),
-    member("float", "u", 20),
-    member("float", "v", 24),
+    member("Math_Vec3i32", "screen", 0x0),
+    member("int32_t", "rhw", 0xC),
+    member("uint32_t", "color", 0x10),
+    member("float", "u", 0x14),
+    member("float", "v", 0x18),
     size=28,
 )
 
 stable.struct(
     "Render_ClipVertex",
-    member("float", "x", 0),
-    member("float", "y", 4),
-    member("float", "z", 8),
-    member("float", "w", 12),
-    member("float", "color_or_data", 16),
-    member("float", "u", 20),
-    member("float", "v", 24),
+    member("float", "x", 0x0),
+    member("float", "y", 0x4),
+    member("float", "z", 0x8),
+    member("float", "w", 0xC),
+    member("float", "color_or_data", 0x10),
+    member("float", "u", 0x14),
+    member("float", "v", 0x18),
     size=28,
 )
 
 stable.struct(
     "Render_ClipAttribute",
-    member("float", "component_0", 0),
-    member("float", "component_1", 4),
-    member("float", "component_2", 8),
+    member("float", "components[3]", 0x0),
     size=12,
 )
 
 
 stable.struct(
     "Render_Color32",
-    member("uint8_t", "b", 0),
-    member("uint8_t", "g", 1),
-    member("uint8_t", "r", 2),
-    member("uint8_t", "a", 3),
+    member("uint8_t", "b", 0x0),
+    member("uint8_t", "g", 0x1),
+    member("uint8_t", "r", 0x2),
+    member("uint8_t", "a", 0x3),
     size=4,
 )
 
 stable.struct(
     "Render_ComponentData",
-    member("uint32_t", "flags", 0),
-    member("Actor_State*", "parent_actor", 4),
-    member("Mesh_Node*", "mesh_data_ptr", 8),
-    member("Mesh_RuntimeVertex*", "vertex_buffer", 12),
-    member("Mesh_RuntimePolygon*", "index_buffer", 16),
-    member("int32_t", "mesh_offset", 20),
-    member("int32_t", "material_offset", 24),
-    member("int16_t", "lod_level", 28),
-    member("int16_t", "render_priority", 30),
-    member("Material_Entry*", "texture_ptr", 32),
-    member("uint32_t", "vertex_count", 36),
-    member("uint32_t", "polygon_count", 40),
-    member("int32_t*", "transform_matrix", 44),
+    member("uint32_t", "flags", 0x0),
+    member("Actor_State*", "parent_actor", 0x4),
+    member("Mesh_Node*", "mesh_data_ptr", 0x8),
+    member("Mesh_RuntimeVertex*", "vertex_buffer", 0xC),
+    member("Mesh_RuntimePolygon*", "index_buffer", 0x10),
+    member("int32_t", "mesh_offset", 0x14),
+    member("int32_t", "material_offset", 0x18),
+    member("int16_t", "lod_level", 0x1C),
+    member("int16_t", "render_priority", 0x1E),
+    member("Material_Entry*", "texture_ptr", 0x20),
+    member("uint32_t", "vertex_count", 0x24),
+    member("uint32_t", "polygon_count", 0x28),
+    member("int32_t*", "transform_matrix", 0x2C),
     size=48,
 )
 
 stable.struct(
     "Render_GradientState",
-    member("int32_t", "start_color", 0),
-    member("int32_t", "end_color", 4),
+    member("int32_t", "start_color", 0x0),
+    member("int32_t", "end_color", 0x4),
     size=8,
 )
 
 
 stable.struct(
     "Render_Polygon",
-    member("Material_Entry*", "material", 0),
-    member("uint16_t", "vertex_indices[4]", 4),
-    member("Mesh_FaceNormal*", "face_normal", 12),
-    member("uint16_t", "flags", 16),
-    member("uint16_t", "padding", 18),
-    member("uint16_t", "uv_indices[4]", 20),
+    member("Material_Entry*", "material", 0x0),
+    member("uint16_t", "vertex_indices[4]", 0x4),
+    member("Mesh_FaceNormal*", "face_normal", 0xC),
+    member("uint16_t", "flags", 0x10),
+    member("uint16_t", "padding", 0x12),
+    member("uint16_t", "uv_indices[4]", 0x14),
     size=28,
 )
 
@@ -3183,76 +2995,67 @@ stable.struct(
     member(
         "uint16_t",
         "vertex_indices_front[3]",
-        0,
+        0x0,
         doc="Storage-order vertex indices before the interleaved flags field.",
     ),
-    member("uint16_t", "flags", 6),
+    member("uint16_t", "flags", 0x6),
     member(
         "uint16_t",
         "vertex_indices_after_flags[1]",
-        8,
+        0x8,
         doc="Final storage-order vertex index after flags.",
     ),
-    member("uint16_t", "material_index", 10),
+    member("uint16_t", "material_index", 0xA),
     size=12,
 )
 
 stable.struct(
+    "Render_ProjectedVertex",
+    member("int16_t", "screen_x", 0x0),
+    member("int16_t", "screen_y", 0x2),
+    member("int32_t", "screen_z", 0x4),
+    size=8,
+)
+
+stable.struct(
+    "Render_ViewVertex",
+    member("float", "x", 0x0),
+    member("float", "y", 0x4),
+    member("float", "z", 0x8),
+    size=12,
+)
+
+stable.struct(
+    "Render_TexCoord8",
+    member("uint8_t", "u", 0x0),
+    member("uint8_t", "v", 0x1),
+    size=2,
+)
+
+stable.struct(
     "Render_PolygonBatchRecord",
-    member("uint32_t", "flags", 0),
-    member("DDraw_IDirectDrawSurface7*", "texture_ptr", 4),
-    member("uint32_t", "material_tint", 8),
+    member("uint32_t", "flags", 0x0),
+    member("DDraw_IDirectDrawSurface7*", "texture_ptr", 0x4),
+    member("uint32_t", "material_tint", 0x8),
     member(
-        "uint32_t",
+        "Render_TexWrapMode",
         "tex_wrap_mode",
-        12,
-        doc="Packed texture wrap/mode word copied from Pkg_PolygonData.texture_info_packed; low byte is U wrap/mode and byte 1 is V wrap/mode, with high 16 bits not semantically validated.",
+        0xC,
+        doc="Texture wrap/mode bytes copied from Pkg_PolygonData texture info, plus reserved upper bytes.",
     ),
-    member("Render_PolygonBatchRecord*", "next_in_bucket", 16),
-    member("int16_t", "screen_x_0", 20),
-    member("int16_t", "screen_y_0", 22),
-    member("int32_t", "screen_z_0", 24),
-    member("int16_t", "screen_x_1", 28),
-    member("int16_t", "screen_y_1", 30),
-    member("int32_t", "screen_z_1", 32),
-    member("int16_t", "screen_x_2", 36),
-    member("int16_t", "screen_y_2", 38),
-    member("int32_t", "screen_z_2", 40),
-    member("int16_t", "screen_x_3", 44),
-    member("int16_t", "screen_y_3", 46),
-    member("int32_t", "screen_z_3", 48),
-    member("float", "view_x_0", 52),
-    member("float", "view_y_0", 56),
-    member("float", "view_z_0", 60),
-    member("float", "view_x_1", 64),
-    member("float", "view_y_1", 68),
-    member("float", "view_z_1", 72),
-    member("float", "view_x_2", 76),
-    member("float", "view_y_2", 80),
-    member("float", "view_z_2", 84),
-    member("float", "view_x_3", 88),
-    member("float", "view_y_3", 92),
-    member("float", "view_z_3", 96),
-    member("float", "depth_bias", 100),
+    member("Render_PolygonBatchRecord*", "next_in_bucket", 0x10),
+    member("Render_ProjectedVertex", "screen_vertices[4]", 0x14),
+    member("Render_ViewVertex", "view_vertices[4]", 0x34),
+    member("float", "depth_bias", 0x64),
     member(
         "int32_t",
         "face_normal_dot",
-        104,
+        0x68,
         doc="Signed face-normal/dot value used by draw and clipping paths; Render_QuadClipped tests it against zero.",
     ),
-    member("uint32_t", "vertex_color_0", 108),
-    member("uint32_t", "vertex_color_1", 112),
-    member("uint32_t", "vertex_color_2", 116),
-    member("uint32_t", "vertex_color_3", 120),
-    member("uint8_t", "tex_u_0", 124),
-    member("uint8_t", "tex_v_0", 125),
-    member("uint8_t", "tex_u_1", 126),
-    member("uint8_t", "tex_v_1", 127),
-    member("uint8_t", "tex_u_2", 128),
-    member("uint8_t", "tex_v_2", 129),
-    member("uint8_t", "tex_u_3", 130),
-    member("uint8_t", "tex_v_3", 131),
-    member("uint32_t", "render_state_flags", 132),
+    member("uint32_t", "vertex_colors[4]", 0x6C),
+    member("Render_TexCoord8", "tex_coords[4]", 0x7C),
+    member("uint32_t", "render_state_flags", 0x84),
     size=136,
 )
 
@@ -3261,18 +3064,18 @@ stable.struct(
     member(
         "Material_TableEntry*",
         "material_entry",
-        0,
+        0x0,
         doc="Runtime material-table entry pointer read by Render_PolygonBatch/Render_SetPolygonUVs.",
     ),
-    member("uint16_t", "vertex_indices[4]", 4),
-    member("uint32_t", "normal_offset", 12),
-    member("uint16_t", "flags", 16),
-    member("uint16_t", "uv_index", 18),
-    member("int16_t", "depth_bias", 20),
+    member("uint16_t", "vertex_indices[4]", 0x4),
+    member("uint32_t", "normal_offset", 0xC),
+    member("uint16_t", "flags", 0x10),
+    member("uint16_t", "uv_index", 0x12),
+    member("int16_t", "depth_bias", 0x14),
     member(
         "int16_t",
         "depth_bias_q12",
-        22,
+        0x16,
         doc="Fixed-point companion to depth_bias in polygon render refs; validated as depth-bias data for render ref records.",
     ),
     size=24,
@@ -3280,147 +3083,123 @@ stable.struct(
 
 stable.struct(
     "Render_QuadData",
-    member("uint32_t", "flags", 0),
-    member("Material_Entry*", "material_ptr", 4),
-    member("uint32_t", "color", 8),
+    member("uint32_t", "flags", 0x0),
+    member("Material_Entry*", "material_ptr", 0x4),
+    member("uint32_t", "color", 0x8),
     member(
         "uint8_t",
         "texture_width",
-        12,
+        0xC,
         doc="Quad texture width byte read by Render_DrawQuad/quad rendering paths.",
     ),
     member(
         "uint8_t",
         "texture_height",
-        13,
+        0xD,
         doc="Quad texture height byte read by Render_DrawQuad/quad rendering paths.",
     ),
     member(
         "uint16_t",
         "quad_padding",
-        14,
+        0xE,
         doc=(
             "Alignment/pad word between texture dimensions and quad_state; Render_DrawQuad reads "
             "texture_width at +0x0C (PC EN) and texture_height at +0x0D (PC EN), then skips to quad_state "
             "at +0x10 (PC EN)."
         ),
     ),
-    member("uint32_t", "quad_state", 16),
-    member("int16_t", "vertex_x[4]", 20),
-    member("int16_t", "vertex_y[4]", 28),
-    member("float", "vertex_z[4]", 36),
-    member("uint32_t", "quad_type", 52),
-    member("uint32_t", "vertex_data[16]", 56),
-    member("uint8_t", "texture_coords[16]", 120),
-    member("uint32_t", "vertex_colors[4]", 136),
+    member("uint32_t", "quad_state", 0x10),
+    member("int16_t", "vertex_x[4]", 0x14),
+    member("int16_t", "vertex_y[4]", 0x1C),
+    member("float", "vertex_z[4]", 0x24),
+    member("uint32_t", "quad_type", 0x34),
+    member("uint32_t", "vertex_data[16]", 0x38),
+    member("uint8_t", "texture_coords[16]", 0x78),
+    member("uint32_t", "vertex_colors[4]", 0x88),
     size=152,
 )
 
 stable.struct(
     "Render_QuadRenderData",
-    member("uint32_t", "render_flags[5]", 0),
-    member("int16_t", "vertex_0_screen_x", 20),
-    member("int16_t", "vertex_0_screen_y", 22),
-    member("uint32_t", "vertex_0_depth", 24),
-    member("int16_t", "vertex_1_screen_x", 28),
-    member("int16_t", "vertex_1_screen_y", 30),
-    member("uint32_t", "vertex_1_depth", 32),
-    member("int16_t", "vertex_2_screen_x", 36),
-    member("int16_t", "vertex_2_screen_y", 38),
-    member("uint32_t", "vertex_2_depth", 40),
-    member("int16_t", "vertex_3_screen_x", 44),
-    member("int16_t", "vertex_3_screen_y", 46),
-    member("uint32_t", "sort_data[2]", 48),
-    member("float", "vertex_0_x", 56),
-    member("float", "vertex_0_z", 60),
-    member("float", "vertex_0_y", 64),
-    member("float", "vertex_1_x", 68),
-    member("float", "vertex_1_z", 72),
-    member("float", "vertex_1_y", 76),
-    member("float", "vertex_2_x", 80),
-    member("float", "vertex_2_y", 84),
-    member("float", "vertex_3_z", 88),
-    member("float", "z_offset", 92),
-    member("int32_t", "depth_bias_sign", 96),
-    member("uint32_t", "vertex_tint", 100),
+    member("uint32_t", "render_flags[5]", 0x0),
+    member("Render_ProjectedVertex", "projected_vertices[3]", 0x14),
+    member("int16_t", "vertex_3_screen_x", 0x2C),
+    member("int16_t", "vertex_3_screen_y", 0x2E),
+    member("uint32_t", "sort_data[2]", 0x30),
+    member("float", "vertex_0_x", 0x38),
+    member("float", "vertex_0_z", 0x3C),
+    member("float", "vertex_0_y", 0x40),
+    member("float", "vertex_1_x", 0x44),
+    member("float", "vertex_1_z", 0x48),
+    member("float", "vertex_1_y", 0x4C),
+    member("float", "vertex_2_x", 0x50),
+    member("float", "vertex_2_y", 0x54),
+    member("float", "vertex_3_z", 0x58),
+    member("float", "z_offset", 0x5C),
+    member("int32_t", "depth_bias_sign", 0x60),
+    member("uint32_t", "vertex_tint", 0x64),
     size=104,
 )
 
-stable.struct("Render_Rgb555Palette", member("uint16_t", "colors[256]", 0), size=512)
+stable.struct("Render_RGB555Palette", member("uint16_t", "colors[256]", 0x0), size=512)
 
 stable.struct(
     "Render_SpriteData",
-    member("int32_t", "x", 0),
-    member("int32_t", "y", 4),
-    member("int32_t", "texture_id", 8),
+    member("int32_t", "x", 0x0),
+    member("int32_t", "y", 0x4),
+    member("int32_t", "texture_id", 0x8),
     size=12,
 )
 
 stable.struct(
     "Render_SpriteLayer",
-    member("int32_t", "texture_handle", 0),
-    member("int32_t", "sprite_count", 4),
-    member("Render_SpriteData*", "sprite_list_ptr", 8),
-    member("Render_SpriteLayer*", "next_layer_ptr", 12),
+    member("int32_t", "texture_handle", 0x0),
+    member("int32_t", "sprite_count", 0x4),
+    member("Render_SpriteData*", "sprite_list_ptr", 0x8),
+    member("Render_SpriteLayer*", "next_layer_ptr", 0xC),
     size=16,
 )
 
 stable.struct(
     "Render_SpriteNodeData",
-    member("uint8_t", "node_type", 0),
-    member("uint8_t", "sprite_flags", 1),
-    member("int16_t", "frame_index", 2),
-    member("Material_Entry*", "material_ptr", 4),
-    member("int16_t", "offset_x", 8),
-    member("int16_t", "offset_y", 10),
-    member("int16_t", "offset_z", 12),
-    member("int16_t", "sort_key", 14),
-    member("int16_t", "bound_extent_x", 16),
-    member("int16_t", "bound_extent_y", 18),
+    member("uint8_t", "node_type", 0x0),
+    member("uint8_t", "sprite_flags", 0x1),
+    member("int16_t", "frame_index", 0x2),
+    member("Material_Entry*", "material_ptr", 0x4),
+    member("Math_Vec3i16", "offset", 0x8),
+    member("int16_t", "sort_key", 0xE),
+    member("Math_Vec2i16", "bound_extent", 0x10),
     size=20,
 )
 
 stable.struct(
     "Render_SpriteVertexData",
-    member("int16_t", "pos_x", 0),
-    member("int16_t", "pos_y", 2),
-    member("int16_t", "pos_z", 4),
-    member("uint8_t", "color_r", 6),
-    member("uint8_t", "color_g", 7),
-    member("uint8_t", "color_b", 8),
-    member("uint8_t", "normal_x", 9),
-    member("uint8_t", "normal_y", 10),
-    member("uint8_t", "vertex_state", 11),
+    member("Math_Vec3i16", "pos", 0x0),
+    member("uint8_t", "color_r", 0x6),
+    member("uint8_t", "color_g", 0x7),
+    member("uint8_t", "color_b", 0x8),
+    member("uint8_t", "normal_x", 0x9),
+    member("uint8_t", "normal_y", 0xA),
+    member("uint8_t", "vertex_state", 0xB),
     size=12,
 )
 
 stable.struct(
-    "Render_ProjectedVertex",
-    member("int16_t", "screen_x", 0),
-    member("int16_t", "screen_y", 2),
-    member("int32_t", "screen_z", 4),
-    size=8,
+    "Render_FloatColorRGB",
+    member("float", "r", 0x0),
+    member("float", "g", 0x4),
+    member("float", "b", 0x8),
+    size=12,
 )
 
 stable.struct(
     "Render_WorkArea",
-    member("uint8_t", "transform_scratch[144]", 0),
-    member("float", "clip_double_buffer_0[160]", 144),
-    member("float", "clip_double_buffer_1[160]", 784),
-    member("uint8_t", "vertex_scratch[104]", 1424),
-    member("float", "color_data[20]", 1528),
-    member("float", "color_r_0", 1608),
-    member("float", "color_g_0", 1612),
-    member("float", "color_b0", 1616),
-    member("float", "color_r_1", 1620),
-    member("float", "color_g_1", 1624),
-    member("float", "color_b1", 1628),
-    member("float", "color_r_2", 1632),
-    member("float", "color_g_2", 1636),
-    member("float", "color_b2", 1640),
-    member("float", "color_r_3", 1644),
-    member("float", "color_g_3", 1648),
-    member("float", "color_b3", 1652),
+    member("uint8_t", "transform_scratch[144]", 0x0),
+    member("float", "clip_double_buffer_0[160]", 0x90),
+    member("float", "clip_double_buffer_1[160]", 0x310),
+    member("uint8_t", "vertex_scratch[104]", 0x590),
+    member("float", "color_data[20]", 0x5F8),
+    member("Render_FloatColorRGB", "color_channels[4]", 0x648),
     size=1656,
 )
 
@@ -3429,25 +3208,25 @@ stable.struct(
     member(
         "int32_t",
         "version_marker",
-        0,
+        0x0,
         doc="32-bit save-file marker set to 2 before SaveGame_InitOperation writes the 0x1dc-byte buffer; SaveGame_LoadState compares the full dword to 2.",
     ),
     member(
         "int32_t",
         "game_state",
-        4,
+        0x4,
         doc="Copied from game_state by SaveGame_SaveToSlot and restored by SaveGame_LoadState.",
     ),
     member(
         "int32_t",
         "game_settings",
-        8,
+        0x8,
         doc="Copied from game_settings by SaveGame_SaveToSlot and restored by SaveGame_LoadState.",
     ),
     member(
         "int32_t",
         "player_lives_state",
-        12,
+        0xC,
         doc="Copied from player_lives by SaveGame_SaveToSlot and restored by SaveGame_LoadState.",
     ),
     size=16,
@@ -3458,73 +3237,73 @@ stable.struct(
     member(
         "char",
         "max_world_reached",
-        0,
+        0x0,
         doc="Highest world/progress index used by Level_CalculateCompletionPercent as the base completion contribution.",
     ),
     member(
         "uint8_t",
         "is_valid",
-        1,
+        0x1,
         doc="Per-slot valid flag set to 1 by SaveGame_SaveToSlot after copying the 0x5c-byte progress block.",
     ),
     member(
         "uint8_t",
         "puppy_count_backup",
-        2,
+        0x2,
         doc="Backed-up puppy/life count copied from backup_puppy_count by SaveGame_BackupPuppyCount.",
     ),
     member(
         "uint8_t",
         "save_game_init_flag",
-        3,
+        0x3,
         doc="Initialization/progress flag set to 4 by SaveGame_InitializeState.",
     ),
     member(
         "uint8_t",
         "game_complete_flag",
-        4,
+        0x4,
         doc="Game-complete flag written by SaveGame_SetGameComplete.",
     ),
     member(
         "uint8_t",
         "slot_padding[3]",
-        5,
+        0x5,
         doc="Unused alignment bytes before the per-level progress arrays.",
     ),
     member(
         "uint8_t",
         "level_completion_flags[16]",
-        8,
+        0x8,
         doc="Per-level puppy/bone completion bitfields updated by SaveGame_SaveLevelCompletion.",
     ),
     member(
         "uint8_t",
         "level_bonus_item_flags[16]",
-        24,
+        0x18,
         doc="Per-level dalmatian/bonus bitfields updated by SaveGame_SaveLevelCompletion.",
     ),
     member(
         "uint8_t",
         "level_best_scores[16]",
-        40,
+        0x28,
         doc="Per-level best completion scores; Level_CalculateCompletionPercent treats 100 as full level score.",
     ),
     member(
         "uint16_t",
         "bonus_level_data[5]",
-        56,
+        0x38,
         doc="Packed bonus-level parameters read by Level_InitializeBonusData.",
     ),
     member(
         "uint16_t",
         "level_best_time",
-        66,
+        0x42,
         doc="Best time/value for the TOB bonus level, written from menu_items by SaveGame_SaveLevelCompletion.",
     ),
     member(
         "uint8_t",
         "bonus_name_entry_buffer[24]",
-        68,
+        0x44,
         doc="Name-entry/bonus scratch data copied as part of the 0x5c-byte save slot payload.",
     ),
     size=92,
@@ -3533,64 +3312,47 @@ stable.struct(
 
 stable.struct(
     "Scene_NodeEntry",
-    member("uint32_t", "material_ptr", 0),
-    member("uint32_t", "type_and_flags", 4),
-    member("uint32_t", "data_offset", 8),
-    member("uint32_t", "child_table_ptr", 12),
+    member("uint32_t", "material_ptr", 0x0),
+    member("uint32_t", "type_and_flags", 0x4),
+    member("uint32_t", "data_offset", 0x8),
+    member("uint32_t", "child_table_ptr", 0xC),
     size=16,
 )
 
 stable.struct(
     "Scene_Header",
-    member("int32_t", "node_count", 0),
-    member("Scene_Node*", "root_node_ptr", 4),
-    member("Scene_Node**", "scene_node_list_ptr", 8),
+    member("int32_t", "node_count", 0x0),
+    member("Scene_Node*", "root_node_ptr", 0x4),
+    member("Scene_Node**", "scene_node_list_ptr", 0x8),
     size=12,
 )
 
 stable.struct(
     "Scene_LocalTransform",
-    member("int16_t", "pos_x", 0),
-    member("int16_t", "pos_y", 2),
-    member("int16_t", "pos_z", 4),
-    member("int16_t", "rot_x", 6),
-    member("int16_t", "rot_y", 8),
-    member("int16_t", "rot_z", 10),
-    member("uint8_t", "flags", 12),
-    member("uint8_t", "padding_0d[1]", 13),
+    member("Math_Vec3i16", "pos", 0x0),
+    member("Math_Vec3i16", "rot", 0x6),
+    member("uint8_t", "flags", 0xC),
+    member("uint8_t", "padding_0d[1]", 0xD),
     size=14,
 )
 
 stable.struct(
     "Camera_Runtime",
-    member("int16_t", "yaw", 0),
-    member("int16_t", "pitch", 2),
-    member("int16_t", "roll", 4),
-    member("int16_t", "look_at_pitch", 6),
-    member("int16_t", "orbit_yaw", 8),
-    member("int16_t", "fov", 10),
-    member("int32_t", "focal_distance", 12),
-    member("int32_t", "eye_pos_x", 16),
-    member("int32_t", "eye_pos_z", 20),
-    member("int32_t", "eye_pos_y", 24),
-    member("int32_t", "target_x", 28),
-    member("int32_t", "target_z", 32),
-    member("int32_t", "target_y", 36),
-    member("Entity_State*", "active_entity_slot_ptr", 40),
-    member("int16_t", "screen_half_w", 44),
-    member("int16_t", "screen_half_h", 46),
-    member("Math_Matrix3x3i16", "view_matrix", 48),
-    member("int16_t", "view_matrix_padding", 66),
-    member("int32_t", "frustum_plane_0_x", 68),
-    member("int32_t", "frustum_plane_0_y", 72),
-    member("int32_t", "frustum_plane_0_z", 76),
-    member("int32_t", "frustum_plane_1_x", 80),
-    member("int32_t", "frustum_plane_1_y", 84),
-    member("int32_t", "frustum_plane_1_z", 88),
-    member("int32_t", "frustum_plane_2_x", 92),
-    member("int32_t", "frustum_plane_2_y", 96),
-    member("int32_t", "frustum_plane_2_z", 100),
-    member("int32_t", "frustum_plane_3_x", 104),
+    member("int16_t", "yaw", 0x0),
+    member("int16_t", "pitch", 0x2),
+    member("int16_t", "roll", 0x4),
+    member("int16_t", "look_at_pitch", 0x6),
+    member("int16_t", "orbit_yaw", 0x8),
+    member("int16_t", "fov", 0xA),
+    member("int32_t", "focal_distance", 0xC),
+    member("Math_Vec3i32XZY", "eye_pos", 0x10),
+    member("Math_Vec3i32XZY", "target_pos", 0x1C),
+    member("Entity_State*", "active_entity_slot_ptr", 0x28),
+    member("Math_SizeI16", "screen_half", 0x2C),
+    member("Math_Matrix3x3i16", "view_matrix", 0x30),
+    member("int16_t", "view_matrix_padding", 0x42),
+    member("Camera_FrustumPlane", "frustum_planes[3]", 0x44),
+    member("int32_t", "frustum_plane_3_x", 0x68),
     size=108,
 )
 
@@ -3599,13 +3361,13 @@ stable.struct(
     member(
         "Scene_Node*",
         "next_in_resource_list",
-        0,
+        0x0,
         doc="Resource-side list link used to chain Scene_Node records during load/fixup.",
     ),
     member(
         "int32_t",
         "node_list_skip_count",
-        4,
+        0x4,
         doc=(
             "Scene_RenderNodeTree treats this as a node-list cursor skip count when traversal "
             "flags hide a subtree."
@@ -3614,7 +3376,7 @@ stable.struct(
     member(
         "Scene_Node*",
         "transform_parent_node",
-        8,
+        0x8,
         doc=(
             "Parent transform node used by the renderer for traversal flags and parent world "
             "matrix/position fields. Runtime render fixes cannot treat it as a child-list head."
@@ -3623,109 +3385,93 @@ stable.struct(
     member(
         "Math_Matrix3x3i16",
         "local_rot_matrix",
-        12,
+        0xC,
         doc="Local rotation matrix read by Scene_UpdateNodeAnimation/node-transform update paths.",
     ),
-    member("int16_t", "local_rot_reserved", 30),
-    member("int32_t", "local_pos_x", 32),
-    member("int32_t", "local_pos_y", 36),
-    member("int32_t", "local_pos_z", 40),
-    member("Math_Matrix3x3i16", "world_rot_matrix", 44),
+    member("int16_t", "local_rot_reserved", 0x1E),
+    member("Math_Vec3i32", "local_pos", 0x20),
+    member("Math_Matrix3x3i16", "world_rot_matrix", 0x2C),
     member(
         "int16_t",
         "world_rot_reserved",
-        62,
+        0x3E,
         doc=(
             "Alignment/reserved word after world_rot_matrix; Scene_UpdateNodeAnimation writes the "
             "surrounding matrix fields, but no direct semantic access to +0x3E (PC EN) has been isolated."
         ),
     ),
-    member("int32_t", "world_pos_x", 64),
-    member("int32_t", "world_pos_y", 68),
-    member("int32_t", "world_pos_z", 72),
+    member("Math_Vec3i32", "world_pos", 0x40),
     member(
-        "int32_t",
-        "world_delta_pos_x",
-        76,
-        doc="Per-update world position delta computed by Scene_UpdateNodeAnimation as new world_pos_x minus the previous world_pos_x.",
-    ),
-    member(
-        "int32_t",
-        "world_delta_pos_y",
-        80,
-        doc="Per-update world position delta computed by Scene_UpdateNodeAnimation as new world_pos_y minus the previous world_pos_y.",
-    ),
-    member(
-        "int32_t",
-        "world_delta_pos_z",
-        84,
-        doc="Per-update world position delta computed by Scene_UpdateNodeAnimation as new world_pos_z minus the previous world_pos_z.",
+        "Math_Vec3i32",
+        "world_delta_pos",
+        0x4C,
+        doc="Per-update world position delta computed by Scene_UpdateNodeAnimation.",
     ),
     member(
         "int8_t",
         "position_anim_channel_index_or_minus_one",
-        88,
+        0x58,
         doc="Signed animation channel index read by Scene_UpdateNodeAnimation; negative values skip sampling.",
     ),
     member(
         "int8_t",
         "rotation_anim_channel_index_or_minus_one",
-        89,
+        0x59,
         doc="Signed animation channel index read by Scene_UpdateNodeAnimation; negative values skip sampling.",
     ),
     member(
         "int8_t",
         "visibility_anim_channel_index_or_minus_one",
-        90,
+        0x5A,
         doc="Signed animation channel index read by visibility/render traversal; negative values skip sampling.",
     ),
     member(
         "int8_t",
         "scale_anim_channel_index_or_minus_one",
-        91,
+        0x5B,
         doc="Signed animation channel index read by Scene_UpdateNodeAnimation; negative values skip sampling.",
     ),
     member(
         "uint16_t",
         "anim_update_sentinel",
-        92,
+        0x5C,
         doc="Scene_UpdateNodeAnimation skips animation update when this word is 0xFFFF.",
     ),
-    member("uint16_t", "padding_5e", 94),
+    member("uint16_t", "padding_5e", 0x5E),
     member(
         "int32_t",
         "cached_anim_tick",
-        96,
+        0x60,
         doc="Compared/stored against actor animation tick by Scene_UpdateNodeAnimation.",
     ),
     member(
         "uint8_t",
         "node_type",
-        100,
+        0x64,
         doc="Node type byte read by Scene_UpdateNodeAnimation.",
     ),
     member(
         "uint8_t",
         "traversal_flags",
-        101,
+        0x65,
         doc="Traversal/visibility flags byte read by Scene_TraverseNodeTree.",
     ),
     member(
         "int8_t",
         "render_entry_index_for_type_6",
-        102,
+        0x66,
         doc="Type-specific signed render/model-entry index; node_type 6 render paths index actor+0x94 (PC EN) with this byte.",
     ),
     member(
         "int8_t",
         "type_specific_secondary_render_or_sound_index",
-        103,
+        0x67,
         doc="Type-specific secondary byte. For node_type 0x0b sound nodes this is a level-local sound index passed to Audio_PlayLevelSoundIndexAtPosition.",
     ),
     member(
         "int32_t",
         "render_param_1",
-        104,
+        0x68,
         doc=(
             "Type-specific render/collision parameter. For collision-style nodes, the low/high "
             "words can act as vertex and polygon counts."
@@ -3734,7 +3480,7 @@ stable.struct(
     member(
         "void*",
         "variant_payload_ptr",
-        108,
+        0x6C,
         doc=(
             "Type-specific pointer: model/mesh sprite table, type-8 simple-node payload, "
             "or collision/scene polygon array; rebased by Resource_FixUp*Node paths."
@@ -3743,38 +3489,33 @@ stable.struct(
     member(
         "Collision_Vertex*",
         "collision_vertices",
-        112,
+        0x70,
         doc="Collision/scene vertex array with signed int16 x/y/z at offsets +0/+2/+4 and 12-byte stride.",
     ),
-    member("int32_t", "actor_world_pos_z", 116),
-    member("uint8_t", "visibility_flags_0", 120),
-    member("uint8_t", "visibility_flags_1", 121),
-    member("uint8_t", "visibility_flags_2", 122),
-    member("uint8_t", "visibility_flags_3", 123),
-    member("uint8_t", "visibility_flags_4", 124),
-    member("uint8_t", "visibility_flags_5", 125),
+    member("int32_t", "actor_world_pos_z", 0x74),
+    member("uint8_t", "visibility_flags[6]", 0x78),
     member(
         "uint8_t",
         "reserved_7e[2]",
-        126,
+        0x7E,
         doc="Reserved model-node tail bytes before rebased model pointers.",
     ),
     member(
         "void*",
         "model_relocated_ptr_80",
-        128,
+        0x80,
         doc=("Model-node pointer rebased by Resource_FixUpModelNode at +0x80 (PC EN)."),
     ),
     member(
         "void*",
         "model_relocated_ptr_84",
-        132,
+        0x84,
         doc=("Model-node pointer rebased by Resource_FixUpModelNode at +0x84 (PC EN)."),
     ),
     member(
         "uint32_t",
         "model_runtime_flags",
-        136,
+        0x88,
         doc=(
             "Flags read by traversal/render/fixup paths; Resource_FixUpModelNode tests bit 1 at +0x88 (PC "
             "EN), and collision polygon tests use transformed coordinates when bits 0x22 are set."
@@ -3783,60 +3524,59 @@ stable.struct(
     member(
         "uint32_t",
         "variant_transform_tail",
-        140,
+        0x8C,
         doc="Opaque tail dword before trail_effects_ptr.",
     ),
-    member("Trail_BoneEffect*", "trail_effects_ptr", 144),
-    member("Submesh_Entry*", "submesh_entry_table", 148),
+    member("Trail_BoneEffect*", "trail_effects_ptr", 0x90),
+    member("Submesh_Entry*", "submesh_entry_table", 0x94),
     member(
         "uint8_t",
         "padding_98[4]",
-        152,
+        0x98,
         doc="Opaque tail gap used by render/finalize/bone paths.",
     ),
-    member("int32_t", "sort_key_2", 156),
-    member("int32_t", "sort_key_3", 160),
-    member("Scene_Node*", "child_node_list_ptr", 164),
+    member("int32_t", "sort_keys[2]", 0x9C),
+    member("Scene_Node*", "child_node_list_ptr", 0xA4),
     member(
         "uint8_t",
         "reserved_a8[4]",
-        168,
+        0xA8,
         doc="Reserved model-node tail gap before the rebased animation-data pointer.",
     ),
     member(
         "void*",
         "model_animation_data_ptr",
-        172,
+        0xAC,
         doc="Model animation-data pointer rebased by Resource_FixUpModelNode and read by Scene_TraverseNodeTree for visibility animation data.",
     ),
     member(
         "void*",
         "offset_fixup_list_ptr",
-        176,
+        0xB0,
         doc="Rebased model-node offset/fixup list pointer walked by Resource_FixUpModelNode.",
     ),
     member(
         "int32_t",
         "child_rot_x",
-        180,
+        0xB4,
         doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail field.",
     ),
     member(
         "uint16_t",
         "padding_b8",
-        184,
+        0xB8,
         doc="Opaque child-transform gap; no stable read/write access has been observed.",
     ),
     member(
         "uint16_t",
         "mesh_node_count",
-        186,
+        0xBA,
         doc="Count for mesh_node_table read by Resource_FixUpModelNode/Resource_FixUpMeshNode.",
     ),
     member(
         "Mesh_RenderNodeEntry*",
         "mesh_node_table",
-        188,
+        0xBC,
         doc=(
             "32-byte mesh render-node entry table; count is read from mesh_node_count at +0xBA (PC EN) "
             "and entries are fixed by Resource_FixUpMeshNode before Scene_RenderSubMesh indexes them."
@@ -3845,55 +3585,55 @@ stable.struct(
     member(
         "int32_t",
         "child_scale_x",
-        192,
+        0xC0,
         doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail field.",
     ),
     member(
         "uint8_t",
         "reserved_c4",
-        196,
+        0xC4,
         doc="Reserved byte before model-node type-1 dispatch metadata.",
     ),
     member(
         "int8_t",
         "type_1_dispatch_index",
-        197,
+        0xC5,
         doc="Signed dispatch index used by Scene_TraverseNodeTree and tested by Resource_FixUpModelNode before rebasing LOD/config data.",
     ),
     member(
         "int8_t",
         "type_1_attach_point_index",
-        198,
+        0xC6,
         doc="For Scene_UpdateNodeAnimation node type 1, indexes actor attach_point_table entries.",
     ),
     member(
         "int8_t",
         "type_1_bone_channel_index",
-        199,
+        0xC7,
         doc="For Scene_UpdateNodeAnimation node type 1, indexes the type-1 bone/animation channel table.",
     ),
     member(
         "int32_t",
         "child_scale_z",
-        200,
+        0xC8,
         doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail field.",
     ),
     member(
         "int32_t",
         "render_offset_x",
-        204,
+        0xCC,
         doc="Model render offset added to world_pos_x by Scene_TraverseNodeTree to produce render-space position.",
     ),
     member(
         "int32_t",
         "render_offset_y",
-        208,
+        0xD0,
         doc="Model render offset added to world_pos_y by Scene_TraverseNodeTree to produce render-space position.",
     ),
     member(
         "int32_t",
         "render_offset_z",
-        212,
+        0xD4,
         doc=(
             "Model render offset added to world_pos_z by Scene_TraverseNodeTree to produce render-space "
             "position; has no confirmed is_active meaning."
@@ -3902,22 +3642,22 @@ stable.struct(
     member(
         "Scene_Node*",
         "lod_config_ptr",
-        216,
+        0xD8,
         doc="Name retained as inferred; current audit did not find a direct stable accessor for this variant-tail pointer.",
     ),
     size=220,
 )
 
-stable.struct("Scene_NodeType", member("uint32_t", "type", 0), size=4)
+stable.struct("Scene_NodeType", member("uint32_t", "type", 0x0), size=4)
 
 
 stable.struct(
     "Script_Context",
-    member("uint8_t*", "script_data", 0),
-    member("uint8_t*", "script_pc", 4),
-    member("int32_t*", "stack_ptr", 8),
-    member("int32_t*", "var_base", 12),
-    member("uint32_t", "flags", 16),
+    member("uint8_t*", "script_data", 0x0),
+    member("uint8_t*", "script_pc", 0x4),
+    member("int32_t*", "stack_ptr", 0x8),
+    member("int32_t*", "var_base", 0xC),
+    member("uint32_t", "flags", 0x10),
     size=20,
 )
 
@@ -3926,7 +3666,7 @@ stable.struct(
     member(
         "Script_CommandCallback",
         "handlers[45]",
-        0,
+        0x0,
         doc=(
             "45-entry script opcode handler array. Entry 0 is null in the "
             "table; non-null entries use the Script_CommandCallback ABI."
@@ -3942,46 +3682,40 @@ stable.struct(
 
 stable.struct(
     "Trail_BoneEffect",
-    member("uint32_t", "spawn_frame", 0),
-    member("int32_t", "waypoint_index", 4),
-    member("int32_t", "pos_x", 8),
-    member("int32_t", "pos_y", 12),
-    member("int32_t", "pos_z", 16),
-    member("int32_t", "offset_x", 20),
-    member("int32_t", "offset_z", 24),
-    member("uint16_t", "rotation", 28),
-    member("uint16_t", "scale", 30),
+    member("uint32_t", "spawn_frame", 0x0),
+    member("int32_t", "waypoint_index", 0x4),
+    member("Math_Vec3i32", "pos", 0x8),
+    member("int32_t", "offset_x", 0x14),
+    member("int32_t", "offset_z", 0x18),
+    member("uint16_t", "rotation", 0x1C),
+    member("uint16_t", "scale", 0x1E),
     size=32,
 )
 
 stable.struct(
     "Trail_Entry",
-    member("uint16_t", "spawn_interval", 0),
-    member("uint16_t", "data_type", 2),
-    member("void*", "data_ptr", 4),
+    member("uint16_t", "spawn_interval", 0x0),
+    member("uint16_t", "data_type", 0x2),
+    member("void*", "data_ptr", 0x4),
     size=8,
 )
 
 stable.struct(
     "Trail_Segment",
-    member("int32_t", "active", 0),
-    member("uint8_t", "world_transform[32]", 4),
-    member("int16_t", "start_x", 36),
-    member("int16_t", "start_y", 38),
-    member("int16_t", "start_z", 40),
+    member("int32_t", "active", 0x0),
+    member("uint8_t", "world_transform[32]", 0x4),
+    member("Math_Vec3i16", "start", 0x24),
     member(
         "int16_t",
         "start_coord_hi",
-        42,
+        0x2A,
         doc="High half of the packed start coordinate word written by Trail_UpdateEffect; not observed as independently read by Trail_RenderAnimated.",
     ),
-    member("int16_t", "end_x", 44),
-    member("int16_t", "end_y", 46),
-    member("int16_t", "end_z", 48),
+    member("Math_Vec3i16", "end", 0x2C),
     member(
         "int16_t",
         "end_coord_hi",
-        50,
+        0x32,
         doc="High half of the packed end coordinate word written by Trail_UpdateEffect; not observed as independently read by Trail_RenderAnimated.",
     ),
     size=52,
@@ -3989,31 +3723,31 @@ stable.struct(
 
 stable.struct(
     "UI_SpotEntry",
-    member("int32_t", "x", 0),
-    member("int32_t", "y", 4),
-    member("int32_t", "timer", 8),
+    member("int32_t", "x", 0x0),
+    member("int32_t", "y", 0x4),
+    member("int32_t", "timer", 0x8),
     size=12,
 )
 
 stable.struct(
     "Menu_LevelProgressInfo",
-    member("int16_t", "level_puppy_count", 0),
-    member("int16_t", "level_bone_count", 2),
-    member("int16_t", "player_bone_count", 4),
-    member("int16_t", "player_lives", 6),
+    member("int16_t", "level_puppy_count", 0x0),
+    member("int16_t", "level_bone_count", 0x2),
+    member("int16_t", "player_bone_count", 0x4),
+    member("int16_t", "player_lives", 0x6),
     size=8,
 )
 
 stable.struct(
     "UI_LivesIconState",
-    member("uint8_t", "target_visible", 0),
-    member("uint8_t", "animating", 1),
-    member("uint8_t", "visible", 2),
-    member("uint8_t", "animation_frame", 3),
+    member("uint8_t", "target_visible", 0x0),
+    member("uint8_t", "animating", 0x1),
+    member("uint8_t", "visible", 0x2),
+    member("uint8_t", "animation_frame", 0x3),
     size=4,
 )
 
-stable.struct("UI_StringTableEntry", member("uint32_t", "offset", 0), size=4)
+stable.struct("UI_StringTableEntry", member("uint32_t", "offset", 0x0), size=4)
 
 
 stable.type_alias("Win32_GUID", "GUID")
@@ -4478,7 +4212,7 @@ stable.fn(
     ret="void",
     params=[
         param("int32_t", "level_sound_index"),
-        param("Math_Vec3i*", "position"),
+        param("Math_Vec3i32*", "position"),
     ],
     doc=(
         "Resolves a level-local sound index through current_level_data->sound_definition_list "
@@ -4493,7 +4227,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("int32_t", "sound_type_index"),
-        param("Math_Vec3i*", "position"),
+        param("Math_Vec3i32*", "position"),
         param("char", "stop_only_if_playing"),
     ],
 )
@@ -5007,7 +4741,7 @@ stable.fn(
         param("Actor_State*", "actor"),
         param("Collision_Polygon*", "collision_poly"),
         param("Math_Vec3i16*", "out_normal"),
-        param("Math_Vec3i*", "delta_vec"),
+        param("Math_Vec3i32*", "delta_vec"),
     ],
 )
 
@@ -5195,7 +4929,7 @@ stable.fn(
     "?? ?? 8B 44 24 2C 8B 74",
     match=-22,
     hook=8,
-    ret="Math_Vec3i*",
+    ret="Math_Vec3i32*",
     params=[
         param(
             "uint32_t",
@@ -5213,7 +4947,7 @@ stable.fn(
             doc="Position/vector keyframe track descriptor.",
         ),
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "inout_vec3",
             doc="Destination vector blended in place and returned.",
         ),
@@ -5242,7 +4976,7 @@ stable.fn(
             doc="Position/vector keyframe track descriptor.",
         ),
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "out_vec3",
             doc="Receives the interpolated three-component vector.",
         ),
@@ -6086,7 +5820,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "position",
             doc="Actor position vector passed by both known callers; unused by the callee.",
         ),
@@ -9549,8 +9283,8 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[
-        param("Math_Vec3i*", "line_start"),
-        param("Math_Vec3i*", "line_end"),
+        param("Math_Vec3i32*", "line_start"),
+        param("Math_Vec3i32*", "line_end"),
         param("uint32_t", "sphere_radius"),
     ],
 )
@@ -9734,12 +9468,12 @@ stable.fn(
             doc="Actor whose physics component and velocity fields are updated.",
         ),
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "inout_velocity",
             doc="Three-int velocity vector normalized, clamped, and copied back into the actor velocity fields.",
         ),
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "steering_vector",
             doc="Three-int caller-provided steering/environment vector used by the velocity integration check.",
         ),
@@ -10073,7 +9807,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "start_pos",
             doc="Starting world position used to seed the bone-trail path search.",
         ),
@@ -11174,7 +10908,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "position",
             doc="World-space fixed-point position tested against the active camera frustum.",
         ),
@@ -11200,7 +10934,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "position",
             doc="World-space fixed-point position forwarded to Render_CheckActorVisibilityAndFrustum.",
         ),
@@ -11224,7 +10958,7 @@ stable.fn(
     ret="BOOL",
     params=[
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "position",
             doc="World-space fixed-point position tested against active ground/shadow collision planes.",
         ),
@@ -11756,7 +11490,7 @@ stable.fn(
     params=[
         param("Audio_SoundDefinition*", "sound_def"),
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "position_or_actor_position_ptr",
             doc=(
                 "Position pointer for 3D playback. Actor sound-node calls often pass &actor->position_x, but "
@@ -11786,7 +11520,7 @@ stable.fn(
     params=[
         param("int32_t", "slot_index"),
         param("Audio_SoundDefinition*", "sound_def"),
-        param("Math_Vec3i*", "position"),
+        param("Math_Vec3i32*", "position"),
     ],
 )
 
@@ -11809,7 +11543,7 @@ stable.fn(
     ret="uint8_t",
     params=[
         param(
-            "Math_Vec3i*",
+            "Math_Vec3i32*",
             "source_pos",
             doc="Nullable source/world position; null treats distance and x/z delta as zero.",
         ),
@@ -14923,10 +14657,10 @@ stable.data(
 stable.data(
     "pkg_toc",
     xref("PKG_LoadEntry", 69, 3),
-    type="Pkg_TocEntry",
+    type="Pkg_TOCEntry",
     doc=(
         "Base of the 0x8a-entry / 0x450-byte package table of contents at "
-        "pcdogs.exe+0x9CA80 (PC EN); each 8-byte Pkg_TocEntry stores file offset and size."
+        "pcdogs.exe+0x9CA80 (PC EN); each 8-byte Pkg_TOCEntry stores file offset and size."
     ),
 )
 stable.data(
@@ -14935,7 +14669,7 @@ stable.data(
     type="uint32_t",
     doc=(
         "Size-field view at pkg_toc + 4 (PC EN) used by PKG_LoadEntry; this overlaps the "
-        "Pkg_TocEntry.size lane within the package TOC allocation."
+        "Pkg_TOCEntry.size lane within the package TOC allocation."
     ),
 )
 stable.data("tree_map_buckets", xref("TreeMap_Rebalance", 21, 3))
@@ -15075,13 +14809,13 @@ stable.data("camera_far_clip_plane", xref("Camera_SetViewport", 60, 2))
 stable.data(
     "player_1_camera_pos",
     xref("Checkers_UpdateStateMachine", 115, 6),
-    type="Math_Vec3i",
+    type="Math_Vec3i32",
     doc="Primary listener/camera position vector at pcdogs.exe+0x224350 (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is set.",
 )
 stable.data(
     "player_2_camera_pos",
     xref("Audio_PlaySoundDefinition3D", 103, 1),
-    type="Math_Vec3i",
+    type="Math_Vec3i32",
     doc="Alternate listener/camera position vector at pcdogs.exe+0x22435C (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is clear.",
 )
 stable.data("graphics_flags", xref("Pkg_InitializeSystem", 20, 2))
@@ -15390,14 +15124,12 @@ stable.data(
     ),
 )
 stable.data("player_1_down_key", xref("Input_InitializeButtonMappings", 359, 2))
-stable.data("input_button_map_0", xref("Input_InitializeButtonMappings", 369, 2))
-stable.data("input_button_map_1", xref("Input_InitializeButtonMappings", 379, 2))
-stable.data("input_button_map_2", xref("Input_InitializeButtonMappings", 389, 2))
-stable.data("input_button_map_3", xref("Input_InitializeButtonMappings", 399, 2))
-stable.data("input_button_map_4", xref("Input_InitializeButtonMappings", 409, 2))
-stable.data("input_button_map_5", xref("Input_InitializeButtonMappings", 419, 2))
-stable.data("input_button_map_6", xref("Input_InitializeButtonMappings", 429, 2))
-stable.data("input_button_map_7", xref("Input_InitializeButtonMappings", 439, 2))
+stable.data(
+    "input_button_map",
+    xref("Input_InitializeButtonMappings", 369, 2),
+    type="int32_t[8]",
+    doc="Eight adjacent player-1 button mapping dwords after the down-key entry.",
+)
 stable.data(
     "special_button",
     xref("Config_ApplySettings", 143, 2),
@@ -15414,14 +15146,12 @@ stable.data(
     ),
 )
 stable.data("player_2_down_button", xref("Input_InitializeButtonMappings", 469, 2))
-stable.data("input_button_map_alt_0", xref("Input_InitializeButtonMappings", 479, 2))
-stable.data("input_button_map_alt_1", xref("Input_InitializeButtonMappings", 489, 2))
-stable.data("input_button_map_alt_2", xref("Input_InitializeButtonMappings", 499, 2))
-stable.data("input_button_map_alt_3", xref("Input_InitializeButtonMappings", 509, 2))
-stable.data("input_button_map_alt_4", xref("Input_InitializeButtonMappings", 519, 2))
-stable.data("input_button_map_alt_5", xref("Input_InitializeButtonMappings", 529, 2))
-stable.data("input_button_map_alt_6", xref("Input_InitializeButtonMappings", 539, 2))
-stable.data("input_button_map_alt_7", xref("Input_InitializeButtonMappings", 549, 2))
+stable.data(
+    "input_button_map_alt",
+    xref("Input_InitializeButtonMappings", 479, 2),
+    type="int32_t[8]",
+    doc="Eight adjacent player-2/gamepad button mapping dwords after the down-button entry.",
+)
 stable.data(
     "config_file_path",
     xref("Movie_PlayIntro", 142, 2),
@@ -15480,134 +15210,29 @@ stable.data("controller_hammerhead_name", xref("Menu_RenderMusicSelection", 26, 
 stable.data(
     "controller_hammerhead_buttons",
     xref("Menu_HandleOptionsLogic", 340, 3),
-    type="int32_t",
-    doc="First entry/base of the Hammerhead 10-button preset row inside a 0x8c-byte controller profile record.",
-)
-stable.data(
-    "controller_hammerhead_btn_1", xref("Input_InitializeControllerMappings", 59, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_2", xref("Input_InitializeControllerMappings", 69, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_3", xref("Input_InitializeControllerMappings", 75, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_4", xref("Input_InitializeControllerMappings", 81, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_5", xref("Input_InitializeControllerMappings", 91, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_6", xref("Input_InitializeControllerMappings", 97, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_7", xref("Input_InitializeControllerMappings", 107, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_8", xref("Input_InitializeControllerMappings", 117, 2)
-)
-stable.data(
-    "controller_hammerhead_btn_9", xref("Input_InitializeControllerMappings", 127, 2)
+    type="int32_t[10]",
+    doc="Ten adjacent Hammerhead button preset dwords inside a 0x8c-byte controller profile record.",
 )
 stable.data(
     "controller_sidewinder_buttons",
     xref("Input_InitializeControllerMappings", 148, 2),
-    type="int32_t",
-    doc="First entry/base of the SideWinder 10-button preset row inside a 0x8c-byte controller profile record.",
-)
-stable.data(
-    "controller_sidewinder_btn_1", xref("Input_InitializeControllerMappings", 158, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_2", xref("Input_InitializeControllerMappings", 168, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_3", xref("Input_InitializeControllerMappings", 174, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_4", xref("Input_InitializeControllerMappings", 180, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_5", xref("Input_InitializeControllerMappings", 190, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_6", xref("Input_InitializeControllerMappings", 196, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_7", xref("Input_InitializeControllerMappings", 202, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_8", xref("Input_InitializeControllerMappings", 212, 2)
-)
-stable.data(
-    "controller_sidewinder_btn_9", xref("Input_InitializeControllerMappings", 222, 2)
+    type="int32_t[10]",
+    doc="Ten adjacent SideWinder button preset dwords inside a 0x8c-byte controller profile record.",
 )
 stable.data(
     "controller_gravis_buttons",
     xref("Input_InitializeControllerMappings", 247, 2),
-    type="int32_t",
-    doc="First entry/base of the Gravis 10-button preset row inside a 0x8c-byte controller profile record.",
+    type="int32_t[10]",
+    doc="Ten adjacent Gravis button preset dwords inside a 0x8c-byte controller profile record.",
 )
 stable.data(
-    "controller_gravis_btn_1", xref("Input_InitializeControllerMappings", 257, 2)
-)
-stable.data(
-    "controller_gravis_btn_2", xref("Input_InitializeControllerMappings", 267, 2)
-)
-stable.data(
-    "controller_gravis_btn_3", xref("Input_InitializeControllerMappings", 273, 2)
-)
-stable.data(
-    "controller_gravis_btn_4", xref("Input_InitializeControllerMappings", 279, 2)
-)
-stable.data(
-    "controller_gravis_btn_5", xref("Input_InitializeControllerMappings", 285, 2)
-)
-stable.data(
-    "controller_gravis_btn_6", xref("Input_InitializeControllerMappings", 295, 2)
-)
-stable.data(
-    "controller_gravis_btn_7", xref("Input_InitializeControllerMappings", 301, 2)
-)
-stable.data(
-    "controller_gravis_btn_8", xref("Input_InitializeControllerMappings", 311, 2)
-)
-stable.data(
-    "controller_gravis_btn_9", xref("Input_InitializeControllerMappings", 321, 2)
-)
-stable.data(
-    "controller_wingman_buttons",
+    "controller_wingman_button_ref",
     xref("Input_InitializeControllerMappings", 366, 2),
     type="int32_t",
-    doc="First entry/base of the WingMan 10-button preset row inside a 0x8c-byte controller profile record.",
-)
-stable.data(
-    "controller_wingman_btn_1", xref("Input_InitializeControllerMappings", 376, 2)
-)
-stable.data(
-    "controller_wingman_btn_2", xref("Input_InitializeControllerMappings", 351, 2)
-)
-stable.data(
-    "controller_wingman_btn_3", xref("Input_InitializeControllerMappings", 359, 2)
-)
-stable.data(
-    "controller_wingman_btn_4", xref("Input_InitializeControllerMappings", 386, 2)
-)
-stable.data(
-    "controller_wingman_btn_5", xref("Input_InitializeControllerMappings", 339, 2)
-)
-stable.data(
-    "controller_wingman_btn_6", xref("Input_InitializeControllerMappings", 345, 2)
-)
-stable.data(
-    "controller_wingman_btn_7", xref("Input_InitializeControllerMappings", 396, 2)
-)
-stable.data(
-    "controller_wingman_btn_8", xref("Input_InitializeControllerMappings", 406, 2)
-)
-stable.data(
-    "controller_wingman_btn_9", xref("Input_InitializeControllerMappings", 416, 2)
+    doc=(
+        "One validated WingMan button preset dword. The surrounding WingMan writes are "
+        "not grouped because their xref order does not prove a contiguous public array."
+    ),
 )
 stable.data("font_data_ptr", xref("Shared_LoadCommonResources", 184, 2))
 stable.data("texture_data_refs_ptr", xref("Shared_LoadCommonResources", 176, 1))

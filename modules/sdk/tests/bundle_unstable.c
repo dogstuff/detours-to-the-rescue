@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#include <pcdogs_layout_asserts.h>
+
 #ifndef DTTR_PCDOGS_UNSTABLE_H
 #error "unstable declarations missing"
 #endif
@@ -167,24 +169,13 @@ static void unstable_pkg_walk_compile_check(const DTTR_Core_Context *ctx) {
 
 static void unstable_struct_layout_compile_check() {
 	DTTR_PCDOGS_T_Actor_State actor = {0};
-	actor.scale_xy = 0;
+	actor.visual_scale.x = 0;
+	actor.animation_component_state.animation_step = 0;
 	actor.scale_factor = 0;
 }
 
 enum {
 	unstable_actor_state_size_check = 1 / (sizeof(DTTR_PCDOGS_T_Actor_State) >= 0x1C4),
-	unstable_actor_state_scale_xy_offset_check = 1
-												 / (offsetof(
-														DTTR_PCDOGS_T_Actor_State,
-														scale_xy
-													)
-													== 0x68),
-	unstable_actor_state_scale_factor_offset_check = 1
-													 / (offsetof(
-															DTTR_PCDOGS_T_Actor_State,
-															scale_factor
-														)
-														== 0xCE),
 	unstable_level_data_const_dispatch_type_check
 	= 1
 	  / __builtin_types_compatible_p(
@@ -208,6 +199,4 @@ enum {
 																->powerup_actor_slots[0]),
 												 DTTR_PCDOGS_T_Pkg_ActorTemplate *
 											 ),
-	unstable_mesh_relative_offset_list_offset_check
-	= 1 / (offsetof(DTTR_PCDOGS_T_Pkg_MeshNodeHeader, relative_offset_list_ptr) == 0x100),
 };

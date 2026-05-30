@@ -162,7 +162,7 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 		return E_OUTOFMEMORY;
 	}
 
-	DTTR_PCDOGS_D_DdrawObject->Write((DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7);
+	DTTR_PCDOGS_D_DDrawObject->Write((DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7);
 
 	if (ddraw_out) {
 		store_pointer(ddraw_out, ddraw7);

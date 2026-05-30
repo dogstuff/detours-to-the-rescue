@@ -232,7 +232,7 @@ static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 		{"AudioInitializeLevelAudio",
 		 DTTR_PCDOGS_F_AudioInitializeLevelAudio->IsResolved},
 		{"MoviePlayFile", DTTR_PCDOGS_F_MoviePlayFile->IsResolved},
-		{"DdrawObject", DTTR_PCDOGS_D_DdrawObject->IsResolved},
+		{"DDrawObject", DTTR_PCDOGS_D_DDrawObject->IsResolved},
 		{"GameInitialized", DTTR_PCDOGS_D_GameInitialized->IsResolved},
 		{"JoystickAvailable", DTTR_PCDOGS_D_JoystickAvailable->IsResolved},
 		{"MainWindowHandle", DTTR_PCDOGS_D_MainWindowHandle->IsResolved},
