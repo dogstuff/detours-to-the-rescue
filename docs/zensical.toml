@@ -11,6 +11,7 @@ site_dir = "build"
 repo_name = "dogstuff/detours-to-the-rescue"
 repo_url = "https://gitlab.com/dogstuff/detours-to-the-rescue"
 extra_css = ["assets/stylesheets/site.css"]
+extra_javascript = ["assets/javascripts/code-tokens.js"]
 nav = [
   { "Home" = "index.md" },
   { "Quick Start" = [
@@ -20,14 +21,17 @@ nav = [
     { "Troubleshooting" = "quick-start/03-troubleshooting.md" },
   ] },
   { "Modding SDK" = [
-    { "Project Setup" = "modding-sdk/00-project-setup.md" },
-    { "Handling Mod Callbacks" = "modding-sdk/01-handling-mod-callbacks.md" },
-    { "Working with Game Globals" = "modding-sdk/02-working-with-game-globals.md" },
-    { "Calling Game Functions" = "modding-sdk/03-calling-game-functions.md" },
-    { "Applying Game Patches" = "modding-sdk/04-applying-game-patches.md" },
-    { "Hooking Game Functions" = "modding-sdk/05-hooking-game-functions.md" },
-    { "Drawing a GUI" = "modding-sdk/06-drawing-a-gui.md" },
-    { "Manually Resolving Symbols" = "modding-sdk/07-resolving-symbols.md" },
+    { "Creating Mods in C" = [
+      { "Project Setup" = "modding-sdk/00-project-setup.md" },
+      { "Handling Mod Callbacks" = "modding-sdk/01-handling-mod-callbacks.md" },
+      { "Working with Game Globals" = "modding-sdk/02-working-with-game-globals.md" },
+      { "Calling Game Functions" = "modding-sdk/03-calling-game-functions.md" },
+      { "Applying Game Patches" = "modding-sdk/04-applying-game-patches.md" },
+      { "Hooking Game Functions" = "modding-sdk/05-hooking-game-functions.md" },
+      { "Drawing a GUI" = "modding-sdk/06-drawing-a-gui.md" },
+      { "Manually Resolving Symbols" = "modding-sdk/07-resolving-symbols.md" },
+    ] },
+    { "PCDOGS Reference" = "modding-sdk/generated/pcdogs/" },
     { "SDK API Documentation" = "sdk-ref/" },
   ] },
   { "Technical Details" = [
@@ -52,12 +56,10 @@ features = [
   "content.code.annotate",
   "content.code.copy",
   "content.code.select",
-  "content.tabs.link",
   "navigation.footer",
   "navigation.tabs",
   "navigation.instant",
   "navigation.instant.prefetch",
-  "navigation.sections",
   "navigation.top",
   "navigation.tracking",
   "search.highlight",

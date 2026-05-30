@@ -337,10 +337,10 @@ stable.struct(
 stable.struct(
     "Animation_RotationKeyframe",
     member("uint32_t", "timing_flags", 0x0),
-    member("Math_QuaternionI16", "quat", 0x4),
+    member("Math_Quaternioni16", "quat", 0x4),
     member("uint32_t", "segment_flags", 0xC),
-    member("Math_QuaternionI16", "tangent_out", 0x10),
-    member("Math_QuaternionI16", "tangent_in", 0x18),
+    member("Math_Quaternioni16", "tangent_out", 0x10),
+    member("Math_Quaternioni16", "tangent_in", 0x18),
     size=32,
 )
 
@@ -1008,7 +1008,7 @@ stable.struct(
 stable.struct(
     "Material_Descriptor",
     member("uint16_t", "flags", 0x0),
-    member("Math_SizeU8", "dimensions_minus_1", 0x2),
+    member("Math_Sizeu8", "dimensions_minus_1", 0x2),
     member("uint32_t", "pixel_data_ofs", 0x4),
     member("uint32_t", "palette_ofs", 0x8),
     size=12,
@@ -1017,7 +1017,7 @@ stable.struct(
 stable.struct(
     "Material_RuntimeDescriptor",
     member("uint16_t", "flags", 0x0),
-    member("Math_SizeU8", "dimensions_minus_1", 0x2),
+    member("Math_Sizeu8", "dimensions_minus_1", 0x2),
     member("uint8_t*", "pixel_data", 0x4),
     member("uint16_t*", "palette", 0x8),
     member("DDraw_IDirectDrawSurface7*", "texture_handles[25]", 0xC),
@@ -1073,10 +1073,10 @@ stable.struct(
     "Material_Entry",
     member("uint8_t", "pixel_format", 0x0),
     member("uint8_t", "flags_byte_1", 0x1),
-    member("Math_SizeU8", "dimensions_minus_1", 0x2),
+    member("Math_Sizeu8", "dimensions_minus_1", 0x2),
     member("uint32_t", "texture_offset", 0x4),
     member("uint32_t", "palette_offset", 0x8),
-    member("Math_SizeU16", "dimensions", 0xC),
+    member("Math_Sizeu16", "dimensions", 0xC),
     member("uint8_t", "format", 0x10),
     member("uint8_t", "mipmap_count", 0x11),
     member("uint16_t", "reserved", 0x12),
@@ -1173,7 +1173,7 @@ stable.struct(
     "Material_DataRef",
     member("uint32_t", "level_base_address", 0x0),
     member("uint32_t", "material_id", 0x4),
-    member("Math_SizeU16", "actual_dimensions", 0x8),
+    member("Math_Sizeu16", "actual_dimensions", 0x8),
     member("uint8_t", "reserved[12]", 0xC),
     size=24,
 )
@@ -1217,7 +1217,7 @@ stable.struct(
     "Material_State",
     member("uint32_t", "flags", 0x0),
     member("uint32_t", "material_id", 0x4),
-    member("Math_SizeU8", "actual_dimensions", 0x8),
+    member("Math_Sizeu8", "actual_dimensions", 0x8),
     member("uint16_t", "padding", 0xA),
     member("DDraw_IDirectDrawSurface7*", "texture_handles[4]", 0xC),
     member("DDraw_IDirectDrawSurface7*", "backface_handles[4]", 0x1C),
@@ -1299,7 +1299,7 @@ stable.struct(
 stable.struct(
     "Material_TextureHashEntry",
     member("Material_Entry*", "material_entry_ptr", 0x0),
-    member("Math_SizeI16", "dimensions", 0x4),
+    member("Math_Sizei16", "dimensions", 0x4),
     member("DDraw_IDirectDrawSurface7*", "texture_data", 0x8),
     member("Animation_FrameData*", "anim_frame_data", 0xC),
     size=16,
@@ -1824,7 +1824,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_QuaternionI16",
+    "Math_Quaternioni16",
     member("int16_t", "w", 0x0, doc="Scalar component in signed Q14 fixed-point form."),
     member(
         "int16_t", "x", 0x2, doc="X vector component in signed Q14 fixed-point form."
@@ -1908,7 +1908,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_BoundingSphereU16",
+    "Math_BoundingSphereu16",
     member("uint16_t", "x", 0x0),
     member("uint16_t", "y", 0x2),
     member("uint16_t", "z", 0x4),
@@ -1917,21 +1917,21 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_SizeU8",
+    "Math_Sizeu8",
     member("uint8_t", "width", 0x0),
     member("uint8_t", "height", 0x1),
     size=2,
 )
 
 stable.struct(
-    "Math_SizeI16",
+    "Math_Sizei16",
     member("int16_t", "width", 0x0),
     member("int16_t", "height", 0x2),
     size=4,
 )
 
 stable.struct(
-    "Math_RectI16",
+    "Math_Recti16",
     member("int16_t", "min_x", 0x0),
     member("int16_t", "min_y", 0x2),
     member("int16_t", "max_x", 0x4),
@@ -1940,14 +1940,14 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_SizeU16",
+    "Math_Sizeu16",
     member("uint16_t", "width", 0x0),
     member("uint16_t", "height", 0x2),
     size=4,
 )
 
 stable.struct(
-    "Math_SizeU32",
+    "Math_Sizeu32",
     member("uint32_t", "width", 0x0),
     member("uint32_t", "height", 0x4),
     size=8,
@@ -2465,7 +2465,7 @@ stable.struct(
 
 stable.struct(
     "Pkg_CollisionHeader",
-    member("Math_SizeU32", "dimensions", 0x0),
+    member("Math_Sizeu32", "dimensions", 0x0),
     member("uint32_t", "cell_size", 0x8),
     member("uint32_t", "data_offset", 0xC),
     member("uint8_t", "collision_reserved[16]", 0x10),
@@ -2712,7 +2712,7 @@ stable.struct(
     "Pkg_MaterialTableEntry",
     member("uint32_t", "texture_offset", 0x0),
     member("Material_Descriptor*", "texture_desc_ptr", 0x4),
-    member("Math_SizeU16", "dimensions", 0x8),
+    member("Math_Sizeu16", "dimensions", 0x8),
     member("uint32_t", "runtime_surface", 0xC),
     member("uint32_t", "pixel_data_offset", 0x10),
     member("uint16_t", "format_flags", 0x14),
@@ -2848,7 +2848,7 @@ stable.struct(
 
 stable.struct(
     "Material_TextureInfo",
-    member("Math_SizeU8", "dimensions", 0x0),
+    member("Math_Sizeu8", "dimensions", 0x0),
     member(
         "uint8_t",
         "reserved[2]",
@@ -3356,7 +3356,7 @@ stable.struct(
     member("Math_Vec3i32XZY", "eye_pos", 0x10),
     member("Math_Vec3i32XZY", "target_pos", 0x1C),
     member("Entity_State*", "active_entity_slot_ptr", 0x28),
-    member("Math_SizeI16", "screen_half", 0x2C),
+    member("Math_Sizei16", "screen_half", 0x2C),
     member("Math_Matrix3x3i16", "view_matrix", 0x30),
     member("int16_t", "view_matrix_padding", 0x42),
     member("Camera_FrustumPlane", "frustum_planes[3]", 0x44),
@@ -5056,7 +5056,7 @@ stable.fn(
         ),
         param("int32_t*", "quat_track", doc="Quaternion keyframe track descriptor."),
         param(
-            "Math_QuaternionI16*",
+            "Math_Quaternioni16*",
             "inout_quat",
             doc="Destination quaternion that is blended in place.",
         ),
@@ -5081,7 +5081,7 @@ stable.fn(
         ),
         param("int32_t*", "quat_track", doc="Quaternion keyframe track descriptor."),
         param(
-            "Math_QuaternionI16*",
+            "Math_Quaternioni16*",
             "out_quat",
             doc="Receives the interpolated four-component Q14 quaternion.",
         ),
@@ -5095,12 +5095,12 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_QuaternionI16*",
+            "Math_Quaternioni16*",
             "out_quat",
             doc="Receives the interpolated Q14 quaternion.",
         ),
-        param("Math_QuaternionI16*", "from_quat", doc="Starting Q14 quaternion."),
-        param("Math_QuaternionI16*", "to_quat", doc="Ending Q14 quaternion."),
+        param("Math_Quaternioni16*", "from_quat", doc="Starting Q14 quaternion."),
+        param("Math_Quaternioni16*", "to_quat", doc="Ending Q14 quaternion."),
         param("int32_t", "blend_weight_q14", doc="Q14 interpolation weight."),
         param(
             "int32_t",
@@ -11439,7 +11439,7 @@ stable.fn(
             doc="Input row-major signed fixed-point 3x3 rotation matrix.",
         ),
         param(
-            "Math_QuaternionI16*",
+            "Math_Quaternioni16*",
             "out_quat",
             doc="Receives the converted Q14 quaternion as w/x/y/z.",
         ),

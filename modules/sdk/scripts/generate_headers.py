@@ -1371,14 +1371,8 @@ def symbol_doc(kind: SymbolDocKind | str, row: object) -> str:
     if explicit:
         return explicit
 
-    kind = SymbolDocKind(kind)
-    if kind == SymbolDocKind.FUNCTION:
-        return "Callable game function."
-
-    if kind == SymbolDocKind.GLOBAL:
-        return "Game data symbol."
-
-    return "PCDOGS symbol."
+    SymbolDocKind(kind)
+    return "Not yet documented."
 
 
 def fallback_param_doc(name: str) -> str:

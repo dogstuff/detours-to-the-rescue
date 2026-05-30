@@ -80,3 +80,274 @@
 .md-typeset .info > summary::after {
     color: #448aff;
 }
+
+.md-typeset details.pcdogs-symbol-builds {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--md-default-fg-color--light);
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 500;
+    line-height: 1.25;
+    margin: -0.35rem 0 0.85rem;
+    padding: 0;
+}
+
+.md-typeset details.pcdogs-symbol-builds > summary {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    list-style: none;
+    margin: 0;
+    min-height: 0;
+    padding: 0;
+}
+
+.md-typeset details.pcdogs-symbol-builds > summary::-webkit-details-marker {
+    display: none;
+}
+
+.md-typeset details.pcdogs-symbol-builds > summary::before {
+    display: none;
+}
+
+.md-typeset details.pcdogs-symbol-builds > summary::after {
+    display: none;
+}
+
+.md-typeset details.pcdogs-symbol-builds .pcdogs-symbol-builds__arrow {
+    align-self: center;
+    background: transparent;
+    border: 0;
+    color: #fff;
+    display: inline-grid;
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    font-weight: 900;
+    height: 0.84rem;
+    justify-self: start;
+    line-height: 1;
+    margin-left: -0.05rem;
+    place-items: center;
+    position: relative;
+    top: 0;
+    transform: none;
+    transition: opacity 120ms ease, transform 120ms ease;
+    width: 0.84rem;
+}
+
+.md-typeset details.pcdogs-symbol-builds > summary:hover .pcdogs-symbol-builds__arrow {
+    opacity: 0.82;
+}
+
+.md-typeset details.pcdogs-symbol-builds[open] .pcdogs-symbol-builds__arrow {
+    transform: rotate(180deg);
+}
+
+.md-typeset details.pcdogs-symbol-builds table.pcdogs-symbol-builds__body {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--md-default-fg-color);
+    display: table;
+    font-size: 0.66rem;
+    font-weight: 400;
+    margin: 0.35rem 0 0 0.85rem;
+    width: auto;
+}
+
+.md-typeset details.pcdogs-symbol-builds table.pcdogs-symbol-builds__body th,
+.md-typeset details.pcdogs-symbol-builds table.pcdogs-symbol-builds__body td {
+    background: transparent;
+    border: 0;
+    padding: 0.1rem 0.75rem 0.1rem 0;
+    vertical-align: top;
+}
+
+.md-typeset details.pcdogs-symbol-builds table.pcdogs-symbol-builds__body th {
+    color: var(--md-default-fg-color--light);
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.md-typeset .pcdogs-undocumented {
+    color: var(--md-default-fg-color--lighter);
+}
+
+.md-typeset .pcdogs-category-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.45rem;
+}
+
+.md-typeset .pcdogs-category-summary__item {
+    background: color-mix(in srgb, var(--md-default-fg-color--lightest) 55%, transparent);
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 999px;
+    color: var(--md-default-fg-color--light);
+    display: inline-flex;
+    font-size: 0.66rem;
+    gap: 0.25em;
+    line-height: 1.25;
+    padding: 0.12rem 0.45rem;
+    white-space: nowrap;
+}
+
+.md-typeset .pcdogs-category-summary__item strong {
+    color: var(--md-default-fg-color);
+    font-weight: 700;
+}
+
+.md-typeset .pcdogs-section-heading {
+    background: color-mix(in srgb, var(--md-default-bg-color) 94%, transparent);
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+    margin-top: 1.2rem;
+    padding: 0.35rem 0 0.3rem;
+    position: sticky;
+    top: 2.4rem;
+    z-index: 4;
+}
+
+.md-typeset .pcdogs-untyped-data {
+    color: var(--md-default-fg-color--light);
+    font-size: 0.82rem;
+    margin: 0.45rem 0 0.85rem;
+}
+
+.md-typeset .pcdogs-symbol-facts {
+    margin: 0.15rem 0 0.85rem;
+}
+
+.md-typeset .pcdogs-symbol-facts--footer {
+    margin: 0.85rem 0 0;
+}
+
+.md-typeset .pcdogs-symbol-fact,
+.md-typeset details.pcdogs-symbol-builds--fact > summary {
+    align-items: baseline;
+    display: grid;
+    font-size: 0.7rem;
+    gap: 0.5rem;
+    grid-template-columns: 4.25rem minmax(0, auto) max-content;
+    line-height: 1.35;
+    margin: 0;
+    width: fit-content;
+}
+
+.md-typeset .pcdogs-symbol-fact__label {
+    color: var(--md-default-fg-color--light);
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.md-typeset .pcdogs-symbol-fact__value {
+    color: var(--md-default-fg-color);
+    font-weight: 600;
+    min-width: 0;
+    text-align: left;
+}
+
+.md-typeset .pcdogs-see-also-kind {
+    color: var(--md-default-fg-color--light);
+    font-weight: 500;
+    margin-left: 0.16em;
+}
+
+.md-typeset details.pcdogs-symbol-builds--fact {
+    margin: 0.18rem 0 0;
+}
+
+.md-typeset details.pcdogs-symbol-builds--fact > summary {
+    align-items: center;
+    color: var(--md-default-fg-color);
+    gap: 0.38rem;
+    padding: 0;
+}
+
+.md-typeset h3[id^="function-"] code,
+.md-typeset h3[id^="unstable-function-"] code,
+.md-typeset h3[id^="resolver-function-"] code,
+.md-typeset h3[id^="data-"] code,
+.md-typeset h3[id^="unstable-data-"] code,
+.md-typeset h3[id^="type-"] code,
+.md-typeset h3[id^="unstable-type-"] code,
+.md-typeset h3[id^="signature-"] code,
+.md-typeset h3[id^="unstable-signature-"] code {
+    background: color-mix(in srgb, var(--md-code-bg-color) 70%, transparent);
+    color: #d8dee9;
+    font-size: 1.08em;
+    font-weight: 700;
+    padding-block: 0.08rem;
+}
+
+.md-typeset .highlight code .k,
+.md-typeset .highlight code .kr {
+    color: color-mix(in srgb, var(--md-code-hl-keyword-color) 88%, var(--md-code-fg-color));
+    font-weight: 650;
+}
+
+.md-typeset .highlight code .kt {
+    color: color-mix(in srgb, var(--doc-symbol-class-fg-color, var(--md-code-hl-keyword-color)) 84%, var(--md-code-fg-color));
+}
+
+.md-typeset .highlight code .n,
+.md-typeset .highlight code .nf {
+    color: var(--md-code-hl-name-color);
+}
+
+.md-typeset .highlight code .o {
+    color: var(--md-code-hl-operator-color);
+}
+
+.md-typeset .highlight code .p {
+    color: var(--md-code-hl-punctuation-color);
+}
+
+.md-typeset .highlight code .kc,
+.md-typeset .highlight code .nb {
+    color: color-mix(in srgb, var(--md-code-hl-constant-color) 86%, var(--md-code-fg-color));
+}
+
+.md-typeset .highlight code .mi,
+.md-typeset .highlight code .mh {
+    color: color-mix(in srgb, var(--md-code-hl-number-color) 84%, var(--md-code-fg-color));
+}
+
+.md-typeset .highlight code .c,
+.md-typeset .highlight code .c1,
+.md-typeset .highlight code .cm {
+    color: var(--md-code-hl-comment-color);
+    font-style: italic;
+}
+
+.md-typeset .highlight code .s,
+.md-typeset .highlight code .s1,
+.md-typeset .highlight code .s2 {
+    color: color-mix(in srgb, var(--md-code-hl-string-color) 86%, var(--md-code-fg-color));
+}
+
+.md-typeset .highlight code .pcdogs-code-type {
+    color: color-mix(in srgb, var(--doc-symbol-class-fg-color, var(--md-code-hl-keyword-color)) 84%, var(--md-code-fg-color));
+}
+
+.md-typeset .highlight code .pcdogs-code-function {
+    color: color-mix(in srgb, var(--doc-symbol-function-fg-color, var(--md-code-hl-function-color)) 82%, var(--md-code-fg-color));
+}
+
+.md-typeset .highlight code .pcdogs-code-data {
+    color: color-mix(in srgb, var(--doc-symbol-attribute-fg-color, var(--md-code-hl-constant-color)) 78%, var(--md-code-fg-color));
+}
+
+.md-typeset .pcdogs-symbol-facts--footer .pcdogs-symbol-fact__value {
+    font-size: 0.62rem;
+    font-weight: 500;
+}
+
+.md-typeset .pcdogs-symbol-facts--footer .pcdogs-symbol-fact__value a {
+    color: #5a9bd3;
+    text-decoration: none;
+}

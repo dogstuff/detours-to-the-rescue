@@ -9,6 +9,7 @@ cached-sdl3gpu-shader-dir := "modules/sidecar/shaders/cache/sdl3gpu"
 format-dirs := "./modules/loader ./modules/sidecar ./modules/common ./modules/sdk"
 docs-build-dir := "docs/build"
 docs-config := "docs/zensical.toml"
+docs-source-dir := build-dir + "/docs-source"
 doxyfile := "docs/doxyfile.ini"
 git-short-sha := `git rev-parse --short HEAD`
 dttr-version := env_var_or_default("DTTR_VERSION", git-short-sha)
@@ -162,9 +163,11 @@ build-docs: setup-build
 
 # Build documentation from an existing build (for CI).
 build-docs-from-build:
-    rm -rf "{{ docs-build-dir }}"
+    rm -rf "{{ docs-build-dir }}" "{{ docs-source-dir }}"
 
-    zensical build --clean --config-file "{{ docs-config }}"
+    python3 scripts/prepare-docs-source.py --config "{{ docs-config }}" --output-dir "{{ docs-source-dir }}"
+    zensical build --clean --config-file "{{ docs-source-dir }}/zensical.toml"
+    cp -R "{{ docs-source-dir }}/build" "{{ docs-build-dir }}"
 
     DTTR_SDK_GENERATED_INCLUDE_DIR="{{ build-dir }}/modules/sdk/generated/include" doxygen "docs/doxyfile-sdk.ini"
     doxygen "{{ doxyfile }}"

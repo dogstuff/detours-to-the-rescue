@@ -1,0 +1,197 @@
+<%def name="symbol_facts(facts, metadata)">
+<div class="pcdogs-symbol-facts">
+% for fact in facts:
+% if fact.label == "Versions":
+<details class="pcdogs-symbol-builds pcdogs-symbol-builds--fact">
+<summary><span class="pcdogs-symbol-fact__label">Versions</span><span class="pcdogs-symbol-fact__value">${fact.value}</span><span class="pcdogs-symbol-builds__arrow" aria-hidden="true">▾</span></summary>
+<table class="pcdogs-symbol-builds__body">
+<tbody>
+% for item in metadata:
+<tr><th>${item.label}</th><td>${item.value}</td></tr>
+% endfor
+</tbody>
+</table>
+</details>
+% else:
+<p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">${fact.label}</span><strong class="pcdogs-symbol-fact__value">${fact.value}</strong></p>
+% endif
+% endfor
+</div>
+</%def>
+
+<%def name="code_block(text)">
+    ```c
+% for line in str(text).splitlines() or [""]:
+% if line:
+    ${line}
+% else:
+${"    "}
+% endif
+% endfor
+    ```
+</%def>
+
+<%def name="see_also_row(related)">
+% if related:
+<div class="pcdogs-symbol-facts pcdogs-symbol-facts--footer">
+<p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">See Also</span><strong class="pcdogs-symbol-fact__value">
+% for item in related:
+% if not loop.first:
+, \
+% endif
+${item.value}<span class="pcdogs-see-also-kind">(${item.kind})</span>\
+% endfor
+</strong></p>
+</div>
+% endif
+</%def>
+
+<%def name="symbol_heading(name, anchor)">
+<%text>### </%text>`${name}` { #${anchor} }
+</%def>
+
+<%def name="function_tabs(fn)">
+=== "Type"
+
+${code_block(fn.prototype)}
+
+=== "C SDK Call"
+
+${code_block(fn.call_example)}
+
+=== "C SDK Patch Spec"
+
+${code_block(fn.patch_spec_example)}
+
+% if fn.hook_example:
+=== "C SDK Hook"
+
+${code_block(fn.hook_example)}
+
+% endif
+</%def>
+
+<%def name="function_entry(fn, internal=False)">
+${symbol_heading(fn.heading, fn.anchor)}
+
+${symbol_facts(fn.facts, fn.metadata)}
+% if internal:
+
+!!! warning "Internal resolver symbol"
+    ${fn.summary}
+% else:
+
+${fn.summary}
+% endif
+
+${function_tabs(fn)}
+${see_also_row(fn.related)}
+</%def>
+
+<%def name="data_entry(glob)">
+${symbol_heading(glob.name, glob.anchor)}
+
+${symbol_facts(glob.facts, glob.metadata)}
+
+${glob.summary}
+
+% if glob.is_typed:
+=== "Read"
+
+${code_block(glob.read_example)}
+
+=== "Write"
+
+${code_block(glob.write_example)}
+
+% if glob.write_policy == "READ_ONLY":
+!!! warning "Read-only data"
+    Use this symbol for inspection only.
+% elif glob.write_policy == "ENGINE_OWNED":
+!!! caution "Engine-owned data"
+    The engine owns this memory; treat writes as unsafe unless a narrower API says otherwise.
+% endif
+% else:
+<p class="pcdogs-untyped-data">${glob.untyped_note}</p>
+% endif
+${see_also_row(glob.related)}
+</%def>
+
+<%def name="type_entry(row)">
+${symbol_heading(row.name, row.anchor)}
+
+${symbol_facts(row.facts, row.metadata)}
+
+${row.summary}
+
+% if row.members:
+| Offset | Type | Name | Notes |
+| --- | --- | --- | --- |
+% for member in row.members:
+| `${member.offset}` | ${member.type_link} | `${member.name}` | ${member.doc} |
+% endfor
+
+% endif
+% if row.enum_values:
+| Value | Name | Notes |
+| --- | --- | --- |
+% for value in row.enum_values:
+| `${value.value}` | `${value.name}` | ${value.table_doc} |
+% endfor
+
+% endif
+${see_also_row(row.related)}
+</%def>
+
+<%def name="signature_entry(sig)">
+${symbol_heading(sig.name, sig.anchor)}
+
+${symbol_facts(sig.facts, sig.metadata)}
+
+${sig.summary}
+
+${see_also_row(sig.related)}
+</%def>
+
+<%def name="entry_list(rows, render_entry)">
+% for item in rows:
+<% entry = render_entry(item).lstrip() %>
+% if not loop.first:
+---
+
+${entry}
+% else:
+${entry}
+% endif
+% endfor
+</%def>
+
+# ${category.display} Symbols
+
+[← Back to PCDOGS categories](index.md)
+
+% if functions:
+<%text>## Functions { .pcdogs-section-heading }</%text>
+
+${entry_list(functions, function_entry)}
+% endif
+% if resolver_functions:
+<%text>## Resolver-Only Functions { .pcdogs-section-heading }</%text>
+
+${entry_list(resolver_functions, lambda fn: function_entry(fn, internal=True))}
+% endif
+% if globals:
+<%text>## Data { .pcdogs-section-heading }</%text>
+
+${entry_list(globals, data_entry)}
+% endif
+% if types:
+<%text>## Types { .pcdogs-section-heading }</%text>
+
+${entry_list(types, type_entry)}
+% endif
+% if signatures:
+<%text>## Signatures { .pcdogs-section-heading }</%text>
+
+${entry_list(signatures, signature_entry)}
+% endif

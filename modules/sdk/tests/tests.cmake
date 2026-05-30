@@ -65,6 +65,17 @@ if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
     set_tests_properties(dttr_sdk_bundle_header PROPERTIES
         LABELS "sdk;generated"
     )
+
+    add_test(
+        NAME dttr_pcdogs_symbol_docs
+        COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_symbol_docs.py"
+            --generator "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_symbol_docs.py"
+            --output-dir "${DTTR_SDK_TEST_BINARY_DIR}/symbol-docs"
+    )
+    set_tests_properties(dttr_pcdogs_symbol_docs PROPERTIES
+        LABELS "sdk;pcdogs;generated;docs"
+    )
 else()
     message(WARNING
         "PCDOGS SDK generator unavailable; skipping generated SDK freshness tests"
