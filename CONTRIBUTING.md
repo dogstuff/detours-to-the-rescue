@@ -3,7 +3,7 @@
 Use these rules for C sources, headers, and generated public SDK names.
 
 - Public SDK/API names use PascalCase under the `DTTR` namespace.
-  - Use `_` only at namespace boundaries: `DTTR_Config_Load`, `DTTR_Core_ResultOk`, `DTTR_Mods_Context`.
+  - Use `_` only to separate namespaces: `DTTR_Config_Load`, `DTTR_Core_ResultOk`, `DTTR_Mods_Context`.
   - Generated PCDOGS helpers use accessor objects: `DTTR_PCDOGS_F_<Symbol>->Verb` for functions and `DTTR_PCDOGS_D_<Symbol>->Read/Write/Ptr` for data. Example: `DTTR_PCDOGS_F_PlayerSetLives->Try(...)`.
 - Private functions, variables, struct/type names, and fields use plain `snake_case`.
 - Globals:

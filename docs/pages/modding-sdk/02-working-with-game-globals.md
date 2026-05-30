@@ -42,8 +42,5 @@ Writing game memory is not always safe. Check `WritePolicy` before exposing rela
 
 Using `UnsafeWrite()` in normal mod behavior bypasses the SDK's safety policy and can corrupt game-owned state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
 
-## Passing raw addresses at API boundaries
-
-Most mods should not need a global's raw address. Use typed helpers first.
 
 If another SDK API requires an address or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](07-resolving-symbols.md).

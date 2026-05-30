@@ -94,7 +94,7 @@ for package_entry in "${package_matrix[@]}"; do
 done
 
 if [ "$mode" = "release" ]; then
-  template_archive="dttr-mod-template-c.tar.gz"
+  template_archive="dttr-mod-template-c.zip"
   scripts/package-mod-template-c.sh "$version" "$template_archive"
   archives+=("$template_archive")
 fi

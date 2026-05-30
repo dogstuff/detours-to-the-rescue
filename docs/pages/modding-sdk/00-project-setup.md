@@ -4,7 +4,7 @@ A DttR mod is a 32-bit Windows DLL that includes `dttr_sdk.h`, exports mod lifec
 
 The easiest starting point is the C template from the latest release:
 
-[`dttr-mod-template-c.tar.gz`](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-mod-template-c.tar.gz)
+[`dttr-mod-template-c.zip`](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-mod-template-c.zip)
 
 ## Starting from the project template
 

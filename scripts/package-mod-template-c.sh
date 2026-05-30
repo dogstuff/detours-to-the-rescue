@@ -2,7 +2,7 @@
 set -euo pipefail
 
 version=$1
-archive=${2:-dttr-mod-template-c.tar.gz}
+archive=${2:-dttr-mod-template-c.zip}
 template_dir=examples/mod-template-c
 package_dir=dttr-mod-template-c
 
@@ -30,5 +30,10 @@ done
 
 printf '%s
 ' "$version" > "$stage_dir/dttr-version.txt"
-rm -f "$archive"
-tar -C "$tmp" -czf "$archive" "$package_dir"
+archive_path=$archive
+if [[ $archive != /* ]]; then
+  archive_path=$PWD/$archive
+fi
+
+rm -f "$archive_path"
+(cd "$tmp" && zip -qr "$archive_path" "$package_dir")
