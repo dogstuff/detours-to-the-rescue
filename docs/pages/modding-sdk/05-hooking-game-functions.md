@@ -7,17 +7,17 @@
 
 A function hook redirects a game function to your detour. Your detour can run custom code, call the original function, change arguments, change the return value, or block the original call.
 
-**Warning:** The detour must use the exact same signature and calling convention as the game function. A mismatch can crash the game or corrupt memory.
+**Warning:** A detour signature or calling-convention mismatch will cause crashes or memory corruption.
 
-## Using the SDK wrappers
+## Storing the original game function
 
-Generated PCDOGS helpers include a function-pointer type for each known function, suffixed with `_proto`. This can be used to store your "original" game function pointer.
+SDK wrappers include a function-pointer type for each known function, suffixed with `_proto`. This can be used to store your "original" game function pointer.
 
 ```c
 static DTTR_PCDOGS_F_PlayerSetLives_proto original_player_set_lives;
 ```
 
-Hook signatures must match the game perfectly and will likely cause the game to crash if there are any divergences. If the generated type does not exist, hooking the function will require additional reverse engineering work.
+Hook signatures that diverge from the game function will cause crashes or memory corruption. If the generated type does not exist, hooking the function will require additional reverse engineering work.
 
 ## Writing a detour
 
@@ -37,7 +37,7 @@ In this case we call `original_player_set_lives(...)` to make normal game behavi
 
 The `original` pointer is only valid while the hook is installed.
 
-## Prefer patch groups for hooks
+## Installing hooks through patch groups
 
 When applying multiple related hooks and patches, install the generated `PatchSpec()` through a patch group to simplify rollbacks and clean up.
 
@@ -70,9 +70,9 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Use `Hook()` only for simple owned hooks
+## Reserving direct hooks for simple cases
 
-Generated helpers also expose `Hook()` and `Unhook()`:
+SDK wrappers also expose `Hook()` and `Unhook()`:
 
 ```c
 DTTR_PCDOGS_F_PlayerSetLives->Hook(
@@ -84,13 +84,13 @@ DTTR_PCDOGS_F_PlayerSetLives->Hook(
 DTTR_PCDOGS_F_PlayerSetLives->Unhook(&ctx->runtime);
 ```
 
-Use this only when your mod fully owns that generated hook slot and the hook is simple to clean up. This should generally be avoided in favor of patch groups.
+Using `Hook()` when another mod or patch group may own the same hook slot will cause hook conflicts. Use it for simple hooks your mod fully owns, and use patch groups for most hooks.
 
-## Using the raw hook API
+## Hooking functions without SDK wrappers
 
-The SDK offers an API for hooking functions when no generated helper exists.
+The SDK offers an API for hooking functions when no SDK wrapper exists.
 
-The raw hook APIs require reverse engineering work to use and should be avoided in most casts.
+The raw hook APIs require reverse engineering work. Prefer SDK wrappers or patch groups in most cases.
 
 Before passing a generated address to a raw hook API, check both conditions:
 

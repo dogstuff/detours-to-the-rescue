@@ -11,9 +11,9 @@ If you want to redirect a game function to your own code, see [Hooking Game Func
 
 Patch through a `DTTR_Core_PatchGroup` whenever possible. A patch group keeps related changes together, rolls back partial installs, and simplifies cleanup.
 
-## Use one group per feature
+## Grouping related patches
 
-Create one patch group for each feature that needs patches. Install that feature's related patches into the group.
+Create one patch group for each set of related functions that needs patches. Install those related patches into the group.
 
 A simple mod usually does this during `DTTR_MODS_INIT`:
 
@@ -23,13 +23,13 @@ A simple mod usually does this during `DTTR_MODS_INIT`:
 4. Return `false` if a required patch fails.
 5. Release the group during `DTTR_MODS_CLEANUP`.
 
-Do not expose a feature until its required patches have installed successfully.
+Exposing related behavior before its required patches have installed successfully will cause that behavior to run against unpatched game code or data.
 
-## Prefer generated patch specs
+## Starting from generated patch specs
 
 For known PCDOGS globals and patch sites, use generated patch specs first since they are pre-configured with the appropriate target and patch type.
 
-Use lower-level target specs only when there is no generated helper for the patch you need to make.
+Use lower-level target specs only when there is no SDK wrapper for the patch you need to make.
 
 ```c
 static DTTR_Core_PatchGroup *patches;
@@ -66,17 +66,17 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Required vs optional patches
+## Marking patches as required or optional
 
-A required patch must install for the feature to work, and should fail init if installation fails.
+A required patch is one the related behavior needs to work. Continuing after a required patch fails to install will cause that behavior to run against the wrong game code or data.
 
 An optional patch is only for a target that legitimately exists in some supported game builds but not others, and does not ignore actual install errors.
 
 When an optional patch is skipped, `DTTR_PCDOGS_T_Patch_Report::skipped_optional` increases. 
 
-## Temporarily disable a patched feature
+## Disabling patched behavior temporarily
 
-To turn off a feature without destroying the group, call:
+To turn off patched behavior without destroying the group, call:
 
 ```c
 DTTR_Core_PatchGroupUninstall(patches);

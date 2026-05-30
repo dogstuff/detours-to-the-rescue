@@ -2,13 +2,15 @@
 
 This page lists the runtime hooks and byte patches DttR installs.
 
-DttR resolves most sites with `DTTR_Core_HookSigscan()` against the loaded game module. In signatures, `?` bytes are mask wildcards.
+DttR resolves most sites against the loaded game module with `DTTR_Core_HookSigscan()`, which accepts signatures in space-separated hexadecimal byte format with `?` bytes as mask wildcards.
 
-## Terms
 
-- IAT hooks replace an import-address-table slot.
-- Jump hooks replace the first five bytes at the match with `E9 <rel32>`.
-- Trampoline hooks use the same jump patch and keep a callable copy of the original prologue.
+## Terminology
+
+- IAT hooks replace an import-address-table slot. Future calls through that import go directly to DttR's replacement function; the call site itself is unchanged, and the hook may call the saved original import when needed.
+- Jump hooks replace the first five bytes at the match with `E9 <rel32>`. Execution that reaches the patched address branches immediately to DttR's callback instead of continuing through the original function body.
+- Trampoline hooks use the same jump patch and keep a callable copy of the original prologue. The callback can run custom code, call the trampoline to resume the displaced original instructions and continue into the game code, then return or adjust control flow as needed.
+
 
 ## Bootstrap
 

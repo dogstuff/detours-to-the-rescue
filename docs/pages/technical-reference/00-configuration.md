@@ -1,10 +1,11 @@
 # Configuration
 
-DttR stores settings in `dttr.json` next to `dttr.exe`. The file must be strict JSON and include `schema_major_version`.
+DttR stores settings in `dttr.json` next to `dttr.exe`. Invalid JSON or a missing `schema_major_version` will cause a configuration error.
 
-If `dttr.json` is missing, DttR creates it from the built-in defaults. If the file is empty, DttR uses the built-in defaults without rewriting it.
+If `dttr.json` is missing or empty, DttR uses the built-in defaults, creating the file only when it is missing.
 
-Pass a config file to `dttr.exe` when you need a separate setup:
+Pass a config file to `dttr.exe` to use multiple persistent configurations:
+
 
 ```sh
 dttr.exe custom_dttr.json
@@ -63,7 +64,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `schema_major_version` | Integer | `1` | Config schema version. Must be `1`. |
+| `schema_major_version` | Integer | `1` | Config schema version. Values other than `1` will cause a configuration error. |
 | `log_level` | String | `debug` in debug builds, `info` in release builds | Minimum log level: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. |
 | `minidump_type` | String | `detailed` in debug builds, `normal` in release builds | Crash minidump detail level: `normal` or `detailed`. |
 | `show_crash_stack_trace` | Boolean | `true` | Show stack traces in crash popups. Full stack traces are still written to `dttr.log` when this is `false`. |

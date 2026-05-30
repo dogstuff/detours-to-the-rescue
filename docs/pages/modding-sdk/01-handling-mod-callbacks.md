@@ -1,8 +1,8 @@
 # Handling Mod Callbacks
 
-Callbacks define how your mod's code is actually executed. Avoid using a lower-level render or window callback when a simpler callback is enough.
+Callbacks define how your mod's code is actually executed. Prefer the simplest callback that fits your use case before using lower-level render or window callbacks.
 
-## Setup and cleanup
+## Setting up and cleaning up your mod
 
 Every mod should start with `DTTR_MODS_INIT` and clean up with `DTTR_MODS_CLEANUP`. Most simple mods only need those two lifecycle callbacks.
 
@@ -26,11 +26,11 @@ Use `DTTR_MODS_CLEANUP` to undo anything your mod set up:
 
 `DTTR_MODS_LATE_INIT` is for setup that needs all mods to be loaded first. Use it when your mod wants to discover or coordinate with another mod. If your mod only touches DttR or its own state, use `DTTR_MODS_INIT` instead.
 
-`DTTR_MODS_BEFORE_UNLOAD` is a final warning that unloading is about to start. Use it for last notifications or coordination between mods. Do not put ordinary cleanup there; keep ordinary cleanup in `DTTR_MODS_CLEANUP`.
+`DTTR_MODS_BEFORE_UNLOAD` is a final warning that unloading is about to start. Use it for last notifications or coordination between mods. Prefer `DTTR_MODS_CLEANUP` for ordinary cleanup.
 
-## Per-frame work
+## Updating during ticks and frames
 
-Use these for regular updates:
+Use these for routine "per-tick" updates:
 
 - `DTTR_MODS_TICK`: General periodic work.
 - `DTTR_MODS_FRAME_BEGIN`: Work at the start of a DttR frame.
@@ -38,7 +38,7 @@ Use these for regular updates:
 
 Keep these callbacks light. If a task can be done once during init, do it during init instead of every frame.
 
-## Input and events
+## Handling input and events
 
 Use these for SDL events, hotkeys, diagnostics, and input blocking:
 
@@ -48,7 +48,7 @@ Use these for SDL events, hotkeys, diagnostics, and input blocking:
 
 `DTTR_MODS_BEFORE_EVENT` can block delivery to the game. `DTTR_MODS_AFTER_EVENT` receives the final consumed state.
 
-## Drawing
+## Drawing custom overlays
 
 Use these for custom drawing:
 
@@ -57,18 +57,18 @@ Use these for custom drawing:
 
 Use `DTTR_MODS_RENDER_GAME` for things that should line up with the game view. Use `DTTR_MODS_RENDER` for full-window overlays.
 
-## Render timing
+## Choosing render-timing callbacks
 
 Use these only when your mod needs exact render-backend timing:
 
-- `DTTR_MODS_BEFORE_GAME_FRAME`
-- `DTTR_MODS_AFTER_GAME_FRAME`
-- `DTTR_MODS_BEFORE_PRESENT`
-- `DTTR_MODS_AFTER_PRESENT`
+- `DTTR_MODS_BEFORE_GAME_FRAME`: Runs immediately before the game frame is processed by the render backend.
+- `DTTR_MODS_AFTER_GAME_FRAME`: Runs immediately after the game frame has been processed by the render backend.
+- `DTTR_MODS_BEFORE_PRESENT`: Runs just before the rendered frame is presented to the window.
+- `DTTR_MODS_AFTER_PRESENT`: Runs just after the rendered frame has been presented to the window.
 
 Most mods do not need these. Prefer the simpler frame or drawing callbacks first.
 
-## Window and graphics lifetime
+## Recreating window and graphics resources
 
 Use these when your mod owns graphics resources that must follow the window:
 
@@ -83,9 +83,9 @@ Use these when your mod owns graphics resources that must follow the graphics de
 - `DTTR_MODS_GRAPHICS_DEVICE_RESTORED`: Recreate or refresh resources after the device comes back.
 - `DTTR_MODS_GRAPHICS_DEVICE_DESTROYING`: Release device resources before shutdown.
 
-Create and destroy device-dependent resources in the matching lifetime callbacks. Do not assume the window or graphics device lives for the entire mod lifetime.
+Create and destroy device-dependent resources in the matching lifetime callbacks. Using window or graphics-device resources outside their matching lifetime will cause stale-resource bugs or crashes.
+## Controlling frame advancement
 
-## Pausing the game
 
 Use these when an overlay or tool needs the window to keep presenting while the game pauses:
 

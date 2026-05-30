@@ -6,7 +6,7 @@ The easiest starting point is the C template from the latest release:
 
 [`dttr-mod-template-c.tar.gz`](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-mod-template-c.tar.gz)
 
-## Using the project template
+## Starting from the project template
 
 Download and extract the template. It includes has the CMake project, MinGW toolchain file, SDK linking scripts, container build, and a minimal mod source file.
 
@@ -30,7 +30,7 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Setting up your build environment
+## Setting up the build environment
 
 Now we need to make sure we have the right build tools installed and configured..
 
@@ -76,7 +76,7 @@ pacman -S --needed mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc 
 If you do not want a local MinGW install, use the template's Podman container build instead.
 Details can be found in the template's README.md.
 
-## Fetch the DttR SDK
+## Fetching the DttR SDK
 
 **NOTE: You can skip this step when using container builds since they fetch the SDK for you by default.**
 
@@ -94,7 +94,7 @@ On Windows with PowerShell:
 ./scripts/fetch-dttr.ps1
 ```
 
-## Compile the mod DLL
+## Compiling the mod DLL
 
 On Linux, macOS, or inside the Nix shell:
 
@@ -110,6 +110,7 @@ On Windows using the MSYS2 MINGW shell:
 
 ```sh
 cmake -S . -B build -G "Ninja Multi-Config" -DDTTRSDK_DIR=.dttr/sdk
+
 cmake --build build --config debug
 ```
 
@@ -118,5 +119,3 @@ The built mod should be here:
 ```text
 build/debug/minimal-mod.dll
 ```
-
-### Testing the compiled mod

@@ -1,8 +1,8 @@
 /// @defgroup sdk_mods Mod API
-/// Mod DLL lifecycle, callbacks, logging, and exported entrypoints.
+/// APIs for a mod's DLL lifecycle, callbacks, logging, and exported entrypoints.
 ///
-/// Globals are for mod-owned state only. A cached DTTR_Mods_Context pointer is
-/// valid only until DTTR_Mod_Cleanup returns.
+/// Keep globals limited to state owned by your mod. If you cache a
+/// DTTR_Mods_Context pointer, treat it as valid until DTTR_Mod_Cleanup returns.
 ///
 /// @code{.c}
 /// #include <dttr_sdk.h>
@@ -29,12 +29,12 @@
 /// @defgroup sdk_core Core SDK
 /// Result handling, AOB/signature scanning, patches, hooks, and patch groups.
 ///
-/// Patch groups keep related targets in one install unit and roll back on
-/// required failures.
+/// Use patch groups to install related hooks and patches together. If a required
+/// patch fails, the group rolls back the work it already applied.
 ///
-/// Generated PCDOGS `PatchSpec()` results describe install support: REL32 targets
-/// produce function-hook specs, HOTPATCH targets stay unsupported, and data
-/// helpers install only when the symbol is typed pointer data.
+/// PCDOGS `PatchSpec()` results describe what the SDK can install for a symbol:
+/// REL32 targets become function-hook specs, HOTPATCH targets are reported as
+/// unsupported, and data helpers install for typed pointer data.
 ///
 /// @code{.c}
 /// static DTTR_Core_PatchGroup *patches;

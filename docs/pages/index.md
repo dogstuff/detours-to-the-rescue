@@ -1,6 +1,6 @@
 !!! note "Quick Start Guide"
 
-    If this is your first time using DttR, the fastest way to get it running is by following the [Quick Start guide](quick-start/00-initial-setup.md).
+    If this is your first time using DttR, the fastest way to get it running is by following the [quick start guide](quick-start/00-initial-setup.md).
 
 # 102 Patches: Detours to the Rescue! (DttR)
 
@@ -8,7 +8,7 @@ DttR is a compatibility layer and modding runtime for the PC version of *102 Dal
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 
-## Features
+## What DttR includes
 
 By default, Detours to the Rescue includes:
 

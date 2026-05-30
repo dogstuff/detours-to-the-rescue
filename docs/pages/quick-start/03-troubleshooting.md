@@ -4,7 +4,7 @@ Try these when DttR starts but crashes, renders incorrectly, or behaves differen
 
 ## Game crashes on startup
 
-First, try a different graphics API. Open `dttr-config.exe`, go to **Graphics**, and change **Graphics API** from `auto` to one of these:
+First, try a different graphics API. Open `dttr-config.exe`, go to **Graphics`, and change `Graphics API` from `auto` to one of these:
 
 - `vulkan`
 - `direct3d12`
@@ -22,7 +22,7 @@ If DttR still crashes:
 
 If DttR launches but crashes during the opening videos or before the main menu, try skipping the intro movies.
 
-Open `dttr-config.exe`, enable **Skip intro movies**, save, then restart DttR.
+Open `dttr-config.exe`, enable `Skip intro movies`, save, then restart DttR.
 
 If this fixes the crash, mention that in any bug report.
 
@@ -32,7 +32,7 @@ To start, tery switching between Graphics APIs and check if the bug is resolved.
 If not, does the glitched behavior vary between APIs? 
 Renderer bugs can often be specific to certain Graphics API backend implementations.
 
-If only polygon movement or seams look wrong, try switching **Vertex Precision** between `native` and `subpixel`.
+If only polygon movement or seams look wrong, try switching `Vertex Precision` between `native` and `subpixel`.
 
 If that doesn't work, some other diagnostic steps include:
 
@@ -63,4 +63,4 @@ Be sure to include:
 - Your selected graphics API.
 - Your game source: CD, installed copy, or ISO.
 - `dttr.log`; configured `Log level` should be `debug` or `trace`.
-- If requested, please also provide the relevant crash `.dmp` files created by DttR. **Note: Crash dumps may contain sensitive information and should generally not be posted publicly.**
+- If requested, please also provide the relevant crash `.dmp` files created by DttR. Warning: Crash dumps may contain sensitive information and should generally not be posted publicly.

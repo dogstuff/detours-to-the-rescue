@@ -10,21 +10,21 @@ PCDOGS function helpers are the safe way to call known game functions. Use them 
 Raw addresses are only for unsupported reverse-engineering or low-level patch work.
 
 
-## Using the generated helpers
+## Calling game functions through SDK wrappers
 
-The SDK provides typed function wrappers for the majority of functions available in the game.
+The SDK provides typed SDK wrappers for the majority of functions available in the game.
 
 For example, `Movie_PlayFile` is exposed as `DTTR_PCDOGS_F_MoviePlayFile`.
 
-Use the helper methods instead of calling the address yourself:
+Use the SDK wrapper methods instead of calling the address yourself:
 
 - `IsCallable(&ctx->runtime)`: Check whether the function is available and safe to call.
 - `Try(&ctx->runtime, args..., out_ret)`: Call the function only when it is available.
 - `Call(&ctx->runtime, args..., fallback_ret)`: Call the function when available, otherwise return a fallback value.
 
-## Best Practices
+## Handling unavailable functions
 
-Use `Try()` when a missing function should disable a feature, show a warning, or write a log message.
+Use `Try()` when a missing function should disable related behavior, show a warning, or write a log message.
 
 ```c
 BOOL played = FALSE;
@@ -54,9 +54,9 @@ BOOL played = DTTR_PCDOGS_F_MoviePlayFile->Call(
 
 This example returns `FALSE` if `Movie_PlayFile` is unavailable.
 
-Prefer `Try()` over `Call()` when the function writes to output parameters, changes game-owned state you depend on, or failing silently, as `Call()` doing so can cause undefined behavior.
+Using `Call()` where a failed game function writes output parameters or changes game-owned state will cause undefined behavior. Use `Try()` when the caller needs to handle failure explicitly.
 
-## Check availability during setup
+## Checking availability during setup
 
 If your mod requires a game function to be available, check it during `DTTR_MODS_INIT`:
 
@@ -73,6 +73,6 @@ DTTR_MODS_INIT {
 
 Fail init for required functions and use `Try()` for optional functions.
 
-## Use SDK types
+## Passing game-owned types
 
-When a wrapper takes a game-owned pointer or struct, use the generated SDK type. Generally avoid guessing a struct layout unless you know what you're doing.
+When a wrapper takes a game-owned pointer or struct, use the generated SDK type. Guessing a struct layout will cause incorrect reads, corrupt writes, or crashes.

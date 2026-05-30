@@ -25,4 +25,4 @@ To disable a mod without deleting it, open `dttr-config.exe`, go to the `Modding
 
 You can also remove the mod DLL from the `mods` folder.
 
-If DttR only crashes with a specific mod installed, please only report this to the mod's developer and do not report it to the main DttR repository.
+If DttR crashes only with a specific mod installed, report it to the mod's developer. Reporting mod-specific crashes to the main DttR repository will send the issue to the wrong project.

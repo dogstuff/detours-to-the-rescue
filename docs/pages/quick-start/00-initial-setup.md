@@ -6,8 +6,8 @@ This guide quickly overviews the process to get set up with DttR.
 
 1. Download the build of DttR you want to use:
 
-    - [Vanilla](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip) - Does not contain any support for modding outside of the included features. This version must be used for speedruns.
-    - [Modding](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip) - Contains the DttR modding runtime and SDK. This is required for running third-party mods.
+    - [Vanilla](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip) - Does not contain modding support beyond the functionality built into DttR. Using a non-Vanilla build for speedruns will cause the run to be invalid.
+    - [Modding](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip) - Contains the DttR modding runtime and SDK.
 
 2. Extract the archive to a writable directory.
 3. Run `dttr.exe`.

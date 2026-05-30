@@ -9,7 +9,7 @@ PCDOGS globals are known pieces of game data exposed through the SDK. When possi
 
 A global helper can tell you whether the symbol was found, read the value with the right type, and decide whether normal writes are allowed.
 
-## Read a global
+## Reading globals safely
 
 Use `Read()` for normal access. It returns `false` if the symbol is unavailable or if the memory read fails.
 
@@ -24,9 +24,9 @@ DTTR_MODS_FRAME_BEGIN {
 }
 ```
 
-## Write only when the policy allows it
+## Checking write policies
 
-Writing game memory is not always safe. Check `WritePolicy` before exposing a feature that edits a global.
+Writing game memory is not always safe. Check `WritePolicy` before exposing related behavior that edits a global.
 
 - `RAW_MEMORY`: `Write()` may update the value after availability and memory-permission checks.
 - `READ_ONLY`: Use for inspection only. These are usually decoded tables, dispatch slots, jumps, opcodes, or indexes.
@@ -34,15 +34,15 @@ Writing game memory is not always safe. Check `WritePolicy` before exposing a fe
 - `PATCH_ONLY`: Change this through patch or hook flows, not direct writes.
 - `UNKNOWN`: The symbol has not been classified enough for normal writes.
 
-`Write()` only succeeds for `RAW_MEMORY` globals. For every other policy, design the feature around reading, patching, or hooking instead.
+`Write()` only succeeds for `RAW_MEMORY` globals. For every other policy, design the related functions around reading, patching, or hooking instead.
 
-## Avoid `UnsafeWrite()` in normal mods
+## Writing through policy-aware helpers
 
 `UnsafeWrite()` bypasses `WritePolicy`. It still requires writable process memory, but it does not mean the write is safe.
 
-Use it only for reverse-engineering experiments, explicit patching work, or SDK internals. Most mods generally should not need to use this.
+Using `UnsafeWrite()` in normal mod behavior will cause writes to bypass the SDK's safety policy and can corrupt game-owned state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
 
-## Use raw addresses only at API boundaries
+## Passing raw addresses at API boundaries
 
 Most mods should not need a global's raw address. Use typed helpers first.
 

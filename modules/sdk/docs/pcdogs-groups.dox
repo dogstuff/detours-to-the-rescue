@@ -1,32 +1,34 @@
 /// @defgroup sdk_pcdogs PCDOGS Symbols
 /// Stable generated symbols and typed helper APIs for 102 Dalmatians: Puppies to the Rescue.
 ///
-/// PCDOGS generated symbols describe known game functions, globals, types, and
-/// patch targets for supported 102 Dalmatians executables. Names come from SDK
-/// blueprints and recovered executable evidence. Stable APIs preserve the public
-/// SDK contract by keeping engine-owned state read/hook-only unless the symbol doc
-/// marks it writable. When recovery work renames a gameplay/runtime symbol, the
-/// new generated name is canonical.
+/// PCDOGS symbols give mods and SDK code typed names for known game functions,
+/// globals, types, and patch targets. Those names come from SDK blueprints and
+/// evidence recovered from supported game executables.
 ///
-/// These symbols cover game-state reads, known function calls, typed hooks, and
-/// patch specs without hand-written lookup logic. Engine-owned globals, including
-/// current level data, render-scoped player_actor, and native callback slots, are
-/// read/hook targets. Writes are limited to symbols whose docs mark them writable.
-/// Level-runtime entity arrays hold level-local runtime slots.
+/// Use these APIs when a mod needs to read game state, call a known game
+/// function, install a typed hook, or build a patch spec. They handle symbol
+/// lookup for you, so mod code can use named SDK wrappers instead of hard-coded
+/// addresses.
 ///
-/// Callback-like PCDOGS names describe native dispatch tables/functions.
-/// `Resource_FixUp*` symbols rebase package-relative offsets into runtime-owned
-/// pointers.
+/// Prefer reading or hooking engine-owned state unless a symbol's documentation
+/// says it is writable. This applies to globals such as current level data, the
+/// render-scoped `player_actor`, native callback slots, and level-local runtime
+/// entity arrays.
 ///
-/// Collision and level-geometry pointers are valid only for the owning node and
-/// current level. Polygons resolve through their owning `Collision_Node`. Use
-/// collision pointers only within the owning level/resource lifetime.
+/// Some PCDOGS names describe native dispatch tables or callback-style
+/// functions. `Resource_FixUp*` symbols convert package-relative offsets into
+/// runtime-owned pointers.
 ///
-/// Source blueprints are authoritative for SDK names, layouts, and write policies;
-/// generated docs/build artifacts are derived outputs.
+/// Collision and level-geometry pointers belong to a specific node and current
+/// level. Polygons resolve through their owning `Collision_Node`, so prefer using
+/// collision pointers within that level or resource lifetime.
 ///
-/// DttR resolves required PCDOGS symbols before loading mods; custom SDK hosts
-/// and tests can call `DTTR_PCDOGS_ResolveAll()` explicitly.
+/// Source blueprints define the SDK names, layouts, and write policies. Generated
+/// docs and build artifacts are derived from those blueprints.
+///
+/// DttR resolves required PCDOGS symbols before loading mods. Custom SDK hosts
+/// and tests can call `DTTR_PCDOGS_ResolveAll()` when they need to resolve
+/// symbols explicitly.
 ///
 /// @code{.c}
 /// #include <dttr_sdk.h>

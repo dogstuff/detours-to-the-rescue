@@ -26,45 +26,41 @@ Turn on `Skip intro movies` to skip the opening videos. This is also worth tryin
 
 ## Adjusting graphics
 
-Start with the defaults unless you are fixing a specific problem or prefer a different look.
+Start with the defaults unless you are fixing a specific problem or want a different look.
 
-Use `Graphics API` when DttR has startup or rendering problems:
+If the game has startup or rendering problems, try changing `Graphics API`:
 
-- `auto` lets DttR choose the backend.
-- `vulkan`, `direct3d12`, and `opengl` force a specific backend.
+- `auto` lets DttR choose.
+- `vulkan`, `direct3d12`, or `opengl` force one backend.
 
 Use `Scaling Fit` to control the window shape:
 
 - `letterbox` keeps the correct aspect ratio.
-- `stretch` fills the whole window, even if it distorts the image.
-- `integer` scales in whole-number steps for sharper and more consistent pixels.
+- `stretch` fills the window but may distort the image.
+- `integer` uses whole-number scaling for sharper, more consistent pixels.
 
-Use `Scaling Method` to choose where DttR applies scaling:
+Use `Scaling Method` only if you want to tune how scaling is applied:
 
-- `logical` scales the game's internal image before presentation.
-- `present` scales the final presented image. This can be useful when comparing output or tuning how scaling looks on your display.
+- `logical` scales the game's internal image.
+- `present` scales the final image shown on your display.
 
-When using `logical` scaling, the `Vertex Precision` can be changed if polygon movement or seams shimmer or otherwise look wrong . Try `native` for original positioning method or `subpixel` for smooth polygon movement with some minor visual artifacts.
+If polygons shimmer or seams look wrong with `logical` scaling, try changing `Vertex Precision`. Use `native` for the original positioning style, or `subpixel` for smoother movement with possible minor artifacts.
 
 Other useful graphics settings:
 
 - Turn `Fullscreen` on to start fullscreen. You can also toggle fullscreen in game with ++f11++.
-- Turn `Sprite Smooth` off for sharper pixels on sprites.
+- Turn `Sprite Smooth` off for sharper sprite pixels.
 - Set `MSAA samples` to `1` to disable MSAA.
 
 ## Configuring a controller
 
-Enable gamepad support, save, then start DttR with the controller connected.
+Enable gamepad support, save your changes, then start DttR with the controller connected.
 
-If DttR listens to the wrong controller, change the controller index. Keep `0` when you only have one controller connected.
+If DttR uses the wrong controller, change the controller index; keep it at `0` when only one controller is connected.
 
-If movement or camera control feels wrong:
+If movement or camera control feels off, adjust the stick or axis bindings, or change the deadzone: raise it if a centered stick drifts, and lower it if movement feels unresponsive near the center.
 
-- Change stick and axis bindings when movement is on the wrong stick or camera control is on the wrong axis.
-- Raise a deadzone if a centered stick drifts.
-- Lower a deadzone if movement feels unresponsive near the center.
-
-To change buttons, click the corresponding `Bind` button, then press the desired controller button or trigger.
+To change a button, click its `Bind` button, then press the controller button or trigger you want to use.
 
 Use `Reset` to restore the default mapping, or `Clear` to leave an action unbound.
 
@@ -76,19 +72,19 @@ Leave sample preemphasis at the default unless you have a specific need to adjus
 
 ## Collecting logs and crash reports
 
-Use `Log file path` to move `dttr.log`. Relative paths resolve from the DttR directory.
+Use `Log file path` to configure where DttR should write `dttr.log`. Relative paths are based on the DttR directory.
 
-Set `Log level` to `debug` or `trace` when you need more diagnostic detail in the generated log file.
+If you need more detail for troubleshooting, set `Log level` to `debug` or `trace`.
 
-Use `Minidump type` to choose how much detail crash dumps include. Crash dumps may contain sensitive information, so avoid posting them publicly unless requested.
+Use `Minidump type` to control how much information crash dumps include. Posting crash dumps publicly can expose sensitive information; share them only when requested.
 
-## Configuring modding features
+## Configuring modding options
 
-The Modding tab is experimental and only applies to the Modding build.
+The Modding tab is experimental and only exists in the Modding build.
 
 - Use hot reload to enable reloading updated mod DLLs automatically without needing to restart the game.
 - To disable specific installed mods, the mod list to disable DLLs in the `mods` directory.
 
 ## Editing the config file directly
 
-For direct JSON editing, alternate config files, and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).
+For direct config JSON editing, alternate config files, and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).
