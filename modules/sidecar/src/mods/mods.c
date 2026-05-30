@@ -68,12 +68,16 @@ static bool is_shadow_mod(const char *filename) {
 		   == 0;
 }
 
-static void log_mod_info(const char *filename, DTTR_Mods_InfoFn info_fn) {
-	if (!info_fn) {
-		return;
-	}
+static const DTTR_Mods_Info *get_mod_info(DTTR_Mods_InfoFn info_fn) {
+	return info_fn ? info_fn() : NULL;
+}
 
-	const DTTR_Mods_Info *info = info_fn();
+static void set_mod_display_name(loaded_mod *mod, const DTTR_Mods_Info *info) {
+	const char *name = info && info->name && info->name[0] ? info->name : mod->filename;
+	DTTR_Path_CopyString(mod->display_name, sizeof(mod->display_name), name);
+}
+
+static void log_mod_info(const char *filename, const DTTR_Mods_Info *info) {
 	if (!info) {
 		return;
 	}
@@ -343,7 +347,9 @@ static bool prepare_mod(
 
 // Calls mod initialization and records ownership for hooks installed by that DLL.
 static bool init_mod(loaded_mod *mod) {
-	log_mod_info(mod->filename, mod->info);
+	const DTTR_Mods_Info *info = get_mod_info(mod->info);
+	set_mod_display_name(mod, info);
+	log_mod_info(mod->filename, info);
 
 	const DTTR_Mods_Context *base_ctx = dttr_sidecar_context();
 	if (!refresh_mod_context(mod, base_ctx)) {
@@ -363,6 +369,7 @@ static bool init_mod(loaded_mod *mod) {
 
 	mod->initialized = true;
 	mod->reload_pending = false;
+	mod->loaded_at_ms = GetTickCount();
 	return true;
 }
 
@@ -746,6 +753,27 @@ void dttr_mods_render(const DTTR_Mods_RenderContext *ctx) { MOD_DISPATCH(render,
 bool dttr_mods_handle_event(const SDL_Event *event) {
 	return dispatch_event_until_consumed(event, false);
 }
+
+size_t dttr_mods_loaded_count() { return kv_size(loaded_mods); }
+
+const char *dttr_mods_loaded_name(size_t index) {
+	if (index >= kv_size(loaded_mods)) {
+		return NULL;
+	}
+
+	loaded_mod *mod = &kv_A(loaded_mods, index);
+	return mod->display_name[0] ? mod->display_name : mod->filename;
+}
+
+DWORD dttr_mods_loaded_elapsed_ms(size_t index) {
+	if (index >= kv_size(loaded_mods)) {
+		return 0;
+	}
+
+	return GetTickCount() - kv_A(loaded_mods, index).loaded_at_ms;
+}
+
+bool dttr_mods_hot_reload_enabled() { return dttr_config.hot_reload; }
 
 void dttr_mods_cleanup() {
 	remove_all_mods(false);

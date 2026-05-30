@@ -6,6 +6,9 @@
 #include <dttr_imgui.h>
 #include <dttr_log.h>
 
+#include <stdio.h>
+#include <string.h>
+
 static DTTR_BackendType backend_type;
 static SDL_Window *window;
 static DTTR_ImGuiDesktopScaleState imgui_scale;
@@ -14,6 +17,133 @@ static bool initialized;
 static const float MODDING_BADGE_FONT_FACTOR = 0.90f;
 static const float MODDING_BADGE_MIN_FONT_SIZE = 6.0f;
 static const float MODDING_BADGE_DEFAULT_FONT_SIZE = 13.0f;
+static const float MODDING_BADGE_LINE_ADVANCE_FACTOR = 0.86f;
+static const float MODDING_BADGE_BOLD_OFFSET = 0.5f;
+static const ImVec4_c MODDING_BADGE_HEADER_COLOR = {1.0f, 1.0f, 1.0f, 1.0f};
+static const ImVec4_c MODDING_BADGE_SECONDS_COLOR = {0.35f, 1.0f, 0.35f, 1.0f};
+static const ImVec4_c MODDING_BADGE_HOT_RELOAD_ON_COLOR = {0.35f, 1.0f, 0.35f, 1.0f};
+static const ImVec4_c MODDING_BADGE_HOT_RELOAD_OFF_COLOR = {1.0f, 0.35f, 0.35f, 1.0f};
+static const char MODDING_BADGE_HOT_RELOAD_LABEL[] = "Hot Reload:";
+
+static float overlay_text_width(const char *text) {
+	if (!text) {
+		return 0.0f;
+	}
+
+	const ImVec2_c size = igCalcTextSize(text, NULL, false, -1.0f);
+	return size.x;
+}
+
+static float overlay_line_height() { return igGetTextLineHeight(); }
+
+static float overlay_line_advance() {
+	return igGetTextLineHeight() * MODDING_BADGE_LINE_ADVANCE_FACTOR;
+}
+
+static float max_float(float a, float b) { return a > b ? a : b; }
+
+static float overlay_mod_gap() {
+	const ImGuiStyle *style = igGetStyle();
+	const float spacing = style ? style->ItemSpacing.x : 4.0f;
+	return spacing * 0.5f;
+}
+
+static void draw_overlay_text_at(
+	ImDrawList *draw_list,
+	ImVec2_c pos,
+	ImU32 color,
+	const char *text
+) {
+	if (!text) {
+		return;
+	}
+
+	ImDrawList_AddText_Vec2(draw_list, pos, color, text, text + strlen(text));
+}
+
+static void draw_bold_overlay_text(
+	ImDrawList *draw_list,
+	ImVec2_c pos,
+	ImU32 color,
+	const char *text
+) {
+	draw_overlay_text_at(draw_list, pos, color, text);
+	draw_overlay_text_at(
+		draw_list,
+		(ImVec2_c){pos.x + MODDING_BADGE_BOLD_OFFSET, pos.y},
+		color,
+		text
+	);
+}
+
+static float hot_reload_width() {
+	const char *state = dttr_mods_hot_reload_enabled() ? "on" : "off";
+	return overlay_text_width(MODDING_BADGE_HOT_RELOAD_LABEL) + overlay_mod_gap()
+		   + overlay_text_width(state);
+}
+
+static void draw_hot_reload_header(float width) {
+	ImDrawList *draw_list = igGetWindowDrawList();
+	if (!draw_list) {
+		return;
+	}
+
+	const bool hot_reload_enabled = dttr_mods_hot_reload_enabled();
+	const char *state = hot_reload_enabled ? "on" : "off";
+	const ImVec4_c state_color = hot_reload_enabled ? MODDING_BADGE_HOT_RELOAD_ON_COLOR
+													: MODDING_BADGE_HOT_RELOAD_OFF_COLOR;
+	const float gap = overlay_mod_gap();
+	const float label_width = overlay_text_width(MODDING_BADGE_HOT_RELOAD_LABEL);
+	const ImVec2_c cursor = igGetCursorScreenPos();
+	const ImU32 label_color = igGetColorU32_Vec4(MODDING_BADGE_HEADER_COLOR);
+	const ImU32 state_color_u32 = igGetColorU32_Vec4(state_color);
+
+	draw_bold_overlay_text(draw_list, cursor, label_color, MODDING_BADGE_HOT_RELOAD_LABEL);
+	draw_bold_overlay_text(
+		draw_list,
+		(ImVec2_c){cursor.x + label_width + gap, cursor.y},
+		state_color_u32,
+		state
+	);
+
+	igDummy((ImVec2_c){width, overlay_line_advance()});
+}
+
+static void mod_overlay_elapsed_text(char *out, size_t out_size, size_t mod_index) {
+	const unsigned long elapsed_seconds = (unsigned long)(dttr_mods_loaded_elapsed_ms(
+															  mod_index
+														  )
+														  / 1000u);
+	snprintf(out, out_size, "(%lus)", elapsed_seconds);
+}
+
+static void draw_mod_overlay_row(
+	const char *name,
+	const char *seconds,
+	float gap,
+	float total_width
+) {
+	ImDrawList *draw_list = igGetWindowDrawList();
+	if (!draw_list) {
+		return;
+	}
+
+	const ImVec2_c cursor = igGetCursorScreenPos();
+	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
+	const ImU32 seconds_color = igGetColorU32_Vec4(MODDING_BADGE_SECONDS_COLOR);
+	const char *mod_name = name ? name : "";
+	const float name_width = overlay_text_width(mod_name);
+
+	draw_bold_overlay_text(draw_list, cursor, text_color, mod_name);
+	draw_overlay_text_at(
+		draw_list,
+		(ImVec2_c){cursor.x + name_width + gap, cursor.y},
+		seconds_color,
+		seconds
+	);
+
+	igDummy((ImVec2_c){total_width, overlay_line_advance()});
+}
 
 // Selects the SDL GPU ImGui backend only when the active renderer is SDL GPU.
 static bool uses_sdl_gpu() { return backend_type == DTTR_BACKEND_SDL_GPU; }
@@ -180,20 +310,21 @@ static ImDrawData *render_game_frame(uint32_t w, uint32_t h) {
 static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	const float game_scale = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 	const float desktop_scale = DTTR_ImGui_GetCurrentDesktopScale(&imgui_scale);
-	const float margin = 4.0f * game_scale * desktop_scale;
+	const float margin = 6.0f * game_scale * desktop_scale;
 	const ImVec2_c pos = {
-		(float)ctx->game_x + (float)ctx->game_w - margin,
+		(float)ctx->game_x + margin,
 		(float)ctx->game_y + margin,
 	};
 
-	const ImVec2_c pivot = {1.0f, 0.0f};
+	const ImVec2_c pivot = {0.0f, 0.0f};
 
 	igSetNextWindowPos(pos, ImGuiCond_Always, pivot);
-	igSetNextWindowBgAlpha(0.3f);
 	igPushStyleVar_Float(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	igPushStyleVar_Float(ImGuiStyleVar_WindowRounding, 0.0f);
+	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, (ImVec2_c){0.0f, 0.0f});
 
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
+								   | ImGuiWindowFlags_NoBackground
 								   | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav
 								   | ImGuiWindowFlags_NoMove
 								   | ImGuiWindowFlags_NoSavedSettings
@@ -225,12 +356,40 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 		igPushFont(font, badge_font_size);
 	}
 
+	const size_t loaded_count = dttr_mods_loaded_count();
+	float rows_width = 0.0f;
+	const float gap = overlay_mod_gap();
+
+	for (size_t i = 0; i < loaded_count; i++) {
+		char seconds[32];
+		mod_overlay_elapsed_text(seconds, sizeof(seconds), i);
+
+		const char *name = dttr_mods_loaded_name(i);
+		const float row_width = overlay_text_width(name ? name : "") + gap
+								+ overlay_text_width(seconds);
+		rows_width = max_float(rows_width, row_width);
+	}
+
+	const float text_width = max_float(hot_reload_width(), rows_width);
+
+	igSetNextWindowContentSize((ImVec2_c){text_width, 0.0f});
+
 	if (igBegin("##modding_overlay", NULL, flags)) {
-		igText("Modding");
+		draw_hot_reload_header(text_width);
+
+		for (size_t i = 0; i < loaded_count; i++) {
+			char seconds[32];
+			mod_overlay_elapsed_text(seconds, sizeof(seconds), i);
+
+			const char *name = dttr_mods_loaded_name(i);
+			draw_mod_overlay_row(name, seconds, gap, text_width);
+		}
+
+		igDummy((ImVec2_c){text_width, overlay_line_height() - overlay_line_advance()});
 	}
 
 	igEnd();
-	igPopStyleVar(2);
+	igPopStyleVar(3);
 
 	if (font) {
 		igPopFont();
