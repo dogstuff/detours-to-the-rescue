@@ -8,7 +8,7 @@ The easiest starting point is the C template from the latest release:
 
 ## Starting from the project template
 
-Download and extract the template. It includes has the CMake project, MinGW toolchain file, SDK linking scripts, container build, and a minimal mod source file.
+Download and extract the template. It includes the CMake project, MinGW toolchain file, SDK linking scripts, container build, and a minimal mod source file.
 
 The starter mod is intentionally small:
 
@@ -32,7 +32,7 @@ DTTR_MODS_CLEANUP {
 
 ## Setting up the build environment
 
-Now we need to make sure we have the right build tools installed and configured..
+Install the build tools for your platform.
 
 If you use Nix on Linux, macOS, or WSL, enter the template development shell:
 
@@ -47,7 +47,7 @@ sudo apt update
 sudo apt install cmake ninja-build curl unzip gcc-mingw-w64-i686
 ```
 
-On DNF-based distribution:
+On DNF-based distributions:
 
 ```sh
 sudo dnf install cmake ninja-build curl unzip mingw32-gcc
@@ -74,11 +74,13 @@ pacman -S --needed mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc 
 ```
 
 If you do not want a local MinGW install, use the template's Podman container build instead.
-Details can be found in the template's README.md.
+The template README has the container build details.
 
 ## Fetching the DttR SDK
 
-**NOTE: You can skip this step when using container builds since they fetch the SDK for you by default.**
+!!! note
+
+    You can skip this step when using the default container build because it fetches the SDK for you.
 
 The template downloads a build of the release SDK that matches `dttr-version.txt`.
 

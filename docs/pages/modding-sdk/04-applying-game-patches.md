@@ -2,10 +2,10 @@
 
 !!! warning "Cross-Region Compatibility Warning"
 
-    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+    The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
-A patch reversibly changes game code or data at runtime. Use this page for byte patches, pointer patches, and other non-function-hook changes.
+A patch changes game code or data at runtime and can be reversed during cleanup. Use this page for byte patches, pointer patches, and other non-function-hook changes.
 
 If you want to redirect a game function to your own code, see [Hooking Game Functions](05-hooking-game-functions.md).
 
@@ -13,7 +13,7 @@ Patch through a `DTTR_Core_PatchGroup` whenever possible. A patch group keeps re
 
 ## Grouping related patches
 
-Create one patch group for each set of related functions that needs patches. Install those related patches into the group.
+Create one patch group for each related set of patches.
 
 A simple mod usually does this during `DTTR_MODS_INIT`:
 
@@ -23,13 +23,13 @@ A simple mod usually does this during `DTTR_MODS_INIT`:
 4. Return `false` if a required patch fails.
 5. Release the group during `DTTR_MODS_CLEANUP`.
 
-Exposing related behavior before its required patches have installed successfully will cause that behavior to run against unpatched game code or data.
+Do not expose related behavior until its required patches have installed successfully; otherwise it can run against unpatched game code or data.
 
 ## Starting from generated patch specs
 
-For known PCDOGS globals and patch sites, use generated patch specs first since they are pre-configured with the appropriate target and patch type.
+For known PCDOGS globals and patch sites, use generated patch specs first. They already include the target and patch type.
 
-Use lower-level target specs only when there is no SDK wrapper for the patch you need to make.
+Use lower-level target specs only when there is no SDK wrapper for the patch you need.
 
 ```c
 static DTTR_Core_PatchGroup *patches;
@@ -68,11 +68,11 @@ DTTR_MODS_CLEANUP {
 
 ## Marking patches as required or optional
 
-A required patch is one the related behavior needs to work. Continuing after a required patch fails to install will cause that behavior to run against the wrong game code or data.
+A required patch is one the related behavior needs to work. If a required patch fails to install, stop instead of running against the wrong game code or data.
 
 An optional patch is only for a target that legitimately exists in some supported game builds but not others, and does not ignore actual install errors.
 
-When an optional patch is skipped, `DTTR_PCDOGS_T_Patch_Report::skipped_optional` increases. 
+When an optional patch is skipped, `DTTR_PCDOGS_T_Patch_Report::skipped_optional` increases.
 
 ## Disabling patched behavior temporarily
 

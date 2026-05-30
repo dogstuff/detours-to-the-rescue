@@ -2,7 +2,7 @@
 
 !!! warning "Cross-Region Compatibility Warning"
 
-    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+    The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
 PCDOGS globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.
@@ -40,7 +40,7 @@ Writing game memory is not always safe. Check `WritePolicy` before exposing rela
 
 `UnsafeWrite()` bypasses `WritePolicy`. It still requires writable process memory, but it does not mean the write is safe.
 
-Using `UnsafeWrite()` in normal mod behavior will cause writes to bypass the SDK's safety policy and can corrupt game-owned state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
+Using `UnsafeWrite()` in normal mod behavior bypasses the SDK's safety policy and can corrupt game-owned state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
 
 ## Passing raw addresses at API boundaries
 

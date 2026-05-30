@@ -9,6 +9,6 @@ Use these rules for C sources, headers, and generated public SDK names.
 - Globals:
   - File-local: plain `snake_case`.
   - Cross-file internal: `dttr_<area>_<name>`.
-  - Public: General avoid, but if one is unavoidable, use `DTTR_Pascal_Name`.
+  - Public: avoid in general, but if one is unavoidable, use `DTTR_Pascal_Name`.
 - Macros and enum constants stay `DTTR_ALL_CAPS`.
 - Avoid scope prefixes like `s_`, `S_`, `m_`, or `g_`.

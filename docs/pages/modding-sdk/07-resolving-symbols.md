@@ -2,7 +2,7 @@
 
 !!! warning "Cross-Region Compatibility Warning"
 
-    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+    The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
 Most mods should not need to manually resolve PCDOGS symbols. Prefer SDK wrappers when possible.
@@ -25,7 +25,7 @@ This is sometimes necessary, but the rest of your mod should use typed helpers w
 
 ## Resolving symbols without a typed helper
 
-The following SDK helpers are exposed for situations where no SDK wrapper exists for something you need to resolve in the game:
+Use these SDK helpers only when no SDK wrapper exists for the game symbol you need:
 
 - `DTTR_PCDOGS_FunctionResolve(...)`
 - `DTTR_PCDOGS_DataResolve(...)`

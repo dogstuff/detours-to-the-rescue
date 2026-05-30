@@ -2,17 +2,17 @@
 
 !!! warning "Cross-Region Compatibility Warning"
 
-    The symbols and types exposed by the SDK have currently only been tested against the English game executable.
+    The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
-PCDOGS function helpers are the safe way to call known game functions. Use them instead of casting raw addresses.
+PCDOGS function helpers are the safest way to call known game functions. Use them instead of casting raw addresses.
 
 Raw addresses are only for unsupported reverse-engineering or low-level patch work.
 
 
 ## Calling game functions through SDK wrappers
 
-The SDK provides typed SDK wrappers for the majority of functions available in the game.
+The SDK provides typed wrappers for most known game functions.
 
 For example, `Movie_PlayFile` is exposed as `DTTR_PCDOGS_F_MoviePlayFile`.
 
@@ -39,7 +39,7 @@ if (!DTTR_PCDOGS_F_MoviePlayFile->Try(
 }
 ```
 
-Your mod can decide what to do instead of pretending the game call worked.
+Your mod can then decide what to do instead of pretending the game call worked.
 
 `Call()` is typically shorter but can hide why the game function did not run.
 
@@ -54,7 +54,7 @@ BOOL played = DTTR_PCDOGS_F_MoviePlayFile->Call(
 
 This example returns `FALSE` if `Movie_PlayFile` is unavailable.
 
-Using `Call()` where a failed game function writes output parameters or changes game-owned state will cause undefined behavior. Use `Try()` when the caller needs to handle failure explicitly.
+Using `Call()` when a failed game function writes output parameters or changes game-owned state can cause undefined behavior. Use `Try()` when the caller needs to handle failure explicitly.
 
 ## Checking availability during setup
 
@@ -75,4 +75,4 @@ Fail init for required functions and use `Try()` for optional functions.
 
 ## Passing game-owned types
 
-When a wrapper takes a game-owned pointer or struct, use the generated SDK type. Guessing a struct layout will cause incorrect reads, corrupt writes, or crashes.
+When a wrapper takes a game-owned pointer or struct, use the generated SDK type. Guessing a struct layout can cause incorrect reads, corrupt writes, or crashes.

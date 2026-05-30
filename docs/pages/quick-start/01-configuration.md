@@ -2,13 +2,13 @@
 
 Run `dttr-config.exe` next to `dttr.exe` to change settings without hand-editing `dttr.json`.
 
-![DttR configuration window](../assets/config.png)
+![DttR configuration window](../assets/config-gui.png)
 
 Choose **Save** before closing the tool. DttR reads the saved `dttr.json` the next time it starts, so restart the game after changing settings.
 
 ## Switching game files
 
-Use `Game Directory or ISO` when you need to switch discs, choose another installed copy, fix a path after moving files, or re-access the first time setup prompt.
+Use `Game Directory or ISO` to switch discs, choose another installed copy, fix a path after moving files, or open the first-time setup prompt again.
 
 - For an installed copy, choose the folder that contains `pcdogs.exe`.
 - For an ISO, choose the original disc image.
@@ -16,7 +16,7 @@ Use `Game Directory or ISO` when you need to switch discs, choose another instal
 
 ## Moving your saves
 
-By default, DttR reads and writes saves from a DttR-owned directory (default `saves` next to `dttr.exe`). Each game executable variant is generated its own subdirectory within the saves directory.
+By default, DttR reads and writes saves from a DttR-owned directory (`saves` next to `dttr.exe`). Each game executable variant gets its own subdirectory.
 
 If you need the game to use its original save paths, set `saves_path` to an empty string in `dttr.json`.
 
@@ -39,7 +39,7 @@ Use `Scaling Fit` to control the window shape:
 - `stretch` fills the window but may distort the image.
 - `integer` uses whole-number scaling for sharper, more consistent pixels.
 
-Use `Scaling Method` only if you want to tune how scaling is applied:
+Use `Scaling Method` only when you need to tune where scaling happens:
 
 - `logical` scales the game's internal image.
 - `present` scales the final image shown on your display.
@@ -83,8 +83,8 @@ Use `Minidump Type` to control how much information crash dumps include. Posting
 The Modding tab is experimental and only exists in the Modding build.
 
 - Use `Hot Reload` to enable reloading updated mod DLLs automatically without needing to restart the game.
-- To disable specific installed mods, the mod list to disable DLLs in the `mods` directory.
+- To disable specific installed mods, uncheck their DLLs in the mod list.
 
 ## Editing the config file directly
 
-For direct config JSON editing, alternate config files, and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).
+For direct JSON editing, alternate config files, and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).

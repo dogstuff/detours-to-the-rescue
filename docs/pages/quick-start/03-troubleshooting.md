@@ -28,19 +28,18 @@ If this fixes the crash, mention that in any bug report.
 
 ## Graphics are missing, flickering, or otherwise broken
 
-To start, try switching between `Graphics API` backends and check if the bug is resolved.
-If not, does the glitched behavior vary between APIs?
-Renderer bugs can be specific to certain `Graphics API` backends.
+Try switching between `Graphics API` backends first.
+If the problem changes between backends, mention that in the bug report; renderer bugs are often backend-specific.
 
 If only polygon movement or seams look wrong, try switching `Vertex Precision` between `native` and `subpixel`.
 
-If that doesn't work, some other diagnostic steps include:
+If that does not work, try these next:
 
 - Setting `Scaling Method` back to `logical`.
 - Setting `Scaling Fit` to `letterbox`.
 - Turning `Sprite Smooth` off and/or setting `MSAA Samples` to `1`.
 
-For each change to the config, ensure your config changes are saved and the game has been restarted.
+After each config change, save and restart the game.
 
 ## Controller input is wrong or missing
 
@@ -54,7 +53,7 @@ Open `dttr-config.exe` and lower `MSS Sample Gain`. Very high gain values can cl
 
 ## Still having issues?
 
-If you're still having problems, feel free to report the issue through [DttR's GitLab repository](https://gitlab.com/dogstuff/detours-to-the-rescue).
+If you are still having problems, report the issue through [DttR's GitLab repository](https://gitlab.com/dogstuff/detours-to-the-rescue).
 
 Be sure to include:
 
@@ -62,5 +61,5 @@ Be sure to include:
 - Whether you downloaded Vanilla or Modding.
 - Your selected `Graphics API`.
 - Your game source: CD, installed copy, or ISO.
-- `dttr.log`; configured `Log Level` should be `debug` or `trace`.
-- If requested, please also provide the relevant crash `.dmp` files created by DttR. Warning: Crash dumps may contain sensitive information and should generally not be posted publicly.
+- `dttr.log`, with `Log Level` set to `debug` or `trace`.
+- If requested, the relevant crash `.dmp` files created by DttR. Crash dumps may contain sensitive information, so do not post them publicly unless asked.

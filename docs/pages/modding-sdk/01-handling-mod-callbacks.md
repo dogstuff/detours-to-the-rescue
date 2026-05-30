@@ -1,6 +1,6 @@
 # Handling Mod Callbacks
 
-Callbacks define how your mod's code is actually executed. Prefer the simplest callback that fits your use case before using lower-level render or window callbacks.
+Callbacks decide when your mod code runs. Prefer the simplest callback that fits before using lower-level render or window callbacks.
 
 ## Setting up and cleaning up your mod
 
@@ -83,9 +83,9 @@ Use these when your mod owns graphics resources that must follow the graphics de
 - `DTTR_MODS_GRAPHICS_DEVICE_RESTORED`: Recreate or refresh resources after the device comes back.
 - `DTTR_MODS_GRAPHICS_DEVICE_DESTROYING`: Release device resources before shutdown.
 
-Create and destroy device-dependent resources in the matching lifetime callbacks. Using window or graphics-device resources outside their matching lifetime will cause stale-resource bugs or crashes.
-## Controlling frame advancement
+Create and destroy device-dependent resources in the matching lifetime callbacks. Using window or graphics-device resources outside their matching lifetime can cause stale-resource bugs or crashes.
 
+## Controlling frame advancement
 
 Use these when an overlay or tool needs the window to keep presenting while the game pauses:
 

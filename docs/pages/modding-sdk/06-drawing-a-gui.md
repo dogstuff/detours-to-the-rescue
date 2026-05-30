@@ -1,6 +1,6 @@
 # Drawing a GUI
 
-DttR provides built-in ImGui support for mods, allowing them to more easily implement overlay menus for a variety of purposes, including debug windows, mod options, small tools, and overlays that do not need to be drawn directly through the game.
+DttR provides built-in ImGui support for mod overlay menus, including debug windows, mod options, small tools, and overlays that do not need to be drawn through the game renderer.
 
 ## Drawing UI in ImGui callbacks
 
@@ -21,9 +21,9 @@ DTTR_MODS_IMGUI_BEGIN {
 
 ## Leaving the ImGui lifecycle to DttR
 
-DttR owns the ImGui context, frame flow, SDL backend, and renderer backend. Submitting ImGui work outside a DttR ImGui callback will cause frame-order or backend-state bugs.
+DttR owns the ImGui context, frame flow, SDL backend, and renderer backend. Submitting ImGui work outside a DttR ImGui callback can cause frame-order or backend-state bugs.
 
-Calling these from a mod will cause DttR's UI or another mod's UI to break:
+Calling these from a mod can break DttR's UI or another mod's UI:
 
 - `igCreateContext` or `igDestroyContext`
 - `igNewFrame` or `igRender`
@@ -48,10 +48,10 @@ DTTR_MODS_IMGUI_BEGIN {
 }
 ```
 
-Storing pointers to short-lived ImGui data after the callback returns will cause dangling-pointer bugs; copy any needed values instead.
+Storing pointers to short-lived ImGui data after the callback returns can create dangling-pointer bugs; copy any needed values instead.
 
 ## Reading SDL events from callbacks
 
 For SDL event callbacks, include `SDL3/SDL.h` and read the callback data directly.
 
-Forwarding events to ImGui backend APIs from a mod will cause duplicate or out-of-order ImGui event handling; read the callback data directly instead.
+Forwarding events to ImGui backend APIs from a mod can create duplicate or out-of-order ImGui event handling; read the callback data directly instead.
