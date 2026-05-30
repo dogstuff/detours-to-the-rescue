@@ -8,7 +8,7 @@ Choose **Save** before closing the tool. DttR reads the saved `dttr.json` the ne
 
 ## Switching game files
 
-Use `Game directory or ISO` when you need to switch discs, choose another installed copy, fix a path after moving files, or re-access the first time setup prompt.
+Use `Game Directory or ISO` when you need to switch discs, choose another installed copy, fix a path after moving files, or re-access the first time setup prompt.
 
 - For an installed copy, choose the folder that contains `pcdogs.exe`.
 - For an ISO, choose the original disc image.
@@ -22,7 +22,7 @@ If you need the game to use its original save paths, set `saves_path` to an empt
 
 ## Skipping intro movies
 
-Turn on `Skip intro movies` to skip the opening videos. This is also worth trying if the game crashes before reaching the main menu.
+Turn on `Skip Intro Movies` to skip the opening videos. This is also worth trying if the game crashes before reaching the main menu.
 
 ## Adjusting graphics
 
@@ -50,15 +50,15 @@ Other useful graphics settings:
 
 - Turn `Fullscreen` on to start fullscreen. You can also toggle fullscreen in game with ++f11++.
 - Turn `Sprite Smooth` off for sharper sprite pixels.
-- Set `MSAA samples` to `1` to disable MSAA.
+- Set `MSAA Samples` to `1` to disable MSAA.
 
 ## Configuring a controller
 
-Enable gamepad support, save your changes, then start DttR with the controller connected.
+Turn on `Enable Gamepad`, save your changes, then start DttR with the controller connected.
 
-If DttR uses the wrong controller, change the controller index; keep it at `0` when only one controller is connected.
+If DttR uses the wrong controller, change `Gamepad Index`; keep it at `0` when only one controller is connected.
 
-If movement or camera control feels off, adjust the stick or axis bindings, or change the deadzone: raise it if a centered stick drifts, and lower it if movement feels unresponsive near the center.
+If movement or camera control feels off, adjust the axis bindings or the matching deadzone fields: raise the deadzone if a centered stick drifts, and lower it if movement feels unresponsive near the center.
 
 To change a button, click its `Bind` button, then press the controller button or trigger you want to use.
 
@@ -66,23 +66,23 @@ Use `Reset` to restore the default mapping, or `Clear` to leave an action unboun
 
 ## Adjusting audio
 
-Use audio gain to make game audio louder or quieter.
+Use `MSS Sample Gain` to make game audio louder or quieter.
 
-Leave sample preemphasis at the default unless you have a specific need to adjust it.
+Leave `MSS Sample Preemphasis` at the default unless you have a specific need to adjust it.
 
 ## Collecting logs and crash reports
 
-Use `Log file path` to configure where DttR should write `dttr.log`. Relative paths are based on the DttR directory.
+Use `Log File Path` to configure where DttR should write `dttr.log`. Relative paths are based on the DttR directory.
 
-If you need more detail for troubleshooting, set `Log level` to `debug` or `trace`.
+If you need more detail for troubleshooting, set `Log Level` to `debug` or `trace`.
 
-Use `Minidump type` to control how much information crash dumps include. Posting crash dumps publicly can expose sensitive information; share them only when requested.
+Use `Minidump Type` to control how much information crash dumps include. Posting crash dumps publicly can expose sensitive information; share them only when requested.
 
 ## Configuring modding options
 
 The Modding tab is experimental and only exists in the Modding build.
 
-- Use hot reload to enable reloading updated mod DLLs automatically without needing to restart the game.
+- Use `Hot Reload` to enable reloading updated mod DLLs automatically without needing to restart the game.
 - To disable specific installed mods, the mod list to disable DLLs in the `mods` directory.
 
 ## Editing the config file directly

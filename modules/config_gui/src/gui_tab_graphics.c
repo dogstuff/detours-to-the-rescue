@@ -43,7 +43,7 @@ static const char *TOOLTIP_PRESENT_FILTER = "Filter used when presenting scaled 
 											"Default: linear.";
 static const char *TOOLTIP_VERTEX_PRECISION = "Vertex coordinate precision during 3D "
 											  "rendering. Default: native.";
-static const char *TOOLTIP_SPRITE_SMOOTH = "Smooth 2D sprites; disable for "
+static const char *TOOLTIP_SPRITE_SMOOTH = "Smooth 2D Sprites; disable for "
 										   "nearest-neighbor. Default: true.";
 static const char *TOOLTIP_MSAA_SAMPLES = "Multisample anti-aliasing samples. Set to 1 "
 										  "to disable. Default: 2.";
@@ -75,7 +75,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_input_int(
 		ctx,
-		"Window width",
+		"Window Width",
 		"##window_width",
 		&state->config.window_width,
 		1,
@@ -85,7 +85,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_input_int(
 		ctx,
-		"Window height",
+		"Window Height",
 		"##window_height",
 		&state->config.window_height,
 		1,
@@ -95,7 +95,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_choice_combo(
 		ctx,
-		"Scaling fit",
+		"Scaling Fit",
 		"##scaling_fit",
 		(int *)&state->config.scaling_fit,
 		DTTR_CONFIG_CHOICES_SCALING_FIT,
@@ -105,7 +105,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_choice_combo(
 		ctx,
-		"Scaling method",
+		"Scaling Method",
 		"##scaling_method",
 		(int *)&state->config.scaling_method,
 		DTTR_CONFIG_CHOICES_SCALING_METHOD,
@@ -115,7 +115,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_choice_combo(
 		ctx,
-		"Present scaling algorithm",
+		"Present Scaling Algorithm",
 		"##present_filter",
 		(int *)&state->config.present_filter,
 		DTTR_CONFIG_CHOICES_PRESENT_FILTER,
@@ -125,7 +125,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_choice_combo(
 		ctx,
-		"Vertex precision",
+		"Vertex Precision",
 		"##vertex_precision",
 		(int *)&state->config.vertex_precision,
 		DTTR_CONFIG_CHOICES_VERTEX_PRECISION,
@@ -135,7 +135,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_checkbox(
 		ctx,
-		"Smooth 2D sprites",
+		"Smooth 2D Sprites",
 		"##sprite_smooth",
 		&state->config.sprite_smooth,
 		TOOLTIP_SPRITE_SMOOTH,
@@ -143,7 +143,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_input_int(
 		ctx,
-		"MSAA samples",
+		"MSAA Samples",
 		"##msaa_samples",
 		&state->config.msaa_samples,
 		1,
@@ -153,7 +153,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_checkbox(
 		ctx,
-		"Texture upload sync",
+		"Texture Upload Sync",
 		"##texture_upload_sync",
 		&state->config.texture_upload_sync,
 		TOOLTIP_TEXTURE_UPLOAD_SYNC,
@@ -161,7 +161,7 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 	);
 	labeled_checkbox(
 		ctx,
-		"Generate texture mipmaps",
+		"Generate Texture Mipmaps",
 		"##generate_texture_mipmaps",
 		&state->config.generate_texture_mipmaps,
 		TOOLTIP_GENERATE_TEXTURE_MIPMAPS,

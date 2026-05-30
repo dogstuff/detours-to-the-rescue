@@ -380,7 +380,9 @@ stable.struct(
 )
 
 stable.struct(
-    "Animation_StateTable", member("Animation_DataBlock*", "anim_ptrs[43]", 0x0), size=172
+    "Animation_StateTable",
+    member("Animation_DataBlock*", "anim_ptrs[43]", 0x0),
+    size=172,
 )
 
 
@@ -1824,9 +1826,15 @@ stable.struct(
 stable.struct(
     "Math_QuaternionI16",
     member("int16_t", "w", 0x0, doc="Scalar component in signed Q14 fixed-point form."),
-    member("int16_t", "x", 0x2, doc="X vector component in signed Q14 fixed-point form."),
-    member("int16_t", "y", 0x4, doc="Y vector component in signed Q14 fixed-point form."),
-    member("int16_t", "z", 0x6, doc="Z vector component in signed Q14 fixed-point form."),
+    member(
+        "int16_t", "x", 0x2, doc="X vector component in signed Q14 fixed-point form."
+    ),
+    member(
+        "int16_t", "y", 0x4, doc="Y vector component in signed Q14 fixed-point form."
+    ),
+    member(
+        "int16_t", "z", 0x6, doc="Z vector component in signed Q14 fixed-point form."
+    ),
     size=8,
     doc="Four signed Q14 fixed-point quaternion components, used by animation rotation tracks.",
 )

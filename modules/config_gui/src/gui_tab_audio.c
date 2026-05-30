@@ -1,7 +1,7 @@
 #include "gui_internal.h"
 
-static const char *TOOLTIP_MSS_SAMPLE_GAIN = "MSS sample gain. Default: 1.0.";
-static const char *TOOLTIP_MSS_SAMPLE_PREEMPHASIS = "MSS sample preemphasis. Default: "
+static const char *TOOLTIP_MSS_SAMPLE_GAIN = "MSS Sample Gain. Default: 1.0.";
+static const char *TOOLTIP_MSS_SAMPLE_PREEMPHASIS = "MSS Sample Preemphasis. Default: "
 													"0.0.";
 
 void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
@@ -11,7 +11,7 @@ void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 
 	labeled_input_float(
 		ctx,
-		"MSS sample gain",
+		"MSS Sample Gain",
 		"##mss_sample_gain",
 		&state->config.mss_sample_gain,
 		TOOLTIP_MSS_SAMPLE_GAIN,
@@ -19,7 +19,7 @@ void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 	);
 	labeled_input_float(
 		ctx,
-		"MSS sample preemphasis",
+		"MSS Sample Preemphasis",
 		"##mss_sample_preemphasis",
 		&state->config.mss_sample_preemphasis,
 		TOOLTIP_MSS_SAMPLE_PREEMPHASIS,

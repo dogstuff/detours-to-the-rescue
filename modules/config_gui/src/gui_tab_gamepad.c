@@ -37,15 +37,15 @@ typedef struct {
 } gamepad_axis_field;
 
 static const gamepad_axis_field GAMEPAD_AXIS_FIELDS[] = {
-	{"Stick X axis", "##axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
-	{"Stick Y axis", "##axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
-	{"Camera RZ axis", "##axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+	{"Stick X Axis", "##axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
+	{"Stick Y Axis", "##axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
+	{"Camera RZ Axis", "##axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
 };
 
 static const gamepad_axis_field GAMEPAD_DEADZONE_FIELDS[] = {
-	{"Stick X deadzone", "##deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
-	{"Stick Y deadzone", "##deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
-	{"Camera RZ deadzone", "##deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+	{"Stick X Deadzone", "##deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
+	{"Stick Y Deadzone", "##deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
+	{"Camera RZ Deadzone", "##deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
 };
 
 static config_label_state gamepad_axis_label_state(
@@ -190,7 +190,7 @@ static void draw_gamepad_axes(const DTTR_ImGuiDialogContext *ctx, config_ui_stat
 
 	labeled_checkbox(
 		ctx,
-		"Enable gamepad",
+		"Enable Gamepad",
 		"##gamepad_enabled",
 		&state->config.gamepad_enabled,
 		TOOLTIP_GAMEPAD_ENABLED,
@@ -198,7 +198,7 @@ static void draw_gamepad_axes(const DTTR_ImGuiDialogContext *ctx, config_ui_stat
 	);
 	labeled_input_int(
 		ctx,
-		"Gamepad index",
+		"Gamepad Index",
 		"##gamepad_index",
 		&state->config.gamepad_index,
 		1,
@@ -287,7 +287,7 @@ static void draw_gamepad_buttons(
 	config_ui_state *state
 ) {
 	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_SECTION_SPACING);
-	igSeparatorText("Button mappings");
+	igSeparatorText("Button Mappings");
 	show_tooltip(TOOLTIP_GAMEPAD_BUTTONS);
 
 	if (state->binding_row >= 0) {

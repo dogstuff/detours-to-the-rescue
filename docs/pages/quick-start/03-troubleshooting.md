@@ -4,7 +4,7 @@ Try these when DttR starts but crashes, renders incorrectly, or behaves differen
 
 ## Game crashes on startup
 
-First, try a different graphics API. Open `dttr-config.exe`, go to **Graphics`, and change `Graphics API` from `auto` to one of these:
+First, try a different `Graphics API`. Open `dttr-config.exe`, go to **Graphics**, and change `Graphics API` from `auto` to one of these:
 
 - `vulkan`
 - `direct3d12`
@@ -15,42 +15,42 @@ Save, close the config tool, then start DttR again. If one backend crashes or sh
 If DttR still crashes:
 
 - Turn off fullscreen and start in a window.
-- Set MSAA samples to `1`.
+- Set `MSAA Samples` to `1`.
 - If you are using the Modding build, temporarily disable third-party mods or remove them from the `mods` directory.
 
 ## Game crashes during intro movies
 
 If DttR launches but crashes during the opening videos or before the main menu, try skipping the intro movies.
 
-Open `dttr-config.exe`, enable `Skip intro movies`, save, then restart DttR.
+Open `dttr-config.exe`, enable `Skip Intro Movies`, save, then restart DttR.
 
 If this fixes the crash, mention that in any bug report.
 
 ## Graphics are missing, flickering, or otherwise broken
 
-To start, tery switching between Graphics APIs and check if the bug is resolved.
-If not, does the glitched behavior vary between APIs? 
-Renderer bugs can often be specific to certain Graphics API backend implementations.
+To start, try switching between `Graphics API` backends and check if the bug is resolved.
+If not, does the glitched behavior vary between APIs?
+Renderer bugs can be specific to certain `Graphics API` backends.
 
 If only polygon movement or seams look wrong, try switching `Vertex Precision` between `native` and `subpixel`.
 
 If that doesn't work, some other diagnostic steps include:
 
-- Setting `Scaling Mode` back to `logical`.
+- Setting `Scaling Method` back to `logical`.
 - Setting `Scaling Fit` to `letterbox`.
-- Disabling sprite smoothing and/or MSAA
+- Turning `Sprite Smooth` off and/or setting `MSAA Samples` to `1`.
 
-For each change to the config, ensure your config changes are saved and the game has been resterted.
+For each change to the config, ensure your config changes are saved and the game has been restarted.
 
 ## Controller input is wrong or missing
 
-Open `dttr-config.exe`, enable gamepad support, save, then restart DttR with the controller already connected.
+Open `dttr-config.exe`, turn on `Enable Gamepad`, save, then restart DttR with the controller already connected.
 
-If DttR listens to the wrong controller, try changing the controller index. If a stick drifts or feels unresponsive, adjust the deadzone in small steps.
+If DttR listens to the wrong controller, try changing `Gamepad Index`. If a stick drifts or feels unresponsive, adjust the matching deadzone field in small steps.
 
 ## Audio is distorted or too loud
 
-Open `dttr-config.exe` and lower the audio gain. Very high gain values can clip and sound distorted.
+Open `dttr-config.exe` and lower `MSS Sample Gain`. Very high gain values can clip and sound distorted.
 
 ## Still having issues?
 
@@ -60,7 +60,7 @@ Be sure to include:
 
 - The DttR version you are using.
 - Whether you downloaded Vanilla or Modding.
-- Your selected graphics API.
+- Your selected `Graphics API`.
 - Your game source: CD, installed copy, or ISO.
-- `dttr.log`; configured `Log level` should be `debug` or `trace`.
+- `dttr.log`; configured `Log Level` should be `debug` or `trace`.
 - If requested, please also provide the relevant crash `.dmp` files created by DttR. Warning: Crash dumps may contain sensitive information and should generally not be posted publicly.

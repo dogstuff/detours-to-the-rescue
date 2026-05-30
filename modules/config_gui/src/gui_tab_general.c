@@ -26,7 +26,7 @@ static const char *TOOLTIP_MINIDUMP_TYPE = "Crash dump detail. Default: normal "
 static const char *TOOLTIP_SHOW_CRASH_STACK_TRACE
 	= "Whether crash popups include the stack trace. The full stack trace is still "
 	  "written to dttr.log. Default: true.";
-static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip intro movies at launch. Default: "
+static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip Intro Movies at launch. Default: "
 											   "false.";
 
 void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
@@ -41,7 +41,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	labeled_path_picker(
 		ctx,
 		state,
-		"Game directory or ISO",
+		"Game Directory or ISO",
 		"##pcdogs_path",
 		state->config.pcdogs_path,
 		sizeof(state->config.pcdogs_path),
@@ -50,7 +50,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	);
 	labeled_input_text(
 		ctx,
-		"Saves path",
+		"Saves Path",
 		"##saves_path",
 		state->config.saves_path,
 		sizeof(state->config.saves_path),
@@ -60,7 +60,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	labeled_log_path_picker(
 		ctx,
 		state,
-		"Log file path",
+		"Log File Path",
 		"##log_file_path",
 		state->config.log_file_path,
 		sizeof(state->config.log_file_path),
@@ -69,7 +69,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	);
 	labeled_choice_combo(
 		ctx,
-		"Log level",
+		"Log Level",
 		"##log_level",
 		&state->config.log_level,
 		DTTR_CONFIG_CHOICES_LOG_LEVEL,
@@ -79,7 +79,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	);
 	labeled_choice_combo(
 		ctx,
-		"Minidump type",
+		"Minidump Type",
 		"##minidump_type",
 		(int *)&state->config.minidump_type,
 		DTTR_CONFIG_CHOICES_MINIDUMP_TYPE,
@@ -89,7 +89,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	);
 	labeled_checkbox(
 		ctx,
-		"Show crash stack trace in popup",
+		"Show Crash Stack Trace in Popup",
 		"##show_crash_stack_trace",
 		&state->config.show_crash_stack_trace,
 		TOOLTIP_SHOW_CRASH_STACK_TRACE,
@@ -97,7 +97,7 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	);
 	labeled_checkbox(
 		ctx,
-		"Skip intro movies",
+		"Skip Intro Movies",
 		"##skip_intro_movies",
 		&state->config.skip_intro_movies,
 		TOOLTIP_SKIP_INTRO_MOVIES,

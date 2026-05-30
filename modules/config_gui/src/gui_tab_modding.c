@@ -1,6 +1,6 @@
 #include "gui_internal.h"
 
-static const char *TOOLTIP_HOT_RELOAD = "Hot reload mod DLLs while the game runs. "
+static const char *TOOLTIP_HOT_RELOAD = "Hot-reload mod DLLs while the game runs. "
 										"Default: false.";
 static const char *TOOLTIP_MOD_ENABLE = "Load this mod DLL on the next game launch. "
 										"Default: enabled.";
@@ -141,7 +141,7 @@ void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 
 	labeled_checkbox(
 		ctx,
-		"Hot reload",
+		"Hot Reload",
 		"##hot_reload",
 		&state->config.hot_reload,
 		TOOLTIP_HOT_RELOAD,

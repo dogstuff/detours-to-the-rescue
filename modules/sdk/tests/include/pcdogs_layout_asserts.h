@@ -208,11 +208,23 @@ SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_SpriteMaterialLayer, anim_frames, 0x8);
 SDK_LAYOUT_SIZE(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, 452);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, component_node_ptrs, 0x50);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, default_home, 0x68);
-SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, default_movement_params, 0x78);
-SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, default_facing_angle, 0x88);
+SDK_LAYOUT_OFFSET(
+	DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout,
+	default_movement_params,
+	0x78
+);
+SDK_LAYOUT_OFFSET(
+	DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout,
+	default_facing_angle,
+	0x88
+);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, default_extra, 0xB4);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, home_pos, 0xD0);
-SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, live_movement_params, 0xE0);
+SDK_LAYOUT_OFFSET(
+	DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout,
+	live_movement_params,
+	0xE0
+);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, live_facing_angle, 0xF0);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, live_extra, 0x11C);
 SDK_LAYOUT_OFFSET(DTTR_PCDOGS_T_Pkg_ActorRecord_UnstableLayout, path_target, 0x148);
