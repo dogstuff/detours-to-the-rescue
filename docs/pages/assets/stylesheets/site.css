@@ -64,3 +64,19 @@
     margin-right: 0.35em;
     opacity: 0.8;
 }
+
+/* Match informational callouts to the theme's blue attachment/note palette. */
+.md-typeset .admonition.info,
+.md-typeset details.info {
+    background-color: #448aff1a;
+}
+
+.md-typeset .info > .admonition-title::before,
+.md-typeset .info > summary::before {
+    background-color: #448aff;
+}
+
+.md-typeset .info > .admonition-title::after,
+.md-typeset .info > summary::after {
+    color: #448aff;
+}

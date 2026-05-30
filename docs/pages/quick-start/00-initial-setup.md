@@ -23,7 +23,7 @@ Choose the method that matches your setup.
 
 === "Original CD"
 
-    !!! note ""
+    !!! info ""
 
         The `Open Disc ...` buttons will only show if DttR detects an inserted/mounted disc containing the original game files.
         This includes official retail copies and mounted disc images.

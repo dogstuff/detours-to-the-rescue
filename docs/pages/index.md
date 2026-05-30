@@ -1,4 +1,4 @@
-!!! note "Quick Start Guide"
+!!! info "Quick Start Guide"
 
     If this is your first time using DttR, the fastest way to get it running is by following the [quick start guide](quick-start/00-initial-setup.md).
 
@@ -22,7 +22,7 @@ By default, Detours to the Rescue includes:
 
 ## Supported PC Releases
 
-!!! note "Version Compatibility Note"
+!!! info "Version Compatibility Note"
 
     If a version of the game is not listed below, it may still work, but it is not guaranteed to be stable.
     For compatibility requests or contributions, create an issue or merge request on this project's [GitLab repository](https://gitlab.com/dogstuff/detours-to-the-rescue).

@@ -1,4 +1,4 @@
-# Creating a Mod
+# Project Setup (Creating a Mod)
 
 A DttR mod is a 32-bit Windows DLL that includes `dttr_sdk.h`, exports mod lifecycle symbols, and links against a build of the DttR SDK.
 
@@ -30,91 +30,211 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Setting up the build environment
+## Building the mod DLL
 
-Install the build tools for your platform.
+Choose the tab for the system you are building on. Each tab includes the full setup, SDK fetch, and build flow for that system.
 
-If you use Nix on Linux, macOS, or WSL, enter the template development shell:
+=== "Nix"
 
-```sh
-nix develop
-```
+    **Set up the build environment**
 
-On APT-based Linux distributions:
+    On Linux, macOS, or WSL with Nix, enter the template development shell:
 
-```sh
-sudo apt update
-sudo apt install cmake ninja-build curl unzip gcc-mingw-w64-i686
-```
+    ```sh
+    nix develop
+    ```
 
-On DNF-based distributions:
+    **Fetch the DttR SDK**
 
-```sh
-sudo dnf install cmake ninja-build curl unzip mingw32-gcc
-```
+    The template downloads a build of the release SDK that matches `dttr-version.txt`:
 
-On macOS with Homebrew:
+    ```sh
+    ./scripts/fetch-dttr.sh
+    ```
 
-```sh
-brew install cmake ninja curl unzip mingw-w64
-```
+    **Compile the mod DLL**
 
-On Windows with `winget`:
+    ```sh
+    cmake -S . -B build -G "Ninja Multi-Config" \
+      -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+      -DDTTRSDK_DIR=.dttr/sdk
 
-Install MSYS2 if needed:
+    cmake --build build --config debug
+    ```
 
-```powershell
-winget install --exact --id MSYS2.MSYS2
-```
+=== "APT"
 
-Then open an MSYS2 MINGW shell and install the build tools:
+    **Set up the build environment**
 
-```sh
-pacman -S --needed mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc curl unzip git
-```
+    On APT-based Linux distributions:
 
-If you do not want a local MinGW install, use the template's Podman container build instead.
-The template README has the container build details.
+    ```sh
+    sudo apt update
+    sudo apt install cmake ninja-build curl unzip gcc-mingw-w64-i686
+    ```
 
-## Fetching the DttR SDK
+    **Fetch the DttR SDK**
 
-!!! note
+    The template downloads a build of the release SDK that matches `dttr-version.txt`:
 
-    You can skip this step when using the default container build because it fetches the SDK for you.
+    ```sh
+    ./scripts/fetch-dttr.sh
+    ```
 
-The template downloads a build of the release SDK that matches `dttr-version.txt`.
+    **Compile the mod DLL**
 
-On Linux, macOS, or inside the Nix shell:
+    ```sh
+    cmake -S . -B build -G "Ninja Multi-Config" \
+      -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+      -DDTTRSDK_DIR=.dttr/sdk
 
-```sh
-./scripts/fetch-dttr.sh
-```
+    cmake --build build --config debug
+    ```
 
-On Windows with PowerShell:
+=== "DNF"
 
-```powershell
-./scripts/fetch-dttr.ps1
-```
+    **Set up the build environment**
 
-## Compiling the mod DLL
+    On DNF-based Linux distributions:
 
-On Linux, macOS, or inside the Nix shell:
+    ```sh
+    sudo dnf install cmake ninja-build curl unzip mingw32-gcc
+    ```
 
-```sh
-cmake -S . -B build -G "Ninja Multi-Config" \
-  -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
-  -DDTTRSDK_DIR=.dttr/sdk
+    **Fetch the DttR SDK**
 
-cmake --build build --config debug
-```
+    The template downloads a build of the release SDK that matches `dttr-version.txt`:
 
-On Windows using the MSYS2 MINGW shell:
+    ```sh
+    ./scripts/fetch-dttr.sh
+    ```
 
-```sh
-cmake -S . -B build -G "Ninja Multi-Config" -DDTTRSDK_DIR=.dttr/sdk
+    **Compile the mod DLL**
 
-cmake --build build --config debug
-```
+    ```sh
+    cmake -S . -B build -G "Ninja Multi-Config" \
+      -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+      -DDTTRSDK_DIR=.dttr/sdk
+
+    cmake --build build --config debug
+    ```
+
+=== "Homebrew (macOS)"
+
+    **Set up the build environment**
+
+    On macOS with Homebrew:
+
+    ```sh
+    brew install cmake ninja curl unzip mingw-w64
+    ```
+
+    **Fetch the DttR SDK**
+
+    The template downloads a build of the release SDK that matches `dttr-version.txt`:
+
+    ```sh
+    ./scripts/fetch-dttr.sh
+    ```
+
+    **Compile the mod DLL**
+
+    ```sh
+    cmake -S . -B build -G "Ninja Multi-Config" \
+      -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+      -DDTTRSDK_DIR=.dttr/sdk
+
+    cmake --build build --config debug
+    ```
+
+=== "winget (Windows)"
+
+
+
+    !!! info ""
+
+        Open an MSYS2 MINGW32 shell before installing or building. If you only see a MINGW64 shortcut, or no MINGW32 shortcut at all, open `C:\msys64\mingw32.exe` directly.
+
+        If you want other shells and applications to find the installed MINGW32 tools, add these entries to your Windows `Path` user variable:
+
+        - `C:\msys64\mingw32\bin`
+        - `C:\msys64\usr\bin`
+
+    **Set up the build environment**
+
+    Install MSYS2 if needed:
+
+    ```powershell
+    winget install --exact --id MSYS2.MSYS2
+    ```
+
+    Install the build tools:
+
+    ```sh
+    pacman -S --needed mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc curl unzip git
+    ```
+
+    **Fetch the DttR SDK**
+
+    In MSYS2:
+
+    ```shell
+    ./scripts/fetch-dttr.sh
+    ```
+
+
+    *or* in PowerShell:
+
+    ```powershell
+    ./scripts/fetch-dttr.ps1
+    ```
+
+    **Compile the mod DLL**
+
+    In the MSYS2 MINGW32 shell, or a new Windows terminal after configuring `Path` for MINGW32:
+
+    ```sh
+    cmake -S . -B build -G "Ninja Multi-Config" -DDTTRSDK_DIR=.dttr/sdk
+
+    cmake --build build --config debug
+    ```
+
+=== "Container"
+
+    **Set up the build environment**
+
+    Install your containerization software of choice.
+
+    **Fetch the DttR SDK**
+
+    !!! info ""
+
+        You can skip this step when using the default container build because it fetches the SDK for you.
+
+    If you pass `--build-arg DTTR_FETCH_SDK=0`, fetch the SDK first so the local SDK files exist in the build context:
+
+    ```sh
+    ./scripts/fetch-dttr.sh
+    ```
+
+    **Compile the mod DLL**
+
+    Build the template into a local container image, then copy the compiled DLL out of the artifact image:
+
+    ```sh
+    # Build the template into a local container image.
+    podman build -t dttr-minimal-mod -f Containerfile .
+
+    # Create a container from that image so we can copy files out of it.
+    container_id=$(podman create dttr-minimal-mod)
+
+    # Copy the built DLL from the container into the same output path as local builds.
+    mkdir -p build/debug
+    podman cp "$container_id:/build/debug/minimal-mod.dll" build/debug/minimal-mod.dll
+
+    # Remove the temporary container.
+    podman rm "$container_id"
+    ```
 
 The built mod should be here:
 

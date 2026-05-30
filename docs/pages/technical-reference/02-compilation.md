@@ -2,7 +2,7 @@
 
 Use the [Nix](https://github.com/NixOS/nix) shell for local Windows builds. It provides MinGW, project dependencies, and the expected build tools.
 
-!!! note
+!!! info "Windows Builds"
 
     On Windows, use WSL with the Nix flow below.
 

@@ -11,7 +11,7 @@ rm -rf .dttr .dttr-download
 mkdir .dttr-download
 
 curl --fail -L -o .dttr-download/dttr.zip \
-  "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/$version/downloads/dttr-modding-$version-release.zip"
+  "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/$version/downloads/dttr-modding-release.zip"
 
 unzip -q .dttr-download/dttr.zip -d .dttr-download
 if [ -d .dttr-download/release-modding ]; then

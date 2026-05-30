@@ -68,7 +68,18 @@ Optional: if you do not have MSYS2, you can install it from PowerShell using win
 winget install --exact --id MSYS2.MSYS2
 ```
 
-Then open an MSYS2 MINGW32 shell and install the required toolchain:
+!!! info "Opening MINGW32"
+
+    Open an MSYS2 MINGW32 shell before installing or building. If you only see a MINGW64 shortcut, or no MINGW32 shortcut at all, open `C:\msys64\mingw32.exe` directly.
+
+    If you want normal Windows terminals to find the pacman-installed MINGW32 tools, add these entries to your Windows `Path` user variable:
+
+    ```text
+    C:\msys64\mingw32\bin
+    C:\msys64\usr\bin
+    ```
+
+Install the build tools:
 
 ```sh
 pacman -S --needed mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc curl unzip git
@@ -77,9 +88,9 @@ pacman -S --needed mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc 
 </details>
 
 <details>
-<summary><strong>Podman Container</strong></summary>
+<summary><strong>Container Build</strong></summary>
 
-If you do not want to install the MinGW toolchain locally, install Podman and use the container build in step 4 instead. The container image installs the compiler and build tools for you.
+If you do not want a local MinGW install, use the template's container build instead. The container image installs the compiler and build tools for you.
 
 ```sh
 podman --version

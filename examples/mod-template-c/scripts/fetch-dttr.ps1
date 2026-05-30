@@ -10,7 +10,7 @@ Remove-Item -Recurse -Force .dttr, .dttr-download -ErrorAction SilentlyContinue
 New-Item -ItemType Directory .dttr-download | Out-Null
 
 Invoke-WebRequest `
-    -Uri "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/$version/downloads/dttr-modding-$version-release.zip" `
+    -Uri "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/$version/downloads/dttr-modding-release.zip" `
     -OutFile .dttr-download/dttr.zip
 
 Expand-Archive -Path .dttr-download/dttr.zip -DestinationPath .dttr-download
