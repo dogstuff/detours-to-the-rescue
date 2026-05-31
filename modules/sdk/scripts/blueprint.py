@@ -7,6 +7,7 @@ from enum import StrEnum
 from typing import TypeAlias
 
 __all__ = [
+    "AbiStatus",
     "Blueprint",
     "CallingConvention",
     "Enum",
@@ -60,6 +61,11 @@ class HookKind(StrEnum):
     REL32 = "rel32"
     HOTPATCH = "hotpatch"
     UNSUPPORTED = "unsupported"
+
+
+class AbiStatus(StrEnum):
+    VERIFIED = "verified"
+    PLACEHOLDER = "placeholder"
 
 
 @dataclass(frozen=True)
@@ -185,6 +191,8 @@ class Function:
     xrefs: list[FunctionXRef] = dc_field(default_factory=list)
     unstable: bool = False
     doc: str | None = None
+    abi_status: AbiStatus = AbiStatus.VERIFIED
+    stable_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -204,6 +212,7 @@ class Data:
     xrefs: list[XRef] = dc_field(default_factory=list)
     unstable: bool = False
     doc: str | None = None
+    stable_reason: str | None = None
 
 
 FunctionRef: TypeAlias = Function | str
@@ -323,6 +332,8 @@ class Blueprint:
         typed: TypedFunction | None = None,
         xrefs: list[FunctionXRef] | None = None,
         unstable: bool | None = None,
+        abi_status: AbiStatus = AbiStatus.VERIFIED,
+        stable_reason: str | None = None,
         doc: str | None = None,
         **typed_overrides: object,
     ) -> Function:
@@ -347,6 +358,8 @@ class Blueprint:
             xrefs or [],
             self.row_unstable(unstable),
             doc,
+            abi_status,
+            stable_reason,
         )
         self.functions.append(row)
         return row
@@ -360,6 +373,7 @@ class Blueprint:
         resolver: Resolver = Resolver.XREF_U32,
         indirections: int = 0,
         unstable: bool | None = None,
+        stable_reason: str | None = None,
         doc: str | None = None,
     ) -> Data:
         """Add global symbol metadata and merge refs from reverse-engineered sites."""
@@ -397,6 +411,13 @@ class Blueprint:
             merged_doc = existing.doc or doc
             if existing.doc and doc and existing.doc != doc:
                 raise ValueError(f"conflicting global documentation for {name}")
+            merged_stable_reason = existing.stable_reason or stable_reason
+            if (
+                existing.stable_reason
+                and stable_reason
+                and existing.stable_reason != stable_reason
+            ):
+                raise ValueError(f"conflicting stable reason for {name}")
 
             row = Data(
                 name,
@@ -404,11 +425,12 @@ class Blueprint:
                 merged_refs,
                 existing.unstable or row_unstable,
                 merged_doc,
+                merged_stable_reason,
             )
             self.globals[i] = row
             return row
 
-        row = Data(name, typed, list(refs), row_unstable, doc)
+        row = Data(name, typed, list(refs), row_unstable, doc, stable_reason)
         self.globals.append(row)
         return row
 

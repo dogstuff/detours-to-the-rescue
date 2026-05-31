@@ -137,7 +137,6 @@ if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
     set(DTTR_PCDOGS_TEST_GENERATOR_ARGS
         --rows-output "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
         "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
-        "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs_unstable.py"
     )
     add_custom_command(
         OUTPUT "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
@@ -149,8 +148,7 @@ if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
-            "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs_unstable.py"
-        COMMENT "Generating PCDOGS blueprint test rows"
+            COMMENT "Generating PCDOGS blueprint test rows"
         VERBATIM
     )
     add_custom_target(dttr_pcdogs_blueprint_test_rows

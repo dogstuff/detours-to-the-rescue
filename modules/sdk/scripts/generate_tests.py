@@ -9,7 +9,8 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from codegen import c_mask, c_sig, load_python_module
+from codegen import c_mask, c_sig
+from generate_headers import load_blueprint, split_row_unstable_rows
 
 try:
     from mako.template import Template
@@ -23,13 +24,6 @@ ENUM_PREFIXES = {
     "cc": "DTTR_PCDOGS_CC",
     "hook": "DTTR_PCDOGS_HOOK",
 }
-
-
-def c_ident(name: str) -> str:
-    """Convert blueprint names into C-safe identifiers for generated test fixtures."""
-
-    ident = "".join(ch if ch.isalnum() else "_" for ch in name)
-    return ident if ident and not ident[0].isdigit() else f"_{ident}"
 
 
 def prefixed_enum(kind: str, value: object) -> str:
@@ -54,13 +48,19 @@ def typed_params(fn: object) -> list[object]:
     return list(fn.typed.params if fn.typed else [])
 
 
+def function_cc(fn: object) -> object:
+    return getattr(fn, "cc", None) or fn.calling_convention
+
+
 def abi_stack_bytes(fn: object) -> int:
     """Compute expected stack cleanup bytes from reverse-engineered calling convention metadata."""
 
     params = typed_params(fn)
     stack_bytes = len(params) * 4
-    if str(fn.cc) == "fastcall":
+
+    if str(function_cc(fn)) == "fastcall":
         stack_bytes = max(0, stack_bytes - min(2, len(params)) * 4)
+
     return stack_bytes
 
 
@@ -78,7 +78,7 @@ static const blueprint_function ${symbol}_FUNCTIONS[] = {
 % for fn in blueprint.functions:
 <% patch_size = fn.hook.patch_size %>\
 <% entry_patch_size = fn.hook.entry_patch_size or patch_size %>\
-\t{"${fn.name}", (const uint8_t *)${c_sig(fn.pattern)}, ${c_mask(fn.pattern)}, ${required_enum(fn.required)}, ${int(fn.match_offset)}, ${cc_enum(fn.cc)}, ${hook_enum(fn.hook.kind)}, ${int(patch_size)}u, ${int(entry_patch_size)}u, ${len(typed_params(fn))}u, ${abi_stack_bytes(fn)}u},
+\t{"${fn.name}", (const uint8_t *)${c_sig(fn.pattern)}, ${c_mask(fn.pattern)}, ${required_enum(fn.required)}, ${int(fn.match_offset)}, ${cc_enum(function_cc(fn))}, ${hook_enum(fn.hook.kind)}, ${int(patch_size)}u, ${int(entry_patch_size)}u, ${len(typed_params(fn))}u, ${abi_stack_bytes(fn)}u},
 % endfor
 };
 
@@ -97,6 +97,7 @@ def render(template: Template, **kwargs: object) -> str:
         required_enum=required_enum,
         cc_enum=cc_enum,
         hook_enum=hook_enum,
+        function_cc=function_cc,
         typed_params=typed_params,
         abi_stack_bytes=abi_stack_bytes,
         int=int,
@@ -106,22 +107,13 @@ def render(template: Template, **kwargs: object) -> str:
     return text if text.endswith("\n") else f"{text}\n"
 
 
-def load_blueprints(paths: list[Path]) -> list[tuple[str, object]]:
-    """Load stable and unstable blueprint objects for generated signature test rows."""
+def load_blueprint_surfaces(path: Path) -> list[tuple[str, object]]:
 
-    blueprints: list[tuple[str, object]] = []
-    for path in paths:
-        module = load_python_module(path)
-        blueprint = getattr(module, "BLUEPRINT", None)
-        if blueprint is None:
-            blueprint = getattr(module, "stable", None) or getattr(
-                module, "unstable", None
-            )
-        if blueprint is None:
-            raise SystemExit(f"{path} does not define a blueprint")
-
-        blueprints.append((c_ident(path.stem).upper(), blueprint))
-    return blueprints
+    stable, unstable = split_row_unstable_rows(load_blueprint(path))
+    return [
+        ("DTTR_PCDOGS", stable),
+        ("DTTR_PCDOGS_UNSTABLE", unstable),
+    ]
 
 
 def write_if_changed(path: Path, text: str) -> None:
@@ -138,10 +130,10 @@ def main() -> int:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--rows-output", required=True, type=Path)
-    parser.add_argument("blueprints", nargs="+", type=Path)
+    parser.add_argument("blueprint", type=Path)
     args = parser.parse_args()
 
-    blueprints = load_blueprints(args.blueprints)
+    blueprints = load_blueprint_surfaces(args.blueprint)
     write_if_changed(args.rows_output, render(ROWS_TEMPLATE, blueprints=blueprints))
     return 0
 

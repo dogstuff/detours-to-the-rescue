@@ -121,10 +121,7 @@ static int stable_compile_check() {
 		   + (exception_reporter(&exception_request, &exception_report) ? 1 : 0);
 }
 
-_Static_assert(
-	DTTR_MODS_API_VERSION >= 12,
-	"strict exception report ABI requires mod API v12"
-);
+_Static_assert(DTTR_MODS_API_VERSION >= 13, "SDK symbls require mod API v13");
 _Static_assert(
 	DTTR_MODS_EXCEPTION_REPORT_STACK_TRACE_CAPACITY == 16384,
 	"exception report stack trace capacity is part of the SDK contract"

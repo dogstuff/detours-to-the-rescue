@@ -5,7 +5,6 @@ set(DTTR_PCDOGS_GENERATOR_INPUTS
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/header_template.h.mako"
     "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs_unstable.py"
 )
 set(DTTR_SDK_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include")
 set(DTTR_SDK_GENERATED_SRC_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/src")

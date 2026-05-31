@@ -32,6 +32,7 @@ from generate_headers import (  # noqa: E402
     header_context,
     load_blueprint,
     pcdogs_type_name,
+    split_row_unstable_rows,
     public_function_rows,
     row_doc,
     symbol_doc,
@@ -101,12 +102,6 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Stable blueprint path. Defaults to modules/sdk/blueprints/dttr_pcdogs.py.",
     )
-    parser.add_argument(
-        "--unstable-blueprint",
-        type=Path,
-        default=None,
-        help="Unstable blueprint path. Defaults to modules/sdk/blueprints/dttr_pcdogs_unstable.py.",
-    )
     parser.add_argument("--check", action="store_true", help="fail if output is stale")
     return parser.parse_args()
 
@@ -115,12 +110,9 @@ def sdk_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def default_blueprints(args: argparse.Namespace) -> tuple[Path, Path]:
+def default_blueprint(args: argparse.Namespace) -> Path:
     root = sdk_root()
-    return (
-        args.stable_blueprint or root / "blueprints/dttr_pcdogs.py",
-        args.unstable_blueprint or root / "blueprints/dttr_pcdogs_unstable.py",
-    )
+    return args.stable_blueprint or root / "blueprints/dttr_pcdogs.py"
 
 
 def template(name: str) -> Template:
@@ -910,9 +902,9 @@ def type_reference_matches(text: object, card: TypeCard) -> bool:
     haystack = str(text)
     if not haystack or haystack == "-":
         return False
-        
+
     names = [card.name, card.c_name]
-    
+
     return any(
         name
         and re.search(
@@ -1339,9 +1331,9 @@ def write_or_check(path: Path, text: str, check: bool) -> bool:
 
 def main() -> int:
     args = parse_args()
-    stable_path, unstable_path = default_blueprints(args)
-    stable = load_blueprint(stable_path)
-    unstable = load_blueprint(unstable_path)
+
+    blueprint = load_blueprint(default_blueprint(args))
+    stable, unstable = split_row_unstable_rows(blueprint)
     outputs = combined_outputs(stable, unstable)
     ok = True
 

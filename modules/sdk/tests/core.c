@@ -1105,7 +1105,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 	DTTR_Core_Hook *hook = (DTTR_Core_Hook *)0x1;
 	DTTR_Core_Result result = DTTR_PCDOGS_Hook_DataPointer(
 		NULL,
-		DTTR_PCDOGS_DATA_GET_ASYNC_KEY_STATE,
+		DTTR_PCDOGS_DATA_PKG_BASE_PATH,
 		rel32_detour,
 		NULL,
 		&hook
@@ -1115,7 +1115,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 
 	result = DTTR_PCDOGS_PatchGroup_HookDataPointer(
 		NULL,
-		DTTR_PCDOGS_DATA_GET_ASYNC_KEY_STATE,
+		DTTR_PCDOGS_DATA_PKG_BASE_PATH,
 		rel32_detour,
 		NULL
 	);

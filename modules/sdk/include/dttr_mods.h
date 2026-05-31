@@ -20,7 +20,7 @@ typedef struct SDL_Window SDL_Window;
 typedef union SDL_Event SDL_Event;
 
 // Reject incompatible hosts by comparing ctx->api_version against this value.
-#define DTTR_MODS_API_VERSION 12
+#define DTTR_MODS_API_VERSION 13
 #define DTTR_MODS_EXCEPTION_REPORT_STACK_TRACE_CAPACITY 16384u
 
 typedef struct {

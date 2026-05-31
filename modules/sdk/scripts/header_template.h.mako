@@ -95,12 +95,12 @@ typedef enum ${enum_name(row.name)} {
 		#pragma pack(pop)
 		% endif
 		% endif
-	% for row in type_prefix_rows:
-	${render_type_row(row).strip()}
-	% endfor
 % for name in forward_names:
 typedef struct ${struct_name(name)} ${struct_name(name)};
 % endfor
+	% for row in type_prefix_rows:
+	${render_type_row(row).strip()}
+	% endfor
 % if packed_type_rows:
 <% in_pack = False %>
 % for row in packed_type_rows:
