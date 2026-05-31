@@ -182,7 +182,7 @@ ${entry}
 
 # ${category.display} Symbols
 
-[← Back to PCDOGS categories](index.md)
+[<- Back to PCDOGS categories](index.md)
 
 % if functions:
 <%text>## Functions { .pcdogs-section-heading }</%text>

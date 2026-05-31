@@ -95,7 +95,7 @@ def check_page_shape(markdown_files: list[Path], checks: Checks) -> str:
             f"{path}: no symbol entries rendered",
         )
         checks.require(
-            "[← Back to PCDOGS categories](index.md)" in text,
+            "[<- Back to PCDOGS categories](index.md)" in text,
             f"{path}: missing category index link",
         )
 

@@ -135,6 +135,8 @@
           docsPackages = with pkgs; [
             just
             doxygen
+            python3
+            python3Packages.mako
             zensical
           ];
           secureFilesPackages = with pkgs; [ glab ];

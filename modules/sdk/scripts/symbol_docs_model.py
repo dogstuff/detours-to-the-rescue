@@ -24,7 +24,7 @@ class RelatedEntry:
 
 
 @dataclass(slots=True)
-class XrefItem:
+class XRefItem:
     kind: str
     value: str
     offsets: str
@@ -62,8 +62,8 @@ class FunctionCard:
     summary: str
     metadata: list[MetadataItem]
     related_type_texts: list[str]
-    references: list[XrefItem] = field(default_factory=list)
-    referenced_by: list[XrefItem] = field(default_factory=list)
+    references: list[XRefItem] = field(default_factory=list)
+    referenced_by: list[XRefItem] = field(default_factory=list)
     xref_count: int = 0
     related: list[RelatedEntry] = field(default_factory=list)
     facts: list[SymbolFact] = field(default_factory=list)
@@ -84,8 +84,8 @@ class GlobalCard:
     untyped_note: str
     metadata: list[MetadataItem]
     related_type_texts: list[str]
-    references: list[XrefItem] = field(default_factory=list)
-    referenced_by: list[XrefItem] = field(default_factory=list)
+    references: list[XRefItem] = field(default_factory=list)
+    referenced_by: list[XRefItem] = field(default_factory=list)
     xref_count: int = 0
     related: list[RelatedEntry] = field(default_factory=list)
     facts: list[SymbolFact] = field(default_factory=list)
@@ -122,7 +122,7 @@ class SignatureCard:
 
 
 @dataclass(slots=True)
-class FunctionXrefCard:
+class FunctionXRefCard:
     category: str
     function: str
     ref_function: str
@@ -131,7 +131,7 @@ class FunctionXrefCard:
 
 
 @dataclass(slots=True)
-class DataXrefCard:
+class DataXRefCard:
     category: str
     global_name: str
     function: str
@@ -148,8 +148,8 @@ class Category:
     globals: list[GlobalCard] = field(default_factory=list)
     types: list[TypeCard] = field(default_factory=list)
     signatures: list[SignatureCard] = field(default_factory=list)
-    function_xrefs: list[FunctionXrefCard] = field(default_factory=list)
-    data_xrefs: list[DataXrefCard] = field(default_factory=list)
+    function_xrefs: list[FunctionXRefCard] = field(default_factory=list)
+    data_xrefs: list[DataXRefCard] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -159,5 +159,5 @@ class SurfaceCards:
     globals: list[GlobalCard] = field(default_factory=list)
     types: list[TypeCard] = field(default_factory=list)
     signatures: list[SignatureCard] = field(default_factory=list)
-    function_xrefs: list[FunctionXrefCard] = field(default_factory=list)
-    data_xrefs: list[DataXrefCard] = field(default_factory=list)
+    function_xrefs: list[FunctionXRefCard] = field(default_factory=list)
+    data_xrefs: list[DataXRefCard] = field(default_factory=list)

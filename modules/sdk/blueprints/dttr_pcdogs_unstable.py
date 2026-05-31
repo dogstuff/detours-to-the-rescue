@@ -18,8 +18,8 @@ unstable = Blueprint("unstable", unstable=True)
 unstable.fn(
     "Component_UpdateProjectileLogic",
     "10 85 C0 74 ?? 57 E8 ??",
-    match=-52,
-    hook=6,
+    match=-0x34,
+    hook=0x6,
     ret="Component_SpawnParams*",
     params=[param("Component_Instance*", "comp")],
     doc=(
@@ -31,7 +31,7 @@ unstable.fn(
 unstable.fn(
     "Collision_ProcessPowerupCollisions",
     "83 EC 1C A1 ?? ??",
-    hook=8,
+    hook=0x8,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
     doc=(
@@ -44,7 +44,7 @@ unstable.fn(
 unstable.fn(
     "Actor_HandleCollisionResponse",
     "00 00 83 FF 06 0F 87 ??",
-    match=-23,
+    match=-0x17,
     ret="int32_t",
     params=[
         param("Actor_State*", "actor"),
@@ -62,7 +62,7 @@ unstable.fn(
 unstable.fn(
     "Powerup_UpdateSpawnLogic",
     "83 EC 0C A1 ?? ??",
-    hook=8,
+    hook=0x8,
     ret="int32_t",
     params=[],
     doc=(
@@ -107,14 +107,14 @@ unstable.fn(
 
 unstable.data(
     "movie_file_names",
-    xref("Movie_PlayIntro", 15, 3),
+    xref("Movie_PlayIntro", 0xF, 0x3),
     type="char*",
     doc="First entry/base of the four-entry movie filename pointer table used by intro and movie playback routines.",
 )
 
 unstable.data(
     "render_list_state",
-    xref("Render_AdjustLevelScale", 101, 2),
+    xref("Render_AdjustLevelScale", 0x65, 0x2),
     type="Render_ListState*",
     doc="Data pointer to active Render_ListState; Render_AdjustLevelScale writes dynamic level scale at +0xB8 (PC EN).",
 )
@@ -163,7 +163,7 @@ unstable.struct(
         0x100D0,
         doc="End/tail dword after the 16384 sorted bucket pointers.",
     ),
-    size=65748,
+    size=0x100D4,
     doc="Validated camera/render-list runtime state with five 12-byte frustum planes.",
 )
 
@@ -171,7 +171,7 @@ unstable.fn(
     "CRT_CodecvtAlwaysNoConversion",
     "B0 01 C3 90 90 90 90 90 90 90 90 90 90 90 90 90 81 EC 10 01 00 00 57 68 ?? ?? ?? ?? 68 04 01 00 00 FF 15 ?? ?? ?? ??",
     required=Required.EN,
-    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     callable=False,
     ret="uint8_t",
     params=[],
@@ -181,7 +181,7 @@ unstable.fn(
 unstable.fn(
     "Stub_NoOp",
     "C3 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 8B 44 24 04 A3 ?? ?? ?? ??",
-    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     callable=False,
     ret="void",
     params=[],
@@ -191,9 +191,9 @@ unstable.fn(
 unstable.fn(
     "CRT_ProbeRead4",
     "25 ?? ?? ?? ?? 83 EC 10",
-    match=-24,
+    match=-0x18,
     cc=CallingConvention.STDCALL,
-    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     callable=False,
     ret="int32_t",
     params=[param("void const*", "address")],
@@ -214,7 +214,7 @@ unstable.struct(
     member("uint16_t", "actor_count", 0x1C),
     member("uint16_t", "material_count", 0x1E),
     member("char*", "string_table", 0x20),
-    size=36,
+    size=0x24,
 )
 
 unstable.struct(
@@ -273,7 +273,7 @@ unstable.struct(
     member("Pkg_SpriteEntry*", "sprite_list", 0x80),
     member("Nav_Network*", "nav_net", 0x84),
     member("Material_Entry*", "usable_materials", 0x88),
-    size=140,
+    size=0x8C,
     doc="Concrete runtime level-data block carried by Level_Data* APIs.",
 )
 
@@ -292,7 +292,7 @@ unstable.struct(
     member("uint8_t", "flags", 0xD),
     member("int16_t", "max_spawn_count", 0xE),
     member("Math_Vec3I32", "pos", 0x10),
-    size=28,
+    size=0x1C,
     doc="0x1c-stride Level_RuntimeData.powerup_list entry walked by Powerup_UpdateSpawnLogic with template_record, flags, max_spawn_count, pos vector field.",
 )
 
@@ -310,7 +310,7 @@ unstable.struct(
     member("uint32_t", "texture_handle", 0x18),
     member("uint32_t", "ref_count", 0x1C),
     member("uint32_t", "reserved_04", 0x20),
-    size=36,
+    size=0x24,
     doc="Expanded/runtime material-entry form with the 20-byte descriptor fields plus runtime DirectDraw/D3D texture handles.",
 )
 
@@ -322,7 +322,7 @@ unstable.struct(
     member("uint32_t", "flags", 0x8),
     member("Material_FrameData*", "material_data_array", 0xC),
     member("uint32_t", "reserved_10", 0x10),
-    size=20,
+    size=0x14,
 )
 
 unstable.struct(
@@ -350,7 +350,7 @@ unstable.struct(
     ),
     member("int16_t", "effect_count", 0xE),
     member("Math_Vec2I16", "scale", 0x10),
-    size=20,
+    size=0x14,
 )
 
 unstable.struct(
@@ -360,7 +360,7 @@ unstable.struct(
     member("uint8_t", "decode_scratch[64]", 0x1CC),
     member("uint8_t", "frame_pixel_data[572]", 0x20C),
     member("int32_t*", "callback_context", 0x448),
-    size=1100,
+    size=0x44C,
 )
 
 unstable.struct(
@@ -480,7 +480,7 @@ unstable.struct(
     member("int32_t", "runtime_state_7", 0x19C),
     member("int32_t", "runtime_state_8", 0x1A0),
     member("int32_t", "ai_scratch_padding[8]", 0x1A4),
-    size=452,
+    size=0x1C4,
     doc=(
         "Runtime actor overlay containing provisional player-specific offsets like +0x74 "
         "(PC EN) and +0x172 (PC EN). Field semantics may be unstable."
@@ -580,7 +580,7 @@ unstable.struct(
             "+0x100 (PC EN) base to each nonzero entry."
         ),
     ),
-    size=260,
+    size=0x104,
 )
 
 unstable.struct(
@@ -640,14 +640,14 @@ unstable.struct(
         0x24,
         doc="Relocated pointer/offset slot in LOD data rebased by Resource_FixUpMeshNode and Actor_CloneTemplateWithTemplateRelativeFixups at stride 0x28.",
     ),
-    size=40,
+    size=0x28,
 )
 
 unstable.struct(
     "Pkg_MeshOffsetTable",
     member("uint32_t", "mesh_offsets[16]", 0x0),
     member("uint8_t", "offset_padding[64]", 0x40),
-    size=128,
+    size=0x80,
 )
 
 unstable.struct(
@@ -655,7 +655,7 @@ unstable.struct(
     member("Material_Entry*", "texture_db", 0x0),
     member("Material_Entry*", "material", 0x4),
     member("Animation_FrameData*", "anim_frames", 0x8),
-    size=12,
+    size=0xC,
 )
 
 unstable.struct(
@@ -757,7 +757,7 @@ unstable.struct(
     member("Math_Vec2I16", "screen", 0xA4),
     member("int16_t", "frame_counter", 0xA8),
     member("int16_t", "padding_aa", 0xAA),
-    size=172,
+    size=0xAC,
     doc="Alternate recovered layout for the 0xac-stride sprite/UI entry; renamed from misleading Pkg_PowerupEntry because Level_RuntimeData.powerup_list uses separate 0x1c-stride Powerup_Entry records.",
 )
 
@@ -766,7 +766,7 @@ unstable.struct(
     member("void*", "scene_node_ptr", 0x0),
     member("Render_SpriteContext*", "sprite_context_ptr", 0x4),
     member("void*", "descriptor_aux_ptr", 0x8),
-    size=12,
+    size=0xC,
 )
 
 unstable.struct(
@@ -903,7 +903,7 @@ unstable.struct(
         0xA8,
         doc="Low-word sprite depth/sort key, compared by UI_CompareSpriteDepth.",
     ),
-    size=172,
+    size=0xAC,
 )
 
 unstable.struct(
@@ -911,7 +911,7 @@ unstable.struct(
     member("uint16_t", "count", 0x0),
     member("uint16_t", "reserved", 0x2),
     member("Component_TrailObject*", "ptr", 0x4),
-    size=8,
+    size=0x8,
 )
 
 unstable.struct(
@@ -919,7 +919,7 @@ unstable.struct(
     member("uint32_t", "checksum", 0x0),
     member("uint32_t", "entry_count", 0x4),
     member("uint8_t", "layout_padding[12]", 0x8),
-    size=20,
+    size=0x14,
 )
 
 unstable.struct(
@@ -931,7 +931,7 @@ unstable.struct(
         0x450,
         doc="Unparsed 0x3B0-byte package-header tail, left after PKG_OpenAndReadTOC copies only the first 0x450 bytes of the 0x800-byte header.",
     ),
-    size=2048,
+    size=0x800,
 )
 
 unstable.struct(
@@ -944,7 +944,7 @@ unstable.struct(
     member("uint8_t", "padding_1b[1]", 0x1B),
     member("uint16_t", "padding", 0x1C),
     member("uint8_t", "padding_1e[2]", 0x1E),
-    size=32,
+    size=0x20,
     doc="Compact scene-node payload/resource-record prefix shared by older recovered Group/Model/Object shapes; no direct loader/parser owner has been validated yet.",
 )
 
@@ -959,7 +959,7 @@ unstable.struct(
     member("uint16_t", "padding_1c", 0x1C),
     member("uint8_t", "padding_1e[2]", 0x1E),
     member("int32_t", "extra_data", 0x20),
-    size=36,
+    size=0x24,
     doc="Compact scene sub-node payload/resource-record variant; no direct loader/parser owner has been validated yet.",
 )
 BLUEPRINT = unstable

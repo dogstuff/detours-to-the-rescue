@@ -39,10 +39,10 @@ from generate_headers import (  # noqa: E402
 )
 from symbol_docs_model import (  # noqa: E402
     Category,
-    DataXrefCard,
+    DataXRefCard,
     EnumValueCard,
     FunctionCard,
-    FunctionXrefCard,
+    FunctionXRefCard,
     GlobalCard,
     MemberCard,
     MetadataItem,
@@ -51,7 +51,7 @@ from symbol_docs_model import (  # noqa: E402
     SurfaceCards,
     SymbolFact,
     TypeCard,
-    XrefItem,
+    XRefItem,
 )
 
 DECIMAL_PLUS_OFFSET = re.compile(r"(?<![eE])\+([0-9]+)\b")
@@ -188,7 +188,7 @@ def metadata_items(lines: list[object]) -> list[MetadataItem]:
         else:
             label, value = "Metadata", text
 
-        if value.strip() in {"", "—"}:
+        if value.strip() in {"", "-"}:
             continue
 
         items.append(
@@ -256,7 +256,7 @@ def build_mask_label(value: object) -> str:
 def function_prototype(fn: object, c_type_fn: Callable[[object], str]) -> str:
     typed = fn.typed
     if not typed:
-        return "—"
+        return "-"
 
     cc = CC_KEYWORD[str(typed.abi)]
     ret = c_type_fn(typed.return_type)
@@ -526,7 +526,7 @@ def function_cards(
                         f"AOB target: {aob_target('function', fn.match_offset)}",
                         f"AOB pattern: {fn.pattern}",
                         f"Hook type: {fn.hook.kind}",
-                        f"Patch size: {f'0x{int(fn.hook.patch_size):X}' if fn.hook.patch_size else '—'}",
+                        f"Patch size: {f'0x{int(fn.hook.patch_size):X}' if fn.hook.patch_size else '-'}",
                         (
                             f"Entry patch size: 0x{int(fn.hook.entry_patch_size):X}"
                             if fn.hook.entry_patch_size
@@ -549,7 +549,7 @@ def function_cards(
 
 
 def global_type(glob: object, c_type_fn: Callable[[object], str]) -> str:
-    return c_type_fn(glob.typed.type) if glob.typed else "—"
+    return c_type_fn(glob.typed.type) if glob.typed else "-"
 
 
 def global_accessor(surface_unstable: bool, glob: object) -> str:
@@ -562,7 +562,7 @@ def global_accessor(surface_unstable: bool, glob: object) -> str:
 
 def global_resolver(glob: object) -> str:
     if not glob.typed:
-        return "—"
+        return "-"
     return f"{glob.typed.ref_function} {offset_pair(glob.typed.instr_off, glob.typed.addr_off)}"
 
 
@@ -666,7 +666,7 @@ def type_summary(row: object, c_type_fn: Callable[[object], str]) -> str:
         return f"{len(row.members)} fields, {completeness}{size}"
     if kind == TypeRowKind.ENUM:
         return f"{len(row.values)} values"
-    return "—"
+    return "-"
 
 
 def member_cards(row: object, c_type_fn: Callable[[object], str]) -> list[MemberCard]:
@@ -787,9 +787,9 @@ def signature_cards(
 
 def function_xref_cards(
     xrefs: list[object], *, unstable: bool
-) -> list[FunctionXrefCard]:
+) -> list[FunctionXRefCard]:
     return [
-        FunctionXrefCard(
+        FunctionXRefCard(
             category=category_slug(xref.function),
             function=str(xref.function),
             ref_function=str(xref.ref_function),
@@ -802,9 +802,9 @@ def function_xref_cards(
 
 def data_xref_cards(
     xrefs: list[object], *, domain_slugs: set[str], unstable: bool
-) -> list[DataXrefCard]:
+) -> list[DataXRefCard]:
     return [
-        DataXrefCard(
+        DataXRefCard(
             category=constrained_category_slug(xref.global_name, domain_slugs),
             global_name=str(xref.global_name),
             function=str(xref.function),
@@ -824,7 +824,7 @@ def xref_link(name: str, card: object | None) -> str:
     return f'<a href="{html.escape(rendered_symbol_link(card), quote=True)}">{html.escape(name)}</a>'
 
 
-def xref_items(rows: list[XrefItem]) -> list[XrefItem]:
+def xref_items(rows: list[XRefItem]) -> list[XRefItem]:
     items = []
 
     for row in rows:
@@ -833,11 +833,11 @@ def xref_items(rows: list[XrefItem]) -> list[XrefItem]:
             continue
 
         items.append(
-            XrefItem(
+            XRefItem(
                 kind=html.escape(str(row.kind or "Reference"), quote=True),
                 value=value,
-                offsets=html.escape(str(row.offsets or "—"), quote=True),
-                detail=html.escape(str(row.detail or "—"), quote=True),
+                offsets=html.escape(str(row.offsets or "-"), quote=True),
+                detail=html.escape(str(row.detail or "-"), quote=True),
             )
         )
 
@@ -849,7 +849,7 @@ def plain_xref_value(value: object) -> str:
     return html.unescape(text).strip()
 
 
-def xref_metadata_items(label: str, rows: list[XrefItem]) -> list[MetadataItem]:
+def xref_metadata_items(label: str, rows: list[XRefItem]) -> list[MetadataItem]:
     lines = []
     suffixes = len(rows) > 1
 
@@ -859,8 +859,8 @@ def xref_metadata_items(label: str, rows: list[XrefItem]) -> list[MetadataItem]:
             continue
 
         kind = html.unescape(str(row.kind or "Reference"))
-        offsets = html.unescape(str(row.offsets or "—"))
-        detail = html.unescape(str(row.detail or "—"))
+        offsets = html.unescape(str(row.offsets or "-"))
+        detail = html.unescape(str(row.detail or "-"))
         row_label = f"{label} {index}" if suffixes else label
         lines.append(f"{row_label}: {kind} {name} @ {offsets} ({detail})")
 
@@ -908,9 +908,11 @@ def merge_related(*groups: list[RelatedEntry]) -> list[RelatedEntry]:
 
 def type_reference_matches(text: object, card: TypeCard) -> bool:
     haystack = str(text)
-    if not haystack or haystack == "—":
+    if not haystack or haystack == "-":
         return False
+        
     names = [card.name, card.c_name]
+    
     return any(
         name
         and re.search(
@@ -995,7 +997,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
 
         if source is not None:
             source.references.append(
-                XrefItem(
+                XRefItem(
                     kind="Function",
                     value=xref_link(xref.ref_function, target),
                     offsets=xref.offsets,
@@ -1005,7 +1007,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
 
         if target is not None:
             target.referenced_by.append(
-                XrefItem(
+                XRefItem(
                     kind="Function",
                     value=xref_link(xref.function, source),
                     offsets=xref.offsets,
@@ -1019,21 +1021,21 @@ def attach_xrefs(cards: SurfaceCards) -> None:
 
         if source is not None:
             source.references.append(
-                XrefItem(
+                XRefItem(
                     kind="Data",
                     value=xref_link(xref.global_name, target),
                     offsets=xref.offsets,
-                    detail="Data xref",
+                    detail="data xref",
                 )
             )
 
         if target is not None:
             target.referenced_by.append(
-                XrefItem(
+                XRefItem(
                     kind="Function",
                     value=xref_link(xref.function, source),
                     offsets=xref.offsets,
-                    detail="Data xref",
+                    detail="data xref",
                 )
             )
 
