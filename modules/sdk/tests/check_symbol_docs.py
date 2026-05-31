@@ -15,7 +15,16 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 SECTION_HEADING = re.compile(
     r"^## (?P<section>.+?) \{ \.pcdogs-section-heading \}$", re.MULTILINE
 )
-SYMBOL_HEADING = re.compile(r"^### `[^`]+` \{ #[a-z0-9_-]+ \}$", re.MULTILINE)
+SYMBOL_HEADING = re.compile(
+    r"^### `[^`]+` \{ #[a-z0-9_-]+ \}$",
+    re.MULTILINE,
+)
+STABILITY_MARKERS = (
+    "Stability",
+    "Stable",
+    "Unstable",
+    "DTTR_SDK_ENABLE_UNSTABLE",
+)
 MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\((?P<href>[^)]+)\)")
 HTML_LINK = re.compile(r'href="(?P<href>[^"]+)"')
 
@@ -108,6 +117,7 @@ def check_page_shape(markdown_files: list[Path], checks: Checks) -> str:
 
 def check_generated_features(all_markdown: str, checks: Checks) -> None:
     for marker in (
+        '=== "C Typedef"',
         '=== "C SDK Call"',
         '=== "C SDK Hook"',
         '=== "Read"',
@@ -115,6 +125,10 @@ def check_generated_features(all_markdown: str, checks: Checks) -> None:
         "Resolver Reference",
         "See Also",
         '<details class="pcdogs-symbol-builds',
+        "typedef ",
+        ") (",
+        "DTTR_PCDOGS_F_",
+        *STABILITY_MARKERS,
     ):
         checks.require(
             marker in all_markdown,

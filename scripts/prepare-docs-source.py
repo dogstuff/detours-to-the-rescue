@@ -39,10 +39,7 @@ def category_nav_entry(title: str, docs_path: str, surface_dir: Path) -> str:
     ]
     category_pages.sort(key=lambda path: page_title(path).casefold())
 
-    lines = [
-        f"    {{ {toml_string(title)} = [",
-        f'      {{ "Overview" = {toml_string(docs_path + "/")} }},',
-    ]
+    lines = [f"    {{ {toml_string(title)} = ["]
     for page in category_pages:
         lines.append(
             "      "

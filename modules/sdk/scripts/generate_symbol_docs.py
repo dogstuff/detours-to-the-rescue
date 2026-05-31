@@ -252,15 +252,16 @@ def function_prototype(fn: object, c_type_fn: Callable[[object], str]) -> str:
 
     cc = CC_KEYWORD[str(typed.abi)]
     ret = c_type_fn(typed.return_type)
+    typedef_name = f"DTTR_PCDOGS_F_{c_pascal_token(fn.name)}_proto"
     if not typed.params:
-        return f"{ret} ({cc}*) (void)"
+        return f"typedef {ret} ({cc} *{typedef_name}) (void);"
 
-    lines = [f"{ret} ({cc}*) ("]
+    lines = [f"typedef {ret} ({cc} *{typedef_name}) ("]
     params = [f"{c_type_fn(param.type)} {param.name}" for param in typed.params]
     for index, param in enumerate(params):
         suffix = "," if index < len(params) - 1 else ""
         lines.append(f"    {param}{suffix}")
-    lines.append(")")
+    lines.append(");")
     return "\n".join(lines)
 
 

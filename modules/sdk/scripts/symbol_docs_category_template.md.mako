@@ -1,5 +1,27 @@
-<%def name="symbol_facts(facts, metadata)">
+<%!
+UNSTABLE_TOOLTIP = "This symbol's wrapper is unstable and may change or be removed. Requires DTTR_SDK_ENABLE_UNSTABLE."
+
+
+def stability_value(anchor):
+    if str(anchor).startswith("unstable-"):
+        return (
+            '<span class="pcdogs-stability-value pcdogs-stability-value--unstable" '
+            f'title="{UNSTABLE_TOOLTIP}" aria-label="{UNSTABLE_TOOLTIP}">'
+            'Unstable'
+            '</span>'
+        )
+    return '<span class="pcdogs-stability-value">Stable</span>'
+%>
+
+<%def name="stability_fact(anchor)">
+<p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">Stability</span><strong class="pcdogs-symbol-fact__value">${stability_value(anchor)}</strong></p>
+</%def>
+
+<%def name="symbol_facts(facts, metadata, anchor=None, stability_after_kind=False)">
 <div class="pcdogs-symbol-facts">
+% if anchor is not None and not stability_after_kind:
+${stability_fact(anchor)}
+% endif
 % for fact in facts:
 % if fact.label == "Versions":
 <details class="pcdogs-symbol-builds pcdogs-symbol-builds--fact">
@@ -14,27 +36,18 @@
 </details>
 % else:
 <p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">${fact.label}</span><strong class="pcdogs-symbol-fact__value">${fact.value}</strong></p>
+% if anchor is not None and stability_after_kind and fact.label == "Kind":
+${stability_fact(anchor)}
+% endif
 % endif
 % endfor
 </div>
 </%def>
 
-<%def name="code_block(text)">
-    ```c
-% for line in str(text).splitlines() or [""]:
-% if line:
-    ${line}
-% else:
-${"    "}
-% endif
-% endfor
-    ```
-</%def>
-
 <%def name="see_also_row(related)">
 % if related:
 <div class="pcdogs-symbol-facts pcdogs-symbol-facts--footer">
-<p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">See Also</span><strong class="pcdogs-symbol-fact__value">
+<p class="pcdogs-symbol-fact pcdogs-symbol-fact--see-also"><span class="pcdogs-symbol-fact__label">See Also</span><strong class="pcdogs-symbol-fact__value">
 % for item in related:
 <span class="pcdogs-see-also-item">${item.value}<span class="pcdogs-see-also-kind">(${item.kind})</span>\
 % if not loop.last:
@@ -50,12 +63,24 @@ ${"    "}
 % endif
 </%def>
 
+<%def name="code_block(text)">
+    ```c
+% for line in str(text).splitlines() or [""]:
+% if line:
+    ${line}
+% else:
+${"    "}
+% endif
+% endfor
+    ```
+</%def>
+
 <%def name="symbol_heading(name, anchor)">
 <%text>### </%text>`${name}` { #${anchor} }
 </%def>
 
 <%def name="function_tabs(fn)">
-=== "Type"
+=== "C Typedef"
 
 ${code_block(fn.prototype)}
 
@@ -75,27 +100,22 @@ ${code_block(fn.hook_example)}
 % endif
 </%def>
 
-<%def name="function_entry(fn, internal=False)">
+<%def name="function_entry(fn)">
 ${symbol_heading(fn.heading, fn.anchor)}
 
-${symbol_facts(fn.facts, fn.metadata)}
-% if internal:
-
-!!! warning "Internal resolver symbol"
-    ${fn.summary}
-% else:
+${symbol_facts(fn.facts, fn.metadata, fn.anchor)}
 
 ${fn.summary}
-% endif
 
 ${function_tabs(fn)}
+
 ${see_also_row(fn.related)}
 </%def>
 
 <%def name="data_entry(glob)">
 ${symbol_heading(glob.name, glob.anchor)}
 
-${symbol_facts(glob.facts, glob.metadata)}
+${symbol_facts(glob.facts, glob.metadata, glob.anchor)}
 
 ${glob.summary}
 
@@ -118,13 +138,14 @@ ${code_block(glob.write_example)}
 % else:
 <p class="pcdogs-untyped-data">${glob.untyped_note}</p>
 % endif
+
 ${see_also_row(glob.related)}
 </%def>
 
 <%def name="type_entry(row)">
 ${symbol_heading(row.name, row.anchor)}
 
-${symbol_facts(row.facts, row.metadata)}
+${symbol_facts(row.facts, row.metadata, row.anchor, stability_after_kind=True)}
 
 ${row.summary}
 
@@ -154,13 +175,14 @@ ${row.summary}
 </table>
 
 % endif
+
 ${see_also_row(row.related)}
 </%def>
 
 <%def name="signature_entry(sig)">
 ${symbol_heading(sig.name, sig.anchor)}
 
-${symbol_facts(sig.facts, sig.metadata)}
+${symbol_facts(sig.facts, sig.metadata, sig.anchor)}
 
 ${sig.summary}
 
@@ -192,7 +214,7 @@ ${entry_list(functions, function_entry)}
 % if resolver_functions:
 <%text>## Resolver-Only Functions { .pcdogs-section-heading }</%text>
 
-${entry_list(resolver_functions, lambda fn: function_entry(fn, internal=True))}
+${entry_list(resolver_functions, function_entry)}
 % endif
 % if globals:
 <%text>## Data { .pcdogs-section-heading }</%text>
