@@ -36,10 +36,14 @@ ${"    "}
 <div class="pcdogs-symbol-facts pcdogs-symbol-facts--footer">
 <p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">See Also</span><strong class="pcdogs-symbol-fact__value">
 % for item in related:
-% if not loop.first:
-, \
+<span class="pcdogs-see-also-item">${item.value}<span class="pcdogs-see-also-kind">(${item.kind})</span>\
+% if not loop.last:
+<span class="pcdogs-see-also-separator">,</span>\
 % endif
-${item.value}<span class="pcdogs-see-also-kind">(${item.kind})</span>\
+</span>\
+% if not loop.last:
+<wbr>\
+% endif
 % endfor
 </strong></p>
 </div>
@@ -125,19 +129,29 @@ ${symbol_facts(row.facts, row.metadata)}
 ${row.summary}
 
 % if row.members:
-| Offset | Type | Name | Notes |
-| --- | --- | --- | --- |
+<table class="pcdogs-type-table pcdogs-type-table--struct">
+<thead>
+<tr><th>Offset</th><th>Name</th><th>Type</th><th>Notes</th></tr>
+</thead>
+<tbody>
 % for member in row.members:
-| `${member.offset}` | ${member.type_link} | `${member.name}` | ${member.doc} |
+<tr><td><code>${member.offset}</code></td><td><code>${member.name}</code></td><td>${member.type_link}</td><td>${member.doc}</td></tr>
 % endfor
+</tbody>
+</table>
 
 % endif
 % if row.enum_values:
-| Value | Name | Notes |
-| --- | --- | --- |
+<table class="pcdogs-type-table pcdogs-type-table--enum">
+<thead>
+<tr><th>Value</th><th>Name</th><th>Notes</th></tr>
+</thead>
+<tbody>
 % for value in row.enum_values:
-| `${value.value}` | `${value.name}` | ${value.table_doc} |
+<tr><td><code>${value.value}</code></td><td><code>${value.name}</code></td><td>${value.table_doc}</td></tr>
 % endfor
+</tbody>
+</table>
 
 % endif
 ${see_also_row(row.related)}

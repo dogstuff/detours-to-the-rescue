@@ -5,7 +5,7 @@
     The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
-PCDOGS globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.
+PCDogs globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.
 
 A global helper can tell you whether the symbol was found, read the value with the right type, and decide whether normal writes are allowed.
 

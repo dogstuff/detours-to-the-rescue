@@ -27,7 +27,7 @@ Do not expose related behavior until its required patches have installed success
 
 ## Starting from generated patch specs
 
-For known PCDOGS globals and patch sites, use generated patch specs first. They already include the target and patch type.
+For known PCDogs globals and patch sites, use generated patch specs first. They already include the target and patch type.
 
 Use lower-level target specs only when there is no SDK wrapper for the patch you need.
 

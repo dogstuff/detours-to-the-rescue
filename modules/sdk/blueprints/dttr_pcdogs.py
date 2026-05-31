@@ -293,7 +293,7 @@ stable.struct(
 
 stable.struct(
     "Animation_FrameVertex",
-    member("Math_Vec3i16", "pos", 0x0),
+    member("Math_Vec3I16", "pos", 0x0),
     member("int16_t", "padding", 0x6),
     size=8,
 )
@@ -311,16 +311,16 @@ stable.struct(
 
 stable.struct(
     "Animation_MorphTargetVertex",
-    member("Math_Vec3i16", "delta", 0x0),
+    member("Math_Vec3I16", "delta", 0x0),
     member("int16_t", "flags", 0x6),
     size=8,
 )
 
 stable.struct(
     "Animation_MorphVertex",
-    member("Math_Vec3i16", "delta", 0x0),
+    member("Math_Vec3I16", "delta", 0x0),
     member("int16_t", "flags", 0x6),
-    member("Math_Vec3i16", "normal", 0x8),
+    member("Math_Vec3I16", "normal", 0x8),
     member("int16_t", "vertex_index", 0xE),
     size=16,
 )
@@ -328,19 +328,19 @@ stable.struct(
 stable.struct(
     "Animation_PositionKeyframe",
     member("uint32_t", "timing_flags", 0x0),
-    member("Math_Vec3i32", "pos", 0x4),
-    member("Math_Vec3i32", "tangent_out", 0x10),
-    member("Math_Vec3i32", "tangent_in", 0x1C),
+    member("Math_Vec3I32", "pos", 0x4),
+    member("Math_Vec3I32", "tangent_out", 0x10),
+    member("Math_Vec3I32", "tangent_in", 0x1C),
     size=40,
 )
 
 stable.struct(
     "Animation_RotationKeyframe",
     member("uint32_t", "timing_flags", 0x0),
-    member("Math_Quaternioni16", "quat", 0x4),
+    member("Math_QuaternionI16", "quat", 0x4),
     member("uint32_t", "segment_flags", 0xC),
-    member("Math_Quaternioni16", "tangent_out", 0x10),
-    member("Math_Quaternioni16", "tangent_in", 0x18),
+    member("Math_QuaternionI16", "tangent_out", 0x10),
+    member("Math_QuaternionI16", "tangent_in", 0x18),
     size=32,
 )
 
@@ -425,9 +425,9 @@ stable.struct(
     member("Audio_SoundEntry*", "prev", 0x0),
     member("Audio_SoundEntry*", "next", 0x4),
     member("Audio_SoundDefinition*", "sound_def_ptr", 0x8),
-    member("Math_Vec3i32*", "position_ptr", 0xC),
-    member("Math_Vec3i32", "listener_pos", 0x10),
-    member("Math_Vec3i32", "sound_pos", 0x1C),
+    member("Math_Vec3I32*", "position_ptr", 0xC),
+    member("Math_Vec3I32", "listener_pos", 0x10),
+    member("Math_Vec3I32", "sound_pos", 0x1C),
     member("int16_t", "volume", 0x28),
     member("int16_t", "pitch", 0x2A),
     member("int16_t", "pan", 0x2C),
@@ -503,21 +503,21 @@ stable.struct(
     member("Camera_FrustumClipPlane", "clip_planes[5]", 0x0),
     member("int32_t", "state_flags[2]", 0x50),
     member("D3D_IDirect3DDevice7*", "d3d_device", 0x58),
-    member("Math_Vec2i32", "viewport_pos", 0x5C),
+    member("Math_Vec2I32", "viewport_pos", 0x5C),
     member("int32_t", "viewport_w", 0x64),
     size=104,
 )
 
 stable.struct(
     "Camera_FrustumClipPlane",
-    member("Math_Vec3i32", "normal", 0x0),
+    member("Math_Vec3I32", "normal", 0x0),
     member("int32_t", "distance", 0xC),
     size=16,
 )
 
 stable.struct(
     "Camera_FrustumPlane",
-    member("Math_Vec3i32", "normal", 0x0),
+    member("Math_Vec3I32", "normal", 0x0),
     size=12,
 )
 
@@ -531,10 +531,10 @@ stable.struct(
     member("int16_t", "roll", 0x8),
     member("int16_t", "fov_angle", 0xA),
     member("int32_t", "clip_distance", 0xC),
-    member("Math_Vec2i32", "position_xy", 0x10),
+    member("Math_Vec2I32", "position_xy", 0x10),
     member("int32_t", "target_x", 0x18),
     member("int32_t", "target_z", 0x1C),
-    member("Math_Vec2i16", "viewport_pos", 0x20),
+    member("Math_Vec2I16", "viewport_pos", 0x20),
     member("int16_t", "view_matrix[20]", 0x24),
     member("uint8_t", "combined_view_matrix[48]", 0x4C),
     member("uint8_t", "viewport_clip_data[12]", 0x7C),
@@ -550,7 +550,7 @@ stable.struct(
         0x8A,
         doc="Opaque/pad bytes before view translation fields; no stable semantics have been isolated.",
     ),
-    member("Math_Vec2i32", "view_translation_xy", 0x8C),
+    member("Math_Vec2I32", "view_translation_xy", 0x8C),
     member("int32_t", "position_z", 0x94),
     member("int32_t", "near_clip_distance", 0x98),
     member("int32_t", "max_render_distance", 0x9C),
@@ -568,7 +568,7 @@ stable.struct(
 stable.struct(
     "Camera_EntityView",
     member("uint32_t", "flags", 0x0),
-    member("Math_Vec3i32", "pos", 0x4),
+    member("Math_Vec3I32", "pos", 0x4),
     member("uint32_t", "activation_radius", 0x10),
     member("uint32_t", "actor_activation_radius", 0x14),
     member("int16_t", "camera_def_index", 0x18),
@@ -588,7 +588,7 @@ stable.struct(
     member("uint8_t", "linked_actor_data[16]", 0x124),
     member("uint32_t", "timestamp", 0x134),
     member("uint8_t", "transition_timers[20]", 0x138),
-    member("Math_Vec3i32", "target_pos", 0x14C),
+    member("Math_Vec3I32", "target_pos", 0x14C),
     member("uint8_t", "look_at_target_data[32]", 0x158),
     size=376,
 )
@@ -596,8 +596,8 @@ stable.struct(
 stable.struct(
     "Camera_State",
     member("int32_t", "mode", 0x0),
-    member("Math_Vec3i32", "cam_offset", 0x4),
-    member("Math_Vec3i32", "target_offset", 0x10),
+    member("Math_Vec3I32", "cam_offset", 0x4),
+    member("Math_Vec3I32", "target_offset", 0x10),
     member("int16_t", "fov_distance", 0x1C),
     member("int16_t", "transition_speed", 0x1E),
     member("int32_t", "flags", 0x20),
@@ -637,13 +637,13 @@ stable.struct(
         doc="Copied pose scalar at +0x08 (PC EN) used by camera pose interpolation paths.",
     ),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "eye_pos",
         0xC,
         doc="Eye/source position interpolated directly or recomputed from target distance.",
     ),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "target_pos",
         0x18,
         doc="Look-at/target position interpolated during camera transitions.",
@@ -681,7 +681,7 @@ stable.struct(
 
 stable.struct(
     "Collision_BoundingSphere",
-    member("Math_Vec3i32", "center", 0x0),
+    member("Math_Vec3I32", "center", 0x0),
     member("int32_t", "radius", 0xC),
     size=16,
 )
@@ -696,7 +696,7 @@ stable.struct(
 
 stable.struct(
     "Collision_Plane",
-    member("Math_Vec3i32", "normal", 0x0),
+    member("Math_Vec3I32", "normal", 0x0),
     member("int32_t", "distance", 0xC),
     member("int32_t", "edge_index", 0x10),
     member("int32_t", "polygon_index", 0x14),
@@ -730,9 +730,9 @@ stable.struct(
 
 stable.struct(
     "Collision_Response",
-    member("Math_Vec3i16", "surface_normal", 0x0),
+    member("Math_Vec3I16", "surface_normal", 0x0),
     member("int16_t", "padding", 0x6),
-    member("Math_Vec3i32", "response_vel", 0x8),
+    member("Math_Vec3I32", "response_vel", 0x8),
     member("int16_t", "penetration_depth", 0x14),
     member("uint16_t", "landing_state", 0x16),
     size=24,
@@ -740,7 +740,7 @@ stable.struct(
 
 stable.struct(
     "Collision_Slot",
-    member("Math_Vec3i32", "normal", 0x0),
+    member("Math_Vec3I32", "normal", 0x0),
     member("uint8_t", "contact_position[4]", 0xC),
     member("uint8_t", "response_data[20]", 0x10),
     size=36,
@@ -749,7 +749,7 @@ stable.struct(
 
 stable.struct(
     "Component_CollisionBox",
-    member("Math_Vec3i16", "half_width", 0x0),
+    member("Math_Vec3I16", "half_width", 0x0),
     member("uint8_t", "is_box", 0x6),
     member("uint8_t", "padding_07[1]", 0x7),
     size=8,
@@ -815,7 +815,7 @@ stable.struct(
     "Component_SpawnParams",
     member("Actor_State*", "owner", 0x0),
     member("Component_Definition*", "definition", 0x4),
-    member("Math_Vec3i32", "initial_pos", 0x8),
+    member("Math_Vec3I32", "initial_pos", 0x8),
     member("Actor_State*", "target_actor", 0x14),
     member("int32_t", "spawn_flags", 0x18),
     size=28,
@@ -823,7 +823,7 @@ stable.struct(
 
 stable.struct(
     "Component_TrailObject",
-    member("Math_Vec3i16", "bone_offset", 0x0),
+    member("Math_Vec3I16", "bone_offset", 0x0),
     member("int16_t", "bone_index", 0x6),
     member("uint8_t", "max_segments", 0x8),
     member("uint8_t", "processed_flag", 0x9),
@@ -907,13 +907,13 @@ stable.struct(
 stable.struct(
     "Input_JoystickState",
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "pos",
         0x0,
         doc="DInput_JoystickState lX/lY/lZ axes; input paths threshold X/Y for gamepad controls.",
     ),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "rot",
         0xC,
         doc="DInput_JoystickState lRx/lRy/lRz axes; Rz is thresholded for gamepad controls.",
@@ -1008,7 +1008,7 @@ stable.struct(
 stable.struct(
     "Material_Descriptor",
     member("uint16_t", "flags", 0x0),
-    member("Math_Sizeu8", "dimensions_minus_1", 0x2),
+    member("Math_SizeU8", "dimensions_minus_1", 0x2),
     member("uint32_t", "pixel_data_ofs", 0x4),
     member("uint32_t", "palette_ofs", 0x8),
     size=12,
@@ -1017,7 +1017,7 @@ stable.struct(
 stable.struct(
     "Material_RuntimeDescriptor",
     member("uint16_t", "flags", 0x0),
-    member("Math_Sizeu8", "dimensions_minus_1", 0x2),
+    member("Math_SizeU8", "dimensions_minus_1", 0x2),
     member("uint8_t*", "pixel_data", 0x4),
     member("uint16_t*", "palette", 0x8),
     member("DDraw_IDirectDrawSurface7*", "texture_handles[25]", 0xC),
@@ -1073,10 +1073,10 @@ stable.struct(
     "Material_Entry",
     member("uint8_t", "pixel_format", 0x0),
     member("uint8_t", "flags_byte_1", 0x1),
-    member("Math_Sizeu8", "dimensions_minus_1", 0x2),
+    member("Math_SizeU8", "dimensions_minus_1", 0x2),
     member("uint32_t", "texture_offset", 0x4),
     member("uint32_t", "palette_offset", 0x8),
-    member("Math_Sizeu16", "dimensions", 0xC),
+    member("Math_SizeU16", "dimensions", 0xC),
     member("uint8_t", "format", 0x10),
     member("uint8_t", "mipmap_count", 0x11),
     member("uint16_t", "reserved", 0x12),
@@ -1173,7 +1173,7 @@ stable.struct(
     "Material_DataRef",
     member("uint32_t", "level_base_address", 0x0),
     member("uint32_t", "material_id", 0x4),
-    member("Math_Sizeu16", "actual_dimensions", 0x8),
+    member("Math_SizeU16", "actual_dimensions", 0x8),
     member("uint8_t", "reserved[12]", 0xC),
     size=24,
 )
@@ -1217,7 +1217,7 @@ stable.struct(
     "Material_State",
     member("uint32_t", "flags", 0x0),
     member("uint32_t", "material_id", 0x4),
-    member("Math_Sizeu8", "actual_dimensions", 0x8),
+    member("Math_SizeU8", "actual_dimensions", 0x8),
     member("uint16_t", "padding", 0xA),
     member("DDraw_IDirectDrawSurface7*", "texture_handles[4]", 0xC),
     member("DDraw_IDirectDrawSurface7*", "backface_handles[4]", 0x1C),
@@ -1299,7 +1299,7 @@ stable.struct(
 stable.struct(
     "Material_TextureHashEntry",
     member("Material_Entry*", "material_entry_ptr", 0x0),
-    member("Math_Sizei16", "dimensions", 0x4),
+    member("Math_SizeI16", "dimensions", 0x4),
     member("DDraw_IDirectDrawSurface7*", "texture_data", 0x8),
     member("Animation_FrameData*", "anim_frame_data", 0xC),
     size=16,
@@ -1307,12 +1307,12 @@ stable.struct(
 
 stable.struct(
     "Math_AABB",
-    member("Math_Vec3i32", "min", 0x0),
+    member("Math_Vec3I32", "min", 0x0),
     size=12,
 )
 
 stable.struct(
-    "Math_Matrix3x3i16",
+    "Math_Matrix3x3I16",
     member("int16_t", "m00", 0x0),
     member("int16_t", "m01", 0x2),
     member("int16_t", "m02", 0x4),
@@ -1342,21 +1342,21 @@ stable.struct(
     member("int16_t", "contact_tangent[6]", 0x10),
     member("int16_t", "contact_normal_z", 0x1C),
     member("int16_t", "contact_normal_z_hi", 0x1E),
-    member("Math_Vec3i32", "attach_offset", 0x20),
+    member("Math_Vec3I32", "attach_offset", 0x20),
     member(
-        "Math_Matrix3x3i16",
+        "Math_Matrix3x3I16",
         "rot_mat",
         0x2C,
         doc="Actor-local rotation/render transform matrix initialized by Entity_SpawnActor.",
     ),
     member("int16_t", "rot_mat_padding", 0x3E),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "position",
         0x40,
         doc="Logical actor position in game fixed-point units.",
     ),
-    member("Math_Vec3i32", "sub_pos", 0x4C),
+    member("Math_Vec3I32", "sub_pos", 0x4C),
     member("int32_t", "attach_flags", 0x58),
     member("int16_t", "anim_seq_index", 0x5C),
     member("int16_t", "anim_seq_timer", 0x5E),
@@ -1366,7 +1366,7 @@ stable.struct(
     member("uint8_t", "attach_slot_index", 0x66),
     member("uint8_t", "render_layer", 0x67),
     member(
-        "Math_Vec2i16",
+        "Math_Vec2I16",
         "visual_scale",
         0x68,
         doc=(
@@ -1397,7 +1397,7 @@ stable.struct(
     member("int32_t", "reserved_90", 0x90),
     member("void*", "attach_point_table", 0x94),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "world_render_pos",
         0x98,
         doc="Render-position mirror used by camera/render paths; transform writes require logical-position coherence.",
@@ -1463,7 +1463,7 @@ stable.struct(
             "Runtime rendering fixes iterate this list with pointer guards."
         ),
     ),
-    member("Math_Vec3i32", "velocity", 0xD4),
+    member("Math_Vec3I32", "velocity", 0xD4),
     member("int32_t", "spin_angle", 0xE0),
     member("int32_t", "spin_speed", 0xE4),
     member(
@@ -1504,7 +1504,7 @@ stable.struct(
     member("int32_t", "camera_mat_xz", 0x118),
     member("int32_t", "camera_mat_yz", 0x11C),
     member("int32_t", "camera_pitch", 0x120),
-    member("Math_Matrix3x3i16*", "camera_rot_matrix_ptr", 0x124),
+    member("Math_Matrix3x3I16*", "camera_rot_matrix_ptr", 0x124),
     member("Actor_State*", "linked_actor", 0x128),
     member("int32_t", "camera_cos_factor", 0x12C),
     member("void*", "camera_scratch_vec_ptr", 0x130),
@@ -1519,7 +1519,7 @@ stable.struct(
         doc="Three contiguous script-entity stack bytes used as an array.",
     ),
     member("int32_t", "path_best_distance", 0x144),
-    member("Math_Vec3i32", "path_target", 0x148),
+    member("Math_Vec3I32", "path_target", 0x148),
     member("int32_t", "path_result_x", 0x154),
     member("int32_t", "camera_sin_factor", 0x158),
     member("int32_t", "path_result_z", 0x15C),
@@ -1650,7 +1650,7 @@ stable.struct(
     member("int32_t", "local_rot_11", 0x34),
     member("int32_t", "local_rot_20", 0x38),
     member("int32_t", "local_rot_22", 0x3C),
-    member("Math_Vec2i32", "local_pos_xy", 0x40),
+    member("Math_Vec2I32", "local_pos_xy", 0x40),
     member("uint8_t", "spawn_count_byte_0", 0x48),
     member("uint8_t", "active_count", 0x49),
     member("uint8_t", "spawn_count_byte_2", 0x4A),
@@ -1658,18 +1658,18 @@ stable.struct(
     member("int32_t", "spawn_interval", 0x4C),
     member("int16_t", "spawn_delay", 0x50),
     member("int16_t", "lifetime", 0x52),
-    member("Math_Vec3i32", "spawn_offset", 0x54),
+    member("Math_Vec3I32", "spawn_offset", 0x54),
     member("Scene_Node*", "lod_node_ptrs[3]", 0x60),
     member("Scene_Node*", "shadow_node_ptr", 0x6C),
     member("void*", "sound_slot_table", 0x70),
-    member("Math_Vec3i32", "local_scale", 0x74),
-    member("Math_Vec3i32", "bone_offset", 0x80),
+    member("Math_Vec3I32", "local_scale", 0x74),
+    member("Math_Vec3I32", "bone_offset", 0x80),
     member("int32_t", "transform_flags", 0x8C),
     member("int32_t", "render_distance_sq", 0x90),
     member("int32_t", "visibility_mask", 0x94),
-    member("Math_Vec3i32", "world_pos", 0x98),
-    member("Math_Vec3i32", "prev_world_pos", 0xA4),
-    member("Math_Vec3i32", "velocity", 0xB0),
+    member("Math_Vec3I32", "world_pos", 0x98),
+    member("Math_Vec3I32", "prev_world_pos", 0xA4),
+    member("Math_Vec3I32", "velocity", 0xB0),
     member("int32_t", "acceleration", 0xBC),
     member("int32_t", "ground_height", 0xC0),
     member("int32_t", "projectile_state", 0xC4),
@@ -1681,7 +1681,7 @@ stable.struct(
         0xD0,
         doc="Pointer to an Actor_State* slot; projectile logic dereferences it and checks the owner's lifecycle_flags.",
     ),
-    member("Math_Vec3i32", "homing_vel", 0xD4),
+    member("Math_Vec3I32", "homing_vel", 0xD4),
     member("int16_t", "yaw_angle", 0xE0),
     member("int16_t", "yaw_angle_prev", 0xE2),
     member("int16_t", "pitch_angle", 0xE4),
@@ -1702,7 +1702,7 @@ stable.struct(
     "Entity_State",
     member("uint32_t", "flags", 0x0),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "bonus_respawn_pos",
         0x4,
         doc="Inactive/pre-spawn entity position; also mirrors Entity_State bonus respawn position.",
@@ -1824,7 +1824,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_Quaternioni16",
+    "Math_QuaternionI16",
     member("int16_t", "w", 0x0, doc="Scalar component in signed Q14 fixed-point form."),
     member(
         "int16_t", "x", 0x2, doc="X vector component in signed Q14 fixed-point form."
@@ -1841,16 +1841,16 @@ stable.struct(
 
 stable.struct(
     "Math_OBB",
-    member("Math_Vec3i32", "center", 0x0),
-    member("Math_Vec3i32", "half", 0xC),
-    member("Math_Vec3i32", "axis_0", 0x18),
+    member("Math_Vec3I32", "center", 0x0),
+    member("Math_Vec3I32", "half", 0xC),
+    member("Math_Vec3I32", "axis_0", 0x18),
     member("int32_t", "axis_1_x", 0x24),
     member("int32_t", "axis_1_y", 0x28),
     size=44,
 )
 
 stable.struct(
-    "Math_Vec3i32",
+    "Math_Vec3I32",
     member("int32_t", "x", 0x0),
     member("int32_t", "y", 0x4),
     member("int32_t", "z", 0x8),
@@ -1858,7 +1858,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_Vec3i32XZY",
+    "Math_Vec3I32XZY",
     member("int32_t", "x", 0x0),
     member("int32_t", "z", 0x4),
     member("int32_t", "y", 0x8),
@@ -1885,7 +1885,7 @@ stable.struct(
 
 
 stable.struct(
-    "Math_Vec3i16",
+    "Math_Vec3I16",
     member("int16_t", "x", 0x0),
     member("int16_t", "y", 0x2),
     member("int16_t", "z", 0x4),
@@ -1894,21 +1894,21 @@ stable.struct(
 
 
 stable.struct(
-    "Math_Vec2i16",
+    "Math_Vec2I16",
     member("int16_t", "x", 0x0),
     member("int16_t", "y", 0x2),
     size=4,
 )
 
 stable.struct(
-    "Math_Vec2i32",
+    "Math_Vec2I32",
     member("int32_t", "x", 0x0),
     member("int32_t", "y", 0x4),
     size=8,
 )
 
 stable.struct(
-    "Math_BoundingSphereu16",
+    "Math_BoundingSphereU16",
     member("uint16_t", "x", 0x0),
     member("uint16_t", "y", 0x2),
     member("uint16_t", "z", 0x4),
@@ -1917,21 +1917,21 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_Sizeu8",
+    "Math_SizeU8",
     member("uint8_t", "width", 0x0),
     member("uint8_t", "height", 0x1),
     size=2,
 )
 
 stable.struct(
-    "Math_Sizei16",
+    "Math_SizeI16",
     member("int16_t", "width", 0x0),
     member("int16_t", "height", 0x2),
     size=4,
 )
 
 stable.struct(
-    "Math_Recti16",
+    "Math_RectI16",
     member("int16_t", "min_x", 0x0),
     member("int16_t", "min_y", 0x2),
     member("int16_t", "max_x", 0x4),
@@ -1940,14 +1940,14 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_Sizeu16",
+    "Math_SizeU16",
     member("uint16_t", "width", 0x0),
     member("uint16_t", "height", 0x2),
     size=4,
 )
 
 stable.struct(
-    "Math_Sizeu32",
+    "Math_SizeU32",
     member("uint32_t", "width", 0x0),
     member("uint32_t", "height", 0x4),
     size=8,
@@ -2002,7 +2002,7 @@ stable.struct(
 
 stable.struct(
     "Mesh_RuntimeVertex",
-    member("Math_Vec3i16", "pos", 0x0),
+    member("Math_Vec3I16", "pos", 0x0),
     member("int16_t", "normal_group_index", 0x6),
     member("uint8_t", "r", 0x8),
     member("uint8_t", "g", 0x9),
@@ -2096,8 +2096,8 @@ stable.struct(
     member("Mesh_Node*", "next_sibling", 0x4),
     member("Mesh_Node*", "first_child", 0x8),
     member("Mesh_Node*", "parent", 0xC),
-    member("Math_Vec3i16", "position", 0x10),
-    member("Math_Vec3i16", "rotation", 0x16),
+    member("Math_Vec3I16", "position", 0x10),
+    member("Math_Vec3I16", "rotation", 0x16),
     member("uint16_t", "flags", 0x1C),
     member("uint16_t", "reserved", 0x1E),
     size=32,
@@ -2109,7 +2109,7 @@ stable.struct(
     member("Mesh_Node*", "next_sibling", 0x4),
     member("Mesh_Node*", "first_child", 0x8),
     member("Mesh_Node*", "parent", 0xC),
-    member("Math_Vec3i16", "position", 0x10),
+    member("Math_Vec3I16", "position", 0x10),
     member("int16_t", "rotation_x", 0x16),
     member("int16_t", "rotation_y", 0x18),
     member("uint16_t", "node_flags_2", 0x1A),
@@ -2119,10 +2119,10 @@ stable.struct(
     member("void*", "aux_ptr", 0x28),
     member("int16_t", "rot_matrix[9]", 0x2C),
     member("int16_t", "matrix_padding", 0x3E),
-    member("Math_Vec3i32", "world_pos", 0x40),
-    member("Math_Vec3i32", "velocity", 0x4C),
+    member("Math_Vec3I32", "world_pos", 0x40),
+    member("Math_Vec3I32", "velocity", 0x4C),
     member("int16_t", "material_flags", 0x58),
-    member("Math_Vec3i16", "bound_extent", 0x5A),
+    member("Math_Vec3I16", "bound_extent", 0x5A),
     member("uint8_t", "node_flags", 0x60),
     member("uint8_t", "padding_61[1]", 0x61),
     member("int16_t", "scale_y", 0x62),
@@ -2140,8 +2140,8 @@ stable.struct(
     member("Mesh_Node*", "parent_node_ptr", 0xA0),
     member("int32_t", "render_flags", 0xA4),
     member("Mesh_Node*", "linked_list_ptr", 0xA8),
-    member("Math_Vec3i32", "bounding_box_min", 0xAC),
-    member("Math_Vec3i32", "bounding_box_max", 0xB8),
+    member("Math_Vec3I32", "bounding_box_min", 0xAC),
+    member("Math_Vec3I32", "bounding_box_max", 0xB8),
     member("int32_t", "bounding_box_radius", 0xC4),
     member("int32_t", "bounding_box_flags", 0xC8),
     member("Mesh_Object*", "special_mesh_data_ptr", 0xCC),
@@ -2157,8 +2157,8 @@ stable.struct(
     member("Mesh_Node*", "next_sibling", 0x4),
     member("Mesh_Node*", "first_child", 0x8),
     member("Mesh_Node*", "parent", 0xC),
-    member("Math_Vec3i16", "position", 0x10),
-    member("Math_Vec3i16", "rotation", 0x16),
+    member("Math_Vec3I16", "position", 0x10),
+    member("Math_Vec3I16", "rotation", 0x16),
     member("uint16_t", "flags", 0x1C),
     member("uint16_t", "material_count", 0x1E),
     member("Mesh_Node*", "parent_ref", 0x20),
@@ -2166,10 +2166,10 @@ stable.struct(
     member("void*", "aux_ptr", 0x28),
     member("int16_t", "rot_matrix[9]", 0x2C),
     member("int16_t", "matrix_padding", 0x3E),
-    member("Math_Vec3i32", "world_pos", 0x40),
-    member("Math_Vec3i32", "velocity", 0x4C),
+    member("Math_Vec3I32", "world_pos", 0x40),
+    member("Math_Vec3I32", "velocity", 0x4C),
     member("int16_t", "material_flags", 0x58),
-    member("Math_Vec3i16", "bound_extent", 0x5A),
+    member("Math_Vec3I16", "bound_extent", 0x5A),
     member("int16_t", "reserved_60", 0x60),
     member("uint8_t", "node_flags", 0x62),
     member("uint8_t", "render_mode", 0x63),
@@ -2323,9 +2323,9 @@ stable.struct(
 
 stable.struct(
     "Mesh_WorkingVertex",
-    member("Math_Vec3i16", "pos", 0x0),
+    member("Math_Vec3I16", "pos", 0x0),
     member("int16_t", "bone_index", 0x6),
-    member("Math_Vec3i16", "normal", 0x8),
+    member("Math_Vec3I16", "normal", 0x8),
     member("int16_t", "padding_0e", 0xE),
     member("int16_t", "u", 0x10),
     member("int16_t", "v", 0x12),
@@ -2340,7 +2340,7 @@ stable.struct(
     member("int16_t", "target_x", 0x4),
     member("int16_t", "target_y", 0x6),
     member("int32_t", "target_z", 0x8),
-    member("Math_Vec3i32", "pos", 0xC),
+    member("Math_Vec3I32", "pos", 0xC),
     size=24,
 )
 
@@ -2360,7 +2360,7 @@ stable.struct(
 
 stable.struct(
     "Nav_Node",
-    member("Math_Vec3i32", "pos", 0x0),
+    member("Math_Vec3I32", "pos", 0x0),
     member("uint16_t", "parent_link", 0xC),
     member("int16_t", "neighbor_count", 0xE),
     member("int32_t*", "pathfind_state", 0x10),
@@ -2384,7 +2384,7 @@ stable.struct(
     member("int32_t", "friction", 0x4),
     member("int32_t", "max_velocity", 0x8),
     member("int32_t", "max_fall_speed", 0xC),
-    member("Math_Vec3i32", "acceleration", 0x10),
+    member("Math_Vec3I32", "acceleration", 0x10),
     member("Actor_State*", "ground_object", 0x1C),
     member("Collision_Polygon*", "ground_polygon", 0x20),
     size=36,
@@ -2423,8 +2423,8 @@ stable.struct(
     member("int16_t", "fov_distance", 0x4),
     member("int16_t", "orbit_yaw", 0x6),
     member("int32_t", "orbit_pitch", 0x8),
-    member("Math_Vec3i32", "cam_offset", 0xC),
-    member("Math_Vec3i32", "target_offset", 0x18),
+    member("Math_Vec3I32", "cam_offset", 0xC),
+    member("Math_Vec3I32", "target_offset", 0x18),
     size=36,
 )
 
@@ -2457,7 +2457,7 @@ stable.struct(
 stable.struct(
     "Pkg_CollisionFacePlane",
     member("int32_t", "plane_distance", 0x0),
-    member("Math_Vec3i16", "normal", 0x4),
+    member("Math_Vec3I16", "normal", 0x4),
     member("int16_t", "padding_0a", 0xA),
     member("int16_t", "adj_edges[4]", 0xC),
     size=20,
@@ -2465,7 +2465,7 @@ stable.struct(
 
 stable.struct(
     "Pkg_CollisionHeader",
-    member("Math_Sizeu32", "dimensions", 0x0),
+    member("Math_SizeU32", "dimensions", 0x0),
     member("uint32_t", "cell_size", 0x8),
     member("uint32_t", "data_offset", 0xC),
     member("uint8_t", "collision_reserved[16]", 0x10),
@@ -2479,7 +2479,7 @@ stable.struct(
     member("uint32_t", "grid_params", 0x8),
     member("void*", "material_base_ptr", 0xC),
     member("uint32_t", "type_flags", 0x10),
-    member("Math_Vec3i32", "extent", 0x14),
+    member("Math_Vec3I32", "extent", 0x14),
     member("void*", "grid_cell_array", 0x20),
     member("Pkg_CollisionFace*", "face_array", 0x24),
     member("Pkg_CollisionFacePlane*", "plane_array", 0x28),
@@ -2543,13 +2543,13 @@ stable.struct(
         doc="Opaque prefix before the node transform matrix.",
     ),
     member(
-        "Math_Matrix3x3i16",
+        "Math_Matrix3x3I16",
         "transform_matrix",
         0x2C,
         doc="Q12 node rotation/scale matrix used when transformed-node flags are set.",
     ),
     member("int16_t", "transform_padding", 0x3E),
-    member("Math_Vec3i32", "origin", 0x40),
+    member("Math_Vec3I32", "origin", 0x40),
     member(
         "uint8_t",
         "reserved_4c[28]",
@@ -2624,7 +2624,7 @@ stable.struct(
 stable.struct(
     "Pkg_FaceNormal",
     member("int32_t", "plane_distance", 0x0),
-    member("Math_Vec3i16", "normal", 0x4),
+    member("Math_Vec3I16", "normal", 0x4),
     member("uint8_t", "padding_0a[2]", 0xA),
     size=12,
 )
@@ -2712,7 +2712,7 @@ stable.struct(
     "Pkg_MaterialTableEntry",
     member("uint32_t", "texture_offset", 0x0),
     member("Material_Descriptor*", "texture_desc_ptr", 0x4),
-    member("Math_Sizeu16", "dimensions", 0x8),
+    member("Math_SizeU16", "dimensions", 0x8),
     member("uint32_t", "runtime_surface", 0xC),
     member("uint32_t", "pixel_data_offset", 0x10),
     member("uint16_t", "format_flags", 0x14),
@@ -2848,7 +2848,7 @@ stable.struct(
 
 stable.struct(
     "Material_TextureInfo",
-    member("Math_Sizeu8", "dimensions", 0x0),
+    member("Math_SizeU8", "dimensions", 0x0),
     member(
         "uint8_t",
         "reserved[2]",
@@ -2872,7 +2872,7 @@ stable.struct(
 
 stable.struct(
     "Pkg_VertexData",
-    member("Math_Vec3i16", "pos", 0x0),
+    member("Math_Vec3I16", "pos", 0x0),
     member("int16_t", "normal_group_index", 0x6),
     member("uint8_t", "r", 0x8),
     member("uint8_t", "g", 0x9),
@@ -2883,7 +2883,7 @@ stable.struct(
 
 stable.struct(
     "Pkg_VertexNormalGroup",
-    member("Math_Vec3i16", "normal", 0x0),
+    member("Math_Vec3I16", "normal", 0x0),
     member("int16_t", "padding", 0x6),
     size=8,
 )
@@ -2905,7 +2905,7 @@ stable.struct(
 stable.struct(
     "Render_FrustumClipPlane",
     member("int32_t", "distance", 0x0),
-    member("Math_Vec3i16", "normal", 0x4),
+    member("Math_Vec3I16", "normal", 0x4),
     member(
         "int16_t",
         "padding_0a",
@@ -2925,7 +2925,7 @@ stable.struct(
 
 stable.struct(
     "Render_ClipUVData",
-    member("Math_Vec3i32", "screen", 0x0),
+    member("Math_Vec3I32", "screen", 0x0),
     member("int32_t", "rhw", 0xC),
     member("uint32_t", "color", 0x10),
     member("float", "u", 0x14),
@@ -3174,15 +3174,15 @@ stable.struct(
     member("uint8_t", "sprite_flags", 0x1),
     member("int16_t", "frame_index", 0x2),
     member("Material_Entry*", "material_ptr", 0x4),
-    member("Math_Vec3i16", "offset", 0x8),
+    member("Math_Vec3I16", "offset", 0x8),
     member("int16_t", "sort_key", 0xE),
-    member("Math_Vec2i16", "bound_extent", 0x10),
+    member("Math_Vec2I16", "bound_extent", 0x10),
     size=20,
 )
 
 stable.struct(
     "Render_SpriteVertexData",
-    member("Math_Vec3i16", "pos", 0x0),
+    member("Math_Vec3I16", "pos", 0x0),
     member("uint8_t", "color_r", 0x6),
     member("uint8_t", "color_g", 0x7),
     member("uint8_t", "color_b", 0x8),
@@ -3337,8 +3337,8 @@ stable.struct(
 
 stable.struct(
     "Scene_LocalTransform",
-    member("Math_Vec3i16", "pos", 0x0),
-    member("Math_Vec3i16", "rot", 0x6),
+    member("Math_Vec3I16", "pos", 0x0),
+    member("Math_Vec3I16", "rot", 0x6),
     member("uint8_t", "flags", 0xC),
     member("uint8_t", "padding_0d[1]", 0xD),
     size=14,
@@ -3353,11 +3353,11 @@ stable.struct(
     member("int16_t", "orbit_yaw", 0x8),
     member("int16_t", "fov", 0xA),
     member("int32_t", "focal_distance", 0xC),
-    member("Math_Vec3i32XZY", "eye_pos", 0x10),
-    member("Math_Vec3i32XZY", "target_pos", 0x1C),
+    member("Math_Vec3I32XZY", "eye_pos", 0x10),
+    member("Math_Vec3I32XZY", "target_pos", 0x1C),
     member("Entity_State*", "active_entity_slot_ptr", 0x28),
-    member("Math_Sizei16", "screen_half", 0x2C),
-    member("Math_Matrix3x3i16", "view_matrix", 0x30),
+    member("Math_SizeI16", "screen_half", 0x2C),
+    member("Math_Matrix3x3I16", "view_matrix", 0x30),
     member("int16_t", "view_matrix_padding", 0x42),
     member("Camera_FrustumPlane", "frustum_planes[3]", 0x44),
     member("int32_t", "frustum_plane_3_x", 0x68),
@@ -3391,14 +3391,14 @@ stable.struct(
         ),
     ),
     member(
-        "Math_Matrix3x3i16",
+        "Math_Matrix3x3I16",
         "local_rot_matrix",
         0xC,
         doc="Local rotation matrix read by Scene_UpdateNodeAnimation/node-transform update paths.",
     ),
     member("int16_t", "local_rot_reserved", 0x1E),
-    member("Math_Vec3i32", "local_pos", 0x20),
-    member("Math_Matrix3x3i16", "world_rot_matrix", 0x2C),
+    member("Math_Vec3I32", "local_pos", 0x20),
+    member("Math_Matrix3x3I16", "world_rot_matrix", 0x2C),
     member(
         "int16_t",
         "world_rot_reserved",
@@ -3408,9 +3408,9 @@ stable.struct(
             "surrounding matrix fields, but no direct semantic access to +0x3E (PC EN) has been isolated."
         ),
     ),
-    member("Math_Vec3i32", "world_pos", 0x40),
+    member("Math_Vec3I32", "world_pos", 0x40),
     member(
-        "Math_Vec3i32",
+        "Math_Vec3I32",
         "world_delta_pos",
         0x4C,
         doc="Per-update world position delta computed by Scene_UpdateNodeAnimation.",
@@ -3692,7 +3692,7 @@ stable.struct(
     "Trail_BoneEffect",
     member("uint32_t", "spawn_frame", 0x0),
     member("int32_t", "waypoint_index", 0x4),
-    member("Math_Vec3i32", "pos", 0x8),
+    member("Math_Vec3I32", "pos", 0x8),
     member("int32_t", "offset_x", 0x14),
     member("int32_t", "offset_z", 0x18),
     member("uint16_t", "rotation", 0x1C),
@@ -3712,14 +3712,14 @@ stable.struct(
     "Trail_Segment",
     member("int32_t", "active", 0x0),
     member("uint8_t", "world_transform[32]", 0x4),
-    member("Math_Vec3i16", "start", 0x24),
+    member("Math_Vec3I16", "start", 0x24),
     member(
         "int16_t",
         "start_coord_hi",
         0x2A,
         doc="High half of the packed start coordinate word written by Trail_UpdateEffect; not observed as independently read by Trail_RenderAnimated.",
     ),
-    member("Math_Vec3i16", "end", 0x2C),
+    member("Math_Vec3I16", "end", 0x2C),
     member(
         "int16_t",
         "end_coord_hi",
@@ -4220,7 +4220,7 @@ stable.fn(
     ret="void",
     params=[
         param("int32_t", "level_sound_index"),
-        param("Math_Vec3i32*", "position"),
+        param("Math_Vec3I32*", "position"),
     ],
     doc=(
         "Resolves a level-local sound index through current_level_data->sound_definition_list "
@@ -4235,7 +4235,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("int32_t", "sound_type_index"),
-        param("Math_Vec3i32*", "position"),
+        param("Math_Vec3I32*", "position"),
         param("char", "stop_only_if_playing"),
     ],
 )
@@ -4748,8 +4748,8 @@ stable.fn(
     params=[
         param("Actor_State*", "actor"),
         param("Collision_Polygon*", "collision_poly"),
-        param("Math_Vec3i16*", "out_normal"),
-        param("Math_Vec3i32*", "delta_vec"),
+        param("Math_Vec3I16*", "out_normal"),
+        param("Math_Vec3I32*", "delta_vec"),
     ],
 )
 
@@ -4937,7 +4937,7 @@ stable.fn(
     "?? ?? 8B 44 24 2C 8B 74",
     match=-22,
     hook=8,
-    ret="Math_Vec3i32*",
+    ret="Math_Vec3I32*",
     params=[
         param(
             "uint32_t",
@@ -4955,7 +4955,7 @@ stable.fn(
             doc="Position/vector keyframe track descriptor.",
         ),
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "inout_vec3",
             doc="Destination vector blended in place and returned.",
         ),
@@ -4984,7 +4984,7 @@ stable.fn(
             doc="Position/vector keyframe track descriptor.",
         ),
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "out_vec3",
             doc="Receives the interpolated three-component vector.",
         ),
@@ -5056,7 +5056,7 @@ stable.fn(
         ),
         param("int32_t*", "quat_track", doc="Quaternion keyframe track descriptor."),
         param(
-            "Math_Quaternioni16*",
+            "Math_QuaternionI16*",
             "inout_quat",
             doc="Destination quaternion that is blended in place.",
         ),
@@ -5081,7 +5081,7 @@ stable.fn(
         ),
         param("int32_t*", "quat_track", doc="Quaternion keyframe track descriptor."),
         param(
-            "Math_Quaternioni16*",
+            "Math_QuaternionI16*",
             "out_quat",
             doc="Receives the interpolated four-component Q14 quaternion.",
         ),
@@ -5095,12 +5095,12 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Quaternioni16*",
+            "Math_QuaternionI16*",
             "out_quat",
             doc="Receives the interpolated Q14 quaternion.",
         ),
-        param("Math_Quaternioni16*", "from_quat", doc="Starting Q14 quaternion."),
-        param("Math_Quaternioni16*", "to_quat", doc="Ending Q14 quaternion."),
+        param("Math_QuaternionI16*", "from_quat", doc="Starting Q14 quaternion."),
+        param("Math_QuaternionI16*", "to_quat", doc="Ending Q14 quaternion."),
         param("int32_t", "blend_weight_q14", doc="Q14 interpolation weight."),
         param(
             "int32_t",
@@ -5124,7 +5124,7 @@ stable.fn(
     "24 18 57 50 51 52 E8 ??",
     match=-16,
     hook=7,
-    ret="Math_Matrix3x3i16*",
+    ret="Math_Matrix3x3I16*",
     params=[
         param(
             "uint32_t",
@@ -5133,7 +5133,7 @@ stable.fn(
         ),
         param("int32_t*", "quat_track", doc="Quaternion keyframe track descriptor."),
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "out_matrix",
             doc="Receives the 3x3 signed fixed-point rotation matrix.",
         ),
@@ -5828,7 +5828,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "position",
             doc="Actor position vector passed by both known callers; unused by the callee.",
         ),
@@ -8719,15 +8719,15 @@ stable.fn(
     "?? C1 F8 02 83 C4 08 8B",
     match=-29,
     hook=6,
-    ret="Math_Matrix3x3i16*",
+    ret="Math_Matrix3x3I16*",
     params=[
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "out_matrix",
             doc="Receives the Y-axis rotation matrix.",
         ),
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "post_multiply",
             doc="Optional matrix multiplied after the Y rotation.",
         ),
@@ -8747,8 +8747,8 @@ stable.fn(
     hook=8,
     ret="int32_t",
     params=[
-        param("Math_Matrix3x3i16*", "out_matrix"),
-        param("Math_Matrix3x3i16*", "post_multiply"),
+        param("Math_Matrix3x3I16*", "out_matrix"),
+        param("Math_Matrix3x3I16*", "post_multiply"),
         param("int32_t", "angle_x"),
         param("int32_t", "angle_y"),
     ],
@@ -8761,8 +8761,8 @@ stable.fn(
     hook=8,
     ret="int32_t",
     params=[
-        param("Math_Matrix3x3i16*", "out_matrix"),
-        param("Math_Matrix3x3i16*", "post_multiply"),
+        param("Math_Matrix3x3I16*", "out_matrix"),
+        param("Math_Matrix3x3I16*", "post_multiply"),
         param("int32_t", "angle_x"),
         param("int32_t", "angle_y"),
         param("int32_t", "angle_z"),
@@ -8776,12 +8776,12 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "out_matrix",
             doc="Receives the combined X/Y/Z rotation matrix.",
         ),
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "post_multiply",
             doc="Optional matrix composed before the rotations.",
         ),
@@ -9291,8 +9291,8 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[
-        param("Math_Vec3i32*", "line_start"),
-        param("Math_Vec3i32*", "line_end"),
+        param("Math_Vec3I32*", "line_start"),
+        param("Math_Vec3I32*", "line_end"),
         param("uint32_t", "sphere_radius"),
     ],
 )
@@ -9476,12 +9476,12 @@ stable.fn(
             doc="Actor whose physics component and velocity fields are updated.",
         ),
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "inout_velocity",
             doc="Three-int velocity vector normalized, clamped, and copied back into the actor velocity fields.",
         ),
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "steering_vector",
             doc="Three-int caller-provided steering/environment vector used by the velocity integration check.",
         ),
@@ -9815,7 +9815,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "start_pos",
             doc="Starting world position used to seed the bone-trail path search.",
         ),
@@ -10916,7 +10916,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "position",
             doc="World-space fixed-point position tested against the active camera frustum.",
         ),
@@ -10942,7 +10942,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "position",
             doc="World-space fixed-point position forwarded to Render_CheckActorVisibilityAndFrustum.",
         ),
@@ -10966,7 +10966,7 @@ stable.fn(
     ret="BOOL",
     params=[
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "position",
             doc="World-space fixed-point position tested against active ground/shadow collision planes.",
         ),
@@ -11434,12 +11434,12 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "matrix",
             doc="Input row-major signed fixed-point 3x3 rotation matrix.",
         ),
         param(
-            "Math_Quaternioni16*",
+            "Math_QuaternionI16*",
             "out_quat",
             doc="Receives the converted Q14 quaternion as w/x/y/z.",
         ),
@@ -11455,17 +11455,17 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "Math_Vec3i16*",
+            "Math_Vec3I16*",
             "up_vector",
             doc="First normalized signed fixed-point vector.",
         ),
         param(
-            "Math_Vec3i16*",
+            "Math_Vec3I16*",
             "forward_vector",
             doc="Second normalized signed fixed-point vector.",
         ),
         param(
-            "Math_Matrix3x3i16*",
+            "Math_Matrix3x3I16*",
             "out_matrix",
             doc="Receives the rotation matrix mapping up_vector toward forward_vector.",
         ),
@@ -11498,7 +11498,7 @@ stable.fn(
     params=[
         param("Audio_SoundDefinition*", "sound_def"),
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "position_or_actor_position_ptr",
             doc=(
                 "Position pointer for 3D playback. Actor sound-node calls often pass &actor->position_x, but "
@@ -11528,7 +11528,7 @@ stable.fn(
     params=[
         param("int32_t", "slot_index"),
         param("Audio_SoundDefinition*", "sound_def"),
-        param("Math_Vec3i32*", "position"),
+        param("Math_Vec3I32*", "position"),
     ],
 )
 
@@ -11551,7 +11551,7 @@ stable.fn(
     ret="uint8_t",
     params=[
         param(
-            "Math_Vec3i32*",
+            "Math_Vec3I32*",
             "source_pos",
             doc="Nullable source/world position; null treats distance and x/z delta as zero.",
         ),
@@ -11882,7 +11882,7 @@ stable.fn(
     hook=6,
     ret="int32_t",
     params=[
-        param("Math_Matrix3x3i16*", "view_matrix"),
+        param("Math_Matrix3x3I16*", "view_matrix"),
         param("int16_t*", "screen_half_size"),
         param("int32_t", "focal_distance"),
     ],
@@ -14817,13 +14817,13 @@ stable.data("camera_far_clip_plane", xref("Camera_SetViewport", 60, 2))
 stable.data(
     "player_1_camera_pos",
     xref("Checkers_UpdateStateMachine", 115, 6),
-    type="Math_Vec3i32",
+    type="Math_Vec3I32",
     doc="Primary listener/camera position vector at pcdogs.exe+0x224350 (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is set.",
 )
 stable.data(
     "player_2_camera_pos",
     xref("Audio_PlaySoundDefinition3D", 103, 1),
-    type="Math_Vec3i32",
+    type="Math_Vec3I32",
     doc="Alternate listener/camera position vector at pcdogs.exe+0x22435C (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is clear.",
 )
 stable.data("graphics_flags", xref("Pkg_InitializeSystem", 20, 2))

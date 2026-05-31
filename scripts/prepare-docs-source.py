@@ -9,12 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-SYMBOL_NAV_ENTRY = '{ "PCDOGS Reference" = "modding-sdk/generated/pcdogs/" },'
+SYMBOL_NAV_ENTRY = '{ "Symbol Wrappers" = "modding-sdk/generated/pcdogs/" },'
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Copy docs sources and add generated PCDOGS reference pages.",
+        description="Copy docs sources and add generated symbol wrappers pages.",
     )
     parser.add_argument("--source-dir", type=Path, default=Path("docs/pages"))
     parser.add_argument("--config", type=Path, default=Path("docs/zensical.toml"))
@@ -41,7 +41,7 @@ def category_nav_entry(title: str, docs_path: str, surface_dir: Path) -> str:
 
     lines = [
         f"    {{ {toml_string(title)} = [",
-        f"      {{ \"Overview\" = {toml_string(docs_path + '/')} }},",
+        f'      {{ "Overview" = {toml_string(docs_path + "/")} }},',
     ]
     for page in category_pages:
         lines.append(
@@ -61,7 +61,7 @@ def config_with_symbol_category_nav(config_text: str, symbol_docs_dir: Path) -> 
     return config_text.replace(
         SYMBOL_NAV_ENTRY,
         category_nav_entry(
-            "PCDOGS Reference",
+            "Symbol Wrappers",
             "modding-sdk/generated/pcdogs",
             symbol_docs_dir / "pcdogs",
         ),

@@ -5,11 +5,11 @@
     The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
-Most mods should not need to manually resolve PCDOGS symbols. Prefer SDK wrappers when possible.
+Most mods should not need to manually resolve PCDogs symbols. Prefer SDK wrappers when possible.
 
 ## Checking symbols through SDK wrappers
 
-DttR resolves normal PCDOGS symbols before loading mods. In most mod code, check the helper you plan to use:
+DttR resolves normal PCDogs symbols before loading mods. In most mod code, check the helper you plan to use:
 
 - Function helpers: `IsCallable(&ctx->runtime)`, `Try(...)`, or `Call(...)`.
 - Global helpers: `Read(...)`, `Write(...)`, or `IsResolved()`.

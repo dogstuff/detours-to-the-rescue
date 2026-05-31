@@ -250,7 +250,7 @@ def build_mask_label(value: object) -> str:
     if bits == 0:
         return "None"
 
-    return ", ".join(name for name, bit in BUILD_NAMES if bits & bit)
+    return " ".join(name for name, bit in BUILD_NAMES if bits & bit)
 
 
 def function_prototype(fn: object, c_type_fn: Callable[[object], str]) -> str:
@@ -1119,7 +1119,7 @@ def attach_related(cards: SurfaceCards) -> None:
                 )
 
         for member in card.members:
-            member_refs = type_references([member.type], types, exclude=card.name)
+            member_refs = type_references([member.type], types)
             member.type_link = (
                 linked_type_code(member.type, member_refs[0])
                 if member_refs

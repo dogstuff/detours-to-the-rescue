@@ -31,7 +31,7 @@ nav = [
       { "Drawing a GUI" = "modding-sdk/06-drawing-a-gui.md" },
       { "Manually Resolving Symbols" = "modding-sdk/07-resolving-symbols.md" },
     ] },
-    { "PCDOGS Reference" = "modding-sdk/generated/pcdogs/" },
+    { "Symbol Wrappers" = "modding-sdk/generated/pcdogs/" },
   ] },
   { "Technical Details" = [
     { "Configuration" = "technical-reference/00-configuration.md" },

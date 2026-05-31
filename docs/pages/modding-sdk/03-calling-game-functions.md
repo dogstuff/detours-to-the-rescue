@@ -5,7 +5,7 @@
     The symbols and types exposed by the SDK have only been tested against the English game executable.
 
 
-PCDOGS function helpers are the safest way to call known game functions. Use them instead of casting raw addresses.
+Symbol wrapper function helpers are the safest way to call known game functions. Use them instead of casting raw addresses.
 
 Raw addresses are only for unsupported reverse-engineering or low-level patch work.
 
