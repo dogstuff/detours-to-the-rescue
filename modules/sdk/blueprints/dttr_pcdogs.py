@@ -16649,7 +16649,9 @@ def _mark_audit_unstable_rows() -> None:
 
     for index, row in enumerate(stable.functions):
         unstable_abi = row.abi_status == AbiStatus.PLACEHOLDER
-        if row.stable_reason is None and (row.required != Required.ALL or unstable_abi):
+        if row.stable_reason is None and (
+            row.required != Required.ALL or unstable_abi or not row.callable
+        ):
             stable.functions[index] = replace(row, unstable=True)
 
     for index, row in enumerate(stable.signatures):
