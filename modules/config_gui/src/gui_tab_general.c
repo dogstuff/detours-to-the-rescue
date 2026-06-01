@@ -23,9 +23,11 @@ static const char *TOOLTIP_LOG_LEVEL = "Minimum log level. Default: info (releas
 static const char *TOOLTIP_LOG_FILE_PATH = "DttR log file path. Default: dttr.log.";
 static const char *TOOLTIP_MINIDUMP_TYPE = "Crash dump detail. Default: normal "
 										   "(release), detailed (debug).";
+
 static const char *TOOLTIP_SHOW_CRASH_POPUP
 	= "Show a crash popup after writing the crash dump and logging the stack trace. "
 	  "Turn this off to close immediately after a crash. Default: true.";
+
 static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip Intro Movies at launch. Default: "
 											   "false.";
 
