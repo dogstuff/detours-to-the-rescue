@@ -19,6 +19,10 @@ typedef struct {
 	DTTR_Core_Hook *handle;
 } mss_import_hook;
 
+static const char *dttr_mss_result_detail(DTTR_Result result) {
+	return result.message ? result.message : DTTR_StatusName(result.status);
+}
+
 static mss_import_hook mss_import_hooks[] = {
 	{"dttr_hook_mss_ail_allocate_sample_handle",
 	 "_AIL_allocate_sample_handle@4",
@@ -130,7 +134,7 @@ static bool install_pointer_hook(
 		return true;
 	}
 
-	DTTR_Core_Result result = DTTR_Core_HookPointer(
+	DTTR_Result result = DTTR_Core_HookPointer(
 		&ctx->runtime,
 		addr,
 		callback,
@@ -138,8 +142,13 @@ static bool install_pointer_hook(
 		handle
 	);
 
-	if (!DTTR_Core_ResultOk(result)) {
-		DTTR_MODS_LOG_ERROR(ctx, "%s: pointer hook failed: %s", name, result.message);
+	if (!DTTR_ResultOk(result)) {
+		DTTR_MODS_LOG_ERROR(
+			ctx,
+			"%s: pointer hook failed: %s",
+			name,
+			dttr_mss_result_detail(result)
+		);
 		return false;
 	}
 
@@ -213,7 +222,16 @@ void dttr_mss_sdl_release_hooks() {
 			continue;
 		}
 
-		DTTR_Core_Unhook(hook->handle);
+		DTTR_Result result = DTTR_Core_Unhook(hook->handle);
+		if (!DTTR_ResultOk(result)) {
+			DTTR_LOG_ERROR(
+				"%s: pointer unhook failed: %s",
+				hook->hook_name,
+				dttr_mss_result_detail(result)
+			);
+			continue;
+		}
+
 		hook->handle = NULL;
 		hook->site = 0;
 	}

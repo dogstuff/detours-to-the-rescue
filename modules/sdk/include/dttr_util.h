@@ -20,10 +20,12 @@ static inline DTTR_PCDOGS_T_Actor_State *DTTR_Util_GetActiveActor(
 	const DTTR_Core_Context *ctx
 ) {
 	DTTR_PCDOGS_T_Actor_State *actor = NULL;
-	return DTTR_PCDOGS_F_EntityGetActiveActorFromList->Try(ctx, &actor) ? actor : NULL;
+	return DTTR_ResultOk(DTTR_PCDOGS_F_EntityGetActiveActorFromList->Call(ctx, &actor))
+			   ? actor
+			   : NULL;
 }
 
-/// Compare actor pointers using live pointer identity.
+/// Compare live actor pointers directly.
 /// @param left First actor pointer.
 /// @param right Second actor pointer.
 /// @return `true` only when both pointers are non-`NULL` and equal.

@@ -7,6 +7,8 @@ import argparse
 from pathlib import Path
 
 STABLE_PREFIX_HEADERS = [
+    "dttr_versions.h",
+    "dttr_result.h",
     "dttr_runtime.h",
     "dttr_core.h",
     "dttr_mods.h",

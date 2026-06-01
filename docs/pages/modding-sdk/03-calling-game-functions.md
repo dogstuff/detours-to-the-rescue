@@ -11,45 +11,29 @@ The SDK provides typed wrappers for most known game functions.
 
 For example, `Movie_PlayFile` is exposed as `DTTR_PCDOGS_F_MoviePlayFile`.
 
-Use the SDK wrapper methods instead of calling the address yourself:
+Use the SDK wrapper instead of casting the address yourself:
 
 - `IsCallable(&ctx->runtime)`: Check whether the function is available and safe to call.
-- `Try(&ctx->runtime, args..., out_ret)`: Call the function only when it is available.
-- `Call(&ctx->runtime, args..., fallback_ret)`: Call the function when available, otherwise return a fallback value.
+- `Call(&ctx->runtime, args..., out_ret)`: Call the function and return `DTTR_Result`.
 
 ## Handling unavailable functions
 
-Use `Try()` when a missing function should disable related behavior, show a warning, or write a log message.
+Check `Call()` when a missing function should disable related behavior, show a warning, or write a log message.
 
 ```c
 BOOL played = FALSE;
-if (!DTTR_PCDOGS_F_MoviePlayFile->Try(
+if (!DTTR_ResultOk(DTTR_PCDOGS_F_MoviePlayFile->Call(
         &ctx->runtime,
         movie_path,
         0,
         &played
-    )) {
+    ))) {
     DTTR_MODS_LOG_WARN(ctx, "Movie_PlayFile is unavailable");
     return;
 }
 ```
 
-Your mod can then decide what to do instead of pretending the game call worked.
-
-`Call()` is typically shorter but can hide why the game function did not run.
-
-```c
-BOOL played = DTTR_PCDOGS_F_MoviePlayFile->Call(
-    &ctx->runtime,
-    movie_path,
-    0,
-    FALSE
-);
-```
-
-This example returns `FALSE` if `Movie_PlayFile` is unavailable.
-
-Using `Call()` when a failed game function writes output parameters or changes game-managed state can cause undefined behavior. Use `Try()` when the caller needs to handle failure explicitly.
+Your mod can then fail closed, warn, or skip the feature instead of pretending the game call worked.
 
 ## Checking availability during setup
 
@@ -66,7 +50,7 @@ DTTR_MODS_INIT {
 }
 ```
 
-Fail init for required functions and use `Try()` for optional functions.
+Fail init for required functions and check `Call()` results for optional functions.
 
 ## Passing game-managed types
 

@@ -19,8 +19,6 @@
 typedef struct SDL_Window SDL_Window;
 typedef union SDL_Event SDL_Event;
 
-// Reject incompatible hosts by comparing ctx->api_version against this value.
-#define DTTR_MODS_API_VERSION 13
 #define DTTR_MODS_EXCEPTION_REPORT_STACK_TRACE_CAPACITY 16384u
 
 typedef struct {
@@ -58,7 +56,7 @@ typedef struct {
 	DTTR_Mods_LogIsEnabledFn log_is_enabled;
 	DTTR_Mods_LogFn log_unchecked;
 	uint32_t struct_size;
-	uint32_t api_version;
+	uint32_t abi_version;
 	uint32_t flags;
 	DTTR_Mods_WriteExceptionReportFn write_exception_report;
 } DTTR_Mods_API;
@@ -66,7 +64,7 @@ typedef struct {
 static inline DTTR_Mods_WriteExceptionReportFn DTTR_Mods_GetWriteExceptionReportFn(
 	const DTTR_Mods_API *api
 ) {
-	if (!api || api->api_version < DTTR_MODS_API_VERSION
+	if (!api || api->abi_version < DTTR_SDK_ABI_VERSION
 		|| api->struct_size < offsetof(DTTR_Mods_API, write_exception_report)
 								  + sizeof(api->write_exception_report)) {
 		return NULL;
@@ -81,7 +79,7 @@ static inline DTTR_Mods_WriteExceptionReportFn DTTR_Mods_GetWriteExceptionReport
 // hot-reloaded mod: use destroying callbacks for host teardown/device loss, and
 // cleanup for resources owned by one mod instance.
 typedef struct {
-	uint32_t api_version;
+	uint32_t abi_version;
 	DTTR_Core_Context runtime;
 	HMODULE sidecar_module;
 	SDL_Window *window;
@@ -247,11 +245,11 @@ typedef void (*DTTR_Mods_GameFrameBlockedFn)();
 	DTTR_EXPORT const DTTR_Mods_Info *DTTR_Mod_Info() { return &dttr_mod_info_; }
 
 static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
-	return ctx && ctx->api_version >= DTTR_MODS_API_VERSION
+	return ctx && ctx->abi_version >= DTTR_SDK_ABI_VERSION
 		   && ctx->struct_size >= sizeof(DTTR_Mods_Context);
 }
 
-// Check API version and delegate to the mod body.
+// Check SDK ABI compatibility and delegate to the mod body.
 #define DTTR_MODS_INIT                                                                   \
 	static bool dttr_mod_init_(const DTTR_Mods_Context *);                               \
 	DTTR_EXPORT bool DTTR_Mod_Init(const DTTR_Mods_Context *ctx) {                       \

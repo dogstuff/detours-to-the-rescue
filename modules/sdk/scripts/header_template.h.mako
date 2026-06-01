@@ -152,13 +152,19 @@ typedef enum DTTR_PCDOGS_T_Data_Resolver {
 /// `READ_ONLY` marks decoded dispatch/jump/lookup/opcode/index tables. `ENGINE_MANAGED`
 /// marks live pointers or state that the game may replace or overwrite. `PATCH_ONLY`
 /// is for symbols that should be changed through generated patch specs or patch groups.
-typedef enum DTTR_PCDOGS_T_Data_Write_Policy {
-	DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN = 0,     ///< Untyped or insufficiently classified symbol.
-	DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY = 1,   ///< Decoded table data for read-only inspection through `Read`.
-	DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED = 2, ///< Live game-managed pointer/state; use higher-level helpers or patch flows.
-	DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY = 3,  ///< Plain generated data slot writable through `Write`.
-	DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY = 4,  ///< Change through generated patch specs or patch groups.
-} DTTR_PCDOGS_T_Data_Write_Policy;
+typedef enum DTTR_PCDOGS_T_Write_Policy {
+	DTTR_PCDOGS_WRITE_POLICY_UNKNOWN = 0,     ///< Untyped or insufficiently classified symbol.
+	DTTR_PCDOGS_WRITE_POLICY_READ_ONLY = 1,   ///< Decoded table data for read-only inspection through `Read`.
+	DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED = 2, ///< Live game-managed pointer/state; use higher-level helpers or patch flows.
+	DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY = 3,  ///< Plain generated data slot writable through `Write`.
+	DTTR_PCDOGS_WRITE_POLICY_PATCH_ONLY = 4,  ///< Change through generated patch specs or patch groups.
+} DTTR_PCDOGS_T_Write_Policy;
+
+/// Generated descriptor/accessor helpers return `DTTR_Result`.
+///
+/// PCDOGS-specific failures use `DTTR_ERR_*` values for missing symbols,
+/// unresolved addresses, unsafe calls or writes, policy mismatches, unsupported
+/// contracts, and ABI/layout drift.
 
 typedef enum DTTR_PCDOGS_T_Calling_Convention {
 	DTTR_PCDOGS_CC_CDECL = 0,
@@ -199,7 +205,7 @@ typedef struct DTTR_PCDOGS_T_Symbol_Function {
 typedef struct DTTR_PCDOGS_T_Symbol_Data {
 	uintptr_t address;
 	bool resolved;
-	DTTR_PCDOGS_T_Data_Write_Policy write_policy;
+	DTTR_PCDOGS_T_Write_Policy write_policy;
 	DTTR_PCDOGS_T_Build_Mask supported_builds;
 } DTTR_PCDOGS_T_Symbol_Data;
 
@@ -318,7 +324,7 @@ typedef struct DTTR_PCDOGS_T_Patch_Report {
 	size_t installed;
 	size_t skipped_optional;
 	size_t failed_index;
-	DTTR_Core_Status status;
+	DTTR_Status status;
 	const char* message;
 } DTTR_PCDOGS_T_Patch_Report;
 
@@ -378,46 +384,46 @@ bool DTTR_PCDOGS_DataSymbolId(
 	DTTR_PCDOGS_T_Data_Id id,
 	DTTR_PCDOGS_T_Symbol_Data_Id* out_symbol_id
 );
-DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
+DTTR_Result DTTR_PCDOGS_FunctionResolve(
 	const DTTR_Core_Context* ctx,
 	DTTR_PCDOGS_T_Function_Id id,
 	uintptr_t* out_addr
 );
-DTTR_Core_Result DTTR_PCDOGS_SymbolFunctionResolve(
+DTTR_Result DTTR_PCDOGS_SymbolFunctionResolve(
 	const DTTR_Core_Context* ctx,
 	DTTR_PCDOGS_T_Symbol_Function_Id id,
 	uintptr_t* out_addr
 );
-DTTR_Core_Result DTTR_PCDOGS_DataResolve(
+DTTR_Result DTTR_PCDOGS_DataResolve(
 	const DTTR_Core_Context* ctx,
 	DTTR_PCDOGS_T_Data_Id id,
 	uintptr_t* out_addr
 );
-DTTR_Core_Result DTTR_PCDOGS_SymbolDataResolve(
+DTTR_Result DTTR_PCDOGS_SymbolDataResolve(
 	const DTTR_Core_Context* ctx,
 	DTTR_PCDOGS_T_Symbol_Data_Id id,
 	uintptr_t* out_addr
 );
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookFunction(
+DTTR_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 	DTTR_Core_PatchGroup* group,
 	DTTR_PCDOGS_T_Function_Id id,
 	void* detour,
 	void** out_original
 );
-DTTR_Core_Result DTTR_PCDOGS_Hook_DataPointer(
+DTTR_Result DTTR_PCDOGS_Hook_DataPointer(
 	const DTTR_Core_Context* ctx,
 	DTTR_PCDOGS_T_Data_Id id,
 	void* new_value,
 	void** out_original,
 	DTTR_Core_Hook** out_hook
 );
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
+DTTR_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 	DTTR_Core_PatchGroup* group,
 	DTTR_PCDOGS_T_Data_Id id,
 	void* new_value,
 	void** out_original
 );
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
+DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 	const DTTR_Core_Context* ctx,
 	const DTTR_PCDOGS_T_Patch_Spec* specs,
 	size_t spec_count,
@@ -698,6 +704,8 @@ struct ${row.accessor_struct_name} {
 % endif
 	/// Returns true after this symbol has resolved in the active process.
 	bool (*IsResolved)();
+	/// Returns this function descriptor's status in the active process.
+	DTTR_Result (*Status)(const DTTR_Core_Context* ctx);
 	/// Returns true when this symbol is resolved and safe to call.
 	bool (*IsCallable)(const DTTR_Core_Context* ctx);
 	/// Returns the resolved function address, or zero when unresolved.
@@ -707,7 +715,7 @@ struct ${row.accessor_struct_name} {
 	/// Returns the REL32 trampoline size or HOTPATCH entry-window size.
 	uint32_t (*HookPrologueSize)();
 	/// Calls the resolved function; value-returning wrappers write through `out_ret`.
-	bool (*Try) ${row.try_params};
+	DTTR_Result (*Call) ${row.try_params};
 	/// Installs generated REL32 hooks; HOTPATCH metadata returns false.
 	bool (*Hook)(
 		const DTTR_Core_Context* ctx,
@@ -724,10 +732,6 @@ struct ${row.accessor_struct_name} {
 % endif
 	/// Detaches the hook installed through this accessor, if any.
 	void (*Unhook)(const DTTR_Core_Context* ctx);
-% if row.ret != "void":
-	/// Calls the resolved function, or returns `fallback_ret`.
-	${row.ret} (*Call) ${row.call_or_params};
-% endif
 };
 
 /// Generated accessor object for `${row.display_name}`.
@@ -746,15 +750,16 @@ struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type {
 % if not unstable:
 	DTTR_PCDOGS_T_Data_Id DataId;
 % endif
-	DTTR_PCDOGS_T_Data_Write_Policy WritePolicy;
+	DTTR_PCDOGS_T_Write_Policy (*Policy)();
+	DTTR_Result (*Status)();
 	bool (*IsResolved)();
 	uintptr_t (*Address)();
 	${c_data_ptr_decl(row.typed.type, '(*Ptr)()')};
-	bool (*Read)(${c_data_read_param(row.typed.type, 'out_value')});
-		/// Policy-checked writer. Returns false unless WritePolicy is RAW_MEMORY.
-	bool (*Write)(${c_data_write_param(row.typed.type, 'value')});
-		/// Bypasses WritePolicy; still requires resolved writable memory.
-	bool (*UnsafeWrite)(${c_data_write_param(row.typed.type, 'value')});
+	DTTR_Result (*Read)(${c_data_read_param(row.typed.type, 'out_value')});
+	/// Policy-gated writer. Returns `DTTR_ERR_POLICY_MISMATCH` unless Policy() is RAW_MEMORY.
+	DTTR_Result (*Write)(${c_data_write_param(row.typed.type, 'value')});
+	/// Bypasses Policy(); still requires resolved, writable memory.
+	DTTR_Result (*UnsafeWrite)(${c_data_write_param(row.typed.type, 'value')});
 % if not unstable:
 		// Builds a pointer-hook spec for pointer data; scalar data returns unsupported.
 	DTTR_PCDOGS_T_Patch_Spec (*PatchSpec)(
@@ -1173,6 +1178,30 @@ static bool dttr_pcdogs_${row.name}_IsCallable(const DTTR_Core_Context* ctx) {
 		   );
 }
 
+static DTTR_Result dttr_pcdogs_${row.name}_Status(
+	const DTTR_Core_Context* ctx
+) {
+	if (!dttr_pcdogs_context_valid(ctx)) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
+	}
+	if (!${row.callable}) {
+		return (DTTR_Result){DTTR_ERR_NOT_CALLABLE, NULL};
+	}
+	if (!dttr_pcdogs_${row.name}_addr) {
+		return (DTTR_Result){DTTR_ERR_UNRESOLVED, NULL};
+	}
+	if (!dttr_pcdogs_function_address_valid(
+			ctx,
+			dttr_pcdogs_${row.name}_addr,
+			DTTR_PCDOGS_SIG(${row.signature}),
+			DTTR_PCDOGS_MASK(${row.signature}),
+			${row.delta}
+		)) {
+		return (DTTR_Result){DTTR_ERR_ABI_MISMATCH, NULL};
+	}
+	return (DTTR_Result){DTTR_OK, NULL};
+}
+
 static uintptr_t dttr_pcdogs_${row.name}_Address() {
 	return dttr_pcdogs_${row.name}_addr;
 }
@@ -1185,20 +1214,24 @@ static uint32_t dttr_pcdogs_${row.name}_HookPrologueSize() {
 	return ${row.hook_prologue_size};
 }
 
-static bool dttr_pcdogs_${row.name}_Try ${row.try_params} {
-	if (!dttr_pcdogs_${row.name}_IsCallable(ctx)) {
-		return false;
+static DTTR_Result dttr_pcdogs_${row.name}_Call ${row.try_params} {
+% if row.ret != "void":
+	if (!out_ret) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
+	}
+% endif
+	DTTR_Result call_result = dttr_pcdogs_${row.name}_Status(ctx);
+	if (!DTTR_ResultOk(call_result)) {
+		return call_result;
 	}
 % if row.ret == "void":
 	((${row.typedef_name})dttr_pcdogs_${row.name}_addr)${row.args};
 % else:
-	if (!out_ret) {
-		return false;
-	}
 	*out_ret = ((${row.typedef_name})dttr_pcdogs_${row.name}_addr)${row.args};
 % endif
-	return true;
+	return (DTTR_Result){DTTR_OK, NULL};
 }
+
 
 static bool dttr_pcdogs_${row.name}_Hook(
 	const DTTR_Core_Context* ctx,
@@ -1262,33 +1295,23 @@ static void dttr_pcdogs_${row.name}_Unhook(const DTTR_Core_Context* ctx) {
 	}
 }
 
-% if row.ret != "void":
-static ${row.ret} dttr_pcdogs_${row.name}_Call${row.call_or_params} {
-	${row.ret} ret_ = fallback_ret;
-	dttr_pcdogs_${row.name}_Try${row.call_or_args};
-	return ret_;
-}
-
-% endif
 static const struct ${row.accessor_struct_name} dttr_pcdogs_${row.name}_symbol = {
 	.SymbolId = ${row.symbol_id},
 % if not unstable:
 	.FunctionId = ${row.function_id},
 % endif
 	.IsResolved = dttr_pcdogs_${row.name}_IsResolved,
+	.Status = dttr_pcdogs_${row.name}_Status,
 	.IsCallable = dttr_pcdogs_${row.name}_IsCallable,
 	.Address = dttr_pcdogs_${row.name}_Address,
 	.HookKind = dttr_pcdogs_${row.name}_HookKind,
 	.HookPrologueSize = dttr_pcdogs_${row.name}_HookPrologueSize,
-	.Try = dttr_pcdogs_${row.name}_Try,
+	.Call = dttr_pcdogs_${row.name}_Call,
 	.Hook = dttr_pcdogs_${row.name}_Hook,
 % if not unstable:
 	.PatchSpec = dttr_pcdogs_${row.name}_PatchSpec,
 % endif
 	.Unhook = dttr_pcdogs_${row.name}_Unhook,
-% if row.ret != "void":
-	.Call = dttr_pcdogs_${row.name}_Call,
-% endif
 };
 
 const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${row.public} =
@@ -1301,6 +1324,16 @@ static bool dttr_pcdogs_${row.name.lower()}_IsResolved() {
 	return dttr_pcdogs_${row.name.lower()}_addr != 0;
 }
 
+static DTTR_PCDOGS_T_Write_Policy dttr_pcdogs_${row.name.lower()}_Policy() {
+	return ${data_write_policy(row)};
+}
+
+static DTTR_Result dttr_pcdogs_${row.name.lower()}_Status() {
+	return dttr_pcdogs_${row.name.lower()}_addr
+		   ? (DTTR_Result){DTTR_OK, NULL}
+		   : (DTTR_Result){DTTR_ERR_UNRESOLVED, NULL};
+}
+
 static uintptr_t dttr_pcdogs_${row.name.lower()}_Address() {
 	return dttr_pcdogs_${row.name.lower()}_addr;
 }
@@ -1309,24 +1342,35 @@ static ${c_data_ptr_decl(row.typed.type, 'dttr_pcdogs_' + row.name.lower() + '_P
 	return ${c_data_ptr_cast(row.typed.type)}dttr_pcdogs_${row.name.lower()}_addr;
 }
 
-static bool dttr_pcdogs_${row.name.lower()}_Read(${c_data_read_param(row.typed.type, 'out_value')}) {
-	if (!out_value
-		|| !dttr_pcdogs_region_has(
+static DTTR_Result dttr_pcdogs_${row.name.lower()}_Read(${c_data_read_param(row.typed.type, 'out_value')}) {
+	if (!out_value) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
+	}
+	DTTR_Result access_result = dttr_pcdogs_${row.name.lower()}_Status();
+	if (!DTTR_ResultOk(access_result)) {
+		return access_result;
+	}
+	if (!dttr_pcdogs_region_has(
 			dttr_pcdogs_${row.name.lower()}_addr,
 			sizeof(${c_type(row.typed.type)}),
 			false,
 			false
 		)) {
-		return false;
+		return (DTTR_Result){DTTR_ERR_READ_FAILED, NULL};
 	}
 	memcpy(out_value, (const void*)dttr_pcdogs_${row.name.lower()}_addr, sizeof(${c_type(row.typed.type)}));
-	return true;
+	return (DTTR_Result){DTTR_OK, NULL};
 }
 
-static bool dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_param(row.typed.type, 'value')}) {
+
+static DTTR_Result dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_param(row.typed.type, 'value')}) {
+	DTTR_Result access_result = dttr_pcdogs_${row.name.lower()}_Status();
+	if (!DTTR_ResultOk(access_result)) {
+		return access_result;
+	}
 % if is_c_array_type(row.typed.type):
 	if (!value) {
-		return false;
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
 	}
 % endif
 	if (!dttr_pcdogs_region_has(
@@ -1335,18 +1379,20 @@ static bool dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_param(row
 			true,
 			false
 		)) {
-		return false;
+		return (DTTR_Result){DTTR_ERR_WRITE_FAILED, NULL};
 	}
 	memcpy((void*)dttr_pcdogs_${row.name.lower()}_addr, ${c_data_write_source(row.typed.type, 'value')}, sizeof(${c_type(row.typed.type)}));
-	return true;
+	return (DTTR_Result){DTTR_OK, NULL};
 }
 
-static bool dttr_pcdogs_${row.name.lower()}_Write(${c_data_write_param(row.typed.type, 'value')}) {
-	if (${data_write_policy(row)} != DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY) {
-		return false;
+
+static DTTR_Result dttr_pcdogs_${row.name.lower()}_Write(${c_data_write_param(row.typed.type, 'value')}) {
+	if (dttr_pcdogs_${row.name.lower()}_Policy() != DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
+		return (DTTR_Result){DTTR_ERR_POLICY_MISMATCH, NULL};
 	}
 	return dttr_pcdogs_${row.name.lower()}_UnsafeWrite(value);
 }
+
 
 % if not unstable:
 static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name.lower()}_PatchSpec(
@@ -1370,7 +1416,8 @@ static const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type dttr_pcdogs_$
 % if not unstable:
 	.DataId = DTTR_PCDOGS_DATA_${row.symbol_id},
 % endif
-	.WritePolicy = ${data_write_policy(row)},
+	.Policy = dttr_pcdogs_${row.name.lower()}_Policy,
+	.Status = dttr_pcdogs_${row.name.lower()}_Status,
 	.IsResolved = dttr_pcdogs_${row.name.lower()}_IsResolved,
 	.Address = dttr_pcdogs_${row.name.lower()}_Address,
 	.Ptr = dttr_pcdogs_${row.name.lower()}_Ptr,

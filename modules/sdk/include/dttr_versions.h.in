@@ -1,0 +1,10 @@
+/// @file dttr_versions.h
+/// Shared SDK version and ABI contract constants.
+
+#ifndef DTTR_VERSIONS_H
+#define DTTR_VERSIONS_H
+
+#define DTTR_SDK_VERSION "@DTTR_VERSION@"
+#define DTTR_SDK_ABI_VERSION 2026060103u
+
+#endif // DTTR_VERSIONS_H

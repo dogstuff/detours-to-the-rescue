@@ -923,9 +923,9 @@ static bool present_video_frame_bgra(
 	const float x1 = (float)(present.x + present.w);
 	const float y1 = (float)(present.y + present.h);
 
-	float identity[16];
-	dttr_graphics_mat4_identity(identity);
-	glUniformMatrix4fv(gl->loc_mvp, 1, GL_FALSE, identity);
+	float neutral_mvp[16];
+	dttr_graphics_mat4_identity(neutral_mvp);
+	glUniformMatrix4fv(gl->loc_mvp, 1, GL_FALSE, neutral_mvp);
 	glUniform2f(gl->loc_screen_size, (float)window_w, (float)window_h);
 	glUniform1f(gl->loc_is_2d, 1.0f);
 	glUniform1f(gl->loc_has_texture, 1.0f);

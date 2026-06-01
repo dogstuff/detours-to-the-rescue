@@ -11,16 +11,24 @@ set(DTTR_SDK_GENERATED_SRC_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/src")
 set(DTTR_SDK_GENERATED_INCLUDE_DIR "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
     CACHE INTERNAL "Generated DttR SDK include directory"
 )
+file(MAKE_DIRECTORY "${DTTR_SDK_GENERATED_INCLUDE_DIR}")
 set(DTTR_PCDOGS_GENERATED_PUBLIC_OUTPUTS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs.h"
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs_unstable.h"
 )
 set(DTTR_SDK_STABLE_HEADERS
+    "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_versions.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_result.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_runtime.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_core.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_mods.h"
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util.h"
+)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_versions.h.in"
+    "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_versions.h"
+    @ONLY
 )
 set(DTTR_PCDOGS_GENERATED_PRIVATE_OUTPUTS
     "${DTTR_SDK_GENERATED_SRC_DIR}/pcdogs.c"

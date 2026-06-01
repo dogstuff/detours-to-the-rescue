@@ -40,13 +40,13 @@ DTTR_MODS_INIT {
         ),
     };
 
-    DTTR_Core_Result result = DTTR_PCDOGS_INSTALL_PATCHES(
+    DTTR_Result result = DTTR_PCDOGS_INSTALL_PATCHES(
         &ctx->runtime,
         specs,
         &patches,
         &report
     );
-    if (!DTTR_Core_ResultOk(result)) {
+    if (!DTTR_ResultOk(result)) {
         DTTR_MODS_LOG_ERROR(ctx, "patch install failed: %s", result.message);
         return false;
     }

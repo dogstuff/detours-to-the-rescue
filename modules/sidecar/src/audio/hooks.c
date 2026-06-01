@@ -52,7 +52,11 @@ static void handle_audio_device_removed() {
 	}
 
 	DTTR_LOG_ERROR("Audio device removed, shutting down audio subsystem");
-	DTTR_PCDOGS_F_AudioShutdownSystem->Call(dttr_sidecar_runtime_context(), 0);
+	int32_t shutdown_result = 0;
+	DTTR_PCDOGS_F_AudioShutdownSystem->Call(
+		dttr_sidecar_runtime_context(),
+		&shutdown_result
+	);
 }
 
 // Reinitializes game audio when a playback device returns.

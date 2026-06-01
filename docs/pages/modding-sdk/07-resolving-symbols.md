@@ -6,7 +6,7 @@ Most mods should not need to manually resolve PCDogs symbols. Prefer SDK wrapper
 
 DttR resolves normal PCDogs symbols before loading mods. In most mod code, check the helper you plan to use:
 
-- Function helpers: `IsCallable(&ctx->runtime)`, `Try(...)`, or `Call(...)`.
+- Function helpers: `Status(&ctx->runtime)`, `IsCallable(&ctx->runtime)`, `Call(...)`.
 - Global helpers: `Read(...)`, `Write(...)`, or `IsResolved()`.
 - Patch helpers: `PatchSpec(...)`.
 

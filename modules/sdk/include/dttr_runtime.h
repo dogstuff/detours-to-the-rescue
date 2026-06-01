@@ -11,11 +11,11 @@
 
 #include <windows.h>
 
+#include <dttr_versions.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define DTTR_RUNTIME_API_VERSION 2
 
 typedef uintptr_t (*DTTR_Core_SigscanFn)(HMODULE mod, const char *sig, const char *mask);
 
@@ -26,14 +26,14 @@ typedef struct DTTR_Core_Context {
 	HMODULE game_module;
 	const DTTR_Core_API *api;
 	uint32_t struct_size;
-	uint32_t api_version;
+	uint32_t abi_version;
 	uint32_t flags;
 	const void *reserved[4];
 } DTTR_Core_Context;
 
 typedef DTTR_Core_Hook *(*DTTR_Core_HookFunctionFn)(
 	uintptr_t addr,
-	// Minimum prologue bytes before instruction-boundary alignment. Pass 0 for auto.
+	// Minimum prologue bytes for the hook injection site. Pass 0 for auto.
 	int prologue_size,
 	void *handler,
 	void **out_original
@@ -56,7 +56,7 @@ struct DTTR_Core_API {
 	DTTR_Core_PatchBytesFn patch_bytes;
 	DTTR_Core_UnhookFn unhook;
 	uint32_t struct_size;
-	uint32_t api_version;
+	uint32_t abi_version;
 	uint32_t flags;
 	const void *reserved[4];
 	DTTR_Core_HookIsActiveFn hook_is_active;
@@ -80,8 +80,8 @@ struct DTTR_Core_API {
 
 /// Install a JMP hook and optionally return the trampoline.
 /// @param addr Function entry or instruction site to hook.
-/// @param prologue_size Minimum prologue bytes before instruction-boundary
-/// alignment, or `0` for automatic sizing.
+/// @param prologue_size Minimum prologue bytes for the hook injection site, or
+/// `0` for automatic sizing.
 /// @param handler Replacement function to call.
 /// @param out_original Optional output receiving the original trampoline.
 /// @return Hook handle on success, or `NULL` on failure.

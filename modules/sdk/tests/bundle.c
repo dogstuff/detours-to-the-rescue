@@ -1,11 +1,11 @@
 #include <dttr_sdk.h>
 #include <stddef.h>
 
-#ifndef DTTR_MODS_API_VERSION
-#error "stable mod API missing"
+#ifndef DTTR_SDK_ABI_VERSION
+#error "SDK ABI version missing"
 #endif
-#ifndef DTTR_RUNTIME_API_VERSION
-#error "runtime API missing"
+#ifndef DTTR_SDK_VERSION
+#error "SDK version missing"
 #endif
 #ifdef DTTR_PCDOGS_UNSTABLE_H
 #error "unstable declarations should require DTTR_SDK_ENABLE_UNSTABLE"
@@ -71,7 +71,7 @@ static bool exception_report_compile_check(
 
 static int stable_compile_check() {
 	DTTR_Core_Context ctx = {0};
-	DTTR_Core_Result result = {DTTR_OK};
+	DTTR_Result result = {DTTR_OK};
 	const DTTR_Mods_Context *mod_ctx = 0;
 	DTTR_PCDOGS_T_Actor_State *actor = 0;
 	DTTR_Mods_ExceptionReportRequest exception_request = {
@@ -82,26 +82,26 @@ static int stable_compile_check() {
 	};
 	DTTR_Mods_API api = {
 		.struct_size = sizeof(DTTR_Mods_API),
-		.api_version = DTTR_MODS_API_VERSION,
+		.abi_version = DTTR_SDK_ABI_VERSION,
 		.write_exception_report = exception_report_compile_check,
 	};
 	DTTR_Mods_API older_api = api;
-	older_api.api_version = DTTR_MODS_API_VERSION - 1u;
+	older_api.abi_version = DTTR_SDK_ABI_VERSION - 1u;
 
 	DTTR_Mods_API future_api = api;
-	future_api.api_version = DTTR_MODS_API_VERSION + 1u;
+	future_api.abi_version = DTTR_SDK_ABI_VERSION + 1u;
 	future_api.struct_size = sizeof(DTTR_Mods_API) + 1u;
 
 	DTTR_Mods_Context compatible_context = {
-		.api_version = DTTR_MODS_API_VERSION,
+		.abi_version = DTTR_SDK_ABI_VERSION,
 		.struct_size = sizeof(DTTR_Mods_Context),
 	};
 
 	DTTR_Mods_Context older_context = compatible_context;
-	older_context.api_version = DTTR_MODS_API_VERSION - 1u;
+	older_context.abi_version = DTTR_SDK_ABI_VERSION - 1u;
 
 	DTTR_Mods_Context future_context = compatible_context;
-	future_context.api_version = DTTR_MODS_API_VERSION + 1u;
+	future_context.abi_version = DTTR_SDK_ABI_VERSION + 1u;
 	future_context.struct_size = sizeof(DTTR_Mods_Context) + 1u;
 
 	DTTR_Mods_WriteExceptionReportFn exception_reporter = DTTR_Mods_GetWriteExceptionReportFn(
@@ -111,7 +111,7 @@ static int stable_compile_check() {
 	runtime_storage_api_compile_check();
 	stable_grouped_data_compile_check();
 
-	return DTTR_MODS_API_VERSION + DTTR_RUNTIME_API_VERSION
+	return DTTR_SDK_ABI_VERSION + (DTTR_SDK_VERSION[0] != '\0' ? 1 : 0)
 		   + (int)exception_request.struct_size + (int)exception_report.struct_size
 		   + (DTTR_Mods_GetWriteExceptionReportFn(&older_api) == NULL ? 1 : 0)
 		   + (DTTR_Mods_GetWriteExceptionReportFn(&future_api) != NULL ? 1 : 0)
@@ -121,7 +121,7 @@ static int stable_compile_check() {
 		   + (exception_reporter(&exception_request, &exception_report) ? 1 : 0);
 }
 
-_Static_assert(DTTR_MODS_API_VERSION >= 13, "SDK symbls require mod API v13");
+_Static_assert(DTTR_SDK_ABI_VERSION >= 2026060103u, "SDK ABI version is incremental");
 _Static_assert(
 	DTTR_MODS_EXCEPTION_REPORT_STACK_TRACE_CAPACITY == 16384,
 	"exception report stack trace capacity is part of the SDK contract"
