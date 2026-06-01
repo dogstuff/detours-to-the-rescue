@@ -87,6 +87,8 @@ def check_page_shape(markdown_files: list[Path], checks: Checks) -> None:
         {"Functions", "Data", "Types"}.issubset(sections),
         "generated docs must cover functions, data, and types",
     )
+
+
 def check_index_links(markdown_files: list[Path], checks: Checks) -> None:
     docs_root = markdown_files[0].parent
     index_text = (docs_root / "index.md").read_text()

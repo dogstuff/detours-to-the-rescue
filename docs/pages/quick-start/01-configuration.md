@@ -78,6 +78,8 @@ If you need more detail for troubleshooting, set `Log Level` to `debug` or `trac
 
 Use `Minidump Type` to control how much information crash dumps include. Posting crash dumps publicly can expose sensitive information; share them only when requested.
 
+Turn off `Show Crash Popup` if you want DttR to close immediately after a crash. The stack trace is still written to `dttr.log`.
+
 ## Configuring modding options
 
 The Modding tab is experimental and only exists in the Modding build.

@@ -96,15 +96,13 @@ static void write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excepti
 		);
 	}
 
-	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, true);
-	sds popup_message = DTTR_CrashDump_BuildReportMessage(
-		summary,
-		stack_trace,
-		dttr_config.show_crash_stack_trace
-	);
+	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
+	sds popup_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
 	sdsfree(stack_trace);
 	DTTR_CrashDump_LogAndTraceReport(log_message);
-	DTTR_Errors_ShowMessage(DTTR_ERROR_TITLE, popup_message);
+	if (dttr_config.show_crash_popup) {
+		DTTR_Errors_ShowMessage(DTTR_ERROR_TITLE, popup_message);
+	}
 	sdsfree(popup_message);
 	sdsfree(log_message);
 	sdsfree(summary);

@@ -63,6 +63,7 @@ BUILD_NAMES = (
     ("SC", 0b100),
 )
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate Markdown reference pages from PCDOGS SDK blueprints.",
@@ -202,7 +203,7 @@ def category_display(name: object) -> str:
     prefix = category_prefix(name)
     if prefix.islower():
         return prefix[:1].upper() + prefix[1:]
-        
+
     return prefix
 
 

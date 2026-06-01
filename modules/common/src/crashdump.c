@@ -78,13 +78,9 @@ static sds build_crash_message(DWORD code, const char *filename) {
 	);
 }
 
-sds DTTR_CrashDump_BuildReportMessage(
-	const char *summary,
-	const char *stack_trace,
-	bool include_stack_trace
-) {
+sds DTTR_CrashDump_BuildReportMessage(const char *summary, const char *stack_trace) {
 	sds message = sdsnew(summary ? summary : "");
-	if (include_stack_trace && stack_trace) {
+	if (stack_trace) {
 		message = sdscat(message, stack_trace);
 	}
 
@@ -258,15 +254,12 @@ static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exceptio
 		GetCurrentThread(),
 		exception_info->ContextRecord
 	);
-	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, true);
-	sds popup_message = DTTR_CrashDump_BuildReportMessage(
-		summary,
-		stack_trace,
-		dttr_config.show_crash_stack_trace
-	);
+	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
+	sds popup_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
 	sdsfree(stack_trace);
 	DTTR_CrashDump_LogAndTraceReport(log_message);
-	if (!DTTR_ImGui_ErrorShow("DttR: Crash", popup_message)) {
+	if (dttr_config.show_crash_popup
+		&& !DTTR_ImGui_ErrorShow("DttR: Crash", popup_message)) {
 		DTTR_SDL_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"DttR: Crash",

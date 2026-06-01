@@ -19,7 +19,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
   "schema_major_version": 1,
   "log_level": "info",
   "minidump_type": "normal",
-  "show_crash_stack_trace": true,
+  "show_crash_popup": true,
   "log_file_path": "dttr.log",
   "pcdogs_path": "",
   "saves_path": "saves",

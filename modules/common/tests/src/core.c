@@ -78,45 +78,37 @@ static void assert_config_rejected(const char *path, const char *contents) {
 	remove(path);
 }
 
-static void config_load_save_round_trips_show_crash_stack_trace(void **state) {
+static void config_load_save_round_trips_show_crash_popup(void **state) {
 	(void)state;
-	const char *path = "dttr-test-crash-stack-roundtrip.json";
+	const char *path = "dttr-test-crash-popup-roundtrip.json";
 
 	write_text_file(path, "{\"schema_major_version\":1}\n");
 	assert_true(DTTR_Config_Load(path));
-	assert_true(dttr_config.show_crash_stack_trace);
+	assert_true(dttr_config.show_crash_popup);
 
-	write_text_file(
-		path,
-		"{\"schema_major_version\":1,\"show_crash_stack_trace\":false}\n"
-	);
+	write_text_file(path, "{\"schema_major_version\":1,\"show_crash_popup\":false}\n");
 	assert_true(DTTR_Config_Load(path));
-	assert_false(dttr_config.show_crash_stack_trace);
+	assert_false(dttr_config.show_crash_popup);
 	assert_true(DTTR_Config_Save(path, &dttr_config));
 
 	assert_true(DTTR_Config_Load(path));
-	assert_false(dttr_config.show_crash_stack_trace);
+	assert_false(dttr_config.show_crash_popup);
 	remove(path);
 }
 
-static void crash_report_message_respects_popup_stack_trace_setting(void **state) {
+static void crash_report_message_includes_stack_trace(void **state) {
 	(void)state;
 	const char *summary = "Exception 0xDEADBEEF\n\nDump written to:\ndttr.dmp";
 	const char *stack_trace = "\n\nStack trace:\n  game!crash+0x1";
 
-	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, true);
-	sds short_popup = DTTR_CrashDump_BuildReportMessage(summary, stack_trace, false);
+	sds message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
 
-	assert_non_null(log_message);
-	assert_non_null(short_popup);
-	assert_non_null(strstr(log_message, "Stack trace:"));
-	assert_non_null(strstr(log_message, "Feel free to report this error"));
-	assert_null(strstr(short_popup, "Stack trace:"));
-	assert_non_null(strstr(short_popup, "Exception 0xDEADBEEF"));
-	assert_non_null(strstr(short_popup, "Feel free to report this error"));
+	assert_non_null(message);
+	assert_non_null(strstr(message, "Stack trace:"));
+	assert_non_null(strstr(message, "Exception 0xDEADBEEF"));
+	assert_non_null(strstr(message, "Feel free to report this error"));
 
-	sdsfree(log_message);
-	sdsfree(short_popup);
+	sdsfree(message);
 }
 
 static void config_load_rejects_invalid_values(void **state) {
@@ -152,10 +144,10 @@ static const DTTR_TestCase TEST_CASES[] = {
 	{"safe-relative-rejects-absolute-and-traversal-paths",
 	 safe_relative_rejects_absolute_and_traversal_paths},
 	{"config-load-rejects-invalid-values", config_load_rejects_invalid_values},
-	{"config-load-save-round-trips-show-crash-stack-trace",
-	 config_load_save_round_trips_show_crash_stack_trace},
-	{"crash-report-message-respects-popup-stack-trace-setting",
-	 crash_report_message_respects_popup_stack_trace_setting},
+	{"config-load-save-round-trips-show-crash-popup",
+	 config_load_save_round_trips_show_crash_popup},
+	{"crash-report-message-includes-stack-trace",
+	 crash_report_message_includes_stack_trace},
 };
 
 DTTR_TEST_MAIN(TEST_CASES)

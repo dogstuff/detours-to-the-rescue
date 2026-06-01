@@ -85,7 +85,7 @@ typedef struct {
 	int schema_major_version;
 	int log_level;
 	DTTR_MinidumpType minidump_type;
-	bool show_crash_stack_trace;
+	bool show_crash_popup;
 	char log_file_path[MAX_PATH];
 	char pcdogs_path[MAX_PATH];
 	char saves_path[MAX_PATH];
