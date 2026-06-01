@@ -1,5 +1,6 @@
 % if return_declaration:
 ${return_declaration}
+
 % endif
 DTTR_Result call_result = ${api}->Call(
 % for index, arg in enumerate(call_args):
