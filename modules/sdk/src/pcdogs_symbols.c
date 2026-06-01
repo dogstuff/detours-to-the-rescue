@@ -18,7 +18,7 @@ static void patch_report_init(DTTR_PCDOGS_T_Patch_Report *report) {
 static void patch_report_fail(
 	DTTR_PCDOGS_T_Patch_Report *report,
 	size_t index,
-	DTTR_Core_Result result
+	DTTR_Result result
 ) {
 	if (!report) {
 		return;
@@ -39,7 +39,7 @@ static uintptr_t global_address_at(uint32_t index) {
 	return global ? global->address : 0;
 }
 
-static DTTR_Core_Result resolve_symbol(
+static DTTR_Result resolve_symbol(
 	const DTTR_Core_Context *ctx,
 	uint32_t id,
 	uint32_t count,
@@ -53,7 +53,7 @@ static DTTR_Core_Result resolve_symbol(
 	}
 
 	*out_addr = 0;
-	DTTR_PCDOGS_SymbolsResolveAll(ctx);
+	DTTR_PCDOGS_ResolveAll(ctx);
 	const uintptr_t addr = address_at(id);
 	if (!addr) {
 		return dttr_core_result(DTTR_ERR_NOT_FOUND, not_found_message);
@@ -63,7 +63,7 @@ static DTTR_Core_Result resolve_symbol(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_PCDOGS_SymbolFunctionResolve(
+DTTR_Result DTTR_PCDOGS_SymbolFunctionResolve(
 	const DTTR_Core_Context *ctx,
 	DTTR_PCDOGS_T_Symbol_Function_Id id,
 	uintptr_t *out_addr
@@ -79,7 +79,7 @@ DTTR_Core_Result DTTR_PCDOGS_SymbolFunctionResolve(
 	);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
+DTTR_Result DTTR_PCDOGS_FunctionResolve(
 	const DTTR_Core_Context *ctx,
 	DTTR_PCDOGS_T_Function_Id id,
 	uintptr_t *out_addr
@@ -95,7 +95,7 @@ DTTR_Core_Result DTTR_PCDOGS_FunctionResolve(
 	return DTTR_PCDOGS_SymbolFunctionResolve(ctx, symbol_id, out_addr);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_SymbolDataResolve(
+DTTR_Result DTTR_PCDOGS_SymbolDataResolve(
 	const DTTR_Core_Context *ctx,
 	DTTR_PCDOGS_T_Symbol_Data_Id id,
 	uintptr_t *out_addr
@@ -111,7 +111,7 @@ DTTR_Core_Result DTTR_PCDOGS_SymbolDataResolve(
 	);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_DataResolve(
+DTTR_Result DTTR_PCDOGS_DataResolve(
 	const DTTR_Core_Context *ctx,
 	DTTR_PCDOGS_T_Data_Id id,
 	uintptr_t *out_addr
@@ -127,7 +127,7 @@ DTTR_Core_Result DTTR_PCDOGS_DataResolve(
 	return DTTR_PCDOGS_SymbolDataResolve(ctx, symbol_id, out_addr);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_Hook_DataPointer(
+DTTR_Result DTTR_PCDOGS_Hook_DataPointer(
 	const DTTR_Core_Context *ctx,
 	DTTR_PCDOGS_T_Data_Id id,
 	void *new_value,
@@ -146,15 +146,15 @@ DTTR_Core_Result DTTR_PCDOGS_Hook_DataPointer(
 	}
 
 	uintptr_t address = 0;
-	DTTR_Core_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
-	if (!DTTR_Core_ResultOk(resolved)) {
+	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
+	if (!DTTR_ResultOk(resolved)) {
 		return resolved;
 	}
 
 	return DTTR_Core_HookPointer(ctx, address, new_value, out_original, out_hook);
 }
 
-static DTTR_Core_Result patch_group_hook_symbol_function(
+static DTTR_Result patch_group_hook_symbol_function(
 	DTTR_Core_PatchGroup *group,
 	DTTR_PCDOGS_T_Symbol_Function_Id id,
 	void *detour,
@@ -177,8 +177,8 @@ static DTTR_Core_Result patch_group_hook_symbol_function(
 
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
-	DTTR_Core_Result resolved = DTTR_PCDOGS_SymbolFunctionResolve(ctx, id, &address);
-	if (!DTTR_Core_ResultOk(resolved)) {
+	DTTR_Result resolved = DTTR_PCDOGS_SymbolFunctionResolve(ctx, id, &address);
+	if (!DTTR_ResultOk(resolved)) {
 		return resolved;
 	}
 
@@ -192,7 +192,7 @@ static DTTR_Core_Result patch_group_hook_symbol_function(
 	);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookFunction(
+DTTR_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 	DTTR_Core_PatchGroup *group,
 	DTTR_PCDOGS_T_Function_Id id,
 	void *detour,
@@ -209,7 +209,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 	return patch_group_hook_symbol_function(group, symbol_id, detour, out_original);
 }
 
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
+DTTR_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 	DTTR_Core_PatchGroup *group,
 	DTTR_PCDOGS_T_Data_Id id,
 	void *new_value,
@@ -224,15 +224,15 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
-	DTTR_Core_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
-	if (!DTTR_Core_ResultOk(resolved)) {
+	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
+	if (!DTTR_ResultOk(resolved)) {
 		return resolved;
 	}
 
 	return DTTR_Core_PatchGroupHookPointer(group, address, new_value, out_original, NULL);
 }
 
-static DTTR_Core_Result patch_spec_target(
+static DTTR_Result patch_spec_target(
 	const DTTR_PCDOGS_T_Patch_Spec *spec,
 	DTTR_Core_TargetSpec *out_target
 ) {
@@ -278,7 +278,7 @@ static DTTR_Core_Result patch_spec_target(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-static DTTR_Core_Result patch_spec_install(
+static DTTR_Result patch_spec_install(
 	DTTR_Core_PatchGroup *group,
 	const DTTR_PCDOGS_T_Patch_Spec *spec
 ) {
@@ -307,14 +307,14 @@ static DTTR_Core_Result patch_spec_install(
 	case DTTR_PCDOGS_PATCH_AOB_BYTES:
 	case DTTR_PCDOGS_PATCH_AOB_REL32_JMP: {
 		DTTR_Core_TargetSpec target = {0};
-		DTTR_Core_Result result = patch_spec_target(spec, &target);
-		if (!DTTR_Core_ResultOk(result)) {
+		DTTR_Result result = patch_spec_target(spec, &target);
+		if (!DTTR_ResultOk(result)) {
 			return result;
 		}
 
 		DTTR_Core_TargetReport target_report = {0};
 		result = DTTR_Core_PatchGroupInstallTargets(group, &target, 1u, &target_report);
-		if (!DTTR_Core_ResultOk(result)) {
+		if (!DTTR_ResultOk(result)) {
 			return result;
 		}
 
@@ -335,7 +335,7 @@ static DTTR_Core_Result patch_spec_install(
 	}
 }
 
-DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
+DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 	const DTTR_Core_Context *ctx,
 	const DTTR_PCDOGS_T_Patch_Spec *specs,
 	size_t spec_count,
@@ -344,7 +344,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 ) {
 	patch_report_init(out_report);
 	if (!out_group || (!specs && spec_count)) {
-		DTTR_Core_Result result = dttr_core_result(
+		DTTR_Result result = dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
 			"invalid PCDOGS patch spec install arguments"
 		);
@@ -353,7 +353,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 	}
 
 	if (*out_group) {
-		DTTR_Core_Result result = dttr_core_result(
+		DTTR_Result result = dttr_core_result(
 			DTTR_ERR_ALREADY_INSTALLED,
 			"PCDOGS patch group output is already set"
 		);
@@ -362,8 +362,8 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 	}
 
 	DTTR_Core_PatchGroup *group = NULL;
-	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(ctx, &group);
-	if (!DTTR_Core_ResultOk(result)) {
+	DTTR_Result result = DTTR_Core_PatchGroupCreate(ctx, &group);
+	if (!DTTR_ResultOk(result)) {
 		patch_report_fail(out_report, 0, result);
 		return result;
 	}
@@ -374,7 +374,7 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 		}
 
 		result = patch_spec_install(group, &specs[i]);
-		if (!DTTR_Core_ResultOk(result)) {
+		if (!DTTR_ResultOk(result)) {
 			if (!specs[i].required
 				&& (result.status == DTTR_ERR_NOT_FOUND
 					|| result.status == DTTR_ERR_UNSUPPORTED)) {
@@ -385,8 +385,8 @@ DTTR_Core_Result DTTR_PCDOGS_PatchGroup_Install(
 				continue;
 			}
 
-			DTTR_Core_Result cleanup = DTTR_Core_PatchGroupReleaseChecked(&group);
-			if (!DTTR_Core_ResultOk(cleanup)) {
+			DTTR_Result cleanup = DTTR_Core_PatchGroupRelease(&group);
+			if (!DTTR_ResultOk(cleanup)) {
 				*out_group = group;
 				patch_report_fail(out_report, i, cleanup);
 				return cleanup;

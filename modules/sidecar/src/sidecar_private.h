@@ -66,14 +66,14 @@ static inline bool dttr_sidecar_install_pcdogs_patch_group(
 	DTTR_Core_PatchGroup **group
 ) {
 	DTTR_PCDOGS_T_Patch_Report report = {0};
-	DTTR_Core_Result result = DTTR_PCDOGS_PatchGroup_Install(
+	DTTR_Result result = DTTR_PCDOGS_PatchGroup_Install(
 		&ctx->runtime,
 		patches,
 		patch_count,
 		group,
 		&report
 	);
-	if (!DTTR_Core_ResultOk(result)) {
+	if (!DTTR_ResultOk(result)) {
 		DTTR_MODS_LOG_ERROR(
 			ctx,
 			"%s: patch %u failed: %s",

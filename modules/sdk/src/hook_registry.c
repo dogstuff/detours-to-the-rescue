@@ -81,17 +81,17 @@ typedef struct {
 
 static ZydisDecoder decoder;
 static bool decoder_initialized = false;
-static DTTR_Core_Result hook_last_error = {DTTR_OK, "ok"};
+static DTTR_Result hook_last_error = {DTTR_OK, "ok"};
 
-DTTR_Core_Result dttr_core_hook_last_error() { return hook_last_error; }
+DTTR_Result dttr_core_hook_last_error() { return hook_last_error; }
 
-void dttr_core_hook_set_last_error(DTTR_Core_Status status, const char *message) {
+void dttr_core_hook_set_last_error(DTTR_Status status, const char *message) {
 	hook_last_error = dttr_core_result(status, message);
 }
 
 static void hook_error_clear() { dttr_core_hook_set_last_error(DTTR_OK, "ok"); }
 
-// Initialize the 32-bit Zydis decoder used to choose safe trampoline boundaries.
+// Initialize the 32-bit Zydis decoder used to choose safe trampoline cut points.
 static bool decoder_init() {
 	if (decoder_initialized) {
 		return true;

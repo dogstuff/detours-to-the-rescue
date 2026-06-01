@@ -135,6 +135,8 @@ READ_ONLY_DATA_NAMES = {
 }
 
 ENGINE_MANAGED_DATA_NAMES = {
+    "player_current_level_id",
+    "menu_level_index",
     "player_actor",
     "active_entity_work_list",
     "current_entity_camera",
@@ -361,8 +363,6 @@ class TypedFunctionRow:
     args: str
     try_params: str
     try_args: str
-    call_or_params: str
-    call_or_args: str
     signature: str
     delta: str
     hook_kind: str
@@ -378,8 +378,6 @@ class TypedFunctionRow:
     is_callable_param_docs: list[tuple[str, str]]
     hook_param_docs: list[tuple[str, str]]
     unhook_param_docs: list[tuple[str, str]]
-    call_or_param_docs: list[tuple[str, str]]
-    return_doc: str
 
     def macro_values(self) -> tuple[str, ...]:
         return tuple(str(getattr(self, field)) for field in TYPED_FIELDS)
@@ -571,7 +569,7 @@ def arg_name(param: object) -> str:
 
 
 def param_args(params: list[object]) -> list[str]:
-    """Return generated call argument names while treating void as an empty list."""
+    """Return generated call argument names while handling void as an empty list."""
 
     if params == ["void"]:
         return []
@@ -1261,7 +1259,7 @@ def inner_parens(value: str) -> str:
 
 
 def c_list(value: object) -> list[str]:
-    """Split generated C argument text while treating void-style lists as empty."""
+    """Split generated C argument text while handling void-style lists as empty."""
 
     if isinstance(value, list):
         return [str(item) for item in value]
@@ -1367,7 +1365,7 @@ def row_doc(row: object) -> str | None:
 
 
 def symbol_doc(kind: SymbolDocKind | str, row: object) -> str:
-    """Return explicit blueprint documentation or a useful generated fallback."""
+    """Return explicit blueprint documentation or generated text."""
 
     explicit = row_doc(row)
     if explicit:
@@ -1377,7 +1375,7 @@ def symbol_doc(kind: SymbolDocKind | str, row: object) -> str:
     return "Not yet documented."
 
 
-def fallback_param_doc(name: str) -> str:
+def inferred_param_doc(name: str) -> str:
     """Return a generic generated parameter explanation when blueprints have no prose."""
 
     if name == "ctx":
@@ -1392,7 +1390,9 @@ def fallback_param_doc(name: str) -> str:
     return "Unnamed argument."
 
 
-def param_doc_pairs(params: object, *, fallback: bool = False) -> list[tuple[str, str]]:
+def param_doc_pairs(
+    params: object, *, infer_missing: bool = False
+) -> list[tuple[str, str]]:
     """Extract parameter docs from blueprint Param rows for generated comments."""
 
     if not isinstance(params, list):
@@ -1404,8 +1404,8 @@ def param_doc_pairs(params: object, *, fallback: bool = False) -> list[tuple[str
         doc = getattr(param, "doc", None)
         if doc:
             pairs.append((name, doxy_text(doc)))
-        elif fallback:
-            pairs.append((name, fallback_param_doc(name)))
+        elif infer_missing:
+            pairs.append((name, inferred_param_doc(name)))
     return pairs
 
 
@@ -1533,18 +1533,18 @@ def data_write_policy(row: GlobalRow) -> str:
 
     name = row.name.lower()
     if name.endswith(READ_ONLY_DATA_SUFFIXES):
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY"
+        return "DTTR_PCDOGS_WRITE_POLICY_READ_ONLY"
 
     if name in READ_ONLY_DATA_NAMES:
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY"
+        return "DTTR_PCDOGS_WRITE_POLICY_READ_ONLY"
 
     if name in ENGINE_MANAGED_DATA_NAMES:
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED"
+        return "DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED"
 
     if row.typed:
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY"
+        return "DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY"
 
-    return "DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN"
+    return "DTTR_PCDOGS_WRITE_POLICY_UNKNOWN"
 
 
 def typed_data_is_pointer(row: GlobalRow) -> bool:
@@ -1584,7 +1584,7 @@ def typed_function_template_row(
     if signature not in explicit_signature_names:
         signature = "FN_" + c_symbol(fn.name)
 
-    param_docs = param_doc_pairs(typed.params, fallback=True)
+    param_docs = param_doc_pairs(typed.params, infer_missing=True)
     return TypedFunctionRow(
         name=ident,
         public=public,
@@ -1600,22 +1600,6 @@ def typed_function_template_row(
         args=c_args(typed.args),
         try_params=c_params_fn(typed.try_params),
         try_args=c_args(typed.try_args),
-        call_or_params=(
-            c_params_fn(
-                [
-                    ("const DTTR_Core_Context*", "ctx"),
-                    *typed.params,
-                    (ret, "fallback_ret"),
-                ]
-            )
-            if ret != "void"
-            else ""
-        ),
-        call_or_args=(
-            "(" + ", ".join(["ctx", *typed.try_args, "&ret_"]) + ")"
-            if ret != "void"
-            else ""
-        ),
         signature=signature,
         delta=c_int(typed.delta),
         hook_kind=HOOK_ENUM[str(typed.hook_kind)],
@@ -1627,7 +1611,7 @@ def typed_function_template_row(
         doc=symbol_doc(SymbolDocKind.FUNCTION, fn),
         group_doc=f"Helpers for `{display_name}`.",
         param_docs=param_docs,
-        try_param_docs=param_doc_pairs(typed.try_params, fallback=True),
+        try_param_docs=param_doc_pairs(typed.try_params, infer_missing=True),
         is_callable_param_docs=[("ctx", "Runtime context for this check.")],
         hook_param_docs=[
             ("ctx", "Runtime context for hook install."),
@@ -1635,16 +1619,6 @@ def typed_function_template_row(
             ("out_original", "Receives the trampoline when requested."),
         ],
         unhook_param_docs=[("ctx", "Runtime context for hook detach.")],
-        call_or_param_docs=[
-            ("ctx", "Runtime context for symbol resolution."),
-            *param_docs,
-            ("fallback_ret", "Returned when no call is made."),
-        ],
-        return_doc=(
-            "`true` when the call ran and wrote the return value."
-            if typed.return_type != "void"
-            else "`true` when the call ran."
-        ),
     )
 
 

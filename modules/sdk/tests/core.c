@@ -231,18 +231,18 @@ static void test_core_validation(void **state) {
 	DTTR_Core_PatchGroup *group = NULL;
 	uintptr_t addr = 0;
 
-	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
-	assert_true(DTTR_Core_ResultOk(result));
-	assert_string_equal(DTTR_Core_StatusName(result.status), "DTTR_OK");
+	DTTR_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
+	assert_true(DTTR_ResultOk(result));
+	assert_string_equal(DTTR_StatusName(result.status), "DTTR_OK");
 	DTTR_Core_PatchGroupDestroy(group);
 
-	result = DTTR_Core_PatchGroupDestroyChecked(NULL);
-	assert_true(DTTR_Core_ResultOk(result));
-	result = DTTR_Core_PatchGroupReleaseChecked(NULL);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupDestroy(NULL);
+	assert_true(DTTR_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(NULL);
+	assert_true(DTTR_ResultOk(result));
 	group = NULL;
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group);
 
 	result = DTTR_Core_AOBFind(NULL, "55 8B", &addr);
@@ -254,13 +254,13 @@ static void test_signature_helpers_resolve_aob_patterns(void **state) {
 	DTTR_Core_Context ctx = runtime_context();
 	uintptr_t addr = 0;
 
-	DTTR_Core_Result result = DTTR_Core_AOBFind(&ctx, "55 8B EC ??", &addr);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_Core_AOBFind(&ctx, "55 8B EC ??", &addr);
+	assert_true(DTTR_ResultOk(result));
 	assert_ptr_equal((void *)addr, sig_target);
 
 	addr = 0;
 	result = DTTR_Core_SignatureFind(&ctx, "\x8B\xEC", "xx", &addr);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_ptr_equal((void *)addr, &sig_target[1]);
 
 	result = DTTR_Core_AOBFind(&ctx, "55 8", &addr);
@@ -292,14 +292,14 @@ static void test_patch_and_group_helpers_restore_memory(void **state) {
 	memcpy(group_patch_target, group_original, sizeof(group_original));
 	pointer_target = pointer_original;
 
-	DTTR_Core_Result result = DTTR_Core_PatchBytes(
+	DTTR_Result result = DTTR_Core_PatchBytes(
 		&ctx,
 		(uintptr_t)patch_target,
 		direct_patch,
 		sizeof(direct_patch),
 		&patch
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_memory_equal(patch_target, direct_patch, sizeof(direct_patch));
 	DTTR_Core_Unpatch(patch);
 	assert_memory_equal(patch_target, direct_original, sizeof(direct_original));
@@ -310,7 +310,7 @@ static void test_patch_and_group_helpers_restore_memory(void **state) {
 		rel32_detour,
 		&rel32_patch
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_rel32_jump(rel32_target, rel32_detour);
 	DTTR_Core_Unpatch(rel32_patch);
 	assert_memory_equal(rel32_target, rel32_original, sizeof(rel32_original));
@@ -355,14 +355,14 @@ static void test_patch_and_group_helpers_restore_memory(void **state) {
 	};
 
 	result = DTTR_Core_PatchGroupCreate(&ctx, &group);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	result = DTTR_Core_PatchGroupInstallTargets(
 		group,
 		targets,
 		sizeof(targets) / sizeof(targets[0]),
 		&report
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_int_equal(report.attempted, 5);
 	assert_int_equal(report.installed, 4);
 	assert_int_equal(report.skipped_optional, 1);
@@ -373,7 +373,7 @@ static void test_patch_and_group_helpers_restore_memory(void **state) {
 	assert_ptr_equal(out_original, pointer_original);
 
 	result = DTTR_Core_PatchGroupUninstall(group);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	DTTR_Core_PatchGroupDestroy(group);
 	assert_memory_equal(group_patch_target, group_original, sizeof(group_original));
 	assert_memory_equal(sig_target, sig_original, sizeof(sig_original));
@@ -389,12 +389,12 @@ static void test_patch_and_group_helpers_restore_memory(void **state) {
 		&out_original,
 		&null_pointer_hook
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(null_pointer_hook);
 	assert_null(pointer_target);
 	assert_ptr_equal(out_original, pointer_original);
-	result = DTTR_Core_UnhookChecked(null_pointer_hook);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_Unhook(null_pointer_hook);
+	assert_true(DTTR_ResultOk(result));
 	assert_ptr_equal(pointer_target, pointer_original);
 
 	DTTR_Core_HookCleanupAll();
@@ -422,8 +422,8 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 	memcpy(rel32_target, rel32_original, sizeof(rel32_original));
 	pointer_target = pointer_original;
 
-	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group);
 
 	result = DTTR_Core_PatchGroupPatchBytes(
@@ -433,7 +433,7 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 		sizeof(patch_bytes),
 		NULL
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_memory_equal(patch_target, patch_bytes, sizeof(patch_bytes));
 
 	result = DTTR_Core_PatchGroupHookPointer(
@@ -443,7 +443,7 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 		&out_original,
 		NULL
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_ptr_equal(pointer_target, pointer_replacement);
 	assert_ptr_equal(out_original, pointer_original);
 
@@ -453,7 +453,7 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 		rel32_detour,
 		NULL
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_rel32_jump(rel32_target, rel32_detour);
 
 	const DTTR_Core_TargetSpec targets[] = {
@@ -479,14 +479,14 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 		sizeof(targets) / sizeof(targets[0]),
 		&report
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_int_equal(report.attempted, 2);
 	assert_int_equal(report.installed, 1);
 	assert_int_equal(report.skipped_optional, 1);
 	assert_memory_equal(group_patch_target, group_patch, sizeof(group_patch));
 
 	result = DTTR_Core_PatchGroupUninstall(group);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_memory_equal(patch_target, patch_original, sizeof(patch_original));
 	assert_memory_equal(group_patch_target, group_original, sizeof(group_original));
 	assert_memory_equal(sig_target, sig_original, sizeof(sig_original));
@@ -495,7 +495,7 @@ static void test_patch_group_helpers_restore_memory_and_roll_back(void **state) 
 	assert_null(out_original);
 
 	result = DTTR_Core_PatchGroupUninstall(group);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	DTTR_Core_PatchGroupDestroy(group);
 	DTTR_Core_HookCleanupAll();
 }
@@ -514,8 +514,8 @@ static void test_patch_group_target_failure_rolls_back_only_new_entries(void **s
 	memcpy(patch_target, first_original, sizeof(first_original));
 	memcpy(group_patch_target, added_original, sizeof(added_original));
 
-	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
+	assert_true(DTTR_ResultOk(result));
 	result = DTTR_Core_PatchGroupPatchBytes(
 		group,
 		(uintptr_t)patch_target,
@@ -523,7 +523,7 @@ static void test_patch_group_target_failure_rolls_back_only_new_entries(void **s
 		sizeof(first_patch),
 		NULL
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 
 	const DTTR_Core_TargetSpec targets[] = {
 		{
@@ -570,8 +570,8 @@ static void test_patch_group_target_failure_reports_rollback_failure(void **stat
 	memcpy(group_patch_target, original, sizeof(original));
 	fail_next_unhook_count = 1;
 
-	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
+	assert_true(DTTR_ResultOk(result));
 
 	const DTTR_Core_TargetSpec targets[] = {
 		{
@@ -601,14 +601,14 @@ static void test_patch_group_target_failure_reports_rollback_failure(void **stat
 	assert_int_equal(report.status, DTTR_ERR_MEMORY_PROTECTION);
 	assert_memory_equal(group_patch_target, patch, sizeof(patch));
 
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group);
+	assert_true(DTTR_ResultOk(result));
 	assert_memory_equal(group_patch_target, original, sizeof(original));
 	DTTR_Core_HookCleanupAll();
 }
 
-// Covers checked release retaining the caller pointer when teardown cannot restore memory.
-static void test_patch_group_checked_release_retains_group_after_restore_failure(
+// Covers result release retaining the caller pointer when teardown cannot restore memory.
+static void test_patch_group_result_release_retains_group_after_restore_failure(
 	void **state
 ) {
 	DTTR_Core_HookCleanupAll();
@@ -623,8 +623,8 @@ static void test_patch_group_checked_release_retains_group_after_restore_failure
 	*slot = pointer_original;
 
 	DTTR_Core_PatchGroup *group = NULL;
-	DTTR_Core_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_Core_PatchGroupCreate(&ctx, &group);
+	assert_true(DTTR_ResultOk(result));
 	result = DTTR_Core_PatchGroupHookPointer(
 		group,
 		(uintptr_t)slot,
@@ -632,12 +632,12 @@ static void test_patch_group_checked_release_retains_group_after_restore_failure
 		&out_original,
 		NULL
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_ptr_equal(*slot, pointer_replacement);
 	assert_ptr_equal(out_original, pointer_original);
 
 	assert_true(VirtualFree(slot, 0, MEM_RELEASE));
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
+	result = DTTR_Core_PatchGroupRelease(&group);
 	assert_int_equal(result.status, DTTR_ERR_MEMORY_PROTECTION);
 	assert_non_null(group);
 	assert_ptr_equal(out_original, pointer_original);
@@ -649,8 +649,8 @@ static void test_patch_group_checked_release_retains_group_after_restore_failure
 		PAGE_READWRITE
 	);
 	assert_ptr_equal(slot, slot_address);
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group);
 	assert_ptr_equal(*slot, pointer_original);
 	assert_null(out_original);
@@ -687,14 +687,14 @@ static void test_pcdogs_patch_specs_install_custom_patches(void **state) {
 		DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(false, "AA BB CC DD", 0, 0xCC),
 	};
 
-	DTTR_Core_Result result = DTTR_PCDOGS_PatchGroup_Install(
+	DTTR_Result result = DTTR_PCDOGS_PatchGroup_Install(
 		&ctx,
 		specs,
 		DTTR_ARRAY_COUNT(specs),
 		&group,
 		&report
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group);
 	assert_int_equal(report.attempted, 4);
 	assert_int_equal(report.installed, 3);
@@ -737,7 +737,7 @@ static void test_pcdogs_patch_specs_cleanup_failure_retains_group(void **state) 
 		unsupported_required,
 	};
 
-	DTTR_Core_Result result = DTTR_PCDOGS_PatchGroup_Install(
+	DTTR_Result result = DTTR_PCDOGS_PatchGroup_Install(
 		&ctx,
 		specs,
 		DTTR_ARRAY_COUNT(specs),
@@ -752,8 +752,8 @@ static void test_pcdogs_patch_specs_cleanup_failure_retains_group(void **state) 
 	assert_int_equal(report.status, DTTR_ERR_MEMORY_PROTECTION);
 	assert_memory_equal(group_patch_target, patch, sizeof(patch));
 
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group);
 	assert_memory_equal(group_patch_target, original, sizeof(original));
 	DTTR_Core_HookCleanupAll();
@@ -780,15 +780,15 @@ static void test_pcdogs_patch_specs_install_macro_counts_arrays(void **state) {
 		),
 	};
 
-	DTTR_Core_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group);
 	assert_int_equal(report.attempted, DTTR_ARRAY_COUNT(specs));
 	assert_int_equal(report.installed, 1);
 	assert_memory_equal(patch_target, ((const uint8_t[]){0x01, 0x02, 0x03, 0x04}), 4);
 
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group);
 	assert_memory_equal(patch_target, original, sizeof(original));
 	DTTR_Core_HookCleanupAll();
@@ -816,8 +816,8 @@ static void test_pcdogs_typed_patch_hook_spec_installs_and_clears_original(void 
 		DTTR_PCDOGS_F_MoviePlayFile->PatchSpec(true, movie_playfile_detour, &original),
 	};
 
-	DTTR_Core_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group);
 	assert_int_equal(report.attempted, DTTR_ARRAY_COUNT(specs));
 	assert_int_equal(report.installed, 1);
@@ -855,8 +855,8 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 			->PatchSpec(true, pcdogs_chain_detour_a, &pcdogs_chain_original_a),
 	};
 
-	DTTR_Core_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_a, &group_a, &report);
-	assert_true(DTTR_Core_ResultOk(result));
+	DTTR_Result result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_a, &group_a, &report);
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group_a);
 	assert_non_null(pcdogs_chain_original_a);
 	assert_int_equal(pcdogs_chain_target(), 17);
@@ -868,20 +868,20 @@ static void test_pcdogs_typed_patch_hook_specs_chain_and_uninstall(void **state)
 	};
 
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, spec_b, &group_b, &report);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group_b);
 	assert_non_null(pcdogs_chain_original_b);
 	assert_int_equal(pcdogs_chain_target(), 117);
 
-	result = DTTR_Core_PatchGroupReleaseChecked(&group_b);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group_b);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group_b);
 	assert_null(pcdogs_chain_original_b);
 	assert_non_null(pcdogs_chain_original_a);
 	assert_int_equal(pcdogs_chain_target(), 17);
 
-	result = DTTR_Core_PatchGroupReleaseChecked(&group_a);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group_a);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group_a);
 	assert_null(pcdogs_chain_original_a);
 	assert_int_equal(pcdogs_chain_target(), 7);
@@ -902,27 +902,24 @@ static void test_core_function_hook_overlap_reports_chain_unsupported(void **sta
 
 	const uint8_t trap = 0xCC;
 	DTTR_Core_Patch *patch = NULL;
-	DTTR_Core_Result result = DTTR_Core_PatchBytes(
+	DTTR_Result result = DTTR_Core_PatchBytes(
 		&ctx,
 		(uintptr_t)site,
 		&trap,
 		sizeof(trap),
 		&patch
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(patch);
 
 	DTTR_Core_Hook *hook = NULL;
 	result = DTTR_Core_HookFunction(&ctx, (uintptr_t)site, 5, rel32_detour, NULL, &hook);
 	assert_int_equal(result.status, DTTR_ERR_HOOK_CHAIN_UNSUPPORTED);
-	assert_string_equal(
-		DTTR_Core_StatusName(result.status),
-		"DTTR_ERR_HOOK_CHAIN_UNSUPPORTED"
-	);
+	assert_string_equal(DTTR_StatusName(result.status), "DTTR_ERR_HOOK_CHAIN_UNSUPPORTED");
 	assert_null(hook);
 
-	result = DTTR_Core_UnpatchChecked(patch);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_Unpatch(patch);
+	assert_true(DTTR_ResultOk(result));
 	VirtualFree(site, 0, MEM_RELEASE);
 	DTTR_Core_HookCleanupAll();
 }
@@ -950,19 +947,19 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	));
 
 	DTTR_Core_Hook *hook = NULL;
-	DTTR_Core_Result result = DTTR_PCDOGS_Hook_DataPointer(
+	DTTR_Result result = DTTR_PCDOGS_Hook_DataPointer(
 		&ctx,
 		DTTR_PCDOGS_DATA_DDRAW_OBJECT,
 		NULL,
 		&out_original,
 		&hook
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(hook);
 	assert_null(pointer_target);
 	assert_ptr_equal(out_original, pointer_original);
-	result = DTTR_Core_UnhookChecked(hook);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_Unhook(hook);
+	assert_true(DTTR_ResultOk(result));
 	assert_ptr_equal(pointer_target, pointer_original);
 
 	out_original = (void *)0x1;
@@ -973,14 +970,14 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	};
 
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(group);
 	assert_int_equal(report.attempted, 1);
 	assert_int_equal(report.installed, 1);
 	assert_null(pointer_target);
 	assert_ptr_equal(out_original, pointer_original);
-	result = DTTR_Core_PatchGroupReleaseChecked(&group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(group);
 	assert_ptr_equal(pointer_target, pointer_original);
 	assert_null(out_original);
@@ -1103,7 +1100,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 	assert_non_null(data);
 
 	DTTR_Core_Hook *hook = (DTTR_Core_Hook *)0x1;
-	DTTR_Core_Result result = DTTR_PCDOGS_Hook_DataPointer(
+	DTTR_Result result = DTTR_PCDOGS_Hook_DataPointer(
 		NULL,
 		DTTR_PCDOGS_DATA_PKG_BASE_PATH,
 		rel32_detour,
@@ -1160,13 +1157,13 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 
 	DTTR_Core_PatchGroup *existing_group = NULL;
 	result = DTTR_Core_PatchGroupCreate(&ctx, &existing_group);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	DTTR_PCDOGS_T_Patch_Report report = {0};
 	result = DTTR_PCDOGS_PatchGroup_Install(&ctx, specs, 0, &existing_group, &report);
 	assert_int_equal(result.status, DTTR_ERR_ALREADY_INSTALLED);
 	assert_int_equal(report.failed_index, 0);
-	result = DTTR_Core_PatchGroupReleaseChecked(&existing_group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&existing_group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(existing_group);
 
 	DTTR_PCDOGS_T_Patch_Spec unsupported = {0};
@@ -1180,13 +1177,13 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 		&optional_group,
 		&report
 	);
-	assert_true(DTTR_Core_ResultOk(result));
+	assert_true(DTTR_ResultOk(result));
 	assert_non_null(optional_group);
 	assert_int_equal(report.attempted, 1);
 	assert_int_equal(report.installed, 0);
 	assert_int_equal(report.skipped_optional, 1);
-	result = DTTR_Core_PatchGroupReleaseChecked(&optional_group);
-	assert_true(DTTR_Core_ResultOk(result));
+	result = DTTR_Core_PatchGroupRelease(&optional_group);
+	assert_true(DTTR_ResultOk(result));
 	assert_null(optional_group);
 
 	unsupported.required = true;
@@ -1434,8 +1431,8 @@ static const DTTR_TestCase TEST_CASES[] = {
 	 test_patch_group_target_failure_rolls_back_only_new_entries},
 	{"core-sdk-patch-group-rollback-failure",
 	 test_patch_group_target_failure_reports_rollback_failure},
-	{"core-sdk-patch-group-checked-release-failure",
-	 test_patch_group_checked_release_retains_group_after_restore_failure},
+	{"core-sdk-patch-group-result-release-failure",
+	 test_patch_group_result_release_retains_group_after_restore_failure},
 	{"pkg-walk-core-behaviors", test_pkg_walk_core_behaviors},
 	{"pkg-walk-accessors-and-status-names", test_pkg_visit_accessors_and_status_names},
 	{"pcdogs-patch-specs", test_pcdogs_patch_specs_install_custom_patches},

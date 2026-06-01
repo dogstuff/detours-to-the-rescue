@@ -69,7 +69,8 @@ static bool default_load_entry(
 	}
 
 	void *loaded = NULL;
-	if (!DTTR_PCDOGS_F_PKGLoadEntry->Try(ctx, toc_index, NULL, &loaded) || !loaded) {
+	if (!DTTR_ResultOk(DTTR_PCDOGS_F_PKGLoadEntry->Call(ctx, toc_index, NULL, &loaded))
+		|| !loaded) {
 		if (out_status) {
 			*out_status = DTTR_UTIL_PKG_STATUS_LOAD_FAILED;
 		}
@@ -99,7 +100,7 @@ static void default_free_entry(
 	}
 
 	BOOL ignored = FALSE;
-	DTTR_PCDOGS_F_ResourceFreeData->Try(ctx, entry_data, &ignored);
+	DTTR_PCDOGS_F_ResourceFreeData->Call(ctx, entry_data, &ignored);
 }
 
 static bool resolve_toc(
@@ -125,12 +126,12 @@ static bool resolve_toc(
 	}
 
 	uintptr_t toc_addr = 0;
-	DTTR_Core_Result resolved = DTTR_PCDOGS_DataResolve(
+	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(
 		ctx,
 		DTTR_PCDOGS_DATA_PKG_TOC,
 		&toc_addr
 	);
-	if (!DTTR_Core_ResultOk(resolved) || !toc_addr) {
+	if (!DTTR_ResultOk(resolved) || !toc_addr) {
 		return false;
 	}
 

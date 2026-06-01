@@ -9229,8 +9229,8 @@ stable.fn(
             "Actor_State*",
             "actor",
             doc=(
-                "Actor/context pointer supplied by the collision pipeline. Validate identity and mutability "
-                "before writing actor fields from hooks."
+                "Actor/context pointer supplied by the collision pipeline. Confirm the target actor "
+                "and mutability before writing actor fields from hooks."
             ),
         ),
         param(
@@ -10715,7 +10715,7 @@ stable.fn(
     ret="uint8_t",
     params=[],
     doc=(
-        "Main frame boundary: begins/ends the D3D scene, runs Game_UpdateAndRenderScene, "
+        "Main frame step: begins/ends the D3D scene, runs Game_UpdateAndRenderScene, "
         "handles surface restore/flip, enforces the 30 FPS limiter, and updates FPS counters. "
         "Return is an AL status byte: 1 when the frame was skipped/aborted, otherwise 0."
     ),
@@ -11540,7 +11540,7 @@ stable.fn(
             doc="Receives the rotation matrix mapping up_vector toward forward_vector.",
         ),
     ],
-    doc="Builds a Q12 rotation matrix from two 3-component vectors; emits identity for near-equal vectors and a 180-degree fallback for opposing vectors.",
+    doc="Builds a Q12 rotation matrix from two 3-component vectors; emits a neutral matrix for near-equal vectors and a 180-degree fallback for opposing vectors.",
 )
 
 stable.fn(
@@ -13608,7 +13608,12 @@ stable.data("menu_accept", xref("Menu_RenderControlsConfiguration", 0x327, 0x1))
 stable.data(
     "format_string_two_strings", xref("Menu_RenderControlsConfiguration", 0x16E, 0x1)
 )
-stable.data("current_level_id", xref("Player_ProcessMovement", 0x141, 0x2))
+stable.data(
+    "player_current_level_id",
+    xref("Player_ProcessMovement", 0x141, 0x2),
+    type="int32_t",
+    doc="Canonical live runtime level id read from the player/gameplay global, not save-slot/menu state.",
+)
 stable.data("cheat_code_sequence", xref("Input_CheckCheatCodeSequence", 0x1E, 0x3))
 stable.data("bonus_replay_level_ids", xref("DemoReplay_LoadBonusReplay", 0x61, 0x3))
 stable.data("bonus_replay_index", xref("DemoReplay_LoadBonusReplay", 0xD, 0x1))
@@ -13750,7 +13755,7 @@ stable.data(
     type="Script_OpcodeTable",
     doc=(
         "45-entry script opcode handler table resolved through Script_WithActor. "
-        "Table identity is cross-tool corroborated; per-opcode semantics still require "
+        "The 45-entry table is cross-tool corroborated; per-opcode semantics still require "
         "case-by-case audit before naming individual handlers."
     ),
 )
@@ -15387,7 +15392,12 @@ stable.data(
 stable.data("screen_fade_duration", xref("Player_RespawnAfterDeath", 0x69, 0x2))
 stable.data("screen_fade_counter", xref("Audio_ProcessMusicFade", 0x47, 0x1))
 stable.data("is_loading_level", xref("Player_RespawnAfterDeath", 0x58, 0x2))
-stable.data("level_index", xref("Menu_ProcessMenuTransition", 0x57, 0x2))
+stable.data(
+    "menu_level_index",
+    xref("Menu_ProcessMenuTransition", 0x57, 0x2),
+    type="int16_t",
+    doc="Menu/load level index. Cross-check against player_current_level_id before using it as live runtime state.",
+)
 stable.data("rendering_state_flag", xref("Level_InitializeActorSystem", 0x102, 0x3))
 stable.data(
     "shared_material_section",

@@ -53,6 +53,9 @@ static void compile_hook_helpers(const DTTR_Core_Context *ctx) {
 
 	DTTR_PCDOGS_F_MoviePlayFile->Hook(ctx, compile_movie_playfile_detour, &original);
 	DTTR_PCDOGS_F_MoviePlayFile->Unhook(ctx);
+	BOOL played = 0;
+	DTTR_PCDOGS_F_MoviePlayFile->Call(ctx, "intro.avi", 0, &played);
+	DTTR_PCDOGS_F_MoviePlayFile->Status(ctx);
 
 	DTTR_PCDOGS_F_PowerupUpdateSpawnLogic_proto powerup_original = 0;
 	DTTR_PCDOGS_F_PowerupUpdateSpawnLogic
@@ -110,23 +113,23 @@ static void compile_global_helpers() {
 	DTTR_PCDOGS_D_PkgBasePath->Read(&value);
 	DTTR_PCDOGS_D_PkgBasePath->Write(&value);
 	DTTR_PCDOGS_D_PkgBasePath->UnsafeWrite(&value);
-	if (DTTR_PCDOGS_D_PkgBasePath->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY) {
+	DTTR_PCDOGS_D_PkgBasePath->Status();
+	if (DTTR_PCDOGS_D_PkgBasePath->Policy() != DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_DynamicLevelScale->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY) {
+	if (DTTR_PCDOGS_D_DynamicLevelScale->Policy()
+		!= DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_CurrentLevelData->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED) {
+	if (DTTR_PCDOGS_D_CurrentLevelData->Policy()
+		!= DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_RenderListState->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED) {
+	if (DTTR_PCDOGS_D_RenderListState->Policy()
+		!= DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED) {
 		return;
 	}
 
@@ -137,15 +140,20 @@ static void compile_global_helpers() {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_WindowLowMessageDispatchTable->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY) {
+	if (DTTR_PCDOGS_D_WindowLowMessageDispatchTable->Policy()
+		!= DTTR_PCDOGS_WRITE_POLICY_READ_ONLY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_ScriptSetVariableOpJumpTable->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY) {
+	if (DTTR_PCDOGS_D_ScriptSetVariableOpJumpTable->Policy()
+		!= DTTR_PCDOGS_WRITE_POLICY_READ_ONLY) {
 		return;
 	}
+
+	int32_t player_current_level_id = -1;
+	int16_t menu_level_index = -1;
+	DTTR_PCDOGS_D_PlayerCurrentLevelId->Read(&player_current_level_id);
+	DTTR_PCDOGS_D_MenuLevelIndex->Read(&menu_level_index);
 }
 
 // Compile stateless active-actor utilities.

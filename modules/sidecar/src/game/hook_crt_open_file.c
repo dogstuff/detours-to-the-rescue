@@ -19,8 +19,10 @@ static DTTR_PCDOGS_T_File_Handle *file_open_with_mode(
 	const char *mode,
 	uint8_t sharing_flag
 ) {
-	return DTTR_PCDOGS_F_FileOpenWithMode
-		->Call(dttr_sidecar_runtime_context(), path, mode, sharing_flag, NULL);
+	DTTR_PCDOGS_T_File_Handle *handle = NULL;
+	DTTR_PCDOGS_F_FileOpenWithMode
+		->Call(dttr_sidecar_runtime_context(), path, mode, sharing_flag, &handle);
+	return handle;
 }
 
 // Accepts only non-empty relative paths for save redirection and game-data lookup.

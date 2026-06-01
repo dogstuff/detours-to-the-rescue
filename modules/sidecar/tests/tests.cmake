@@ -16,6 +16,7 @@ dttr_add_cmocka_test_suite(dttr_sidecar_pcdogs_tests
     SOURCES
         "${DTTR_SIDECAR_TEST_SOURCE_DIR}/pcdogs.c"
     INCLUDE_DIRS
+        "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
         "${CMAKE_SOURCE_DIR}/modules/sdk/include"
         "${CMAKE_SOURCE_DIR}/modules/sdk/tests/include"
         "${CMAKE_SOURCE_DIR}/modules/sidecar/include"
@@ -37,6 +38,7 @@ dttr_add_cmocka_test_suite(dttr_sidecar_directdraw_validation_tests
     INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
         "${CMAKE_SOURCE_DIR}/modules/sidecar/include"
+        "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
         "${CMAKE_SOURCE_DIR}/modules/sdk/include"
     LINK_LIBRARIES
         PkgConfig::SDL3
@@ -56,6 +58,7 @@ dttr_add_cmocka_test_suite(dttr_sidecar_mesh_seam_fill_tests
     INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
         "${CMAKE_SOURCE_DIR}/modules/sidecar/include"
+        "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
         "${CMAKE_SOURCE_DIR}/modules/sdk/include"
     LINK_LIBRARIES
         PkgConfig::SDL3

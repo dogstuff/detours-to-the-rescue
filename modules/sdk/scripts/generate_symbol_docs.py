@@ -8,6 +8,7 @@ import difflib
 import html
 import re
 import sys
+from functools import lru_cache
 from collections import defaultdict
 from dataclasses import replace
 from pathlib import Path
@@ -93,9 +94,14 @@ def default_blueprint(args: argparse.Namespace) -> Path:
     return args.stable_blueprint or root / "blueprints/dttr_pcdogs.py"
 
 
+@lru_cache
 def template(name: str) -> Template:
     path = Path(__file__).resolve().with_name(name)
     return Template(path.read_text(), filename=str(path), strict_undefined=True)
+
+
+def render_template(name: str, **context: object) -> str:
+    return template(name).render(**context).strip("\n")
 
 
 def hex_offset(value: object) -> str:
@@ -302,7 +308,7 @@ def data_write_argument(c_type: str, name: str) -> str:
     return name
 
 
-def fallback_value(c_type: str) -> str:
+def sample_value(c_type: str) -> str:
     normalized = c_type.strip()
     if "*" in normalized:
         return f"({normalized})NULL"
@@ -407,26 +413,20 @@ def function_call_example(
     if not fn.callable:
         return "// This symbol is not marked safe to call through the SDK."
 
-    params = [fallback_value(c_type_fn(param.type)) for param in typed.params]
+    params = [sample_value(c_type_fn(param.type)) for param in typed.params]
     return_type = c_type_fn(typed.return_type)
     call_args = ["&ctx->runtime", *params]
-
+    return_declaration = ""
     if return_type != "void":
-        call_args.append(f"{fallback_value(return_type)} /* Default on failure */")
+        return_declaration = f"{return_type} result = {{0}};"
+        call_args.append("&result")
 
-    lines = [f"{api}->Call("]
-
-    for index, arg in enumerate(call_args):
-        suffix = "," if index < len(call_args) - 1 else ""
-        lines.append(f"    {arg}{suffix}")
-
-    lines.append(");")
-    call = "\n".join(lines)
-
-    if return_type == "void":
-        return call
-
-    return f"{return_type} result = {call}"
+    return render_template(
+        "symbol_docs_function_call_example.c.mako",
+        api=api,
+        call_args=call_args,
+        return_declaration=return_declaration,
+    )
 
 
 def function_patch_spec_example(
@@ -546,35 +546,30 @@ def global_read_example(glob: object, c_type_fn: Callable[[object], str]) -> str
     accessor = global_accessor(glob.unstable, glob)
     default_value = data_default_value(c_type)
 
-    lines = [
-        c_value_declaration(c_type, "value", default_value),
-        f"bool ok = {accessor}->Read({data_read_argument(c_type, 'value')});",
-    ]
-    return "\n".join(lines)
+    return render_template(
+        "symbol_docs_global_read_example.c.mako",
+        accessor=accessor,
+        read_argument=data_read_argument(c_type, "value"),
+        value_declaration=c_value_declaration(c_type, "value", default_value),
+    )
 
 
 def global_write_example(glob: object, c_type_fn: Callable[[object], str]) -> str:
     if not glob.typed:
         return "// No typed data write example is available yet."
 
-    policy = data_write_policy(glob).removeprefix("DTTR_PCDOGS_DATA_WRITE_POLICY_")
+    policy = data_write_policy(glob).removeprefix("DTTR_PCDOGS_WRITE_POLICY_")
     accessor = global_accessor(glob.unstable, glob)
     c_type = c_type_fn(glob.typed.type)
-    if policy != "RAW_MEMORY":
-        return "\n".join(
-            [
-                f"// WritePolicy is {policy}; Write() returns false for this symbol.",
-                "// Use Read() or Ptr() for inspection instead.",
-            ]
-        )
-
     default_value = data_default_value(c_type)
-
-    lines = [
-        c_value_declaration(c_type, "value", default_value),
-        f"bool ok = {accessor}->Write({data_write_argument(c_type, 'value')});",
-    ]
-    return "\n".join(lines)
+    return render_template(
+        "symbol_docs_global_write_example.c.mako",
+        accessor=accessor,
+        policy=policy,
+        value_declaration=c_value_declaration(c_type, "value", default_value),
+        write_allowed=policy == "RAW_MEMORY",
+        write_argument=data_write_argument(c_type, "value"),
+    )
 
 
 def global_cards(
@@ -587,7 +582,7 @@ def global_cards(
     cards = []
 
     for glob in globals_:
-        policy = data_write_policy(glob).removeprefix("DTTR_PCDOGS_DATA_WRITE_POLICY_")
+        policy = data_write_policy(glob).removeprefix("DTTR_PCDOGS_WRITE_POLICY_")
 
         cards.append(
             GlobalCard(
@@ -1260,20 +1255,8 @@ def symbol_doc_cards(stable: object, unstable: object) -> SurfaceCards:
 
 
 def render_outputs(categories: list[Category]) -> dict[str, str]:
-    caveat = (
-        "Stable symbols are the supported modder-facing PCDOGS surface. "
-        "Unstable symbols are included beside them for discovery and marked inline."
-    )
-    index_template = template("symbol_docs_index_template.md.mako")
     category_template = template("symbol_docs_category_template.md.mako")
-
-    outputs = {
-        "pcdogs/index.md": index_template.render_unicode(
-            title="PCDOGS Symbols",
-            caveat=caveat,
-            categories=categories,
-        )
-    }
+    outputs = {}
 
     for category in categories:
         outputs[f"pcdogs/{category.filename}"] = normalize_rendered_markdown(

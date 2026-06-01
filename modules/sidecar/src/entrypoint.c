@@ -130,7 +130,7 @@ static const DTTR_Mods_API MOD_API = {
 	.log_is_enabled = DTTR_Log_IsEnabled,
 	.log_unchecked = DTTR_Log_Unchecked,
 	.struct_size = sizeof(DTTR_Mods_API),
-	.api_version = DTTR_MODS_API_VERSION,
+	.abi_version = DTTR_SDK_ABI_VERSION,
 	.write_exception_report = dttr_sidecar_write_exception_report,
 };
 
@@ -143,7 +143,7 @@ static const DTTR_Core_API RUNTIME_API = {
 	.hook_is_active = DTTR_Core_HookIsActive,
 	.unhook_checked = DTTR_Core_HookDetachChecked,
 	.struct_size = sizeof(DTTR_Core_API),
-	.api_version = DTTR_RUNTIME_API_VERSION,
+	.abi_version = DTTR_SDK_ABI_VERSION,
 };
 
 // Exposes the single sidecar context shared by hooks, mods, and runtime calls.
@@ -160,13 +160,13 @@ typedef struct dttr_required_symbol {
 // Captures module handles and APIs before callbacks expose sidecar state.
 static void init_sidecar_context(HMODULE game_module, HMODULE sidecar_module) {
 	sidecar_ctx = (DTTR_Mods_Context){
-		.api_version = DTTR_MODS_API_VERSION,
+		.abi_version = DTTR_SDK_ABI_VERSION,
 		.runtime =
 			(DTTR_Core_Context){
 				.game_module = game_module,
 				.api = &RUNTIME_API,
 				.struct_size = sizeof(DTTR_Core_Context),
-				.api_version = DTTR_RUNTIME_API_VERSION,
+				.abi_version = DTTR_SDK_ABI_VERSION,
 			},
 		.sidecar_module = sidecar_module,
 		.window = NULL,
@@ -474,12 +474,17 @@ static void cleanup_runtime(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_HookCleanupAll();
 }
 
-static bool require_pcdogs_call(const char *name, bool called) {
-	if (!called) {
-		DTTR_LOG_ERROR("Required PCDOGS startup call failed: %s", name);
+static bool require_pcdogs_call(const char *name, DTTR_Result result) {
+	if (!DTTR_ResultOk(result)) {
+		DTTR_LOG_ERROR(
+			"Required PCDOGS startup call failed: %s (%s)",
+			name,
+			DTTR_StatusName(result.status)
+		);
+		return false;
 	}
 
-	return called;
+	return true;
 }
 
 // Publishes the runtime API once the game window exists.
@@ -487,19 +492,19 @@ static bool initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t ret = 0;
 	return require_pcdogs_call(
 			   "PKFindAndOpenFile",
-			   DTTR_PCDOGS_F_PKGFindAndOpenFile->Try(ctx, &ret)
+			   DTTR_PCDOGS_F_PKGFindAndOpenFile->Call(ctx, &ret)
 		   )
 		   && require_pcdogs_call(
 			   "ResourceInitializeGameEngine",
-			   DTTR_PCDOGS_F_ResourceInitializeGameEngine->Try(ctx, &ret)
+			   DTTR_PCDOGS_F_ResourceInitializeGameEngine->Call(ctx, &ret)
 		   )
 		   && require_pcdogs_call(
 			   "D3DInitializeGraphicsSubsystem",
-			   DTTR_PCDOGS_F_D3DInitializeGraphicsSubsystem->Try(ctx, hwnd, NULL, &ret)
+			   DTTR_PCDOGS_F_D3DInitializeGraphicsSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )
 		   && require_pcdogs_call(
 			   "PkInitializeSystem",
-			   DTTR_PCDOGS_F_PkgInitializeSystem->Try(ctx, &ret)
+			   DTTR_PCDOGS_F_PkgInitializeSystem->Call(ctx, &ret)
 		   );
 }
 
@@ -509,15 +514,15 @@ static bool start_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t config_ret = 0;
 	return require_pcdogs_call(
 			   "DisplaySetMode",
-			   DTTR_PCDOGS_F_DisplaySetMode->Try(ctx, hwnd, &ret)
+			   DTTR_PCDOGS_F_DisplaySetMode->Call(ctx, hwnd, &ret)
 		   )
 		   && require_pcdogs_call(
 			   "InputResetState",
-			   DTTR_PCDOGS_F_InputResetState->Try(ctx, &ret)
+			   DTTR_PCDOGS_F_InputResetState->Call(ctx, &ret)
 		   )
 		   && require_pcdogs_call(
 			   "ConfigLoadFromINIAlternate",
-			   DTTR_PCDOGS_F_ConfigLoadFromINIAlternate->Try(ctx, &config_ret)
+			   DTTR_PCDOGS_F_ConfigLoadFromINIAlternate->Call(ctx, &config_ret)
 		   );
 }
 
@@ -536,7 +541,8 @@ static void tick_main_loop() {
 	if (rendering_enabled) {
 #ifdef DTTR_MODS_ENABLED
 		if (dttr_mods_should_advance_game_frame()) {
-			DTTR_PCDOGS_F_RenderFrame->Call(dttr_sidecar_runtime_context(), 0);
+			uint8_t frame_status = 0;
+			DTTR_PCDOGS_F_RenderFrame->Call(dttr_sidecar_runtime_context(), &frame_status);
 			dttr_mods_game_frame_advanced();
 		} else {
 			dttr_graphics_begin_frame();
@@ -545,7 +551,8 @@ static void tick_main_loop() {
 		}
 
 #else
-		DTTR_PCDOGS_F_RenderFrame->Call(dttr_sidecar_runtime_context(), 0);
+		uint8_t frame_status = 0;
+		DTTR_PCDOGS_F_RenderFrame->Call(dttr_sidecar_runtime_context(), &frame_status);
 #endif
 	}
 

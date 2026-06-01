@@ -20,7 +20,7 @@ struct DTTR_Core_PatchGroup {
 };
 
 // Return stable status tokens for logs and tests that compare SDK failures by name.
-const char *DTTR_Core_StatusName(DTTR_Core_Status status) {
+const char *DTTR_StatusName(DTTR_Status status) {
 	switch (status) {
 	case DTTR_OK:
 		return "DTTR_OK";
@@ -44,12 +44,34 @@ const char *DTTR_Core_StatusName(DTTR_Core_Status status) {
 		return "DTTR_ERR_OUT_OF_MEMORY";
 	case DTTR_ERR_HOOK_CHAIN_UNSUPPORTED:
 		return "DTTR_ERR_HOOK_CHAIN_UNSUPPORTED";
+	case DTTR_ERR_MISSING_SYMBOL:
+		return "DTTR_ERR_MISSING_SYMBOL";
+	case DTTR_ERR_UNRESOLVED:
+		return "DTTR_ERR_UNRESOLVED";
+	case DTTR_ERR_NOT_CALLABLE:
+		return "DTTR_ERR_NOT_CALLABLE";
+	case DTTR_ERR_READ_FAILED:
+		return "DTTR_ERR_READ_FAILED";
+	case DTTR_ERR_WRITE_FAILED:
+		return "DTTR_ERR_WRITE_FAILED";
+	case DTTR_ERR_POLICY_MISMATCH:
+		return "DTTR_ERR_POLICY_MISMATCH";
+	case DTTR_ERR_UNSUPPORTED_LAYOUT:
+		return "DTTR_ERR_UNSUPPORTED_LAYOUT";
+	case DTTR_ERR_UNSUPPORTED_CONTRACT:
+		return "DTTR_ERR_UNSUPPORTED_CONTRACT";
+	case DTTR_ERR_PROVENANCE_UNSAFE:
+		return "DTTR_ERR_PROVENANCE_UNSAFE";
 	default:
 		return "DTTR_ERR_UNKNOWN";
 	}
 }
 
-bool DTTR_Core_ResultOk(DTTR_Core_Result result) { return result.status == DTTR_OK; }
+bool DTTR_StatusOk(DTTR_Status status) { return status == DTTR_OK; }
+
+bool DTTR_StatusFailed(DTTR_Status status) { return !DTTR_StatusOk(status); }
+
+bool DTTR_ResultOk(DTTR_Result result) { return DTTR_StatusOk(result.status); }
 
 static bool runtime_context_valid(const DTTR_Core_Context *ctx) {
 	return ctx && ctx->game_module && ctx->api;
@@ -71,10 +93,10 @@ static int hex_value(char ch) {
 	return -1;
 }
 
-static DTTR_Core_Result parse_aob_fail(
+static DTTR_Result parse_aob_fail(
 	char *sig,
 	char *mask,
-	DTTR_Core_Status status,
+	DTTR_Status status,
 	const char *message
 ) {
 	free(sig);
@@ -83,7 +105,7 @@ static DTTR_Core_Result parse_aob_fail(
 }
 
 // Convert user-facing AOB text into the signature and mask strings consumed by sigscan.
-static DTTR_Core_Result parse_aob(const char *aob, char **out_sig, char **out_mask) {
+static DTTR_Result parse_aob(const char *aob, char **out_sig, char **out_mask) {
 	if (!aob || !out_sig || !out_mask) {
 		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, "invalid AOB parser arguments");
 	}
@@ -181,7 +203,7 @@ static DTTR_Core_Result parse_aob(const char *aob, char **out_sig, char **out_ma
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-static DTTR_Core_Result aob_scan_with(
+static DTTR_Result aob_scan_with(
 	HMODULE mod,
 	DTTR_Core_SigscanFn sigscan,
 	const char *aob,
@@ -189,9 +211,9 @@ static DTTR_Core_Result aob_scan_with(
 ) {
 	char *sig = NULL;
 	char *mask = NULL;
-	DTTR_Core_Result parsed = parse_aob(aob, &sig, &mask);
+	DTTR_Result parsed = parse_aob(aob, &sig, &mask);
 
-	if (!DTTR_Core_ResultOk(parsed)) {
+	if (!DTTR_ResultOk(parsed)) {
 		return parsed;
 	}
 
@@ -207,11 +229,7 @@ static DTTR_Core_Result aob_scan_with(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_AOBFindInModule(
-	HMODULE mod,
-	const char *aob,
-	uintptr_t *out_addr
-) {
+DTTR_Result DTTR_Core_AOBFindInModule(HMODULE mod, const char *aob, uintptr_t *out_addr) {
 	if (!out_addr) {
 		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, "out_addr is NULL");
 	}
@@ -220,7 +238,7 @@ DTTR_Core_Result DTTR_Core_AOBFindInModule(
 	return aob_scan_with(mod, DTTR_Core_HookSigscan, aob, out_addr);
 }
 
-DTTR_Core_Result DTTR_Core_AOBFind(
+DTTR_Result DTTR_Core_AOBFind(
 	const DTTR_Core_Context *ctx,
 	const char *aob,
 	uintptr_t *out_addr
@@ -242,7 +260,7 @@ DTTR_Core_Result DTTR_Core_AOBFind(
 	return aob_scan_with(ctx->game_module, runtime->sigscan, aob, out_addr);
 }
 
-DTTR_Core_Result DTTR_Core_SignatureFind(
+DTTR_Result DTTR_Core_SignatureFind(
 	const DTTR_Core_Context *ctx,
 	const char *sig,
 	const char *mask,
@@ -275,7 +293,7 @@ DTTR_Core_Result DTTR_Core_SignatureFind(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_PatchBytes(
+DTTR_Result DTTR_Core_PatchBytes(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
 	const uint8_t *bytes,
@@ -309,7 +327,7 @@ DTTR_Core_Result DTTR_Core_PatchBytes(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_HookFunction(
+DTTR_Result DTTR_Core_HookFunction(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
 	int prologue_size,
@@ -345,7 +363,7 @@ DTTR_Core_Result DTTR_Core_HookFunction(
 	);
 
 	if (!hook) {
-		DTTR_Core_Result hook_error = dttr_core_hook_last_error();
+		DTTR_Result hook_error = dttr_core_hook_last_error();
 		if (hook_error.status == DTTR_ERR_HOOK_CHAIN_UNSUPPORTED) {
 			return hook_error;
 		}
@@ -357,7 +375,7 @@ DTTR_Core_Result DTTR_Core_HookFunction(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_HookAOB(
+DTTR_Result DTTR_Core_HookAOB(
 	const DTTR_Core_Context *ctx,
 	const char *aob,
 	intptr_t offset,
@@ -367,9 +385,9 @@ DTTR_Core_Result DTTR_Core_HookAOB(
 	DTTR_Core_Hook **out_hook
 ) {
 	uintptr_t match = 0;
-	DTTR_Core_Result found = DTTR_Core_AOBFind(ctx, aob, &match);
+	DTTR_Result found = DTTR_Core_AOBFind(ctx, aob, &match);
 
-	if (!DTTR_Core_ResultOk(found)) {
+	if (!DTTR_ResultOk(found)) {
 		if (out_hook) {
 			*out_hook = NULL;
 		}
@@ -398,7 +416,7 @@ static bool rel32_displacement(uintptr_t site, void *detour, int32_t *out_rel) {
 	return true;
 }
 
-DTTR_Core_Result DTTR_Core_PatchRel32Jump(
+DTTR_Result DTTR_Core_PatchRel32Jump(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
 	void *detour,
@@ -423,7 +441,7 @@ DTTR_Core_Result DTTR_Core_PatchRel32Jump(
 	return DTTR_Core_PatchBytes(ctx, address, jmp, sizeof(jmp), out_patch);
 }
 
-DTTR_Core_Result DTTR_Core_PatchAOBRel32Jump(
+DTTR_Result DTTR_Core_PatchAOBRel32Jump(
 	const DTTR_Core_Context *ctx,
 	const char *aob,
 	intptr_t offset,
@@ -435,9 +453,9 @@ DTTR_Core_Result DTTR_Core_PatchAOBRel32Jump(
 	}
 
 	uintptr_t match = 0;
-	DTTR_Core_Result found = DTTR_Core_AOBFind(ctx, aob, &match);
+	DTTR_Result found = DTTR_Core_AOBFind(ctx, aob, &match);
 
-	if (!DTTR_Core_ResultOk(found)) {
+	if (!DTTR_ResultOk(found)) {
 		return found;
 	}
 
@@ -449,7 +467,7 @@ DTTR_Core_Result DTTR_Core_PatchAOBRel32Jump(
 	);
 }
 
-DTTR_Core_Result DTTR_Core_HookPointer(
+DTTR_Result DTTR_Core_HookPointer(
 	const DTTR_Core_Context *ctx,
 	uintptr_t address,
 	void *new_value,
@@ -486,9 +504,7 @@ DTTR_Core_Result DTTR_Core_HookPointer(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-void DTTR_Core_Unpatch(DTTR_Core_Patch *patch) { DTTR_Core_HookDetach(patch); }
-
-DTTR_Core_Result DTTR_Core_UnpatchChecked(DTTR_Core_Patch *patch) {
+DTTR_Result DTTR_Core_Unpatch(DTTR_Core_Patch *patch) {
 	if (!patch || DTTR_Core_HookDetachChecked(patch)) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
@@ -496,9 +512,7 @@ DTTR_Core_Result DTTR_Core_UnpatchChecked(DTTR_Core_Patch *patch) {
 	return dttr_core_result(DTTR_ERR_MEMORY_PROTECTION, "failed to detach patch");
 }
 
-void DTTR_Core_Unhook(DTTR_Core_Hook *hook) { DTTR_Core_HookDetach(hook); }
-
-DTTR_Core_Result DTTR_Core_UnhookChecked(DTTR_Core_Hook *hook) {
+DTTR_Result DTTR_Core_Unhook(DTTR_Core_Hook *hook) {
 	if (!hook || DTTR_Core_HookDetachChecked(hook)) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
@@ -507,19 +521,15 @@ DTTR_Core_Result DTTR_Core_UnhookChecked(DTTR_Core_Hook *hook) {
 }
 
 static void report_init(DTTR_Core_TargetReport *report);
-static void report_fail(
-	DTTR_Core_TargetReport *report,
-	size_t index,
-	DTTR_Core_Result result
-);
-static DTTR_Core_Result install_one_target(
+static void report_fail(DTTR_Core_TargetReport *report, size_t index, DTTR_Result result);
+static DTTR_Result install_one_target(
 	const DTTR_Core_Context *ctx,
 	const DTTR_Core_TargetSpec *target,
 	DTTR_Core_Hook **out_handle
 );
 
 // Grow patch-group storage before installing another owned hook or patch.
-static DTTR_Core_Result patch_group_reserve(DTTR_Core_PatchGroup *group) {
+static DTTR_Result patch_group_reserve(DTTR_Core_PatchGroup *group) {
 	if (kv_size(group->entries) < kv_max(group->entries)) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
@@ -544,7 +554,7 @@ static DTTR_Core_Result patch_group_reserve(DTTR_Core_PatchGroup *group) {
 }
 
 // Validate a patch group and reserve storage for one more owned hook or patch.
-static DTTR_Core_Result patch_group_prepare_install(DTTR_Core_PatchGroup *group) {
+static DTTR_Result patch_group_prepare_install(DTTR_Core_PatchGroup *group) {
 	if (!group) {
 		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, "patch group is NULL");
 	}
@@ -572,7 +582,7 @@ static bool patch_group_detach_checked(
 }
 
 // Roll back patch-group entries after the requested keep count in reverse install order.
-static DTTR_Core_Result patch_group_uninstall_from(
+static DTTR_Result patch_group_uninstall_from(
 	DTTR_Core_PatchGroup *group,
 	size_t keep_count
 ) {
@@ -594,7 +604,7 @@ static DTTR_Core_Result patch_group_uninstall_from(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupCreate(
+DTTR_Result DTTR_Core_PatchGroupCreate(
 	const DTTR_Core_Context *ctx,
 	DTTR_Core_PatchGroup **out_group
 ) {
@@ -621,7 +631,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupCreate(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupUninstall(DTTR_Core_PatchGroup *group) {
+DTTR_Result DTTR_Core_PatchGroupUninstall(DTTR_Core_PatchGroup *group) {
 	if (!group) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
@@ -629,13 +639,13 @@ DTTR_Core_Result DTTR_Core_PatchGroupUninstall(DTTR_Core_PatchGroup *group) {
 	return patch_group_uninstall_from(group, 0u);
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupDestroyChecked(DTTR_Core_PatchGroup *group) {
+DTTR_Result DTTR_Core_PatchGroupDestroy(DTTR_Core_PatchGroup *group) {
 	if (!group) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
 
-	DTTR_Core_Result result = DTTR_Core_PatchGroupUninstall(group);
-	if (!DTTR_Core_ResultOk(result)) {
+	DTTR_Result result = DTTR_Core_PatchGroupUninstall(group);
+	if (!DTTR_ResultOk(result)) {
 		return result;
 	}
 
@@ -644,26 +654,18 @@ DTTR_Core_Result DTTR_Core_PatchGroupDestroyChecked(DTTR_Core_PatchGroup *group)
 	return result;
 }
 
-void DTTR_Core_PatchGroupDestroy(DTTR_Core_PatchGroup *group) {
-	DTTR_Core_PatchGroupDestroyChecked(group);
-}
-
-DTTR_Core_Result DTTR_Core_PatchGroupReleaseChecked(DTTR_Core_PatchGroup **group) {
+DTTR_Result DTTR_Core_PatchGroupRelease(DTTR_Core_PatchGroup **group) {
 	if (!group || !*group) {
 		return dttr_core_result(DTTR_OK, "ok");
 	}
 
-	DTTR_Core_Result result = DTTR_Core_PatchGroupDestroyChecked(*group);
-	if (!DTTR_Core_ResultOk(result)) {
+	DTTR_Result result = DTTR_Core_PatchGroupDestroy(*group);
+	if (!DTTR_ResultOk(result)) {
 		return result;
 	}
 
 	*group = NULL;
 	return result;
-}
-
-void DTTR_Core_PatchGroupRelease(DTTR_Core_PatchGroup **group) {
-	DTTR_Core_PatchGroupReleaseChecked(group);
 }
 
 // Return the runtime context that backs a patch group for generated helper calls.
@@ -672,7 +674,7 @@ const DTTR_Core_Context *dttr_core_patch_group_context(const DTTR_Core_PatchGrou
 }
 
 // Store a newly installed handle in a patch group after the runtime operation succeeds.
-static DTTR_Core_Result patch_group_adopt_hook(
+static DTTR_Result patch_group_adopt_hook(
 	DTTR_Core_PatchGroup *group,
 	DTTR_Core_Hook *hook,
 	void **out_original,
@@ -687,7 +689,7 @@ static DTTR_Core_Result patch_group_adopt_hook(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupPatchBytes(
+DTTR_Result DTTR_Core_PatchGroupPatchBytes(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
 	const uint8_t *bytes,
@@ -698,29 +700,23 @@ DTTR_Core_Result DTTR_Core_PatchGroupPatchBytes(
 		*out_patch = NULL;
 	}
 
-	DTTR_Core_Result reserved = patch_group_prepare_install(group);
+	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_Core_ResultOk(reserved)) {
+	if (!DTTR_ResultOk(reserved)) {
 		return reserved;
 	}
 
 	DTTR_Core_Patch *patch = NULL;
-	DTTR_Core_Result result = DTTR_Core_PatchBytes(
-		&group->ctx,
-		address,
-		bytes,
-		size,
-		&patch
-	);
+	DTTR_Result result = DTTR_Core_PatchBytes(&group->ctx, address, bytes, size, &patch);
 
-	if (!DTTR_Core_ResultOk(result)) {
+	if (!DTTR_ResultOk(result)) {
 		return result;
 	}
 
 	return patch_group_adopt_hook(group, patch, NULL, (DTTR_Core_Hook **)out_patch);
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupHookFunction(
+DTTR_Result DTTR_Core_PatchGroupHookFunction(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
 	int prologue_size,
@@ -732,14 +728,14 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookFunction(
 		*out_hook = NULL;
 	}
 
-	DTTR_Core_Result reserved = patch_group_prepare_install(group);
+	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_Core_ResultOk(reserved)) {
+	if (!DTTR_ResultOk(reserved)) {
 		return reserved;
 	}
 
 	DTTR_Core_Hook *hook = NULL;
-	DTTR_Core_Result result = DTTR_Core_HookFunction(
+	DTTR_Result result = DTTR_Core_HookFunction(
 		&group->ctx,
 		address,
 		prologue_size,
@@ -748,14 +744,14 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookFunction(
 		&hook
 	);
 
-	if (!DTTR_Core_ResultOk(result)) {
+	if (!DTTR_ResultOk(result)) {
 		return result;
 	}
 
 	return patch_group_adopt_hook(group, hook, out_original, out_hook);
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupHookPointer(
+DTTR_Result DTTR_Core_PatchGroupHookPointer(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
 	void *new_value,
@@ -766,14 +762,14 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookPointer(
 		*out_hook = NULL;
 	}
 
-	DTTR_Core_Result reserved = patch_group_prepare_install(group);
+	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_Core_ResultOk(reserved)) {
+	if (!DTTR_ResultOk(reserved)) {
 		return reserved;
 	}
 
 	DTTR_Core_Hook *hook = NULL;
-	DTTR_Core_Result result = DTTR_Core_HookPointer(
+	DTTR_Result result = DTTR_Core_HookPointer(
 		&group->ctx,
 		address,
 		new_value,
@@ -781,14 +777,14 @@ DTTR_Core_Result DTTR_Core_PatchGroupHookPointer(
 		&hook
 	);
 
-	if (!DTTR_Core_ResultOk(result)) {
+	if (!DTTR_ResultOk(result)) {
 		return result;
 	}
 
 	return patch_group_adopt_hook(group, hook, out_original, out_hook);
 }
 
-DTTR_Core_Result DTTR_Core_PatchGroupPatchRel32Jump(
+DTTR_Result DTTR_Core_PatchGroupPatchRel32Jump(
 	DTTR_Core_PatchGroup *group,
 	uintptr_t address,
 	void *detour,
@@ -798,21 +794,16 @@ DTTR_Core_Result DTTR_Core_PatchGroupPatchRel32Jump(
 		*out_patch = NULL;
 	}
 
-	DTTR_Core_Result reserved = patch_group_prepare_install(group);
+	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_Core_ResultOk(reserved)) {
+	if (!DTTR_ResultOk(reserved)) {
 		return reserved;
 	}
 
 	DTTR_Core_Patch *patch = NULL;
-	DTTR_Core_Result result = DTTR_Core_PatchRel32Jump(
-		&group->ctx,
-		address,
-		detour,
-		&patch
-	);
+	DTTR_Result result = DTTR_Core_PatchRel32Jump(&group->ctx, address, detour, &patch);
 
-	if (!DTTR_Core_ResultOk(result)) {
+	if (!DTTR_ResultOk(result)) {
 		return result;
 	}
 
@@ -832,7 +823,7 @@ static void **target_original_slot(const DTTR_Core_TargetSpec *target) {
 }
 
 // Install a target list transactionally so required failures roll back new entries.
-DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
+DTTR_Result DTTR_Core_PatchGroupInstallTargets(
 	DTTR_Core_PatchGroup *group,
 	const DTTR_Core_TargetSpec *targets,
 	size_t target_count,
@@ -841,7 +832,7 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 	report_init(out_report);
 
 	if (!group || (!targets && target_count)) {
-		DTTR_Core_Result result = dttr_core_result(
+		DTTR_Result result = dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
 			"invalid patch group target arguments"
 		);
@@ -856,11 +847,11 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 			out_report->attempted++;
 		}
 
-		DTTR_Core_Result reserved = patch_group_reserve(group);
+		DTTR_Result reserved = patch_group_reserve(group);
 
-		if (!DTTR_Core_ResultOk(reserved)) {
-			DTTR_Core_Result rollback = patch_group_uninstall_from(group, keep_count);
-			if (!DTTR_Core_ResultOk(rollback)) {
+		if (!DTTR_ResultOk(reserved)) {
+			DTTR_Result rollback = patch_group_uninstall_from(group, keep_count);
+			if (!DTTR_ResultOk(rollback)) {
 				report_fail(out_report, i, rollback);
 				return rollback;
 			}
@@ -870,9 +861,9 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 		}
 
 		DTTR_Core_Hook *handle = NULL;
-		DTTR_Core_Result result = install_one_target(&group->ctx, &targets[i], &handle);
+		DTTR_Result result = install_one_target(&group->ctx, &targets[i], &handle);
 
-		if (!DTTR_Core_ResultOk(result)) {
+		if (!DTTR_ResultOk(result)) {
 			if (!targets[i].required && result.status == DTTR_ERR_NOT_FOUND) {
 				if (out_report) {
 					out_report->skipped_optional++;
@@ -881,8 +872,8 @@ DTTR_Core_Result DTTR_Core_PatchGroupInstallTargets(
 				continue;
 			}
 
-			DTTR_Core_Result rollback = patch_group_uninstall_from(group, keep_count);
-			if (!DTTR_Core_ResultOk(rollback)) {
+			DTTR_Result rollback = patch_group_uninstall_from(group, keep_count);
+			if (!DTTR_ResultOk(rollback)) {
 				report_fail(out_report, i, rollback);
 				return rollback;
 			}
@@ -918,11 +909,7 @@ static void report_init(DTTR_Core_TargetReport *report) {
 }
 
 // Record the first failing target so callers can diagnose partial install attempts.
-static void report_fail(
-	DTTR_Core_TargetReport *report,
-	size_t index,
-	DTTR_Core_Result result
-) {
+static void report_fail(DTTR_Core_TargetReport *report, size_t index, DTTR_Result result) {
 	if (!report) {
 		return;
 	}
@@ -933,7 +920,7 @@ static void report_fail(
 }
 
 // Resolve direct and AOB target specs into concrete addresses before installation.
-static DTTR_Core_Result target_address(
+static DTTR_Result target_address(
 	const DTTR_Core_Context *ctx,
 	const DTTR_Core_TargetSpec *target,
 	uintptr_t *out_address
@@ -951,9 +938,9 @@ static DTTR_Core_Result target_address(
 	}
 
 	uintptr_t match = 0;
-	DTTR_Core_Result found = DTTR_Core_AOBFind(ctx, target->aob, &match);
+	DTTR_Result found = DTTR_Core_AOBFind(ctx, target->aob, &match);
 
-	if (!DTTR_Core_ResultOk(found)) {
+	if (!DTTR_ResultOk(found)) {
 		return found;
 	}
 
@@ -962,16 +949,16 @@ static DTTR_Core_Result target_address(
 }
 
 // Dispatch one target spec to the matching patch, hook, or jump primitive.
-static DTTR_Core_Result install_one_target(
+static DTTR_Result install_one_target(
 	const DTTR_Core_Context *ctx,
 	const DTTR_Core_TargetSpec *target,
 	DTTR_Core_Hook **out_handle
 ) {
 	*out_handle = NULL;
 	uintptr_t address = 0;
-	DTTR_Core_Result address_result = target_address(ctx, target, &address);
+	DTTR_Result address_result = target_address(ctx, target, &address);
 
-	if (!DTTR_Core_ResultOk(address_result)) {
+	if (!DTTR_ResultOk(address_result)) {
 		return address_result;
 	}
 

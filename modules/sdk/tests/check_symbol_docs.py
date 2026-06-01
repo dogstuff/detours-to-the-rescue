@@ -53,12 +53,13 @@ def generate_docs(generator: Path, output_dir: Path) -> None:
 
 def generated_markdown(output_dir: Path, checks: Checks) -> list[Path]:
     docs_root = output_dir / "pcdogs"
-    checks.require_file(docs_root / "index.md", "missing generated index")
     checks.require_file(docs_root / "actor.md", "missing representative category page")
     markdown_files = sorted(docs_root.glob("*.md"))
+
     checks.require(
         len(markdown_files) > 10, "expected many category pages to be generated"
     )
+
     return markdown_files
 
 
@@ -73,9 +74,6 @@ def check_page_shape(markdown_files: list[Path], checks: Checks) -> None:
             f"{path}: generated page lacks a top-level heading",
         )
 
-        if path.name == "index.md":
-            continue
-
         sections.update(
             match.group("section") for match in SECTION_HEADING.finditer(text)
         )
@@ -87,19 +85,6 @@ def check_page_shape(markdown_files: list[Path], checks: Checks) -> None:
         {"Functions", "Data", "Types"}.issubset(sections),
         "generated docs must cover functions, data, and types",
     )
-
-
-def check_index_links(markdown_files: list[Path], checks: Checks) -> None:
-    docs_root = markdown_files[0].parent
-    index_text = (docs_root / "index.md").read_text()
-    for category_page in markdown_files:
-        if category_page.name == "index.md":
-            continue
-        checks.require(
-            f"({category_page.name})" in index_text
-            or f'href="{category_page.name}"' in index_text,
-            f"index does not link generated category page: {category_page.name}",
-        )
 
 
 def normalize_doc_link(source: Path, href: str, generated_root: Path) -> Path | None:
@@ -145,7 +130,6 @@ def main() -> int:
         return 1
 
     check_page_shape(markdown_files, checks)
-    check_index_links(markdown_files, checks)
     check_internal_links(markdown_files, checks)
 
     if checks.failures:

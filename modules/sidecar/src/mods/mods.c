@@ -28,7 +28,7 @@ static uintptr_t hook_owner_counter = 0;
 
 static DTTR_Mods_Context mod_context(const DTTR_Mods_Context *base_ctx) {
 	return (DTTR_Mods_Context){
-		.api_version = base_ctx->api_version,
+		.abi_version = base_ctx->abi_version,
 		.runtime = base_ctx->runtime,
 		.sidecar_module = base_ctx->sidecar_module,
 		.window = DTTR_Graphics_GetWindow(),
