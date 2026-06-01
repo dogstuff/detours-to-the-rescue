@@ -281,7 +281,10 @@
 }
 
 .md-typeset table.pcdogs-type-table--struct th:nth-child(1),
-.md-typeset table.pcdogs-type-table--struct td:nth-child(1),
+.md-typeset table.pcdogs-type-table--struct td:nth-child(1) {
+    text-align: left;
+}
+
 .md-typeset table.pcdogs-type-table--enum th:nth-child(1),
 .md-typeset table.pcdogs-type-table--enum td:nth-child(1) {
     text-align: center;
@@ -325,6 +328,52 @@
     font-weight: 600;
     min-width: 0;
     text-align: left;
+}
+
+.md-typeset .pcdogs-pill {
+    --pcdogs-accent-color: var(--md-default-fg-color);
+    align-items: center;
+    background: color-mix(in srgb, var(--pcdogs-accent-color) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pcdogs-accent-color) 62%, transparent);
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--pcdogs-accent-color) 86%, #fff);
+    cursor: help;
+    display: inline-flex;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    line-height: 1.2;
+    padding: 0.08rem 0.42rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.md-typeset .pcdogs-policy {
+    color: color-mix(in srgb, var(--pcdogs-accent-color) 86%, #fff);
+    cursor: help;
+    font-weight: 800;
+    letter-spacing: 0.015em;
+    text-transform: uppercase;
+}
+
+.md-typeset .pcdogs-policy--unknown {
+    --pcdogs-accent-color: #9aa4b2;
+}
+
+.md-typeset .pcdogs-policy--read-only {
+    --pcdogs-accent-color: #38bdf8;
+}
+
+.md-typeset .pcdogs-policy--engine-managed {
+    --pcdogs-accent-color: #c084fc;
+}
+
+.md-typeset .pcdogs-policy--raw-memory {
+    --pcdogs-accent-color: #22c55e;
+}
+
+.md-typeset .pcdogs-policy--patch-only {
+    --pcdogs-accent-color: #a78bfa;
 }
 
 .md-typeset .pcdogs-symbol-fact--see-also {
@@ -402,14 +451,49 @@
     padding-block: 0.08rem;
 }
 
-.md-typeset .pcdogs-stability-value {
-    color: var(--md-default-fg-color);
-    font-weight: 600;
+.md-typeset h3[id^="function-"],
+.md-typeset h3[id^="unstable-function-"],
+.md-typeset h3[id^="resolver-function-"],
+.md-typeset h3[id^="data-"],
+.md-typeset h3[id^="unstable-data-"],
+.md-typeset h3[id^="type-"],
+.md-typeset h3[id^="unstable-type-"],
+.md-typeset h3[id^="signature-"],
+.md-typeset h3[id^="unstable-signature-"] {
+    align-items: center;
+    display: flex;
+    gap: 0.55rem;
+}
+
+.md-typeset .pcdogs-heading-pills {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 0.3rem;
+    margin-left: auto;
+}
+
+.md-typeset h3[id^="unstable-function-"],
+.md-typeset h3[id^="unstable-data-"],
+.md-typeset h3[id^="unstable-type-"],
+.md-typeset h3[id^="unstable-signature-"] {
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, #f59e0b 9%, transparent),
+        color-mix(in srgb, #f59e0b 3%, transparent) 68%,
+        transparent
+    );
+    border-left: 0.16rem solid color-mix(in srgb, #f59e0b 42%, transparent);
+    border-radius: 0.22rem;
+    padding: 0.22rem 0.35rem;
+}
+
+.md-typeset .pcdogs-stability-value--stable {
+    --pcdogs-accent-color: #60a5fa;
 }
 
 .md-typeset .pcdogs-stability-value--unstable {
-    color: #d8953b;
-    cursor: help;
+    --pcdogs-accent-color: #f59e0b;
 }
 
 .md-typeset .highlight code .k,

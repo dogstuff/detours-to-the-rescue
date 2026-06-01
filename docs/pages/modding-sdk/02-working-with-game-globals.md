@@ -1,10 +1,5 @@
 # Working with Game Globals
 
-!!! warning "Cross-Region Compatibility Warning"
-
-    The symbols and types exposed by the SDK have only been tested against the English game executable.
-
-
 PCDogs globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.
 
 A global helper can tell you whether the symbol was found, read the value with the right type, and decide whether normal writes are allowed.
@@ -30,7 +25,7 @@ Writing game memory is not always safe. Check `WritePolicy` before exposing rela
 
 - `RAW_MEMORY`: `Write()` may update the value after availability and memory-permission checks.
 - `READ_ONLY`: Use for inspection only. These are usually decoded tables, dispatch slots, jumps, opcodes, or indexes.
-- `ENGINE_OWNED`: The game owns this pointer or state and may replace or overwrite it.
+- `ENGINE_MANAGED`: The game manages this pointer or state and may replace or overwrite it.
 - `PATCH_ONLY`: Change this through patch or hook flows, not direct writes.
 - `UNKNOWN`: The symbol has not been classified enough for normal writes.
 
@@ -40,7 +35,7 @@ Writing game memory is not always safe. Check `WritePolicy` before exposing rela
 
 `UnsafeWrite()` bypasses `WritePolicy`. It still requires writable process memory, but it does not mean the write is safe.
 
-Using `UnsafeWrite()` in normal mod behavior bypasses the SDK's safety policy and can corrupt game-owned state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
+Using `UnsafeWrite()` in normal mod behavior bypasses the SDK's safety policy and can corrupt game-managed state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
 
 
 If another SDK API requires an address or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](07-resolving-symbols.md).

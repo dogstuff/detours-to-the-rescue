@@ -1,29 +1,67 @@
 <%!
-UNSTABLE_TOOLTIP = "This symbol's wrapper is unstable and may change or be removed. Requires DTTR_SDK_ENABLE_UNSTABLE."
+import html
+
+STABLE_TOOLTIP = "This SDK wrapper is stable and is unlikely to change outside a major version release."
+UNSTABLE_TOOLTIP = "This wrapper is unstable and may change or be removed. Requires DTTR_SDK_ENABLE_UNSTABLE."
+POLICY_TOOLTIPS = {
+    "UNKNOWN": "Normal Write() is disabled because this symbol has not been classified enough.",
+    "READ_ONLY": "Normal Write() is disabled because this is decoded table or lookup data for inspection.",
+    "ENGINE_MANAGED": "Normal Write() is disabled because this is live game-managed state that the game may replace or overwrite.",
+    "RAW_MEMORY": "Normal Write() may update it after availability and memory checks.",
+    "PATCH_ONLY": "Change through patch or hook flows instead of direct data writes.",
+}
+
+
+def tooltip_attrs(text):
+    value = html.escape(str(text), quote=True)
+    return f'title="{value}" aria-label="{value}"'
+
+
+def policy_class(value):
+    return html.escape(str(value).lower().replace("_", "-"), quote=True)
+
+
+def policy_value(value):
+    value = str(value)
+    tooltip = POLICY_TOOLTIPS.get(value, "Data write policy.")
+    return (
+        f'<span class="pcdogs-policy pcdogs-policy--{policy_class(value)}" '
+        f'{tooltip_attrs(tooltip)}>'
+        f'{html.escape(value)}'
+        '</span>'
+    )
 
 
 def stability_value(anchor):
     if str(anchor).startswith("unstable-"):
         return (
-            '<span class="pcdogs-stability-value pcdogs-stability-value--unstable" '
-            f'title="{UNSTABLE_TOOLTIP}" aria-label="{UNSTABLE_TOOLTIP}">'
+            '<span class="pcdogs-pill pcdogs-stability-value pcdogs-stability-value--unstable" '
+            f'{tooltip_attrs(UNSTABLE_TOOLTIP)}>'
             'Unstable'
             '</span>'
         )
-    return '<span class="pcdogs-stability-value">Stable</span>'
-%>
+    return (
+        '<span class="pcdogs-pill pcdogs-stability-value pcdogs-stability-value--stable" '
+        f'{tooltip_attrs(STABLE_TOOLTIP)}>'
+        'Stable'
+        '</span>'
+    )
 
-<%def name="stability_fact(anchor)">
-<p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">Stability</span><strong class="pcdogs-symbol-fact__value">${stability_value(anchor)}</strong></p>
-</%def>
+
+def heading_pills(anchor):
+    return '<span class="pcdogs-heading-pills">' + stability_value(anchor) + '</span>'
+
+
+def toc_label(value):
+    return html.escape(str(value), quote=True)
+%>
 
 <%def name="symbol_facts(facts, metadata, anchor=None, stability_after_kind=False)">
 <div class="pcdogs-symbol-facts">
-% if anchor is not None and not stability_after_kind:
-${stability_fact(anchor)}
-% endif
 % for fact in facts:
-% if fact.label == "Versions":
+% if fact.label == "Policy":
+<p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">Write Policy</span><strong class="pcdogs-symbol-fact__value">${policy_value(fact.value)}</strong></p>
+% elif fact.label == "Versions":
 <details class="pcdogs-symbol-builds pcdogs-symbol-builds--fact">
 <summary><span class="pcdogs-symbol-fact__label">Versions</span><span class="pcdogs-symbol-fact__value">${fact.value}</span><span class="pcdogs-symbol-builds__arrow" aria-hidden="true">▾</span></summary>
 <table class="pcdogs-symbol-builds__body">
@@ -36,9 +74,6 @@ ${stability_fact(anchor)}
 </details>
 % else:
 <p class="pcdogs-symbol-fact"><span class="pcdogs-symbol-fact__label">${fact.label}</span><strong class="pcdogs-symbol-fact__value">${fact.value}</strong></p>
-% if anchor is not None and stability_after_kind and fact.label == "Kind":
-${stability_fact(anchor)}
-% endif
 % endif
 % endfor
 </div>
@@ -76,7 +111,7 @@ ${"    "}
 </%def>
 
 <%def name="symbol_heading(name, anchor)">
-<%text>### </%text>`${name}` { #${anchor} }
+<%text>### </%text>`${name}` ${heading_pills(anchor)} { #${anchor} data-toc-label="${toc_label(name)}" }
 </%def>
 
 <%def name="function_tabs(fn)">
@@ -128,13 +163,6 @@ ${code_block(glob.read_example)}
 
 ${code_block(glob.write_example)}
 
-% if glob.write_policy == "READ_ONLY":
-!!! warning "Read-only data"
-    Use this symbol for inspection only.
-% elif glob.write_policy == "ENGINE_OWNED":
-!!! caution "Engine-owned data"
-    The engine owns this memory; treat writes as unsafe unless a narrower API says otherwise.
-% endif
 % else:
 <p class="pcdogs-untyped-data">${glob.untyped_note}</p>
 % endif
@@ -190,15 +218,13 @@ ${see_also_row(sig.related)}
 </%def>
 
 <%def name="entry_list(rows, render_entry)">
-% for item in rows:
-<% entry = render_entry(item).lstrip() %>
-% if not loop.first:
+% for index, item in enumerate(rows):
+% if index > 0:
+
 ---
 
-${entry}
-% else:
-${entry}
 % endif
+${render_entry(item).lstrip()}
 % endfor
 </%def>
 

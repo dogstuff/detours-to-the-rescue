@@ -149,13 +149,13 @@ typedef enum DTTR_PCDOGS_T_Data_Resolver {
 /// `Write` enforces this policy and only writes `RAW_MEMORY` symbols. `UnsafeWrite`
 /// bypasses the policy check but still requires writable process memory. Reserve
 /// `UnsafeWrite` for explicit patching, reverse-engineering work, or SDK internals.
-/// `READ_ONLY` marks decoded dispatch/jump/lookup/opcode/index tables. `ENGINE_OWNED`
+/// `READ_ONLY` marks decoded dispatch/jump/lookup/opcode/index tables. `ENGINE_MANAGED`
 /// marks live pointers or state that the game may replace or overwrite. `PATCH_ONLY`
 /// is for symbols that should be changed through generated patch specs or patch groups.
 typedef enum DTTR_PCDOGS_T_Data_Write_Policy {
 	DTTR_PCDOGS_DATA_WRITE_POLICY_UNKNOWN = 0,     ///< Untyped or insufficiently classified symbol.
 	DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY = 1,   ///< Decoded table data for read-only inspection through `Read`.
-	DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED = 2, ///< Live game-owned pointer/state; use higher-level helpers or patch flows.
+	DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED = 2, ///< Live game-managed pointer/state; use higher-level helpers or patch flows.
 	DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY = 3,  ///< Plain generated data slot writable through `Write`.
 	DTTR_PCDOGS_DATA_WRITE_POLICY_PATCH_ONLY = 4,  ///< Change through generated patch specs or patch groups.
 } DTTR_PCDOGS_T_Data_Write_Policy;

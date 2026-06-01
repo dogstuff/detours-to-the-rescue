@@ -647,12 +647,15 @@ def global_cards(
 def type_summary(row: object, c_type_fn: Callable[[object], str]) -> str:
     kind = type_row_kind(row)
     if kind == TypeRowKind.TYPE_ALIAS:
-        return f"alias of `{c_type_fn(row.source_type)}`"
+        return f"alias of `{docs_type_label(c_type_fn(row.source_type))}`"
     if kind == TypeRowKind.FUNCTION_TYPE_ALIAS:
         params = ", ".join(
-            f"{c_type_fn(param.type)} {param.name}" for param in row.params
+            f"{docs_type_label(c_type_fn(param.type))} {param.name}"
+            for param in row.params
         )
-        return f"callback `{c_type_fn(row.ret)} (*)({params or 'void'})`"
+        return (
+            f"callback `{docs_type_label(c_type_fn(row.ret))} (*)({params or 'void'})`"
+        )
     if kind == TypeRowKind.STRUCT:
         size = f", size 0x{row.size:X}" if row.size is not None else ""
         completeness = "incomplete" if row.incomplete else "complete"
@@ -932,8 +935,14 @@ def type_references(
     return sorted(found, key=lambda card: card.name.casefold())
 
 
-def linked_type_code(text: object, type_card: TypeCard) -> str:
-    value = str(text)
+def docs_type_label(text: object) -> str:
+    return re.sub(r"\b(?:DTTR_PCDOGS_T_|PCDOGS_DTTR_T_)", "", str(text))
+
+
+def linked_type_code(
+    text: object, type_card: TypeCard, *, display_text: object | None = None
+) -> str:
+    value = str(docs_type_label(text) if display_text is None else display_text)
     return (
         f'<a href="{html.escape(rendered_symbol_link(type_card), quote=True)}">'
         f"<code>{html.escape(value)}</code></a>"
@@ -1095,7 +1104,7 @@ def attach_related(cards: SurfaceCards) -> None:
         )
 
         card.related = related
-        card.facts = []
+        card.facts = [symbol_fact("Policy", card.write_policy)]
 
         if card.is_typed:
             card.facts.append(symbol_fact("Type", card.type))
@@ -1115,10 +1124,13 @@ def attach_related(cards: SurfaceCards) -> None:
 
         for member in card.members:
             member_refs = type_references([member.type], types)
+            member_display_type = docs_type_label(member.type)
             member.type_link = (
-                linked_type_code(member.type, member_refs[0])
+                linked_type_code(
+                    member.type, member_refs[0], display_text=member_display_type
+                )
                 if member_refs
-                else f"<code>{html.escape(member.type)}</code>"
+                else f"<code>{html.escape(member_display_type)}</code>"
             )
 
         related = merge_related(

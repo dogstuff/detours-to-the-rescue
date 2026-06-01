@@ -121,12 +121,12 @@ static void compile_global_helpers() {
 	}
 
 	if (DTTR_PCDOGS_D_CurrentLevelData->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED) {
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED) {
 		return;
 	}
 
 	if (DTTR_PCDOGS_D_RenderListState->WritePolicy
-		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED) {
+		!= DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED) {
 		return;
 	}
 

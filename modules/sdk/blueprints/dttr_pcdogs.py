@@ -1374,7 +1374,7 @@ stable.struct(
         0x68,
         doc=(
             "Unpacked XY visual scale. Fabricated values can destabilize "
-            "Actor_ProcessRendering, so engine-owned spawn/render paths are safer "
+            "Actor_ProcessRendering, so engine-managed spawn/render paths are safer "
             "than direct writes."
         ),
     ),
@@ -3892,7 +3892,7 @@ stable.callback_type(
         param("int32_t", "collision_depth"),
     ],
     calling=CallingConvention.CDECL,
-    doc="Engine-owned scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
+    doc="Engine-managed scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
 )
 
 
@@ -4607,7 +4607,7 @@ stable.fn(
     doc=(
         "Camera follow/update path that swaps active entity/navigation work-list buffers and queues "
         "entity slots for visibility/update work; pcdogs.exe+0x55D30 (PC EN), pcdogs.exe+0x55D3C (PC "
-        "EN), pcdogs.exe+0x55ED8 (PC EN), and pcdogs.exe+0x56850 (PC EN) are engine-owned pointer cells."
+        "EN), pcdogs.exe+0x55ED8 (PC EN), and pcdogs.exe+0x56850 (PC EN) are engine-managed pointer cells."
     ),
 )
 
@@ -8906,7 +8906,7 @@ stable.fn(
     params=[param("Component_Instance*", "comp"), param("Actor_State*", "other_actor")],
     doc=(
         "Triggers the component/actor collision callback path for comp against other_actor. "
-        "Uses engine-owned callback globals and actor/component state; direct callback-slot "
+        "Uses engine-managed callback globals and actor/component state; direct callback-slot "
         "writes belong in hook/patch flows, not generated data Write()."
     ),
 )
@@ -9182,7 +9182,7 @@ stable.fn(
     doc=(
         "Actor-level projectile lifecycle callback. Drives projectile state transitions, may "
         "reinitialize via Component_InitializeProjectile, spawn follow-up projectiles, and "
-        "emit trails; callback slot remains engine-owned."
+        "emit trails; callback slot remains engine-managed."
     ),
 )
 
@@ -9360,7 +9360,7 @@ stable.fn(
     params=[],
     doc=(
         "Frame collision pass over live actor/entity runtime lists. It drives actor-to-actor "
-        "collision checks and dispatches response callbacks through engine-owned globals; "
+        "collision checks and dispatches response callbacks through engine-managed globals; "
         "entity slots and actor pointers are level-local runtime identities."
     ),
 )
@@ -15011,7 +15011,7 @@ stable.data(
     xref("Resource_UnloadGameData", 0x43, 0x2),
     doc=(
         "Untyped native level cleanup/init callback slot touched by Resource_UnloadGameData. "
-        "Kept engine-owned and untyped until the callback signature is proven."
+        "Kept engine-managed and untyped until the callback signature is proven."
     ),
 )
 stable.data(
@@ -15019,7 +15019,7 @@ stable.data(
     xref("Resource_UnloadGameData", 0x3D, 0x2),
     doc=(
         "Untyped native level cleanup/init callback slot touched by Resource_UnloadGameData. "
-        "Kept engine-owned and untyped until the callback signature is proven."
+        "Kept engine-managed and untyped until the callback signature is proven."
     ),
 )
 stable.data("vertex_batch_buffer", xref("Scene_RenderFrame", 0x57A, 0x1))
@@ -15058,7 +15058,7 @@ stable.data(
     type="Actor_State*",
     doc=(
         "Script-dispatch current actor context written by Script_ExecuteBehaviorScript "
-        "and read by script command handlers; engine-owned transient state."
+        "and read by script command handlers; engine-managed transient state."
     ),
 )
 stable.data("script_entity_index", xref("Script_CheckTerminator", 0x116, 0x1))
@@ -15374,7 +15374,7 @@ stable.data(
     "collision_process_func",
     xref("Level_InitializeActorSystem", 0x1B, 0x2),
     type="Collision_ProcessCallback",
-    doc="Engine-owned scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
+    doc="Engine-managed scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
 )
 stable.data("debug_polygon_counts", xref("Render_IsPolygonInDebugList", 0x0, 0x1))
 stable.data("powerup_active_list_head", xref("Render_IsPolygonInDebugList", 0x27, 0x3))

@@ -16,13 +16,15 @@ SECTION_HEADING = re.compile(
     r"^## (?P<section>.+?) \{ \.pcdogs-section-heading \}$", re.MULTILINE
 )
 SYMBOL_HEADING = re.compile(
-    r"^### `[^`]+` \{ #[a-z0-9_-]+ \}$",
+    r'^### `[^`]+` .*\{ #[a-z0-9_-]+ data-toc-label="[^"]+" \}$',
     re.MULTILINE,
 )
 STABILITY_MARKERS = (
-    "Stability",
     "Stable",
     "Unstable",
+    "pcdogs-stability-value--stable",
+    "pcdogs-stability-value--unstable",
+    'title="This SDK wrapper is stable and is unlikely to change outside a major version release."',
     "DTTR_SDK_ENABLE_UNSTABLE",
 )
 MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\((?P<href>[^)]+)\)")
@@ -119,6 +121,14 @@ def check_generated_features(all_markdown: str, checks: Checks) -> None:
         '=== "Write"',
         "Resolver Reference",
         "See Also",
+        "pcdogs-pill",
+        "pcdogs-heading-pills",
+        "data-toc-label=",
+        "pcdogs-policy--unknown",
+        "pcdogs-policy--read-only",
+        "pcdogs-policy--engine-managed",
+        "pcdogs-policy--raw-memory",
+        'title="Normal Write() is disabled because this is live game-managed state that the game may replace or overwrite."',
         '<details class="pcdogs-symbol-builds',
         "typedef ",
         ") (",
@@ -134,9 +144,39 @@ def check_generated_features(all_markdown: str, checks: Checks) -> None:
         "Not yet documented." in all_markdown,
         "undocumented symbols must keep a standard fallback",
     )
+
+    checks.require(
+        '<span class="pcdogs-symbol-fact__label">Write Policy</span>' in all_markdown,
+        "write policy should render as a labeled fact",
+    )
+    checks.require(
+        "pcdogs-pill pcdogs-policy" not in all_markdown,
+        "policy values should be colored text, not pills",
+    )
+    checks.require(
+        '<span class="pcdogs-symbol-fact__label">Stability</span>' not in all_markdown,
+        "stability pill should not render a label",
+    )
     checks.require(
         "None" not in all_markdown,
         "generated docs should not expose Python None placeholders",
+    )
+    struct_type_cells = re.findall(
+        r"<tr><td><code>0x[0-9A-F]+</code></td><td><code>[^<]+</code></td><td>(.*?)</td>",
+        all_markdown,
+    )
+    checks.require(
+        bool(struct_type_cells)
+        and not any(
+            "DTTR_PCDOGS_T_" in cell or "PCDOGS_DTTR_T_" in cell
+            for cell in struct_type_cells
+        ),
+        "struct field type tables should omit generated SDK type prefixes",
+    )
+    checks.require(
+        "<code>DTTR_PCDOGS_T_"
+        not in re.sub(r"```c.*?```", "", all_markdown, flags=re.DOTALL),
+        "linked/reference type names outside C code blocks should omit SDK type prefixes",
     )
 
 

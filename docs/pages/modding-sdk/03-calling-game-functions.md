@@ -1,10 +1,5 @@
 # Calling Game Functions
 
-!!! warning "Cross-Region Compatibility Warning"
-
-    The symbols and types exposed by the SDK have only been tested against the English game executable.
-
-
 Symbol wrapper function helpers are the safest way to call known game functions. Use them instead of casting raw addresses.
 
 Raw addresses are only for unsupported reverse-engineering or low-level patch work.
@@ -54,7 +49,7 @@ BOOL played = DTTR_PCDOGS_F_MoviePlayFile->Call(
 
 This example returns `FALSE` if `Movie_PlayFile` is unavailable.
 
-Using `Call()` when a failed game function writes output parameters or changes game-owned state can cause undefined behavior. Use `Try()` when the caller needs to handle failure explicitly.
+Using `Call()` when a failed game function writes output parameters or changes game-managed state can cause undefined behavior. Use `Try()` when the caller needs to handle failure explicitly.
 
 ## Checking availability during setup
 
@@ -73,6 +68,6 @@ DTTR_MODS_INIT {
 
 Fail init for required functions and use `Try()` for optional functions.
 
-## Passing game-owned types
+## Passing game-managed types
 
-When a wrapper takes a game-owned pointer or struct, use the generated SDK type. Guessing a struct layout can cause incorrect reads, corrupt writes, or crashes.
+When a wrapper takes a game-managed pointer or struct, use the generated SDK type. Guessing a struct layout can cause incorrect reads, corrupt writes, or crashes.

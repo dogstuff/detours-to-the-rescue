@@ -1,10 +1,5 @@
 # Hooking Game Functions
 
-!!! warning "Cross-Region Compatibility Warning"
-
-    The symbols and types exposed by the SDK have only been tested against the English game executable.
-
-
 A function hook redirects a game function to your detour. Your detour can run custom code, call the original function, change arguments, change the return value, or block the original call.
 
 **Warning:** A detour signature or calling-convention mismatch can cause crashes or memory corruption.

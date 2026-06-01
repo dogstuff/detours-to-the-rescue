@@ -1,10 +1,5 @@
 # Applying Game Patches
 
-!!! warning "Cross-Region Compatibility Warning"
-
-    The symbols and types exposed by the SDK have only been tested against the English game executable.
-
-
 A patch changes game code or data at runtime and can be reversed during cleanup. Use this page for byte patches, pointer patches, and other non-function-hook changes.
 
 If you want to redirect a game function to your own code, see [Hooking Game Functions](05-hooking-game-functions.md).

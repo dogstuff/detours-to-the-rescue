@@ -134,7 +134,7 @@ READ_ONLY_DATA_NAMES = {
     "collision_state_handler_table",
 }
 
-ENGINE_OWNED_DATA_NAMES = {
+ENGINE_MANAGED_DATA_NAMES = {
     "player_actor",
     "active_entity_work_list",
     "current_entity_camera",
@@ -1538,8 +1538,8 @@ def data_write_policy(row: GlobalRow) -> str:
     if name in READ_ONLY_DATA_NAMES:
         return "DTTR_PCDOGS_DATA_WRITE_POLICY_READ_ONLY"
 
-    if name in ENGINE_OWNED_DATA_NAMES:
-        return "DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_OWNED"
+    if name in ENGINE_MANAGED_DATA_NAMES:
+        return "DTTR_PCDOGS_DATA_WRITE_POLICY_ENGINE_MANAGED"
 
     if row.typed:
         return "DTTR_PCDOGS_DATA_WRITE_POLICY_RAW_MEMORY"
