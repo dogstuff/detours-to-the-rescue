@@ -144,7 +144,6 @@ class Category:
     slug: str
     filename: str
     functions: list[FunctionCard] = field(default_factory=list)
-    resolver_functions: list[FunctionCard] = field(default_factory=list)
     globals: list[GlobalCard] = field(default_factory=list)
     types: list[TypeCard] = field(default_factory=list)
     signatures: list[SignatureCard] = field(default_factory=list)
@@ -155,7 +154,6 @@ class Category:
 @dataclass(slots=True)
 class SurfaceCards:
     functions: list[FunctionCard] = field(default_factory=list)
-    resolver_functions: list[FunctionCard] = field(default_factory=list)
     globals: list[GlobalCard] = field(default_factory=list)
     types: list[TypeCard] = field(default_factory=list)
     signatures: list[SignatureCard] = field(default_factory=list)

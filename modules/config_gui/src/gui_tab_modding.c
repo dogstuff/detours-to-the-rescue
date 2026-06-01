@@ -4,7 +4,7 @@ static const char *TOOLTIP_HOT_RELOAD = "Hot-reload mod DLLs while the game runs
 										"Default: false.";
 static const char *TOOLTIP_MOD_ENABLE = "Load this mod DLL on the next game launch. "
 										"Default: enabled.";
-static const char *MODDING_WARNING_TEXT = "Experimental modding API. It may change "
+static const char *MODDING_WARNING_TEXT = "The DttR modding API is currently experimental and may change "
 										  "without warning.";
 
 #define DTTR_CONFIG_UI_MOD_ENABLE_W 4.0f

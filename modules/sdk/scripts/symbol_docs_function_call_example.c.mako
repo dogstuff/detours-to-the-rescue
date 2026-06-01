@@ -6,6 +6,6 @@ DTTR_Result call_result = ${api}->Call(
     ${arg}${"," if index < len(call_args) - 1 else ""}
 % endfor
 );
-if (!DTTR_ResultOk(call_result)) {
+if (!DTTR_ResultOK(call_result)) {
     // Handle failure before using any output values.
 }

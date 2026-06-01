@@ -142,7 +142,7 @@ static bool install_pointer_hook(
 		handle
 	);
 
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		DTTR_MODS_LOG_ERROR(
 			ctx,
 			"%s: pointer hook failed: %s",
@@ -223,7 +223,7 @@ void dttr_mss_sdl_release_hooks() {
 		}
 
 		DTTR_Result result = DTTR_Core_Unhook(hook->handle);
-		if (!DTTR_ResultOk(result)) {
+		if (!DTTR_ResultOK(result)) {
 			DTTR_LOG_ERROR(
 				"%s: pointer unhook failed: %s",
 				hook->hook_name,

@@ -9375,20 +9375,6 @@ stable.fn(
 )
 
 stable.fn(
-    "Collision_ProcessPowerupCollisions",
-    "83 EC 1C A1 ?? ??",
-    hook=0x8,
-    ret="int32_t",
-    public=False,
-    params=[param("Actor_State*", "actor")],
-    doc=(
-        "Scans the powerup actor list against actor and dispatches powerup_collision_handler as "
-        "(powerup_actor, actor, 0, -2). Unconsumed pairs may fall through to swept/sphere distance "
-        "tests and Collision_ResolveActorToActorCollision(actor, powerup_actor, -1, 0)."
-    ),
-)
-
-stable.fn(
     "Model_UpdateShadow",
     "0F 00 00 51 53 50 E8 ??",
     match=-0x35,
@@ -9471,25 +9457,6 @@ stable.fn(
         "when collision_depth is -1 and the other actor subtype requires condition "
         "checks. Dispatches by other_actor subtype fields and selector masks; native "
         "return values are 0 or -1 sentinel results."
-    ),
-)
-
-stable.fn(
-    "Actor_HandleCollisionResponse",
-    "00 00 83 FF 06 0F 87 ??",
-    match=-0x17,
-    ret="int32_t",
-    public=False,
-    params=[
-        param("Actor_State*", "actor"),
-        param("Actor_State*", "other_actor"),
-        param("Collision_Polygon*", "collision_poly"),
-        param("int32_t", "collision_slot"),
-    ],
-    doc=(
-        "Subtype collision-response helper called by Actor_ProcessCollisionResponse; it updates "
-        "response vectors, normal fields, and selected actor record slots from the caller's "
-        "Collision_Polygon pointer, selected collision slot, and actor record state."
     ),
 )
 

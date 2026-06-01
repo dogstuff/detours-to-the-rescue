@@ -73,7 +73,7 @@ static inline bool dttr_sidecar_install_pcdogs_patch_group(
 		group,
 		&report
 	);
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		DTTR_MODS_LOG_ERROR(
 			ctx,
 			"%s: patch %u failed: %s",

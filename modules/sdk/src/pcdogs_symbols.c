@@ -147,7 +147,7 @@ DTTR_Result DTTR_PCDOGS_Hook_DataPointer(
 
 	uintptr_t address = 0;
 	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
-	if (!DTTR_ResultOk(resolved)) {
+	if (!DTTR_ResultOK(resolved)) {
 		return resolved;
 	}
 
@@ -178,7 +178,7 @@ static DTTR_Result patch_group_hook_symbol_function(
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
 	DTTR_Result resolved = DTTR_PCDOGS_SymbolFunctionResolve(ctx, id, &address);
-	if (!DTTR_ResultOk(resolved)) {
+	if (!DTTR_ResultOK(resolved)) {
 		return resolved;
 	}
 
@@ -225,7 +225,7 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 	const DTTR_Core_Context *ctx = dttr_core_patch_group_context(group);
 	uintptr_t address = 0;
 	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(ctx, id, &address);
-	if (!DTTR_ResultOk(resolved)) {
+	if (!DTTR_ResultOK(resolved)) {
 		return resolved;
 	}
 
@@ -308,13 +308,13 @@ static DTTR_Result patch_spec_install(
 	case DTTR_PCDOGS_PATCH_AOB_REL32_JMP: {
 		DTTR_Core_TargetSpec target = {0};
 		DTTR_Result result = patch_spec_target(spec, &target);
-		if (!DTTR_ResultOk(result)) {
+		if (!DTTR_ResultOK(result)) {
 			return result;
 		}
 
 		DTTR_Core_TargetReport target_report = {0};
 		result = DTTR_Core_PatchGroupInstallTargets(group, &target, 1u, &target_report);
-		if (!DTTR_ResultOk(result)) {
+		if (!DTTR_ResultOK(result)) {
 			return result;
 		}
 
@@ -363,7 +363,7 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 
 	DTTR_Core_PatchGroup *group = NULL;
 	DTTR_Result result = DTTR_Core_PatchGroupCreate(ctx, &group);
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		patch_report_fail(out_report, 0, result);
 		return result;
 	}
@@ -374,7 +374,7 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 		}
 
 		result = patch_spec_install(group, &specs[i]);
-		if (!DTTR_ResultOk(result)) {
+		if (!DTTR_ResultOK(result)) {
 			if (!specs[i].required
 				&& (result.status == DTTR_ERR_NOT_FOUND
 					|| result.status == DTTR_ERR_UNSUPPORTED)) {
@@ -386,7 +386,7 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 			}
 
 			DTTR_Result cleanup = DTTR_Core_PatchGroupRelease(&group);
-			if (!DTTR_ResultOk(cleanup)) {
+			if (!DTTR_ResultOK(cleanup)) {
 				*out_group = group;
 				patch_report_fail(out_report, i, cleanup);
 				return cleanup;

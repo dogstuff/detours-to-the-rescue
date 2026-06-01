@@ -496,6 +496,19 @@
     --pcdogs-accent-color: #f59e0b;
 }
 
+.md-nav--secondary .md-nav__item:has(> .md-nav__link[href*="#unstable-function-"]),
+.md-nav--secondary .md-nav__item:has(> .md-nav__link[href*="#unstable-data-"]),
+.md-nav--secondary .md-nav__item:has(> .md-nav__link[href*="#unstable-type-"]) {
+    background: color-mix(in srgb, #f59e0b 1.5%, transparent);
+    border-left: 0.12rem solid color-mix(in srgb, #f59e0b 22%, transparent);
+}
+
+.md-nav--secondary .md-nav__item:has(> .md-nav__link[href*="#unstable-function-"]:hover),
+.md-nav--secondary .md-nav__item:has(> .md-nav__link[href*="#unstable-data-"]:hover),
+.md-nav--secondary .md-nav__item:has(> .md-nav__link[href*="#unstable-type-"]:hover) {
+    background: color-mix(in srgb, #f59e0b 3%, transparent);
+}
+
 .md-typeset .highlight code .k,
 .md-typeset .highlight code .kr {
     color: color-mix(in srgb, var(--md-code-hl-keyword-color) 88%, var(--md-code-fg-color));

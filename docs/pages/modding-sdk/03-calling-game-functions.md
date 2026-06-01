@@ -22,7 +22,7 @@ Check `Call()` when a missing function should disable related behavior, show a w
 
 ```c
 BOOL played = FALSE;
-if (!DTTR_ResultOk(DTTR_PCDOGS_F_MoviePlayFile->Call(
+if (!DTTR_ResultOK(DTTR_PCDOGS_F_MoviePlayFile->Call(
         &ctx->runtime,
         movie_path,
         0,

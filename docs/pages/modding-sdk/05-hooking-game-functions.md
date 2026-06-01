@@ -56,7 +56,7 @@ DTTR_MODS_INIT {
         &patches,
         &report
     );
-    return DTTR_ResultOk(result);
+    return DTTR_ResultOK(result);
 }
 
 DTTR_MODS_CLEANUP {

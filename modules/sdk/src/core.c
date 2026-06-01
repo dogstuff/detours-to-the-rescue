@@ -67,11 +67,11 @@ const char *DTTR_StatusName(DTTR_Status status) {
 	}
 }
 
-bool DTTR_StatusOk(DTTR_Status status) { return status == DTTR_OK; }
+bool DTTR_StatusOK(DTTR_Status status) { return status == DTTR_OK; }
 
-bool DTTR_StatusFailed(DTTR_Status status) { return !DTTR_StatusOk(status); }
+bool DTTR_StatusFailed(DTTR_Status status) { return !DTTR_StatusOK(status); }
 
-bool DTTR_ResultOk(DTTR_Result result) { return DTTR_StatusOk(result.status); }
+bool DTTR_ResultOK(DTTR_Result result) { return DTTR_StatusOK(result.status); }
 
 static bool runtime_context_valid(const DTTR_Core_Context *ctx) {
 	return ctx && ctx->game_module && ctx->api;
@@ -213,7 +213,7 @@ static DTTR_Result aob_scan_with(
 	char *mask = NULL;
 	DTTR_Result parsed = parse_aob(aob, &sig, &mask);
 
-	if (!DTTR_ResultOk(parsed)) {
+	if (!DTTR_ResultOK(parsed)) {
 		return parsed;
 	}
 
@@ -387,7 +387,7 @@ DTTR_Result DTTR_Core_HookAOB(
 	uintptr_t match = 0;
 	DTTR_Result found = DTTR_Core_AOBFind(ctx, aob, &match);
 
-	if (!DTTR_ResultOk(found)) {
+	if (!DTTR_ResultOK(found)) {
 		if (out_hook) {
 			*out_hook = NULL;
 		}
@@ -455,7 +455,7 @@ DTTR_Result DTTR_Core_PatchAOBRel32Jump(
 	uintptr_t match = 0;
 	DTTR_Result found = DTTR_Core_AOBFind(ctx, aob, &match);
 
-	if (!DTTR_ResultOk(found)) {
+	if (!DTTR_ResultOK(found)) {
 		return found;
 	}
 
@@ -645,7 +645,7 @@ DTTR_Result DTTR_Core_PatchGroupDestroy(DTTR_Core_PatchGroup *group) {
 	}
 
 	DTTR_Result result = DTTR_Core_PatchGroupUninstall(group);
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		return result;
 	}
 
@@ -660,7 +660,7 @@ DTTR_Result DTTR_Core_PatchGroupRelease(DTTR_Core_PatchGroup **group) {
 	}
 
 	DTTR_Result result = DTTR_Core_PatchGroupDestroy(*group);
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		return result;
 	}
 
@@ -702,14 +702,14 @@ DTTR_Result DTTR_Core_PatchGroupPatchBytes(
 
 	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_ResultOk(reserved)) {
+	if (!DTTR_ResultOK(reserved)) {
 		return reserved;
 	}
 
 	DTTR_Core_Patch *patch = NULL;
 	DTTR_Result result = DTTR_Core_PatchBytes(&group->ctx, address, bytes, size, &patch);
 
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		return result;
 	}
 
@@ -730,7 +730,7 @@ DTTR_Result DTTR_Core_PatchGroupHookFunction(
 
 	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_ResultOk(reserved)) {
+	if (!DTTR_ResultOK(reserved)) {
 		return reserved;
 	}
 
@@ -744,7 +744,7 @@ DTTR_Result DTTR_Core_PatchGroupHookFunction(
 		&hook
 	);
 
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		return result;
 	}
 
@@ -764,7 +764,7 @@ DTTR_Result DTTR_Core_PatchGroupHookPointer(
 
 	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_ResultOk(reserved)) {
+	if (!DTTR_ResultOK(reserved)) {
 		return reserved;
 	}
 
@@ -777,7 +777,7 @@ DTTR_Result DTTR_Core_PatchGroupHookPointer(
 		&hook
 	);
 
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		return result;
 	}
 
@@ -796,14 +796,14 @@ DTTR_Result DTTR_Core_PatchGroupPatchRel32Jump(
 
 	DTTR_Result reserved = patch_group_prepare_install(group);
 
-	if (!DTTR_ResultOk(reserved)) {
+	if (!DTTR_ResultOK(reserved)) {
 		return reserved;
 	}
 
 	DTTR_Core_Patch *patch = NULL;
 	DTTR_Result result = DTTR_Core_PatchRel32Jump(&group->ctx, address, detour, &patch);
 
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		return result;
 	}
 
@@ -849,9 +849,9 @@ DTTR_Result DTTR_Core_PatchGroupInstallTargets(
 
 		DTTR_Result reserved = patch_group_reserve(group);
 
-		if (!DTTR_ResultOk(reserved)) {
+		if (!DTTR_ResultOK(reserved)) {
 			DTTR_Result rollback = patch_group_uninstall_from(group, keep_count);
-			if (!DTTR_ResultOk(rollback)) {
+			if (!DTTR_ResultOK(rollback)) {
 				report_fail(out_report, i, rollback);
 				return rollback;
 			}
@@ -863,7 +863,7 @@ DTTR_Result DTTR_Core_PatchGroupInstallTargets(
 		DTTR_Core_Hook *handle = NULL;
 		DTTR_Result result = install_one_target(&group->ctx, &targets[i], &handle);
 
-		if (!DTTR_ResultOk(result)) {
+		if (!DTTR_ResultOK(result)) {
 			if (!targets[i].required && result.status == DTTR_ERR_NOT_FOUND) {
 				if (out_report) {
 					out_report->skipped_optional++;
@@ -873,7 +873,7 @@ DTTR_Result DTTR_Core_PatchGroupInstallTargets(
 			}
 
 			DTTR_Result rollback = patch_group_uninstall_from(group, keep_count);
-			if (!DTTR_ResultOk(rollback)) {
+			if (!DTTR_ResultOK(rollback)) {
 				report_fail(out_report, i, rollback);
 				return rollback;
 			}
@@ -940,7 +940,7 @@ static DTTR_Result target_address(
 	uintptr_t match = 0;
 	DTTR_Result found = DTTR_Core_AOBFind(ctx, target->aob, &match);
 
-	if (!DTTR_ResultOk(found)) {
+	if (!DTTR_ResultOK(found)) {
 		return found;
 	}
 
@@ -958,7 +958,7 @@ static DTTR_Result install_one_target(
 	uintptr_t address = 0;
 	DTTR_Result address_result = target_address(ctx, target, &address);
 
-	if (!DTTR_ResultOk(address_result)) {
+	if (!DTTR_ResultOK(address_result)) {
 		return address_result;
 	}
 

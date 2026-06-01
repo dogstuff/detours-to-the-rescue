@@ -47,7 +47,7 @@ const char *DTTR_StatusName(DTTR_Status status);
 /// Report whether an SDK status represents success.
 /// @param status Status value returned by an SDK operation.
 /// @return `true` when `status` is `DTTR_OK`.
-bool DTTR_StatusOk(DTTR_Status status);
+bool DTTR_StatusOK(DTTR_Status status);
 
 /// Report whether an SDK status represents failure.
 /// @param status Status value returned by an SDK operation.
@@ -57,7 +57,7 @@ bool DTTR_StatusFailed(DTTR_Status status);
 /// Report whether an SDK result represents success.
 /// @param result Result object returned by an SDK operation.
 /// @return `true` when `result.status` is `DTTR_OK`.
-bool DTTR_ResultOk(DTTR_Result result);
+bool DTTR_ResultOK(DTTR_Result result);
 
 #ifdef __cplusplus
 }

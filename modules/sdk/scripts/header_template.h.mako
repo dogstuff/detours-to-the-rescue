@@ -439,7 +439,7 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 #ifdef DTTR_PCDOGS_IMPLEMENTATION
 
 % if hidden_functions:
-// Internal resolver-only function identifiers.
+// Internal implementation-only function identifiers.
 enum {
 % for row in hidden_functions:
 	DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id} = ${row.index},
@@ -1221,7 +1221,7 @@ static DTTR_Result dttr_pcdogs_${row.name}_Call ${row.try_params} {
 	}
 % endif
 	DTTR_Result call_result = dttr_pcdogs_${row.name}_Status(ctx);
-	if (!DTTR_ResultOk(call_result)) {
+	if (!DTTR_ResultOK(call_result)) {
 		return call_result;
 	}
 % if row.ret == "void":
@@ -1347,7 +1347,7 @@ static DTTR_Result dttr_pcdogs_${row.name.lower()}_Read(${c_data_read_param(row.
 		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
 	}
 	DTTR_Result access_result = dttr_pcdogs_${row.name.lower()}_Status();
-	if (!DTTR_ResultOk(access_result)) {
+	if (!DTTR_ResultOK(access_result)) {
 		return access_result;
 	}
 	if (!dttr_pcdogs_region_has(
@@ -1365,7 +1365,7 @@ static DTTR_Result dttr_pcdogs_${row.name.lower()}_Read(${c_data_read_param(row.
 
 static DTTR_Result dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_param(row.typed.type, 'value')}) {
 	DTTR_Result access_result = dttr_pcdogs_${row.name.lower()}_Status();
-	if (!DTTR_ResultOk(access_result)) {
+	if (!DTTR_ResultOK(access_result)) {
 		return access_result;
 	}
 % if is_c_array_type(row.typed.type):

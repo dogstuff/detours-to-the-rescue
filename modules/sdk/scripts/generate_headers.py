@@ -2116,12 +2116,6 @@ def split_row_unstable_rows(
     unstable_global_names = _row_names(unstable_globals)
     stable_function_names = _row_names(stable_functions)
     stable_global_names = _row_names(stable_globals)
-    unstable_resolver_function_names = {
-        row.function
-        for row in blueprint.xrefs
-        if row.global_name in unstable_global_names
-    }
-
     stable = replace(
         blueprint,
         signatures=stable_signatures,
@@ -2136,25 +2130,29 @@ def split_row_unstable_rows(
         structs=stable_structs,
     )
 
-    unstable_output_function_names = (
-        unstable_function_names | unstable_resolver_function_names
-    )
-    resolver_functions = [
-        replace(row, public=False)
+    unstable_symbol_function_names = unstable_function_names | {
+        row.function
+        for row in blueprint.xrefs
+        if row.global_name in unstable_global_names
+    }
+
+    xref_support_functions = [
+        replace(row, public=False, unstable=True)
         for row in stable_functions
-        if row.name in unstable_resolver_function_names
+        if row.name in unstable_symbol_function_names
         and row.name not in unstable_function_names
     ]
+
     promoted = replace(
         blueprint,
         signatures=unstable_signatures,
-        functions=[*unstable_functions, *resolver_functions],
+        functions=[*unstable_functions, *xref_support_functions],
         function_xrefs=_function_xrefs_for_surface(
-            blueprint.function_xrefs, unstable_output_function_names
+            blueprint.function_xrefs, unstable_symbol_function_names
         ),
         globals=unstable_globals,
         xrefs=_xrefs_for_surface(
-            blueprint.xrefs, unstable_global_names, unstable_output_function_names
+            blueprint.xrefs, unstable_global_names, unstable_symbol_function_names
         ),
         structs=unstable_structs,
         external_structs=[],
@@ -2185,11 +2183,11 @@ def validate_split_blueprints(stable: BlueprintRows, unstable: BlueprintRows) ->
 
     for row in unstable.globals:
         if row.typed and row.name not in unstable_data_xrefs:
-            raise ValueError(f"unstable typed global has no resolver xref: {row.name}")
+            raise ValueError(f"unstable typed global has no data xref: {row.name}")
 
         if row.typed and row.typed.ref_function not in unstable_function_names:
             raise ValueError(
-                f"unstable typed global resolver missing from output: {row.name}"
+                f"unstable typed global xref function missing from output: {row.name}"
             )
 
 

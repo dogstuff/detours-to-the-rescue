@@ -46,7 +46,7 @@ DTTR_MODS_INIT {
         &patches,
         &report
     );
-    if (!DTTR_ResultOk(result)) {
+    if (!DTTR_ResultOK(result)) {
         DTTR_MODS_LOG_ERROR(ctx, "patch install failed: %s", result.message);
         return false;
     }

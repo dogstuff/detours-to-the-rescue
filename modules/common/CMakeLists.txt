@@ -33,6 +33,7 @@ target_link_libraries(common
         glad
         klib
         physfs-static
+        Zydis
         yyjson
 )
 target_compile_definitions(common PRIVATE

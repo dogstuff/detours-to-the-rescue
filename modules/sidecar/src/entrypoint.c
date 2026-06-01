@@ -475,7 +475,7 @@ static void cleanup_runtime(const DTTR_Mods_Context *ctx) {
 }
 
 static bool require_pcdogs_call(const char *name, DTTR_Result result) {
-	if (!DTTR_ResultOk(result)) {
+	if (!DTTR_ResultOK(result)) {
 		DTTR_LOG_ERROR(
 			"Required PCDOGS startup call failed: %s (%s)",
 			name,

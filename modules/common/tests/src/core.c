@@ -79,7 +79,6 @@ static void assert_config_rejected(const char *path, const char *contents) {
 }
 
 static void config_load_save_round_trips_show_crash_popup(void **state) {
-	(void)state;
 	const char *path = "dttr-test-crash-popup-roundtrip.json";
 
 	write_text_file(path, "{\"schema_major_version\":1}\n");
@@ -97,7 +96,6 @@ static void config_load_save_round_trips_show_crash_popup(void **state) {
 }
 
 static void crash_report_message_includes_stack_trace(void **state) {
-	(void)state;
 	const char *summary = "Exception 0xDEADBEEF\n\nDump written to:\ndttr.dmp";
 	const char *stack_trace = "\n\nStack trace:\n  game!crash+0x1";
 

@@ -20,7 +20,7 @@ static inline DTTR_PCDOGS_T_Actor_State *DTTR_Util_GetActiveActor(
 	const DTTR_Core_Context *ctx
 ) {
 	DTTR_PCDOGS_T_Actor_State *actor = NULL;
-	return DTTR_ResultOk(DTTR_PCDOGS_F_EntityGetActiveActorFromList->Call(ctx, &actor))
+	return DTTR_ResultOK(DTTR_PCDOGS_F_EntityGetActiveActorFromList->Call(ctx, &actor))
 			   ? actor
 			   : NULL;
 }

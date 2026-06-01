@@ -69,7 +69,7 @@ static bool default_load_entry(
 	}
 
 	void *loaded = NULL;
-	if (!DTTR_ResultOk(DTTR_PCDOGS_F_PKGLoadEntry->Call(ctx, toc_index, NULL, &loaded))
+	if (!DTTR_ResultOK(DTTR_PCDOGS_F_PKGLoadEntry->Call(ctx, toc_index, NULL, &loaded))
 		|| !loaded) {
 		if (out_status) {
 			*out_status = DTTR_UTIL_PKG_STATUS_LOAD_FAILED;
@@ -131,7 +131,7 @@ static bool resolve_toc(
 		DTTR_PCDOGS_DATA_PKG_TOC,
 		&toc_addr
 	);
-	if (!DTTR_ResultOk(resolved) || !toc_addr) {
+	if (!DTTR_ResultOK(resolved) || !toc_addr) {
 		return false;
 	}
 

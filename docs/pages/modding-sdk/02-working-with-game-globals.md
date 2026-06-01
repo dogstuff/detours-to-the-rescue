@@ -13,7 +13,7 @@ static int32_t last_lives;
 
 DTTR_MODS_FRAME_BEGIN {
     int32_t lives = 0;
-    if (DTTR_ResultOk(DTTR_PCDOGS_D_SaveFilePlayerLives->Read(&lives))) {
+    if (DTTR_ResultOK(DTTR_PCDOGS_D_SaveFilePlayerLives->Read(&lives))) {
         last_lives = lives;
     }
 }

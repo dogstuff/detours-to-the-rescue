@@ -235,11 +235,6 @@ ${render_entry(item).lstrip()}
 
 ${entry_list(functions, function_entry)}
 % endif
-% if resolver_functions:
-<%text>## Resolver-Only Functions { .pcdogs-section-heading }</%text>
-
-${entry_list(resolver_functions, function_entry)}
-% endif
 % if globals:
 <%text>## Data { .pcdogs-section-heading }</%text>
 

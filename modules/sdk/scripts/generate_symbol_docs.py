@@ -406,8 +406,6 @@ def function_call_example(
     fn: object, c_type_fn: Callable[[object], str], api: str
 ) -> str:
     typed = fn.typed
-    if not fn.public:
-        return "// Resolver-only symbol; no public SDK function helper is generated."
     if not typed:
         return "// No typed SDK call example is available yet."
     if not fn.callable:
@@ -432,8 +430,6 @@ def function_call_example(
 def function_patch_spec_example(
     fn: object, c_type_fn: Callable[[object], str], api: str
 ) -> str:
-    if not fn.public:
-        return "// Resolver-only symbol; no public SDK patch spec helper is generated."
     if not fn.typed:
         return "// No typed SDK patch spec example is available yet."
     if str(fn.hook.kind) != "rel32":
@@ -464,23 +460,16 @@ def function_cards(
     functions: list[object],
     c_type_fn: Callable[[object], str],
     *,
-    public_only: bool,
     unstable: bool,
 ) -> list[FunctionCard]:
-    source = (
-        public_function_rows(functions)
-        if public_only
-        else [fn for fn in functions if not fn.public]
-    )
     cards = []
 
-    for fn in source:
+    for fn in functions:
+        if not fn.public:
+            continue
+
         public = c_pascal_token(fn.name)
-        api = (
-            f"DTTR_PCDOGS_F_{public}"
-            if fn.public
-            else f"DTTR_PCDOGS_SYMBOL_FUNCTION_ID_{fn.symbol_id}"
-        )
+        api = f"DTTR_PCDOGS_F_{public}"
         cards.append(
             FunctionCard(
                 name=str(fn.name),
@@ -955,7 +944,7 @@ def xref_related_values(card: FunctionCard | GlobalCard, kind: str) -> list[str]
 
 
 def attach_xrefs(cards: SurfaceCards) -> None:
-    functions = [*cards.functions, *cards.resolver_functions]
+    functions = cards.functions
     function_by_name = {card.name: card for card in functions}
     global_by_name = {card.name: card for card in cards.globals}
 
@@ -1027,7 +1016,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
 
 
 def attach_related(cards: SurfaceCards) -> None:
-    functions = [*cards.functions, *cards.resolver_functions]
+    functions = cards.functions
     globals_ = cards.globals
     types = cards.types
     type_refs = {
@@ -1156,7 +1145,6 @@ def build_categories(cards: SurfaceCards) -> list[Category]:
     categories: dict[str, Category] = {}
 
     add_by_category(categories, "functions", cards.functions)
-    add_by_category(categories, "resolver_functions", cards.resolver_functions)
     add_by_category(categories, "globals", cards.globals)
     add_by_category(categories, "types", cards.types)
     add_by_category(categories, "signatures", cards.signatures)
@@ -1181,22 +1169,14 @@ def surface_cards(
     functions = function_cards(
         blueprint.functions,
         c_type_fn,
-        public_only=True,
-        unstable=unstable,
-    )
-    resolver_functions = function_cards(
-        blueprint.functions,
-        c_type_fn,
-        public_only=False,
         unstable=unstable,
     )
 
-    domain_slugs = {fn.category for fn in [*functions, *resolver_functions]}
+    domain_slugs = {fn.category for fn in functions}
     domain_slugs.add("misc")
 
     return SurfaceCards(
         functions=functions,
-        resolver_functions=resolver_functions,
         globals=global_cards(
             blueprint.globals,
             c_type_fn,
@@ -1229,7 +1209,6 @@ def surface_cards(
 def merge_surfaces(stable: SurfaceCards, unstable: SurfaceCards) -> SurfaceCards:
     return SurfaceCards(
         functions=[*stable.functions, *unstable.functions],
-        resolver_functions=[*stable.resolver_functions, *unstable.resolver_functions],
         globals=[*stable.globals, *unstable.globals],
         types=[*stable.types, *unstable.types],
         signatures=[*stable.signatures, *unstable.signatures],
@@ -1263,7 +1242,6 @@ def render_outputs(categories: list[Category]) -> dict[str, str]:
             category_template.render_unicode(
                 category=category,
                 functions=category.functions,
-                resolver_functions=category.resolver_functions,
                 globals=category.globals,
                 types=category.types,
                 signatures=category.signatures,
