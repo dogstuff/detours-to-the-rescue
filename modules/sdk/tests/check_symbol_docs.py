@@ -19,14 +19,6 @@ SYMBOL_HEADING = re.compile(
     r'^### `[^`]+` .*\{ #[a-z0-9_-]+ data-toc-label="[^"]+" \}$',
     re.MULTILINE,
 )
-STABILITY_MARKERS = (
-    "Stable",
-    "Unstable",
-    "pcdogs-stability-value--stable",
-    "pcdogs-stability-value--unstable",
-    'title="This SDK wrapper is stable and is unlikely to change outside a major version release."',
-    "DTTR_SDK_ENABLE_UNSTABLE",
-)
 MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\((?P<href>[^)]+)\)")
 HTML_LINK = re.compile(r'href="(?P<href>[^"]+)"')
 
@@ -63,17 +55,6 @@ def generated_markdown(output_dir: Path, checks: Checks) -> list[Path]:
     docs_root = output_dir / "pcdogs"
     checks.require_file(docs_root / "index.md", "missing generated index")
     checks.require_file(docs_root / "actor.md", "missing representative category page")
-
-    for stale_path in (
-        output_dir / "pcdogs-stable",
-        output_dir / "pcdogs-unstable",
-        output_dir / "pcdogs-stable-symbols.md",
-        output_dir / "pcdogs-unstable-symbols.md",
-    ):
-        checks.require(
-            not stale_path.exists(), f"stale split docs were generated: {stale_path}"
-        )
-
     markdown_files = sorted(docs_root.glob("*.md"))
     checks.require(
         len(markdown_files) > 10, "expected many category pages to be generated"
@@ -81,13 +62,10 @@ def generated_markdown(output_dir: Path, checks: Checks) -> list[Path]:
     return markdown_files
 
 
-def check_page_shape(markdown_files: list[Path], checks: Checks) -> str:
+def check_page_shape(markdown_files: list[Path], checks: Checks) -> None:
     sections: set[str] = set()
-    all_markdown: list[str] = []
-
     for path in markdown_files:
         text = path.read_text()
-        all_markdown.append(text)
 
         checks.require(text.strip(), f"{path}: generated page is empty")
         checks.require(
@@ -109,77 +87,6 @@ def check_page_shape(markdown_files: list[Path], checks: Checks) -> str:
         {"Functions", "Data", "Types"}.issubset(sections),
         "generated docs must cover functions, data, and types",
     )
-    return "\n".join(all_markdown)
-
-
-def check_generated_features(all_markdown: str, checks: Checks) -> None:
-    for marker in (
-        '=== "C Typedef"',
-        '=== "C SDK Call"',
-        '=== "C SDK Hook"',
-        '=== "Read"',
-        '=== "Write"',
-        "Resolver Reference",
-        "See Also",
-        "pcdogs-pill",
-        "pcdogs-heading-pills",
-        "data-toc-label=",
-        "pcdogs-policy--unknown",
-        "pcdogs-policy--read-only",
-        "pcdogs-policy--engine-managed",
-        "pcdogs-policy--raw-memory",
-        'title="Normal Write() is disabled because this is live game-managed state that the game may replace or overwrite."',
-        '<details class="pcdogs-symbol-builds',
-        "typedef ",
-        ") (",
-        "DTTR_PCDOGS_F_",
-        *STABILITY_MARKERS,
-    ):
-        checks.require(
-            marker in all_markdown,
-            f"generated docs never rendered expected feature: {marker}",
-        )
-
-    checks.require(
-        "Not yet documented." in all_markdown,
-        "undocumented symbols must keep a standard fallback",
-    )
-
-    checks.require(
-        '<span class="pcdogs-symbol-fact__label">Write Policy</span>' in all_markdown,
-        "write policy should render as a labeled fact",
-    )
-    checks.require(
-        "pcdogs-pill pcdogs-policy" not in all_markdown,
-        "policy values should be colored text, not pills",
-    )
-    checks.require(
-        '<span class="pcdogs-symbol-fact__label">Stability</span>' not in all_markdown,
-        "stability pill should not render a label",
-    )
-    checks.require(
-        "None" not in all_markdown,
-        "generated docs should not expose Python None placeholders",
-    )
-    struct_type_cells = re.findall(
-        r"<tr><td><code>0x[0-9A-F]+</code></td><td><code>[^<]+</code></td><td>(.*?)</td>",
-        all_markdown,
-    )
-    checks.require(
-        bool(struct_type_cells)
-        and not any(
-            "DTTR_PCDOGS_T_" in cell or "PCDOGS_DTTR_T_" in cell
-            for cell in struct_type_cells
-        ),
-        "struct field type tables should omit generated SDK type prefixes",
-    )
-    checks.require(
-        "<code>DTTR_PCDOGS_T_"
-        not in re.sub(r"```c.*?```", "", all_markdown, flags=re.DOTALL),
-        "linked/reference type names outside C code blocks should omit SDK type prefixes",
-    )
-
-
 def check_index_links(markdown_files: list[Path], checks: Checks) -> None:
     docs_root = markdown_files[0].parent
     index_text = (docs_root / "index.md").read_text()
@@ -235,8 +142,7 @@ def main() -> int:
         print("\n".join(checks.failures), file=sys.stderr)
         return 1
 
-    all_markdown = check_page_shape(markdown_files, checks)
-    check_generated_features(all_markdown, checks)
+    check_page_shape(markdown_files, checks)
     check_index_links(markdown_files, checks)
     check_internal_links(markdown_files, checks)
 

@@ -63,29 +63,6 @@ BUILD_NAMES = (
     ("SC", 0b100),
 )
 
-PREFIX_DISPLAY = {
-    "bonetrail": "BoneTrail",
-    "crt": "CRT",
-    "d3d": "Direct3D",
-    "ddraw": "DirectDraw",
-    "demoreplay": "DemoReplay",
-    "dinput": "DirectInput",
-    "directx": "DirectX",
-    "gamestate": "GameState",
-    "joystate": "JoyState",
-    "minigame": "MiniGame",
-    "pkg": "Package",
-    "savegame": "SaveGame",
-    "scenenode": "SceneNode",
-    "scriptcmd": "ScriptCmd",
-    "scriptop": "ScriptOp",
-    "titlescreen": "TitleScreen",
-    "treemap": "TreeMap",
-    "win32": "Win32",
-    "winmain": "Misc",
-}
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate Markdown reference pages from PCDOGS SDK blueprints.",
@@ -218,14 +195,15 @@ def category_prefix(name: object) -> str:
     text = str(name).strip()
     if "_" not in text:
         return "misc"
-    return text.split("_", 1)[0].lower()
+    return text.split("_", 1)[0]
 
 
 def category_display(name: object) -> str:
     prefix = category_prefix(name)
-    if prefix in PREFIX_DISPLAY:
-        return PREFIX_DISPLAY[prefix]
-    return prefix[:1].upper() + prefix[1:]
+    if prefix.islower():
+        return prefix[:1].upper() + prefix[1:]
+        
+    return prefix
 
 
 def category_slug(name: object) -> str:
@@ -1218,7 +1196,6 @@ def surface_cards(
     )
 
     domain_slugs = {fn.category for fn in [*functions, *resolver_functions]}
-    domain_slugs.update(slug(display) for display in PREFIX_DISPLAY.values())
     domain_slugs.add("misc")
 
     return SurfaceCards(

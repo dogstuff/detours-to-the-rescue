@@ -447,7 +447,7 @@ stable.struct(
         "flags",
         0x4,
         doc=(
-            "Audio definition flags. ScriptCmd_PlaySoundBlockOrWait mutates bit 0x40 as "
+            "Audio definition flags. Script_PlaySoundBlockOrWait mutates bit 0x40 as "
             "a script_playback_active_or_wait_latch around direct playback."
         ),
     ),
@@ -3689,7 +3689,7 @@ stable.struct(
     ),
     size=0xB4,
     doc=(
-        "Script opcode dispatch table reached from ScriptCmd_WithActor at pcdogs.exe+0x51988 (PC EN). "
+        "Script opcode dispatch table reached from Script_WithActor at pcdogs.exe+0x51988 (PC EN). "
         "Table shape is stable; individual handler slots dispatch native script opcodes."
     ),
 )
@@ -3808,7 +3808,7 @@ stable.callback_type(
     params=[param("Actor_State*", "actor"), param("uint8_t**", "ip")],
     calling=CallingConvention.CDECL,
     doc=(
-        "ScriptCmd_WithActor uses this callback type for opcode handlers in the native script dispatch table."
+        "Script_WithActor uses this callback type for opcode handlers in the native script dispatch table."
     ),
 )
 
@@ -4203,7 +4203,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Navigation_AddCommand",
+    "Nav_AddCommand",
     "8B 0D ?? ?? ?? ?? 8B 54 24 04 81",
     hook=0x6,
     ret="void*",
@@ -4218,7 +4218,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Navigation_HandleDamageResponse",
+    "Nav_HandleDamageResponse",
     "53 8B 5C 24 0C 55 56 57 53 E8 ??",
     ret="int32_t",
     params=[
@@ -5512,7 +5512,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_SetEntityIndex",
+    "Script_SetEntityIndex",
     "8B 44 24 08 8B 08 41 89 08 8B C1 8B 4C 24 04 8A 40 ?? 88 81 ?? ?? ?? ?? C3",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "script_cursor_inout")],
@@ -5523,7 +5523,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_ConditionalJump",
+    "Script_ConditionalJump",
     "51 8B 4C 24 0C 33 D2 8B 01 83 C0 02 89 01 8A 70 ?? 8A 50 ?? 03 D0 40 89 01",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "script_cursor_inout")],
@@ -5612,7 +5612,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_IndirectCall",
+    "Script_IndirectCall",
     "8B 44 24 08 50 8B 10 42 89 10 8B 44 24 08 8B CA 33 D2 50 8A 51 FF FF 14 95 ?? ?? ?? ??",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -5645,7 +5645,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_RotateActor",
+    "Script_RotateActor",
     "83 C0 02 89 06 8B E9 ??",
     match=-0x1D,
     hook=0x7,
@@ -5663,7 +5663,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_WaitForAnimation",
+    "Script_WaitForAnimation",
     "83 C0 02 89 06 8B 3D ??",
     match=-0x1D,
     hook=0x7,
@@ -5689,7 +5689,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_PathfindToEntity",
+    "Script_PathfindToEntity",
     "3D FF 7F 74 ?? 8B 35 ??",
     match=-0x2A,
     hook=0x7,
@@ -5712,7 +5712,7 @@ stable.fn(
     match=-0x13,
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
-    doc="Parses one navigation opcode from *ip and forwards it into the actor navigation queue. Opcode 0x67 derives the target entity slot from the current actor entry in current_level_data->entity_array before calling Navigation_AddCommand.",
+    doc="Parses one navigation opcode from *ip and forwards it into the actor navigation queue. Opcode 0x67 derives the target entity slot from the current actor entry in current_level_data->entity_array before calling Nav_AddCommand.",
 )
 
 stable.fn(
@@ -5732,7 +5732,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_PlaySoundIndex",
+    "Script_PlaySoundIndex",
     "?? 83 C4 08 85 C0 7C ?? 8B 15 ?? ?? ?? ?? 8B",
     match=-0x46,
     ret="void",
@@ -5761,7 +5761,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_WithActor",
+    "Script_WithActor",
     "83 C0 02 89 06 8B 1D ??",
     match=-0x21,
     hook=0x7,
@@ -5825,7 +5825,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_PlaySoundBlockOrWait",
+    "Script_PlaySoundBlockOrWait",
     "03 D8 40 89 06 8B 3D ??",
     match=-0x1B,
     hook=0x7,
@@ -9883,7 +9883,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Navigation_CalculatePolygonCenter",
+    "Nav_CalculatePolygonCenter",
     "57 F6 40 10 01 0F 84 ??",
     match=-0xB,
     hook=0x6,
@@ -9897,7 +9897,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Navigation_ProcessPathNode",
+    "Nav_ProcessPathNode",
     "54 C1 0E 85 D2 0F 84 ??",
     match=-0x1D,
     hook=0x6,
@@ -11673,7 +11673,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_AnimateRotation",
+    "Script_AnimateRotation",
     "83 EC ?? 53 55 56 57 8B 7C 24 ?? 33 C9 33 DB 8B 2F 83 C5 ?? 8B C5 89 2F",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -11681,7 +11681,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_AnimateZoom",
+    "Script_AnimateZoom",
     "33 D2 8A 50 FF 8B E9 ??",
     match=-0x7D,
     ret="void",
@@ -11689,7 +11689,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_ProcessSpriteRotation",
+    "Script_ProcessSpriteRotation",
     "55 8B EC 83 EC ?? 53 56 57 8B 7D ?? 33 C9 33 DB 8B 37 83 C6 ?? 8B C6 89 37",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -11697,7 +11697,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_AnimateTarget",
+    "Script_AnimateTarget",
     "14 52 8D 04 50 8B 15 ??",
     match=-0x98,
     hook=0x7,
@@ -11706,7 +11706,7 @@ stable.fn(
 )
 
 stable.fn(
-    "ScriptCmd_SetCameraProperty",
+    "Script_SetCameraProperty",
     "0C 49 8D 04 48 8B 0D ??",
     match=-0x47,
     ret="void",
@@ -12936,7 +12936,7 @@ stable.data(
 
 # Function promoted with the data rows that use it as an xref resolver.
 stable.fn(
-    "ScriptCmd_ConditionalBranch",
+    "Script_ConditionalBranch",
     "0B DA 80 F9 06 0F 84 ??",
     match=-0x68,
     ret="void",
@@ -13114,15 +13114,15 @@ stable.data(
 )
 stable.data(
     "script_branch_arithmetic_op_table",
-    xref("ScriptCmd_ConditionalBranch", 0x10B, 0x3),
+    xref("Script_ConditionalBranch", 0x10B, 0x3),
     type="uint32_t",
-    doc="Four-entry uint32_t jump table used by ScriptCmd_ConditionalBranch for arithmetic/combine opcodes before comparison.",
+    doc="Four-entry uint32_t jump table used by Script_ConditionalBranch for arithmetic/combine opcodes before comparison.",
 )
 stable.data(
     "script_branch_comparison_op_table",
-    xref("ScriptCmd_ConditionalBranch", 0x187, 0x3),
+    xref("Script_ConditionalBranch", 0x187, 0x3),
     type="uint32_t",
-    doc="Six-entry uint32_t jump table used by ScriptCmd_ConditionalBranch for comparison opcodes.",
+    doc="Six-entry uint32_t jump table used by Script_ConditionalBranch for comparison opcodes.",
 )
 stable.data(
     "script_set_variable_op_jump_table",
@@ -13746,10 +13746,10 @@ stable.data("pcdogs_pkg", xref("PKG_FindAndOpenFile", 0x45, 0x1))
 stable.data("random_seed", xref("Math_GenerateRandom", 0x0, 0x2))
 stable.data(
     "script_command_table",
-    xref("ScriptCmd_WithActor", 0xAE, 0x3),
+    xref("Script_WithActor", 0xAE, 0x3),
     type="Script_OpcodeTable",
     doc=(
-        "45-entry script opcode handler table resolved through ScriptCmd_WithActor. "
+        "45-entry script opcode handler table resolved through Script_WithActor. "
         "Table identity is cross-tool corroborated; per-opcode semantics still require "
         "case-by-case audit before naming individual handlers."
     ),
