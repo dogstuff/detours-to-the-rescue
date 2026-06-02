@@ -33,7 +33,7 @@ static void *original_level_data;
 DTTR_MODS_INIT {
     DTTR_PCDOGS_T_Patch_Report report = {0};
     const DTTR_PCDOGS_T_Patch_Spec specs[] = {
-        DTTR_PCDOGS_D_CurrentLevelData->PatchSpec(
+        DTTR_PCDOGS_D_PKG_ResourceCurrentLevelData->PatchSpec(
             true,
             replacement_level_data,
             &original_level_data

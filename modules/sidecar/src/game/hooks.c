@@ -14,7 +14,7 @@ static const DTTR_PCDOGS_T_Patch_Spec game_patches[] = {
 	{
 		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
 		.required = true,
-		.function = DTTR_PCDOGS_FUNCTION_TITLE_SCREEN_CLEANUP_RESOURCES,
+		.function = DTTR_PCDOGS_FUNCTION_TITLE_CLEANUP_SCREEN_RESOURCES,
 		.detour = dttr_hook_cleanup_title_resources_callback,
 		.out_original = (void **)&dttr_hook_cleanup_title_resources_original,
 	},

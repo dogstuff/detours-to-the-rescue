@@ -26,7 +26,7 @@ static const DTTR_PCDOGS_T_Patch_Spec graphics_import_thunk_patches[] = {
 	{
 		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
 		.required = true,
-		.function = DTTR_PCDOGS_FUNCTION_DIRECT_X_DIRECT_DRAW_ENUMERATE_EX_A,
+		.function = DTTR_PCDOGS_FUNCTION_DDRAW_ENUMERATE_EX_A,
 		.detour = dttr_hook_directdraw_enumerate_ex_a_callback,
 		.out_original = NULL,
 	},
@@ -162,7 +162,7 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 		return E_OUTOFMEMORY;
 	}
 
-	DTTR_PCDOGS_D_DDrawObject->Write((DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7);
+	DTTR_PCDOGS_D_DDraw_Object->Write((DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7);
 
 	if (ddraw_out) {
 		store_pointer(ddraw_out, ddraw7);

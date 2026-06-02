@@ -28,7 +28,8 @@ from generate_headers import (  # noqa: E402
     SymbolDocKind,
     TypeRowKind,
     build_mask_bits,
-    c_pascal_token,
+    c_array_type_parts,
+    c_public_token,
     data_write_policy,
     header_context,
     load_blueprint,
@@ -237,7 +238,8 @@ def function_prototype(fn: object, c_type_fn: Callable[[object], str]) -> str:
 
     cc = CC_KEYWORD[str(typed.abi)]
     ret = c_type_fn(typed.return_type)
-    typedef_name = f"DTTR_PCDOGS_F_{c_pascal_token(fn.name)}_proto"
+    typedef_name = f"DTTR_PCDOGS_F_{c_public_token(fn.name)}_proto"
+
     if not typed.params:
         return f"typedef {ret} ({cc} *{typedef_name}) (void);"
 
@@ -261,24 +263,19 @@ def function_related_type_texts(
     return texts
 
 
-def c_array_type_parts_from_text(c_type: str) -> tuple[str, str] | None:
-    match = re.match(r"^(?P<base>.+)\[(?P<count>[^\]]+)\]$", c_type.strip())
-    if match is None:
-        return None
-    return match.group("base").strip(), match.group("count").strip()
-
-
 def c_value_declaration(c_type: str, name: str, value: str) -> str:
-    parts = c_array_type_parts_from_text(c_type)
+    parts = c_array_type_parts(c_type)
+
     if parts is None:
         return f"{c_type} {name} = {value};"
+
     base, count = parts
     return f"{base} {name}[{count}] = {{0}};"
 
 
 def data_default_value(c_type: str) -> str:
     normalized = c_type.strip()
-    if c_array_type_parts_from_text(normalized) is not None:
+    if c_array_type_parts(normalized) is not None:
         return "{0}"
     if "*" in normalized:
         return f"({normalized})NULL"
@@ -303,7 +300,7 @@ def data_read_argument(c_type: str, name: str) -> str:
 
 
 def data_write_argument(c_type: str, name: str) -> str:
-    if c_array_type_parts_from_text(c_type) is not None:
+    if c_array_type_parts(c_type) is not None:
         return f"&{name}"
     return name
 
@@ -363,7 +360,7 @@ def c_detour_function(
 def function_detour_boilerplate(
     fn: object, c_type_fn: Callable[[object], str]
 ) -> tuple[str, list[str]]:
-    public = c_pascal_token(fn.name)
+    public = c_public_token(fn.name)
     typed = fn.typed
     param_decls = c_param_decls(typed.params, c_type_fn)
     arg_text = ", ".join(str(param.name) for param in typed.params)
@@ -468,7 +465,7 @@ def function_cards(
         if not fn.public:
             continue
 
-        public = c_pascal_token(fn.name)
+        public = c_public_token(fn.name)
         api = f"DTTR_PCDOGS_F_{public}"
         cards.append(
             FunctionCard(
@@ -514,7 +511,7 @@ def global_type(glob: object, c_type_fn: Callable[[object], str]) -> str:
 
 
 def global_accessor(surface_unstable: bool, glob: object) -> str:
-    public = c_pascal_token(glob.name)
+    public = c_public_token(glob.name)
     if glob.typed:
         return f"DTTR_PCDOGS_D_{public}"
     prefix = "DTTR_PCDOGS_SYMBOL_DATA_ID_" if surface_unstable else "DTTR_PCDOGS_DATA_"
@@ -695,9 +692,7 @@ def type_cards(
     for row in types:
         kind = type_row_kind(row)
         docs = row_doc(row)
-        c_name = pcdogs_type_name(
-            row.alias or row.name if kind == TypeRowKind.ENUM else row.name
-        )
+        c_name = pcdogs_type_name(row.name)
         cards.append(
             TypeCard(
                 name=str(row.name),
@@ -899,7 +894,7 @@ def type_references(
 
 
 def docs_type_label(text: object) -> str:
-    return re.sub(r"\b(?:DTTR_PCDOGS_T_|PCDOGS_DTTR_T_)", "", str(text))
+    return re.sub(r"\bDTTR_PCDOGS_T_", "", str(text))
 
 
 def linked_type_code(
@@ -1115,10 +1110,33 @@ def attach_related(cards: SurfaceCards) -> None:
         card.facts = [symbol_fact("Versions", card.builds)]
 
 
-def empty_category(display: str) -> Category:
-    category_id = slug(display)
+CATEGORY_DISPLAY_OVERRIDES = {
+    "d3d": "D3D",
+    "ddraw": "DDraw",
+    "dinput": "DInput",
+    "pkg": "PKG",
+    "ui": "UI",
+    "win32": "Win32",
+}
+
+
+def category_display_from_slug(category_id: str) -> str:
+    normalized = category_id or "misc"
+
+    if normalized in CATEGORY_DISPLAY_OVERRIDES:
+        return CATEGORY_DISPLAY_OVERRIDES[normalized]
+
+    return (
+        " ".join(part[:1].upper() + part[1:] for part in normalized.split("-"))
+        or "Misc"
+    )
+
+
+def category_from_slug(category_id: str) -> Category:
+    category_id = category_id or "misc"
+
     return Category(
-        display=display,
+        display=category_display_from_slug(category_id),
         slug=category_id,
         filename=f"{category_id}.md",
     )
@@ -1129,10 +1147,8 @@ def add_by_category(
 ) -> None:
     for item in items:
         cat_slug = str(item.category)
-        categories.setdefault(
-            cat_slug,
-            empty_category(category_display(getattr(item, "name", item.category))),
-        )
+        categories.setdefault(cat_slug, category_from_slug(cat_slug))
+
         getattr(categories[cat_slug], key).append(item)
 
 

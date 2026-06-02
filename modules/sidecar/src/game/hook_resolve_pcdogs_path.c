@@ -8,7 +8,7 @@
 
 // Writes the package base path expected by PCDogs from the loaded module path.
 uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback() {
-	char (*path_buffer)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PkgBasePath
+	char (*path_buffer)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PKG_BasePath
 																 ->Ptr();
 	if (!path_buffer) {
 		DTTR_LOG_ERROR("PCDOGS package base path was unavailable");

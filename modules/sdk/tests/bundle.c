@@ -45,18 +45,18 @@ static void runtime_storage_api_compile_check() {
 static void stable_grouped_data_compile_check() {
 	int32_t input_map[DTTR_PCDOGS_D_INPUT_BUTTON_MAP_COUNT] = {0};
 	int32_t input_map_alt[DTTR_PCDOGS_D_INPUT_BUTTON_MAP_ALT_COUNT] = {0};
-	int32_t hammerhead[DTTR_PCDOGS_D_CONTROLLER_HAMMERHEAD_BUTTONS_COUNT] = {0};
-	int32_t sidewinder[DTTR_PCDOGS_D_CONTROLLER_SIDEWINDER_BUTTONS_COUNT] = {0};
-	int32_t gravis[DTTR_PCDOGS_D_CONTROLLER_GRAVIS_BUTTONS_COUNT] = {0};
+	int32_t hammerhead[DTTR_PCDOGS_D_INPUT_CONTROLLER_HAMMERHEAD_BUTTONS_COUNT] = {0};
+	int32_t sidewinder[DTTR_PCDOGS_D_INPUT_CONTROLLER_SIDEWINDER_BUTTONS_COUNT] = {0};
+	int32_t gravis[DTTR_PCDOGS_D_INPUT_CONTROLLER_GRAVIS_BUTTONS_COUNT] = {0};
 
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_InputButtonMap, input_map);
-	DTTR_PCDOGS_D_InputButtonMap->Write(&input_map);
-	DTTR_PCDOGS_D_InputButtonMap->UnsafeWrite(&input_map);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ButtonMap, input_map);
+	DTTR_PCDOGS_D_Input_ButtonMap->Write(&input_map);
+	DTTR_PCDOGS_D_Input_ButtonMap->UnsafeWrite(&input_map);
 
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_InputButtonMapAlt, input_map_alt);
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_ControllerHammerheadButtons, hammerhead);
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_ControllerSidewinderButtons, sidewinder);
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_ControllerGravisButtons, gravis);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ButtonMapAlt, input_map_alt);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ControllerHammerheadButtons, hammerhead);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ControllerSidewinderButtons, sidewinder);
+	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ControllerGravisButtons, gravis);
 }
 
 #undef SDK_READ_GROUPED_DATA

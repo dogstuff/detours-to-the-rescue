@@ -96,7 +96,7 @@ static LONG read_axis(int axis_idx) {
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	di_joy_state *state = NULL;
-	DTTR_Result alloc_result = DTTR_PCDOGS_F_CRTMalloc->Call(
+	DTTR_Result alloc_result = DTTR_PCDOGS_F_Mem_MallocCRT->Call(
 		dttr_sidecar_runtime_context(),
 		sizeof(di_joy_state),
 		(void **)&state

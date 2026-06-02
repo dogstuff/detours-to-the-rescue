@@ -503,7 +503,7 @@ enum {
 #define DTTR_PCDOGS_DATA_ROWS(TYPED_DATA, UNTYPED_DATA, CTX) \
 % for row in globals:
 % if row.typed:
-	TYPED_DATA(CTX, ${row.name}, ${c_pascal_token(row.name)}, ${c_type(row.typed.type)}, ${'DTTR_PCDOGS_SYMBOL_DATA_ID_' if unstable else 'DTTR_PCDOGS_DATA_'}${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
+	TYPED_DATA(CTX, ${row.name}, ${c_public_token(row.name)}, ${c_type(row.typed.type)}, ${'DTTR_PCDOGS_SYMBOL_DATA_ID_' if unstable else 'DTTR_PCDOGS_DATA_'}${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
 % else:
 	UNTYPED_DATA(CTX, ${row.name})${' \\' if loop.index != len(globals) - 1 else ''}
 % endif
@@ -590,7 +590,7 @@ static DTTR_PCDOGS_T_Symbol_Function dttr_pcdogs_symbol_functions[DTTR_PCDOGS_SY
 
 static const char* const dttr_pcdogs_symbol_function_names[DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT_VALUE] = {
 % for row in functions:
-	[DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id}] = "${c_pascal_token(row.name)}",
+	[DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id}] = "${c_public_token(row.name)}",
 % endfor
 };
 
@@ -745,7 +745,7 @@ DTTR_PCDOGS_API const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${
 
 % endif
 ${doxy_comment(symbol_doc(DOC_KIND.GLOBAL, row), returns="Typed data symbol object.")}
-struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type {
+struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type {
 	DTTR_PCDOGS_T_Symbol_Data_Id SymbolId;
 % if not unstable:
 	DTTR_PCDOGS_T_Data_Id DataId;
@@ -770,7 +770,7 @@ struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type {
 % endif
 };
 
-DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type* const DTTR_PCDOGS_D_${c_pascal_token(row.name)};
+DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* const DTTR_PCDOGS_D_${c_public_token(row.name)};
 
 % endif
 % endfor
@@ -1411,7 +1411,7 @@ static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name.lower()}_PatchSpec(
 }
 
 % endif
-static const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type dttr_pcdogs_${row.name.lower()}_symbol = {
+static const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type dttr_pcdogs_${row.name.lower()}_symbol = {
 	.SymbolId = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
 % if not unstable:
 	.DataId = DTTR_PCDOGS_DATA_${row.symbol_id},
@@ -1429,7 +1429,7 @@ static const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type dttr_pcdogs_$
 % endif
 };
 
-const struct DTTR_PCDOGS_D_${c_pascal_token(row.name)}_type* const DTTR_PCDOGS_D_${c_pascal_token(row.name)} =
+const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* const DTTR_PCDOGS_D_${c_public_token(row.name)} =
 	&dttr_pcdogs_${row.name.lower()}_symbol;
 
 % endif

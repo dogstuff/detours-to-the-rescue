@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-static DTTR_PCDOGS_F_MoviePlayFile_proto movie_play_file_original;
+static DTTR_PCDOGS_F_Video_PlayMovieFile_proto movie_play_file_original;
 
 // Replaces the game's blocking movie call with sidecar-managed FFmpeg playback.
 static BOOL __cdecl movie_play_file_detour(
@@ -601,7 +601,7 @@ void DTTR_Movies_Init() {
 
 // Installs the game movie hook so sidecar playback replaces the original routine.
 bool dttr_movies_hooks_init(const DTTR_Mods_Context *ctx) {
-	if (!DTTR_PCDOGS_F_MoviePlayFile
+	if (!DTTR_PCDOGS_F_Video_PlayMovieFile
 			 ->Hook(&ctx->runtime, movie_play_file_detour, &movie_play_file_original)) {
 		DTTR_MODS_LOG_ERROR(ctx, "movie_playfile: hook failed");
 		return false;
@@ -612,7 +612,7 @@ bool dttr_movies_hooks_init(const DTTR_Mods_Context *ctx) {
 
 // Removes the game movie hook and clears the saved original function pointer.
 void dttr_movies_hooks_cleanup(const DTTR_Mods_Context *ctx) {
-	DTTR_PCDOGS_F_MoviePlayFile->Unhook(&ctx->runtime);
+	DTTR_PCDOGS_F_Video_PlayMovieFile->Unhook(&ctx->runtime);
 	movie_play_file_original = NULL;
 }
 
@@ -627,7 +627,7 @@ void DTTR_Movies_Cleanup() {
 
 // Maps the game movie filename to an override path or bundled data-file path.
 static sds resolve_movie_path(const char *path) {
-	char (*base_path)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PkgBasePath
+	char (*base_path)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PKG_BasePath
 															   ->Ptr();
 	sds requested_path = sdsnew(base_path ? *base_path : NULL);
 	if (!requested_path || !DTTR_Path_AppendSegment(&requested_path, path, '\\')) {

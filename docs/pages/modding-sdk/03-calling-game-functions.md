@@ -9,7 +9,7 @@ Raw addresses are only for unsupported reverse-engineering or low-level patch wo
 
 The SDK provides typed wrappers for most known game functions.
 
-For example, `Movie_PlayFile` is exposed as `DTTR_PCDOGS_F_MoviePlayFile`.
+For example, `Video_PlayMovieFile` is exposed as `DTTR_PCDOGS_F_Video_PlayMovieFile`.
 
 Use the SDK wrapper instead of casting the address yourself:
 
@@ -22,13 +22,13 @@ Check `Call()` when a missing function should disable related behavior, show a w
 
 ```c
 BOOL played = FALSE;
-if (!DTTR_ResultOK(DTTR_PCDOGS_F_MoviePlayFile->Call(
+if (!DTTR_ResultOK(DTTR_PCDOGS_F_Video_PlayMovieFile->Call(
         &ctx->runtime,
         movie_path,
         0,
         &played
     ))) {
-    DTTR_MODS_LOG_WARN(ctx, "Movie_PlayFile is unavailable");
+    DTTR_MODS_LOG_WARN(ctx, "Video_PlayMovieFile is unavailable");
     return;
 }
 ```
@@ -41,8 +41,8 @@ If your mod requires a game function to be available, check it during `DTTR_MODS
 
 ```c
 DTTR_MODS_INIT {
-    if (!DTTR_PCDOGS_F_MoviePlayFile->IsCallable(&ctx->runtime)) {
-        DTTR_MODS_LOG_ERROR(ctx, "Movie_PlayFile is required");
+    if (!DTTR_PCDOGS_F_Video_PlayMovieFile->IsCallable(&ctx->runtime)) {
+        DTTR_MODS_LOG_ERROR(ctx, "Video_PlayMovieFile is required");
         return false;
     }
 

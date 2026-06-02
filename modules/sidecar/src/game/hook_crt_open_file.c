@@ -20,7 +20,7 @@ static DTTR_PCDOGS_T_File_Handle *file_open_with_mode(
 	uint8_t sharing_flag
 ) {
 	DTTR_PCDOGS_T_File_Handle *handle = NULL;
-	DTTR_PCDOGS_F_FileOpenWithMode
+	DTTR_PCDOGS_F_File_OpenWithMode
 		->Call(dttr_sidecar_runtime_context(), path, mode, sharing_flag, &handle);
 	return handle;
 }

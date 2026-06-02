@@ -5,8 +5,8 @@
 #include <dttr_path.h>
 #include <dttr_sdl.h>
 
-#include <dbghelp.h>
 #include <Zydis/Zydis.h>
+#include <dbghelp.h>
 
 #include <dttr_log.h>
 #include <sds.h>
@@ -68,15 +68,15 @@ static bool memory_protection_is_readable(DWORD protect) {
 
 	protect &= 0xFF;
 	switch (protect) {
-		case PAGE_READONLY:
-		case PAGE_READWRITE:
-		case PAGE_WRITECOPY:
-		case PAGE_EXECUTE_READ:
-		case PAGE_EXECUTE_READWRITE:
-		case PAGE_EXECUTE_WRITECOPY:
-			return true;
-		default:
-			return false;
+	case PAGE_READONLY:
+	case PAGE_READWRITE:
+	case PAGE_WRITECOPY:
+	case PAGE_EXECUTE_READ:
+	case PAGE_EXECUTE_READWRITE:
+	case PAGE_EXECUTE_WRITECOPY:
+		return true;
+	default:
+		return false;
 	}
 }
 
@@ -119,13 +119,7 @@ static bool format_instruction_at(
 	size_t text_size
 ) {
 	ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT] = {0};
-	if (!ZYAN_SUCCESS(ZydisDecoderDecodeFull(
-			decoder,
-			bytes,
-			size,
-			instruction,
-			operands
-		))
+	if (!ZYAN_SUCCESS(ZydisDecoderDecodeFull(decoder, bytes, size, instruction, operands))
 		|| instruction->length == 0) {
 		return false;
 	}
@@ -164,7 +158,8 @@ static sds append_failed_instruction_decode(
 				text,
 				sizeof(text)
 			)) {
-			return emitted > 0 ? message : append_disassembly_unavailable(message, "decode failed");
+			return emitted > 0 ? message
+							   : append_disassembly_unavailable(message, "decode failed");
 		}
 
 		message = append_disassembly_line(
@@ -196,11 +191,9 @@ static sds append_disassembly_from_bytes(
 	}
 
 	ZydisDecoder decoder = {0};
-	if (!ZYAN_SUCCESS(ZydisDecoderInit(
-			&decoder,
-			ZYDIS_MACHINE_MODE_LEGACY_32,
-			ZYDIS_STACK_WIDTH_32
-		))) {
+	if (!ZYAN_SUCCESS(
+			ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32)
+		)) {
 		return append_disassembly_unavailable(message, "decoder unavailable");
 	}
 
@@ -289,8 +282,8 @@ static sds append_disassembly_window(sds message, HANDLE process, DWORD failed_e
 	const uintptr_t region_base = (uintptr_t)mbi.BaseAddress;
 	const uintptr_t region_end = region_base + mbi.RegionSize;
 	uintptr_t start = failed_eip > DISASM_BYTES_BEFORE
-		? (uintptr_t)failed_eip - DISASM_BYTES_BEFORE
-		: (uintptr_t)failed_eip;
+						  ? (uintptr_t)failed_eip - DISASM_BYTES_BEFORE
+						  : (uintptr_t)failed_eip;
 	if (start < region_base) {
 		start = region_base;
 	}

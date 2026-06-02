@@ -128,7 +128,7 @@ READ_ONLY_DATA_SUFFIXES = (
 READ_ONLY_DATA_NAMES = {
     "script_command_table",
     "pkg_toc",
-    "package_toc_file_sizes",
+    "pkg_toc_file_sizes",
     "model_physics_callback_table",
     "movement_handler_table",
     "collision_state_handler_table",
@@ -141,7 +141,7 @@ ENGINE_MANAGED_DATA_NAMES = {
     "active_entity_work_list",
     "current_entity_camera",
     "render_list_state",
-    "current_level_data",
+    "pkg_resource_current_level_data",
     "navigation_command_queue",
     "navigation_queue_head",
     "d3d_device7",
@@ -427,31 +427,34 @@ _DOMAIN_USE = {
     "Checkers": "the in-game checkers/minigame board-state logic",
     "Collision": "level collision paths for geometry tests, hit events, responses, and movement blocking",
     "Component": "component attachment paths for spawned objects, collision boxes, mesh components, and trail effects",
-    "D3D": "Direct3D device enumeration, capabilities, render-state, and graphics initialization paths",
-    "DDraw": "DirectDraw surface, display-mode, pixel-format, and device enumeration paths",
-    "DInput": "DirectInput joystick/device enumeration, data-format setup, and raw input polling paths",
+    "Debug": "debug overlays, exception/CRT guard paths, process startup, and runtime diagnostic helpers",
     "Entity": "persistent spawn/script/defaults records that own or request active runtime actors",
     "File": "file and package access paths for asset loading, CRT-style file state, and sharing/access modes",
-    "Input": "keyboard, joystick, and gamepad processing before movement and menu logic consume per-frame state",
+    "Graphics": "DirectDraw/Direct3D setup, render-state, clipping, sprites, surfaces, display modes, and draw work areas",
+    "Input": "keyboard, joystick, DirectInput, and gamepad processing before movement and menu logic consume per-frame state",
     "Level": _LEVEL_PACKAGE_USE,
     "LevelBlob": _LEVEL_PACKAGE_USE,
     "Material": "material and texture-table paths for package loading, animation frames, and renderer state setup",
     "Menu": "menu and front-end/HUD paths that prepare progress summaries, option rows, prompts, and save/load screens",
     "Math": "geometry and transform paths for collision checks, culling, camera math, and mesh rendering",
+    "Mem": "allocator, heap, pointer-handle, CRT allocation, and memory-copy helpers",
+    "MemHeap": "heap block metadata and allocator internals",
     "Mesh": "mesh loading and rendering paths that read vertices, polygons, normals, material refs, and scene-node transforms",
-    "Movie": "movie playback paths that open video streams, maintain playback buffers, and handle skip/close state",
     "Nav": "navigation graph and pathfinding paths for actor movement commands and neighbor/path state",
     "Physics": "physics and movement integration paths that carry per-object simulation state",
     "Powerup": "powerup spawn/update paths that walk per-level powerup entries and instantiate template actor records",
     "Pk": "package-resource parsing paths for level, geometry, material, texture, sprite, sound, script, and UI resources",
     "Pkg": "package table-of-contents and resource-record parsing paths used while loading game data archives",
-    "Render": "renderer paths for polygon batches, clipping, sprite layers, colors, gradients, and draw work areas",
+    "Replay": "demo replay and input recording playback paths",
     "SaveGame": "save/load paths that store slots, current level progress, flags, and persisted game state",
     "Scene": "scene graph loading and traversal paths that link model/object nodes, local transforms, and resource references",
     "Script": "game scripting interpreter paths for opcode dispatch, script contexts, and script-bound entities",
+    "String": "string, character, and floating-point formatting/conversion helpers",
     "Texture": "texture loading/rendering paths that track surface descriptors and package texture metadata",
     "Trail": "trail and bone-effect rendering paths for segmented trails attached to moving objects or bones",
     "UI": "front-end and HUD paths that draw text, lives icons, spots, and other interface resources",
+    "Video": "movie/video playback paths that open streams, maintain playback buffers, and handle skip/close state",
+    "Window": "Win32 window procedure, process entrypoint, shutdown, and message-loop integration paths",
 }
 
 _SPECIFIC_STRUCT_DOCS = {
@@ -461,11 +464,10 @@ _SPECIFIC_STRUCT_DOCS = {
     "Input_Event": "Compact input event record; `type` selects the event kind and `value` carries the button/key payload.",
     "Input_State": "Per-frame input snapshot, shared by movement, menus, movie playback, and replay hooks.",
     "Input_JoystickState": "DirectInput-style joystick axis/POV snapshot, later folded into `DTTR_PCDOGS_Input_State`.",
-    "DInput_JoystickState": "DirectInput DIJOYSTATE-compatible axis/button snapshot.",
     "DInput_DeviceEnumContext": "DirectInput joystick enumeration context for discovered device GUIDs.",
-    "Movie_PlaybackBuffer": "Movie playback buffer state, covering frame reads, input, and close/skip handling.",
-    "SaveGame_Data": "Save-file header plus 0x5c-byte save-slot payloads for game state, settings, and player-lives dwords.",
-    "SaveGame_Slot": "0x5c-byte per-slot progress payload, used by save/load UI and completion calculations.",
+    "Video_PlaybackBuffer": "Movie playback buffer state, covering frame reads, input, and close/skip handling.",
+    "Save_GameData": "Save-file header plus 0x5c-byte save-slot payloads for game state, settings, and player-lives dwords.",
+    "Save_GameSlot": "0x5c-byte per-slot progress payload, used by save/load UI and completion calculations.",
     "Script_OpcodeTable": "Opcode dispatch table, routing bytecode operations to script handlers.",
     "Script_Context": "Script interpreter context for instruction state and game-script execution data.",
 }
@@ -490,10 +492,12 @@ _KIND_USE = {
 }
 
 _DOMAIN_PREFIXES = (
-    ("Pkg", "Pkg"),
-    ("Pk", "Pk"),
+    ("MemHeap", "MemHeap"),
+    ("SaveGame", "SaveGame"),
     ("LevelBlob", "LevelBlob"),
     ("SceneNode", "Scene"),
+    ("Pkg", "Pkg"),
+    ("Pk", "Pk"),
     ("Texture", "Texture"),
 )
 
@@ -908,12 +912,42 @@ def check_unique(
         seen.add(key)
 
 
+def check_public_token_unique(rows: list[object], label: str) -> None:
+    """Reject duplicate public C names after namespace-aware rendering."""
+
+    seen: dict[str, str] = {}
+    for row in rows:
+        token = c_public_token(row.name)
+        previous = seen.get(token)
+        if previous is not None:
+            raise ValueError(
+                f"duplicate public {label} token {token}: {previous}, {row.name}"
+            )
+        seen[token] = row.name
+
+
+def check_pascal_namespace_shape(rows: list[object], label: str) -> None:
+    """Reject stale Pascal Namespace_Subnamespace_Name shapes."""
+
+    for row in rows:
+        if re.match(r"^[A-Z][A-Za-z0-9]*_[A-Z][A-Za-z0-9]*_", row.name):
+            raise ValueError(
+                f"{label} name has a stale subnamespace separator: {row.name}"
+            )
+
+
 def validate_blueprint(blueprint: BlueprintRows) -> None:
     """Validate blueprint names and xrefs before emitting headers or implementation stubs."""
 
     check_unique(blueprint.signatures, "signature")
     check_unique(blueprint.functions, "function", allow_stable_unstable_pair=True)
     check_unique(blueprint.globals, "global")
+    check_pascal_namespace_shape(blueprint.signatures, "signature")
+    check_pascal_namespace_shape(blueprint.functions, "function")
+    check_pascal_namespace_shape(blueprint.structs, "type")
+    check_public_token_unique(blueprint.functions, "function")
+    check_public_token_unique([row for row in blueprint.globals if row.typed], "data")
+    check_public_token_unique(blueprint.structs, "type")
 
     functions = {row.name for row in blueprint.functions}
     for row in blueprint.function_xrefs:
@@ -951,15 +985,19 @@ def clang_format_header(path: Path, text: str) -> str:
     """Format generated C headers the same way checked-in SDK headers are stored."""
 
     try:
+        assume_filename = path.with_suffix(".c")
         result = subprocess.run(
-            ["clang-format", f"--assume-filename={path}"],
+            ["clang-format", f"--assume-filename={assume_filename}"],
             input=text,
             text=True,
             capture_output=True,
             check=True,
         )
-    except (FileNotFoundError, subprocess.CalledProcessError):
+    except FileNotFoundError:
         return text
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or exc.stdout.strip() or str(exc)
+        raise RuntimeError(f"clang-format failed for {path}: {detail}") from exc
 
     return result.stdout
 
@@ -1021,7 +1059,12 @@ def c_symbol(value: object) -> str:
             out.append("_")
         out.append(ch)
     symbol = "".join(out).upper()
-    return symbol.replace("D3" + "_D", "D3D").replace("D" + "_DRAW", "DDRAW")
+    return (
+        symbol.replace("D3" + "_D", "D3D")
+        .replace("DIRECT3" + "_D", "DIRECT3D")
+        .replace("D" + "_DRAW", "DDRAW")
+        .replace("D" + "_INPUT", "DINPUT")
+    )
 
 
 _PASCAL_ACRONYMS = {
@@ -1039,6 +1082,7 @@ _PASCAL_ACRONYMS = {
     "io": "IO",
     "lod": "LOD",
     "obb": "OBB",
+    "pkg": "PKG",
     "rgb": "RGB",
     "rgba": "RGBA",
     "rhw": "RHW",
@@ -1065,10 +1109,16 @@ def c_pascal_part(part: str) -> str:
     return part[:1].upper() + part[1:]
 
 
-def c_pascal_token(value: object) -> str:
-    """Convert generated symbol names to a public Pascal-style C token."""
+def c_public_token(value: object) -> str:
+    """Render public SDK identifiers with the namespace boundary preserved."""
 
-    return "".join(c_pascal_part(part) for part in str(value).split("_") if part)
+    parts = [part for part in str(value).split("_") if part]
+    if not parts:
+        return ""
+
+    namespace = c_pascal_part(parts[0])
+    rest = "".join(c_pascal_part(part) for part in parts[1:])
+    return f"{namespace}_{rest}" if rest else namespace
 
 
 def c_int(value: object) -> str:
@@ -1179,10 +1229,13 @@ def c_data_write_source(value: object, name: str) -> str:
 def pcdogs_type_name(name: str) -> str:
     """Return the public C name for a generated PCDOGS type."""
 
+    if re.match(r"^[A-Z][A-Za-z0-9]*_[A-Z][A-Za-z0-9]*_", name):
+        raise ValueError(f"PCDOGS type name has a stale subnamespace separator: {name}")
+
     if name.startswith("DTTR_PCDOGS_T_"):
         return name
 
-    return f"DTTR_PCDOGS_T_{name}"
+    return f"DTTR_PCDOGS_T_{c_public_token(name)}"
 
 
 def type_row_kind(row: object) -> TypeRowKind:
@@ -1203,30 +1256,13 @@ def type_row_kind(row: object) -> TypeRowKind:
     raise ValueError(f"unknown type row: {row!r}")
 
 
-TYPE_NAME_RENDERERS = dict.fromkeys(
-    (
-        TypeRowKind.TYPE_ALIAS,
-        TypeRowKind.FUNCTION_TYPE_ALIAS,
-        TypeRowKind.STRUCT,
-        TypeRowKind.ENUM,
-    ),
-    pcdogs_type_name,
-)
-
-
 def pcdogs_type_names(rows: list[object]) -> dict[str, str]:
     """Map generated blueprint type identifiers to public PCDOGS names."""
 
     names: dict[str, str] = {}
     for row in rows:
-        row_kind = type_row_kind(row)
-        renderer = TYPE_NAME_RENDERERS.get(row_kind)
-        if not renderer:
-            continue
-
-        names[row.name] = renderer(row.name)
-        if row_kind == TypeRowKind.ENUM and row.alias:
-            names[row.alias] = renderer(row.alias)
+        type_row_kind(row)
+        names[row.name] = pcdogs_type_name(row.name)
     return names
 
 
@@ -1576,7 +1612,7 @@ def typed_function_template_row(
         raise ValueError(f"function is not typed: {fn.name}")
 
     ident = fn.name.lower()
-    public = c_pascal_token(fn.name)
+    public = c_public_token(fn.name)
     display_name = fn.name
     typedef_name = f"DTTR_PCDOGS_F_{public}_proto"
     ret = c_type_fn(typed.return_type)
@@ -1720,7 +1756,6 @@ def declared_type_names(rows: list[object]) -> set[str]:
             names.add(row.name)
         elif row_kind == TypeRowKind.ENUM:
             names.add(row.name)
-            names.add(row.alias or row.name)
     return names
 
 
@@ -1829,7 +1864,7 @@ STATIC_TEMPLATE_CONTEXT = {
     "struct_name": pcdogs_type_name,
     "enum_name": pcdogs_type_name,
     "c_symbol": c_symbol,
-    "c_pascal_token": c_pascal_token,
+    "c_public_token": c_public_token,
     "c_sig": c_sig,
     "c_mask": c_mask,
     "c_enum": c_enum,

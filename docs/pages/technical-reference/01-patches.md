@@ -14,13 +14,13 @@ DttR resolves most sites against the loaded game module with `DTTR_Core_HookSigs
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `dttr_hook_win_main` | Signature `83 EC 40 53 8B 5C 24`, jump hook at the matched function entry | Game `WinMain`-style entrypoint | Installs before sidecar setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and mods, then drives the original game loop. |
+| `dttr_hook_win_main` | Signature `83 EC 40 53 8B 5C 24`, jump hook at the matched function entry | Game `Window_RunWinMain`-style entrypoint | Installs before sidecar setup. The callback initializes config, SDL, graphics, data pointers, hooks, movies, audio, and mods, then drives the original game loop. |
 
 ## Game Data and Process Fixes
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `DTTR_PCDOGS_F_FileOpenWithMode` | Signature `E8 ?? ?? ?? ?? 85 C0 75 ?? C3`, resolve the matched `CALL rel32` target | Game lower-level CRT-style open routine | Hands resolved paths back to the original file opener. |
+| `DTTR_PCDOGS_F_File_OpenWithMode` | Signature `E8 ?? ?? ?? ?? 85 C0 75 ?? C3`, resolve the matched `CALL rel32` target | Game lower-level CRT-style open routine | Hands resolved paths back to the original file opener. |
 | `dttr_crt_hook_open_file` | Signature `6A 40 FF 74 24 0C FF 74 24 0C E8`, jump hook at match | Game file-open wrapper | Routes file reads through DttR path resolution: case-insensitive lookup, ISO paths, and safe failure handling. |
 | `dttr_hook_resolve_pcdogs_path` | Signature `51 8D 44 24 ?? 57`, optional jump hook at match | Game directory resolver | Fixes later releases that mis-detect the game directory when an earlier path segment contains `p`. |
 | `dttr_hook_cleanup_title_resources` | Signature `6A 01 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 83 ?? ??`, trampoline hook at match | Original cleanup-title-resources routine, captured as `dttr_hook_cleanup_title_resources_original` | Runs the original cleanup, then clears stale title resource pointers. |
@@ -32,7 +32,7 @@ DttR resolves most sites against the loaded game module with `DTTR_Core_HookSigs
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
 | `dttr_hook_directdraw_create_ex` | Generated `DDraw_CreateEx` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawCreateEx` thunk body (`FF 25 <IAT slot>`) | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
-| `dttr_hook_directdraw_enumerate_ex_a` | Generated `DirectX_DirectDrawEnumerateExA` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawEnumerateExA` thunk body (`FF 25 <IAT slot>`) | Enumerates DttR's virtual display device. |
+| `dttr_hook_directdraw_enumerate_ex_a` | Generated `DDraw_EnumerateExA` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawEnumerateExA` thunk body (`FF 25 <IAT slot>`) | Enumerates DttR's virtual display device. |
 
 ### Subpixel Vertex Precision Byte Patches
 
@@ -71,16 +71,16 @@ These hooks keep game audio paths safe while DttR routes MSS through SDL.
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `DTTR_PCDOGS_F_AudioInitializeSystem` | Signature `81 EC 90 ?? ?? ?? 55 56 57 FF 15`, generated `Hook()` helper | Game audio system init, captured as `audio_init_system_original` | Skips MSS init when SDL reports no playback devices. |
-| `DTTR_PCDOGS_F_AudioStopAllSounds` | Signature `A1 ?? ?? ?? ?? 6A ?? 50 FF 15`, generated `Hook()` helper | Game stop-all-sounds routine, captured as `audio_stop_all_sounds_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
-| `DTTR_PCDOGS_F_AudioInitializeLevelAudio` | Signature `A1 ?? ?? ?? ?? 6A 7F 50 FF 15`, generated `Hook()` helper | Game level-audio init routine, captured as `audio_init_level_audio_original` | Guards level audio init when no driver is active. |
-| `DTTR_PCDOGS_F_AudioStopAllSamples` | Signature `56 57 8B 3D ?? ?? ?? ?? BE`, generated `Hook()` helper | Game stop-all-samples routine, captured as `audio_stop_all_samples_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
+| `DTTR_PCDOGS_F_Audio_InitializeSystem` | Signature `81 EC 90 ?? ?? ?? 55 56 57 FF 15`, generated `Hook()` helper | Game audio system init, captured as `audio_init_system_original` | Skips MSS init when SDL reports no playback devices. |
+| `DTTR_PCDOGS_F_Audio_StopAllSounds` | Signature `A1 ?? ?? ?? ?? 6A ?? 50 FF 15`, generated `Hook()` helper | Game stop-all-sounds routine, captured as `audio_stop_all_sounds_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
+| `DTTR_PCDOGS_F_Audio_InitializeLevelAudio` | Signature `A1 ?? ?? ?? ?? 6A 7F 50 FF 15`, generated `Hook()` helper | Game level-audio init routine, captured as `audio_init_level_audio_original` | Guards level audio init when no driver is active. |
+| `DTTR_PCDOGS_F_Audio_StopAllSamples` | Signature `56 57 8B 3D ?? ?? ?? ?? BE`, generated `Hook()` helper | Game stop-all-samples routine, captured as `audio_stop_all_samples_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
 
 ## Movies
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `dttr_movies_hook_movie_play_file` | Signature `8B 44 24 08 8B 0D ?? ?? ?? ?? 8B 54 24 04 56 50`, jump hook at match | Game `Movie_PlayFile` routine | Replaces MCI playback with DttR's FFmpeg/SDL-backed movie player. |
+| `dttr_movies_hook_movie_play_file` | Signature `8B 44 24 08 8B 0D ?? ?? ?? ?? 8B 54 24 04 56 50`, jump hook at match | Game `Video_PlayMovieFile` routine | Replaces MCI playback with DttR's FFmpeg/SDL-backed movie player. |
 
 ### Miles Sound System Import Hooks
 

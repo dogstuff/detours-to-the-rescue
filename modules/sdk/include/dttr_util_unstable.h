@@ -111,7 +111,7 @@ typedef DTTR_Util_PkgVisitAction (*DTTR_Util_PkgVisitor)(
 typedef bool (*DTTR_Util_PkgLoadEntryFn)(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
+	const DTTR_PCDOGS_T_PKG_TOCEntry *entry,
 	void *userdata,
 	void **out_entry,
 	size_t *out_size,
@@ -121,7 +121,7 @@ typedef bool (*DTTR_Util_PkgLoadEntryFn)(
 typedef void (*DTTR_Util_PkgFreeEntryFn)(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
+	const DTTR_PCDOGS_T_PKG_TOCEntry *entry,
 	void *entry_data,
 	void *userdata
 );
@@ -137,7 +137,7 @@ struct DTTR_Util_PkgVisit {
 	uint32_t pkg_size;
 	const void *ptr;
 	const DTTR_Util_PkgVisit *parent;
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *toc_entry;
+	const DTTR_PCDOGS_T_PKG_TOCEntry *toc_entry;
 	const void *loaded_entry_base;
 	size_t loaded_entry_size;
 	void *userdata;
@@ -149,7 +149,7 @@ typedef struct DTTR_Util_PkgWalkOptions {
 	uint32_t domains;
 	uint32_t max_depth;
 	bool load_entries;
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *toc_entries;
+	const DTTR_PCDOGS_T_PKG_TOCEntry *toc_entries;
 	uint32_t toc_count;
 	DTTR_Util_PkgLoadEntryFn load_entry;
 	DTTR_Util_PkgFreeEntryFn free_entry;
@@ -176,11 +176,11 @@ DTTR_UTIL_API DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 
 DTTR_UTIL_API const char *DTTR_Util_PkgVisitStatusName(DTTR_Util_PkgVisitStatus status);
 
-static inline const DTTR_PCDOGS_T_Pkg_TOCEntry *DTTR_Util_PkgVisit_AsTOCEntry(
+static inline const DTTR_PCDOGS_T_PKG_TOCEntry *DTTR_Util_PkgVisit_AsTOCEntry(
 	const DTTR_Util_PkgVisit *visit
 ) {
 	return visit && visit->kind == DTTR_UTIL_PKG_VISIT_TOC_ENTRY
-			   ? (const DTTR_PCDOGS_T_Pkg_TOCEntry *)visit->ptr
+			   ? (const DTTR_PCDOGS_T_PKG_TOCEntry *)visit->ptr
 			   : NULL;
 }
 
@@ -222,25 +222,25 @@ static inline const DTTR_PCDOGS_T_Scene_Node *DTTR_Util_PkgVisit_AsSceneNode(
 			   : NULL;
 }
 
-static inline const DTTR_PCDOGS_T_Render_SpriteContext *DTTR_Util_PkgVisit_AsSpriteContext(
+static inline const DTTR_PCDOGS_T_Graphics_SpriteContext *DTTR_Util_PkgVisit_AsSpriteContext(
 	const DTTR_Util_PkgVisit *visit
 ) {
 	return visit && visit->kind == DTTR_UTIL_PKG_VISIT_SPRITE_ENTRY
-			   ? (const DTTR_PCDOGS_T_Render_SpriteContext *)visit->ptr
+			   ? (const DTTR_PCDOGS_T_Graphics_SpriteContext *)visit->ptr
 			   : NULL;
 }
 
-static inline const DTTR_PCDOGS_T_Render_SpriteContext *DTTR_Util_PkgVisit_AsSpriteEntry(
+static inline const DTTR_PCDOGS_T_Graphics_SpriteContext *DTTR_Util_PkgVisit_AsSpriteEntry(
 	const DTTR_Util_PkgVisit *visit
 ) {
 	return DTTR_Util_PkgVisit_AsSpriteContext(visit);
 }
 
-static inline const DTTR_PCDOGS_T_Pkg_CollisionShape *DTTR_Util_PkgVisit_AsCollisionShape(
+static inline const DTTR_PCDOGS_T_PKG_CollisionShape *DTTR_Util_PkgVisit_AsCollisionShape(
 	const DTTR_Util_PkgVisit *visit
 ) {
 	return visit && visit->kind == DTTR_UTIL_PKG_VISIT_COLLISION_SHAPE
-			   ? (const DTTR_PCDOGS_T_Pkg_CollisionShape *)visit->ptr
+			   ? (const DTTR_PCDOGS_T_PKG_CollisionShape *)visit->ptr
 			   : NULL;
 }
 

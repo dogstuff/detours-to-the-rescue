@@ -6,10 +6,10 @@
 
 #include <SDL3/SDL.h>
 
-static DTTR_PCDOGS_F_AudioInitializeSystem_proto audio_init_system_original;
-static DTTR_PCDOGS_F_AudioStopAllSounds_proto audio_stop_all_sounds_original;
-static DTTR_PCDOGS_F_AudioInitializeLevelAudio_proto audio_init_level_audio_original;
-static DTTR_PCDOGS_F_AudioStopAllSamples_proto audio_stop_all_samples_original;
+static DTTR_PCDOGS_F_Audio_InitializeSystem_proto audio_init_system_original;
+static DTTR_PCDOGS_F_Audio_StopAllSounds_proto audio_stop_all_sounds_original;
+static DTTR_PCDOGS_F_Audio_InitializeLevelAudio_proto audio_init_level_audio_original;
+static DTTR_PCDOGS_F_Audio_StopAllSamples_proto audio_stop_all_samples_original;
 
 static int32_t audio_init_system();
 static int32_t __cdecl audio_init_system_detour();
@@ -28,7 +28,8 @@ static bool has_playback_devices() {
 // Treats either the original MSS driver or SDL shim as an active audio backend.
 static bool has_audio_driver() {
 	void *audio_driver = NULL;
-	DTTR_PCDOGS_D_AudioDigitalDriver->Read(&audio_driver);
+	DTTR_PCDOGS_D_Audio_DigitalDriver->Read(&audio_driver);
+
 	return audio_driver || dttr_mss_sdl_has_driver();
 }
 
@@ -53,7 +54,7 @@ static void handle_audio_device_removed() {
 
 	DTTR_LOG_ERROR("Audio device removed, shutting down audio subsystem");
 	int32_t shutdown_result = 0;
-	DTTR_PCDOGS_F_AudioShutdownSystem->Call(
+	DTTR_PCDOGS_F_Audio_ShutdownSystem->Call(
 		dttr_sidecar_runtime_context(),
 		&shutdown_result
 	);
@@ -138,7 +139,7 @@ bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 	ok = log_hook_result(
 			 ctx,
 			 "audio_initializesystem",
-			 DTTR_PCDOGS_F_AudioInitializeSystem->Hook(
+			 DTTR_PCDOGS_F_Audio_InitializeSystem->Hook(
 				 &ctx->runtime,
 				 audio_init_system_detour,
 				 &audio_init_system_original
@@ -148,7 +149,7 @@ bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 	ok = log_hook_result(
 			 ctx,
 			 "audio_stopallsounds",
-			 DTTR_PCDOGS_F_AudioStopAllSounds->Hook(
+			 DTTR_PCDOGS_F_Audio_StopAllSounds->Hook(
 				 &ctx->runtime,
 				 audio_stop_all_sounds_detour,
 				 &audio_stop_all_sounds_original
@@ -158,7 +159,7 @@ bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 	ok = log_hook_result(
 			 ctx,
 			 "audio_initializelevelaudio",
-			 DTTR_PCDOGS_F_AudioInitializeLevelAudio->Hook(
+			 DTTR_PCDOGS_F_Audio_InitializeLevelAudio->Hook(
 				 &ctx->runtime,
 				 audio_init_level_audio_detour,
 				 &audio_init_level_audio_original
@@ -168,7 +169,7 @@ bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 	ok = log_hook_result(
 			 ctx,
 			 "audio_stopallsamples",
-			 DTTR_PCDOGS_F_AudioStopAllSamples->Hook(
+			 DTTR_PCDOGS_F_Audio_StopAllSamples->Hook(
 				 &ctx->runtime,
 				 audio_stop_all_samples_detour,
 				 &audio_stop_all_samples_original
@@ -180,10 +181,10 @@ bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 
 // Removes audio detours before shutting down the SDL replacement backend.
 void dttr_audio_cleanup(const DTTR_Mods_Context *ctx) {
-	DTTR_PCDOGS_F_AudioStopAllSamples->Unhook(&ctx->runtime);
-	DTTR_PCDOGS_F_AudioInitializeLevelAudio->Unhook(&ctx->runtime);
-	DTTR_PCDOGS_F_AudioStopAllSounds->Unhook(&ctx->runtime);
-	DTTR_PCDOGS_F_AudioInitializeSystem->Unhook(&ctx->runtime);
+	DTTR_PCDOGS_F_Audio_StopAllSamples->Unhook(&ctx->runtime);
+	DTTR_PCDOGS_F_Audio_InitializeLevelAudio->Unhook(&ctx->runtime);
+	DTTR_PCDOGS_F_Audio_StopAllSounds->Unhook(&ctx->runtime);
+	DTTR_PCDOGS_F_Audio_InitializeSystem->Unhook(&ctx->runtime);
 	audio_init_system_original = NULL;
 	audio_stop_all_sounds_original = NULL;
 	audio_init_level_audio_original = NULL;

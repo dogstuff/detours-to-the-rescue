@@ -2,6 +2,6 @@
 
 DTTR_DEFINE_HOOK_STORAGE(dttr_hook_win_main)
 DTTR_DEFINE_STORAGE(
-	DTTR_PCDOGS_F_TitleScreenCleanupResources_proto,
+	DTTR_PCDOGS_F_Title_CleanupScreenResources_proto,
 	dttr_hook_cleanup_title_resources_original
 )

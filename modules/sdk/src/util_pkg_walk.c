@@ -46,7 +46,7 @@ const char *DTTR_Util_PkgVisitStatusName(DTTR_Util_PkgVisitStatus status) {
 static bool default_load_entry(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
+	const DTTR_PCDOGS_T_PKG_TOCEntry *entry,
 	void *userdata,
 	void **out_entry,
 	size_t *out_size,
@@ -69,7 +69,7 @@ static bool default_load_entry(
 	}
 
 	void *loaded = NULL;
-	if (!DTTR_ResultOK(DTTR_PCDOGS_F_PKGLoadEntry->Call(ctx, toc_index, NULL, &loaded))
+	if (!DTTR_ResultOK(DTTR_PCDOGS_F_PKG_LoadEntry->Call(ctx, toc_index, NULL, &loaded))
 		|| !loaded) {
 		if (out_status) {
 			*out_status = DTTR_UTIL_PKG_STATUS_LOAD_FAILED;
@@ -91,7 +91,7 @@ static bool default_load_entry(
 static void default_free_entry(
 	const DTTR_Core_Context *ctx,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *entry,
+	const DTTR_PCDOGS_T_PKG_TOCEntry *entry,
 	void *entry_data,
 	void *userdata
 ) {
@@ -100,13 +100,13 @@ static void default_free_entry(
 	}
 
 	BOOL ignored = FALSE;
-	DTTR_PCDOGS_F_ResourceFreeData->Call(ctx, entry_data, &ignored);
+	DTTR_PCDOGS_F_PKG_FreeResourceData->Call(ctx, entry_data, &ignored);
 }
 
 static bool resolve_toc(
 	const DTTR_Core_Context *ctx,
 	const DTTR_Util_PkgWalkOptions *options,
-	const DTTR_PCDOGS_T_Pkg_TOCEntry **out_entries,
+	const DTTR_PCDOGS_T_PKG_TOCEntry **out_entries,
 	uint32_t *out_count
 ) {
 	if (!out_entries || !out_count) {
@@ -135,7 +135,7 @@ static bool resolve_toc(
 		return false;
 	}
 
-	*out_entries = (const DTTR_PCDOGS_T_Pkg_TOCEntry *)toc_addr;
+	*out_entries = (const DTTR_PCDOGS_T_PKG_TOCEntry *)toc_addr;
 	*out_count = requested_count;
 
 	return true;
@@ -161,7 +161,7 @@ static DTTR_Util_PkgVisit make_visit(
 	DTTR_Util_PkgVisitStatus status,
 	uint32_t depth,
 	int32_t toc_index,
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *toc_entry,
+	const DTTR_PCDOGS_T_PKG_TOCEntry *toc_entry,
 	const void *ptr,
 	const void *loaded_entry_base,
 	size_t loaded_entry_size,
@@ -268,7 +268,7 @@ DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 		return result;
 	}
 
-	const DTTR_PCDOGS_T_Pkg_TOCEntry *toc_entries = NULL;
+	const DTTR_PCDOGS_T_PKG_TOCEntry *toc_entries = NULL;
 	uint32_t toc_count = 0;
 	if (!resolve_toc(ctx, options, &toc_entries, &toc_count)) {
 		return make_result(DTTR_UTIL_PKG_STATUS_UNRESOLVED_SYMBOL);
@@ -281,7 +281,7 @@ DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 	uint32_t max_depth = options->max_depth;
 
 	for (uint32_t i = 0; i < toc_count; ++i) {
-		const DTTR_PCDOGS_T_Pkg_TOCEntry *toc_entry = &toc_entries[i];
+		const DTTR_PCDOGS_T_PKG_TOCEntry *toc_entry = &toc_entries[i];
 
 		DTTR_Util_PkgVisit toc_visit = make_visit(
 			options,

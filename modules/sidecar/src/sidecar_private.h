@@ -13,7 +13,7 @@
 
 DTTR_HOOK_STORAGE_SLOT(dttr_hook_win_main)
 DTTR_STORAGE_SLOT(
-	DTTR_PCDOGS_F_TitleScreenCleanupResources_proto,
+	DTTR_PCDOGS_F_Title_CleanupScreenResources_proto,
 	dttr_hook_cleanup_title_resources_original
 )
 

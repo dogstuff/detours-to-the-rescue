@@ -9,7 +9,7 @@ A function hook redirects a game function to your detour. Your detour can run cu
 SDK wrappers include a function-pointer type for each known function, suffixed with `_proto`. Use it to store your "original" game function pointer.
 
 ```c
-static DTTR_PCDOGS_F_PlayerSetLives_proto original_player_set_lives;
+static DTTR_PCDOGS_F_Player_SetLives_proto original_player_set_lives;
 ```
 
 Hook signatures that diverge from the game function can cause crashes or memory corruption. If the generated type does not exist, hooking the function requires additional reverse engineering work.
@@ -38,12 +38,12 @@ When applying related hooks and patches, install the generated `PatchSpec()` thr
 
 ```c
 static DTTR_Core_PatchGroup *patches;
-static DTTR_PCDOGS_F_PlayerSetLives_proto original_player_set_lives;
+static DTTR_PCDOGS_F_Player_SetLives_proto original_player_set_lives;
 
 DTTR_MODS_INIT {
     DTTR_PCDOGS_T_Patch_Report report = {0};
     const DTTR_PCDOGS_T_Patch_Spec specs[] = {
-        DTTR_PCDOGS_F_PlayerSetLives->PatchSpec(
+        DTTR_PCDOGS_F_Player_SetLives->PatchSpec(
             true,
             player_set_lives_detour,
             &original_player_set_lives
@@ -70,13 +70,13 @@ DTTR_MODS_CLEANUP {
 SDK wrappers also expose `Hook()` and `Unhook()`:
 
 ```c
-DTTR_PCDOGS_F_PlayerSetLives->Hook(
+DTTR_PCDOGS_F_Player_SetLives->Hook(
     &ctx->runtime,
     player_set_lives_detour,
     &original_player_set_lives
 );
 
-DTTR_PCDOGS_F_PlayerSetLives->Unhook(&ctx->runtime);
+DTTR_PCDOGS_F_Player_SetLives->Unhook(&ctx->runtime);
 ```
 
 Using `Hook()` while another mod or patch group owns the same hook slot can cause hook conflicts. Use it for simple hooks your mod fully owns, and use patch groups for most hooks.
@@ -90,10 +90,10 @@ The raw hook APIs require reverse engineering work. Prefer SDK wrappers or patch
 Before passing a generated address to a raw hook API, check both conditions:
 
 ```c
-if (!DTTR_PCDOGS_F_PlayerSetLives->IsCallable(&ctx->runtime)) {
+if (!DTTR_PCDOGS_F_Player_SetLives->IsCallable(&ctx->runtime)) {
     return false;
 }
-if (DTTR_PCDOGS_F_PlayerSetLives->HookKind() != DTTR_PCDOGS_HOOK_REL32) {
+if (DTTR_PCDOGS_F_Player_SetLives->HookKind() != DTTR_PCDOGS_HOOK_REL32) {
     return false;
 }
 ```

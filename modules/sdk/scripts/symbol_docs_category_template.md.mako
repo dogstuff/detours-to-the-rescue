@@ -52,8 +52,11 @@ def heading_pills(anchor):
     return '<span class="pcdogs-heading-pills">' + stability_value(anchor) + '</span>'
 
 
-def toc_label(value):
-    return html.escape(str(value), quote=True)
+def toc_label(value, category):
+    text = str(value)
+    if str(category) != "misc" and "_" in text:
+        text = text.split("_", 1)[1]
+    return html.escape(text, quote=True)
 %>
 
 <%def name="symbol_facts(facts, metadata, anchor=None, stability_after_kind=False)">
@@ -110,8 +113,8 @@ ${"    "}
     ```
 </%def>
 
-<%def name="symbol_heading(name, anchor)">
-<%text>### </%text>`${name}` ${heading_pills(anchor)} { #${anchor} data-toc-label="${toc_label(name)}" }
+<%def name="symbol_heading(name, anchor, category)">
+<%text>### </%text>`${name}` ${heading_pills(anchor)} { #${anchor} data-toc-label="${toc_label(name, category)}" }
 </%def>
 
 <%def name="function_tabs(fn)">
@@ -136,7 +139,7 @@ ${code_block(fn.hook_example)}
 </%def>
 
 <%def name="function_entry(fn)">
-${symbol_heading(fn.heading, fn.anchor)}
+${symbol_heading(fn.heading, fn.anchor, fn.category)}
 
 ${symbol_facts(fn.facts, fn.metadata, fn.anchor)}
 
@@ -148,7 +151,7 @@ ${see_also_row(fn.related)}
 </%def>
 
 <%def name="data_entry(glob)">
-${symbol_heading(glob.name, glob.anchor)}
+${symbol_heading(glob.name, glob.anchor, glob.category)}
 
 ${symbol_facts(glob.facts, glob.metadata, glob.anchor)}
 
@@ -171,7 +174,7 @@ ${see_also_row(glob.related)}
 </%def>
 
 <%def name="type_entry(row)">
-${symbol_heading(row.name, row.anchor)}
+${symbol_heading(row.name, row.anchor, row.category)}
 
 ${symbol_facts(row.facts, row.metadata, row.anchor, stability_after_kind=True)}
 
@@ -208,7 +211,7 @@ ${see_also_row(row.related)}
 </%def>
 
 <%def name="signature_entry(sig)">
-${symbol_heading(sig.name, sig.anchor)}
+${symbol_heading(sig.name, sig.anchor, sig.category)}
 
 ${symbol_facts(sig.facts, sig.metadata, sig.anchor)}
 
