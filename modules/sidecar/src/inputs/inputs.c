@@ -19,7 +19,7 @@ static const DTTR_PCDOGS_T_Patch_Spec inputs_patches[] = {
 	{
 		.kind = DTTR_PCDOGS_PATCH_DATA_POINTER_HOOK,
 		.required = true,
-		.global = DTTR_PCDOGS_DATA_INPUT_GET_ASYNC_KEY_STATE,
+		.global = DTTR_PCDOGS_DATA_VIDEO_PLAY_MOVIE_LOOP_INPUT_GET_ASYNC_KEY_STATE,
 		.new_value = dttr_inputs_hook_get_async_key_state_callback,
 		.out_original = NULL,
 	},
@@ -53,7 +53,7 @@ static void try_open_configured_gamepad() {
 }
 
 static void close_gamepad() {
-	DTTR_PCDOGS_D_Input_JoystickAvailable->Write(0);
+	DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(0);
 	if (!dttr_gamepad) {
 		return;
 	}
@@ -96,10 +96,10 @@ void DTTR_Inputs_HandleDeviceEvent(const SDL_Event *event) {
 
 		try_open_configured_gamepad();
 		int32_t game_initialized = 0;
-		DTTR_PCDOGS_D_Window_GameInitialized->Read(&game_initialized);
+		DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Read(&game_initialized);
 
 		if (dttr_gamepad && game_initialized == 1) {
-			DTTR_PCDOGS_D_Input_JoystickAvailable->Write(1);
+			DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(1);
 		}
 
 		return;
@@ -110,7 +110,7 @@ void DTTR_Inputs_HandleDeviceEvent(const SDL_Event *event) {
 
 		DTTR_LOG_INFO("Gamepad disconnected: %s", SDL_GetGamepadName(dttr_gamepad));
 		close_gamepad();
-		DTTR_PCDOGS_D_Input_JoystickAvailable->Write(0);
+		DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(0);
 		return;
 	default:
 		return;
@@ -120,11 +120,11 @@ void DTTR_Inputs_HandleDeviceEvent(const SDL_Event *event) {
 // Publishes joystick availability after the game has initialized its input globals.
 void DTTR_Inputs_LateInit() {
 	if (!dttr_config.gamepad_enabled || !dttr_gamepad) {
-		DTTR_PCDOGS_D_Input_JoystickAvailable->Write(0);
+		DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(0);
 		return;
 	}
 
-	DTTR_PCDOGS_D_Input_JoystickAvailable->Write(1);
+	DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(1);
 	DTTR_LOG_DEBUG("Joystick is available");
 }
 

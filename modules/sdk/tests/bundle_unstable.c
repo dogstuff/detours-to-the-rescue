@@ -157,9 +157,7 @@ static void compile_global_helpers() {
 
 	int32_t player_current_level_id = -1;
 	int16_t menu_level_index = -1;
-	DTTR_PCDOGS_D_Player_ProcessMovement_CurrentLevelID->Read(
-		&player_current_level_id
-	);
+	DTTR_PCDOGS_D_Player_ProcessMovement_CurrentLevelID->Read(&player_current_level_id);
 	DTTR_PCDOGS_D_Menu_ProcessMenuTransition_LevelIndex->Read(&menu_level_index);
 }
 

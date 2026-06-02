@@ -28,7 +28,7 @@ static bool has_playback_devices() {
 // Treats either the original MSS driver or SDL shim as an active audio backend.
 static bool has_audio_driver() {
 	void *audio_driver = NULL;
-	DTTR_PCDOGS_D_Audio_DigitalDriver->Read(&audio_driver);
+	DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver);
 
 	return audio_driver || dttr_mss_sdl_has_driver();
 }

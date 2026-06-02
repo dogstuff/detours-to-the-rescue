@@ -13498,9 +13498,7 @@ stable.data(
     xref("Graphics_IsQuadClipped", 0x631, 0x2),
 )
 stable.data("Graphics_DrawQuad_NegZBias", xref("Graphics_DrawQuad", 0xACC, 0x2))
-stable.data(
-    "Graphics_DrawQuad_AltUVOffset", xref("Graphics_DrawQuad", 0x261, 0x2)
-)
+stable.data("Graphics_DrawQuad_AltUVOffset", xref("Graphics_DrawQuad", 0x261, 0x2))
 stable.data(
     "Camera_SetupProjection_FixedToFloat",
     xref("Camera_SetupProjection", 0xA1, 0x2),
@@ -13526,9 +13524,7 @@ stable.data(
     xref("Graphics_RenderPolygonBatch", 0x1831, 0x2),
 )
 stable.data("Timer_GetGameTime_MsToSec", xref("Timer_GetGameTime", 0x19, 0x2))
-stable.data(
-    "Game_HandleGameOver_FadeMul", xref("Game_HandleGameOver", 0x13, 0x2)
-)
+stable.data("Game_HandleGameOver_FadeMul", xref("Game_HandleGameOver", 0x13, 0x2))
 stable.data(
     "D3D_SetFogDistance_GraphicsGammaStep", xref("D3D_SetFogDistance", 0x3A, 0x2)
 )
@@ -13585,9 +13581,7 @@ stable.data(
     "String_CheckFloatPrecision_CRTNegativeTwo",
     xref("String_CheckFloatPrecision", 0xF, 0x2),
 )
-stable.data(
-    "String_LoadFloatFPU_CRTKernel32", xref("String_LoadFloatFPU", 0x0, 0x1)
-)
+stable.data("String_LoadFloatFPU_CRTKernel32", xref("String_LoadFloatFPU", 0x0, 0x1))
 stable.data(
     "String_ConvertFloatToExponential_CRTExponentSuffix",
     xref("String_ConvertFloatToExponential", 0x93, 0x1),
@@ -13634,9 +13628,7 @@ stable.data(
     xref("Video_ShutdownAVIPlayer", 0x6, 0x1),
 )
 stable.data("Video_OpenAVIFile_MCIMovieID", xref("Video_OpenAVIFile", 0x15, 0x1))
-stable.data(
-    "Video_CloseAVIFile_MCICloseDevice", xref("Video_CloseAVIFile", 0x5, 0x1)
-)
+stable.data("Video_CloseAVIFile_MCICloseDevice", xref("Video_CloseAVIFile", 0x5, 0x1))
 stable.data(
     "Video_PlayAVIFullscreen_MCIPlayFullscreen",
     xref("Video_PlayAVIFullscreen", 0x5, 0x1),
@@ -13644,9 +13636,7 @@ stable.data(
 stable.data(
     "Video_IsAVIPlaying_MCIStatusPlaying", xref("Video_IsAVIPlaying", 0x33, 0x1)
 )
-stable.data(
-    "Video_IsAVIPlaying_MCIStatusMode", xref("Video_IsAVIPlaying", 0x8, 0x1)
-)
+stable.data("Video_IsAVIPlaying_MCIStatusMode", xref("Video_IsAVIPlaying", 0x8, 0x1))
 stable.data(
     "Graphics_RenderTexturedSprite_FontGlyphRenderState",
     xref("Graphics_RenderTexturedSprite", 0x17, 0x1),
@@ -13808,9 +13798,7 @@ stable.data(
 stable.data(
     "D3D_InitializeDirectDraw_OpenLog", xref("D3D_InitializeDirectDraw", 0x2E, 0x1)
 )
-stable.data(
-    "D3D_InitializeDirectDraw_Log", xref("D3D_InitializeDirectDraw", 0x15, 0x1)
-)
+stable.data("D3D_InitializeDirectDraw_Log", xref("D3D_InitializeDirectDraw", 0x15, 0x1))
 stable.data(
     "D3D_InitializeDirectDraw_LogFileMode",
     xref("D3D_InitializeDirectDraw", 0x10, 0x1),
@@ -13819,18 +13807,12 @@ stable.data(
     "Graphics_TakeScreenshot_FileModeReadBinary",
     xref("Graphics_TakeScreenshot", 0x1D, 0x1),
 )
-stable.data(
-    "Graphics_TakeScreenshot_Fmt", xref("Graphics_TakeScreenshot", 0xE, 0x1)
-)
-stable.data(
-    "D3D_SetGammaRamp_ErrSetGammaControl", xref("D3D_SetGammaRamp", 0x118, 0x1)
-)
+stable.data("Graphics_TakeScreenshot_Fmt", xref("Graphics_TakeScreenshot", 0xE, 0x1))
+stable.data("D3D_SetGammaRamp_ErrSetGammaControl", xref("D3D_SetGammaRamp", 0x118, 0x1))
 stable.data(
     "D3D_SetGammaRamp_ErrQueryGammaControl", xref("D3D_SetGammaRamp", 0x90, 0x1)
 )
-stable.data(
-    "D3D_SetGammaRamp_NotSupported", xref("D3D_SetGammaRamp", 0x59, 0x1)
-)
+stable.data("D3D_SetGammaRamp_NotSupported", xref("D3D_SetGammaRamp", 0x59, 0x1))
 stable.data(
     "D3D_EnumerateDirectDrawDevices_TryRefRasterizer",
     xref("D3D_EnumerateDirectDrawDevices", 0x65, 0x1),
@@ -13963,27 +13945,17 @@ stable.data(
 stable.data(
     "Video_OpenMovieFile_DefaultRectLeft", xref("Video_OpenMovieFile", 0x0, 0x1)
 )
-stable.data(
-    "Video_OpenMovieFile_DefaultRectTop", xref("Video_OpenMovieFile", 0x5, 0x2)
-)
+stable.data("Video_OpenMovieFile_DefaultRectTop", xref("Video_OpenMovieFile", 0x5, 0x2))
 stable.data(
     "Video_OpenMovieFile_DefaultRectRight", xref("Video_OpenMovieFile", 0xB, 0x2)
 )
 stable.data(
     "Video_OpenMovieFile_DefaultRectBottom", xref("Video_OpenMovieFile", 0x16, 0x1)
 )
-stable.data(
-    "Video_OpenMovieFile_AltRectLeft", xref("Video_OpenMovieFile", 0x34, 0x2)
-)
-stable.data(
-    "Video_OpenMovieFile_AltRectTop", xref("Video_OpenMovieFile", 0x3A, 0x2)
-)
-stable.data(
-    "Video_OpenMovieFile_AltRectRight", xref("Video_OpenMovieFile", 0x40, 0x1)
-)
-stable.data(
-    "Video_OpenMovieFile_AltRectBottom", xref("Video_OpenMovieFile", 0x4B, 0x2)
-)
+stable.data("Video_OpenMovieFile_AltRectLeft", xref("Video_OpenMovieFile", 0x34, 0x2))
+stable.data("Video_OpenMovieFile_AltRectTop", xref("Video_OpenMovieFile", 0x3A, 0x2))
+stable.data("Video_OpenMovieFile_AltRectRight", xref("Video_OpenMovieFile", 0x40, 0x1))
+stable.data("Video_OpenMovieFile_AltRectBottom", xref("Video_OpenMovieFile", 0x4B, 0x2))
 stable.data(
     "Save_GameLevelCompletion_IndexDalmatians",
     xref("Save_SaveGameLevelCompletion", 0x14D, 0x3),
@@ -14004,12 +13976,8 @@ stable.data(
     "Level_InitializeBonusData_Rff",
     xref("Level_InitializeBonusData", 0x2E, 0x1),
 )
-stable.data(
-    "Menu_UpdatePauseMenu_Cheater", xref("Menu_UpdatePauseMenu", 0x21F, 0x1)
-)
-stable.data(
-    "Menu_RenderSaveGame_Percent", xref("Menu_RenderSaveGame", 0x348, 0x1)
-)
+stable.data("Menu_UpdatePauseMenu_Cheater", xref("Menu_UpdatePauseMenu", 0x21F, 0x1))
+stable.data("Menu_RenderSaveGame_Percent", xref("Menu_RenderSaveGame", 0x348, 0x1))
 stable.data(
     "Menu_RenderSaveGame_StringFormatStringAndInt",
     xref("Menu_RenderSaveGame", 0x295, 0x1),
@@ -14206,24 +14174,14 @@ stable.data(
     doc='First byte/base of the "savegame.dat" path literal shared by Save_ReadGameFile and Save_WriteGameFile.',
     write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data(
-    "Save_WriteGameFile_ModeWriteBinary", xref("Save_WriteGameFile", 0x1, 0x1)
-)
-stable.data(
-    "Video_PlayMovieIntro_ErrPlay", xref("Video_PlayMovieIntro", 0xF9, 0x1)
-)
-stable.data(
-    "Video_PlayMovieIntro_ErrOpen", xref("Video_PlayMovieIntro", 0xBA, 0x1)
-)
+stable.data("Save_WriteGameFile_ModeWriteBinary", xref("Save_WriteGameFile", 0x1, 0x1))
+stable.data("Video_PlayMovieIntro_ErrPlay", xref("Video_PlayMovieIntro", 0xF9, 0x1))
+stable.data("Video_PlayMovieIntro_ErrOpen", xref("Video_PlayMovieIntro", 0xBA, 0x1))
 stable.data(
     "Video_PlayMovieIntro_StringConcat3", xref("Video_PlayMovieIntro", 0x21, 0x1)
 )
-stable.data(
-    "Debug_RenderOverlay_FPSFormat", xref("Debug_RenderOverlay", 0xA3, 0x1)
-)
-stable.data(
-    "Debug_RenderOverlay_PosFormat", xref("Debug_RenderOverlay", 0x75, 0x1)
-)
+stable.data("Debug_RenderOverlay_FPSFormat", xref("Debug_RenderOverlay", 0xA3, 0x1))
+stable.data("Debug_RenderOverlay_PosFormat", xref("Debug_RenderOverlay", 0x75, 0x1))
 stable.data(
     "Graphics_IsQuadClipped_MaxPrimitivesPerBatch",
     xref("Graphics_IsQuadClipped", 0x7D4, 0x2),
@@ -14324,19 +14282,13 @@ stable.data(
     xref("Window_ProcessGameProc", 0x49, 0x1),
 )
 stable.data("Window_RunWinMain_RequiresNT", xref("Window_RunWinMain", 0x75, 0x1))
-stable.data(
-    "PKG_FindAndOpenFile_CantFindPKG", xref("PKG_FindAndOpenFile", 0x141, 0x1)
-)
+stable.data("PKG_FindAndOpenFile_CantFindPKG", xref("PKG_FindAndOpenFile", 0x141, 0x1))
 stable.data("PKG_FindAndOpenFile_SetupPath", xref("PKG_FindAndOpenFile", 0xD5, 0x1))
-stable.data(
-    "PKG_FindAndOpenFile_SearchPattern", xref("PKG_FindAndOpenFile", 0xAB, 0x1)
-)
+stable.data("PKG_FindAndOpenFile_SearchPattern", xref("PKG_FindAndOpenFile", 0xAB, 0x1))
 stable.data(
     "PKG_FindAndOpenFile_DalmsSetupPath", xref("PKG_FindAndOpenFile", 0x93, 0x1)
 )
-stable.data(
-    "PKG_FindAndOpenFile_DriveLetter", xref("PKG_FindAndOpenFile", 0x60, 0x1)
-)
+stable.data("PKG_FindAndOpenFile_DriveLetter", xref("PKG_FindAndOpenFile", 0x60, 0x1))
 stable.data("PKG_FindAndOpenFile_PcdogsPKG", xref("PKG_FindAndOpenFile", 0x45, 0x1))
 stable.data("Math_GenerateRandom_Seed", xref("Math_GenerateRandom", 0x0, 0x2))
 stable.data(
@@ -14368,12 +14320,8 @@ stable.data(
 stable.data(
     "Mem_MallocWithRetry_UIConfirmStopGame", xref("Mem_MallocWithRetry", 0x4E, 0x1)
 )
-stable.data(
-    "Mem_MallocWithRetry_OutOfMemory", xref("Mem_MallocWithRetry", 0x31, 0x1)
-)
-stable.data(
-    "Mem_MallocWithRetry_Failed", xref("Mem_MallocWithRetry", 0x1A, 0x1)
-)
+stable.data("Mem_MallocWithRetry_OutOfMemory", xref("Mem_MallocWithRetry", 0x31, 0x1))
+stable.data("Mem_MallocWithRetry_Failed", xref("Mem_MallocWithRetry", 0x1A, 0x1))
 stable.data(
     "UI_ShowConfirmDialog_ProgrammerMessage", xref("UI_ShowConfirmDialog", 0x5A, 0x1)
 )
@@ -14384,13 +14332,9 @@ stable.data("Mem_AllocateHandle_OutOfExtents", xref("Mem_AllocateHandle", 0xC, 0
 stable.data(
     "Mem_FreeAllExtents_LeakUnreleasedExtent", xref("Mem_FreeAllExtents", 0x16, 0x1)
 )
-stable.data(
-    "Mem_ReleaseHandle_LeakInvalidExtent", xref("Mem_ReleaseHandle", 0x9E, 0x1)
-)
+stable.data("Mem_ReleaseHandle_LeakInvalidExtent", xref("Mem_ReleaseHandle", 0x9E, 0x1))
 stable.data("Mem_ReleaseHandle_FreeDebug", xref("Mem_ReleaseHandle", 0x4C, 0x1))
-stable.data(
-    "Mem_ReleaseHandle_LeakUnallocated", xref("Mem_ReleaseHandle", 0x29, 0x1)
-)
+stable.data("Mem_ReleaseHandle_LeakUnallocated", xref("Mem_ReleaseHandle", 0x29, 0x1))
 stable.data(
     "Timer_GetElapsedTickCount_GameStartTime",
     xref("Timer_GetElapsedTickCount", 0x0, 0x1),
@@ -14398,9 +14342,7 @@ stable.data(
 stable.data(
     "Input_IsKeyPressed_MappingTableSize", xref("Input_IsKeyPressed", 0x2C, 0x3)
 )
-stable.data(
-    "Input_IsKeyPressed_MappingTablePtr", xref("Input_IsKeyPressed", 0x0, 0x1)
-)
+stable.data("Input_IsKeyPressed_MappingTablePtr", xref("Input_IsKeyPressed", 0x0, 0x1))
 stable.data("String_ParseInt_CharTypeTable", xref("String_ParseInt", 0x23, 0x2))
 stable.data(
     "String_FormatFloat_DecimalPointChar", xref("String_FormatFloat", 0x40, 0x2)
@@ -14424,7 +14366,8 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "Script_OpPauseToggle_ScreenBorderStateFlag", xref("Script_OpPauseToggle", 0x66, 0x1)
+    "Script_OpPauseToggle_ScreenBorderStateFlag",
+    xref("Script_OpPauseToggle", 0x66, 0x1),
 )
 stable.data(
     "ActiveEntityWorkList",
@@ -14636,42 +14579,18 @@ stable.data(
     "Checkers_UpdateStateMachine_AIThinkTimeout",
     xref("Checkers_UpdateStateMachine", 0x5B8, 0x2),
 )
-stable.data(
-    "Graphics_DrawQuad_Vertex0", xref("Graphics_DrawQuad", 0x3CC, 0x6)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex0U", xref("Graphics_DrawQuad", 0x288, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex0V", xref("Graphics_DrawQuad", 0x29D, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex1", xref("Graphics_DrawQuad", 0x3D6, 0x6)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex1U", xref("Graphics_DrawQuad", 0x2B4, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex1V", xref("Graphics_DrawQuad", 0x2C9, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex2", xref("Graphics_DrawQuad", 0x3E0, 0x6)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex2U", xref("Graphics_DrawQuad", 0x2EC, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex2V", xref("Graphics_DrawQuad", 0x304, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex3", xref("Graphics_DrawQuad", 0x3EA, 0x6)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex3U", xref("Graphics_DrawQuad", 0x35A, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex3V", xref("Graphics_DrawQuad", 0x372, 0x2)
-)
+stable.data("Graphics_DrawQuad_Vertex0", xref("Graphics_DrawQuad", 0x3CC, 0x6))
+stable.data("Graphics_DrawQuad_Vertex0U", xref("Graphics_DrawQuad", 0x288, 0x2))
+stable.data("Graphics_DrawQuad_Vertex0V", xref("Graphics_DrawQuad", 0x29D, 0x2))
+stable.data("Graphics_DrawQuad_Vertex1", xref("Graphics_DrawQuad", 0x3D6, 0x6))
+stable.data("Graphics_DrawQuad_Vertex1U", xref("Graphics_DrawQuad", 0x2B4, 0x2))
+stable.data("Graphics_DrawQuad_Vertex1V", xref("Graphics_DrawQuad", 0x2C9, 0x2))
+stable.data("Graphics_DrawQuad_Vertex2", xref("Graphics_DrawQuad", 0x3E0, 0x6))
+stable.data("Graphics_DrawQuad_Vertex2U", xref("Graphics_DrawQuad", 0x2EC, 0x2))
+stable.data("Graphics_DrawQuad_Vertex2V", xref("Graphics_DrawQuad", 0x304, 0x2))
+stable.data("Graphics_DrawQuad_Vertex3", xref("Graphics_DrawQuad", 0x3EA, 0x6))
+stable.data("Graphics_DrawQuad_Vertex3U", xref("Graphics_DrawQuad", 0x35A, 0x2))
+stable.data("Graphics_DrawQuad_Vertex3V", xref("Graphics_DrawQuad", 0x372, 0x2))
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_DeviceInit0",
     xref("D3D_InitDirectDrawAndDirect3D", 0x8A, 0x2),
@@ -14983,18 +14902,10 @@ stable.data(
     type="int32_t",
     write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data(
-    "Graphics_DrawQuad_VertexPtrs", xref("Graphics_DrawQuad", 0x6C, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex1Ptr", xref("Graphics_DrawQuad", 0x3D6, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex2Ptr", xref("Graphics_DrawQuad", 0x3E0, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_Vertex3Ptr", xref("Graphics_DrawQuad", 0x3EA, 0x2)
-)
+stable.data("Graphics_DrawQuad_VertexPtrs", xref("Graphics_DrawQuad", 0x6C, 0x2))
+stable.data("Graphics_DrawQuad_Vertex1Ptr", xref("Graphics_DrawQuad", 0x3D6, 0x2))
+stable.data("Graphics_DrawQuad_Vertex2Ptr", xref("Graphics_DrawQuad", 0x3E0, 0x2))
+stable.data("Graphics_DrawQuad_Vertex3Ptr", xref("Graphics_DrawQuad", 0x3EA, 0x2))
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_GraphicsSelectedDriverIndex",
     xref("D3D_InitDirectDrawAndDirect3D", 0x1B1, 0x1),
@@ -15213,9 +15124,7 @@ stable.data(
     "Menu_ClearTransitionFlags_PuppyCounterAnimState",
     xref("Menu_ClearTransitionFlags", 0x17, 0x3),
 )
-stable.data(
-    "Level_GetDataPointer_BonusFlags", xref("Level_GetDataPointer", 0x4, 0x1)
-)
+stable.data("Level_GetDataPointer_BonusFlags", xref("Level_GetDataPointer", 0x4, 0x1))
 stable.data(
     "Menu_RenderControlsConfiguration_StringFormatBuffer",
     xref("Menu_RenderControlsConfiguration", 0x2D, 0x1),
@@ -15350,9 +15259,7 @@ stable.data(
     "Menu_ProcessMenuState_PostTransitionAction",
     xref("Menu_ProcessMenuState", 0x78, 0x3),
 )
-stable.data(
-    "Menu_ProcessMenuState_Context", xref("Menu_ProcessMenuState", 0x39F, 0x1)
-)
+stable.data("Menu_ProcessMenuState_Context", xref("Menu_ProcessMenuState", 0x39F, 0x1))
 stable.data(
     "Menu_ProcessMenuState_FadeCounter",
     xref("Menu_ProcessMenuState", 0x7BC, 0x2),
@@ -15447,9 +15354,7 @@ stable.data(
     "Shared_LoadCommonResources_TimerState",
     xref("Shared_LoadCommonResources", 0x32, 0x1),
 )
-stable.data(
-    "Menu_UpdatePauseMenu_Timer", xref("Menu_UpdatePauseMenu", 0x17B, 0x3)
-)
+stable.data("Menu_UpdatePauseMenu_Timer", xref("Menu_UpdatePauseMenu", 0x17B, 0x3))
 stable.data(
     "Shared_LoadCommonResources_PKGResourceHandle1",
     xref("Shared_LoadCommonResources", 0x19, 0x1),
@@ -15530,9 +15435,7 @@ stable.data(
     doc="Packed save-menu transition/countdown dword; native code accesses individual byte lanes.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data(
-    "Menu_CheckPauseInput_Delay", xref("Menu_CheckPauseInput", 0x5A, 0x1)
-)
+stable.data("Menu_CheckPauseInput_Delay", xref("Menu_CheckPauseInput", 0x5A, 0x1))
 stable.data(
     "Menu_HandleOptionsLogic_InputMenuControlsKeyIndex",
     xref("Menu_HandleOptionsLogic", 0xA4, 0x1),
@@ -15982,12 +15885,8 @@ stable.data(
         "powerup/entity runtime data."
     ),
 )
-stable.data(
-    "Trail_ResetBone_PathNodeCount", xref("Trail_ResetBone", 0x18, 0x2)
-)
-stable.data(
-    "Trail_FindBonePath_End", xref("Trail_FindBonePath", 0x25F, 0x1)
-)
+stable.data("Trail_ResetBone_PathNodeCount", xref("Trail_ResetBone", 0x18, 0x2))
+stable.data("Trail_FindBonePath_End", xref("Trail_FindBonePath", 0x25F, 0x1))
 stable.data(
     "Trail_CheckBoneAvailable_Timer",
     xref("Trail_CheckBoneAvailable", 0x13, 0x2),
@@ -15996,9 +15895,7 @@ stable.data(
     "Trail_UpdateAndRenderBone_Entries",
     xref("Trail_UpdateAndRenderBone", 0x497, 0x1),
 )
-stable.data(
-    "Trail_ResetBone_Entry0Timestamp", xref("Trail_ResetBone", 0x1E, 0x1)
-)
+stable.data("Trail_ResetBone_Entry0Timestamp", xref("Trail_ResetBone", 0x1E, 0x1))
 stable.data(
     "Trail_UpdateAndRenderBone_Entry0PosX",
     xref("Trail_UpdateAndRenderBone", 0x40B, 0x1),
@@ -16024,15 +15921,9 @@ stable.data(
     "Trail_UpdateAndRenderBone_PathBufferZ1",
     xref("Trail_UpdateAndRenderBone", 0x157, 0x2),
 )
-stable.data(
-    "Trail_FindBonePath_BufferX2", xref("Trail_FindBonePath", 0x9A, 0x1)
-)
-stable.data(
-    "Trail_FindBonePath_BufferY2", xref("Trail_FindBonePath", 0x759, 0x1)
-)
-stable.data(
-    "Trail_FindBonePath_BufferZ2", xref("Trail_FindBonePath", 0x760, 0x2)
-)
+stable.data("Trail_FindBonePath_BufferX2", xref("Trail_FindBonePath", 0x9A, 0x1))
+stable.data("Trail_FindBonePath_BufferY2", xref("Trail_FindBonePath", 0x759, 0x1))
+stable.data("Trail_FindBonePath_BufferZ2", xref("Trail_FindBonePath", 0x760, 0x2))
 stable.data(
     "PKG_FixUpResourceMeshNode_SpecialNodeProcessingFlag",
     xref("PKG_FixUpResourceMeshNode", 0x23D, 0x2),
@@ -16377,9 +16268,7 @@ stable.data(
     "Mem_InitializeAllocator_HeapAllocatorInitialized",
     xref("Mem_InitializeAllocator", 0x2D, 0x2),
 )
-stable.data(
-    "Mem_AllocateHandle_PoolHead", xref("Mem_AllocateHandle", 0x1, 0x2)
-)
+stable.data("Mem_AllocateHandle_PoolHead", xref("Mem_AllocateHandle", 0x1, 0x2))
 stable.data(
     "Input_ClearState_Buffer",
     xref("Input_ClearState", 0x8, 0x1),
@@ -16419,12 +16308,8 @@ stable.data(
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data(
-    "Camera_SetViewport_Height", xref("Camera_SetViewport", 0x36, 0x2)
-)
-stable.data(
-    "Camera_SetViewport_FarClipPlane", xref("Camera_SetViewport", 0x3C, 0x2)
-)
+stable.data("Camera_SetViewport_Height", xref("Camera_SetViewport", 0x36, 0x2))
+stable.data("Camera_SetViewport_FarClipPlane", xref("Camera_SetViewport", 0x3C, 0x2))
 stable.data(
     "Checkers_UpdateStateMachine_Player1CameraPos",
     xref("Checkers_UpdateStateMachine", 0x73, 0x6),
@@ -16632,9 +16517,7 @@ stable.data(
     "Graphics_IsQuadClipped_BatchTriangleCount",
     xref("Graphics_IsQuadClipped", 0x81D, 0x2),
 )
-stable.data(
-    "Window_RunWinMain_InstanceHandle", xref("Window_RunWinMain", 0x21C, 0x1)
-)
+stable.data("Window_RunWinMain_InstanceHandle", xref("Window_RunWinMain", 0x21C, 0x1))
 stable.data(
     "Graphics_IsQuadClipped_BatchPrimitiveCount",
     xref("Graphics_IsQuadClipped", 0x7CF, 0x1),
@@ -16643,12 +16526,8 @@ stable.data(
     "Input_ProcessWindowMessages_AcceleratorTable",
     xref("Input_ProcessWindowMessages", 0x8B, 0x1),
 )
-stable.data(
-    "Window_RunWinMain_ShowCmd", xref("Window_RunWinMain", 0x18C, 0x2)
-)
-stable.data(
-    "Graphics_DrawQuad_RenderFrameCount", xref("Graphics_DrawQuad", 0xB9D, 0x2)
-)
+stable.data("Window_RunWinMain_ShowCmd", xref("Window_RunWinMain", 0x18C, 0x2))
+stable.data("Graphics_DrawQuad_RenderFrameCount", xref("Graphics_DrawQuad", 0xB9D, 0x2))
 stable.data(
     "String_GetByIndex_LocalizationLanguageID",
     xref("String_GetByIndex", 0xA1, 0x1),
@@ -17253,15 +17132,9 @@ stable.data(
     "Graphics_ClipPolygonByCameraPyramid_Left0",
     xref("Graphics_ClipPolygonByCameraPyramid", 0x6D, 0x1),
 )
-stable.data(
-    "Camera_SetupClipPlanes_Left1", xref("Camera_SetupClipPlanes", 0xC6, 0x1)
-)
-stable.data(
-    "Camera_SetupClipPlanes_Left2", xref("Camera_SetupClipPlanes", 0xCF, 0x2)
-)
-stable.data(
-    "Camera_SetupClipPlanes_Right0", xref("Camera_SetupClipPlanes", 0xF1, 0x2)
-)
+stable.data("Camera_SetupClipPlanes_Left1", xref("Camera_SetupClipPlanes", 0xC6, 0x1))
+stable.data("Camera_SetupClipPlanes_Left2", xref("Camera_SetupClipPlanes", 0xCF, 0x2))
+stable.data("Camera_SetupClipPlanes_Right0", xref("Camera_SetupClipPlanes", 0xF1, 0x2))
 stable.data(
     "Camera_SetupClipPlanes_Right1",
     xref("Camera_SetupClipPlanes", 0x158, 0x2),
@@ -17270,15 +17143,9 @@ stable.data(
     "Camera_SetupClipPlanes_Right2",
     xref("Camera_SetupClipPlanes", 0x166, 0x1),
 )
-stable.data(
-    "Camera_SetupClipPlanes_Top0", xref("Camera_SetupClipPlanes", 0x16F, 0x2)
-)
-stable.data(
-    "Camera_SetupClipPlanes_Top1", xref("Camera_SetupClipPlanes", 0x191, 0x2)
-)
-stable.data(
-    "Camera_SetupClipPlanes_Top2", xref("Camera_SetupClipPlanes", 0x1AF, 0x2)
-)
+stable.data("Camera_SetupClipPlanes_Top0", xref("Camera_SetupClipPlanes", 0x16F, 0x2))
+stable.data("Camera_SetupClipPlanes_Top1", xref("Camera_SetupClipPlanes", 0x191, 0x2))
+stable.data("Camera_SetupClipPlanes_Top2", xref("Camera_SetupClipPlanes", 0x1AF, 0x2))
 stable.data(
     "Camera_SetupClipPlanes_Bottom0",
     xref("Camera_SetupClipPlanes", 0x1B5, 0x1),
@@ -17468,9 +17335,7 @@ stable.data(
     "Script_OpPauseToggle_TargetDistance",
     xref("Script_OpPauseToggle", 0x1AF, 0x2),
 )
-stable.data(
-    "Script_OpPauseToggle_CameraFOV", xref("Script_OpPauseToggle", 0x1C3, 0x2)
-)
+stable.data("Script_OpPauseToggle_CameraFOV", xref("Script_OpPauseToggle", 0x1C3, 0x2))
 stable.data(
     "Checkers_UpdateStateMachine_SaveGameWorld0CompletionBits",
     xref("Checkers_UpdateStateMachine", 0x518, 0x2),
@@ -17531,7 +17396,9 @@ stable.data(
     "Level_InitializeActorSystem_TransitionState",
     xref("Level_InitializeActorSystem", 0xE4, 0x2),
 )
-stable.data("Script_OpPauseToggle_CurrentGameMode", xref("Script_OpPauseToggle", 0x0, 0x1))
+stable.data(
+    "Script_OpPauseToggle_CurrentGameMode", xref("Script_OpPauseToggle", 0x0, 0x1)
+)
 stable.data(
     "Level_InitializeActorSystem_RenderDistanceQuarter",
     xref("Level_InitializeActorSystem", 0x1AF, 0x2),
@@ -17582,9 +17449,7 @@ stable.data(
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data(
-    "Script_OpPauseToggle_State", xref("Script_OpPauseToggle", 0x1B, 0x1)
-)
+stable.data("Script_OpPauseToggle_State", xref("Script_OpPauseToggle", 0x1B, 0x1))
 stable.data(
     "Script_OpPauseToggle_SavedCameraX",
     xref("Script_OpPauseToggle", 0x29, 0x2),
@@ -17647,9 +17512,7 @@ stable.data(
     "Audio_ShutdownSystem_AilReleaseSampleHandle",
     xref("Audio_ShutdownSystem", 0xA, 0x2),
 )
-stable.data(
-    "Audio_ShutdownSystem_AilShutdown", xref("Audio_ShutdownSystem", 0x37, 0x2)
-)
+stable.data("Audio_ShutdownSystem_AilShutdown", xref("Audio_ShutdownSystem", 0x37, 0x2))
 
 # Lower-confidence rows live in the canonical blueprint and carry unstable=True.
 _unstable_rows = Blueprint("unstable", unstable=True)

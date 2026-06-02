@@ -173,8 +173,8 @@ void dttr_mss_stream_apply_master_gain() {
 
 // Resolves a game-relative stream path through override data and the cached game data tree.
 static sds resolve_game_relative_stream_path(const char *relative) {
-	char (*base_path)[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = DTTR_PCDOGS_D_PKG_BasePath
-															   ->Ptr();
+	char (*base_path)[DTTR_PCDOGS_D_AUDIO_OPEN_STREAM_PKG_BASE_PATH_COUNT]
+		= DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Ptr();
 	sds requested = sdsnew(base_path ? *base_path : NULL);
 
 	if (!requested || !DTTR_Path_AppendSegment(&requested, relative, '\\')) {

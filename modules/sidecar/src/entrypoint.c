@@ -195,14 +195,14 @@ static const DTTR_PCDOGS_T_Symbol_Data *pcdogs_symbol_data(
 
 static bool movie_file_names_resolved() {
 	const DTTR_PCDOGS_T_Symbol_Data *symbol = pcdogs_symbol_data(
-		DTTR_PCDOGS_SYMBOL_DATA_ID_VIDEO_MOVIE_FILE_NAMES
+		DTTR_PCDOGS_SYMBOL_DATA_ID_VIDEO_PLAY_MOVIE_INTRO_FILE_NAMES
 	);
 	return symbol && symbol->address != 0;
 }
 
 static char **movie_file_names_ptr() {
 	const DTTR_PCDOGS_T_Symbol_Data *symbol = pcdogs_symbol_data(
-		DTTR_PCDOGS_SYMBOL_DATA_ID_VIDEO_MOVIE_FILE_NAMES
+		DTTR_PCDOGS_SYMBOL_DATA_ID_VIDEO_PLAY_MOVIE_INTRO_FILE_NAMES
 	);
 	return symbol && symbol->address ? (char **)symbol->address : NULL;
 }
@@ -232,24 +232,32 @@ static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 		{"Audio_InitializeLevelAudio",
 		 DTTR_PCDOGS_F_Audio_InitializeLevelAudio->IsResolved},
 		{"Video_PlayMovieFile", DTTR_PCDOGS_F_Video_PlayMovieFile->IsResolved},
-		{"DDraw_Object", DTTR_PCDOGS_D_DDraw_Object->IsResolved},
-		{"Window_GameInitialized", DTTR_PCDOGS_D_Window_GameInitialized->IsResolved},
-		{"Input_JoystickAvailable", DTTR_PCDOGS_D_Input_JoystickAvailable->IsResolved},
-		{"Window_MainHandle", DTTR_PCDOGS_D_Window_MainHandle->IsResolved},
-		{"Window_MainHandle2", DTTR_PCDOGS_D_Window_MainHandle2->IsResolved},
-		{"Rendering_Enabled", DTTR_PCDOGS_D_Rendering_Enabled->IsResolved},
-		{"Window_ShouldQuit", DTTR_PCDOGS_D_Window_ShouldQuit->IsResolved},
-		{"PKG_BasePath", DTTR_PCDOGS_D_PKG_BasePath->IsResolved},
-		{"Audio_DigitalDriver", DTTR_PCDOGS_D_Audio_DigitalDriver->IsResolved},
+		{"DDraw_Object", DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->IsResolved},
+		{"Window_GameInitialized",
+		 DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->IsResolved},
+		{"Input_JoystickAvailable",
+		 DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->IsResolved},
+		{"Window_MainHandle",
+		 DTTR_PCDOGS_D_D3D_InitDirectDrawAndDirect3D_WindowMainHandle->IsResolved},
+		{"Window_MainHandle2", DTTR_PCDOGS_D_Window_RunWinMain_Handle2->IsResolved},
+		{"Rendering_Enabled",
+		 DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->IsResolved},
+		{"Window_ShouldQuit",
+		 DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->IsResolved},
+		{"PKG_BasePath", DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->IsResolved},
+		{"Audio_DigitalDriver",
+		 DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->IsResolved},
 		{"Video_MovieFileNames", movie_file_names_resolved},
-		{"Video_MoviePathPrefix", DTTR_PCDOGS_D_Video_MoviePathPrefix->IsResolved},
+		{"Video_MoviePathPrefix",
+		 DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->IsResolved},
 		{"PKG_ResourceTitleBonusReplayResource",
-		 DTTR_PCDOGS_D_PKG_ResourceTitleBonusReplayResource->IsResolved},
-		{"PKG_ResourceTitleHandle1", DTTR_PCDOGS_D_PKG_ResourceTitleHandle1->IsResolved},
-		{"PKG_ResourceTitleHandle0", DTTR_PCDOGS_D_PKG_ResourceTitleHandle0->IsResolved},
+		 DTTR_PCDOGS_D_Title_CleanupScreenResources_PKGResourceTitleBonusReplayResource
+			 ->IsResolved},
+		{"PKG_ResourceTitleHandle1", DTTR_PCDOGS_D_PKGResourceTitleHandle1->IsResolved},
+		{"PKG_ResourceTitleHandle0", DTTR_PCDOGS_D_PKGResourceTitleHandle0->IsResolved},
 		{"PKG_ResourceTitleMaterialBase",
-		 DTTR_PCDOGS_D_PKG_ResourceTitleMaterialBase->IsResolved},
-		{"PKG_ResourceTitlePackage", DTTR_PCDOGS_D_PKG_ResourceTitlePackage->IsResolved},
+		 DTTR_PCDOGS_D_PKGResourceTitleMaterialBase->IsResolved},
+		{"PKG_ResourceTitlePackage", DTTR_PCDOGS_D_PKGResourceTitlePackage->IsResolved},
 	};
 
 	bool ok = true;
@@ -406,7 +414,7 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 
 	switch (event->type) {
 	case SDL_EVENT_QUIT:
-		DTTR_PCDOGS_D_Window_ShouldQuit->Write(1);
+		DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(1);
 		after_sdl_event(event, true);
 		return;
 
@@ -539,7 +547,7 @@ static void tick_main_loop() {
 	SDL_DelayNS(1);
 
 	int32_t rendering_enabled = 0;
-	DTTR_PCDOGS_D_Rendering_Enabled->Read(&rendering_enabled);
+	DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Read(&rendering_enabled);
 
 	if (rendering_enabled) {
 #ifdef DTTR_MODS_ENABLED
@@ -576,7 +584,7 @@ static void attempt_play_startup_movies() {
 		return;
 	}
 
-	const char *const prefix = DTTR_PCDOGS_D_Video_MoviePathPrefix->Ptr();
+	const char *const prefix = DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->Ptr();
 	char **const names = movie_file_names_ptr();
 	if (!prefix || !names) {
 		return;
@@ -604,7 +612,7 @@ static void attempt_play_startup_movies() {
 		const DTTR_MovieResult ret = DTTR_Movies_Stop();
 
 		if (ret == DTTR_MOVIE_QUIT) {
-			DTTR_PCDOGS_D_Window_ShouldQuit->Write(1);
+			DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(1);
 		}
 
 		if (ret != DTTR_MOVIE_ENDED) {
@@ -733,8 +741,8 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 	dttr_mods_overlay_visible_changed(false);
 #endif
 
-	DTTR_PCDOGS_D_Window_MainHandle2->Write(hwnd);
-	DTTR_PCDOGS_D_Window_MainHandle->Write(hwnd);
+	DTTR_PCDOGS_D_Window_RunWinMain_Handle2->Write(hwnd);
+	DTTR_PCDOGS_D_D3D_InitDirectDrawAndDirect3D_WindowMainHandle->Write(hwnd);
 
 	if (!initialize_pcdogs_runtime(&ctx->runtime, hwnd)) {
 		exit_code = 1;
@@ -749,7 +757,7 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 	}
 
 	void *audio_driver = NULL;
-	DTTR_PCDOGS_D_Audio_DigitalDriver->Read(&audio_driver);
+	DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver);
 	if (audio_driver == NULL) {
 		DTTR_LOG_WARN("No audio device available - audio disabled");
 	}
@@ -758,19 +766,19 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_late_init();
 #endif
-	DTTR_PCDOGS_D_Window_ShouldQuit->Write(0);
+	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(0);
 
-	DTTR_PCDOGS_D_Window_GameInitialized->Write(1);
-	DTTR_PCDOGS_D_Rendering_Enabled->Write(1);
+	DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Write(1);
+	DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Write(1);
 
 	DTTR_LOG_INFO("Ready!");
 
 	int32_t should_quit = 0;
-	DTTR_PCDOGS_D_Window_ShouldQuit->Read(&should_quit);
+	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&should_quit);
 	while (should_quit == 0) {
 		dttr_sidecar_poll_sdl_events();
 		tick_main_loop();
-		DTTR_PCDOGS_D_Window_ShouldQuit->Read(&should_quit);
+		DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&should_quit);
 	}
 
 cleanup_sidecar_runtime:
