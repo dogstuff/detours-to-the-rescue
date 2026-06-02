@@ -215,34 +215,34 @@ static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 		{"PKG_FindAndOpenFile", DTTR_PCDOGS_F_PKG_FindAndOpenFile->IsResolved},
 		{"PKG_InitializeResourceGameEngine",
 		 DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->IsResolved},
-		{"D3DInitializeGraphicsSubsystem",
+		{"D3D_InitializeGraphicsSubsystem",
 		 DTTR_PCDOGS_F_D3D_InitializeGraphicsSubsystem->IsResolved},
 		{"PKG_InitializeSystem", DTTR_PCDOGS_F_PKG_InitializeSystem->IsResolved},
-		{"DisplaySetMode", DTTR_PCDOGS_F_Display_SetMode->IsResolved},
-		{"InputResetState", DTTR_PCDOGS_F_Input_ResetState->IsResolved},
-		{"ConfigLoadAlternateFromINI",
+		{"Display_SetMode", DTTR_PCDOGS_F_Display_SetMode->IsResolved},
+		{"Input_ResetState", DTTR_PCDOGS_F_Input_ResetState->IsResolved},
+		{"Config_LoadAlternateFromINI",
 		 DTTR_PCDOGS_F_Config_LoadAlternateFromINI->IsResolved},
-		{"GraphicsRenderFrame", DTTR_PCDOGS_F_Graphics_RenderFrame->IsResolved},
-		{"FileOpenWithMode", DTTR_PCDOGS_F_File_OpenWithMode->IsResolved},
-		{"MemMallocCRT", DTTR_PCDOGS_F_Mem_MallocCRT->IsResolved},
-		{"AudioInitializeSystem", DTTR_PCDOGS_F_Audio_InitializeSystem->IsResolved},
-		{"AudioShutdownSystem", DTTR_PCDOGS_F_Audio_ShutdownSystem->IsResolved},
-		{"AudioStopAllSamples", DTTR_PCDOGS_F_Audio_StopAllSamples->IsResolved},
-		{"AudioStopAllSounds", DTTR_PCDOGS_F_Audio_StopAllSounds->IsResolved},
-		{"AudioInitializeLevelAudio",
+		{"Graphics_RenderFrame", DTTR_PCDOGS_F_Graphics_RenderFrame->IsResolved},
+		{"File_OpenWithMode", DTTR_PCDOGS_F_File_OpenWithMode->IsResolved},
+		{"Mem_MallocCRT", DTTR_PCDOGS_F_Mem_MallocCRT->IsResolved},
+		{"Audio_InitializeSystem", DTTR_PCDOGS_F_Audio_InitializeSystem->IsResolved},
+		{"Audio_ShutdownSystem", DTTR_PCDOGS_F_Audio_ShutdownSystem->IsResolved},
+		{"Audio_StopAllSamples", DTTR_PCDOGS_F_Audio_StopAllSamples->IsResolved},
+		{"Audio_StopAllSounds", DTTR_PCDOGS_F_Audio_StopAllSounds->IsResolved},
+		{"Audio_InitializeLevelAudio",
 		 DTTR_PCDOGS_F_Audio_InitializeLevelAudio->IsResolved},
-		{"VideoPlayMovieFile", DTTR_PCDOGS_F_Video_PlayMovieFile->IsResolved},
-		{"DDrawObject", DTTR_PCDOGS_D_DDraw_Object->IsResolved},
-		{"WindowGameInitialized", DTTR_PCDOGS_D_Window_GameInitialized->IsResolved},
-		{"InputJoystickAvailable", DTTR_PCDOGS_D_Input_JoystickAvailable->IsResolved},
-		{"WindowMainHandle", DTTR_PCDOGS_D_Window_MainHandle->IsResolved},
-		{"WindowMainHandle2", DTTR_PCDOGS_D_Window_MainHandle2->IsResolved},
-		{"RenderingEnabled", DTTR_PCDOGS_D_Rendering_Enabled->IsResolved},
-		{"WindowShouldQuit", DTTR_PCDOGS_D_Window_ShouldQuit->IsResolved},
+		{"Video_PlayMovieFile", DTTR_PCDOGS_F_Video_PlayMovieFile->IsResolved},
+		{"DDraw_Object", DTTR_PCDOGS_D_DDraw_Object->IsResolved},
+		{"Window_GameInitialized", DTTR_PCDOGS_D_Window_GameInitialized->IsResolved},
+		{"Input_JoystickAvailable", DTTR_PCDOGS_D_Input_JoystickAvailable->IsResolved},
+		{"Window_MainHandle", DTTR_PCDOGS_D_Window_MainHandle->IsResolved},
+		{"Window_MainHandle2", DTTR_PCDOGS_D_Window_MainHandle2->IsResolved},
+		{"Rendering_Enabled", DTTR_PCDOGS_D_Rendering_Enabled->IsResolved},
+		{"Window_ShouldQuit", DTTR_PCDOGS_D_Window_ShouldQuit->IsResolved},
 		{"PKG_BasePath", DTTR_PCDOGS_D_PKG_BasePath->IsResolved},
-		{"AudioDigitalDriver", DTTR_PCDOGS_D_Audio_DigitalDriver->IsResolved},
-		{"VideoMovieFileNames", movie_file_names_resolved},
-		{"VideoMoviePathPrefix", DTTR_PCDOGS_D_Video_MoviePathPrefix->IsResolved},
+		{"Audio_DigitalDriver", DTTR_PCDOGS_D_Audio_DigitalDriver->IsResolved},
+		{"Video_MovieFileNames", movie_file_names_resolved},
+		{"Video_MoviePathPrefix", DTTR_PCDOGS_D_Video_MoviePathPrefix->IsResolved},
 		{"PKG_ResourceTitleBonusReplayResource",
 		 DTTR_PCDOGS_D_PKG_ResourceTitleBonusReplayResource->IsResolved},
 		{"PKG_ResourceTitleHandle1", DTTR_PCDOGS_D_PKG_ResourceTitleHandle1->IsResolved},
@@ -502,7 +502,7 @@ static bool initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 			   DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->Call(ctx, &ret)
 		   )
 		   && require_pcdogs_call(
-			   "D3DInitializeGraphicsSubsystem",
+			   "D3D_InitializeGraphicsSubsystem",
 			   DTTR_PCDOGS_F_D3D_InitializeGraphicsSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )
 		   && require_pcdogs_call(
@@ -516,15 +516,15 @@ static bool start_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t ret = 0;
 	int32_t config_ret = 0;
 	return require_pcdogs_call(
-			   "DisplaySetMode",
+			   "Display_SetMode",
 			   DTTR_PCDOGS_F_Display_SetMode->Call(ctx, hwnd, &ret)
 		   )
 		   && require_pcdogs_call(
-			   "InputResetState",
+			   "Input_ResetState",
 			   DTTR_PCDOGS_F_Input_ResetState->Call(ctx, &ret)
 		   )
 		   && require_pcdogs_call(
-			   "ConfigLoadAlternateFromINI",
+			   "Config_LoadAlternateFromINI",
 			   DTTR_PCDOGS_F_Config_LoadAlternateFromINI->Call(ctx, &config_ret)
 		   );
 }

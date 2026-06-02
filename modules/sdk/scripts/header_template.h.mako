@@ -43,9 +43,9 @@ typedef ${c_type(row.ret)}(${row.calling}*${function_type_name(row.name)})${c_pa
 % elif type_row_kind(row) == TYPE_ROW.STRUCT:
 % if row.incomplete and not unstable:
 #ifdef DTTR_PCDOGS_IMPLEMENTATION
-${doxy_brief(row_doc(row) or "Private incomplete PCDOGS layout.")}
+${doxy_brief(row_doc(row)) if row_doc(row) else ""}
 % else:
-${doxy_brief(row_doc(row) or "PCDOGS struct layout.")}
+${doxy_brief(row_doc(row)) if row_doc(row) else ""}
 % endif
 % if row.incomplete and row.size is not None:
 // Size 0x${format(row.size, "X")}; layout is generated from currently known fields.

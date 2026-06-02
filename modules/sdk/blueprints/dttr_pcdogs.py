@@ -19,6 +19,7 @@ from blueprint import (
 
 stable = Blueprint("stable")
 
+
 stable.type_alias("Audio_AILHSample", "void*")
 
 stable.type_alias("Audio_AILHStream", "void*")
@@ -30,6 +31,7 @@ stable.struct(
     member("uint32_t", "count", 0x0),
     member("Win32_GUID*", "guid_list", 0x4),
     size=0x8,
+    doc="DirectInput joystick enumeration context for discovered device GUIDs.",
 )
 
 
@@ -223,7 +225,7 @@ stable.struct(
         "reserved_06",
         0x6,
         doc=(
-            "Unreferenced byte before fixup_flags; Pkg_FixUpResourceAnimationData reads +0x7 (PC EN) and "
+            "Unreferenced byte before fixup_flags; PKG_FixUpResourceAnimationData reads +0x7 (PC EN) and "
             "channel pointers, not +0x6 (PC EN)."
         ),
     ),
@@ -566,7 +568,7 @@ stable.struct(
     member("int16_t", "entity_index", 0x1A),
     member("uint8_t", "neighbor_entity_links[8]", 0x1C),
     member("uint8_t", "zone_boundaries[32]", 0x24),
-    member("Pkg_ActorTemplate*", "actor_template", 0x44),
+    member("PKG_ActorTemplate*", "actor_template", 0x44),
     member("uint32_t", "action_data[2]", 0x48),
     member("int32_t*", "camera_path_data", 0x50),
     member("uint8_t", "path_parameters[16]", 0x54),
@@ -705,7 +707,7 @@ stable.struct(
         0xC,
         doc=(
             "Face-plane/adjacency data owned by the Collision_Node query, matching "
-            "Pkg_CollisionFacePlane normal fields and packed adj_edge words."
+            "PKG_CollisionFacePlane normal fields and packed adj_edge words."
         ),
     ),
     member("uint16_t", "flags", 0x10),
@@ -854,6 +856,7 @@ stable.struct(
         doc="DDSURFACEDESC2 display-mode workspace and tail counters populated by DirectDraw enumeration callbacks; not reserved.",
     ),
     size=0x2B8C,
+    doc="DirectDraw/Direct3D driver enumeration record, covering display device selection, hardware acceleration, and display modes.",
 )
 
 
@@ -868,6 +871,7 @@ stable.struct(
     member("int32_t", "bufsiz", 0x18),
     member("char*", "tmpfname", 0x1C),
     size=0x20,
+    doc="CRT-compatible file handle layout, used by package and asset loading streams.",
 )
 
 stable.struct(
@@ -875,6 +879,7 @@ stable.struct(
     member("int32_t", "access", 0x0),
     member("int32_t", "share", 0x4),
     size=0x8,
+    doc="Access/share-mode pair, passed through file-open wrappers.",
 )
 
 stable.struct(
@@ -1221,7 +1226,7 @@ stable.struct(
     "Material_Table",
     member("uint16_t", "material_count", 0x0),
     member("uint16_t", "flags", 0x2),
-    member("Pkg_MaterialTableEntry*", "entries_ptr", 0x4),
+    member("PKG_MaterialTableEntry*", "entries_ptr", 0x4),
     member("uint32_t", "reserved", 0x8),
     member("uint32_t", "materials_offset", 0xC),
     member("uint16_t", "secondary_count", 0x10),
@@ -1251,7 +1256,7 @@ stable.struct(
         0xC,
         doc="Texture width/height plus reserved upper bytes copied into render batches.",
     ),
-    member("Pkg_UVCoord", "uv_tile_offset", 0x10),
+    member("PKG_UVCoord", "uv_tile_offset", 0x10),
     member(
         "uint8_t",
         "texture_info_hi_reserved[2]",
@@ -1475,12 +1480,12 @@ stable.struct(
         ),
     ),
     member("int32_t", "rotation", 0xF0),
-    member("Pkg_ActorRecord*", "record_ptr", 0xF4),
+    member("PKG_ActorRecord*", "record_ptr", 0xF4),
     member("Actor_State*", "child_actor", 0xF8),
     member("int32_t", "fade_alpha", 0xFC),
     member("int32_t", "path_trace_mode", 0x100),
     member(
-        "Pkg_LODEntry*",
+        "PKG_LODEntry*",
         "level_local_lod_redirect_record",
         0x104,
         doc=(
@@ -1764,7 +1769,7 @@ stable.struct(
         "uint8_t",
         "cached_actor_defaults[104]",
         0xC0,
-        doc="Entity_SpawnActor caches 0x68 bytes here; Entity_CopyDataToActor copies this block into Pkg_ActorRecord+0x30 (PC EN).",
+        doc="Entity_SpawnActor caches 0x68 bytes here; Entity_CopyDataToActor copies this block into PKG_ActorRecord+0x30 (PC EN).",
     ),
     member("Actor_State*", "active_actor", 0x128),
     member("uint8_t", "padding_12c[16]", 0x12C),
@@ -1980,7 +1985,7 @@ stable.struct(
         "Material_TableEntry*",
         "material_entry",
         0x0,
-        doc="Runtime material-table entry pointer; Pkg_FixUpResourceMaterialRefs rewrites material indices to 36-byte Material_TableEntry records.",
+        doc="Runtime material-table entry pointer; PKG_FixUpResourceMaterialRefs rewrites material indices to 36-byte Material_TableEntry records.",
     ),
     member("uint16_t", "vertex_indices[4]", 0x4),
     member("void*", "p_normal_plane", 0xC),
@@ -2037,7 +2042,7 @@ stable.struct(
         "reserved_00[10]",
         0x0,
         doc=(
-            "Unresolved prefix before render count/flags; Pkg_FixUpResourceMeshNode fixes descriptor data at "
+            "Unresolved prefix before render count/flags; PKG_FixUpResourceMeshNode fixes descriptor data at "
             "+0x0C (PC EN) and relocated tail pointer at +0x1C (PC EN)."
         ),
     ),
@@ -2060,7 +2065,7 @@ stable.struct(
         "Material_RefEntry",
         "material_descriptor",
         0xC,
-        doc="0x0C material/command descriptor fixed by Pkg_FixUpResourceSpriteEntry when Pkg_FixUpResourceMeshNode walks the 0x20-stride render-node table.",
+        doc="0x0C material/command descriptor fixed by PKG_FixUpResourceSpriteEntry when PKG_FixUpResourceMeshNode walks the 0x20-stride render-node table.",
     ),
     member(
         "uint8_t",
@@ -2068,17 +2073,17 @@ stable.struct(
         0x18,
         doc=(
             "Opaque gap between the 0x0C material descriptor and the relocated tail pointer; "
-            "Pkg_FixUpResourceMeshNode's 0x20-stride helper skips these bytes."
+            "PKG_FixUpResourceMeshNode's 0x20-stride helper skips these bytes."
         ),
     ),
     member(
         "void*",
         "relocated_tail_ptr",
         0x1C,
-        doc="Entry tail pointer rebased by the 0x20-stride render-node fixup helper called from Pkg_FixUpResourceMeshNode.",
+        doc="Entry tail pointer rebased by the 0x20-stride render-node fixup helper called from PKG_FixUpResourceMeshNode.",
     ),
     size=0x20,
-    doc="32-byte mesh render-node entry rebased by Pkg_FixUpResourceMeshNode's entry-table helper.",
+    doc="32-byte mesh render-node entry rebased by PKG_FixUpResourceMeshNode's entry-table helper.",
 )
 
 stable.struct(
@@ -2119,7 +2124,7 @@ stable.struct(
     member("int16_t", "scale_y", 0x62),
     member("Mesh_RuntimePolygon*", "polygon_data_ptr", 0x64),
     member("Mesh_RuntimeVertex*", "vertex_array_ptr", 0x68),
-    member("Pkg_ResourceManager*", "resource_manager_ref", 0x6C),
+    member("PKG_ResourceManager*", "resource_manager_ref", 0x6C),
     member("Mesh_RuntimeVertex*", "scene_vertex_data", 0x70),
     member("Mesh_VertexNormal*", "normal_source_ptr", 0x74),
     member("uint8_t", "mesh_flags", 0x78),
@@ -2178,37 +2183,37 @@ stable.struct(
         "void*",
         "group_list_0",
         0x84,
-        doc="First of six group-node fixup/list heads rebased by Pkg_FixUpResourceGroupNode from +0x84 (PC EN) through +0x98 (PC EN).",
+        doc="First of six group-node fixup/list heads rebased by PKG_FixUpResourceGroupNode from +0x84 (PC EN) through +0x98 (PC EN).",
     ),
     member(
         "void*",
         "group_list_1",
         0x88,
-        doc="Group-node fixup/list head rebased by Pkg_FixUpResourceGroupNode.",
+        doc="Group-node fixup/list head rebased by PKG_FixUpResourceGroupNode.",
     ),
     member(
         "void*",
         "group_list_2",
         0x8C,
-        doc="Group-node fixup/list head rebased by Pkg_FixUpResourceGroupNode.",
+        doc="Group-node fixup/list head rebased by PKG_FixUpResourceGroupNode.",
     ),
     member(
         "void*",
         "group_list_3",
         0x90,
-        doc="Group-node fixup/list head rebased by Pkg_FixUpResourceGroupNode.",
+        doc="Group-node fixup/list head rebased by PKG_FixUpResourceGroupNode.",
     ),
     member(
         "void*",
         "group_list_4",
         0x94,
-        doc="Group-node fixup/list head rebased by Pkg_FixUpResourceGroupNode.",
+        doc="Group-node fixup/list head rebased by PKG_FixUpResourceGroupNode.",
     ),
     member(
         "void*",
         "group_list_5",
         0x98,
-        doc="Sixth group-node fixup/list head rebased by Pkg_FixUpResourceGroupNode.",
+        doc="group-node fixup/list head rebased by PKG_FixUpResourceGroupNode.",
     ),
     member("void*", "group_linked_list_a", 0x9C),
     member(
@@ -2217,7 +2222,7 @@ stable.struct(
         0xA0,
         doc=(
             "Opaque 32-bit slot between group_linked_list_a and group_linked_list_b; "
-            "Pkg_FixUpResourceGroupNode rebases adjacent list pointers at +0x9C (PC EN)/+0xA4 (PC EN) but "
+            "PKG_FixUpResourceGroupNode rebases adjacent list pointers at +0x9C (PC EN)/+0xA4 (PC EN) but "
             "intentionally skips +0xA0 (PC EN)."
         ),
     ),
@@ -2309,7 +2314,10 @@ stable.struct(
 )
 
 stable.struct(
-    "Mesh_VertexUV", member("int16_t", "u", 0x0), member("int16_t", "v", 0x2), size=0x4
+    "Mesh_VertexUV",
+    member("int16_t", "u", 0x0),
+    member("int16_t", "v", 0x2),
+    size=0x4,
 )
 
 stable.struct(
@@ -2382,14 +2390,14 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_SplashScreen",
+    "PKG_SplashScreen",
     member("uint32_t", "format_tag", 0x0),
     member("uint8_t", "pixel_data[1228800]", 0x4),
     size=0x12C004,
 )
 
 stable.struct(
-    "Pkg_SplashScreenEx",
+    "PKG_SplashScreenEx",
     member("uint32_t", "type_tag", 0x0),
     member("uint32_t", "data_offset", 0x4),
     member("uint32_t", "reserved", 0x8),
@@ -2399,7 +2407,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_ActorTemplate",
+    "PKG_ActorTemplate",
     member("Mesh_Node*", "lod_nodes[3]", 0x0),
     member("uint32_t", "reserved_0c", 0xC),
     member("Animation_StateTable*", "anim_table", 0x10),
@@ -2407,7 +2415,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_CameraDef",
+    "PKG_CameraDef",
     member("uint8_t", "camera_type", 0x0),
     member("uint8_t", "flags", 0x1),
     member("int16_t", "transition_speed", 0x2),
@@ -2420,7 +2428,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_CollisionFace",
+    "PKG_CollisionFace",
     member("int16_t", "material_index", 0x0),
     member("int16_t", "surface_type", 0x2),
     member(
@@ -2446,7 +2454,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_CollisionFacePlane",
+    "PKG_CollisionFacePlane",
     member("int32_t", "plane_distance", 0x0),
     member("Math_Vec3I16", "normal", 0x4),
     member("int16_t", "padding_0a", 0xA),
@@ -2455,7 +2463,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_CollisionHeader",
+    "PKG_CollisionHeader",
     member("Math_SizeU32", "dimensions", 0x0),
     member("uint32_t", "cell_size", 0x8),
     member("uint32_t", "data_offset", 0xC),
@@ -2464,7 +2472,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_CollisionShape",
+    "PKG_CollisionShape",
     member("uint32_t", "face_count", 0x0),
     member("uint32_t", "flags_packed", 0x4),
     member("uint32_t", "grid_params", 0x8),
@@ -2472,9 +2480,9 @@ stable.struct(
     member("uint32_t", "type_flags", 0x10),
     member("Math_Vec3I32", "extent", 0x14),
     member("void*", "grid_cell_array", 0x20),
-    member("Pkg_CollisionFace*", "face_array", 0x24),
-    member("Pkg_CollisionFacePlane*", "plane_array", 0x28),
-    member("Pkg_CollisionVertex*", "vertex_array", 0x2C),
+    member("PKG_CollisionFace*", "face_array", 0x24),
+    member("PKG_CollisionFacePlane*", "plane_array", 0x28),
+    member("PKG_CollisionVertex*", "vertex_array", 0x2C),
     member("int32_t", "sentinel", 0x30),
     member("int32_t", "face_array_count", 0x34),
     member("int32_t", "vertex_count", 0x38),
@@ -2483,7 +2491,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_CollisionVertex",
+    "PKG_CollisionVertex",
     member("int16_t", "x", 0x0),
     member("int16_t", "y", 0x2),
     member("int16_t", "z", 0x4),
@@ -2592,7 +2600,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_ComponentData",
+    "PKG_ComponentData",
     member("uint8_t", "flags", 0x0),
     member("uint8_t", "component_bytes_01[51]", 0x1),
     member("int32_t", "parent_ref_value", 0x34),
@@ -2613,7 +2621,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_FaceNormal",
+    "PKG_FaceNormal",
     member("int32_t", "plane_distance", 0x0),
     member("Math_Vec3I16", "normal", 0x4),
     member("uint8_t", "padding_0a[2]", 0xA),
@@ -2621,7 +2629,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_GeometryChunk",
+    "PKG_GeometryChunk",
     member("uint32_t", "vertex_offset", 0x0),
     member("uint32_t", "vertex_count", 0x4),
     member("uint32_t", "polygon_offset", 0x8),
@@ -2632,7 +2640,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_GeometryResource",
+    "PKG_GeometryResource",
     member("uint32_t", "node_count", 0x0),
     member("uint32_t", "resource_mgr_offset", 0x4),
     member("uint32_t", "material_table_offset", 0x8),
@@ -2648,7 +2656,7 @@ stable.struct(
 
 
 stable.struct(
-    "Pkg_LevelHeader",
+    "PKG_LevelHeader",
     member("uint32_t", "cam_default_offset", 0x0),
     member("int16_t", "actor_record_count", 0x4),
     member("int16_t", "padding_06", 0x6),
@@ -2682,7 +2690,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_LevelResource",
+    "PKG_LevelResource",
     member("uint32_t", "node_count", 0x0),
     member("uint32_t", "resource_mgr_offset", 0x4),
     member("uint32_t", "material_table_offset", 0x8),
@@ -2692,7 +2700,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_MaterialRef",
+    "PKG_MaterialRef",
     member("uint32_t", "texture_id", 0x0),
     member("Material_Descriptor*", "texture_desc_ptr", 0x4),
     member("uint32_t", "properties", 0x8),
@@ -2700,7 +2708,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_MaterialTableEntry",
+    "PKG_MaterialTableEntry",
     member("uint32_t", "texture_offset", 0x0),
     member("Material_Descriptor*", "texture_desc_ptr", 0x4),
     member("Math_SizeU16", "dimensions", 0x8),
@@ -2715,7 +2723,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_MenuTextureResource",
+    "PKG_MenuTextureResource",
     member("uint32_t", "format", 0x0),
     member("uint32_t", "data_offset", 0x4),
     member("uint32_t", "reserved", 0x8),
@@ -2725,24 +2733,24 @@ stable.struct(
 
 
 stable.struct(
-    "Pkg_PolygonData",
+    "PKG_PolygonData",
     member("uint32_t", "flags", 0x0),
     member("Material_Entry*", "material_ptr", 0x4),
     member("uint32_t", "material_tint", 0x8),
     member("Material_TextureInfo", "texture_info", 0xC),
-    member("Pkg_UVCoord", "uv_tile_offset", 0x10),
+    member("PKG_UVCoord", "uv_tile_offset", 0x10),
     member("uint8_t", "padding_12[2]", 0x12),
     member("uint8_t", "color_adjust_r", 0x14),
     member("uint8_t", "color_adjust_g", 0x15),
     member("uint8_t", "color_adjust_b", 0x16),
     member("uint8_t", "padding_17", 0x17),
-    member("Pkg_PolygonData*", "next_polygon_data_ptr", 0x18),
+    member("PKG_PolygonData*", "next_polygon_data_ptr", 0x18),
     member("uint16_t", "explicit_uv[4]", 0x1C),
     size=0x24,
 )
 
 stable.struct(
-    "Pkg_PolygonDataRaw",
+    "PKG_PolygonDataRaw",
     member("uint32_t", "material_index", 0x0),
     member("uint16_t", "vertex_indices[4]", 0x4),
     member("uint32_t", "uv_data_offset", 0xC),
@@ -2752,10 +2760,10 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_PolygonListEntry",
+    "PKG_PolygonListEntry",
     member("uint32_t", "material_index", 0x0),
     member("uint16_t", "vertex_indices[4]", 0x4),
-    member("Pkg_FaceNormal*", "face_normal_ptr", 0xC),
+    member("PKG_FaceNormal*", "face_normal_ptr", 0xC),
     member("uint16_t", "flags", 0x10),
     member("uint16_t", "tex_coord_index", 0x12),
     member("uint16_t", "reserved", 0x14),
@@ -2765,7 +2773,7 @@ stable.struct(
 
 
 stable.struct(
-    "Pkg_ResourceDirectory",
+    "PKG_ResourceDirectory",
     member("uint32_t", "material_blob_offset", 0x0),
     member("uint32_t", "mesh_node_root_offset", 0x4),
     member("uint32_t", "level_data_offset", 0x8),
@@ -2777,7 +2785,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_ResourceHeader",
+    "PKG_ResourceHeader",
     member("uint32_t", "resource_type", 0x0),
     member("uint32_t", "data_offset", 0x4),
     member("uint32_t", "data_size", 0x8),
@@ -2792,7 +2800,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_ScriptHeader",
+    "PKG_ScriptHeader",
     member("uint8_t", "size_b0", 0x0),
     member("uint8_t", "size_b1", 0x1),
     member("uint8_t", "size_b2", 0x2),
@@ -2804,19 +2812,33 @@ stable.struct(
     size=0x8,
 )
 
-stable.struct("Pkg_SoundResource", member("uint32_t", "data_offset", 0x0), size=0x4)
+stable.struct(
+    "PKG_SoundResource",
+    member("uint32_t", "data_offset", 0x0),
+    size=0x4,
+)
 
 stable.struct(
-    "Pkg_SpriteAtlasResource", member("uint32_t", "data_offset", 0x0), size=0x4
+    "PKG_SpriteAtlasResource",
+    member("uint32_t", "data_offset", 0x0),
+    size=0x4,
 )
 
 
-stable.struct("Pkg_StringEntry", member("uint32_t", "offset", 0x0), size=0x4)
-
-stable.struct("Pkg_TextureResource", member("uint32_t", "data_offset", 0x0), size=0x4)
+stable.struct(
+    "PKG_StringEntry",
+    member("uint32_t", "offset", 0x0),
+    size=0x4,
+)
 
 stable.struct(
-    "Pkg_TOCEntry",
+    "PKG_TextureResource",
+    member("uint32_t", "data_offset", 0x0),
+    size=0x4,
+)
+
+stable.struct(
+    "PKG_TOCEntry",
     member("uint32_t", "offset", 0x0),
     member("uint32_t", "size", 0x4),
     size=0x8,
@@ -2825,7 +2847,7 @@ stable.struct(
 
 
 stable.struct(
-    "Pkg_UILayoutEntry",
+    "PKG_UILayoutEntry",
     member("uint32_t", "element_id", 0x0),
     member("uint32_t", "element_type", 0x4),
     member("int16_t", "param_a", 0x8),
@@ -2836,7 +2858,10 @@ stable.struct(
 
 
 stable.struct(
-    "Pkg_UVCoord", member("uint8_t", "u", 0x0), member("uint8_t", "v", 0x1), size=0x2
+    "PKG_UVCoord",
+    member("uint8_t", "u", 0x0),
+    member("uint8_t", "v", 0x1),
+    size=0x2,
 )
 
 stable.struct(
@@ -2853,7 +2878,7 @@ stable.struct(
 
 stable.struct(
     "Graphics_TexWrapMode",
-    member("Pkg_UVCoord", "mode", 0x0),
+    member("PKG_UVCoord", "mode", 0x0),
     member(
         "uint8_t",
         "reserved[2]",
@@ -2864,7 +2889,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_VertexData",
+    "PKG_VertexData",
     member("Math_Vec3I16", "pos", 0x0),
     member("int16_t", "normal_group_index", 0x6),
     member("uint8_t", "r", 0x8),
@@ -2875,7 +2900,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Pkg_VertexNormalGroup",
+    "PKG_VertexNormalGroup",
     member("Math_Vec3I16", "normal", 0x0),
     member("int16_t", "padding", 0x6),
     size=0x8,
@@ -3042,7 +3067,7 @@ stable.struct(
         "Graphics_TexWrapMode",
         "tex_wrap_mode",
         0xC,
-        doc="Texture wrap/mode bytes copied from Pkg_PolygonData texture info, plus reserved upper bytes.",
+        doc="Texture wrap/mode bytes copied from PKG_PolygonData texture info, plus reserved upper bytes.",
     ),
     member("Graphics_PolygonBatchRecord*", "next_in_bucket", 0x10),
     member("Graphics_ProjectedVertex", "screen_vertices[4]", 0x14),
@@ -3143,7 +3168,9 @@ stable.struct(
 )
 
 stable.struct(
-    "Graphics_RGB555Palette", member("uint16_t", "colors[256]", 0x0), size=0x200
+    "Graphics_RGB555Palette",
+    member("uint16_t", "colors[256]", 0x0),
+    size=0x200,
 )
 
 stable.struct(
@@ -3233,6 +3260,7 @@ stable.struct(
         doc="Copied from player_lives by Save_SaveGameToSlot and restored by Save_LoadGameState.",
     ),
     size=0x10,
+    doc="Save-file header plus 0x5c-byte save-slot payloads for game state, settings, and player-lives dwords.",
 )
 
 stable.struct(
@@ -3310,6 +3338,7 @@ stable.struct(
         doc="Name-entry/bonus scratch data copied as part of the 0x5c-byte save slot payload.",
     ),
     size=0x5C,
+    doc="0x5c-byte per-slot progress payload, used by save/load UI and completion calculations.",
 )
 
 
@@ -3486,7 +3515,7 @@ stable.struct(
         0x6C,
         doc=(
             "Type-specific pointer: model/mesh sprite table, type-8 simple-node payload, "
-            "or collision/scene polygon array; rebased by Pkg_FixUpResource*Node paths."
+            "or collision/scene polygon array; rebased by PKG_FixUpResource*Node paths."
         ),
     ),
     member(
@@ -3508,7 +3537,7 @@ stable.struct(
         "model_relocated_ptr_80",
         0x80,
         doc=(
-            "Model-node pointer rebased by Pkg_FixUpResourceModelNode at +0x80 (PC EN)."
+            "Model-node pointer rebased by PKG_FixUpResourceModelNode at +0x80 (PC EN)."
         ),
     ),
     member(
@@ -3516,7 +3545,7 @@ stable.struct(
         "model_relocated_ptr_84",
         0x84,
         doc=(
-            "Model-node pointer rebased by Pkg_FixUpResourceModelNode at +0x84 (PC EN)."
+            "Model-node pointer rebased by PKG_FixUpResourceModelNode at +0x84 (PC EN)."
         ),
     ),
     member(
@@ -3524,7 +3553,7 @@ stable.struct(
         "model_runtime_flags",
         0x88,
         doc=(
-            "Flags read by traversal/render/fixup paths; Pkg_FixUpResourceModelNode tests bit 1 at +0x88 (PC "
+            "Flags read by traversal/render/fixup paths; PKG_FixUpResourceModelNode tests bit 1 at +0x88 (PC "
             "EN), and collision polygon tests use transformed coordinates when bits 0x22 are set."
         ),
     ),
@@ -3554,13 +3583,13 @@ stable.struct(
         "void*",
         "model_animation_data_ptr",
         0xAC,
-        doc="Model animation-data pointer rebased by Pkg_FixUpResourceModelNode and read by Scene_TraverseNodeTree for visibility animation data.",
+        doc="Model animation-data pointer rebased by PKG_FixUpResourceModelNode and read by Scene_TraverseNodeTree for visibility animation data.",
     ),
     member(
         "void*",
         "offset_fixup_list_ptr",
         0xB0,
-        doc="Rebased model-node offset/fixup list pointer walked by Pkg_FixUpResourceModelNode.",
+        doc="Rebased model-node offset/fixup list pointer walked by PKG_FixUpResourceModelNode.",
     ),
     member(
         "int32_t",
@@ -3578,7 +3607,7 @@ stable.struct(
         "uint16_t",
         "mesh_node_count",
         0xBA,
-        doc="Count for mesh_node_table read by Pkg_FixUpResourceModelNode/Pkg_FixUpResourceMeshNode.",
+        doc="Count for mesh_node_table read by PKG_FixUpResourceModelNode/PKG_FixUpResourceMeshNode.",
     ),
     member(
         "Mesh_RenderNodeEntry*",
@@ -3586,7 +3615,7 @@ stable.struct(
         0xBC,
         doc=(
             "32-byte mesh render-node entry table; count is read from mesh_node_count at +0xBA (PC EN) "
-            "and entries are fixed by Pkg_FixUpResourceMeshNode before Scene_RenderSubMesh indexes them."
+            "and entries are fixed by PKG_FixUpResourceMeshNode before Scene_RenderSubMesh indexes them."
         ),
     ),
     member(
@@ -3605,7 +3634,7 @@ stable.struct(
         "int8_t",
         "type_1_dispatch_index",
         0xC5,
-        doc="Signed dispatch index used by Scene_TraverseNodeTree and tested by Pkg_FixUpResourceModelNode before rebasing LOD/config data.",
+        doc="Signed dispatch index used by Scene_TraverseNodeTree and tested by PKG_FixUpResourceModelNode before rebasing LOD/config data.",
     ),
     member(
         "int8_t",
@@ -3655,7 +3684,11 @@ stable.struct(
     size=0xDC,
 )
 
-stable.struct("Scene_NodeType", member("uint32_t", "type", 0x0), size=0x4)
+stable.struct(
+    "Scene_NodeType",
+    member("uint32_t", "type", 0x0),
+    size=0x4,
+)
 
 
 stable.struct(
@@ -3666,6 +3699,7 @@ stable.struct(
     member("int32_t*", "var_base", 0xC),
     member("uint32_t", "flags", 0x10),
     size=0x14,
+    doc="Script interpreter context for instruction state and game-script execution data.",
 )
 
 stable.struct(
@@ -3754,7 +3788,11 @@ stable.struct(
     size=0x4,
 )
 
-stable.struct("UI_StringTableEntry", member("uint32_t", "offset", 0x0), size=0x4)
+stable.struct(
+    "UI_StringTableEntry",
+    member("uint32_t", "offset", 0x0),
+    size=0x4,
+)
 
 
 stable.type_alias("Win32_GUID", "GUID")
@@ -4365,7 +4403,7 @@ stable.fn(
     "00 00 8B 48 24 51 E8 ??",
     match=-0x9,
     ret="int32_t",
-    params=[param("Pkg_ActorRecord*", "record")],
+    params=[param("PKG_ActorRecord*", "record")],
 )
 
 stable.fn(
@@ -4390,7 +4428,7 @@ stable.fn(
     match=-0x3C,
     hook=0xA,
     ret="int32_t*",
-    params=[param("Actor_State*", "actor"), param("Pkg_ActorRecord*", "record")],
+    params=[param("Actor_State*", "actor"), param("PKG_ActorRecord*", "record")],
 )
 
 stable.fn(
@@ -4464,7 +4502,7 @@ stable.fn(
     "Entity_CopyDataToActor",
     "68 01 00 00 20 0F 85 ??",
     match=-0xD,
-    ret="Pkg_ActorRecord*",
+    ret="PKG_ActorRecord*",
     params=[param("Actor_State*", "actor")],
 )
 
@@ -4843,7 +4881,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("Actor_State*", "actor"),
-        param("Pkg_ActorRecord*", "record"),
+        param("PKG_ActorRecord*", "record"),
         param("int32_t", "update_from_input"),
     ],
 )
@@ -4865,7 +4903,7 @@ stable.fn(
             doc="Player actor being reset and moved to the respawn target.",
         ),
         param(
-            "Pkg_ActorRecord*",
+            "PKG_ActorRecord*",
             "record",
             doc="Player actor record containing backup-puppy and respawn state fields.",
         ),
@@ -6133,7 +6171,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_UnloadResourceGameData",
+    "PKG_UnloadResourceGameData",
     "56 33 F6 56 E8 ??",
     hook=0x9,
     ret="void",
@@ -7322,7 +7360,7 @@ stable.fn(
     params=[
         param("Scene_Node*", "node"),
         param("Graphics_PolygonBatchRecord*", "out_batch"),
-        param("Pkg_PolygonData*", "polygon_data"),
+        param("PKG_PolygonData*", "polygon_data"),
         param("int16_t", "uv_index_or_mode"),
         param("Mesh_RuntimeVertex**", "polygon_vertices"),
     ],
@@ -8072,7 +8110,7 @@ stable.fn(
             doc="Script/player controller actor; actor->linked_actor receives refreshed completion flags.",
         ),
         param(
-            "Pkg_ActorRecord*",
+            "PKG_ActorRecord*",
             "record",
             doc="Player actor record whose puppy/count fields are initialized from the backup puppy-count global.",
         ),
@@ -8107,7 +8145,7 @@ stable.fn(
             doc="Unused ABI slot; the respawn caller passes the current entity before the record.",
         ),
         param(
-            "Pkg_ActorRecord*",
+            "PKG_ActorRecord*",
             "record",
             doc="Player record whose +0x74 (PC EN) counter is reset to 4.",
         ),
@@ -8461,7 +8499,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_InitializeResourceGameEngine",
+    "PKG_InitializeResourceGameEngine",
     "E8 ?? ?? ?? ?? 85 C0 75 ?? 32",
     ret="int32_t",
     params=[],
@@ -8472,7 +8510,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_ShutdownResourceGameSubsystems",
+    "PKG_ShutdownResourceGameSubsystems",
     "E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 90 90 90 90 90 90 51",
     ret="int32_t",
     params=[],
@@ -8537,17 +8575,17 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FreeResourceAndReturnNull",
+    "PKG_FreeResourceAndReturnNull",
     "8B 44 24 04 50 E8 ?? ?? ?? ?? 83 C4 04 32",
     ret="BOOL",
     params=[
         param(
             "void*",
             "mem_ptr",
-            doc="Resource-memory data pointer forwarded to Pkg_FreeResourceMemory.",
+            doc="Resource-memory data pointer forwarded to PKG_FreeResourceMemory.",
         )
     ],
-    doc="Frees memPtr through Pkg_FreeResourceMemory and returns FALSE.",
+    doc="Frees memPtr through PKG_FreeResourceMemory and returns FALSE.",
     abi_status=AbiStatus.PLACEHOLDER,
 )
 
@@ -8567,7 +8605,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_CleanupResourceGameState",
+    "PKG_CleanupResourceGameState",
     "A1 ?? ?? ?? ?? 53 33 DB 3B C3 74",
     ret="BOOL",
     params=[],
@@ -8601,7 +8639,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_LoadRandomSplashScreen",
+    "PKG_LoadRandomSplashScreen",
     "A0 ?? ?? ?? ?? 53 33",
     required=Required.EN,
     ret="BOOL",
@@ -8851,7 +8889,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_AllocateResourceMemory",
+    "PKG_AllocateResourceMemory",
     "8B 44 24 04 85 C0 75 ?? C3 50 E8 ?? ?? ?? ?? 83 C4 04 C3",
     ret="void*",
     params=[param("int32_t", "size")],
@@ -8860,7 +8898,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_AllocateResourceWithHeader",
+    "PKG_AllocateResourceWithHeader",
     "8B 44 24 04 56 83 C0 04 50 E8 ??",
     ret="uint32_t*",
     params=[
@@ -8874,7 +8912,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FreeResourceMemory",
+    "PKG_FreeResourceMemory",
     "8B 44 24 04 85 C0 74 ?? 56 8B 70 FC 56 E8 ??",
     hook=0x6,
     ret="BOOL",
@@ -8885,7 +8923,7 @@ stable.fn(
             doc="Resource data pointer returned after the hidden handle dword.",
         )
     ],
-    doc="Releases a resource data pointer allocated by Pkg_AllocateResourceMemory/Pkg_AllocateResourceWithHeader by reading the hidden handle at mem_ptr - 4.",
+    doc="Releases a resource data pointer allocated by PKG_AllocateResourceMemory/PKG_AllocateResourceWithHeader by reading the hidden handle at mem_ptr - 4.",
     abi_status=AbiStatus.PLACEHOLDER,
 )
 
@@ -10011,7 +10049,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceObjectNode",
+    "PKG_FixUpResourceObjectNode",
     "56 8B 74 24 08 8B 46 04 85 C0 74 ?? 8B 0D ??",
     ret="void",
     params=[param("Scene_Node*", "node")],
@@ -10023,7 +10061,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceModelNode",
+    "PKG_FixUpResourceModelNode",
     "?? ?? ?? 03 C2 89 86 80",
     match=-0x4E,
     ret="void",
@@ -10038,7 +10076,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceAnimationData",
+    "PKG_FixUpResourceAnimationData",
     "51 8B 4C 24 08 8A 41 07 A8 02 0F 85 ??",
     ret="void",
     params=[
@@ -10057,7 +10095,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceMaterialRefs",
+    "PKG_FixUpResourceMaterialRefs",
     "8B 54 24 08 8B 44 24 04 56 8B 08 8B 35 ??",
     hook=0x8,
     ret="void",
@@ -10077,7 +10115,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceMaterialIndices",
+    "PKG_FixUpResourceMaterialIndices",
     "8B 54 24 04 56 F6 02 80 75 ?? A1 ??",
     ret="void",
     params=[
@@ -10095,7 +10133,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceRenderNodeEntries",
+    "PKG_FixUpResourceRenderNodeEntries",
     "72 ?? 8D 46 F0 50 E8 ??",
     match=-0x15,
     hook=0x6,
@@ -10113,7 +10151,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceSpriteEntry",
+    "PKG_FixUpResourceSpriteEntry",
     "8B 44 24 04 8B 0D ?? ?? ?? ?? 89 08 8B 48",
     hook=0xA,
     ret="void",
@@ -10128,7 +10166,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceMeshNode",
+    "PKG_FixUpResourceMeshNode",
     "8E 84 00 00 00 8B 15 ??",
     match=-0x49,
     ret="void",
@@ -10139,7 +10177,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceSimpleNode",
+    "PKG_FixUpResourceSimpleNode",
     "8B 4C 24 04 8B 41 6C 85 C0 74 ?? 8B 15 ??",
     hook=0x7,
     ret="void",
@@ -10154,7 +10192,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceObjectNodeType7SpriteEntry",
+    "PKG_FixUpResourceObjectNodeType7SpriteEntry",
     "8B 44 24 04 83 C0 6C 50 E8 ??",
     hook=0x7,
     ret="void",
@@ -10162,14 +10200,14 @@ stable.fn(
         param(
             "void*",
             "node",
-            doc="Type-7 compact object node; passes the sprite/material descriptor payload at node +0x6C (PC EN) to Pkg_FixUpResourceSpriteEntry.",
+            doc="Type-7 compact object node; passes the sprite/material descriptor payload at node +0x6C (PC EN) to PKG_FixUpResourceSpriteEntry.",
         )
     ],
     doc="Formerly misidentified as a face-pointer/descriptor helper; this wrapper fixes the type-7 object-node sprite/material payload at node +0x6C (PC EN) in place.",
 )
 
 stable.fn(
-    "Pkg_FixUpResourceGroupNode",
+    "PKG_FixUpResourceGroupNode",
     "56 57 8B 7C 24 0C 8B 47 70 85 C0 74 ?? 8B 0D ??",
     hook=0x6,
     ret="void",
@@ -10184,7 +10222,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourcePolygonList",
+    "PKG_FixUpResourcePolygonList",
     "56 57 8B 7C 24 0C 8B 37 85 F6 0F 84 ??",
     hook=0x6,
     ret="void",
@@ -10203,13 +10241,13 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceLevelPointers",
+    "PKG_FixUpResourceLevelPointers",
     "?? ?? ?? ?? 83 C4 08 53",
     match=-0x11,
     ret="void",
     params=[
         param(
-            "Pkg_LevelHeader*",
+            "PKG_LevelHeader*",
             "level",
             doc="Level header whose relative resource lists are rebased in place.",
         )
@@ -10218,12 +10256,12 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceActorPointers",
+    "PKG_FixUpResourceActorPointers",
     "56 8B 74 24 08 57 8B 46 10 85 C0 74 ?? 8B 0D ??",
     ret="void",
     params=[
         param(
-            "Pkg_ActorTemplate*",
+            "PKG_ActorTemplate*",
             "actor_template",
             doc="Actor template with three node refs at +0/+4/+8 and a 43-entry animation state table at +0x10 (PC EN).",
         )
@@ -10232,14 +10270,14 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FixUpResourceComponentNodes",
+    "PKG_FixUpResourceComponentNodes",
     "06 85 C0 74 ?? 8B 0D ??",
     match=-0x10,
     hook=0x7,
     ret="void",
     params=[
         param(
-            "Pkg_ComponentData*",
+            "PKG_ComponentData*",
             "component_data",
             doc="Component record; fixes four sub-node pointers at +0x60 (PC EN).",
         )
@@ -10704,11 +10742,11 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_CleanupFinalResourceGame",
+    "PKG_CleanupFinalResourceGame",
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E9",
     ret="int32_t",
     params=[],
-    doc="Final game shutdown chain: shuts down audio, closes the package file handle, then tail-calls Pkg_ShutdownResourceGameSubsystems.",
+    doc="Final game shutdown chain: shuts down audio, closes the package file handle, then tail-calls PKG_ShutdownResourceGameSubsystems.",
 )
 
 stable.fn(
@@ -10734,7 +10772,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_InitializeSystem",
+    "PKG_InitializeSystem",
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1",
     ret="int32_t",
     params=[],
@@ -10749,7 +10787,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_ReleaseResourceManager",
+    "PKG_ReleaseResourceManager",
     "F6 C5 08 75 ?? 50 E8 ??",
     match=-0x1B,
     hook=0x7,
@@ -10830,17 +10868,17 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_CleanupResourceHandle",
+    "PKG_CleanupResourceHandle",
     "8B 44 24 04 50 E8 ?? ?? ?? ?? 59 C3 90 90 90 90 8B",
     required=Required.EN,
     ret="BOOL",
     params=[param("void*", "resource_data")],
-    doc="Thin wrapper around Pkg_FreeResourceData for resource data pointers.",
+    doc="Thin wrapper around PKG_FreeResourceData for resource data pointers.",
     abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
-    "Pkg_LoadEntryAlloc",
+    "PKG_LoadEntryAlloc",
     "8B 44 24 04 6A 01 6A 00 50 E8 ??",
     hook=0x6,
     ret="void*",
@@ -10851,7 +10889,7 @@ stable.fn(
             doc="Package TOC index to load with destination allocation enabled.",
         )
     ],
-    doc="Wrapper around Pkg_LoadEntry(toc_index, NULL) that allocates destination storage for one package TOC entry and returns the loaded buffer pointer.",
+    doc="Wrapper around PKG_LoadEntry(toc_index, NULL) that allocates destination storage for one package TOC entry and returns the loaded buffer pointer.",
     abi_status=AbiStatus.PLACEHOLDER,
 )
 
@@ -10879,7 +10917,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_LoadEntry",
+    "PKG_LoadEntry",
     "33 C0 5B C3 8B C7 25 ??",
     match=-0x14,
     ret="void*",
@@ -10894,15 +10932,15 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_FreeResourceData",
+    "PKG_FreeResourceData",
     "8B 44 24 04 50 E8 ?? ?? ?? ?? 59 C3 90 90 90 90 B0",
     ret="BOOL",
     params=[param("void*", "resource_data")],
-    doc="Thin wrapper around Pkg_FreeResourceMemory for resource data pointers.",
+    doc="Thin wrapper around PKG_FreeResourceMemory for resource data pointers.",
 )
 
 stable.fn(
-    "Pkg_FindAndOpenFile",
+    "PKG_FindAndOpenFile",
     "81 EC 10 01 00 00 57 ??",
     hook=0x6,
     ret="int32_t",
@@ -10911,7 +10949,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_OpenAndReadTOC",
+    "PKG_OpenAndReadTOC",
     "?? ?? 68 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8D 4C 24 0C 68 ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 83",
     match=-0xD,
     hook=0x6,
@@ -10921,7 +10959,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_Close",
+    "PKG_Close",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 50 E8 ?? ?? ?? ?? 83 C4 04 C7 05 ?? ?? ?? ?? 00 00 00 00 C3 90 90 90 83",
     ret="File_Handle*",
     params=[],
@@ -11020,7 +11058,7 @@ stable.fn(
     ret="Actor_State*",
     params=[
         param(
-            "Pkg_ActorTemplate*",
+            "PKG_ActorTemplate*",
             "actor_template",
             doc=(
                 "Powerup actor-template/clone-source selected from "
@@ -11867,7 +11905,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Pkg_LoadTitleScreenResources",
+    "PKG_LoadTitleScreenResources",
     "6A 00 6A 00 E8 ?? ?? ?? ?? 83 C4 08",
     required=Required.EN,
     hook=0x9,
@@ -12987,7 +13025,7 @@ stable.data(
     xref("Title_CleanupScreenResources", 0x17, 0x2),
     type="void*",
     doc=(
-        "Title-screen resource handle slot 1 cleaned by Pkg_CleanupResourceHandle during "
+        "Title-screen resource handle slot 1 cleaned by PKG_CleanupResourceHandle during "
         "Title_CleanupScreenResources."
     ),
 )
@@ -12996,7 +13034,7 @@ stable.data(
     xref("Title_CleanupScreenResources", 0x23, 0x2),
     type="void*",
     doc=(
-        "Title-screen resource handle slot 0 cleaned by Pkg_CleanupResourceHandle during "
+        "Title-screen resource handle slot 0 cleaned by PKG_CleanupResourceHandle during "
         "Title_CleanupScreenResources."
     ),
 )
@@ -13005,7 +13043,7 @@ stable.data(
     xref("Title_CleanupScreenResources", 0x2F, 0x1),
     type="void*",
     doc=(
-        "Title-screen material/resource manager base released by Pkg_ReleaseResourceManager "
+        "Title-screen material/resource manager base released by PKG_ReleaseResourceManager "
         "during Title_CleanupScreenResources."
     ),
 )
@@ -13014,7 +13052,7 @@ stable.data(
     xref("Title_CleanupScreenResources", 0x3A, 0x2),
     type="void*",
     doc=(
-        "Title-screen resource package pointer freed by Pkg_FreeResourceData during "
+        "Title-screen resource package pointer freed by PKG_FreeResourceData during "
         "Title_CleanupScreenResources."
     ),
 )
@@ -13625,83 +13663,83 @@ stable.data(
     doc="First byte/base of the data/music path format literal used by Audio_OpenStream.",
 )
 stable.data(
-    "pkg_resource_fix_up_end", xref("Pkg_FixUpResourceLevelPointers", 0x560, 0x1)
+    "pkg_resource_fix_up_end", xref("PKG_FixUpResourceLevelPointers", 0x560, 0x1)
 )
 stable.data(
     "pkg_resource_fix_up_usable_materials",
-    xref("Pkg_FixUpResourceLevelPointers", 0x4D7, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x4D7, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_nav_net", xref("Pkg_FixUpResourceLevelPointers", 0x466, 0x1)
+    "pkg_resource_fix_up_nav_net", xref("PKG_FixUpResourceLevelPointers", 0x466, 0x1)
 )
 stable.data(
-    "pkg_resource_fix_up_powerup_ct", xref("Pkg_FixUpResourceLevelPointers", 0x420, 0x1)
+    "pkg_resource_fix_up_powerup_ct", xref("PKG_FixUpResourceLevelPointers", 0x420, 0x1)
 )
 stable.data(
-    "pkg_resource_fix_up_trail_list", xref("Pkg_FixUpResourceLevelPointers", 0x371, 0x1)
+    "pkg_resource_fix_up_trail_list", xref("PKG_FixUpResourceLevelPointers", 0x371, 0x1)
 )
 stable.data(
-    "pkg_resource_fix_up_max_themes", xref("Pkg_FixUpResourceLevelPointers", 0x32D, 0x1)
+    "pkg_resource_fix_up_max_themes", xref("PKG_FixUpResourceLevelPointers", 0x32D, 0x1)
 )
 stable.data(
     "pkg_resource_fix_up_sprite_list",
-    xref("Pkg_FixUpResourceLevelPointers", 0x2B7, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x2B7, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_powerup_ct_ellipsis",
-    xref("Pkg_FixUpResourceLevelPointers", 0x26B, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x26B, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_var_list", xref("Pkg_FixUpResourceLevelPointers", 0x241, 0x1)
+    "pkg_resource_fix_up_var_list", xref("PKG_FixUpResourceLevelPointers", 0x241, 0x1)
 )
 stable.data(
     "pkg_resource_fix_up_sound_definition_list",
-    xref("Pkg_FixUpResourceLevelPointers", 0x217, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x217, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_cycle_actor_list",
-    xref("Pkg_FixUpResourceLevelPointers", 0x127, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x127, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_actor_list_not_null",
-    xref("Pkg_FixUpResourceLevelPointers", 0x10C, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x10C, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_actor_list_null",
-    xref("Pkg_FixUpResourceLevelPointers", 0xFA, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0xFA, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_actor_ct_zero",
-    xref("Pkg_FixUpResourceLevelPointers", 0xD1, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0xD1, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_actor_ct", xref("Pkg_FixUpResourceLevelPointers", 0xB8, 0x1)
+    "pkg_resource_fix_up_actor_ct", xref("PKG_FixUpResourceLevelPointers", 0xB8, 0x1)
 )
 stable.data(
     "pkg_resource_fix_up_cam_default_null",
-    xref("Pkg_FixUpResourceLevelPointers", 0xA0, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0xA0, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_cam_default_not_null",
-    xref("Pkg_FixUpResourceLevelPointers", 0x93, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x93, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_cam_default_get_addr",
-    xref("Pkg_FixUpResourceLevelPointers", 0x70, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x70, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_cam_default_abs_addr",
-    xref("Pkg_FixUpResourceLevelPointers", 0x53, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x53, 0x1),
 )
 stable.data(
     "pkg_resource_fix_up_level_base_null",
-    xref("Pkg_FixUpResourceLevelPointers", 0x3B, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x3B, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_level_null", xref("Pkg_FixUpResourceLevelPointers", 0x23, 0x1)
+    "pkg_resource_fix_up_level_null", xref("PKG_FixUpResourceLevelPointers", 0x23, 0x1)
 )
 stable.data(
-    "pkg_resource_fix_up_start", xref("Pkg_FixUpResourceLevelPointers", 0xB, 0x1)
+    "pkg_resource_fix_up_start", xref("PKG_FixUpResourceLevelPointers", 0xB, 0x1)
 )
 stable.data(
     "file_savegame_dat",
@@ -13779,12 +13817,12 @@ stable.data(
 stable.data("window_shutdown_unload_data", xref("Window_ProcessGameProc", 0x55, 0x1))
 stable.data("window_shutdown_begin", xref("Window_ProcessGameProc", 0x49, 0x1))
 stable.data("win_main_requires_nt", xref("Window_RunWinMain", 0x75, 0x1))
-stable.data("file_cant_find_pkg", xref("Pkg_FindAndOpenFile", 0x141, 0x1))
-stable.data("file_setup_path", xref("Pkg_FindAndOpenFile", 0xD5, 0x1))
-stable.data("pkg_search_pattern", xref("Pkg_FindAndOpenFile", 0xAB, 0x1))
-stable.data("file_dalms_setup_path", xref("Pkg_FindAndOpenFile", 0x93, 0x1))
-stable.data("file_drive_letter", xref("Pkg_FindAndOpenFile", 0x60, 0x1))
-stable.data("pkg_pcdogs_pkg", xref("Pkg_FindAndOpenFile", 0x45, 0x1))
+stable.data("file_cant_find_pkg", xref("PKG_FindAndOpenFile", 0x141, 0x1))
+stable.data("file_setup_path", xref("PKG_FindAndOpenFile", 0xD5, 0x1))
+stable.data("pkg_search_pattern", xref("PKG_FindAndOpenFile", 0xAB, 0x1))
+stable.data("file_dalms_setup_path", xref("PKG_FindAndOpenFile", 0x93, 0x1))
+stable.data("file_drive_letter", xref("PKG_FindAndOpenFile", 0x60, 0x1))
+stable.data("pkg_pcdogs_pkg", xref("PKG_FindAndOpenFile", 0x45, 0x1))
 stable.data("random_seed", xref("Math_GenerateRandom", 0x0, 0x2))
 stable.data(
     "script_command_table",
@@ -14693,28 +14731,28 @@ stable.data("menu_render_state", xref("Graphics_DrawSortedLists", 0x15, 0x1))
 stable.data(
     "graphics_rendering_frame_counter", xref("Graphics_IncrementPassCounter", 0x0, 0x1)
 )
-stable.data("pkg_loading_screen_state", xref("Pkg_LoadRandomSplashScreen", 0x0, 0x1))
+stable.data("pkg_loading_screen_state", xref("PKG_LoadRandomSplashScreen", 0x0, 0x1))
 stable.data("level_select_state", xref("Level_UpdateWorldSelectMenu", 0x1, 0x1))
 stable.data("level_select_slot", xref("Level_UpdateWorldSelectMenu", 0x46, 0x3))
 stable.data("level_select_fade_counter", xref("Level_UpdateWorldSelectMenu", 0xA, 0x1))
 stable.data("input_cheat_code_progress", xref("Input_CheckCheatCodeSequence", 0xB, 0x1))
 stable.data(
-    "pkg_loading_blend_texture_ptr", xref("Pkg_LoadRandomSplashScreen", 0x43, 0x1)
+    "pkg_loading_blend_texture_ptr", xref("PKG_LoadRandomSplashScreen", 0x43, 0x1)
 )
 stable.data(
     "pkg_resource_level_handle",
-    xref("Pkg_CleanupResourceGameState", 0x0, 0x1),
-    doc="Global latch for the completed level resource/blob handle returned by Level_LoadStateMachine; Pkg_CleanupResourceGameState passes the non-null handle to Level_UnloadResources and then clears it.",
+    xref("PKG_CleanupResourceGameState", 0x0, 0x1),
+    doc="Global latch for the completed level resource/blob handle returned by Level_LoadStateMachine; PKG_CleanupResourceGameState passes the non-null handle to Level_UnloadResources and then clears it.",
 )
-stable.data("pkg_loading_fade_counter", xref("Pkg_LoadRandomSplashScreen", 0x4F, 0x2))
+stable.data("pkg_loading_fade_counter", xref("PKG_LoadRandomSplashScreen", 0x4F, 0x2))
 stable.data("main_menu_state", xref("Level_Load", 0xAF, 0x2))
 stable.data("main_menu_selection", xref("Level_UpdateInterLevelMenu", 0x10A, 0x1))
 stable.data("menu_fade_timer", xref("Level_UpdateInterLevelMenu", 0x12, 0x1))
 stable.data(
-    "pkg_last_loading_image_index", xref("Pkg_LoadRandomSplashScreen", 0x13, 0x3)
+    "pkg_last_loading_image_index", xref("PKG_LoadRandomSplashScreen", 0x13, 0x3)
 )
 stable.data(
-    "pkg_resource_loading_image_ptr", xref("Pkg_LoadRandomSplashScreen", 0x35, 0x1)
+    "pkg_resource_loading_image_ptr", xref("PKG_LoadRandomSplashScreen", 0x35, 0x1)
 )
 stable.data("loading_fade_delay", xref("UI_Update", 0x34, 0x2))
 stable.data("skip_title_screen", xref("Menu_ProcessMenuTransition", 0x8F, 0x2))
@@ -14905,7 +14943,7 @@ stable.data("bone_trail_path_buffer_y_2", xref("Trail_FindBonePath", 0x759, 0x1)
 stable.data("bone_trail_path_buffer_z_2", xref("Trail_FindBonePath", 0x760, 0x2))
 stable.data(
     "pkg_resource_special_node_processing_flag",
-    xref("Pkg_FixUpResourceMeshNode", 0x23D, 0x2),
+    xref("PKG_FixUpResourceMeshNode", 0x23D, 0x2),
 )
 stable.data(
     "save_game_operation_state",
@@ -14999,10 +15037,10 @@ stable.data(
 )
 stable.data(
     "level_menu_load_state",
-    xref("Pkg_CleanupResourceGameState", 0x1D, 0x2),
+    xref("PKG_CleanupResourceGameState", 0x1D, 0x2),
     type="uint8_t",
     doc=(
-        "Top-level menu/load dispatch state byte used by Level_Load, UI_Update, Pkg_CleanupResourceGameState, "
+        "Top-level menu/load dispatch state byte used by Level_Load, UI_Update, PKG_CleanupResourceGameState, "
         "and transition helpers."
     ),
 )
@@ -15027,29 +15065,29 @@ stable.data(
     type="void*",
     doc="Opaque second level package-entry buffer loaded from TOC entry 0x25 + level_index * 3 by Level_LoadStateMachine stage 2.",
 )
-stable.data("debug_logging_enabled", xref("Pkg_FixUpResourceLevelPointers", 0x0, 0x1))
+stable.data("debug_logging_enabled", xref("PKG_FixUpResourceLevelPointers", 0x0, 0x1))
 stable.data(
     "pkg_file_handle",
-    xref("Pkg_LoadEntry", 0x4C, 0x1),
+    xref("PKG_LoadEntry", 0x4C, 0x1),
     type="File_Handle*",
-    doc="Open package File_Handle consumed by Pkg_LoadEntry while reading aligned package entries.",
+    doc="Open package File_Handle consumed by PKG_LoadEntry while reading aligned package entries.",
 )
 stable.data(
     "pkg_toc",
-    xref("Pkg_LoadEntry", 0x45, 0x3),
-    type="Pkg_TOCEntry",
+    xref("PKG_LoadEntry", 0x45, 0x3),
+    type="PKG_TOCEntry",
     doc=(
         "Base of the 0x8a-entry / 0x450-byte package table of contents at "
-        "pcdogs.exe+0x9CA80 (PC EN); each 8-byte Pkg_TOCEntry stores file offset and size."
+        "pcdogs.exe+0x9CA80 (PC EN); each 8-byte PKG_TOCEntry stores file offset and size."
     ),
 )
 stable.data(
     "pkg_toc_file_sizes",
-    xref("Pkg_LoadEntry", 0x7, 0x3),
+    xref("PKG_LoadEntry", 0x7, 0x3),
     type="uint32_t",
     doc=(
-        "Size-field view at pkg_toc + 4 (PC EN) used by Pkg_LoadEntry; this overlaps the "
-        "Pkg_TOCEntry.size lane within the package TOC allocation."
+        "Size-field view at pkg_toc + 4 (PC EN) used by PKG_LoadEntry; this overlaps the "
+        "PKG_TOCEntry.size lane within the package TOC allocation."
     ),
 )
 stable.data("tree_map_buckets", xref("Tree_RebalanceMap", 0x15, 0x3))
@@ -15117,7 +15155,7 @@ stable.data(
     doc=(
         "Shared frame/input/audio transition bitfield: bit 0x20 marks demo replay playback, bit 0x10 selects "
         "alternate 3D-audio listener camera data, bit 0x400 is set by Audio_TriggerMusicTransition, bit 0x08 "
-        "requests unload before being cleared after Pkg_UnloadResourceGameData, bit 0x1000 allows cleanup/load "
+        "requests unload before being cleared after PKG_UnloadResourceGameData, bit 0x1000 allows cleanup/load "
         "rendering, bit 0x4000 requests Level_Load, bit 0x04 marks post-load actor/audio initialization, and "
         "bit 0x02 allows active scene update/render."
     ),
@@ -15137,18 +15175,18 @@ stable.data(
 stable.data("spots_active_count", xref("Spots_Initialize", 0xE, 0x3))
 stable.data(
     "audio_title_music_data",
-    xref("Pkg_LoadTitleScreenResources", 0x97, 0x2),
+    xref("PKG_LoadTitleScreenResources", 0x97, 0x2),
     type="int32_t*",
     doc="Title-screen music stream-record pointer loaded from the title package and armed by Audio_StartMusicWithFade.",
 )
 stable.data(
-    "pkg_resource_title_material_base", xref("Pkg_LoadTitleScreenResources", 0x55, 0x2)
+    "pkg_resource_title_material_base", xref("PKG_LoadTitleScreenResources", 0x55, 0x2)
 )
 stable.data("spots_cycle_length", xref("Spots_Initialize", 0x1A6, 0x2))
 stable.data("title_screen_counter", xref("Title_UpdateAndRenderScreen", 0x82, 0x3))
 stable.data("spots_material_index", xref("Spots_Initialize", 0x3F, 0x1))
 stable.data(
-    "pkg_resource_title_package", xref("Pkg_LoadTitleScreenResources", 0x3E, 0x1)
+    "pkg_resource_title_package", xref("PKG_LoadTitleScreenResources", 0x3E, 0x1)
 )
 stable.data("title_screen_fade_level", xref("Title_UpdateAndRenderScreen", 0xA8, 0x3))
 stable.data("spots_data_array", xref("Spots_Initialize", 0x17, 0x1))
@@ -15159,10 +15197,10 @@ stable.data(
 )
 stable.data("title_screen_state", xref("Title_UpdateAndRenderScreen", 0x10, 0x3))
 stable.data(
-    "pkg_resource_title_handle_1", xref("Pkg_LoadTitleScreenResources", 0x24, 0x1)
+    "pkg_resource_title_handle_1", xref("PKG_LoadTitleScreenResources", 0x24, 0x1)
 )
 stable.data(
-    "pkg_resource_title_handle_0", xref("Pkg_LoadTitleScreenResources", 0xC, 0x1)
+    "pkg_resource_title_handle_0", xref("PKG_LoadTitleScreenResources", 0xC, 0x1)
 )
 stable.data("audio_spots_sound_id", xref("Spots_Update", 0x5C, 0x1))
 stable.data("spots_frame_counter", xref("Spots_Initialize", 0x7, 0x3))
@@ -15215,20 +15253,20 @@ stable.data(
     type="Math_Vec3I32",
     doc="Alternate listener/camera position vector at pcdogs.exe+0x22435C (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is clear.",
 )
-stable.data("graphics_flags", xref("Pkg_InitializeSystem", 0x14, 0x2))
+stable.data("graphics_flags", xref("PKG_InitializeSystem", 0x14, 0x2))
 stable.data(
     "pkg_resource_level_init_callback_2",
-    xref("Pkg_UnloadResourceGameData", 0x43, 0x2),
+    xref("PKG_UnloadResourceGameData", 0x43, 0x2),
     doc=(
-        "Untyped native level cleanup/init callback slot touched by Pkg_UnloadResourceGameData. "
+        "Untyped native level cleanup/init callback slot touched by PKG_UnloadResourceGameData. "
         "Kept engine-managed and untyped until the callback signature is proven."
     ),
 )
 stable.data(
     "pkg_resource_level_init_callback_1",
-    xref("Pkg_UnloadResourceGameData", 0x3D, 0x2),
+    xref("PKG_UnloadResourceGameData", 0x3D, 0x2),
     doc=(
-        "Untyped native level cleanup/init callback slot touched by Pkg_UnloadResourceGameData. "
+        "Untyped native level cleanup/init callback slot touched by PKG_UnloadResourceGameData. "
         "Kept engine-managed and untyped until the callback signature is proven."
     ),
 )
@@ -15569,13 +15607,13 @@ stable.data(
 )
 stable.data(
     "pkg_resource_level_material_section",
-    xref("Pkg_FixUpResourceModelNode", 0x115, 0x1),
+    xref("PKG_FixUpResourceModelNode", 0x115, 0x1),
     type="Material_SectionHeader*",
     doc="Active level material section header/base used while rebasing model-node material references.",
 )
 stable.data(
     "pkg_resource_level_blob_ptr",
-    xref("Pkg_FixUpResourceObjectNode", 0xC, 0x2),
+    xref("PKG_FixUpResourceObjectNode", 0xC, 0x2),
     type="uint32_t*",
     doc=(
         "Active level blob relocation base loaded from TOC entry 0x26 + level_index * 3; used while rebasing "
@@ -16185,7 +16223,7 @@ _unstable_rows.struct(
     member("void*", "collision_data", 0x0),
     member("Actor_State*", "actor_list", 0x4),
     member("void*", "trigger_list", 0x8),
-    member("Pkg_CameraDef*", "camera_data", 0xC),
+    member("PKG_CameraDef*", "camera_data", 0xC),
     member("Material_Entry*", "material_table", 0x10),
     member("uint32_t", "reserved_01", 0x14),
     member("uint32_t", "flags", 0x18),
@@ -16236,19 +16274,19 @@ _unstable_rows.struct(
         doc="0x1c-stride current-level powerup spawn-record list keyed by powerup_count.",
     ),
     member(
-        "Pkg_ActorTemplate*",
+        "PKG_ActorTemplate*",
         "powerup_actor_slots[16]",
         0x24,
         doc=(
             "Fixed 16-slot powerup actor-template/clone-source table. "
-            "Pkg_FixUpResourceLevelPointers fixes each non-null slot with Pkg_FixUpResourceActorPointers; "
-            "Powerup_CloneActor reads these Pkg_ActorTemplate* sources when creating spawned powerup actors."
+            "PKG_FixUpResourceLevelPointers fixes each non-null slot with PKG_FixUpResourceActorPointers; "
+            "Powerup_CloneActor reads these PKG_ActorTemplate* sources when creating spawned powerup actors."
         ),
     ),
     member("char*", "themes[5]", 0x64),
     member("int32_t", "theme_count", 0x78),
     member("Trail_Entry*", "trail_list", 0x7C),
-    member("Pkg_SpriteEntry*", "sprite_list", 0x80),
+    member("PKG_SpriteEntry*", "sprite_list", 0x80),
     member("Nav_Network*", "nav_net", 0x84),
     member("Material_Entry*", "usable_materials", 0x88),
     size=0x8C,
@@ -16257,7 +16295,7 @@ _unstable_rows.struct(
 
 _unstable_rows.struct(
     "Powerup_Entry",
-    member("Pkg_ActorRecord*", "template_record", 0x0),
+    member("PKG_ActorRecord*", "template_record", 0x0),
     member("int16_t", "spawn_params_a", 0x4),
     member("int16_t", "spawn_params_b", 0x6),
     member(
@@ -16339,10 +16377,11 @@ _unstable_rows.struct(
     member("uint8_t", "frame_pixel_data[572]", 0x20C),
     member("int32_t*", "callback_context", 0x448),
     size=0x44C,
+    doc="Movie playback buffer state, covering frame reads, input, and close/skip handling.",
 )
 
 _unstable_rows.struct(
-    "Pkg_ActorRecordUnstableLayout",
+    "PKG_ActorRecordUnstableLayout",
     member("uint32_t", "flags", 0x0),
     member("Math_Vec3I32", "camera_pos", 0x4),
     member("int32_t", "collision_radius_sq", 0x10),
@@ -16354,10 +16393,10 @@ _unstable_rows.struct(
     member("int16_t", "self_index", 0x20),
     member("int16_t", "default_anim_state", 0x22),
     member("int32_t", "link_targets[9]", 0x24),
-    member("Pkg_ScriptHeader*", "script_data_ptr", 0x48),
+    member("PKG_ScriptHeader*", "script_data_ptr", 0x48),
     member("uint32_t", "actor_template_ptr", 0x4C),
     member("uint32_t", "component_node_ptrs[2]", 0x50),
-    member("Pkg_ActorRecordUnstableLayout*", "spawn_state_ptr", 0x58),
+    member("PKG_ActorRecordUnstableLayout*", "spawn_state_ptr", 0x58),
     member("Math_Vec3I32", "default_ref_pos", 0x5C),
     member("Math_Vec2I32", "default_home", 0x68),
     member("int32_t", "default_direction", 0x70),
@@ -16466,7 +16505,7 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_MeshNodeHeader",
+    "PKG_MeshNodeHeader",
     member("uint32_t", "node_type", 0x0),
     member("uint32_t", "parent_index", 0x4),
     member("uint32_t", "node_data_offset", 0x8),
@@ -16480,13 +16519,13 @@ _unstable_rows.struct(
         "uint16_t",
         "padding_5c",
         0x5C,
-        doc="Pad/opaque mesh-node header word, not referenced by Pkg_FixUpResourceMeshNode.",
+        doc="Pad/opaque mesh-node header word, not referenced by PKG_FixUpResourceMeshNode.",
     ),
     member(
         "uint16_t",
         "padding_5e",
         0x5E,
-        doc="Pad/opaque mesh-node header word, not referenced by Pkg_FixUpResourceMeshNode.",
+        doc="Pad/opaque mesh-node header word, not referenced by PKG_FixUpResourceMeshNode.",
     ),
     member("uint32_t", "vertex_format", 0x60),
     member("uint8_t", "subtype_id", 0x64),
@@ -16553,7 +16592,7 @@ _unstable_rows.struct(
         "relative_offset_list_ptr",
         0x100,
         doc=(
-            "Relative-offset list rebased in place by Pkg_FixUpResourceMeshNode; the function walks "
+            "Relative-offset list rebased in place by PKG_FixUpResourceMeshNode; the function walks "
             "a dword list at +0x100 (PC EN) until a zero terminator and adds the rebased "
             "+0x100 (PC EN) base to each nonzero entry."
         ),
@@ -16562,7 +16601,7 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_LODEntry",
+    "PKG_LODEntry",
     member("int16_t", "lod_level", 0x0),
     member("int16_t", "sprite_layer_count", 0x2),
     member("void*", "render_data_ptr", 0x4),
@@ -16616,20 +16655,20 @@ _unstable_rows.struct(
         "int32_t",
         "lod_relocated_ptr_24",
         0x24,
-        doc="Relocated pointer/offset slot in LOD data rebased by Pkg_FixUpResourceMeshNode and Actor_CloneTemplateWithTemplateRelativeFixups at stride 0x28.",
+        doc="Relocated pointer/offset slot in LOD data rebased by PKG_FixUpResourceMeshNode and Actor_CloneTemplateWithTemplateRelativeFixups at stride 0x28.",
     ),
     size=0x28,
 )
 
 _unstable_rows.struct(
-    "Pkg_MeshOffsetTable",
+    "PKG_MeshOffsetTable",
     member("uint32_t", "mesh_offsets[16]", 0x0),
     member("uint8_t", "offset_padding[64]", 0x40),
     size=0x80,
 )
 
 _unstable_rows.struct(
-    "Pkg_SpriteMaterialLayer",
+    "PKG_SpriteMaterialLayer",
     member("Material_Entry*", "texture_db", 0x0),
     member("Material_Entry*", "material", 0x4),
     member("Animation_FrameData*", "anim_frames", 0x8),
@@ -16637,11 +16676,11 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_SpriteEntryAltLayout",
+    "PKG_SpriteEntryAltLayout",
     member("uint8_t", "type", 0x0),
     member("uint8_t", "layer_index", 0x1),
     member("uint16_t", "control_flags", 0x2),
-    member("Pkg_SpriteMaterialLayer", "material_layers[2]", 0x4),
+    member("PKG_SpriteMaterialLayer", "material_layers[2]", 0x4),
     member("Scene_Node*", "scene_node_ref", 0x1C),
     member("Math_Vec2I16", "base", 0x20),
     member("Math_Vec2I16", "offset", 0x24),
@@ -16736,11 +16775,11 @@ _unstable_rows.struct(
     member("int16_t", "frame_counter", 0xA8),
     member("int16_t", "padding_aa", 0xAA),
     size=0xAC,
-    doc="Alternate recovered layout for the 0xac-stride sprite/UI entry; renamed from misleading Pkg_PowerupEntry because Level_RuntimeData.powerup_list uses separate 0x1c-stride Powerup_Entry records.",
+    doc="Alternate recovered layout for the 0xac-stride sprite/UI entry; renamed from misleading PKG_PowerupEntry because Level_RuntimeData.powerup_list uses separate 0x1c-stride Powerup_Entry records.",
 )
 
 _unstable_rows.struct(
-    "Pkg_SpriteLayerBinding",
+    "PKG_SpriteLayerBinding",
     member("void*", "scene_node_ptr", 0x0),
     member("Graphics_SpriteContext*", "sprite_context_ptr", 0x4),
     member("void*", "descriptor_aux_ptr", 0x8),
@@ -16748,10 +16787,10 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_SpriteEntry",
+    "PKG_SpriteEntry",
     member("uint32_t", "flags_and_layer_count", 0x0),
     member(
-        "Pkg_SpriteLayerBinding",
+        "PKG_SpriteLayerBinding",
         "layers[2]",
         0x4,
         doc="Two 0x0C sprite layer bindings: scene node pointer, Graphics_SpriteContext pointer, and descriptor aux pointer.",
@@ -16885,7 +16924,7 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_TrailListEntry",
+    "PKG_TrailListEntry",
     member("uint16_t", "count", 0x0),
     member("uint16_t", "reserved", 0x2),
     member("Component_TrailObject*", "ptr", 0x4),
@@ -16893,7 +16932,7 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_UILayoutResource",
+    "PKG_UILayoutResource",
     member("uint32_t", "checksum", 0x0),
     member("uint32_t", "entry_count", 0x4),
     member("uint8_t", "layout_padding[12]", 0x8),
@@ -16901,13 +16940,13 @@ _unstable_rows.struct(
 )
 
 _unstable_rows.struct(
-    "Pkg_Header",
-    member("Pkg_TOCEntry", "entries[138]", 0x0),
+    "PKG_Header",
+    member("PKG_TOCEntry", "entries[138]", 0x0),
     member(
         "uint8_t",
         "header_reserved[944]",
         0x450,
-        doc="Unparsed 0x3B0-byte package-header tail, left after Pkg_OpenAndReadTOC copies only the first 0x450 bytes of the 0x800-byte header.",
+        doc="Unparsed 0x3B0-byte package-header tail, left after PKG_OpenAndReadTOC copies only the first 0x450 bytes of the 0x800-byte header.",
     ),
     size=0x800,
 )
