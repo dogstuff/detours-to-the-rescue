@@ -9,12 +9,17 @@
 
 #include <dttr_test_support.h>
 
+static void assert_contains(const char *text, const char *needle) {
+	assert_non_null(strstr(text, needle));
+}
+
 static void stack_trace_formatter_includes_marker(void **state) {
 	sds stack_trace = DTTR_CrashDump_FormatStackTrace(NULL, NULL, NULL);
 
 	assert_non_null(stack_trace);
-	assert_non_null(strstr(stack_trace, "Stack trace:"));
-	assert_non_null(strstr(stack_trace, "<unavailable>"));
+	assert_contains(stack_trace, "<context unavailable>");
+	assert_contains(stack_trace, "Stack trace:");
+	assert_contains(stack_trace, "<unavailable>");
 
 	sdsfree(stack_trace);
 }
@@ -99,12 +104,12 @@ static void crash_report_message_includes_stack_trace(void **state) {
 	const char *summary = "Exception 0xDEADBEEF\n\nDump written to:\ndttr.dmp";
 	const char *stack_trace = "\n\nStack trace:\n  game!crash+0x1";
 
-	sds message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
+	sds message = DTTR_CrashDump_AppendReportMessage(sdsnew(summary), stack_trace);
 
 	assert_non_null(message);
-	assert_non_null(strstr(message, "Stack trace:"));
-	assert_non_null(strstr(message, "Exception 0xDEADBEEF"));
-	assert_non_null(strstr(message, "Feel free to report this error"));
+	assert_contains(message, "Stack trace:");
+	assert_contains(message, "Exception 0xDEADBEEF");
+	assert_contains(message, "Feel free to report this error");
 
 	sdsfree(message);
 }

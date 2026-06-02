@@ -17,9 +17,10 @@
 
 static const char *const ERROR_TITLE = "DttR: Error";
 static const char *const HEADER_TITLE = "102 Crashes: Traces to the Rescue!";
+static const char *const CRASH_DETAILS_MARKER = "\n\nContextFlags=";
 static const char *const STACK_TRACE_MARKER = "\n\nStack trace:";
 static const char *const DUMP_MARKER = "\n\nDump written to:";
-static const char *const REPORT_MARKER = "\n\nIf this error is unexpected";
+static const char *const REPORT_MARKER = "\n\nFeel free to report this error";
 
 typedef struct {
 	const char *text;
@@ -54,15 +55,21 @@ static error_message parse_error_message(const char *message) {
 		return (error_message){0};
 	}
 
-	const char *stack_text = stack + 2;
-	const char *report_text = strstr(stack_text, REPORT_MARKER);
+	const char *details = stack;
+	const char *crash_details = strstr(message, CRASH_DETAILS_MARKER);
+	if (crash_details && crash_details < stack) {
+		details = crash_details;
+	}
+
+	const char *details_text = details + 2;
+	const char *report_text = strstr(details_text, REPORT_MARKER);
 
 	return (error_message){
-		.summary_end = stack,
+		.summary_end = details,
 		.report_text = report_text,
 		.stack_trace = sdsnewlen(
-			stack_text,
-			report_text ? (size_t)(report_text - stack_text) : strlen(stack_text)
+			details_text,
+			report_text ? (size_t)(report_text - details_text) : strlen(details_text)
 		),
 	};
 }

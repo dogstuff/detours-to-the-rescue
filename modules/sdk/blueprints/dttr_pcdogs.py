@@ -767,7 +767,7 @@ stable.struct(
     member("int32_t", "return_to_owner", 0x34),
     member("int32_t", "collision_radius", 0x38),
     member("int32_t", "collision_height", 0x3C),
-    member("int32_t", "minigame_params", 0x40),
+    member("int32_t", "mini_game_params", 0x40),
     member("int32_t", "sound_effect_id", 0x44),
     member("uint8_t", "team_id", 0x48),
     member("uint8_t", "spawn_limit_counter", 0x49),
@@ -3763,7 +3763,7 @@ stable.struct(
 )
 
 stable.struct(
-    "UI_SpotEntry",
+    "Title_SpotEntry",
     member("int32_t", "x", 0x0),
     member("int32_t", "y", 0x4),
     member("int32_t", "timer", 0x8),
@@ -5878,7 +5878,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Game_InitializeMiniRoundParams",
+    "MiniGame_InitializeRoundParams",
     "66 8B 44 24 08 66 C7 05 ??",
     ret="void",
     params=[
@@ -5890,14 +5890,14 @@ stable.fn(
         param(
             "int16_t",
             "round_param",
-            doc="Round/minigame parameter stored in the global word at pcdogs.exe+0x234416 (PC EN).",
+            doc="Round/mini-game parameter stored in the global word at pcdogs.exe+0x234416 (PC EN).",
         ),
     ],
-    doc="Initializes mini-game round globals by setting the round counter/default at pcdogs.exe+0x234414 (PC EN) to 10 and storing roundParam at pcdogs.exe+0x234416 (PC EN).",
+    doc="Initializes mini-game round globals by setting the round counter/default at pcdogs.exe+0x234414 (PC EN) to 10 and storing round_param at pcdogs.exe+0x234416 (PC EN).",
 )
 
 stable.fn(
-    "Game_SetMiniScoreValues",
+    "MiniGame_SetScoreValues",
     "8B 44 24 08 66 A3 ??",
     hook=0xA,
     ret="int32_t",
@@ -5927,7 +5927,7 @@ stable.fn(
     ret="void",
     params=[],
     doc=(
-        "Processes the frame-driven checkers/minigame state machine. Updates global board, "
+        "Processes the frame-driven checkers/mini-game state machine. Updates global board, "
         "selection, current-player, move-result, animation, camera, and AI-search state; "
         "called from the render frame when checkers mode is active."
     ),
@@ -11739,7 +11739,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Replay_StartRecordingPlayback",
+    "Replay_StartDemoPlayback",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 8B 48",
     ret="int32_t*",
     params=[],
@@ -11747,7 +11747,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Replay_StopRecordingPlayback",
+    "Replay_StopDemoPlayback",
     "8B 15 ?? ?? ?? ?? A1 ?? ?? ?? ?? 83 E2 DF 85 C0 89 15 ?? ?? ?? ?? 74 ??",
     hook=0x6,
     ret="void*",
@@ -11887,7 +11887,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Spots_Initialize",
+    "Title_InitializeSpots",
     "51 53 55 56 33 DB 57 66 89 1D ??",
     cc=CallingConvention.FASTCALL,
     hook=0x6,
@@ -11897,7 +11897,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Spots_Update",
+    "Title_UpdateSpots",
     "53 55 8B 6C 24 0C 85 ED 75 ?? 66 A1 ??",
     hook=0x6,
     ret="void",
@@ -11935,7 +11935,7 @@ stable.fn(
             doc="Normal update callers pass nullptr; (void*)-1 forces the title-screen shutdown/reset path. The stack slot is reused internally as a Graphics_SpriteContext* scratch.",
         ),
     ],
-    doc="Advances the title-screen state machine, draws title sprites/text/spots, and returns nonzero while the title screen remains active.",
+    doc="Advances the title-screen state machine, draws title sprites/text/title spots, and returns nonzero while the title screen remains active.",
 )
 
 stable.fn(
@@ -12281,7 +12281,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitSoundSystem",
+    "Movie_InitSoundSystem",
     "FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     hook=0x6,
     ret="int32_t",
@@ -12289,7 +12289,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitVideoSystem",
+    "Movie_InitVideoSystem",
     "FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     hook=0x6,
     ret="int32_t",
@@ -12297,7 +12297,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_ShutdownMovie",
+    "Movie_ShutdownMovie",
     "FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     required=Required.EN,
     hook=0x6,
@@ -12306,7 +12306,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_ShutdownVideo",
+    "Movie_ShutdownVideo",
     "FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     hook=0x6,
     ret="int32_t",
@@ -12314,7 +12314,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_ShutdownSound",
+    "Movie_ShutdownSound",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12323,7 +12323,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_ReturnPlaybackMode",
+    "Movie_ReturnPlaybackMode",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12332,7 +12332,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_StopTimer",
+    "Movie_StopTimer",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12341,7 +12341,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_StartTimer",
+    "Movie_StartTimer",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12350,7 +12350,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_MapVideo",
+    "Movie_MapVideo",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12359,7 +12359,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitMoviePlayback",
+    "Movie_InitMoviePlayback",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12368,7 +12368,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitSound",
+    "Movie_InitSound",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12377,7 +12377,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitPlaybackMode",
+    "Movie_InitPlaybackMode",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12386,7 +12386,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitVideo",
+    "Movie_InitVideo",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12395,7 +12395,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_InitMovie",
+    "Movie_InitMovie",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     hook=0x6,
@@ -12404,7 +12404,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_PlayFrame",
+    "Movie_PlayFrame",
     "25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x7,
     required=Required.EN,
@@ -12414,7 +12414,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_ShutdownSoundSystem",
+    "Movie_ShutdownSoundSystem",
     "FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     hook=0x6,
     ret="int32_t",
@@ -12422,7 +12422,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_ShutdownVideoSystem",
+    "Movie_ShutdownVideoSystem",
     "FF 25 ?? ?? ?? ?? E8",
     hook=0x6,
     ret="int32_t",
@@ -14213,19 +14213,19 @@ stable.data(
     "video_movie_handle",
     xref("Video_CloseMovieFile", 0x0, 0x1),
     type="int32_t",
-    doc="winplay/RPL movie handle initialized by Player_InitMovie and shut down by Player_ShutdownMovie.",
+    doc="winplay/RPL movie handle initialized by Movie_InitMovie and shut down by Movie_ShutdownMovie.",
 )
 stable.data(
     "video_surface_handle",
     xref("Video_CloseMovieFile", 0x1A, 0x1),
     type="int32_t",
-    doc="winplay video surface handle initialized by Player_InitVideo, mapped for playback, and shut down by Player_ShutdownVideo.",
+    doc="winplay video surface handle initialized by Movie_InitVideo, mapped for playback, and shut down by Movie_ShutdownVideo.",
 )
 stable.data(
     "video_sound_handle",
     xref("Video_CloseMovieFile", 0x10, 0x1),
     type="int32_t",
-    doc="winplay sound handle initialized by Player_InitSound and passed into movie playback.",
+    doc="winplay sound handle initialized by Movie_InitSound and passed into movie playback.",
 )
 stable.data(
     "graphics_polygon_render_flags", xref("Graphics_RenderPolygonBatch", 0x3D9, 0x2)
@@ -15138,9 +15138,9 @@ stable.data(
 )
 stable.data(
     "replay_input_ptr",
-    xref("Replay_StartRecordingPlayback", 0xE, 0x2),
+    xref("Replay_StartDemoPlayback", 0xE, 0x2),
     type="int32_t*",
-    doc="Pointer to the current demo replay input-frame stream, loaded from demo_replay_data[1] by Replay_StartRecordingPlayback when replay playback begins.",
+    doc="Pointer to the current demo replay input-frame stream, loaded from replay_data[1] by Replay_StartDemoPlayback when replay playback begins.",
 )
 stable.data(
     "frame_counter",
@@ -15172,7 +15172,7 @@ stable.data(
     type="char*",
     doc="First entry/base of the heap-allocated input button-name buffer pointer array.",
 )
-stable.data("spots_active_count", xref("Spots_Initialize", 0xE, 0x3))
+stable.data("title_spots_active_count", xref("Title_InitializeSpots", 0xE, 0x3))
 stable.data(
     "audio_title_music_data",
     xref("PKG_LoadTitleScreenResources", 0x97, 0x2),
@@ -15182,15 +15182,15 @@ stable.data(
 stable.data(
     "pkg_resource_title_material_base", xref("PKG_LoadTitleScreenResources", 0x55, 0x2)
 )
-stable.data("spots_cycle_length", xref("Spots_Initialize", 0x1A6, 0x2))
+stable.data("title_spots_cycle_length", xref("Title_InitializeSpots", 0x1A6, 0x2))
 stable.data("title_screen_counter", xref("Title_UpdateAndRenderScreen", 0x82, 0x3))
-stable.data("spots_material_index", xref("Spots_Initialize", 0x3F, 0x1))
+stable.data("title_spots_material_index", xref("Title_InitializeSpots", 0x3F, 0x1))
 stable.data(
     "pkg_resource_title_package", xref("PKG_LoadTitleScreenResources", 0x3E, 0x1)
 )
 stable.data("title_screen_fade_level", xref("Title_UpdateAndRenderScreen", 0xA8, 0x3))
-stable.data("spots_data_array", xref("Spots_Initialize", 0x17, 0x1))
-stable.data("spots_timer_array", xref("Spots_Initialize", 0x152, 0x4))
+stable.data("title_spots_data_array", xref("Title_InitializeSpots", 0x17, 0x1))
+stable.data("title_spots_timer_array", xref("Title_InitializeSpots", 0x152, 0x4))
 stable.data(
     "pkg_resource_title_bonus_replay_resource",
     xref("Title_CleanupScreenResources", 0xC, 0x1),
@@ -15202,8 +15202,8 @@ stable.data(
 stable.data(
     "pkg_resource_title_handle_0", xref("PKG_LoadTitleScreenResources", 0xC, 0x1)
 )
-stable.data("audio_spots_sound_id", xref("Spots_Update", 0x5C, 0x1))
-stable.data("spots_frame_counter", xref("Spots_Initialize", 0x7, 0x3))
+stable.data("title_spots_sound_id", xref("Title_UpdateSpots", 0x5C, 0x1))
+stable.data("title_spots_frame_counter", xref("Title_InitializeSpots", 0x7, 0x3))
 stable.data("mem_handle_pool", xref("Mem_AllocateHandle", 0x52, 0x2))
 stable.data("mem_handle_pool_handle_id", xref("Mem_InitializeAllocator", 0xA, 0x1))
 stable.data(
@@ -15281,7 +15281,7 @@ stable.data(
 )
 stable.data("input_toggle_mask_p_1", xref("Menu_ProcessMenuState", 0x1A2, 0x2))
 stable.data(
-    "replay_saved_random_seed", xref("Replay_StartRecordingPlayback", 0x1E, 0x1)
+    "replay_saved_random_seed", xref("Replay_StartDemoPlayback", 0x1E, 0x1)
 )
 stable.data(
     "input_state_current_p_1",

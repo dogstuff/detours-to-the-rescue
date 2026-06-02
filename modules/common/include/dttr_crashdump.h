@@ -20,7 +20,7 @@ void DTTR_CrashDump_ClearSymbolProvider();
 /// Formats a stack trace from a thread context. Caller frees the returned sds.
 sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context);
 
-sds DTTR_CrashDump_BuildReportMessage(const char *summary, const char *stack_trace);
+sds DTTR_CrashDump_AppendReportMessage(sds message, const char *stack_trace);
 
 /// Writes a process minidump and returns the dump filename. The caller should free the
 /// returned sds.

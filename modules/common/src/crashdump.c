@@ -83,7 +83,7 @@ static bool memory_protection_is_readable(DWORD protect) {
 static sds append_disassembly_unavailable(sds message, const char *reason) {
 	return sdscatprintf(
 		message,
-		"\n    <disassembly unavailable: %s>",
+		"\n<disassembly unavailable: %s>",
 		reason ? reason : "unknown"
 	);
 }
@@ -99,13 +99,11 @@ static sds append_disassembly_line(
 	const char *text,
 	bool failed
 ) {
-	return sdscatprintf(
-		message,
-		"\n    %s 0x%08lX  %s",
-		failed ? "=>" : "  ",
-		address,
-		text
-	);
+	if (failed) {
+		return sdscatprintf(message, "\n=> 0x%08lX  %s", address, text);
+	}
+
+	return sdscatprintf(message, "\n0x%08lX  %s", address, text);
 }
 
 static bool format_instruction_at(
@@ -145,6 +143,7 @@ static sds append_failed_instruction_decode(
 	DWORD failed_eip
 ) {
 	size_t offset = 0;
+
 	for (int emitted = 0; offset < size && emitted < DISASM_MAX_INSTRUCTIONS; emitted++) {
 		ZydisDecodedInstruction instruction = {0};
 		char text[DISASM_TEXT_CAPACITY] = {0};
@@ -202,12 +201,11 @@ static sds append_disassembly_from_bytes(
 		return append_disassembly_unavailable(message, "decoder unavailable");
 	}
 
-	message = sdscatprintf(message, "\n    Disassembly around 0x%08lX:", failed_eip);
-
 	CrashDisasmLine lines[DISASM_MAX_BYTES] = {0};
 	size_t line_count = 0;
 	size_t failed_index = SIZE_MAX;
 	size_t offset = 0;
+
 	while (offset < size && line_count < DISASM_MAX_BYTES) {
 		ZydisDecodedInstruction instruction = {0};
 		if (!format_instruction_at(
@@ -268,7 +266,66 @@ static sds append_disassembly_from_bytes(
 	return message;
 }
 
+static sds append_registers(sds message, const CONTEXT *ctx) {
+	if (!ctx) {
+		return sdscat(message, "\n<context unavailable>");
+	}
+
+	return sdscatprintf(
+		message,
+		"\nContextFlags=0x%08lX"
+		"\nEAX=0x%08lX EBX=0x%08lX ECX=0x%08lX EDX=0x%08lX"
+		"\nESI=0x%08lX EDI=0x%08lX EBP=0x%08lX ESP=0x%08lX"
+		"\nEIP=0x%08lX EFLAGS=0x%08lX"
+		"\nSEGCS=0x%08lX SEGSS=0x%08lX SEGDS=0x%08lX SEGES=0x%08lX "
+		"SEGFS=0x%08lX SEGGS=0x%08lX"
+		"\nDR0=0x%08lX DR1=0x%08lX DR2=0x%08lX DR3=0x%08lX "
+		"DR6=0x%08lX DR7=0x%08lX"
+		"\n"
+		"\nFPU:"
+		"\nControlWord=0x%08lX StatusWord=0x%08lX TagWord=0x%08lX"
+		"\nErrorOffset=0x%08lX ErrorSelector=0x%08lX"
+		"\nDataOffset=0x%08lX DataSelector=0x%08lX Cr0NpxState=0x%08lX"
+		"\n",
+		ctx->ContextFlags,
+		ctx->Eax,
+		ctx->Ebx,
+		ctx->Ecx,
+		ctx->Edx,
+		ctx->Esi,
+		ctx->Edi,
+		ctx->Ebp,
+		ctx->Esp,
+		ctx->Eip,
+		ctx->EFlags,
+		ctx->SegCs,
+		ctx->SegSs,
+		ctx->SegDs,
+		ctx->SegEs,
+		ctx->SegFs,
+		ctx->SegGs,
+		ctx->Dr0,
+		ctx->Dr1,
+		ctx->Dr2,
+		ctx->Dr3,
+		ctx->Dr6,
+		ctx->Dr7,
+		ctx->FloatSave.ControlWord,
+		ctx->FloatSave.StatusWord,
+		ctx->FloatSave.TagWord,
+		ctx->FloatSave.ErrorOffset,
+		ctx->FloatSave.ErrorSelector,
+		ctx->FloatSave.DataOffset,
+		ctx->FloatSave.DataSelector,
+		ctx->FloatSave.Cr0NpxState
+	);
+}
+
 static sds append_disassembly_window(sds message, HANDLE process, DWORD failed_eip) {
+	if (!process) {
+		return append_disassembly_unavailable(message, "process unavailable");
+	}
+
 	MEMORY_BASIC_INFORMATION mbi = {0};
 	if (VirtualQueryEx(process, (LPCVOID)(uintptr_t)failed_eip, &mbi, sizeof(mbi))
 		!= sizeof(mbi)) {
@@ -318,6 +375,16 @@ static sds append_disassembly_window(sds message, HANDLE process, DWORD failed_e
 	);
 }
 
+static sds append_crash_diagnostics(sds message, HANDLE process, const CONTEXT *context) {
+	message = sdscat(message, "\n");
+	message = append_registers(message, context);
+	if (!context) {
+		return message;
+	}
+
+	return append_disassembly_window(message, process, context->Eip);
+}
+
 static MINIDUMP_TYPE minidump_type() {
 	if (dttr_config.minidump_type == DTTR_MINIDUMP_DETAILED) {
 		return MiniDumpWithDataSegs | MiniDumpWithIndirectlyReferencedMemory;
@@ -343,8 +410,11 @@ static sds build_crash_message(DWORD code, const char *filename) {
 	);
 }
 
-sds DTTR_CrashDump_BuildReportMessage(const char *summary, const char *stack_trace) {
-	sds message = sdsnew(summary ? summary : "");
+sds DTTR_CrashDump_AppendReportMessage(sds message, const char *stack_trace) {
+	if (!message) {
+		message = sdsempty();
+	}
+
 	if (stack_trace) {
 		message = sdscat(message, stack_trace);
 	}
@@ -428,13 +498,13 @@ void DTTR_CrashDump_LogAndTraceReport(const char *message) {
 }
 
 sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT *context) {
-	sds message = sdscat(sdsempty(), "\n\nStack trace:");
+	sds message = append_crash_diagnostics(sdsempty(), process, context);
+	message = sdscat(message, "\n\nStack trace:");
 	if (!process || !thread || !context) {
 		return sdscat(message, "\n  <unavailable>");
 	}
 
 	CONTEXT ctx = *context;
-	message = append_disassembly_window(message, process, ctx.Eip);
 	enter_dbghelp_lock();
 	if (!SymInitialize(process, NULL, TRUE)) {
 		leave_dbghelp_lock();
@@ -520,24 +590,23 @@ static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exceptio
 		GetCurrentThread(),
 		exception_info->ContextRecord
 	);
-	sds log_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
-	sds popup_message = DTTR_CrashDump_BuildReportMessage(summary, stack_trace);
+
+	sds report_message = DTTR_CrashDump_AppendReportMessage(summary, stack_trace);
 	sdsfree(stack_trace);
-	DTTR_CrashDump_LogAndTraceReport(log_message);
+
+	DTTR_CrashDump_LogAndTraceReport(report_message);
 
 	if (dttr_config.show_crash_popup
-		&& !DTTR_ImGui_ErrorShow("DttR: Crash", popup_message)) {
+		&& !DTTR_ImGui_ErrorShow("DttR: Crash", report_message)) {
 		DTTR_SDL_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"DttR: Crash",
-			popup_message,
+			report_message,
 			NULL
 		);
 	}
 
-	sdsfree(popup_message);
-	sdsfree(log_message);
-	sdsfree(summary);
+	sdsfree(report_message);
 	sdsfree(filename);
 	ExitProcess(1);
 	return EXCEPTION_CONTINUE_SEARCH;
