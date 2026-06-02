@@ -503,9 +503,9 @@ enum {
 #define DTTR_PCDOGS_DATA_ROWS(TYPED_DATA, UNTYPED_DATA, CTX) \
 % for row in globals:
 % if row.typed:
-	TYPED_DATA(CTX, ${row.name}, ${c_public_token(row.name)}, ${c_type(row.typed.type)}, ${'DTTR_PCDOGS_SYMBOL_DATA_ID_' if unstable else 'DTTR_PCDOGS_DATA_'}${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
+	TYPED_DATA(CTX, ${row.symbol_id.lower()}, ${c_public_token(row.name)}, ${c_type(row.typed.type)}, ${'DTTR_PCDOGS_SYMBOL_DATA_ID_' if unstable else 'DTTR_PCDOGS_DATA_'}${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
 % else:
-	UNTYPED_DATA(CTX, ${row.name})${' \\' if loop.index != len(globals) - 1 else ''}
+	UNTYPED_DATA(CTX, ${row.symbol_id.lower()})${' \\' if loop.index != len(globals) - 1 else ''}
 % endif
 % endfor
 % else:
@@ -1320,51 +1320,51 @@ const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${row.public} =
 % endfor
 % for row in globals:
 % if row.typed:
-static bool dttr_pcdogs_${row.name.lower()}_IsResolved() {
-	return dttr_pcdogs_${row.name.lower()}_addr != 0;
+static bool dttr_pcdogs_${row.symbol_id.lower()}_IsResolved() {
+	return dttr_pcdogs_${row.symbol_id.lower()}_addr != 0;
 }
 
-static DTTR_PCDOGS_T_Write_Policy dttr_pcdogs_${row.name.lower()}_Policy() {
+static DTTR_PCDOGS_T_Write_Policy dttr_pcdogs_${row.symbol_id.lower()}_Policy() {
 	return ${data_write_policy(row)};
 }
 
-static DTTR_Result dttr_pcdogs_${row.name.lower()}_Status() {
-	return dttr_pcdogs_${row.name.lower()}_addr
+static DTTR_Result dttr_pcdogs_${row.symbol_id.lower()}_Status() {
+	return dttr_pcdogs_${row.symbol_id.lower()}_addr
 		   ? (DTTR_Result){DTTR_OK, NULL}
 		   : (DTTR_Result){DTTR_ERR_UNRESOLVED, NULL};
 }
 
-static uintptr_t dttr_pcdogs_${row.name.lower()}_Address() {
-	return dttr_pcdogs_${row.name.lower()}_addr;
+static uintptr_t dttr_pcdogs_${row.symbol_id.lower()}_Address() {
+	return dttr_pcdogs_${row.symbol_id.lower()}_addr;
 }
 
-static ${c_data_ptr_decl(row.typed.type, 'dttr_pcdogs_' + row.name.lower() + '_Ptr()')} {
-	return ${c_data_ptr_cast(row.typed.type)}dttr_pcdogs_${row.name.lower()}_addr;
+static ${c_data_ptr_decl(row.typed.type, 'dttr_pcdogs_' + row.symbol_id.lower() + '_Ptr()')} {
+	return ${c_data_ptr_cast(row.typed.type)}dttr_pcdogs_${row.symbol_id.lower()}_addr;
 }
 
-static DTTR_Result dttr_pcdogs_${row.name.lower()}_Read(${c_data_read_param(row.typed.type, 'out_value')}) {
+static DTTR_Result dttr_pcdogs_${row.symbol_id.lower()}_Read(${c_data_read_param(row.typed.type, 'out_value')}) {
 	if (!out_value) {
 		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
 	}
-	DTTR_Result access_result = dttr_pcdogs_${row.name.lower()}_Status();
+	DTTR_Result access_result = dttr_pcdogs_${row.symbol_id.lower()}_Status();
 	if (!DTTR_ResultOK(access_result)) {
 		return access_result;
 	}
 	if (!dttr_pcdogs_region_has(
-			dttr_pcdogs_${row.name.lower()}_addr,
+			dttr_pcdogs_${row.symbol_id.lower()}_addr,
 			sizeof(${c_type(row.typed.type)}),
 			false,
 			false
 		)) {
 		return (DTTR_Result){DTTR_ERR_READ_FAILED, NULL};
 	}
-	memcpy(out_value, (const void*)dttr_pcdogs_${row.name.lower()}_addr, sizeof(${c_type(row.typed.type)}));
+	memcpy(out_value, (const void*)dttr_pcdogs_${row.symbol_id.lower()}_addr, sizeof(${c_type(row.typed.type)}));
 	return (DTTR_Result){DTTR_OK, NULL};
 }
 
 
-static DTTR_Result dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_param(row.typed.type, 'value')}) {
-	DTTR_Result access_result = dttr_pcdogs_${row.name.lower()}_Status();
+static DTTR_Result dttr_pcdogs_${row.symbol_id.lower()}_UnsafeWrite(${c_data_write_param(row.typed.type, 'value')}) {
+	DTTR_Result access_result = dttr_pcdogs_${row.symbol_id.lower()}_Status();
 	if (!DTTR_ResultOK(access_result)) {
 		return access_result;
 	}
@@ -1374,28 +1374,28 @@ static DTTR_Result dttr_pcdogs_${row.name.lower()}_UnsafeWrite(${c_data_write_pa
 	}
 % endif
 	if (!dttr_pcdogs_region_has(
-			dttr_pcdogs_${row.name.lower()}_addr,
+			dttr_pcdogs_${row.symbol_id.lower()}_addr,
 			sizeof(${c_type(row.typed.type)}),
 			true,
 			false
 		)) {
 		return (DTTR_Result){DTTR_ERR_WRITE_FAILED, NULL};
 	}
-	memcpy((void*)dttr_pcdogs_${row.name.lower()}_addr, ${c_data_write_source(row.typed.type, 'value')}, sizeof(${c_type(row.typed.type)}));
+	memcpy((void*)dttr_pcdogs_${row.symbol_id.lower()}_addr, ${c_data_write_source(row.typed.type, 'value')}, sizeof(${c_type(row.typed.type)}));
 	return (DTTR_Result){DTTR_OK, NULL};
 }
 
 
-static DTTR_Result dttr_pcdogs_${row.name.lower()}_Write(${c_data_write_param(row.typed.type, 'value')}) {
-	if (dttr_pcdogs_${row.name.lower()}_Policy() != DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
+static DTTR_Result dttr_pcdogs_${row.symbol_id.lower()}_Write(${c_data_write_param(row.typed.type, 'value')}) {
+	if (dttr_pcdogs_${row.symbol_id.lower()}_Policy() != DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
 		return (DTTR_Result){DTTR_ERR_POLICY_MISMATCH, NULL};
 	}
-	return dttr_pcdogs_${row.name.lower()}_UnsafeWrite(value);
+	return dttr_pcdogs_${row.symbol_id.lower()}_UnsafeWrite(value);
 }
 
 
 % if not unstable:
-static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name.lower()}_PatchSpec(
+static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.symbol_id.lower()}_PatchSpec(
 	bool required,
 	void* new_value,
 	void** out_original
@@ -1411,26 +1411,26 @@ static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name.lower()}_PatchSpec(
 }
 
 % endif
-static const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type dttr_pcdogs_${row.name.lower()}_symbol = {
+static const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type dttr_pcdogs_${row.symbol_id.lower()}_symbol = {
 	.SymbolId = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
 % if not unstable:
 	.DataId = DTTR_PCDOGS_DATA_${row.symbol_id},
 % endif
-	.Policy = dttr_pcdogs_${row.name.lower()}_Policy,
-	.Status = dttr_pcdogs_${row.name.lower()}_Status,
-	.IsResolved = dttr_pcdogs_${row.name.lower()}_IsResolved,
-	.Address = dttr_pcdogs_${row.name.lower()}_Address,
-	.Ptr = dttr_pcdogs_${row.name.lower()}_Ptr,
-	.Read = dttr_pcdogs_${row.name.lower()}_Read,
-	.Write = dttr_pcdogs_${row.name.lower()}_Write,
-	.UnsafeWrite = dttr_pcdogs_${row.name.lower()}_UnsafeWrite,
+	.Policy = dttr_pcdogs_${row.symbol_id.lower()}_Policy,
+	.Status = dttr_pcdogs_${row.symbol_id.lower()}_Status,
+	.IsResolved = dttr_pcdogs_${row.symbol_id.lower()}_IsResolved,
+	.Address = dttr_pcdogs_${row.symbol_id.lower()}_Address,
+	.Ptr = dttr_pcdogs_${row.symbol_id.lower()}_Ptr,
+	.Read = dttr_pcdogs_${row.symbol_id.lower()}_Read,
+	.Write = dttr_pcdogs_${row.symbol_id.lower()}_Write,
+	.UnsafeWrite = dttr_pcdogs_${row.symbol_id.lower()}_UnsafeWrite,
 % if not unstable:
-	.PatchSpec = dttr_pcdogs_${row.name.lower()}_PatchSpec,
+	.PatchSpec = dttr_pcdogs_${row.symbol_id.lower()}_PatchSpec,
 % endif
 };
 
 const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* const DTTR_PCDOGS_D_${c_public_token(row.name)} =
-	&dttr_pcdogs_${row.name.lower()}_symbol;
+	&dttr_pcdogs_${row.symbol_id.lower()}_symbol;
 
 % endif
 % endfor

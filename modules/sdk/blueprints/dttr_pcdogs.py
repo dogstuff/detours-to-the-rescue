@@ -10,6 +10,7 @@ from blueprint import (
     CallingConvention,
     HookKind,
     Required,
+    WritePolicy,
     enum_value,
     hook,
     member,
@@ -437,7 +438,7 @@ stable.struct(
         "flags",
         0x4,
         doc=(
-            "Audio definition flags. Script_PlaySoundBlockOrWait mutates bit 0x40 as "
+            "Audio definition flags. Script_OpPlaySoundBlockOrWait mutates bit 0x40 as "
             "a script_playback_active_or_wait_latch around direct playback."
         ),
     ),
@@ -3715,7 +3716,7 @@ stable.struct(
     ),
     size=0xB4,
     doc=(
-        "Script opcode dispatch table reached from Script_RunWithActor at pcdogs.exe+0x51988 (PC EN). "
+        "Script opcode dispatch table reached from Script_OpRunWithActor at pcdogs.exe+0x51988 (PC EN). "
         "Table shape is stable; individual handler slots dispatch native script opcodes."
     ),
 )
@@ -3838,7 +3839,7 @@ stable.callback_type(
     params=[param("Actor_State*", "actor"), param("uint8_t**", "ip")],
     calling=CallingConvention.CDECL,
     doc=(
-        "Script_RunWithActor uses this callback type for opcode handlers in the native script dispatch table."
+        "Script_OpRunWithActor uses this callback type for opcode handlers in the native script dispatch table."
     ),
 )
 
@@ -3946,92 +3947,88 @@ stable.enum(
 
 stable.enum("Camera_TransitionMode", enum_value("CAMERA_SNAP", 0))
 
-stable.sig("ddraw_object_anchor", "A1 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 81 EC 9C 00 00 00")
+stable.sig("DDraw_ObjectAnchor", "A1 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 81 EC 9C 00 00 00")
 
-stable.sig("game_initialized_anchor", "89 35 ?? ?? ?? ?? C6 44 24 ?? 10")
+stable.sig("Game_InitializedAnchor", "89 35 ?? ?? ?? ?? C6 44 24 ?? 10")
 
 stable.sig(
-    "gamepad_button_flags", "8B 15 ?? ?? ?? ?? 8B 06 0B C2 89 06 81 FB BC 02 00 00"
+    "Input_GamepadButtonFlags", "8B 15 ?? ?? ?? ?? 8B 06 0B C2 89 06 81 FB BC 02 00 00"
 )
 
-stable.sig("joystick_available_anchor", "A0 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? A1")
+stable.sig("Input_JoystickAvailableAnchor", "A0 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? A1")
 
-stable.sig("keyboard_mappinbuttons", "8B 15 ?? ?? ?? ?? 50 56")
+stable.sig("Input_KeyboardMappingButtons", "8B 15 ?? ?? ?? ?? 50 56")
 
-stable.sig("keyboard_mappinkeys", "A3 ?? ?? ?? ?? A1 ?? ?? ?? ?? 8D 14 8D")
+stable.sig("Input_KeyboardMappingKeys", "A3 ?? ?? ?? ?? A1 ?? ?? ?? ?? 8D 14 8D")
 
-stable.sig("main_window_handle_anchor", "A1 ?? ?? ?? ?? 83 C4 08 6A 03")
+stable.sig("Window_MainHandleAnchor", "A1 ?? ?? ?? ?? 83 C4 08 6A 03")
 
-stable.sig("main_window_handle2_anchor", "A3 ?? ?? ?? ?? FF D7")
+stable.sig("Window_MainHandle2Anchor", "A3 ?? ?? ?? ?? FF D7")
 
-stable.sig("mappincount", "8B 0D ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 50")
+stable.sig("Input_MappingCount", "8B 0D ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 50")
 
-stable.sig("rendering_enabled_anchor", "39 35 ?? ?? ?? ?? 74 ?? E8")
+stable.sig("Graphics_RenderingEnabledAnchor", "39 35 ?? ?? ?? ?? 74 ?? E8")
 
-stable.sig("should_quit_anchor", "39 35 ?? ?? ?? ?? 75 ?? 39 35")
+stable.sig("Window_ShouldQuitAnchor", "39 35 ?? ?? ?? ?? 75 ?? 39 35")
 
-stable.sig("directory_anchor", "68 ?? ?? ?? ?? 68 04 01 00 00 FF 15")
+stable.sig("File_DirectoryAnchor", "68 ?? ?? ?? ?? 68 04 01 00 00 FF 15")
 
-stable.sig("audio_digital_driver_anchor", "A1 ?? ?? ?? ?? 6A 7F 50 FF 15")
+stable.sig("Audio_DigitalDriverAnchor", "A1 ?? ?? ?? ?? 6A 7F 50 FF 15")
 
-stable.sig("movie_file_names_and_path_prefix", "8B 04 B5 ?? ?? ?? ?? 50 68")
+stable.sig("Video_MovieFileNamesAndPathPrefix", "8B 04 B5 ?? ?? ?? ?? 50 68")
 
 stable.sig(
-    "title_resource_cleanup_bundle",
+    "Title_ResourceCleanupBundle",
     "6A 01 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ??",
 )
 
-stable.sig("find_and_load_game_pkfile", "81 EC 10 01 00 00 57 ??")
+stable.sig("PKG_FindAndLoadGamePKFile", "81 EC 10 01 00 00 57 ??")
 
-stable.sig("initialize_game_engine", "E8 ?? ?? ?? ?? 85 C0 75 ?? 32 C0")
+stable.sig("Game_InitializeEngine", "E8 ?? ?? ?? ?? 85 C0 75 ?? 32 C0")
 
-stable.sig("initialize_graphics_subsystem", "E8 ?? ?? ?? ?? 8B 44 24 ?? 8B 4C 24 ?? 50")
+stable.sig("Graphics_InitializeSubsystem", "E8 ?? ?? ?? ?? 8B 44 24 ?? 8B 4C 24 ?? 50")
 
-stable.sig("initialize_capabilities", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 A3")
+stable.sig("D3D_InitializeCapabilities", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 A3")
 
-stable.sig("initialize_window_handle", "A1 ?? ?? ?? ?? 56 57 8B 7C 24")
+stable.sig("Window_InitializeHandle", "A1 ?? ?? ?? ?? 56 57 8B 7C 24")
 
-stable.sig("initialize_game_systems", "E8 ?? ?? ?? ?? 8D 54 24 ?? 56")
+stable.sig("Game_InitializeSystems", "E8 ?? ?? ?? ?? 8D 54 24 ?? 56")
 
-stable.sig("sig_render_frame", "51 53 E8 ?? ?? ?? ?? A1")
+stable.sig("Graphics_RenderFrame", "51 53 E8 ?? ?? ?? ?? A1")
 
-stable.sig("is_key_pressed", "A1 ?? ?? ?? ?? 33 C9 85 C0 53")
+stable.sig("Input_IsKeyPressed", "A1 ?? ?? ?? ?? 33 C9 85 C0 53")
 
-stable.sig("reset_input_and_state", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 25 DF F4 FF FF")
+stable.sig("Input_ResetInputAndState", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 25 DF F4 FF FF")
 
-stable.sig("take_screenshot", "81 EC 04 01 00 00 56 ??")
+stable.sig("Graphics_TakeScreenshot", "81 EC 04 01 00 00 56 ??")
 
-stable.sig("malloc", "FF 35 ?? ?? ?? ?? FF 74 24")
+stable.sig("Mem_Malloc", "FF 35 ?? ?? ?? ?? FF 74 24")
 
-stable.sig("sig_audio_shutdown_system", "A1 ?? ?? ?? ?? 85 C0 74 ?? 53 8B 1D")
+stable.sig("Audio_ShutdownSystem", "A1 ?? ?? ?? ?? 85 C0 74 ?? 53 8B 1D")
 
 stable.sig(
-    "sig_camera_check_actor_distance",
+    "Camera_CheckActorDistance",
     "8B 44 24 04 85 C0 75 ?? 33 C0 C3 8B 15 ??",
     required=Required.EN,
 )
 
 stable.sig(
-    "sig_scene_render_frame",
+    "Scene_RenderFrame",
     "55 8B EC 83 EC 44 F6 05 ?? ?? ?? ?? 08 0F 85 ??",
     required=Required.EN,
 )
 
 stable.sig(
-    "sig_timer_get_raw_tick_count",
+    "Timer_GetRawTickCount",
     "E9 ?? ?? ?? ?? 90 90 90 90 90 90 90 90 90 90 90 55",
     required=Required.EN,
 )
 
-stable.sig(
-    "sig_audio_play_positional_sound", "8B 0D ?? ?? ?? ?? 56 85", required=Required.EN
-)
+stable.sig("Audio_PlayPositionalSound", "8B 0D ?? ?? ?? ?? 56 85", required=Required.EN)
 
-stable.sig("sig_actor_set_property", "00 00 83 F9 09 0F 87 ??", required=Required.EN)
+stable.sig("Actor_SetProperty", "00 00 83 F9 09 0F 87 ??", required=Required.EN)
 
-stable.sig(
-    "sig_render_adjust_level_scale", "A1 ?? ?? ?? ?? 85 C0 7C", required=Required.EN
-)
+stable.sig("Graphics_AdjustLevelScale", "A1 ?? ?? ?? ?? 85 C0 7C", required=Required.EN)
 
 stable.fn(
     "Camera_CheckActorDistance",
@@ -4285,7 +4282,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_CheckCollisionBit",
+    "Script_OpCheckCollisionBit",
     "83 C1 02 89 08 8B 35 ??",
     match=-0x13,
     hook=0x7,
@@ -4294,7 +4291,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_PollSignal",
+    "Script_OpPollSignal",
     "66 89 54 24 10 50 E8 ??",
     match=-0x5A,
     ret="void",
@@ -4432,7 +4429,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_SetPlayerState",
+    "Script_OpSetPlayerState",
     "00 88 4F 0C 7D ?? E8 ??",
     match=-0x5A,
     ret="void",
@@ -4605,7 +4602,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_PauseToggle",
+    "Script_OpPauseToggle",
     "A1 ?? ?? ?? ?? 53 33 DB 55",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -5528,7 +5525,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_CheckTerminator",
+    "Script_OpCheckTerminator",
     "FF 48 83 F8 03 0F 87 ??",
     match=-0xF,
     hook=0x7,
@@ -5542,7 +5539,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_SetEntityIndex",
+    "Script_OpSetEntityIndex",
     "8B 44 24 08 8B 08 41 89 08 8B C1 8B 4C 24 04 8A 40 ?? 88 81 ?? ?? ?? ?? C3",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "script_cursor_inout")],
@@ -5553,7 +5550,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_JumpConditional",
+    "Script_OpJumpConditional",
     "51 8B 4C 24 0C 33 D2 8B 01 83 C0 02 89 01 8A 70 ?? 8A 50 ?? 03 D0 40 89 01",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "script_cursor_inout")],
@@ -5624,7 +5621,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_SetVariable",
+    "Script_OpSetVariable",
     "C1 E3 08 57 0B DA E8 ??",
     match=-0x5B,
     hook=0x7,
@@ -5633,7 +5630,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_DecrementVariable",
+    "Script_OpDecrementVariable",
     "?? ?? 8B 4C 24 14 83 C4",
     match=-0x1E,
     hook=0x8,
@@ -5642,7 +5639,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_CallIndirect",
+    "Script_OpCallIndirect",
     "8B 44 24 08 50 8B 10 42 89 10 8B 44 24 08 8B CA 33 D2 50 8A 51 FF FF 14 95 ?? ?? ?? ??",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -5650,7 +5647,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_MoveToTarget",
+    "Script_OpMoveToTarget",
     "66 81 FF FF 7F 0F 84 ??",
     match=-0x7C,
     hook=0x6,
@@ -5659,7 +5656,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_WalkToTarget",
+    "Script_OpWalkToTarget",
     "89 4C 24 1C 75 ?? A1 ??",
     match=-0x62,
     ret="void",
@@ -5667,7 +5664,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_RunToTarget",
+    "Script_OpRunToTarget",
     "03 C8 83 C0 02 8B E9 ??",
     match=-0x1E,
     ret="void",
@@ -5675,7 +5672,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_RotateActor",
+    "Script_OpRotateActor",
     "83 C0 02 89 06 8B E9 ??",
     match=-0x1D,
     hook=0x7,
@@ -5684,7 +5681,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_MoveToTargetWithCamera",
+    "Script_OpMoveToTargetWithCamera",
     "08 8B 74 24 18 8B 1D ??",
     match=-0x64,
     hook=0x8,
@@ -5693,7 +5690,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_WaitForAnimation",
+    "Script_OpWaitForAnimation",
     "83 C0 02 89 06 8B 3D ??",
     match=-0x1D,
     hook=0x7,
@@ -5702,7 +5699,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_SetActorProperty",
+    "Script_OpSetActorProperty",
     "08 0B CA 8B C1 8B 0D ??",
     match=-0x41,
     hook=0x6,
@@ -5711,7 +5708,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_ClearActorProperty",
+    "Script_OpClearActorProperty",
     "8B 44 24 08 6A FF 8B 08 41 89 08 8B C1 8B 0D ??",
     hook=0x6,
     ret="void",
@@ -5719,7 +5716,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_PathfindToEntity",
+    "Script_OpPathfindToEntity",
     "3D FF 7F 74 ?? 8B 35 ??",
     match=-0x2A,
     hook=0x7,
@@ -5728,7 +5725,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_TraceActorPath",
+    "Script_OpTraceActorPath",
     "83 C0 04 89 07 8B 35 ??",
     match=-0x4B,
     ret="void",
@@ -5737,7 +5734,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_AddNavigationCommand",
+    "Script_OpAddNavigationCommand",
     "88 54 24 10 75 ?? 8B ??",
     match=-0x13,
     ret="void",
@@ -5746,7 +5743,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_TestPathTrace",
+    "Script_OpTestPathTrace",
     "58 FF 8B EB 72 ?? 80 ??",
     match=-0x4E,
     ret="void",
@@ -5754,7 +5751,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_EmitSignal",
+    "Script_OpEmitSignal",
     "C2 3C FE 75 ?? C1 E8 ??",
     match=-0x4B,
     ret="void",
@@ -5762,7 +5759,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_PlaySoundIndex",
+    "Script_OpPlaySoundIndex",
     "?? 83 C4 08 85 C0 7C ?? 8B 15 ?? ?? ?? ?? 8B",
     match=-0x46,
     ret="void",
@@ -5774,7 +5771,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_StopSound",
+    "Script_OpStopSound",
     "?? 83 C4 08 85 C0 7C ?? 8B 15 ?? ?? ?? ?? 6A",
     match=-0x4D,
     ret="void",
@@ -5782,7 +5779,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_RemoveActor",
+    "Script_OpRemoveActor",
     "66 85 C0 7E ?? 8B 15 ?? ?? ?? ?? 68",
     match=-0x29,
     hook=0x6,
@@ -5791,7 +5788,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_RunWithActor",
+    "Script_OpRunWithActor",
     "83 C0 02 89 06 8B 1D ??",
     match=-0x21,
     hook=0x7,
@@ -5821,7 +5818,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Entity_EnsureCameraActive",
+    "Script_OpEnsureCameraActive",
     "5A 04 51 8B 6A 08 E8 ??",
     match=-0x42,
     hook=0x6,
@@ -5830,7 +5827,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_TriggerLevelTransition",
+    "Script_OpTriggerLevelTransition",
     "03 C8 40 89 06 8B E9 ??",
     match=-0x1C,
     ret="void",
@@ -5838,7 +5835,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_TriggerMusicTransition",
+    "Script_OpTriggerMusicTransition",
     "83 EC 10 8B 44 24 18 56 C7 05 ??",
     hook=0x7,
     ret="void",
@@ -5846,7 +5843,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_TriggerMusicFade",
+    "Script_OpTriggerMusicFade",
     "EF C1 FA 05 8B CA C1 E9 ??",
     match=-0x81,
     hook=0x6,
@@ -5855,7 +5852,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_PlaySoundBlockOrWait",
+    "Script_OpPlaySoundBlockOrWait",
     "03 D8 40 89 06 8B 3D ??",
     match=-0x1B,
     hook=0x7,
@@ -5869,7 +5866,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_CheckButtonState",
+    "Script_OpCheckButtonState",
     "?? 83 C4 10 83 F8 64 7D ?? 89",
     match=-0x6A,
     hook=0x8,
@@ -11670,7 +11667,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_AnimateRotation",
+    "Script_OpAnimateRotation",
     "83 EC ?? 53 55 56 57 8B 7C 24 ?? 33 C9 33 DB 8B 2F 83 C5 ?? 8B C5 89 2F",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -11678,7 +11675,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_AnimateZoom",
+    "Script_OpAnimateZoom",
     "33 D2 8A 50 FF 8B E9 ??",
     match=-0x7D,
     ret="void",
@@ -11686,7 +11683,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_ProcessSpriteRotation",
+    "Script_OpProcessSpriteRotation",
     "55 8B EC 83 EC ?? 53 56 57 8B 7D ?? 33 C9 33 DB 8B 37 83 C6 ?? 8B C6 89 37",
     ret="void",
     params=[param("Actor_State*", "actor"), param("uint8_t* *", "ip")],
@@ -11694,7 +11691,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_AnimateTarget",
+    "Script_OpAnimateTarget",
     "14 52 8D 04 50 8B 15 ??",
     match=-0x98,
     hook=0x7,
@@ -11703,7 +11700,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Script_SetCameraProperty",
+    "Script_OpSetCameraProperty",
     "0C 49 8D 04 48 8B 0D ??",
     match=-0x47,
     ret="void",
@@ -12927,15 +12924,16 @@ stable.fn(
 )
 
 stable.data(
-    "debug_max_fps_threshold",
+    "Graphics_AdjustLevelScale_DebugMaxFPSThreshold",
     xref("Graphics_AdjustLevelScale", 0x32, 0x2),
     type="int32_t",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 
 
 # Function promoted with the data rows that use it as an xref resolver.
 stable.fn(
-    "Script_BranchConditional",
+    "Script_OpBranchConditional",
     "0B DA 80 F9 06 0F 84 ??",
     match=-0x68,
     ret="void",
@@ -12948,122 +12946,138 @@ stable.fn(
 )
 
 stable.data(
-    "ddraw_object",
+    "D3D_CreateTextureSurface_DDrawObject",
     xref("D3D_CreateTextureSurface", 0x2D6, 0x1),
     type="DDraw_IDirectDraw7*",
     doc="Primary IDirectDraw7 interface used for texture/work/z-buffer surface creation and released during DirectDraw shutdown.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "window_game_initialized",
+    "Window_ProcessGameProc_Initialized",
     xref("Window_ProcessGameProc", 0x5F, 0x1),
     type="int32_t",
     doc="Non-zero after the main game window and runtime initialization have completed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_joystick_available",
+    "Input_GetPressedButton_JoystickAvailable",
     xref("Input_GetPressedButton", 0x1F, 0x1),
     type="uint8_t",
     doc="Non-zero when joystick/gamepad input is available; allows gamepad polling in Input_GetPressedButton.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "window_main_handle",
+    "D3D_InitDirectDrawAndDirect3D_WindowMainHandle",
     xref("D3D_InitDirectDrawAndDirect3D", 0x5, 0x2),
     type="HWND",
     doc="Primary game window handle captured during DirectDraw/Direct3D initialization.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "window_main_handle_2",
+    "Window_RunWinMain_Handle2",
     xref("Window_RunWinMain", 0x13B, 0x1),
     type="HWND",
     doc=(
         "Write-only secondary copy of the HWND returned by CreateWindowExA in Window_RunWinMain; "
         "main_window_handle is the runtime window handle read by input/movie/DirectDraw paths."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "rendering_enabled",
+    "Window_RunWinMain_RenderingEnabled",
     xref("Window_RunWinMain", 0x163, 0x2),
     type="int32_t",
     doc="Flag checked by game rendering paths before drawing world content.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "window_should_quit",
+    "Input_ProcessWindowMessages_ShouldQuit",
     xref("Input_ProcessWindowMessages", 0x0, 0x1),
     type="int32_t",
     doc="Flag set by window-message processing for game exit.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_digital_driver",
+    "Audio_InitializeSystem_DigitalDriver",
     xref("Audio_InitializeSystem", 0x7F, 0x1),
     type="Audio_AILHDigitalDriver",
     doc="Miles digital driver handle opened by AIL_waveOutOpen and cleared by Audio_ShutdownSystem.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_movie_file_names",
+    "Video_PlayMovieIntro_FileNames",
     xref("Video_PlayMovieIntro", 0xF, 0x3),
     type="char*[4]",
     doc="First entry/base of the four-entry movie filename pointer table used by intro and movie playback routines.",
     stable_reason="sidecar startup resolves this movie filename table before playback",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_movie_path_prefix",
+    "Video_PlayMovieIntro_PathPrefix",
     xref("Video_PlayMovieIntro", 0x17, 0x1),
     type="char",
     doc="First byte/base of the NUL-terminated data/movies path prefix used by movie-loading routines.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_title_bonus_replay_resource",
+    "Title_CleanupScreenResources_PKGResourceTitleBonusReplayResource",
     xref("Title_CleanupScreenResources", 0xC, 0x1),
     type="void*",
     doc=(
         "Title-screen bonus replay resource pointer freed during "
         "Title_CleanupScreenResources and assigned/used by title-screen load/update paths."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_title_handle_1",
+    "PKGResourceTitleHandle1",
     xref("Title_CleanupScreenResources", 0x17, 0x2),
     type="void*",
     doc=(
         "Title-screen resource handle slot 1 cleaned by PKG_CleanupResourceHandle during "
         "Title_CleanupScreenResources."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_title_handle_0",
+    "PKGResourceTitleHandle0",
     xref("Title_CleanupScreenResources", 0x23, 0x2),
     type="void*",
     doc=(
         "Title-screen resource handle slot 0 cleaned by PKG_CleanupResourceHandle during "
         "Title_CleanupScreenResources."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_title_material_base",
+    "PKGResourceTitleMaterialBase",
     xref("Title_CleanupScreenResources", 0x2F, 0x1),
     type="void*",
     doc=(
         "Title-screen material/resource manager base released by PKG_ReleaseResourceManager "
         "during Title_CleanupScreenResources."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_title_package",
+    "PKGResourceTitlePackage",
     xref("Title_CleanupScreenResources", 0x3A, 0x2),
     type="void*",
     doc=(
         "Title-screen resource package pointer freed by PKG_FreeResourceData during "
         "Title_CleanupScreenResources."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "scene_node_type_dispatch_table",
+    "Scene_TraverseNodeTree_TypeDispatchTable",
     xref("Scene_TraverseNodeTree", 0x37A, 0x3),
     type="uint32_t",
     doc="Seven-entry uint32_t jump table used by Scene_TraverseNodeTree to dispatch child scene-node type values 1..7 from node +0x64 (PC EN); node_type 3..5 share target pcdogs.exe+0x016D2 (PC EN) and out-of-range values default to pcdogs.exe+0x016D2 (PC EN).",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "input_control_code_dispatch_table",
+    "Input_CheckButtonState_ControlCodeDispatchTable",
     xref("Input_CheckButtonState", 0x82, 0x3),
     type="uint32_t",
     doc=(
@@ -13071,503 +13085,774 @@ stable.data(
         "Slots 0..8 handle aggregate direction axes and signed axis thresholds; slot 9 is "
         "the default return-zero path for unused codes 0x24..0x3f."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "input_control_code_dispatch_index_table",
+    "Input_CheckButtonState_ControlCodeDispatchIndexTable",
     xref("Input_CheckButtonState", 0x7C, 0x2),
     type="uint8_t",
     doc=(
         "0x28-byte uint8_t lookup table mapping control-code offsets 0x20..0x47 onto "
         "input_control_code_dispatch_table slots."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "actor_path_target_selector_dispatch_table",
+    "Actor_TracePath_TargetSelectorDispatchTable",
     xref("Actor_TracePath", 0x2C0, 0x3),
     type="uint32_t",
     doc="Ten-entry uint32_t jump table used by Actor_TracePath for negative target-selector sentinel values -0x8000..-0x7FF7.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "actor_property_id_dispatch_table",
+    "Actor_SetProperty_IDDispatchTable",
     xref("Actor_SetProperty", 0x3E, 0x3),
     type="uint32_t",
     doc="Ten-entry uint32_t jump table used by Actor_SetProperty for property ids 0..9.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "player_behavior_state_dispatch_table",
+    "Actor_ProcessPlayerBehavior_StateDispatchTable",
     xref("Actor_ProcessPlayerBehavior", 0x26F, 0x3),
     type="uint32_t",
     doc="Five-entry uint32_t jump table used by Actor_ProcessPlayerBehavior for player behavior state values 0..4.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_response_node_type_dispatch_table",
+    "Actor_ProcessCollisionResponse_NodeTypeDispatchTable",
     xref("Actor_ProcessCollisionResponse", 0x14F, 0x3),
     type="uint32_t",
     doc="Five-entry uint32_t jump table used by Actor_ProcessCollisionResponse for collided actor/node type values 0..4.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "script_terminator_opcode_table",
-    xref("Script_CheckTerminator", 0x1A, 0x3),
+    "Script_OpCheckTerminator_OpcodeTable",
+    xref("Script_OpCheckTerminator", 0x1A, 0x3),
     type="uint32_t",
-    doc="Four-entry uint32_t jump table for Script_CheckTerminator opcodes 1 through 4.",
+    doc="Four-entry uint32_t jump table for Script_OpCheckTerminator opcodes 1 through 4.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "script_branch_arithmetic_op_table",
-    xref("Script_BranchConditional", 0x10B, 0x3),
+    "Script_OpBranchConditional_ArithmeticOpTable",
+    xref("Script_OpBranchConditional", 0x10B, 0x3),
     type="uint32_t",
-    doc="Four-entry uint32_t jump table used by Script_BranchConditional for arithmetic/combine opcodes before comparison.",
+    doc="Four-entry uint32_t jump table used by Script_OpBranchConditional for arithmetic/combine opcodes before comparison.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "script_branch_comparison_op_table",
-    xref("Script_BranchConditional", 0x187, 0x3),
+    "Script_OpBranchConditional_ComparisonOpTable",
+    xref("Script_OpBranchConditional", 0x187, 0x3),
     type="uint32_t",
-    doc="Six-entry uint32_t jump table used by Script_BranchConditional for comparison opcodes.",
+    doc="Six-entry uint32_t jump table used by Script_OpBranchConditional for comparison opcodes.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "script_set_variable_op_jump_table",
-    xref("Script_SetVariable", 0x111, 0x3),
+    "Script_OpSetVariable_OpJumpTable",
+    xref("Script_OpSetVariable", 0x111, 0x3),
     type="uint32_t",
     doc=(
-        "Four-entry uint32_t jump table used by Script_SetVariable for arithmetic opcode dispatch; "
+        "Four-entry uint32_t jump table used by Script_OpSetVariable for arithmetic opcode dispatch; "
         "validated as data."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "checkers_capture_piece_type_dispatch_table",
+    "Checkers_CheckCapturePossible_PieceTypeDispatchTable",
     xref("Checkers_CheckCapturePossible", 0x20, 0x3),
     type="uint32_t",
     doc=(
         "Six-entry uint32_t jump table for Checkers_CheckCapturePossible piece values 1..6. "
         "Pieces 1/2 are men, 5/6 are kings, and 3/4 fall through to the no-capture path."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "checkers_simple_move_piece_type_dispatch_table",
+    "Checkers_ValidateMove_SimpleMovePieceTypeDispatchTable",
     xref("Checkers_ValidateMove", 0x68, 0x3),
     type="uint32_t",
     doc=(
         "Six-entry uint32_t Checkers_ValidateMove jump table for one-square moves by piece value "
         "1..6; pieces 3/4 share the invalid/default path and 5/6 share king movement."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "checkers_capture_move_piece_type_dispatch_table",
+    "Checkers_ValidateMove_CaptureMovePieceTypeDispatchTable",
     xref("Checkers_ValidateMove", 0x10F, 0x3),
     type="uint32_t",
     doc=(
         "Six-entry uint32_t Checkers_ValidateMove jump table for two-square captures by piece value "
         "1..6; pieces 3/4 share the invalid/default path and 5/6 share king capture logic."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "mesh_command_signal_dispatch_table",
+    "Graphics_UpdateMeshCommandFlags_SignalDispatchTable",
     xref("Graphics_UpdateMeshCommandFlags", 0x77, 0x3),
     type="uint32_t",
     doc="Eleven-entry uint32_t jump table used by Graphics_UpdateMeshCommandFlags for mesh command signal ids 0..10.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760028_range_dispatch_table",
+    "D3D_FormatDirectXError_88760028RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0xDF, 0x3),
     type="uint32_t",
     doc="Eight-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760028..0x88760078 DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760028_range_index_table",
+    "D3D_FormatDirectXError_88760028RangeIndexTable",
     xref("D3D_FormatDirectXError", 0xD9, 0x2),
     type="uint8_t",
     doc="0x51-byte uint8_t lookup table that maps sparse 0x88760028..0x88760078 HRESULT offsets to D3D_FormatDirectXError jump-table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760091_range_dispatch_table",
+    "D3D_FormatDirectXError_88760091RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x14C, 0x3),
     type="uint32_t",
     doc="Fifteen-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760091..0x887600E1 DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760091_range_index_table",
+    "D3D_FormatDirectXError_88760091RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x146, 0x2),
     type="uint8_t",
     doc="0x51-byte uint8_t lookup table that maps sparse 0x88760091..0x887600E1 HRESULT offsets to D3D_FormatDirectXError jump-table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_887600f0_range_dispatch_table",
+    "D3D_FormatDirectXError_887600f0RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x201, 0x3),
     type="uint32_t",
     doc="Thirty-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x887600F0..0x887601D6 DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_887600f0_range_index_table",
+    "D3D_FormatDirectXError_887600f0RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x1FB, 0x2),
     type="uint8_t",
     doc="0xE7-byte uint8_t lookup table that maps sparse 0x887600F0..0x887601D6 HRESULT offsets to D3D_FormatDirectXError jump-table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_887601ea_range_dispatch_table",
+    "D3D_FormatDirectXError_887601eaRangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x38E, 0x3),
     type="uint32_t",
     doc="Thirty-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x887601EA..0x88760245 DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_887601ea_range_index_table",
+    "D3D_FormatDirectXError_887601eaRangeIndexTable",
     xref("D3D_FormatDirectXError", 0x388, 0x2),
     type="uint8_t",
     doc="0x5C-byte uint8_t lookup table that maps sparse 0x887601EA..0x88760245 HRESULT offsets to D3D_FormatDirectXError jump-table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760247_range_dispatch_table",
+    "D3D_FormatDirectXError_88760247RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x4FA, 0x3),
     type="uint32_t",
     doc="Sixteen-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760247..0x8876026C DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760247_range_index_table",
+    "D3D_FormatDirectXError_88760247RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x4F4, 0x2),
     type="uint8_t",
     doc="0x26-byte uint8_t lookup table that maps sparse 0x88760247..0x8876026C HRESULT offsets to D3D_FormatDirectXError jump-table slots; 0x88760276 is handled as a separate singleton.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760280_range_dispatch_table",
+    "D3D_FormatDirectXError_88760280RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x5D7, 0x3),
     type="uint32_t",
     doc="Seven-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760280..0x887602B4 DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_88760280_range_index_table",
+    "D3D_FormatDirectXError_88760280RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x5D1, 0x2),
     type="uint8_t",
     doc="0x35-byte uint8_t lookup table that maps sparse 0x88760280..0x887602B4 HRESULT offsets to D3D_FormatDirectXError jump-table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "d3d_error_887602b6_range_dispatch_table",
+    "D3D_FormatDirectXError_887602b6RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x61F, 0x3),
     type="uint32_t",
     doc="Six-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the contiguous 0x887602B6..0x887602BB DirectDraw error range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "bonus_level_code_dispatch_table",
+    "Level_InitializeBonusData_CodeDispatchTable",
     xref("Level_InitializeBonusData", 0x27, 0x3),
     type="uint32_t",
     doc="Five-entry uint32_t jump table used by Level_InitializeBonusData for bonus level ids 27..31.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "level_completion_slot_dispatch_table",
+    "Level_BuildCompletionTable_SlotDispatchTable",
     xref("Level_BuildCompletionTable", 0x178, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Level_BuildCompletionTable to store four packed completion masks.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "options_menu_render_item_dispatch_table",
+    "Menu_RenderOptionsMenu_ItemDispatchTable",
     xref("Menu_RenderOptionsMenu", 0x103, 0x3),
     type="uint32_t",
     doc="Seven-entry uint32_t jump table used by Menu_RenderOptionsMenu to render options menu rows 0..6.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "menu_state_dispatch_table",
+    "Menu_ProcessMenuState_DispatchTable",
     xref("Menu_ProcessMenuState", 0xB1, 0x3),
     type="uint32_t",
     doc="Thirteen-entry uint32_t jump table used by Menu_ProcessMenuState for menu state values 1..13.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "level_load_state_dispatch_table",
+    "Level_Load_StateDispatchTable",
     xref("Level_Load", 0x10, 0x3),
     type="uint32_t",
     doc="Eleven-entry uint32_t jump table used by Level_Load for level-loading state values 0..10; state 9 maps to the idle/default return path.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "projectile_hit_node_type_dispatch_table",
+    "Collision_ProcessProjectileHit_NodeTypeDispatchTable",
     xref("Collision_ProcessProjectileHit", 0x5D, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Collision_ProcessProjectileHit for hit actor/node type values 1..4.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_3d_axis_dispatch_table",
+    "Collision_DetectAndResolve3DCollision_3dAxisDispatchTable",
     xref("Collision_DetectAndResolve3DCollision", 0xDFB, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Collision_DetectAndResolve3DCollision to select one of four collision-normal/contact axes.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "object_node_collision_axis_dispatch_table",
+    "Collision_ResolveObjectNodeCollision_AxisDispatchTable",
     xref("Collision_ResolveObjectNodeCollision", 0x15A, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Collision_ResolveObjectNodeCollision to select one of four object-node collision axes.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_condition_subtype_dispatch_table",
+    "Actor_CheckCollisionConditions_ConditionSubtypeDispatchTable",
     xref("Actor_CheckCollisionConditions", 0x27, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Actor_CheckCollisionConditions after remapping collision subtype values 0x0D..0x17.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_condition_subtype_index_table",
+    "Actor_CheckCollisionConditions_ConditionSubtypeIndexTable",
     xref("Actor_CheckCollisionConditions", 0x21, 0x2),
     type="uint8_t",
     doc="0x0B-byte uint8_t lookup table mapping collision subtype values 0x0D..0x17 onto collision_condition_subtype_dispatch_table slots; max slot is 3.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_condition_flag_mask_dispatch_table",
+    "Actor_CheckCollisionConditions_ConditionFlagMaskDispatchTable",
     xref("Actor_CheckCollisionConditions", 0x123, 0x3),
     type="uint32_t",
     doc="Eight-entry uint32_t jump table used by Actor_CheckCollisionConditions to test selector values 2..9 against masks 0x10,0x20,0x40,0x80,1,2,4,8.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_response_subtype_dispatch_table",
+    "Actor_HandleCollisionResponse_SubtypeDispatchTable",
     xref("Actor_HandleCollisionResponse", 0x22, 0x3),
     type="uint32_t",
     doc="Seven-entry uint32_t jump table used by Actor_HandleCollisionResponse for collision subtype values 0x0D..0x13.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "input_button_mask_dispatch_table",
+    "Input_GetButtonIndex_MaskDispatchTable",
     xref("Input_GetButtonIndex", 0x19, 0x3),
     type="uint32_t",
     doc="Seven-entry uint32_t jump table mapping low input button bitmasks 1,2,4,8,0x10,0x20 through input_button_mask_index_table; slot 6 is the default unrecognized-mask path.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "input_button_mask_index_table",
+    "Input_GetButtonIndex_MaskIndexTable",
     xref("Input_GetButtonIndex", 0x13, 0x2),
     type="uint8_t",
     doc="0x20-byte uint8_t lookup table for Input_GetButtonIndex masks 1..0x20; larger recognized masks are handled by direct compares.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "window_low_message_dispatch_table",
+    "Window_ProcessGameProc_LowMessageDispatchTable",
     xref("Window_ProcessGameProc", 0x40, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Window_ProcessGameProc for sparse low Win32 messages 0x02..0x10, including destroy/size/close handling; WM_KEYDOWN (0x100) is handled by a direct branch.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "window_low_message_index_table",
+    "Window_ProcessGameProc_LowMessageIndexTable",
     xref("Window_ProcessGameProc", 0x3A, 0x2),
     type="uint8_t",
     doc="0x0f-byte uint8_t lookup table mapping Win32 message IDs 0x02..0x10 to window_low_message_dispatch_table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "window_high_message_dispatch_table",
+    "Window_ProcessGameProc_HighMessageDispatchTable",
     xref("Window_ProcessGameProc", 0x169, 0x3),
     type="uint32_t",
     doc="Four-entry uint32_t jump table used by Window_ProcessGameProc for Win32 messages 0x101..0x112, including WM_KEYUP, system key messages, and WM_SYSCOMMAND filtering.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "window_high_message_index_table",
+    "Window_ProcessGameProc_HighMessageIndexTable",
     xref("Window_ProcessGameProc", 0x163, 0x2),
     type="uint8_t",
     doc="0x12-byte uint8_t lookup table mapping sparse high Win32 message IDs 0x101..0x112 to window_high_message_dispatch_table slots.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "ui_sprite_anchor_dispatch_table",
+    "UI_UpdateAndRenderSprites_SpriteAnchorDispatchTable",
     xref("UI_UpdateAndRenderSprites", 0x4EB, 0x3),
     type="uint32_t",
     doc="Eight-entry uint32_t jump table used by UI_UpdateAndRenderSprites for sprite anchor codes 1..8.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "input_movement_direction_dispatch_table",
+    "Input_CalculateMovementVector_DirectionDispatchTable",
     xref("Input_CalculateMovementVector", 0x29, 0x3),
     type="uint32_t",
     doc="Ten-entry uint32_t jump table used by Input_CalculateMovementVector to map low-nibble direction masks to heading offsets; kept as read-only scalar/base table metadata.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "movement_command_opcode_dispatch_table",
+    "Actor_ProcessMovementCommands_CommandOpcodeDispatchTable",
     xref("Actor_ProcessMovementCommands", 0x4F, 0x3),
     type="uint32_t",
     doc="Eleven-entry uint32_t jump table used by Actor_ProcessMovementCommands for movement command opcodes 0..10; kept as read-only scalar/base table metadata.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "title_screen_state_dispatch_table",
+    "Title_UpdateAndRenderScreen_StateDispatchTable",
     xref("Title_UpdateAndRenderScreen", 0x20, 0x3),
     type="uint32_t",
     doc="Seven-entry uint32_t jump table used by Title_UpdateAndRenderScreen for title-screen state values 0..6.",
+    write_policy=WritePolicy.READ_ONLY,
 )
-stable.data("graphics_max_gamma_clamp", xref("Graphics_AdjustLevelScale", 0x21, 0x2))
-stable.data("rhw_depth_mul_2", xref("Level_InitializeActorSystem", 0x1A1, 0x2))
-stable.data("degenerate_tri_area", xref("Level_InitializeActorSystem", 0x15E, 0x2))
-stable.data("camera_init_dist", xref("Level_InitializeActorSystem", 0x156, 0x2))
-stable.data("graphics_z_depth_scale", xref("Graphics_IsQuadClipped", 0x68D, 0x2))
 stable.data(
-    "math_one",
+    "Graphics_AdjustLevelScale_MaxGammaClamp",
+    xref("Graphics_AdjustLevelScale", 0x21, 0x2),
+)
+stable.data(
+    "Level_InitializeActorSystem_RHWDepthMul2",
+    xref("Level_InitializeActorSystem", 0x1A1, 0x2),
+)
+stable.data(
+    "Level_InitializeActorSystem_DegenerateTriArea",
+    xref("Level_InitializeActorSystem", 0x15E, 0x2),
+)
+stable.data(
+    "Level_InitializeActorSystem_CameraInitDist",
+    xref("Level_InitializeActorSystem", 0x156, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ZDepthScale",
+    xref("Graphics_IsQuadClipped", 0x68D, 0x2),
+)
+stable.data(
+    "MathOne",
     xref("Graphics_RenderTexturedQuad", 0xC2, 0x2),
     xref("DInput_SetConstantForceEffect", 0x17, 0x2),
 )
 stable.data(
-    "math_zero",
+    "MathZero",
     xref("Graphics_ClipPolygonByPlane", 0x117, 0x2),
     xref("Video_OpenMovieFile", 0x1B, 0x2),
 )
-stable.data("camera_fov_angle_scale", xref("Camera_SetupClipPlanes", 0x17, 0x2))
 stable.data(
-    "debug_fps_update_interval", xref("Math_SnapVertexToNearestPoint", 0x69, 0x2)
+    "Camera_SetupClipPlanes_FOVAngleScale",
+    xref("Camera_SetupClipPlanes", 0x17, 0x2),
 )
-stable.data("graphics_bottom_edge_clamp", xref("Graphics_IsQuadClipped", 0x759, 0x2))
-stable.data("graphics_right_edge_clamp", xref("Graphics_IsQuadClipped", 0x72C, 0x2))
-stable.data("graphics_max_z_depth_clamp", xref("Graphics_IsQuadClipped", 0x697, 0x2))
 stable.data(
-    "graphics_project_screen_height_half",
+    "Math_SnapVertexToNearestPoint_DebugFPSUpdateInterval",
+    xref("Math_SnapVertexToNearestPoint", 0x69, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_BottomEdgeClamp",
+    xref("Graphics_IsQuadClipped", 0x759, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_RightEdgeClamp",
+    xref("Graphics_IsQuadClipped", 0x72C, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_MaxZDepthClamp",
+    xref("Graphics_IsQuadClipped", 0x697, 0x2),
+)
+stable.data(
+    "GraphicsProjectScreenHeightHalf",
     xref("Graphics_IsQuadClipped", 0x656, 0x2),
     xref("Graphics_DrawQuad", 0xAD4, 0x2),
 )
 stable.data(
-    "graphics_project_screen_width_half", xref("Graphics_IsQuadClipped", 0x631, 0x2)
+    "Graphics_IsQuadClipped_ProjectScreenWidthHalf",
+    xref("Graphics_IsQuadClipped", 0x631, 0x2),
 )
-stable.data("graphics_neg_z_bias", xref("Graphics_DrawQuad", 0xACC, 0x2))
-stable.data("graphics_alt_uv_offset", xref("Graphics_DrawQuad", 0x261, 0x2))
-stable.data("camera_fixed_to_float", xref("Camera_SetupProjection", 0xA1, 0x2))
-stable.data("camera_aspect_correction", xref("Camera_SetupProjection", 0x60, 0x2))
-stable.data("camera_debug_pos_scale", xref("Camera_SetupProjection", 0x36, 0x2))
+stable.data("Graphics_DrawQuad_NegZBias", xref("Graphics_DrawQuad", 0xACC, 0x2))
 stable.data(
-    "graphics_window_width",
+    "Graphics_DrawQuad_AltUVOffset", xref("Graphics_DrawQuad", 0x261, 0x2)
+)
+stable.data(
+    "Camera_SetupProjection_FixedToFloat",
+    xref("Camera_SetupProjection", 0xA1, 0x2),
+)
+stable.data(
+    "Camera_SetupProjection_AspectCorrection",
+    xref("Camera_SetupProjection", 0x60, 0x2),
+)
+stable.data(
+    "Camera_SetupProjection_DebugPosScale",
+    xref("Camera_SetupProjection", 0x36, 0x2),
+)
+stable.data(
+    "GraphicsWindowWidth",
     xref("Graphics_RenderPolygonBatch", 0x184B, 0x2),
     xref("D3D_InitDirectDrawAndDirect3D", 0x5C, 0x2),
     type="int32_t",
     doc="Active render/window width in pixels; initialized during DirectDraw/Direct3D setup and read by render projection/batching paths.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("graphics_min_fog_dist", xref("Graphics_RenderPolygonBatch", 0x1831, 0x2))
-stable.data("ms_to_sec", xref("Timer_GetGameTime", 0x19, 0x2))
-stable.data("game_over_fade_mul", xref("Game_HandleGameOver", 0x13, 0x2))
-stable.data("graphics_gamma_step", xref("D3D_SetFogDistance", 0x3A, 0x2))
-stable.data("graphics_default_gamma", xref("D3D_SetFogDistance", 0x4, 0x2))
 stable.data(
-    "input_gamepad_axis_scale",
+    "Graphics_RenderPolygonBatch_MinFogDist",
+    xref("Graphics_RenderPolygonBatch", 0x1831, 0x2),
+)
+stable.data("Timer_GetGameTime_MsToSec", xref("Timer_GetGameTime", 0x19, 0x2))
+stable.data(
+    "Game_HandleGameOver_FadeMul", xref("Game_HandleGameOver", 0x13, 0x2)
+)
+stable.data(
+    "D3D_SetFogDistance_GraphicsGammaStep", xref("D3D_SetFogDistance", 0x3A, 0x2)
+)
+stable.data(
+    "D3D_SetFogDistance_GraphicsDefaultGamma", xref("D3D_SetFogDistance", 0x4, 0x2)
+)
+stable.data(
+    "Input_ReadGamepad_AxisScale",
     xref("Input_ReadGamepad", 0xDB, 0x2),
     type="float",
     doc="Float constant -4096.0 used to convert post-deadzone DirectInput axis values into signed Q12 input axes.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_inv_range",
+    "Input_ReadGamepad_AxisInvRange",
     xref("Input_ReadGamepad", 0xD5, 0x2),
     type="float",
     doc="Float constant 1/600 used with gamepad_axis_scale; the observed deadzone is the literal +/-100 check in Input_ReadGamepad.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("difficulty_normal", xref("Game_HandleGameOver", 0x23, 0x2))
-stable.data("difficulty_easy", xref("Game_HandleGameOver", 0x1B, 0x2))
-stable.data("ddraw_gamma_control_guid", xref("D3D_SetGammaRamp", 0x82, 0x1))
-stable.data("ddraw_direct_draw7_guid", xref("D3D_InitializeDirectDraw", 0x1F7, 0x1))
-stable.data("d3d_tnl_hal_device_iid", xref("D3D_CreateTextureSurface", 0x86, 0x1))
-stable.data("d3d_hal_device_iid", xref("D3D_SelectBestDriver", 0x78, 0x1))
-stable.data("d3d_rgb_device_iid", xref("D3D_CreateTextureSurface", 0x43, 0x1))
-stable.data("dinput_device2_a_guid", xref("D3D_GetDeviceCapabilities", 0x9, 0x1))
-stable.data("string_crt_zero", xref("String_CheckFloatPrecision", 0x2A, 0x2))
-stable.data("string_crt_negative_two", xref("String_CheckFloatPrecision", 0xF, 0x2))
-stable.data("string_crt_kernel32", xref("String_LoadFloatFPU", 0x0, 0x1))
 stable.data(
-    "string_crt_exponent_suffix", xref("String_ConvertFloatToExponential", 0x93, 0x1)
+    "Game_HandleGameOver_DifficultyNormal", xref("Game_HandleGameOver", 0x23, 0x2)
 )
-stable.data("string_crt_qnan", xref("String_ConvertFloatToDecimalString", 0xF5, 0x1))
-stable.data("string_crt_inf", xref("String_ConvertFloatToDecimalString", 0xD8, 0x1))
-stable.data("string_crt_ind", xref("String_ConvertFloatToDecimalString", 0xC7, 0x1))
-stable.data("string_crt_snan", xref("String_ConvertFloatToDecimalString", 0xAD, 0x1))
-stable.data("actor_spawn_params", xref("Level_InitializeActorSystem", 0x13B, 0x4))
-stable.data("max_level_scale", xref("Level_InitializeActorSystem", 0x12C, 0x2))
-stable.data("reciprocal_lookup_table", xref("Graphics_AdjustLevelScale", 0x50, 0x2))
 stable.data(
-    "video_mci_open_avi_video",
+    "Game_HandleGameOver_DifficultyEasy", xref("Game_HandleGameOver", 0x1B, 0x2)
+)
+stable.data(
+    "D3D_SetGammaRamp_DDrawGammaControlGUID", xref("D3D_SetGammaRamp", 0x82, 0x1)
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawDirectDraw7GUID",
+    xref("D3D_InitializeDirectDraw", 0x1F7, 0x1),
+)
+stable.data(
+    "D3D_CreateTextureSurface_TnLHALDeviceIID",
+    xref("D3D_CreateTextureSurface", 0x86, 0x1),
+)
+stable.data(
+    "D3D_SelectBestDriver_HALDeviceIID", xref("D3D_SelectBestDriver", 0x78, 0x1)
+)
+stable.data(
+    "D3D_CreateTextureSurface_RGBDeviceIID",
+    xref("D3D_CreateTextureSurface", 0x43, 0x1),
+)
+stable.data(
+    "D3D_GetDeviceCapabilities_DInputDevice2AGUID",
+    xref("D3D_GetDeviceCapabilities", 0x9, 0x1),
+)
+stable.data(
+    "String_CheckFloatPrecision_CRTZero",
+    xref("String_CheckFloatPrecision", 0x2A, 0x2),
+)
+stable.data(
+    "String_CheckFloatPrecision_CRTNegativeTwo",
+    xref("String_CheckFloatPrecision", 0xF, 0x2),
+)
+stable.data(
+    "String_LoadFloatFPU_CRTKernel32", xref("String_LoadFloatFPU", 0x0, 0x1)
+)
+stable.data(
+    "String_ConvertFloatToExponential_CRTExponentSuffix",
+    xref("String_ConvertFloatToExponential", 0x93, 0x1),
+)
+stable.data(
+    "String_ConvertFloatToDecimalString_CRTQNAN",
+    xref("String_ConvertFloatToDecimalString", 0xF5, 0x1),
+)
+stable.data(
+    "String_ConvertFloatToDecimalString_CRTINF",
+    xref("String_ConvertFloatToDecimalString", 0xD8, 0x1),
+)
+stable.data(
+    "String_ConvertFloatToDecimalString_CRTIND",
+    xref("String_ConvertFloatToDecimalString", 0xC7, 0x1),
+)
+stable.data(
+    "String_ConvertFloatToDecimalString_CRTSNAN",
+    xref("String_ConvertFloatToDecimalString", 0xAD, 0x1),
+)
+stable.data(
+    "Level_InitializeActorSystem_SpawnParams",
+    xref("Level_InitializeActorSystem", 0x13B, 0x4),
+)
+stable.data(
+    "Level_InitializeActorSystem_MaxLevelScale",
+    xref("Level_InitializeActorSystem", 0x12C, 0x2),
+)
+stable.data(
+    "Graphics_AdjustLevelScale_ReciprocalLookupTable",
+    xref("Graphics_AdjustLevelScale", 0x50, 0x2),
+    write_policy=WritePolicy.READ_ONLY,
+)
+stable.data(
+    "VideoMCIOpenAVIVideo",
     xref("Video_InitializeAVIPlayer", 0x6, 0x1),
     xref("Video_OpenAVIFile", 0x33, 0x1),
     type="char",
     doc='NUL-terminated MCI command fragment "open" used by AVI/movie playback setup.',
-)
-stable.data("video_mci_close_avi_video", xref("Video_ShutdownAVIPlayer", 0x6, 0x1))
-stable.data("video_mci_movie_id", xref("Video_OpenAVIFile", 0x15, 0x1))
-stable.data("video_mci_close_device", xref("Video_CloseAVIFile", 0x5, 0x1))
-stable.data("video_mci_play_fullscreen", xref("Video_PlayAVIFullscreen", 0x5, 0x1))
-stable.data("video_mci_status_playing", xref("Video_IsAVIPlaying", 0x33, 0x1))
-stable.data("video_mci_status_mode", xref("Video_IsAVIPlaying", 0x8, 0x1))
-stable.data(
-    "graphics_font_glyph_render_state", xref("Graphics_RenderTexturedSprite", 0x17, 0x1)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_cooperative_level_set", xref("D3D_InitDirectDrawAndDirect3D", 0x11, 0x2)
+    "Video_ShutdownAVIPlayer_MCICloseAVIVideo",
+    xref("Video_ShutdownAVIPlayer", 0x6, 0x1),
 )
-stable.data("camera_projection_divisor", xref("Camera_SetupProjection", 0xF, 0x2))
+stable.data("Video_OpenAVIFile_MCIMovieID", xref("Video_OpenAVIFile", 0x15, 0x1))
 stable.data(
-    "graphics_tex_err_tex_2_null", xref("Graphics_LoadAndUploadTexture", 0x81, 0x1)
-)
-stable.data(
-    "graphics_tex_err_tex_1_null", xref("Graphics_LoadAndUploadTexture", 0x54, 0x1)
+    "Video_CloseAVIFile_MCICloseDevice", xref("Video_CloseAVIFile", 0x5, 0x1)
 )
 stable.data(
-    "graphics_tex_err_tex_0_null", xref("Graphics_LoadAndUploadTexture", 0x27, 0x1)
+    "Video_PlayAVIFullscreen_MCIPlayFullscreen",
+    xref("Video_PlayAVIFullscreen", 0x5, 0x1),
 )
 stable.data(
-    "graphics_texture_error_string", xref("Graphics_LoadAndUploadTexture", 0x22, 0x1)
-)
-stable.data("d3d_err_create_texture", xref("D3D_CreateTextureSurface", 0x2F1, 0x1))
-stable.data("d3d_err_no4444_rgba", xref("D3D_CreateTextureSurface", 0x16C, 0x1))
-stable.data("d3d_texture_error", xref("D3D_CreateTextureSurface", 0x167, 0x1))
-stable.data("d3d_err_no16_bit_rgb", xref("D3D_CreateTextureSurface", 0x160, 0x1))
-stable.data("d3d_err_create_work_surface", xref("D3D_CreateWorkSurface", 0xB4, 0x1))
-stable.data("d3d_err_blt", xref("Material_CopyPixelDataToTexture", 0x2ED, 0x1))
-stable.data(
-    "d3d_err_get_surface_ptr", xref("Material_CopyPixelDataToTexture", 0xD6, 0x1)
+    "Video_IsAVIPlaying_MCIStatusPlaying", xref("Video_IsAVIPlaying", 0x33, 0x1)
 )
 stable.data(
-    "d3d_error_message_buffer", xref("Material_CopyPixelDataToTexture", 0xD1, 0x1)
-)
-stable.data("d3d_err_lock", xref("Material_CopyPixelDataToTexture", 0x9E, 0x1))
-stable.data("d3d_err_work_null", xref("Material_CopyPixelDataToTexture", 0x73, 0x1))
-stable.data(
-    "d3d_err_copy_mem_tex_null", xref("Material_CopyPixelDataToTexture", 0x35, 0x1)
+    "Video_IsAVIPlaying_MCIStatusMode", xref("Video_IsAVIPlaying", 0x8, 0x1)
 )
 stable.data(
-    "d3d_err_work_surface_null", xref("Graphics_BlitTextureToQuadrants", 0x89, 0x1)
-)
-stable.data("window_class_name", xref("Debug_Log", 0x12, 0x1))
-stable.data("d3d_err_z_enable", xref("D3D_InitDirectDrawAndDirect3D", 0x58B, 0x1))
-stable.data("d3d_err_set_viewport", xref("D3D_InitDirectDrawAndDirect3D", 0x42A, 0x1))
-stable.data(
-    "d3d_err_create_rgb_device", xref("D3D_InitDirectDrawAndDirect3D", 0x3B7, 0x1)
+    "Graphics_RenderTexturedSprite_FontGlyphRenderState",
+    xref("Graphics_RenderTexturedSprite", 0x17, 0x1),
 )
 stable.data(
-    "d3d_err_create_hal_device", xref("D3D_InitDirectDrawAndDirect3D", 0x37F, 0x1)
+    "D3D_InitDirectDrawAndDirect3D_GraphicsCooperativeLevelSet",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x11, 0x2),
 )
 stable.data(
-    "d3d_err_create_driver_device", xref("D3D_InitDirectDrawAndDirect3D", 0x347, 0x1)
-)
-stable.data("d3d_err_create_device7", xref("D3D_InitDirectDrawAndDirect3D", 0x306, 0x1))
-stable.data(
-    "d3d_err_add_attached_surface", xref("D3D_InitDirectDrawAndDirect3D", 0x2FB, 0x1)
-)
-stable.data("d3d_software_device", xref("D3D_InitDirectDrawAndDirect3D", 0x2AF, 0x1))
-stable.data("d3d_tnl_device", xref("D3D_InitDirectDrawAndDirect3D", 0x298, 0x1))
-stable.data("d3d_hal_device", xref("D3D_InitDirectDrawAndDirect3D", 0x26F, 0x1))
-stable.data(
-    "d3d_err_create_z_buffer", xref("D3D_InitDirectDrawAndDirect3D", 0x1DD, 0x1)
+    "Camera_SetupProjection_Divisor",
+    xref("Camera_SetupProjection", 0xF, 0x2),
 )
 stable.data(
-    "d3d_err_query_direct3d7", xref("D3D_InitDirectDrawAndDirect3D", 0x19C, 0x1)
+    "Graphics_LoadAndUploadTexture_TexErrTex2Null",
+    xref("Graphics_LoadAndUploadTexture", 0x81, 0x1),
 )
 stable.data(
-    "d3d_err_get_attached_surface", xref("D3D_InitDirectDrawAndDirect3D", 0x17A, 0x1)
-)
-stable.data("d3d_err_create_surface", xref("D3D_InitDirectDrawAndDirect3D", 0x138, 0x1))
-stable.data(
-    "d3d_err_set_display_mode", xref("D3D_InitDirectDrawAndDirect3D", 0x106, 0x1)
+    "Graphics_LoadAndUploadTexture_TexErrTex1Null",
+    xref("Graphics_LoadAndUploadTexture", 0x54, 0x1),
 )
 stable.data(
-    "d3d_err_set_cooperative_level", xref("D3D_InitDirectDrawAndDirect3D", 0x2E, 0x1)
+    "Graphics_LoadAndUploadTexture_TexErrTex0Null",
+    xref("Graphics_LoadAndUploadTexture", 0x27, 0x1),
 )
 stable.data(
-    "d3d_textures_still_active", xref("D3D_ReleaseAllAndReportLeaks", 0x8F, 0x1)
-)
-stable.data("d3d_closing_log", xref("D3D_HandleSignal", 0x0, 0x1))
-stable.data("d3d_log_separator", xref("D3D_InitializeDirectDraw", 0x1B5, 0x1))
-stable.data("d3d_can_use_color_key", xref("D3D_InitializeDirectDraw", 0x177, 0x1))
-stable.data("d3d_selected_driver_header", xref("D3D_InitializeDirectDraw", 0x7D, 0x1))
-stable.data("d3d_open_log", xref("D3D_InitializeDirectDraw", 0x2E, 0x1))
-stable.data("d3d_log", xref("D3D_InitializeDirectDraw", 0x15, 0x1))
-stable.data("d3d_log_file_mode", xref("D3D_InitializeDirectDraw", 0x10, 0x1))
-stable.data("file_mode_read_binary", xref("Graphics_TakeScreenshot", 0x1D, 0x1))
-stable.data("screenshot_fmt", xref("Graphics_TakeScreenshot", 0xE, 0x1))
-stable.data("d3d_err_set_gamma_control", xref("D3D_SetGammaRamp", 0x118, 0x1))
-stable.data("d3d_err_query_gamma_control", xref("D3D_SetGammaRamp", 0x90, 0x1))
-stable.data("d3d_gamma_not_supported", xref("D3D_SetGammaRamp", 0x59, 0x1))
-stable.data("d3d_try_ref_rasterizer", xref("D3D_EnumerateDirectDrawDevices", 0x65, 0x1))
-stable.data(
-    "d3d_no_devices_accepted", xref("D3D_EnumerateDirectDrawDevices", 0x4C, 0x1)
+    "Graphics_LoadAndUploadTexture_ErrorString",
+    xref("Graphics_LoadAndUploadTexture", 0x22, 0x1),
 )
 stable.data(
-    "d3d_no_devices_enumerated", xref("D3D_EnumerateDirectDrawDevices", 0x23, 0x1)
+    "D3D_CreateTextureSurface_ErrCreateTexture",
+    xref("D3D_CreateTextureSurface", 0x2F1, 0x1),
 )
-stable.data("d3d_err_query_during_enum", xref("DDraw_EnumerateCallback", 0x56, 0x1))
-stable.data("d3d_err_create_during_enum", xref("DDraw_EnumerateCallback", 0x29, 0x1))
 stable.data(
-    "ddraw_error_unknown_message",
+    "D3D_CreateTextureSurface_ErrNo4444RGBA",
+    xref("D3D_CreateTextureSurface", 0x16C, 0x1),
+)
+stable.data(
+    "D3D_CreateTextureSurface_Error",
+    xref("D3D_CreateTextureSurface", 0x167, 0x1),
+)
+stable.data(
+    "D3D_CreateTextureSurface_ErrNo16BitRGB",
+    xref("D3D_CreateTextureSurface", 0x160, 0x1),
+)
+stable.data(
+    "D3D_CreateWorkSurface_ErrCreateWorkSurface",
+    xref("D3D_CreateWorkSurface", 0xB4, 0x1),
+)
+stable.data(
+    "Material_CopyPixelDataToTexture_D3DErrBlt",
+    xref("Material_CopyPixelDataToTexture", 0x2ED, 0x1),
+)
+stable.data(
+    "Material_CopyPixelDataToTexture_D3DErrGetSurfacePtr",
+    xref("Material_CopyPixelDataToTexture", 0xD6, 0x1),
+)
+stable.data(
+    "Material_CopyPixelDataToTexture_D3DErrorMessageBuffer",
+    xref("Material_CopyPixelDataToTexture", 0xD1, 0x1),
+)
+stable.data(
+    "Material_CopyPixelDataToTexture_D3DErrLock",
+    xref("Material_CopyPixelDataToTexture", 0x9E, 0x1),
+)
+stable.data(
+    "Material_CopyPixelDataToTexture_D3DErrWorkNull",
+    xref("Material_CopyPixelDataToTexture", 0x73, 0x1),
+)
+stable.data(
+    "Material_CopyPixelDataToTexture_D3DErrCopyMemTexNull",
+    xref("Material_CopyPixelDataToTexture", 0x35, 0x1),
+)
+stable.data(
+    "Graphics_BlitTextureToQuadrants_D3DErrWorkSurfaceNull",
+    xref("Graphics_BlitTextureToQuadrants", 0x89, 0x1),
+)
+stable.data("Debug_Log_WindowClassName", xref("Debug_Log", 0x12, 0x1))
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrZEnable",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x58B, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrSetViewport",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x42A, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrCreateRGBDevice",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x3B7, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrCreateHALDevice",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x37F, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrCreateDriverDevice",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x347, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrCreateDevice7",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x306, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrAddAttachedSurface",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x2FB, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_SoftwareDevice",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x2AF, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_TnLDevice",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x298, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_HALDevice",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x26F, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrCreateZBuffer",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x1DD, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrQueryDirect3D7",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x19C, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrGetAttachedSurface",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x17A, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrCreateSurface",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x138, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrSetDisplayMode",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x106, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_ErrSetCooperativeLevel",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x2E, 0x1),
+)
+stable.data(
+    "D3D_ReleaseAllAndReportLeaks_TexturesStillActive",
+    xref("D3D_ReleaseAllAndReportLeaks", 0x8F, 0x1),
+)
+stable.data("D3D_HandleSignal_ClosingLog", xref("D3D_HandleSignal", 0x0, 0x1))
+stable.data(
+    "D3D_InitializeDirectDraw_LogSeparator",
+    xref("D3D_InitializeDirectDraw", 0x1B5, 0x1),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_CanUseColorKey",
+    xref("D3D_InitializeDirectDraw", 0x177, 0x1),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_SelectedDriverHeader",
+    xref("D3D_InitializeDirectDraw", 0x7D, 0x1),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_OpenLog", xref("D3D_InitializeDirectDraw", 0x2E, 0x1)
+)
+stable.data(
+    "D3D_InitializeDirectDraw_Log", xref("D3D_InitializeDirectDraw", 0x15, 0x1)
+)
+stable.data(
+    "D3D_InitializeDirectDraw_LogFileMode",
+    xref("D3D_InitializeDirectDraw", 0x10, 0x1),
+)
+stable.data(
+    "Graphics_TakeScreenshot_FileModeReadBinary",
+    xref("Graphics_TakeScreenshot", 0x1D, 0x1),
+)
+stable.data(
+    "Graphics_TakeScreenshot_Fmt", xref("Graphics_TakeScreenshot", 0xE, 0x1)
+)
+stable.data(
+    "D3D_SetGammaRamp_ErrSetGammaControl", xref("D3D_SetGammaRamp", 0x118, 0x1)
+)
+stable.data(
+    "D3D_SetGammaRamp_ErrQueryGammaControl", xref("D3D_SetGammaRamp", 0x90, 0x1)
+)
+stable.data(
+    "D3D_SetGammaRamp_NotSupported", xref("D3D_SetGammaRamp", 0x59, 0x1)
+)
+stable.data(
+    "D3D_EnumerateDirectDrawDevices_TryRefRasterizer",
+    xref("D3D_EnumerateDirectDrawDevices", 0x65, 0x1),
+)
+stable.data(
+    "D3D_EnumerateDirectDrawDevices_NoDevicesAccepted",
+    xref("D3D_EnumerateDirectDrawDevices", 0x4C, 0x1),
+)
+stable.data(
+    "D3D_EnumerateDirectDrawDevices_NoDevicesEnumerated",
+    xref("D3D_EnumerateDirectDrawDevices", 0x23, 0x1),
+)
+stable.data(
+    "DDraw_EnumerateCallback_D3DErrQueryDuringEnum",
+    xref("DDraw_EnumerateCallback", 0x56, 0x1),
+)
+stable.data(
+    "DDraw_EnumerateCallback_D3DErrCreateDuringEnum",
+    xref("DDraw_EnumerateCallback", 0x29, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrorUnknownMessage",
     xref("D3D_FormatDirectXError", 0x650, 0x1),
     type="char",
     doc=(
@@ -13575,305 +13860,574 @@ stable.data(
         "D3D_FormatDirectXError; name aligned to Binary Ninja's ddraw_error_unknown_message data "
         "symbol."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("ddraw_err_ok", xref("D3D_FormatDirectXError", 0x649, 0x1))
-stable.data("ddraw_err_not_initialized", xref("D3D_FormatDirectXError", 0x626, 0x1))
-stable.data("ddraw_err_test_finished", xref("D3D_FormatDirectXError", 0x608, 0x1))
-stable.data("ddraw_err_page_lock_failed", xref("D3D_FormatDirectXError", 0x5DE, 0x1))
-stable.data("ddraw_err_non_local_vid_mem", xref("D3D_FormatDirectXError", 0x5AE, 0x1))
-stable.data("ddraw_err_cant_duplicate", xref("D3D_FormatDirectXError", 0x501, 0x1))
-stable.data("ddraw_err_not_flippable", xref("D3D_FormatDirectXError", 0x4C9, 0x1))
-stable.data("ddraw_err_width_too_large", xref("D3D_FormatDirectXError", 0x395, 0x1))
-stable.data("ddraw_err_size_too_large", xref("D3D_FormatDirectXError", 0x35D, 0x1))
-stable.data("ddraw_err_out_of_memory", xref("D3D_FormatDirectXError", 0x2A8, 0x1))
-stable.data("ddraw_err_no_gdi", xref("D3D_FormatDirectXError", 0x208, 0x1))
-stable.data("ddraw_err_no_flip_hardware", xref("D3D_FormatDirectXError", 0x1DF, 0x1))
 stable.data(
-    "ddraw_err_invalid_pixel_format", xref("D3D_FormatDirectXError", 0x153, 0x1)
+    "D3D_FormatDirectXError_DDrawErrOk", xref("D3D_FormatDirectXError", 0x649, 0x1)
 )
-stable.data("ddraw_err_invalid_object", xref("D3D_FormatDirectXError", 0x12C, 0x1))
-stable.data("ddraw_err_unsupported", xref("D3D_FormatDirectXError", 0xE6, 0x1))
-stable.data("ddraw_err_can_not_detach", xref("D3D_FormatDirectXError", 0xBF, 0x1))
-stable.data("ddraw_err_invalid_params", xref("D3D_FormatDirectXError", 0xB5, 0x1))
-stable.data("ddraw_err_already_initialized", xref("D3D_FormatDirectXError", 0xAB, 0x1))
-stable.data("ddraw_err_can_not_attach", xref("D3D_FormatDirectXError", 0xA1, 0x1))
-stable.data("ddraw_err_not_supported", xref("D3D_FormatDirectXError", 0x7E, 0x1))
-stable.data("ddraw_err_generic_failure", xref("D3D_FormatDirectXError", 0x74, 0x1))
 stable.data(
-    "graphics_error_message_interface_already_associated",
+    "D3D_FormatDirectXError_DDrawErrNotInitialized",
+    xref("D3D_FormatDirectXError", 0x626, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrTestFinished",
+    xref("D3D_FormatDirectXError", 0x608, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrPageLockFailed",
+    xref("D3D_FormatDirectXError", 0x5DE, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrNonLocalVidMem",
+    xref("D3D_FormatDirectXError", 0x5AE, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrCantDuplicate",
+    xref("D3D_FormatDirectXError", 0x501, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrNotFlippable",
+    xref("D3D_FormatDirectXError", 0x4C9, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrWidthTooLarge",
+    xref("D3D_FormatDirectXError", 0x395, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrSizeTooLarge",
+    xref("D3D_FormatDirectXError", 0x35D, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrOutOfMemory",
+    xref("D3D_FormatDirectXError", 0x2A8, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrNoGdi", xref("D3D_FormatDirectXError", 0x208, 0x1)
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrNoFlipHardware",
+    xref("D3D_FormatDirectXError", 0x1DF, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrInvalidPixelFormat",
+    xref("D3D_FormatDirectXError", 0x153, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrInvalidObject",
+    xref("D3D_FormatDirectXError", 0x12C, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrUnsupported",
+    xref("D3D_FormatDirectXError", 0xE6, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrCanNotDetach",
+    xref("D3D_FormatDirectXError", 0xBF, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrInvalidParams",
+    xref("D3D_FormatDirectXError", 0xB5, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrAlreadyInitialized",
+    xref("D3D_FormatDirectXError", 0xAB, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrCanNotAttach",
+    xref("D3D_FormatDirectXError", 0xA1, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrNotSupported",
+    xref("D3D_FormatDirectXError", 0x7E, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_DDrawErrGenericFailure",
+    xref("D3D_FormatDirectXError", 0x74, 0x1),
+)
+stable.data(
+    "D3D_FormatDirectXError_GraphicsErrorMessageInterfaceAlreadyAssociated",
     xref("D3D_FormatDirectXError", 0x6A, 0x1),
 )
-stable.data("video_movie_playback_state", xref("Video_OpenMovieFile", 0x11, 0x1))
-stable.data("video_default_screen_width", xref("Video_OpenMovieFile", 0x2C, 0x2))
-stable.data("video_default_screen_height", xref("Video_OpenMovieFile", 0x21, 0x1))
-stable.data("video_default_rect_left", xref("Video_OpenMovieFile", 0x0, 0x1))
-stable.data("video_default_rect_top", xref("Video_OpenMovieFile", 0x5, 0x2))
-stable.data("video_default_rect_right", xref("Video_OpenMovieFile", 0xB, 0x2))
-stable.data("video_default_rect_bottom", xref("Video_OpenMovieFile", 0x16, 0x1))
-stable.data("video_alt_rect_left", xref("Video_OpenMovieFile", 0x34, 0x2))
-stable.data("video_alt_rect_top", xref("Video_OpenMovieFile", 0x3A, 0x2))
-stable.data("video_alt_rect_right", xref("Video_OpenMovieFile", 0x40, 0x1))
-stable.data("video_alt_rect_bottom", xref("Video_OpenMovieFile", 0x4B, 0x2))
-stable.data("level_index_dalmatians", xref("Save_SaveGameLevelCompletion", 0x14D, 0x3))
-stable.data("name_entry_char_a", xref("Menu_ProcessNameEntryInput", 0x37, 0x4))
-stable.data("difficulty_option_easy", xref("Menu_RenderDifficultySelection", 0x3E, 0x1))
-stable.data("menu_difficulty_tob", xref("Level_InitializeBonusData", 0x52, 0x1))
-stable.data("level_bonus_rff", xref("Level_InitializeBonusData", 0x2E, 0x1))
-stable.data("menu_cheater", xref("Menu_UpdatePauseMenu", 0x21F, 0x1))
-stable.data("menu_save_percent", xref("Menu_RenderSaveGame", 0x348, 0x1))
-stable.data("string_format_string_and_int", xref("Menu_RenderSaveGame", 0x295, 0x1))
-stable.data("menu_cancel", xref("Menu_RenderControlsConfiguration", 0x368, 0x1))
-stable.data("menu_accept", xref("Menu_RenderControlsConfiguration", 0x327, 0x1))
 stable.data(
-    "string_format_string_two_strings",
+    "Video_OpenMovieFile_PlaybackState",
+    xref("Video_OpenMovieFile", 0x11, 0x1),
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultScreenWidth",
+    xref("Video_OpenMovieFile", 0x2C, 0x2),
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultScreenHeight",
+    xref("Video_OpenMovieFile", 0x21, 0x1),
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultRectLeft", xref("Video_OpenMovieFile", 0x0, 0x1)
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultRectTop", xref("Video_OpenMovieFile", 0x5, 0x2)
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultRectRight", xref("Video_OpenMovieFile", 0xB, 0x2)
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultRectBottom", xref("Video_OpenMovieFile", 0x16, 0x1)
+)
+stable.data(
+    "Video_OpenMovieFile_AltRectLeft", xref("Video_OpenMovieFile", 0x34, 0x2)
+)
+stable.data(
+    "Video_OpenMovieFile_AltRectTop", xref("Video_OpenMovieFile", 0x3A, 0x2)
+)
+stable.data(
+    "Video_OpenMovieFile_AltRectRight", xref("Video_OpenMovieFile", 0x40, 0x1)
+)
+stable.data(
+    "Video_OpenMovieFile_AltRectBottom", xref("Video_OpenMovieFile", 0x4B, 0x2)
+)
+stable.data(
+    "Save_GameLevelCompletion_IndexDalmatians",
+    xref("Save_SaveGameLevelCompletion", 0x14D, 0x3),
+)
+stable.data(
+    "Menu_ProcessNameEntryInput_CharA",
+    xref("Menu_ProcessNameEntryInput", 0x37, 0x4),
+)
+stable.data(
+    "Menu_RenderDifficultySelection_OptionEasy",
+    xref("Menu_RenderDifficultySelection", 0x3E, 0x1),
+)
+stable.data(
+    "Level_InitializeBonusData_MenuDifficultyTob",
+    xref("Level_InitializeBonusData", 0x52, 0x1),
+)
+stable.data(
+    "Level_InitializeBonusData_Rff",
+    xref("Level_InitializeBonusData", 0x2E, 0x1),
+)
+stable.data(
+    "Menu_UpdatePauseMenu_Cheater", xref("Menu_UpdatePauseMenu", 0x21F, 0x1)
+)
+stable.data(
+    "Menu_RenderSaveGame_Percent", xref("Menu_RenderSaveGame", 0x348, 0x1)
+)
+stable.data(
+    "Menu_RenderSaveGame_StringFormatStringAndInt",
+    xref("Menu_RenderSaveGame", 0x295, 0x1),
+)
+stable.data(
+    "Menu_RenderControlsConfiguration_Cancel",
+    xref("Menu_RenderControlsConfiguration", 0x368, 0x1),
+)
+stable.data(
+    "Menu_RenderControlsConfiguration_Accept",
+    xref("Menu_RenderControlsConfiguration", 0x327, 0x1),
+)
+stable.data(
+    "Menu_RenderControlsConfiguration_StringFormatStringTwoStrings",
     xref("Menu_RenderControlsConfiguration", 0x16E, 0x1),
 )
 stable.data(
-    "player_current_level_id",
+    "Player_ProcessMovement_CurrentLevelID",
     xref("Player_ProcessMovement", 0x141, 0x2),
     type="int32_t",
     doc="Canonical live runtime level id read from the player/gameplay global, not save-slot/menu state.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "input_cheat_code_sequence", xref("Input_CheckCheatCodeSequence", 0x1E, 0x3)
+    "Input_CheckCheatCodeSequence_Sequence",
+    xref("Input_CheckCheatCodeSequence", 0x1E, 0x3),
 )
-stable.data("replay_bonus_level_ids", xref("Replay_LoadDemoBonusReplay", 0x61, 0x3))
-stable.data("replay_bonus_index", xref("Replay_LoadDemoBonusReplay", 0xD, 0x1))
-stable.data("matrix_fixed_one_1", xref("Math_BuildMatrixRotationXY", 0xA4, 0x1))
-stable.data("matrix_fixed_zero_1", xref("Math_BuildRotationMatrix", 0x66, 0x1))
-stable.data("matrix_fixed_one_2", xref("Math_BuildMatrixRotationXY", 0x77, 0x3))
-stable.data("matrix_fixed_zero_2", xref("Math_BuildRotationMatrix", 0x75, 0x2))
-stable.data("matrix_fixed_one_short", xref("Math_BuildMatrixRotationXY", 0x7E, 0x3))
-stable.data("matrix_fixed_one_3", xref("Math_BuildMatrixRotationY", 0x32, 0x3))
-stable.data("matrix_fixed_zero_3", xref("Math_BuildMatrixRotationY", 0x26, 0x2))
-stable.data("matrix_fixed_one_4", xref("Math_BuildMatrixRotationY", 0x76, 0x2))
-stable.data("matrix_fixed_zero_4", xref("Math_BuildMatrixRotationY", 0x41, 0x3))
-stable.data("matrix_fixed_one_short_2", xref("Math_BuildMatrixRotationY", 0x39, 0x3))
-stable.data("matrix_fixed_one_5", xref("Math_BuildRotationMatrix", 0x130, 0x1))
-stable.data("matrix_fixed_one_6", xref("Math_BuildRotationMatrix", 0x146, 0x3))
 stable.data(
-    "vertex_index_remap_table_1", xref("Actor_InitializeDirectionTables", 0xA, 0x1)
+    "Replay_LoadDemoBonusReplay_LevelIDs",
+    xref("Replay_LoadDemoBonusReplay", 0x61, 0x3),
 )
-stable.data("audio_emulated", xref("Audio_InitializeSystem", 0x9A, 0x1))
-stable.data("audio_active_waves_themes", xref("Audio_ShutdownSystem", 0x4A, 0x1))
 stable.data(
-    "audio_music_path",
+    "Replay_LoadDemoBonusReplay_Index",
+    xref("Replay_LoadDemoBonusReplay", 0xD, 0x1),
+)
+stable.data(
+    "Math_BuildMatrixRotationXY_FixedOne1",
+    xref("Math_BuildMatrixRotationXY", 0xA4, 0x1),
+)
+stable.data(
+    "Math_BuildRotationMatrix_FixedZero1",
+    xref("Math_BuildRotationMatrix", 0x66, 0x1),
+)
+stable.data(
+    "Math_BuildMatrixRotationXY_FixedOne2",
+    xref("Math_BuildMatrixRotationXY", 0x77, 0x3),
+)
+stable.data(
+    "Math_BuildRotationMatrix_FixedZero2",
+    xref("Math_BuildRotationMatrix", 0x75, 0x2),
+)
+stable.data(
+    "Math_BuildMatrixRotationXY_FixedOneShort",
+    xref("Math_BuildMatrixRotationXY", 0x7E, 0x3),
+)
+stable.data(
+    "Math_BuildMatrixRotationY_FixedOne3",
+    xref("Math_BuildMatrixRotationY", 0x32, 0x3),
+)
+stable.data(
+    "Math_BuildMatrixRotationY_FixedZero3",
+    xref("Math_BuildMatrixRotationY", 0x26, 0x2),
+)
+stable.data(
+    "Math_BuildMatrixRotationY_FixedOne4",
+    xref("Math_BuildMatrixRotationY", 0x76, 0x2),
+)
+stable.data(
+    "Math_BuildMatrixRotationY_FixedZero4",
+    xref("Math_BuildMatrixRotationY", 0x41, 0x3),
+)
+stable.data(
+    "Math_BuildMatrixRotationY_FixedOneShort2",
+    xref("Math_BuildMatrixRotationY", 0x39, 0x3),
+)
+stable.data(
+    "Math_BuildRotationMatrix_FixedOne5",
+    xref("Math_BuildRotationMatrix", 0x130, 0x1),
+)
+stable.data(
+    "Math_BuildRotationMatrix_FixedOne6",
+    xref("Math_BuildRotationMatrix", 0x146, 0x3),
+)
+stable.data(
+    "Actor_InitializeDirectionTables_VertexIndexRemapTable1",
+    xref("Actor_InitializeDirectionTables", 0xA, 0x1),
+)
+stable.data(
+    "Audio_InitializeSystem_Emulated", xref("Audio_InitializeSystem", 0x9A, 0x1)
+)
+stable.data(
+    "Audio_ShutdownSystem_ActiveWavesThemes",
+    xref("Audio_ShutdownSystem", 0x4A, 0x1),
+)
+stable.data(
+    "Audio_OpenStream_MusicPath",
     xref("Audio_OpenStream", 0x2B, 0x1),
     type="char",
     doc="First byte/base of the data/music path format literal used by Audio_OpenStream.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_fix_up_end", xref("PKG_FixUpResourceLevelPointers", 0x560, 0x1)
+    "PKG_FixUpResourceLevelPointers_End",
+    xref("PKG_FixUpResourceLevelPointers", 0x560, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_usable_materials",
+    "PKG_FixUpResourceLevelPointers_UsableMaterials",
     xref("PKG_FixUpResourceLevelPointers", 0x4D7, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_nav_net", xref("PKG_FixUpResourceLevelPointers", 0x466, 0x1)
+    "PKG_FixUpResourceLevelPointers_NavNet",
+    xref("PKG_FixUpResourceLevelPointers", 0x466, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_powerup_ct", xref("PKG_FixUpResourceLevelPointers", 0x420, 0x1)
+    "PKG_FixUpResourceLevelPointers_PowerupCt",
+    xref("PKG_FixUpResourceLevelPointers", 0x420, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_trail_list", xref("PKG_FixUpResourceLevelPointers", 0x371, 0x1)
+    "PKG_FixUpResourceLevelPointers_TrailList",
+    xref("PKG_FixUpResourceLevelPointers", 0x371, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_max_themes", xref("PKG_FixUpResourceLevelPointers", 0x32D, 0x1)
+    "PKG_FixUpResourceLevelPointers_MaxThemes",
+    xref("PKG_FixUpResourceLevelPointers", 0x32D, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_sprite_list",
+    "PKG_FixUpResourceLevelPointers_SpriteList",
     xref("PKG_FixUpResourceLevelPointers", 0x2B7, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_powerup_ct_ellipsis",
+    "PKG_FixUpResourceLevelPointers_PowerupCtEllipsis",
     xref("PKG_FixUpResourceLevelPointers", 0x26B, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_var_list", xref("PKG_FixUpResourceLevelPointers", 0x241, 0x1)
+    "PKG_FixUpResourceLevelPointers_VarList",
+    xref("PKG_FixUpResourceLevelPointers", 0x241, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_sound_definition_list",
+    "PKG_FixUpResourceLevelPointers_SoundDefinitionList",
     xref("PKG_FixUpResourceLevelPointers", 0x217, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_cycle_actor_list",
+    "PKG_FixUpResourceLevelPointers_CycleActorList",
     xref("PKG_FixUpResourceLevelPointers", 0x127, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_actor_list_not_null",
+    "PKG_FixUpResourceLevelPointers_ActorListNotNull",
     xref("PKG_FixUpResourceLevelPointers", 0x10C, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_actor_list_null",
+    "PKG_FixUpResourceLevelPointers_ActorListNull",
     xref("PKG_FixUpResourceLevelPointers", 0xFA, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_actor_ct_zero",
+    "PKG_FixUpResourceLevelPointers_ActorCtZero",
     xref("PKG_FixUpResourceLevelPointers", 0xD1, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_actor_ct", xref("PKG_FixUpResourceLevelPointers", 0xB8, 0x1)
+    "PKG_FixUpResourceLevelPointers_ActorCt",
+    xref("PKG_FixUpResourceLevelPointers", 0xB8, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_cam_default_null",
+    "PKG_FixUpResourceLevelPointers_CamDefaultNull",
     xref("PKG_FixUpResourceLevelPointers", 0xA0, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_cam_default_not_null",
+    "PKG_FixUpResourceLevelPointers_CamDefaultNotNull",
     xref("PKG_FixUpResourceLevelPointers", 0x93, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_cam_default_get_addr",
+    "PKG_FixUpResourceLevelPointers_CamDefaultGetAddr",
     xref("PKG_FixUpResourceLevelPointers", 0x70, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_cam_default_abs_addr",
+    "PKG_FixUpResourceLevelPointers_CamDefaultAbsAddr",
     xref("PKG_FixUpResourceLevelPointers", 0x53, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_level_base_null",
+    "PKG_FixUpResourceLevelPointers_BaseNull",
     xref("PKG_FixUpResourceLevelPointers", 0x3B, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_level_null", xref("PKG_FixUpResourceLevelPointers", 0x23, 0x1)
+    "PKG_FixUpResourceLevelPointers_Null",
+    xref("PKG_FixUpResourceLevelPointers", 0x23, 0x1),
 )
 stable.data(
-    "pkg_resource_fix_up_start", xref("PKG_FixUpResourceLevelPointers", 0xB, 0x1)
+    "PKG_FixUpResourceLevelPointers_Start",
+    xref("PKG_FixUpResourceLevelPointers", 0xB, 0x1),
 )
 stable.data(
-    "file_savegame_dat",
+    "Save_ReadGameFile_Dat",
     xref("Save_ReadGameFile", 0x6, 0x1),
     type="char",
     doc='First byte/base of the "savegame.dat" path literal shared by Save_ReadGameFile and Save_WriteGameFile.',
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("file_mode_write_binary", xref("Save_WriteGameFile", 0x1, 0x1))
-stable.data("video_movie_err_play", xref("Video_PlayMovieIntro", 0xF9, 0x1))
-stable.data("video_movie_err_open", xref("Video_PlayMovieIntro", 0xBA, 0x1))
-stable.data("string_concat_3", xref("Video_PlayMovieIntro", 0x21, 0x1))
-stable.data("debug_fps_format", xref("Debug_RenderOverlay", 0xA3, 0x1))
-stable.data("debug_pos_format", xref("Debug_RenderOverlay", 0x75, 0x1))
 stable.data(
-    "graphics_max_primitives_per_batch", xref("Graphics_IsQuadClipped", 0x7D4, 0x2)
+    "Save_WriteGameFile_ModeWriteBinary", xref("Save_WriteGameFile", 0x1, 0x1)
 )
-stable.data("window_class_pcdogs", xref("Config_SaveSettingsToINI", 0x40, 0x1))
 stable.data(
-    "file_config_checksum",
+    "Video_PlayMovieIntro_ErrPlay", xref("Video_PlayMovieIntro", 0xF9, 0x1)
+)
+stable.data(
+    "Video_PlayMovieIntro_ErrOpen", xref("Video_PlayMovieIntro", 0xBA, 0x1)
+)
+stable.data(
+    "Video_PlayMovieIntro_StringConcat3", xref("Video_PlayMovieIntro", 0x21, 0x1)
+)
+stable.data(
+    "Debug_RenderOverlay_FPSFormat", xref("Debug_RenderOverlay", 0xA3, 0x1)
+)
+stable.data(
+    "Debug_RenderOverlay_PosFormat", xref("Debug_RenderOverlay", 0x75, 0x1)
+)
+stable.data(
+    "Graphics_IsQuadClipped_MaxPrimitivesPerBatch",
+    xref("Graphics_IsQuadClipped", 0x7D4, 0x2),
+)
+stable.data(
+    "Config_SaveSettingsToINI_WindowClassPcdogs",
+    xref("Config_SaveSettingsToINI", 0x40, 0x1),
+)
+stable.data(
+    "Config_LoadFromINI_FileConfigChecksum",
     xref("Config_LoadFromINI", 0x43, 0x1),
     type="int32_t",
     doc="Scalar checksum/header accumulator used by Config_LoadFromINI to validate the PCDOGS pcdogs.ini header.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_button_name_buffer",
+    "Input_FormatButtonName_Buffer",
     xref("Input_FormatButtonName", 0x3C, 0x3),
     type="int32_t",
     doc=(
         "First entry/base of the input button-name string-id table consumed by Input_FormatButtonName and "
         "Input_GetButtonString; not the heap-allocated input_button_name_buffers pointer array."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("file_pcdogs_ini", xref("Config_LoadFromINI", 0x9, 0x1))
+stable.data("Config_LoadFromINI_FilePcdogsINI", xref("Config_LoadFromINI", 0x9, 0x1))
 stable.data(
-    "input_controller_wingman_rumblepad",
+    "Input_InitializeControllerMappings_WingmanRumblepad",
     xref("Input_InitializeControllerMappings", 0xED, 0x1),
 )
 stable.data(
-    "input_controller_gravis_gamepad",
+    "Input_InitializeControllerMappings_GravisGamepad",
     xref("Input_InitializeControllerMappings", 0x8A, 0x1),
 )
 stable.data(
-    "input_controller_ms_sidewinder",
+    "Input_InitializeControllerMappings_MsSidewinder",
     xref("Input_InitializeControllerMappings", 0x27, 0x1),
 )
 stable.data(
-    "input_controller_hammerhead_fx",
+    "Input_InitializeControllerMappings_HammerheadFx",
     xref("Input_InitializeControllerMappings", 0x4, 0x1),
 )
 stable.data(
-    "input_no_key_assigned",
+    "Input_FormatButtonName_NoKeyAssigned",
     xref("Input_FormatButtonName", 0x70, 0x1),
     type="char",
     doc='First byte/base of the inline "No key assigned" string literal used by Input_FormatButtonName.',
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("window_game_title_102_dalmatians", xref("Window_RunWinMain", 0x52, 0x4))
 stable.data(
-    "graphics_window_height",
+    "Window_RunWinMain_GameTitle102Dalmatians",
+    xref("Window_RunWinMain", 0x52, 0x4),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_GraphicsWindowHeight",
     xref("D3D_InitDirectDrawAndDirect3D", 0x56, 0x2),
     type="int32_t",
     doc="Active render/window height in pixels initialized during DirectDraw/Direct3D setup.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("d3d_err_begin_scene", xref("Graphics_RenderFrame", 0x79, 0x1))
-stable.data("d3d_err_restore_all_surfaces", xref("Graphics_RenderFrame", 0x52, 0x1))
-stable.data("window_shutdown_complete", xref("Window_ProcessGameProc", 0x102, 0x1))
-stable.data("window_shutdown_destroy_window", xref("Window_ProcessGameProc", 0xCF, 0x1))
-stable.data("window_shutdown_uninit_game", xref("Window_ProcessGameProc", 0xAD, 0x1))
 stable.data(
-    "window_shutdown_direct_input_release", xref("Window_ProcessGameProc", 0x9C, 0x1)
+    "Graphics_RenderFrame_D3DErrBeginScene", xref("Graphics_RenderFrame", 0x79, 0x1)
 )
-stable.data("window_shutdown_kill_game", xref("Window_ProcessGameProc", 0x88, 0x1))
 stable.data(
-    "window_shutdown_uninit_game_interface", xref("Window_ProcessGameProc", 0x77, 0x1)
+    "Graphics_RenderFrame_D3DErrRestoreAllSurfaces",
+    xref("Graphics_RenderFrame", 0x52, 0x1),
 )
-stable.data("window_shutdown_unload_data", xref("Window_ProcessGameProc", 0x55, 0x1))
-stable.data("window_shutdown_begin", xref("Window_ProcessGameProc", 0x49, 0x1))
-stable.data("win_main_requires_nt", xref("Window_RunWinMain", 0x75, 0x1))
-stable.data("file_cant_find_pkg", xref("PKG_FindAndOpenFile", 0x141, 0x1))
-stable.data("file_setup_path", xref("PKG_FindAndOpenFile", 0xD5, 0x1))
-stable.data("pkg_search_pattern", xref("PKG_FindAndOpenFile", 0xAB, 0x1))
-stable.data("file_dalms_setup_path", xref("PKG_FindAndOpenFile", 0x93, 0x1))
-stable.data("file_drive_letter", xref("PKG_FindAndOpenFile", 0x60, 0x1))
-stable.data("pkg_pcdogs_pkg", xref("PKG_FindAndOpenFile", 0x45, 0x1))
-stable.data("random_seed", xref("Math_GenerateRandom", 0x0, 0x2))
 stable.data(
-    "script_command_table",
-    xref("Script_RunWithActor", 0xAE, 0x3),
+    "Window_ProcessGameProc_ShutdownComplete",
+    xref("Window_ProcessGameProc", 0x102, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownDestroyWindow",
+    xref("Window_ProcessGameProc", 0xCF, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownUninitGame",
+    xref("Window_ProcessGameProc", 0xAD, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownDirectInputRelease",
+    xref("Window_ProcessGameProc", 0x9C, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownKillGame",
+    xref("Window_ProcessGameProc", 0x88, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownUninitGameInterface",
+    xref("Window_ProcessGameProc", 0x77, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownUnloadData",
+    xref("Window_ProcessGameProc", 0x55, 0x1),
+)
+stable.data(
+    "Window_ProcessGameProc_ShutdownBegin",
+    xref("Window_ProcessGameProc", 0x49, 0x1),
+)
+stable.data("Window_RunWinMain_RequiresNT", xref("Window_RunWinMain", 0x75, 0x1))
+stable.data(
+    "PKG_FindAndOpenFile_CantFindPKG", xref("PKG_FindAndOpenFile", 0x141, 0x1)
+)
+stable.data("PKG_FindAndOpenFile_SetupPath", xref("PKG_FindAndOpenFile", 0xD5, 0x1))
+stable.data(
+    "PKG_FindAndOpenFile_SearchPattern", xref("PKG_FindAndOpenFile", 0xAB, 0x1)
+)
+stable.data(
+    "PKG_FindAndOpenFile_DalmsSetupPath", xref("PKG_FindAndOpenFile", 0x93, 0x1)
+)
+stable.data(
+    "PKG_FindAndOpenFile_DriveLetter", xref("PKG_FindAndOpenFile", 0x60, 0x1)
+)
+stable.data("PKG_FindAndOpenFile_PcdogsPKG", xref("PKG_FindAndOpenFile", 0x45, 0x1))
+stable.data("Math_GenerateRandom_Seed", xref("Math_GenerateRandom", 0x0, 0x2))
+stable.data(
+    "Script_OpRunWithActor_CommandTable",
+    xref("Script_OpRunWithActor", 0xAE, 0x3),
     type="Script_OpcodeTable",
     doc=(
-        "45-entry script opcode handler table resolved through Script_RunWithActor. "
+        "45-entry script opcode handler table resolved through Script_OpRunWithActor. "
         "The 45-entry table is cross-tool corroborated; per-opcode semantics still require "
         "case-by-case audit before naming individual handlers."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
-stable.data("input_landing_flags_ptr", xref("Player_ProcessMovement", 0x4A, 0x1))
-stable.data("string_no_string", xref("String_GetByIndex", 0x2DD, 0x1))
-stable.data("string_two_strings", xref("String_GetByIndex", 0x1AC, 0x1))
 stable.data(
-    "graphics_list_state",
+    "Player_ProcessMovement_InputLandingFlagsPtr",
+    xref("Player_ProcessMovement", 0x4A, 0x1),
+)
+stable.data("String_GetByIndex_NoString", xref("String_GetByIndex", 0x2DD, 0x1))
+stable.data("String_GetByIndex_TwoStrings", xref("String_GetByIndex", 0x1AC, 0x1))
+stable.data(
+    "Graphics_AdjustLevelScale_ListState",
     xref("Graphics_AdjustLevelScale", 0x65, 0x2),
     doc="Data pointer to active Graphics_ListState; Graphics_AdjustLevelScale writes dynamic level scale at +0xB8 (PC EN).",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("debug_killed_by_player", xref("Mem_MallocWithRetry", 0x60, 0x1))
-stable.data("ui_confirm_stop_game", xref("Mem_MallocWithRetry", 0x4E, 0x1))
-stable.data("mem_out_of_memory", xref("Mem_MallocWithRetry", 0x31, 0x1))
-stable.data("mem_malloc_failed", xref("Mem_MallocWithRetry", 0x1A, 0x1))
-stable.data("ui_programmer_message", xref("UI_ShowConfirmDialog", 0x5A, 0x1))
-stable.data("mem_alloc_debug", xref("Mem_AllocateHandle", 0x78, 0x1))
-stable.data("mem_alloc_failed", xref("Mem_AllocateHandle", 0x3B, 0x1))
-stable.data("mem_alloc_prefix", xref("Mem_AllocateHandle", 0x22, 0x1))
-stable.data("mem_out_of_extents", xref("Mem_AllocateHandle", 0xC, 0x1))
-stable.data("mem_leak_unreleased_extent", xref("Mem_FreeAllExtents", 0x16, 0x1))
-stable.data("mem_leak_invalid_extent", xref("Mem_ReleaseHandle", 0x9E, 0x1))
-stable.data("mem_free_debug", xref("Mem_ReleaseHandle", 0x4C, 0x1))
-stable.data("mem_leak_unallocated", xref("Mem_ReleaseHandle", 0x29, 0x1))
-stable.data("game_start_time", xref("Timer_GetElapsedTickCount", 0x0, 0x1))
-stable.data("input_key_mapping_table_size", xref("Input_IsKeyPressed", 0x2C, 0x3))
-stable.data("input_key_mapping_table_ptr", xref("Input_IsKeyPressed", 0x0, 0x1))
-stable.data("string_char_type_table", xref("String_ParseInt", 0x23, 0x2))
-stable.data("string_decimal_point_char", xref("String_FormatFloat", 0x40, 0x2))
-stable.data("scene_traversal_depth", xref("Scene_TraverseNodeTree", 0x401, 0x2))
-stable.data("graphics_capability_flags", xref("Graphics_RenderMeshNode", 0xF76, 0x1))
 stable.data(
-    "current_entity_camera",
+    "Mem_MallocWithRetry_DebugKilledByPlayer", xref("Mem_MallocWithRetry", 0x60, 0x1)
+)
+stable.data(
+    "Mem_MallocWithRetry_UIConfirmStopGame", xref("Mem_MallocWithRetry", 0x4E, 0x1)
+)
+stable.data(
+    "Mem_MallocWithRetry_OutOfMemory", xref("Mem_MallocWithRetry", 0x31, 0x1)
+)
+stable.data(
+    "Mem_MallocWithRetry_Failed", xref("Mem_MallocWithRetry", 0x1A, 0x1)
+)
+stable.data(
+    "UI_ShowConfirmDialog_ProgrammerMessage", xref("UI_ShowConfirmDialog", 0x5A, 0x1)
+)
+stable.data("Mem_AllocateHandle_AllocDebug", xref("Mem_AllocateHandle", 0x78, 0x1))
+stable.data("Mem_AllocateHandle_AllocFailed", xref("Mem_AllocateHandle", 0x3B, 0x1))
+stable.data("Mem_AllocateHandle_AllocPrefix", xref("Mem_AllocateHandle", 0x22, 0x1))
+stable.data("Mem_AllocateHandle_OutOfExtents", xref("Mem_AllocateHandle", 0xC, 0x1))
+stable.data(
+    "Mem_FreeAllExtents_LeakUnreleasedExtent", xref("Mem_FreeAllExtents", 0x16, 0x1)
+)
+stable.data(
+    "Mem_ReleaseHandle_LeakInvalidExtent", xref("Mem_ReleaseHandle", 0x9E, 0x1)
+)
+stable.data("Mem_ReleaseHandle_FreeDebug", xref("Mem_ReleaseHandle", 0x4C, 0x1))
+stable.data(
+    "Mem_ReleaseHandle_LeakUnallocated", xref("Mem_ReleaseHandle", 0x29, 0x1)
+)
+stable.data(
+    "Timer_GetElapsedTickCount_GameStartTime",
+    xref("Timer_GetElapsedTickCount", 0x0, 0x1),
+)
+stable.data(
+    "Input_IsKeyPressed_MappingTableSize", xref("Input_IsKeyPressed", 0x2C, 0x3)
+)
+stable.data(
+    "Input_IsKeyPressed_MappingTablePtr", xref("Input_IsKeyPressed", 0x0, 0x1)
+)
+stable.data("String_ParseInt_CharTypeTable", xref("String_ParseInt", 0x23, 0x2))
+stable.data(
+    "String_FormatFloat_DecimalPointChar", xref("String_FormatFloat", 0x40, 0x2)
+)
+stable.data(
+    "Scene_TraverseNodeTree_TraversalDepth",
+    xref("Scene_TraverseNodeTree", 0x401, 0x2),
+)
+stable.data(
+    "Graphics_RenderMeshNode_CapabilityFlags",
+    xref("Graphics_RenderMeshNode", 0xF76, 0x1),
+)
+stable.data(
+    "Camera_UpdateFollow_CurrentEntityCamera",
     xref("Camera_UpdateFollow", 0x2D0, 0x2),
     doc=(
         "Camera_UpdateFollow scratch/current entity-camera cell. This is transient "
         "camera-owned runtime state used across level/entity transitions; current_level_data "
         "entity slots are the actor/entity enumeration source, not this global."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("screen_border_state_flag", xref("Script_PauseToggle", 0x66, 0x1))
 stable.data(
-    "active_entity_work_list",
+    "Script_OpPauseToggle_ScreenBorderStateFlag", xref("Script_OpPauseToggle", 0x66, 0x1)
+)
+stable.data(
+    "ActiveEntityWorkList",
     xref("Entity_UpdateVisibilityAndSpawn", 0xE8, 0x1),
     xref("Camera_UpdateFollow", 0x86D, 0x1),
     doc=(
@@ -13882,23 +14436,26 @@ stable.data(
         "EN) are alternating 0x978-byte backing buffers. Entity_GetActiveActorFromList loads "
         "pcdogs.exe+0x55D30 (PC EN) as an entity-array scan bound."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("fade_counter", xref("Script_PauseToggle", 0x8D, 0x1))
+stable.data("Script_OpPauseToggle_FadeCounter", xref("Script_OpPauseToggle", 0x8D, 0x1))
 stable.data(
-    "audio_music_transition_volume", xref("Audio_TriggerMusicTransition", 0x99, 0x2)
+    "Audio_TriggerMusicTransition_Volume",
+    xref("Audio_TriggerMusicTransition", 0x99, 0x2),
 )
 stable.data(
-    "navigation_command_queue",
+    "Camera_UpdateFollow_NavigationCommandQueue",
     xref("Camera_UpdateFollow", 0x863, 0x1),
     doc=(
         "Camera_UpdateFollow navigation command/work queue pointer cell at pcdogs.exe+0x55D3C (PC "
         "EN); writes are staged into the pcdogs.exe+0x55ED8 (PC EN)/pcdogs.exe+0x56850 (PC EN) "
         "backing-buffer pair."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("path_trace_work_buffer", xref("Actor_TracePath", 0x12, 0x1))
+stable.data("Actor_TracePath_WorkBuffer", xref("Actor_TracePath", 0x12, 0x1))
 stable.data(
-    "path_trace_state_2",
+    "Actor_TracePath_State2",
     xref("Actor_TracePath", 0x27, 0x2),
     doc=(
         "Actor_TracePath byte/cell used when the source actor is NULL. Native evidence "
@@ -13906,289 +14463,580 @@ stable.data(
         "entity slots, and active_entity_work_list; the exact byte meaning is still unknown."
     ),
 )
-stable.data("path_trace_state_1", xref("Actor_TracePath", 0x1D, 0x2))
-stable.data("path_trace_state_3", xref("Actor_TracePath", 0x17, 0x2))
-stable.data("camera_transition_trigger", xref("Camera_UpdateFollow", 0x29C, 0x1))
-stable.data("camera_transition_countdown", xref("Script_PauseToggle", 0x17B, 0x2))
+stable.data("Actor_TracePath_State1", xref("Actor_TracePath", 0x1D, 0x2))
+stable.data("Actor_TracePath_State3", xref("Actor_TracePath", 0x17, 0x2))
 stable.data(
-    "audio_music_fade_frame_count",
+    "Camera_UpdateFollow_TransitionTrigger",
+    xref("Camera_UpdateFollow", 0x29C, 0x1),
+)
+stable.data(
+    "Script_OpPauseToggle_CameraTransitionCountdown",
+    xref("Script_OpPauseToggle", 0x17B, 0x2),
+)
+stable.data(
+    "AudioMusicFadeFrameCount",
     xref("Audio_TriggerMusicTransition", 0x66, 0x2),
     xref("Audio_InitializeSystem", 0x117, 0x2),
 )
 stable.data(
-    "audio_music_fade_start_frame", xref("Audio_TriggerMusicTransition", 0xC7, 0x1)
+    "Audio_TriggerMusicTransition_FadeStartFrame",
+    xref("Audio_TriggerMusicTransition", 0xC7, 0x1),
 )
 stable.data(
-    "audio_music_transition_end_frame", xref("Audio_TriggerMusicTransition", 0xE2, 0x2)
+    "Audio_TriggerMusicTransition_EndFrame",
+    xref("Audio_TriggerMusicTransition", 0xE2, 0x2),
 )
 stable.data(
-    "audio_music_transition_pending", xref("Audio_TriggerMusicTransition", 0xCF, 0x2)
+    "Audio_TriggerMusicTransition_Pending",
+    xref("Audio_TriggerMusicTransition", 0xCF, 0x2),
 )
 stable.data(
-    "navigation_queue_head",
+    "Camera_UpdateFollow_NavigationQueueHead",
     xref("Camera_UpdateFollow", 0x872, 0x1),
     doc=(
         "Active entity/navigation backing buffer at pcdogs.exe+0x55ED8 (PC EN); Camera_UpdateFollow "
         "selects pcdogs.exe+0x56850 (PC EN) as the alternate buffer while the shared backing-buffer "
         "layout stays opaque."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "level_transition_flag",
-    xref("Script_PauseToggle", 0x174, 0x2),
-    xref("Script_PauseToggle", 0x18F, 0x2),
+    "Script_OpPauseToggle_LevelTransitionFlag",
+    xref("Script_OpPauseToggle", 0x174, 0x2),
+    xref("Script_OpPauseToggle", 0x18F, 0x2),
 )
 stable.data(
-    "level_transition_start_frame", xref("Level_InitializeActorSystem", 0xC3, 0x1)
+    "Level_InitializeActorSystem_TransitionStartFrame",
+    xref("Level_InitializeActorSystem", 0xC3, 0x1),
 )
 stable.data(
-    "game_settings",
+    "GameSettings",
     xref("Camera_UpdateFollow", 0x7BA, 0x1),
     xref("Game_SetSoundEnabled", 0xC, 0x1),
 )
 stable.data(
-    "level_transition_end_frame", xref("Level_InitializeActorSystem", 0xD9, 0x1)
+    "Level_InitializeActorSystem_TransitionEndFrame",
+    xref("Level_InitializeActorSystem", 0xD9, 0x1),
 )
-stable.data("camera_transition_frame_counter", xref("Camera_UpdateFollow", 0x7BF, 0x2))
-stable.data("camera_previous_yaw", xref("Camera_CalculateFollowAngles", 0x97, 0x3))
-stable.data("camera_transition_paused", xref("Camera_InterpolateTransition", 0x16, 0x1))
-stable.data("animation_timer_state", xref("Script_PauseToggle", 0xF7, 0x2))
-stable.data("anim_queued_state_change", xref("Animation_QueueStateChange", 0x9, 0x3))
-stable.data("animation_state_queue_count", xref("Animation_QueueStateChange", 0x0, 0x1))
 stable.data(
-    "video_avi_player_initialized",
+    "Camera_UpdateFollow_TransitionFrameCounter",
+    xref("Camera_UpdateFollow", 0x7BF, 0x2),
+)
+stable.data(
+    "Camera_CalculateFollowAngles_PreviousYaw",
+    xref("Camera_CalculateFollowAngles", 0x97, 0x3),
+)
+stable.data(
+    "Camera_InterpolateTransition_Paused",
+    xref("Camera_InterpolateTransition", 0x16, 0x1),
+)
+stable.data(
+    "Script_OpPauseToggle_AnimationTimerState", xref("Script_OpPauseToggle", 0xF7, 0x2)
+)
+stable.data(
+    "Animation_QueueStateChange_AnimQueuedStateChange",
+    xref("Animation_QueueStateChange", 0x9, 0x3),
+)
+stable.data(
+    "Animation_QueueStateChange_Count",
+    xref("Animation_QueueStateChange", 0x0, 0x1),
+)
+stable.data(
+    "Video_InitializeAVIPlayer_Initialized",
     xref("Video_InitializeAVIPlayer", 0x20, 0x1),
     xref("Video_InitializeAVIPlayer", 0x36, 0x1),
 )
-stable.data("video_avi_window_handle", xref("Video_InitializeAVIPlayer", 0x31, 0x1))
-stable.data("video_avi_movie_counter", xref("Video_InitializeAVIPlayer", 0xB, 0x2))
-stable.data("checkers_camera_pos_1_x", xref("Checkers_UpdateStateMachine", 0xE6, 0x2))
-stable.data("checkers_camera_pos_1_y", xref("Checkers_UpdateStateMachine", 0xEC, 0x1))
-stable.data("checkers_camera_pos_1_z", xref("Checkers_UpdateStateMachine", 0xF1, 0x2))
-stable.data("checkers_camera_pos_2_x", xref("Checkers_UpdateStateMachine", 0xA1, 0x2))
-stable.data("checkers_logic_state", xref("Checkers_UpdateStateMachine", 0xBD, 0x2))
-stable.data("checkers_camera_pos_2_z", xref("Checkers_UpdateStateMachine", 0xC3, 0x1))
-stable.data("checkers_selected_col_1", xref("Checkers_UpdateStateMachine", 0x42, 0x2))
-stable.data("checkers_selected_row_1", xref("Checkers_UpdateStateMachine", 0x3C, 0x2))
-stable.data("checkers_selected_col_2", xref("Checkers_UpdateStateMachine", 0x36, 0x2))
-stable.data("checkers_selected_row_2", xref("Checkers_UpdateStateMachine", 0x30, 0x2))
 stable.data(
-    "checkers_board",
+    "Video_InitializeAVIPlayer_WindowHandle",
+    xref("Video_InitializeAVIPlayer", 0x31, 0x1),
+)
+stable.data(
+    "Video_InitializeAVIPlayer_MovieCounter",
+    xref("Video_InitializeAVIPlayer", 0xB, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_CameraPos1X",
+    xref("Checkers_UpdateStateMachine", 0xE6, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_CameraPos1Y",
+    xref("Checkers_UpdateStateMachine", 0xEC, 0x1),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_CameraPos1Z",
+    xref("Checkers_UpdateStateMachine", 0xF1, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_CameraPos2X",
+    xref("Checkers_UpdateStateMachine", 0xA1, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_LogicState",
+    xref("Checkers_UpdateStateMachine", 0xBD, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_CameraPos2Z",
+    xref("Checkers_UpdateStateMachine", 0xC3, 0x1),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_SelectedCol1",
+    xref("Checkers_UpdateStateMachine", 0x42, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_SelectedRow1",
+    xref("Checkers_UpdateStateMachine", 0x3C, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_SelectedCol2",
+    xref("Checkers_UpdateStateMachine", 0x36, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_SelectedRow2",
+    xref("Checkers_UpdateStateMachine", 0x30, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_Board",
     xref("Checkers_UpdateStateMachine", 0xE1, 0x1),
     type="Checkers_Board",
     doc="32-byte checkers board at pcdogs.exe+0x572A0 (PC EN); passed to board init, move generation, move execution, and AI search.",
-)
-stable.data("checkers_ai_node_counter", xref("Checkers_UpdateStateMachine", 0x5BE, 0x2))
-stable.data("checkers_move_result", xref("Checkers_UpdateStateMachine", 0x263, 0x1))
-stable.data(
-    "checkers_ai_move_from_col", xref("Checkers_UpdateStateMachine", 0x5B2, 0x2)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "checkers_ai_move_from_row", xref("Checkers_UpdateStateMachine", 0x5AC, 0x2)
+    "Checkers_UpdateStateMachine_AINodeCounter",
+    xref("Checkers_UpdateStateMachine", 0x5BE, 0x2),
 )
-stable.data("checkers_ai_move_to_col", xref("Checkers_UpdateStateMachine", 0x5A6, 0x2))
-stable.data("checkers_ai_move_to_row", xref("Checkers_UpdateStateMachine", 0x59D, 0x2))
 stable.data(
-    "checkers_ai_search_jmp_buf",
+    "Checkers_UpdateStateMachine_MoveResult",
+    xref("Checkers_UpdateStateMachine", 0x263, 0x1),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_AIMoveFromCol",
+    xref("Checkers_UpdateStateMachine", 0x5B2, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_AIMoveFromRow",
+    xref("Checkers_UpdateStateMachine", 0x5AC, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_AIMoveToCol",
+    xref("Checkers_UpdateStateMachine", 0x5A6, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_AIMoveToRow",
+    xref("Checkers_UpdateStateMachine", 0x59D, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_AISearchJmpBuf",
     xref("Checkers_UpdateStateMachine", 0x587, 0x1),
     type="uint32_t",
     doc="First word of a 64-byte setjmp/longjmp buffer used to abort/pause checkers AI search from input/render polling; SDK generator cannot expose this raw array as a typed global.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "checkers_ai_think_timeout", xref("Checkers_UpdateStateMachine", 0x5B8, 0x2)
-)
-stable.data("graphics_quad_vertex_0", xref("Graphics_DrawQuad", 0x3CC, 0x6))
-stable.data("graphics_quad_vertex_0_u", xref("Graphics_DrawQuad", 0x288, 0x2))
-stable.data("graphics_quad_vertex_0_v", xref("Graphics_DrawQuad", 0x29D, 0x2))
-stable.data("graphics_quad_vertex_1", xref("Graphics_DrawQuad", 0x3D6, 0x6))
-stable.data("graphics_quad_vertex_1_u", xref("Graphics_DrawQuad", 0x2B4, 0x2))
-stable.data("graphics_quad_vertex_1_v", xref("Graphics_DrawQuad", 0x2C9, 0x2))
-stable.data("graphics_quad_vertex_2", xref("Graphics_DrawQuad", 0x3E0, 0x6))
-stable.data("graphics_quad_vertex_2_u", xref("Graphics_DrawQuad", 0x2EC, 0x2))
-stable.data("graphics_quad_vertex_2_v", xref("Graphics_DrawQuad", 0x304, 0x2))
-stable.data("graphics_quad_vertex_3", xref("Graphics_DrawQuad", 0x3EA, 0x6))
-stable.data("graphics_quad_vertex_3_u", xref("Graphics_DrawQuad", 0x35A, 0x2))
-stable.data("graphics_quad_vertex_3_v", xref("Graphics_DrawQuad", 0x372, 0x2))
-stable.data("d3d_device_init_0", xref("D3D_InitDirectDrawAndDirect3D", 0x8A, 0x2))
-stable.data("d3d_device_init_1", xref("D3D_InitDirectDrawAndDirect3D", 0x85, 0x1))
-stable.data("d3d_device_init_2", xref("D3D_InitDirectDrawAndDirect3D", 0x90, 0x2))
-stable.data("d3d_device_init_3", xref("D3D_InitDirectDrawAndDirect3D", 0x68, 0x2))
-stable.data("graphics_vertex_color_buffer", xref("Graphics_IsQuadClipped", 0x35B, 0x2))
-stable.data(
-    "graphics_vertex_color_buffer_g", xref("Graphics_IsQuadClipped", 0x1D9, 0x1)
+    "Checkers_UpdateStateMachine_AIThinkTimeout",
+    xref("Checkers_UpdateStateMachine", 0x5B8, 0x2),
 )
 stable.data(
-    "graphics_vertex_color_buffer_b1", xref("Graphics_IsQuadClipped", 0x367, 0x1)
+    "Graphics_DrawQuad_Vertex0", xref("Graphics_DrawQuad", 0x3CC, 0x6)
 )
 stable.data(
-    "graphics_vertex_color_buffer_b0", xref("Graphics_IsQuadClipped", 0x36C, 0x2)
+    "Graphics_DrawQuad_Vertex0U", xref("Graphics_DrawQuad", 0x288, 0x2)
 )
 stable.data(
-    "graphics_vertex_color_buffer_r_0", xref("Graphics_IsQuadClipped", 0x38A, 0x2)
+    "Graphics_DrawQuad_Vertex0V", xref("Graphics_DrawQuad", 0x29D, 0x2)
 )
 stable.data(
-    "graphics_vertex_color_buffer_g_1", xref("Graphics_IsQuadClipped", 0x3A1, 0x1)
+    "Graphics_DrawQuad_Vertex1", xref("Graphics_DrawQuad", 0x3D6, 0x6)
 )
 stable.data(
-    "graphics_vertex_color_buffer_r_1", xref("Graphics_IsQuadClipped", 0x37E, 0x2)
+    "Graphics_DrawQuad_Vertex1U", xref("Graphics_DrawQuad", 0x2B4, 0x2)
 )
 stable.data(
-    "graphics_vertex_color_buffer_b", xref("Graphics_IsQuadClipped", 0x396, 0x2)
+    "Graphics_DrawQuad_Vertex1V", xref("Graphics_DrawQuad", 0x2C9, 0x2)
 )
 stable.data(
-    "graphics_vertex_color_buffer_b2", xref("Graphics_IsQuadClipped", 0x372, 0x2)
+    "Graphics_DrawQuad_Vertex2", xref("Graphics_DrawQuad", 0x3E0, 0x6)
 )
 stable.data(
-    "graphics_vertex_color_buffer_g_2", xref("Graphics_IsQuadClipped", 0x440, 0x2)
+    "Graphics_DrawQuad_Vertex2U", xref("Graphics_DrawQuad", 0x2EC, 0x2)
 )
 stable.data(
-    "graphics_vertex_color_buffer_r_2", xref("Graphics_IsQuadClipped", 0x453, 0x1)
+    "Graphics_DrawQuad_Vertex2V", xref("Graphics_DrawQuad", 0x304, 0x2)
 )
 stable.data(
-    "graphics_vertex_color_buffer_g_3", xref("Graphics_IsQuadClipped", 0x47C, 0x2)
-)
-stable.data("graphics_vertex_work_buffer", xref("Graphics_IsQuadClipped", 0x40E, 0x1))
-stable.data(
-    "graphics_vertex_work_buffer_v_1_base", xref("Graphics_IsQuadClipped", 0x41F, 0x1)
+    "Graphics_DrawQuad_Vertex3", xref("Graphics_DrawQuad", 0x3EA, 0x6)
 )
 stable.data(
-    "graphics_vertex_work_buffer_v_1_alt", xref("Graphics_IsQuadClipped", 0x4A9, 0x1)
+    "Graphics_DrawQuad_Vertex3U", xref("Graphics_DrawQuad", 0x35A, 0x2)
 )
-stable.data("graphics_clip_quad_src_u", xref("Graphics_IsQuadClipped", 0x33C, 0x1))
-stable.data("graphics_clip_quad_src_v", xref("Graphics_IsQuadClipped", 0x347, 0x2))
 stable.data(
-    "graphics_vertex_work_buffer_v_2_base", xref("Graphics_IsQuadClipped", 0x436, 0x1)
+    "Graphics_DrawQuad_Vertex3V", xref("Graphics_DrawQuad", 0x372, 0x2)
 )
-stable.data("graphics_clip_quad_dst_u", xref("Graphics_IsQuadClipped", 0x34F, 0x2))
-stable.data("graphics_clip_quad_dst_v", xref("Graphics_IsQuadClipped", 0x355, 0x2))
-stable.data("graphics_clip_temp_buffer", xref("Graphics_IsQuadClipped", 0x5A3, 0x1))
-stable.data("graphics_driver_guid", xref("Graphics_IsQuadClipped", 0x5EB, 0x1))
 stable.data(
-    "graphics_clip_work_buffer_6", xref("D3D_InitDirectDrawAndDirect3D", 0x1C5, 0x3)
+    "D3D_InitDirectDrawAndDirect3D_DeviceInit0",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x8A, 0x2),
 )
-stable.data("ddraw_enum_driver_data", xref("D3D_InitializeDirectDraw", 0x12B, 0x3))
-stable.data("ddraw_init_state_0", xref("D3D_InitializeDirectDraw", 0xE7, 0x3))
-stable.data("ddraw_init_state_1", xref("D3D_InitializeDirectDraw", 0x16B, 0x3))
-stable.data("ddraw_init_param_0", xref("D3D_InitializeDirectDraw", 0x89, 0x2))
-stable.data("ddraw_init_param_1", xref("D3D_InitializeDirectDraw", 0x9C, 0x2))
-stable.data("ddraw_init_param_2", xref("D3D_InitializeDirectDraw", 0xA5, 0x2))
-stable.data("ddraw_init_param_3", xref("D3D_InitializeDirectDraw", 0xB3, 0x2))
-stable.data("ddraw_init_param_4", xref("D3D_InitializeDirectDraw", 0xAE, 0x1))
-stable.data("graphics_driver_initialized", xref("D3D_InitializeDirectDraw", 0x73, 0x2))
 stable.data(
-    "pkg_loading_screen_texture",
+    "D3D_InitDirectDrawAndDirect3D_DeviceInit1",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x85, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_DeviceInit2",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x90, 0x2),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_DeviceInit3",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x68, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBuffer",
+    xref("Graphics_IsQuadClipped", 0x35B, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferG",
+    xref("Graphics_IsQuadClipped", 0x1D9, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferB1",
+    xref("Graphics_IsQuadClipped", 0x367, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferB0",
+    xref("Graphics_IsQuadClipped", 0x36C, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferR0",
+    xref("Graphics_IsQuadClipped", 0x38A, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferG1",
+    xref("Graphics_IsQuadClipped", 0x3A1, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferR1",
+    xref("Graphics_IsQuadClipped", 0x37E, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferB",
+    xref("Graphics_IsQuadClipped", 0x396, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferB2",
+    xref("Graphics_IsQuadClipped", 0x372, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferG2",
+    xref("Graphics_IsQuadClipped", 0x440, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferR2",
+    xref("Graphics_IsQuadClipped", 0x453, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexColorBufferG3",
+    xref("Graphics_IsQuadClipped", 0x47C, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexWorkBuffer",
+    xref("Graphics_IsQuadClipped", 0x40E, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexWorkBufferV1Base",
+    xref("Graphics_IsQuadClipped", 0x41F, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexWorkBufferV1Alt",
+    xref("Graphics_IsQuadClipped", 0x4A9, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipQuadSrcU",
+    xref("Graphics_IsQuadClipped", 0x33C, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipQuadSrcV",
+    xref("Graphics_IsQuadClipped", 0x347, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_VertexWorkBufferV2Base",
+    xref("Graphics_IsQuadClipped", 0x436, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipQuadDstU",
+    xref("Graphics_IsQuadClipped", 0x34F, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipQuadDstV",
+    xref("Graphics_IsQuadClipped", 0x355, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipTempBuffer",
+    xref("Graphics_IsQuadClipped", 0x5A3, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_DriverGUID",
+    xref("Graphics_IsQuadClipped", 0x5EB, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_GraphicsClipWorkBuffer6",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x1C5, 0x3),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawEnumDriverData",
+    xref("D3D_InitializeDirectDraw", 0x12B, 0x3),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitState0",
+    xref("D3D_InitializeDirectDraw", 0xE7, 0x3),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitState1",
+    xref("D3D_InitializeDirectDraw", 0x16B, 0x3),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitParam0",
+    xref("D3D_InitializeDirectDraw", 0x89, 0x2),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitParam1",
+    xref("D3D_InitializeDirectDraw", 0x9C, 0x2),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitParam2",
+    xref("D3D_InitializeDirectDraw", 0xA5, 0x2),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitParam3",
+    xref("D3D_InitializeDirectDraw", 0xB3, 0x2),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_DDrawInitParam4",
+    xref("D3D_InitializeDirectDraw", 0xAE, 0x1),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_GraphicsDriverInitialized",
+    xref("D3D_InitializeDirectDraw", 0x73, 0x2),
+)
+stable.data(
+    "Graphics_LoadAndUploadTexture_PKGLoadingScreenTexture",
     xref("Graphics_LoadAndUploadTexture", 0x19, 0x1),
     type="Material_BlendTextureSet",
-)
-stable.data("graphics_clip_input_buffer", xref("Graphics_IsQuadClipped", 0x413, 0x1))
-stable.data("graphics_clip_input_buffer_y", xref("Graphics_IsQuadClipped", 0x424, 0x1))
-stable.data(
-    "graphics_clip_input_buffer_v_2", xref("Graphics_IsQuadClipped", 0x43B, 0x1)
-)
-stable.data("graphics_render_clip_min_x", xref("Graphics_IsQuadClipped", 0x306, 0x2))
-stable.data("graphics_render_clip_min_y", xref("Graphics_IsQuadClipped", 0x320, 0x2))
-stable.data(
-    "graphics_clip_input_buffer_vertex_2_w", xref("Graphics_IsQuadClipped", 0x30C, 0x2)
-)
-stable.data("graphics_render_clip_max_x", xref("Graphics_IsQuadClipped", 0x326, 0x2))
-stable.data("d3d_device_caps_0", xref("D3D_InitDirectDrawAndDirect3D", 0x7F, 0x1))
-stable.data(
-    "graphics_client_rect_top", xref("D3D_InitDirectDrawAndDirect3D", 0x9C, 0x1)
-)
-stable.data("d3d_device_caps_1", xref("D3D_InitDirectDrawAndDirect3D", 0xA1, 0x2))
-stable.data(
-    "graphics_client_rect_bottom", xref("D3D_InitDirectDrawAndDirect3D", 0x6E, 0x2)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_active_texture_count",
+    "Graphics_IsQuadClipped_ClipInputBuffer",
+    xref("Graphics_IsQuadClipped", 0x413, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipInputBufferY",
+    xref("Graphics_IsQuadClipped", 0x424, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipInputBufferV2",
+    xref("Graphics_IsQuadClipped", 0x43B, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_RenderClipMinX",
+    xref("Graphics_IsQuadClipped", 0x306, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_RenderClipMinY",
+    xref("Graphics_IsQuadClipped", 0x320, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipInputBufferVertex2W",
+    xref("Graphics_IsQuadClipped", 0x30C, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_RenderClipMaxX",
+    xref("Graphics_IsQuadClipped", 0x326, 0x2),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_DeviceCaps0",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x7F, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_GraphicsClientRectTop",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x9C, 0x1),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_DeviceCaps1",
+    xref("D3D_InitDirectDrawAndDirect3D", 0xA1, 0x2),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_GraphicsClientRectBottom",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x6E, 0x2),
+)
+stable.data(
+    "Material_ReleaseTextureArray_GraphicsActiveTextureCount",
     xref("Material_ReleaseTextureArray", 0x17, 0x2),
     type="uint32_t",
-)
-stable.data("graphics_untextured_vertex_buffer", xref("Graphics_DrawQuad", 0x4ED, 0x1))
-stable.data(
-    "graphics_untextured_vertex_buffer_vertex_1", xref("Graphics_DrawQuad", 0x512, 0x6)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_untextured_vertex_buffer_vertex_2", xref("Graphics_DrawQuad", 0x52D, 0x6)
+    "Graphics_DrawQuad_UntexturedVertexBuffer",
+    xref("Graphics_DrawQuad", 0x4ED, 0x1),
 )
 stable.data(
-    "graphics_untextured_vertex_buffer_vertex_3", xref("Graphics_DrawQuad", 0x523, 0x6)
+    "Graphics_DrawQuad_UntexturedVertexBufferVertex1",
+    xref("Graphics_DrawQuad", 0x512, 0x6),
 )
 stable.data(
-    "camera_projection_matrix_x_scale", xref("Camera_SetupProjection", 0x40, 0x1)
+    "Graphics_DrawQuad_UntexturedVertexBufferVertex2",
+    xref("Graphics_DrawQuad", 0x52D, 0x6),
 )
 stable.data(
-    "camera_projection_matrix_y_scale", xref("Camera_SetupProjection", 0x8C, 0x2)
+    "Graphics_DrawQuad_UntexturedVertexBufferVertex3",
+    xref("Graphics_DrawQuad", 0x523, 0x6),
 )
 stable.data(
-    "camera_projection_matrix_near_w", xref("Camera_SetupProjection", 0x6A, 0x2)
+    "Camera_SetupProjection_MatrixXScale",
+    xref("Camera_SetupProjection", 0x40, 0x1),
 )
-stable.data("camera_projection_matrix_one", xref("Camera_SetupProjection", 0x78, 0x2))
-stable.data("camera_projection_matrix_far_w", xref("Camera_SetupProjection", 0x82, 0x2))
-stable.data("graphics_transformed_vertices", xref("Graphics_IsQuadClipped", 0x806, 0x1))
 stable.data(
-    "graphics_transformed_vertices_y", xref("Graphics_IsQuadClipped", 0x640, 0x2)
+    "Camera_SetupProjection_MatrixYScale",
+    xref("Camera_SetupProjection", 0x8C, 0x2),
 )
-stable.data("graphics_clip_output_buffer", xref("Graphics_IsQuadClipped", 0x5A8, 0x1))
-stable.data("camera_clip_plane_count", xref("Graphics_IsQuadClipped", 0x378, 0x2))
-stable.data("camera_clip_plane_coeffs_0", xref("Graphics_IsQuadClipped", 0x384, 0x2))
-stable.data("camera_clip_plane_coeffs_1", xref("Graphics_IsQuadClipped", 0x39C, 0x1))
-stable.data("camera_clip_plane_coeffs_2", xref("Graphics_IsQuadClipped", 0x3B0, 0x2))
-stable.data("camera_clip_plane_coeffs_3", xref("Graphics_IsQuadClipped", 0x3B6, 0x2))
-stable.data("camera_clip_plane_coeffs_4", xref("Graphics_IsQuadClipped", 0x3BC, 0x1))
-stable.data("camera_clip_plane_coeffs_5", xref("Graphics_IsQuadClipped", 0x390, 0x2))
-stable.data("camera_clip_plane_coeffs_6", xref("Graphics_IsQuadClipped", 0x3A6, 0x2))
-stable.data("camera_clip_plane_coeffs_7", xref("Graphics_IsQuadClipped", 0x3C1, 0x2))
-stable.data("d3d_vertex_buffer", xref("Graphics_IsQuadClipped", 0x7E6, 0x1))
-stable.data("d3d_vertex_buffer_y", xref("Graphics_IsQuadClipped", 0x79D, 0x1))
 stable.data(
-    "graphics_clip_temp_vertex_buffer",
+    "Camera_SetupProjection_MatrixNearW",
+    xref("Camera_SetupProjection", 0x6A, 0x2),
+)
+stable.data(
+    "Camera_SetupProjection_MatrixOne",
+    xref("Camera_SetupProjection", 0x78, 0x2),
+)
+stable.data(
+    "Camera_SetupProjection_MatrixFarW",
+    xref("Camera_SetupProjection", 0x82, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_TransformedVertices",
+    xref("Graphics_IsQuadClipped", 0x806, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_TransformedVerticesY",
+    xref("Graphics_IsQuadClipped", 0x640, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ClipOutputBuffer",
+    xref("Graphics_IsQuadClipped", 0x5A8, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCount",
+    xref("Graphics_IsQuadClipped", 0x378, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs0",
+    xref("Graphics_IsQuadClipped", 0x384, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs1",
+    xref("Graphics_IsQuadClipped", 0x39C, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs2",
+    xref("Graphics_IsQuadClipped", 0x3B0, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs3",
+    xref("Graphics_IsQuadClipped", 0x3B6, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs4",
+    xref("Graphics_IsQuadClipped", 0x3BC, 0x1),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs5",
+    xref("Graphics_IsQuadClipped", 0x390, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs6",
+    xref("Graphics_IsQuadClipped", 0x3A6, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_CameraClipPlaneCoeffs7",
+    xref("Graphics_IsQuadClipped", 0x3C1, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_D3DVertexBuffer", xref("Graphics_IsQuadClipped", 0x7E6, 0x1)
+)
+stable.data(
+    "Graphics_IsQuadClipped_D3DVertexBufferY",
+    xref("Graphics_IsQuadClipped", 0x79D, 0x1),
+)
+stable.data(
+    "Graphics_ClipPolygonByCameraPyramid_TempVertexBuffer",
     xref("Graphics_ClipPolygonByCameraPyramid", 0x18, 0x1),
 )
 stable.data(
-    "graphics_clip_temp_uv_buffer",
+    "Graphics_ClipPolygonByCameraPyramid_TempUVBuffer",
     xref("Graphics_ClipPolygonByCameraPyramid", 0x1D, 0x1),
 )
 stable.data(
-    "graphics_current_bound_texture",
+    "Material_ReleaseTextureArray_GraphicsCurrentBoundTexture",
     xref("Material_ReleaseTextureArray", 0x30, 0x1),
     type="DDraw_IDirectDrawSurface7*",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_current_blend_mode", xref("D3D_SetBlendMode", 0x98, 0x1), type="int32_t"
-)
-stable.data("graphics_quad_vertex_ptrs", xref("Graphics_DrawQuad", 0x6C, 0x2))
-stable.data("graphics_quad_vertex_1_ptr", xref("Graphics_DrawQuad", 0x3D6, 0x2))
-stable.data("graphics_quad_vertex_2_ptr", xref("Graphics_DrawQuad", 0x3E0, 0x2))
-stable.data("graphics_quad_vertex_3_ptr", xref("Graphics_DrawQuad", 0x3EA, 0x2))
-stable.data(
-    "graphics_selected_driver_index", xref("D3D_InitDirectDrawAndDirect3D", 0x1B1, 0x1)
+    "D3D_SetBlendMode_GraphicsCurrentBlendMode",
+    xref("D3D_SetBlendMode", 0x98, 0x1),
+    type="int32_t",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_tex_format_is_software", xref("D3D_CreateTextureSurface", 0x183, 0x2)
+    "Graphics_DrawQuad_VertexPtrs", xref("Graphics_DrawQuad", 0x6C, 0x2)
 )
 stable.data(
-    "graphics_tex_needs_alpha",
+    "Graphics_DrawQuad_Vertex1Ptr", xref("Graphics_DrawQuad", 0x3D6, 0x2)
+)
+stable.data(
+    "Graphics_DrawQuad_Vertex2Ptr", xref("Graphics_DrawQuad", 0x3E0, 0x2)
+)
+stable.data(
+    "Graphics_DrawQuad_Vertex3Ptr", xref("Graphics_DrawQuad", 0x3EA, 0x2)
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_GraphicsSelectedDriverIndex",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x1B1, 0x1),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsTexFormatIsSoftware",
+    xref("D3D_CreateTextureSurface", 0x183, 0x2),
+)
+stable.data(
+    "Graphics_LoadAndUploadTexture_TexNeedsAlpha",
     xref("Graphics_LoadAndUploadTexture", 0xA, 0x2),
     type="uint8_t",
-)
-stable.data("graphics_gamma_control", xref("D3D_SetGammaRamp", 0x6E, 0x2))
-stable.data("ddraw_enum_device_list", xref("D3D_EnumDeviceCallback", 0x3A, 0x3))
-stable.data("ddraw_enum_device_count", xref("D3D_EnumerateDirectDrawDevices", 0xE, 0x1))
-stable.data(
-    "graphics_enum_device_count", xref("D3D_EnumerateDirectDrawDevices", 0x1A, 0x1)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_accepted_device_count", xref("D3D_EnumerateDirectDrawDevices", 0x43, 0x1)
+    "D3D_SetGammaRamp_GraphicsGammaControl", xref("D3D_SetGammaRamp", 0x6E, 0x2)
 )
 stable.data(
-    "dinput_interface",
+    "D3D_EnumDeviceCallback_DDrawEnumDeviceList",
+    xref("D3D_EnumDeviceCallback", 0x3A, 0x3),
+)
+stable.data(
+    "D3D_EnumerateDirectDrawDevices_DDrawEnumDeviceCount",
+    xref("D3D_EnumerateDirectDrawDevices", 0xE, 0x1),
+)
+stable.data(
+    "D3D_EnumerateDirectDrawDevices_GraphicsEnumDeviceCount",
+    xref("D3D_EnumerateDirectDrawDevices", 0x1A, 0x1),
+)
+stable.data(
+    "D3D_EnumerateDirectDrawDevices_GraphicsAcceptedDeviceCount",
+    xref("D3D_EnumerateDirectDrawDevices", 0x43, 0x1),
+)
+stable.data(
+    "DInput_InitializeJoystickInput_Interface",
     xref("DInput_InitializeJoystickInput", 0x1C, 0x1),
     type="DInput_IDirectInputA*",
     doc="DirectInput interface created by DInput_CreateInterface; used for joystick enumeration/creation and released by DInput_ReleaseResources.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_joystick_state",
+    "Input_ReadGamepad_JoystickState",
     xref("Input_ReadGamepad", 0x20, 0x1),
     type="struct DIJOYSTATE*",
     doc=(
@@ -14196,184 +15044,235 @@ stable.data(
         "during input shutdown. This is a frame-local sample source; Input_GetJoystickAxis* "
         "near Input_ReadGamepad gives live analog freshness."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "dinput_joystick_device",
+    "DInput_InitializeJoystickInput_Device",
     xref("DInput_InitializeJoystickInput", 0x74, 0x1),
     type="DInput_IDirectInputDevice*",
     doc="DirectInput joystick device created by DInput_CreateConfiguredJoystickDevice; acquired, polled, and released by input shutdown.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "dinput_constant_force_effect",
+    "DInput_CreateConfiguredJoystickDevice_ConstantForceEffect",
     xref("DInput_CreateConfiguredJoystickDevice", 0x172, 0x1),
     type="void*",
     doc="DirectInput constant-force effect object returned by IDirectInputDevice::CreateEffect when force feedback is available.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_movie_handle",
+    "Video_CloseMovieFile_Handle",
     xref("Video_CloseMovieFile", 0x0, 0x1),
     type="int32_t",
     doc="winplay/RPL movie handle initialized by Movie_InitMovie and shut down by Movie_ShutdownMovie.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_surface_handle",
+    "Video_CloseMovieFile_SurfaceHandle",
     xref("Video_CloseMovieFile", 0x1A, 0x1),
     type="int32_t",
     doc="winplay video surface handle initialized by Movie_InitVideo, mapped for playback, and shut down by Movie_ShutdownVideo.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_sound_handle",
+    "Video_CloseMovieFile_SoundHandle",
     xref("Video_CloseMovieFile", 0x10, 0x1),
     type="int32_t",
     doc="winplay sound handle initialized by Movie_InitSound and passed into movie playback.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_polygon_render_flags", xref("Graphics_RenderPolygonBatch", 0x3D9, 0x2)
+    "Graphics_RenderPolygonBatch_Flags",
+    xref("Graphics_RenderPolygonBatch", 0x3D9, 0x2),
 )
 stable.data(
-    "graphics_max_primitives_per_batch_d3d",
+    "Graphics_RenderPolygonBatch_MaxPrimitivesPerBatchD3D",
     xref("Graphics_RenderPolygonBatch", 0x3CD, 0x2),
 )
 stable.data(
-    "graphics_polygon_batch_work_value_1",
+    "Graphics_RenderPolygonBatch_WorkValue1",
     xref("Graphics_RenderPolygonBatch", 0x20E, 0x3),
 )
 stable.data(
-    "graphics_polygon_batch_work_value_2",
+    "Graphics_RenderPolygonBatch_WorkValue2",
     xref("Graphics_RenderPolygonBatch", 0x207, 0x3),
 )
 stable.data(
-    "graphics_polygon_batch_work_value_3",
+    "Graphics_RenderPolygonBatch_WorkValue3",
     xref("Graphics_RenderPolygonBatch", 0x200, 0x3),
 )
 stable.data(
-    "graphics_batch_vertex_base", xref("Graphics_RenderPolygonBatch", 0x443, 0x1)
+    "Graphics_RenderPolygonBatch_VertexBase",
+    xref("Graphics_RenderPolygonBatch", 0x443, 0x1),
 )
 stable.data(
-    "graphics_poly_batch_vertex_count", xref("Graphics_RenderPolygonBatch", 0x44B, 0x2)
+    "Graphics_RenderPolygonBatch_PolyBatchVertexCount",
+    xref("Graphics_RenderPolygonBatch", 0x44B, 0x2),
 )
 stable.data(
-    "graphics_poly_batch_tri_count", xref("Graphics_RenderPolygonBatch", 0x458, 0x2)
-)
-stable.data("normal_accumulator_x", xref("Mesh_CalculateVertexNormals", 0x5F6, 0x4))
-stable.data("vertex_normal_accum_y", xref("Scene_FinalizeNodeRender", 0x306, 0x1))
-stable.data("vertex_normal_accum_z", xref("Mesh_CalculateVertexNormals", 0x612, 0x4))
-stable.data("vertex_normal_count", xref("Mesh_CalculateVertexNormals", 0x5E8, 0x4))
-stable.data(
-    "graphics_poly_batch_texture_state", xref("Graphics_RenderPolygonBatch", 0xC2, 0x1)
+    "Graphics_RenderPolygonBatch_PolyBatchTriCount",
+    xref("Graphics_RenderPolygonBatch", 0x458, 0x2),
 )
 stable.data(
-    "graphics_backface_vertex_1_ptr", xref("Graphics_RenderPolygonBatch", 0xA0, 0x2)
+    "Mesh_CalculateVertexNormals_NormalAccumulatorX",
+    xref("Mesh_CalculateVertexNormals", 0x5F6, 0x4),
 )
 stable.data(
-    "graphics_backface_vertex_2_ptr", xref("Graphics_RenderPolygonBatch", 0xB2, 0x2)
+    "Scene_FinalizeNodeRender_VertexNormalAccumY",
+    xref("Scene_FinalizeNodeRender", 0x306, 0x1),
 )
 stable.data(
-    "graphics_transformed_vertex_1_screen_xy",
+    "Mesh_CalculateVertexNormals_NormalAccumZ",
+    xref("Mesh_CalculateVertexNormals", 0x612, 0x4),
+)
+stable.data(
+    "Mesh_CalculateVertexNormals_NormalCount",
+    xref("Mesh_CalculateVertexNormals", 0x5E8, 0x4),
+)
+stable.data(
+    "Graphics_RenderPolygonBatch_PolyBatchTextureState",
+    xref("Graphics_RenderPolygonBatch", 0xC2, 0x1),
+)
+stable.data(
+    "Graphics_RenderPolygonBatch_BackfaceVertex1Ptr",
+    xref("Graphics_RenderPolygonBatch", 0xA0, 0x2),
+)
+stable.data(
+    "Graphics_RenderPolygonBatch_BackfaceVertex2Ptr",
+    xref("Graphics_RenderPolygonBatch", 0xB2, 0x2),
+)
+stable.data(
+    "Graphics_RenderPolygonBatch_TransformedVertex1ScreenXy",
     xref("Graphics_RenderPolygonBatch", 0x722, 0x3),
 )
 stable.data(
-    "graphics_transformed_vertex_1_view_z",
+    "Graphics_RenderPolygonBatch_TransformedVertex1ViewZ",
     xref("Graphics_RenderPolygonBatch", 0x6BE, 0x1),
 )
 stable.data(
-    "graphics_transformed_vertex_2_screen_xy",
+    "Graphics_RenderPolygonBatch_TransformedVertex2ScreenXy",
     xref("Graphics_RenderPolygonBatch", 0x889, 0x3),
 )
 stable.data(
-    "graphics_transformed_vertex_2_view_z",
+    "Graphics_RenderPolygonBatch_TransformedVertex2ViewZ",
     xref("Graphics_RenderPolygonBatch", 0x825, 0x1),
 )
 stable.data(
-    "graphics_transformed_vertex_3_screen_xy",
+    "Graphics_RenderPolygonBatch_TransformedVertex3ScreenXy",
     xref("Graphics_RenderPolygonBatch", 0x9F0, 0x3),
 )
 stable.data(
-    "graphics_transformed_vertex_3_view_z",
+    "Graphics_RenderPolygonBatch_TransformedVertex3ViewZ",
     xref("Graphics_RenderPolygonBatch", 0x98C, 0x1),
 )
 stable.data(
-    "graphics_transformed_vertex_4_screen_x",
+    "Graphics_RenderPolygonBatch_TransformedVertex4ScreenX",
     xref("Graphics_RenderPolygonBatch", 0xA24, 0x3),
 )
 stable.data(
-    "graphics_transformed_vertex_4_screen_y",
+    "Graphics_RenderPolygonBatch_TransformedVertex4ScreenY",
     xref("Graphics_RenderPolygonBatch", 0x1117, 0x2),
 )
 stable.data(
-    "graphics_transformed_vertex_4_view_z",
+    "Graphics_RenderPolygonBatch_TransformedVertex4ViewZ",
     xref("Graphics_RenderPolygonBatch", 0xB0C, 0x1),
 )
 stable.data(
-    "graphics_poly_batch_render_flags", xref("Graphics_RenderPolygonBatch", 0xC7, 0x1)
+    "Graphics_RenderPolygonBatch_PolyBatchRenderFlags",
+    xref("Graphics_RenderPolygonBatch", 0xC7, 0x1),
 )
 stable.data(
-    "sprite_vertex_flags", xref("Bone_TransformForRenderWeightedVerts", 0x5D3, 0x2)
+    "Bone_TransformForRenderWeightedVerts_SpriteVertexFlags",
+    xref("Bone_TransformForRenderWeightedVerts", 0x5D3, 0x2),
 )
 stable.data(
-    "sprite_last_position_x", xref("Bone_TransformForRenderWeightedVerts", 0x300, 0x2)
+    "Bone_TransformForRenderWeightedVerts_SpriteLastPositionX",
+    xref("Bone_TransformForRenderWeightedVerts", 0x300, 0x2),
 )
 stable.data(
-    "sprite_last_position_y", xref("Bone_TransformForRenderWeightedVerts", 0x309, 0x2)
+    "Bone_TransformForRenderWeightedVerts_SpriteLastPositionY",
+    xref("Bone_TransformForRenderWeightedVerts", 0x309, 0x2),
 )
 stable.data(
-    "sprite_last_position_z", xref("Bone_TransformForRenderWeightedVerts", 0x312, 0x2)
+    "Bone_TransformForRenderWeightedVerts_SpriteLastPositionZ",
+    xref("Bone_TransformForRenderWeightedVerts", 0x312, 0x2),
 )
 stable.data(
-    "sprite_anim_frame", xref("Bone_TransformForRenderWeightedVerts", 0x576, 0x4)
+    "Bone_TransformForRenderWeightedVerts_SpriteAnimFrame",
+    xref("Bone_TransformForRenderWeightedVerts", 0x576, 0x4),
 )
 stable.data(
-    "sprite_anim_flags", xref("Bone_TransformForRenderWeightedVerts", 0x57E, 0x4)
+    "Bone_TransformForRenderWeightedVerts_SpriteAnimFlags",
+    xref("Bone_TransformForRenderWeightedVerts", 0x57E, 0x4),
 )
 stable.data(
-    "sprite_anim_state", xref("Bone_TransformForRenderWeightedVerts", 0x47F, 0x3)
-)
-stable.data("puppy_counter_anim_state", xref("Menu_ClearTransitionFlags", 0x17, 0x3))
-stable.data("level_bonus_flags", xref("Level_GetDataPointer", 0x4, 0x1))
-stable.data(
-    "menu_string_format_buffer", xref("Menu_RenderControlsConfiguration", 0x2D, 0x1)
-)
-stable.data("pause_menu_state", xref("Save_SaveGameLevelCompletion", 0xBC, 0x2))
-stable.data(
-    "menu_confirm_prompt_frame_counter", xref("Menu_RenderConfirmPrompt", 0x20, 0x2)
+    "Bone_TransformForRenderWeightedVerts_SpriteAnimState",
+    xref("Bone_TransformForRenderWeightedVerts", 0x47F, 0x3),
 )
 stable.data(
-    "pause_transition_timer",
+    "Menu_ClearTransitionFlags_PuppyCounterAnimState",
+    xref("Menu_ClearTransitionFlags", 0x17, 0x3),
+)
+stable.data(
+    "Level_GetDataPointer_BonusFlags", xref("Level_GetDataPointer", 0x4, 0x1)
+)
+stable.data(
+    "Menu_RenderControlsConfiguration_StringFormatBuffer",
+    xref("Menu_RenderControlsConfiguration", 0x2D, 0x1),
+)
+stable.data(
+    "Save_GameLevelCompletion_PauseMenuState",
+    xref("Save_SaveGameLevelCompletion", 0xBC, 0x2),
+)
+stable.data(
+    "Menu_RenderConfirmPrompt_FrameCounter",
+    xref("Menu_RenderConfirmPrompt", 0x20, 0x2),
+)
+stable.data(
+    "PauseTransitionTimer",
     xref("Menu_UpdatePauseMenu", 0xD2, 0x3),
     xref("Menu_ResetState", 0x2, 0x1),
 )
-stable.data("game_state", xref("Save_GetGameSlotIndex", 0x0, 0x1))
-stable.data("player_lives", xref("Player_SetLives", 0x4, 0x1))
-stable.data("menu_options_value_1", xref("Menu_HandleOptionsLogic", 0x95, 0x1))
+stable.data("Save_GetGameSlotIndex_State", xref("Save_GetGameSlotIndex", 0x0, 0x1))
+stable.data("Player_SetLives_Lives", xref("Player_SetLives", 0x4, 0x1))
 stable.data(
-    "pause_menu_transition_timer_1", xref("Menu_ClearTransitionFlags", 0x7, 0x3)
+    "Menu_HandleOptionsLogic_Value1",
+    xref("Menu_HandleOptionsLogic", 0x95, 0x1),
 )
 stable.data(
-    "save_file_buffer",
+    "Menu_ClearTransitionFlags_PauseMenuTransitionTimer1",
+    xref("Menu_ClearTransitionFlags", 0x7, 0x3),
+)
+stable.data(
+    "Save_LoadGameState_FileBuffer",
     xref("Save_LoadGameState", 0xD, 0x1),
     type="Save_GameData",
     doc="0x10-byte save-file header followed by save-slot payloads; passed to Save_InitGameOperation with total size 0x1dc.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_file_game_state",
+    "Save_LoadGameState_FileGameState",
     xref("Save_LoadGameState", 0x70, 0x2),
     type="int32_t",
     doc="Save-file header game_state dword restored to game_state by Save_LoadGameState.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_file_game_settings",
+    "Save_LoadGameState_FileGameSettings",
     xref("Save_LoadGameState", 0x76, 0x2),
     type="int32_t",
     doc="Save-file header game_settings dword restored to game_settings by Save_LoadGameState.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_file_player_lives",
+    "Save_LoadGameState_FilePlayerLives",
     xref("Save_LoadGameState", 0x6B, 0x1),
     type="int32_t",
     doc="Save-file header player-lives dword restored to player_lives by Save_LoadGameState.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_buffer",
+    "Menu_HandleSaveGameLogic_Buffer",
     xref("Menu_HandleSaveGameLogic", 0x318, 0x2),
     type="Save_GameSlot",
     doc=(
@@ -14381,21 +15280,24 @@ stable.data(
         "Save_GameData header. Native file operations cover 0x1dc bytes, consistent "
         "with five slot-sized records."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_slot_valid_flags",
+    "Menu_HandleSaveGameLogic_SlotValidFlags",
     xref("Menu_HandleSaveGameLogic", 0x13C, 0x3),
     type="uint8_t",
     doc="First save-slot valid byte at Save_GameSlot+1; Save_SaveGameToSlot sets saveSlots[slotIndex].is_valid to 1.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "menu_options_backup_data",
+    "Menu_HandleOptionsLogic_BackupData",
     xref("Menu_HandleOptionsLogic", 0xA9, 0x1),
     type="uint8_t[0x6c]",
     doc="Editable 0x6c-byte options/config backup block copied before controls remapping and passed to Config_SaveSettingsToINI.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_keyboard_mappings",
+    "Menu_HandleOptionsLogic_InputKeyboardMappings",
     xref("Menu_HandleOptionsLogic", 0x425, 0x3),
     type="int32_t",
     doc=(
@@ -14403,9 +15305,10 @@ stable.data(
         "options_menu_backup_data at offset +4 (PC EN); options UI compares 11 keyboard-side "
         "entries. Scalar alias only; the parent 0x6c block remains authoritative."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_mappings",
+    "Menu_HandleOptionsLogic_InputGamepadMappings",
     xref("Menu_HandleOptionsLogic", 0x9A, 0x1),
     type="int32_t",
     doc=(
@@ -14413,236 +15316,311 @@ stable.data(
         "options_menu_backup_data at offset +0x38 (PC EN); options UI uses 10 gamepad-side "
         "entries. Scalar alias only; the parent 0x6c block remains authoritative."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_data_buffer",
+    "Shared_LoadCommonResources_PKGResourceDataBuffer",
     xref("Shared_LoadCommonResources", 0x4D, 0x1),
     type="void*",
     doc="Resource/common-data buffer pointer populated by Shared_LoadCommonResources.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("menu_state", xref("Menu_ProcessMenuState", 0xA0, 0x3))
+stable.data("Menu_ProcessMenuState_State", xref("Menu_ProcessMenuState", 0xA0, 0x3))
 stable.data(
-    "menu_selection",
+    "MenuSelection",
     xref("Level_SetMenuProgressState", 0x44, 0x2),
     xref("Menu_ProcessMenuState", 0xD2, 0x1),
 )
-stable.data("menu_skip_background_render", xref("Menu_ProcessMenuState", 0x250, 0x1))
-stable.data("display_menu_flags", xref("Menu_ProcessMenuState", 0x235, 0x1))
-stable.data("menu_transition_delay", xref("Menu_ProcessMenuState", 0x6F, 0x1))
-stable.data("audio_menu_sound_effect", xref("Menu_HandleOptionsLogic", 0x9, 0x2))
-stable.data("menu_post_transition_action", xref("Menu_ProcessMenuState", 0x78, 0x3))
-stable.data("menu_context", xref("Menu_ProcessMenuState", 0x39F, 0x1))
 stable.data(
-    "menu_fade_counter",
+    "Menu_ProcessMenuState_SkipBackgroundRender",
+    xref("Menu_ProcessMenuState", 0x250, 0x1),
+)
+stable.data(
+    "Menu_ProcessMenuState_DisplayMenuFlags", xref("Menu_ProcessMenuState", 0x235, 0x1)
+)
+stable.data(
+    "Menu_ProcessMenuState_TransitionDelay",
+    xref("Menu_ProcessMenuState", 0x6F, 0x1),
+)
+stable.data(
+    "Menu_HandleOptionsLogic_AudioMenuSoundEffect",
+    xref("Menu_HandleOptionsLogic", 0x9, 0x2),
+)
+stable.data(
+    "Menu_ProcessMenuState_PostTransitionAction",
+    xref("Menu_ProcessMenuState", 0x78, 0x3),
+)
+stable.data(
+    "Menu_ProcessMenuState_Context", xref("Menu_ProcessMenuState", 0x39F, 0x1)
+)
+stable.data(
+    "Menu_ProcessMenuState_FadeCounter",
     xref("Menu_ProcessMenuState", 0x7BC, 0x2),
     xref("Menu_ProcessMenuState", 0x5B, 0x1),
 )
-stable.data("menu_stored_fade_level", xref("Menu_ProcessMenuState", 0x989, 0x2))
-stable.data("menu_option_index", xref("Menu_ProcessMenuState", 0xFE, 0x1))
-stable.data("menu_name_entry_active", xref("Menu_ProcessMenuState", 0x84A, 0x2))
-stable.data("name_entry_row", xref("Game_BackupSettings", 0x11, 0x1))
-stable.data("menu_name_entry_column", xref("Menu_ProcessMenuState", 0x82E, 0x2))
-stable.data("saved_game_settings", xref("Game_BackupSettings", 0x16, 0x2))
-stable.data("saved_player_lives", xref("Game_BackupSettings", 0x1C, 0x2))
-stable.data("ui_lives_current_value", xref("Menu_UpdatePauseMenu", 0x11B, 0x2))
-stable.data("menu_reset_flag", xref("Level_CheckBonusUnlock", 0x26, 0x3))
 stable.data(
-    "save_game_collectibles_data",
+    "Menu_ProcessMenuState_StoredFadeLevel",
+    xref("Menu_ProcessMenuState", 0x989, 0x2),
+)
+stable.data(
+    "Menu_ProcessMenuState_OptionIndex", xref("Menu_ProcessMenuState", 0xFE, 0x1)
+)
+stable.data(
+    "Menu_ProcessMenuState_NameEntryActive",
+    xref("Menu_ProcessMenuState", 0x84A, 0x2),
+)
+stable.data("Game_BackupSettings_NameEntryRow", xref("Game_BackupSettings", 0x11, 0x1))
+stable.data(
+    "Menu_ProcessMenuState_NameEntryColumn",
+    xref("Menu_ProcessMenuState", 0x82E, 0x2),
+)
+stable.data(
+    "Game_BackupSettings_SavedGameSettings", xref("Game_BackupSettings", 0x16, 0x2)
+)
+stable.data(
+    "Game_BackupSettings_SavedPlayerLives", xref("Game_BackupSettings", 0x1C, 0x2)
+)
+stable.data(
+    "Menu_UpdatePauseMenu_UILivesCurrentValue", xref("Menu_UpdatePauseMenu", 0x11B, 0x2)
+)
+stable.data(
+    "Level_CheckBonusUnlock_MenuResetFlag", xref("Level_CheckBonusUnlock", 0x26, 0x3)
+)
+stable.data(
+    "Save_GameLevelCompletion_CollectiblesData",
     xref("Save_SaveGameLevelCompletion", 0xAB, 0x3),
     type="Save_GameSlot",
     doc="Active 0x5c-byte save progress payload copied into save_game_buffer by Save_SaveGameToSlot.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_puppy_count_backup",
+    "Level_InitializeSaveState_GamePuppyCountBackup",
     xref("Level_InitializeSaveState", 0x7, 0x1),
     type="uint8_t",
     doc="Active Save_GameSlot+2 puppy/life backup byte, seeded to 3 by Save_InitializeGameState and updated by Save_BackupGamePuppyCount.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_init_flag",
+    "Save_InitializeGameState_InitFlag",
     xref("Save_InitializeGameState", 0x16, 0x2),
     type="uint8_t",
     doc="Active Save_GameSlot+3 initialization flag set to 4 by Save_InitializeGameState.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_complete_flag",
+    "Save_SetGameComplete_Flag",
     xref("Save_SetGameComplete", 0x4, 0x1),
     type="uint8_t",
     doc="Active Save_GameSlot+4 game-complete flag written by Save_SetGameComplete.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_bonus_data",
+    "Level_InitializeBonusData_SaveGameBonusData",
     xref("Level_InitializeBonusData", 0x6, 0x4),
     type="uint16_t",
     doc=(
         "First entry of the active Save_GameSlot+0x38 (PC EN) packed bonus-level parameter table read "
         "by Level_InitializeBonusData."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_level_best_time",
+    "Save_GameLevelCompletion_BestTime",
     xref("Save_SaveGameLevelCompletion", 0x83, 0x3),
     type="uint16_t",
     doc=(
         "Active Save_GameSlot+0x42 (PC EN) best time/value for the TOB bonus level, written from "
         "menu_items by Save_SaveGameLevelCompletion."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_bonus_name_entry_buffer",
+    "Level_InitializeBonusData_SaveGameBonusNameEntryBuffer",
     xref("Level_InitializeBonusData", 0x12, 0x3),
     type="uint8_t",
     doc="First byte of active Save_GameSlot+0x44 (PC EN) bonus/name-entry payload copied with each 0x5c-byte save slot.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("ui_lives_state", xref("UI_UpdateLives", 0x12F, 0x3))
-stable.data("ui_lives_counter_1", xref("UI_UpdateLives", 0x51, 0x1))
-stable.data("timer_state", xref("Shared_LoadCommonResources", 0x32, 0x1))
-stable.data("pause_menu_timer", xref("Menu_UpdatePauseMenu", 0x17B, 0x3))
-stable.data("pkg_resource_handle_1", xref("Shared_LoadCommonResources", 0x19, 0x1))
+stable.data("UI_UpdateLives_State", xref("UI_UpdateLives", 0x12F, 0x3))
+stable.data("UI_UpdateLives_Counter1", xref("UI_UpdateLives", 0x51, 0x1))
 stable.data(
-    "save_game_saved_world_0_completion_bits",
+    "Shared_LoadCommonResources_TimerState",
+    xref("Shared_LoadCommonResources", 0x32, 0x1),
+)
+stable.data(
+    "Menu_UpdatePauseMenu_Timer", xref("Menu_UpdatePauseMenu", 0x17B, 0x3)
+)
+stable.data(
+    "Shared_LoadCommonResources_PKGResourceHandle1",
+    xref("Shared_LoadCommonResources", 0x19, 0x1),
+)
+stable.data(
+    "Save_GameBonusProgress_SavedWorld0CompletionBits",
     xref("Save_SaveGameBonusProgress", 0x11, 0x1),
 )
 stable.data(
-    "save_game_saved_world_1_completion_bits",
+    "Save_GameBonusProgress_SavedWorld1CompletionBits",
     xref("Save_SaveGameBonusProgress", 0x1B, 0x2),
 )
 stable.data(
-    "save_game_saved_world_2_completion_bits",
+    "Save_GameBonusProgress_SavedWorld2CompletionBits",
     xref("Save_SaveGameBonusProgress", 0x27, 0x2),
 )
 stable.data(
-    "save_game_saved_world_3_completion_bits",
+    "Save_GameBonusProgress_SavedWorld3CompletionBits",
     xref("Save_SaveGameBonusProgress", 0x2D, 0x1),
 )
 stable.data(
-    "save_game_saved_world_4_completion_bits",
+    "Save_GameBonusProgress_SavedWorld4CompletionBits",
     xref("Save_SaveGameBonusProgress", 0x32, 0x2),
 )
 stable.data(
-    "save_game_operation_step",
+    "Menu_RenderSaveGame_OperationStep",
     xref("Menu_RenderSaveGame", 0x10D, 0x3),
     type="uint8_t",
     doc="Save/load async operation step byte used by Menu_RenderSaveGame, Menu_HandleSaveGameLogic, and Save_SaveGameToSlot.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_load_mode_flag",
+    "Menu_RenderSaveGame_LoadModeFlag",
     xref("Menu_RenderSaveGame", 0x114, 0x1),
     type="uint8_t",
     doc="Save/load mode byte in the save-menu state cluster.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_operation_result",
+    "Menu_HandleSaveGameLogic_OperationResult",
     xref("Menu_HandleSaveGameLogic", 0x93, 0x2),
     type="uint8_t",
     doc="Save operation result/status byte written by Menu_HandleSaveGameLogic.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_menu_active",
+    "Menu_RenderSaveGame_Active",
     xref("Menu_RenderSaveGame", 0x18, 0x1),
     type="uint8_t",
     doc="Save-menu active byte flag read by Menu_RenderSaveGame.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_overwrite_choice",
+    "Menu_RenderSaveGame_OverwriteChoice",
     xref("Menu_RenderSaveGame", 0x134, 0x3),
     type="uint8_t",
     doc="Overwrite-confirmation choice byte in the save/load menu dialog state cluster.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_dialog_state",
+    "Menu_RenderSaveGame_DialogState",
     xref("Menu_RenderSaveGame", 0xC5, 0x1),
     type="uint8_t",
     doc="Save/load dialog substate byte consumed by Menu_RenderSaveGame.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_dirty_flag",
+    "Menu_HandleSaveGameLogic_DirtyFlag",
     xref("Menu_HandleSaveGameLogic", 0x1B1, 0x2),
     type="uint8_t",
     doc="Async save dirty/completion byte set while save-slot data is copied and operation 9 is queued.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_menu_state",
+    "Menu_RenderSaveGame_State",
     xref("Menu_RenderSaveGame", 0xF9, 0x2),
     type="int32_t",
     doc="Packed save-menu transition/countdown dword; native code accesses individual byte lanes.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("menu_pause_delay", xref("Menu_CheckPauseInput", 0x5A, 0x1))
 stable.data(
-    "input_menu_controls_key_index",
+    "Menu_CheckPauseInput_Delay", xref("Menu_CheckPauseInput", 0x5A, 0x1)
+)
+stable.data(
+    "Menu_HandleOptionsLogic_InputMenuControlsKeyIndex",
     xref("Menu_HandleOptionsLogic", 0xA4, 0x1),
     type="int16_t",
     doc="Two-byte controls prompt descriptor filled by Menu_RenderButtonPrompt.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_controls_button_index",
+    "Menu_HandleOptionsLogic_InputMenuControlsButtonIndex",
     xref("Menu_HandleOptionsLogic", 0x9F, 0x1),
     type="int16_t",
     doc="Second two-byte controls prompt descriptor filled by Menu_RenderButtonPrompt for duplicate/conflict checks.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_backup_puppy_count",
+    "Level_InitializeSaveState_GameBackupPuppyCount",
     xref("Level_InitializeSaveState", 0xF, 0x1),
     xref("Level_InitializeSaveState", 0x14, 0x2),
 )
-stable.data("menu_selection_2", xref("Save_SaveGameLevelCompletion", 0x10D, 0x2))
-stable.data("puppy_counter_ui_state", xref("Menu_UpdatePauseMenu", 0xF8, 0x3))
 stable.data(
-    "input_menu_input_up",
+    "Save_GameLevelCompletion_MenuSelection2",
+    xref("Save_SaveGameLevelCompletion", 0x10D, 0x2),
+)
+stable.data(
+    "Menu_UpdatePauseMenu_PuppyCounterUIState", xref("Menu_UpdatePauseMenu", 0xF8, 0x3)
+)
+stable.data(
+    "Menu_UpdateInput_Up",
     xref("Menu_UpdateInput", 0x12, 0x1),
     type="int32_t",
     doc=(
         "One-shot menu-input up pulse dword at pcdogs.exe+0x9BAA4 (PC EN) in the pcdogs.exe+0x9BAA4 "
         "(PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_input_down",
+    "Menu_UpdateInput_Down",
     xref("Menu_UpdateInput", 0x17, 0x1),
     type="int32_t",
     doc=(
         "One-shot menu-input down pulse dword at pcdogs.exe+0x9BAA8 (PC EN) in the pcdogs.exe+0x9BAA4 "
         "(PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_input_left",
+    "Menu_UpdateInput_Left",
     xref("Menu_UpdateInput", 0xD, 0x1),
     type="int32_t",
     doc=(
         "One-shot menu-input left pulse dword at pcdogs.exe+0x9BAAC (PC EN) in the pcdogs.exe+0x9BAA4 "
         "(PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_input_right",
+    "Menu_UpdateInput_Right",
     xref("Menu_UpdateInput", 0x8, 0x1),
     type="int32_t",
     doc=(
         "One-shot menu-input right pulse dword at pcdogs.exe+0x9BAB0 (PC EN) in the "
         "pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_input_confirm",
+    "Menu_UpdateInput_Confirm",
     xref("Menu_UpdateInput", 0x21, 0x1),
     type="int32_t",
     doc=(
         "One-shot menu-input confirm pulse dword at pcdogs.exe+0x9BAB4 (PC EN) in the "
         "pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_input_cancel",
+    "Menu_UpdateInput_Cancel",
     xref("Menu_UpdateInput", 0x1C, 0x1),
     type="int32_t",
     doc=(
         "One-shot menu-input cancel pulse dword at pcdogs.exe+0x9BAB8 (PC EN) in the "
         "pcdogs.exe+0x9BAA4 (PC EN)..pcdogs.exe+0x9BAB8 (PC EN) pulse cluster."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_input_up_held",
+    "Menu_UpdateInput_UpHeld",
     xref("Menu_UpdateInput", 0xBE, 0x1),
     doc=(
         "Held/debounce up byte at pcdogs.exe+0x9BABE (PC EN) in the pcdogs.exe+0x9BABC (PC "
@@ -14650,7 +15628,7 @@ stable.data(
     ),
 )
 stable.data(
-    "input_menu_input_down_held",
+    "Menu_UpdateInput_DownHeld",
     xref("Menu_UpdateInput", 0xA5, 0x2),
     doc=(
         "Held/debounce down byte at pcdogs.exe+0x9BABF (PC EN) in the pcdogs.exe+0x9BABC (PC "
@@ -14658,7 +15636,7 @@ stable.data(
     ),
 )
 stable.data(
-    "input_menu_input_left_held",
+    "Menu_UpdateInput_LeftHeld",
     xref("Menu_UpdateInput", 0x35, 0x2),
     doc=(
         "Held/debounce left byte at pcdogs.exe+0x9BAC1 (PC EN) in the pcdogs.exe+0x9BABC (PC "
@@ -14666,7 +15644,7 @@ stable.data(
     ),
 )
 stable.data(
-    "input_menu_input_right_held",
+    "Menu_UpdateInput_RightHeld",
     xref("Menu_UpdateInput", 0x5A, 0x2),
     doc=(
         "Held/debounce right byte at pcdogs.exe+0x9BAC0 (PC EN) in the pcdogs.exe+0x9BABC (PC "
@@ -14674,7 +15652,7 @@ stable.data(
     ),
 )
 stable.data(
-    "input_menu_input_cancel_held",
+    "Menu_UpdateInput_CancelHeld",
     xref("Menu_UpdateInput", 0x73, 0x2),
     doc=(
         "Held/debounce cancel byte at pcdogs.exe+0x9BABD (PC EN) in the pcdogs.exe+0x9BABC (PC "
@@ -14682,7 +15660,7 @@ stable.data(
     ),
 )
 stable.data(
-    "input_menu_input_confirm_held",
+    "Menu_UpdateInput_ConfirmHeld",
     xref("Menu_UpdateInput", 0x8C, 0x2),
     doc=(
         "Held/debounce confirm byte at pcdogs.exe+0x9BABC (PC EN) in the pcdogs.exe+0x9BABC (PC "
@@ -14690,136 +15668,198 @@ stable.data(
     ),
 )
 stable.data(
-    "options_menu_column",
+    "Menu_HandleOptionsLogic_Column",
     xref("Menu_HandleOptionsLogic", 0xE1, 0x1),
     type="int32_t",
     doc="Options/control-remap column cursor dword used by Menu_HandleOptionsLogic.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "options_menu_selection",
+    "OptionsMenuSelection",
     xref("Menu_HandleOptionsLogic", 0x3A, 0x2),
     xref("Level_UpdateInterLevelMenu", 0xB5, 0x3),
     type="int32_t",
     doc="Selected options-menu row dword at pcdogs.exe+0x9BAC8 (PC EN).",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_menu_button_remapping_active",
+    "Menu_HandleOptionsLogic_InputMenuButtonRemappingActive",
     xref("Menu_HandleOptionsLogic", 0x203, 0x1),
     type="int32_t",
     doc="Control-remapping active/latch dword in the options submenu state cluster.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "options_menu_state",
+    "Menu_HandleOptionsLogic_State",
     xref("Menu_HandleOptionsLogic", 0x147, 0x2),
     type="int32_t",
     doc="Auxiliary options-menu UI state dword at pcdogs.exe+0x9BADC (PC EN).",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "menu_ui_state_5",
+    "Menu_HandleOptionsLogic_UIState5",
     xref("Menu_HandleOptionsLogic", 0x2E, 0x2),
     type="int32_t",
     doc="Auxiliary options-menu UI state dword read by Menu_HandleOptionsLogic.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "options_menu_sub_state",
+    "Menu_HandleOptionsLogic_SubState",
     xref("Menu_HandleOptionsLogic", 0x0, 0x1),
     type="int32_t",
     doc="Options/control-remap substate dword read at Menu_HandleOptionsLogic entry.",
-)
-stable.data("sorted_render_list_flags", xref("Graphics_DrawSortedLists", 0xA, 0x1))
-stable.data("menu_render_state", xref("Graphics_DrawSortedLists", 0x15, 0x1))
-stable.data(
-    "graphics_rendering_frame_counter", xref("Graphics_IncrementPassCounter", 0x0, 0x1)
-)
-stable.data("pkg_loading_screen_state", xref("PKG_LoadRandomSplashScreen", 0x0, 0x1))
-stable.data("level_select_state", xref("Level_UpdateWorldSelectMenu", 0x1, 0x1))
-stable.data("level_select_slot", xref("Level_UpdateWorldSelectMenu", 0x46, 0x3))
-stable.data("level_select_fade_counter", xref("Level_UpdateWorldSelectMenu", 0xA, 0x1))
-stable.data("input_cheat_code_progress", xref("Input_CheckCheatCodeSequence", 0xB, 0x1))
-stable.data(
-    "pkg_loading_blend_texture_ptr", xref("PKG_LoadRandomSplashScreen", 0x43, 0x1)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_level_handle",
+    "Graphics_DrawSortedLists_RenderListFlags",
+    xref("Graphics_DrawSortedLists", 0xA, 0x1),
+)
+stable.data(
+    "Graphics_DrawSortedLists_MenuRenderState",
+    xref("Graphics_DrawSortedLists", 0x15, 0x1),
+)
+stable.data(
+    "Graphics_IncrementPassCounter_RenderingFrameCounter",
+    xref("Graphics_IncrementPassCounter", 0x0, 0x1),
+)
+stable.data(
+    "PKG_LoadRandomSplashScreen_LoadingScreenState",
+    xref("PKG_LoadRandomSplashScreen", 0x0, 0x1),
+)
+stable.data(
+    "Level_UpdateWorldSelectMenu_State",
+    xref("Level_UpdateWorldSelectMenu", 0x1, 0x1),
+)
+stable.data(
+    "Level_UpdateWorldSelectMenu_Slot",
+    xref("Level_UpdateWorldSelectMenu", 0x46, 0x3),
+)
+stable.data(
+    "Level_UpdateWorldSelectMenu_FadeCounter",
+    xref("Level_UpdateWorldSelectMenu", 0xA, 0x1),
+)
+stable.data(
+    "Input_CheckCheatCodeSequence_Progress",
+    xref("Input_CheckCheatCodeSequence", 0xB, 0x1),
+)
+stable.data(
+    "PKG_LoadRandomSplashScreen_LoadingBlendTexturePtr",
+    xref("PKG_LoadRandomSplashScreen", 0x43, 0x1),
+)
+stable.data(
+    "PKG_CleanupResourceGameState_LevelHandle",
     xref("PKG_CleanupResourceGameState", 0x0, 0x1),
     doc="Global latch for the completed level resource/blob handle returned by Level_LoadStateMachine; PKG_CleanupResourceGameState passes the non-null handle to Level_UnloadResources and then clears it.",
 )
-stable.data("pkg_loading_fade_counter", xref("PKG_LoadRandomSplashScreen", 0x4F, 0x2))
-stable.data("main_menu_state", xref("Level_Load", 0xAF, 0x2))
-stable.data("main_menu_selection", xref("Level_UpdateInterLevelMenu", 0x10A, 0x1))
-stable.data("menu_fade_timer", xref("Level_UpdateInterLevelMenu", 0x12, 0x1))
 stable.data(
-    "pkg_last_loading_image_index", xref("PKG_LoadRandomSplashScreen", 0x13, 0x3)
+    "PKG_LoadRandomSplashScreen_LoadingFadeCounter",
+    xref("PKG_LoadRandomSplashScreen", 0x4F, 0x2),
+)
+stable.data("Level_Load_MainMenuState", xref("Level_Load", 0xAF, 0x2))
+stable.data(
+    "Level_UpdateInterLevelMenu_MainMenuSelection",
+    xref("Level_UpdateInterLevelMenu", 0x10A, 0x1),
 )
 stable.data(
-    "pkg_resource_loading_image_ptr", xref("PKG_LoadRandomSplashScreen", 0x35, 0x1)
-)
-stable.data("loading_fade_delay", xref("UI_Update", 0x34, 0x2))
-stable.data("skip_title_screen", xref("Menu_ProcessMenuTransition", 0x8F, 0x2))
-stable.data(
-    "input_cheat_sequence_index", xref("Input_CheckCheatCodeSequence", 0x14, 0x2)
+    "Level_UpdateInterLevelMenu_FadeTimer",
+    xref("Level_UpdateInterLevelMenu", 0x12, 0x1),
 )
 stable.data(
-    "input_cheat_previous_button", xref("Input_CheckCheatCodeSequence", 0x5, 0x2)
+    "PKG_LoadRandomSplashScreen_LastLoadingImageIndex",
+    xref("PKG_LoadRandomSplashScreen", 0x13, 0x3),
 )
-stable.data("collision_object_list", xref("Collision_DetectActorCollisions", 0x41, 0x1))
 stable.data(
-    "collision_ground_check_result",
+    "PKG_LoadRandomSplashScreen_ResourceLoadingImagePtr",
+    xref("PKG_LoadRandomSplashScreen", 0x35, 0x1),
+)
+stable.data("UI_Update_LoadingFadeDelay", xref("UI_Update", 0x34, 0x2))
+stable.data(
+    "Menu_ProcessMenuTransition_SkipTitleScreen",
+    xref("Menu_ProcessMenuTransition", 0x8F, 0x2),
+)
+stable.data(
+    "Input_CheckCheatCodeSequence_Index",
+    xref("Input_CheckCheatCodeSequence", 0x14, 0x2),
+)
+stable.data(
+    "Input_CheckCheatCodeSequence_PreviousButton",
+    xref("Input_CheckCheatCodeSequence", 0x5, 0x2),
+)
+stable.data(
+    "Collision_DetectActorCollisions_ObjectList",
+    xref("Collision_DetectActorCollisions", 0x41, 0x1),
+)
+stable.data(
+    "Collision_ProcessActorGroundCheck_Result",
     xref("Collision_ProcessActorGroundCheck", 0x44, 0x1),
 )
 stable.data(
-    "collision_test_pos_x", xref("Collision_DetectObjectNodeCollisions", 0xD9, 0x2)
+    "Collision_DetectObjectNodeCollisions_TestPosX",
+    xref("Collision_DetectObjectNodeCollisions", 0xD9, 0x2),
 )
 stable.data(
-    "collision_test_pos_y", xref("Collision_DetectObjectNodeCollisions", 0xF4, 0x2)
+    "Collision_DetectObjectNodeCollisions_TestPosY",
+    xref("Collision_DetectObjectNodeCollisions", 0xF4, 0x2),
 )
 stable.data(
-    "collision_test_pos_z", xref("Collision_DetectObjectNodeCollisions", 0x102, 0x2)
+    "Collision_DetectObjectNodeCollisions_TestPosZ",
+    xref("Collision_DetectObjectNodeCollisions", 0x102, 0x2),
 )
 stable.data(
-    "collision_test_radius", xref("Collision_DetectObjectNodeCollisions", 0x8F, 0x1)
+    "Collision_DetectObjectNodeCollisions_TestRadius",
+    xref("Collision_DetectObjectNodeCollisions", 0x8F, 0x1),
 )
 stable.data(
-    "collision_test_vel_x", xref("Collision_DetectObjectNodeCollisions", 0x83, 0x2)
+    "Collision_DetectObjectNodeCollisions_TestVelX",
+    xref("Collision_DetectObjectNodeCollisions", 0x83, 0x2),
 )
 stable.data(
-    "collision_test_vel_y", xref("Collision_DetectObjectNodeCollisions", 0x99, 0x2)
+    "Collision_DetectObjectNodeCollisions_TestVelY",
+    xref("Collision_DetectObjectNodeCollisions", 0x99, 0x2),
 )
 stable.data(
-    "collision_test_vel_z", xref("Collision_DetectObjectNodeCollisions", 0xBB, 0x2)
+    "Collision_DetectObjectNodeCollisions_TestVelZ",
+    xref("Collision_DetectObjectNodeCollisions", 0xBB, 0x2),
 )
 stable.data(
-    "collision_response_buffer",
+    "Collision_DetectAndResolve3DCollision_ResponseBuffer",
     xref("Collision_DetectAndResolve3DCollision", 0x1AC6, 0x3),
 )
 stable.data(
-    "collision_plane_pointers", xref("Actor_InitializeDirectionTables", 0x5, 0x1)
+    "Actor_InitializeDirectionTables_CollisionPlanePointers",
+    xref("Actor_InitializeDirectionTables", 0x5, 0x1),
 )
 stable.data(
-    "collision_plane_buffer", xref("Collision_ResolveObjectNodeCollision", 0x1FC, 0x1)
+    "Collision_ResolveObjectNodeCollision_PlaneBuffer",
+    xref("Collision_ResolveObjectNodeCollision", 0x1FC, 0x1),
 )
 stable.data(
-    "collision_ground_normal_y", xref("Collision_ProcessActorGroundCheck", 0x4F, 0x2)
+    "Collision_ProcessActorGroundCheck_NormalY",
+    xref("Collision_ProcessActorGroundCheck", 0x4F, 0x2),
 )
 stable.data(
-    "collision_object_count",
+    "CollisionObjectCount",
     xref("Graphics_IsPolygonInDebugList", 0xC, 0x2),
     xref("Collision_DetectActorCollisions", 0x33, 0x2),
 )
 stable.data(
-    "collision_ground_normal_x", xref("Collision_ProcessActorGroundCheck", 0x34, 0x1)
+    "Collision_ProcessActorGroundCheck_NormalX",
+    xref("Collision_ProcessActorGroundCheck", 0x34, 0x1),
 )
 stable.data(
-    "collision_ground_normal_z", xref("Collision_ProcessActorGroundCheck", 0x39, 0x2)
+    "Collision_ProcessActorGroundCheck_NormalZ",
+    xref("Collision_ProcessActorGroundCheck", 0x39, 0x2),
 )
 stable.data(
-    "collision_response_planes", xref("Actor_InitializeDirectionTables", 0xF, 0x1)
+    "Actor_InitializeDirectionTables_CollisionResponsePlanes",
+    xref("Actor_InitializeDirectionTables", 0xF, 0x1),
 )
 stable.data(
-    "collision_ground_dist", xref("Collision_ProcessActorGroundCheck", 0x60, 0x2)
+    "Collision_ProcessActorGroundCheck_Dist",
+    xref("Collision_ProcessActorGroundCheck", 0x60, 0x2),
 )
 stable.data(
-    "actor_default_update_callback_slot",
+    "ActorDefaultUpdateCallbackSlot",
     xref("Graphics_InitializeDispatchTables", 0x1D, 0x2),
     xref("Collision_DetectAndResolve3DCollision", 0x1796, 0x3),
     type="Actor_DefaultUpdateCallback",
@@ -14828,21 +15868,24 @@ stable.data(
         "Actor_HandleDefaultUpdate by Graphics_InitializeDispatchTables; slots at +8 (PC EN)/+12 (PC EN)/+16 (PC EN) "
         "hold actor, component/projectile, and powerup collision callbacks."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "collision_dispatch_actor_func",
+    "Level_InitializeActorSystem_CollisionDispatchActorFunc",
     xref("Level_InitializeActorSystem", 0x11, 0x2),
     type="Collision_ActorResponseCallback",
     doc="Actor collision response callback slot initialized to Actor_ProcessCollisionResponse; part of the sparse collision-state callback vector.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "collision_response_actor_func",
+    "Collision_InitializeFunctionPointers_ResponseActorFunc",
     xref("Collision_InitializeFunctionPointers", 0xA, 0x2),
     type="Collision_ComponentResponseCallback",
     doc="Component/projectile collision response callback slot initialized to Collision_ProcessProjectileHit.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "powerup_collision_handler",
+    "Collision_ProcessPowerupCollisions_Handler",
     xref("Collision_ProcessPowerupCollisions", 0x3, 0x1),
     type="Powerup_CollisionCallback",
     doc=(
@@ -14850,21 +15893,24 @@ stable.data(
         "Powerup_InitializeSystem; Collision_ProcessPowerupCollisions passes "
         "(powerup_actor, actor, 0, -2)."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "audio_system_flag",
+    "Audio_SetEnabledFlag_SystemFlag",
     xref("Audio_SetEnabledFlag", 0x4, 0x1),
     type="uint8_t",
     doc="Byte-sized audio enabled flag stored by Audio_SetEnabledFlag and read by Audio_GetEnabledFlag.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_open_stream_count",
+    "Audio_ShutdownSystem_OpenStreamCount",
     xref("Audio_ShutdownSystem", 0x3D, 0x1),
     type="int32_t",
     doc="Count of open Miles streams, incremented by Audio_OpenStream and decremented by Audio_CloseMusicStream.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_slots",
+    "Audio_StartSoundPlayback_Slots",
     xref("Audio_StartSoundPlayback", 0x70, 0x2),
     type="Audio_SoundSlot",
     doc=(
@@ -14873,52 +15919,62 @@ stable.data(
         "then writes the leading fields at cursor - 8/cursor - 4; SDK typed globals "
         "resolve to the array base."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_slot_0_sample_handle",
+    "Audio_ShutdownSystem_SoundSlot0SampleHandle",
     xref("Audio_ShutdownSystem", 0x11, 0x1),
     type="Audio_AILHSample",
     doc="Sample-handle field of sound_slots[0]; Audio_ShutdownSystem iterates this field with Audio_SoundSlot stride 0x14 through all nine sound slots.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_music_stream_handle",
+    "Audio_SetStreamVolume_MusicStreamHandle",
     xref("Audio_SetStreamVolume", 0x0, 0x2),
     type="Audio_AILHStream",
     doc="Active Miles music stream handle consumed by set-volume/play/pause/resume/close helpers.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_music_selected_stream_record",
+    "Audio_ResetMusicState_SelectedStreamRecord",
     xref("Audio_ResetMusicState", 0x4, 0x1),
     type="int32_t*",
     doc="Selected/pending music stream record pointer stored by Audio_ResetMusicState and later passed to Audio_PlayMusicStream by Audio_ProcessMusicFade.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("audio_active_wave_count", xref("Audio_ShutdownSystem", 0x42, 0x2))
 stable.data(
-    "audio_sound_system_flags",
+    "Audio_ShutdownSystem_ActiveWaveCount", xref("Audio_ShutdownSystem", 0x42, 0x2)
+)
+stable.data(
+    "Audio_FadeOutMusic_SoundSystemFlags",
     xref("Audio_FadeOutMusic", 0x0, 0x2),
     type="uint8_t",
     doc="Byte-sized audio/music state flags used by music fade/transition routines.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_music_transition_target",
+    "Audio_ShutdownSystem_MusicTransitionTarget",
     xref("Audio_ShutdownSystem", 0x2F, 0x2),
     type="int16_t",
     doc="Signed 16-bit music transition target/state value cleared during audio shutdown.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_music_transition_state",
+    "Audio_StartMusicWithFade_TransitionState",
     xref("Audio_StartMusicWithFade", 0x7, 0x3),
     type="int16_t",
     doc="Signed 16-bit current music fade/transition volume state advanced by Audio_ProcessMusicFade.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_music_fade_target_volume",
+    "Audio_SetMusicFadeTarget_Volume",
     xref("Audio_SetMusicFadeTarget", 0x7, 0x3),
     type="int16_t",
     doc="Signed 16-bit target volume used by Audio_SetMusicFadeTarget and Audio_ProcessMusicFade.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "bone_trail_current_entity",
+    "Trail_ResetBone_CurrentEntity",
     xref("Trail_ResetBone", 0x12, 0x2),
     doc=(
         "Bone-trail current nav/entity/powerup selector. Trail_FindBonePath writes it from "
@@ -14926,27 +15982,63 @@ stable.data(
         "powerup/entity runtime data."
     ),
 )
-stable.data("bone_trail_path_node_count", xref("Trail_ResetBone", 0x18, 0x2))
-stable.data("bone_trail_path_end", xref("Trail_FindBonePath", 0x25F, 0x1))
-stable.data("bone_trail_timer", xref("Trail_CheckBoneAvailable", 0x13, 0x2))
-stable.data("bone_trail_entries", xref("Trail_UpdateAndRenderBone", 0x497, 0x1))
-stable.data("bone_trail_entry_0_timestamp", xref("Trail_ResetBone", 0x1E, 0x1))
-stable.data("bone_trail_entry_0_pos_x", xref("Trail_UpdateAndRenderBone", 0x40B, 0x1))
-stable.data("bone_trail_path_nodes", xref("Trail_UpdateAndRenderBone", 0x3B5, 0x6))
-stable.data("bone_trail_path_buffer_y", xref("Trail_UpdateAndRenderBone", 0x44B, 0x2))
-stable.data("bone_trail_path_buffer_z", xref("Trail_UpdateAndRenderBone", 0x41E, 0x1))
-stable.data("bone_trail_target_position", xref("Trail_UpdateAndRenderBone", 0x137, 0x2))
-stable.data("bone_trail_anim_time", xref("Trail_ResetBone", 0x28, 0x1))
-stable.data("bone_trail_path_buffer_z_1", xref("Trail_UpdateAndRenderBone", 0x157, 0x2))
-stable.data("bone_trail_path_buffer_x_2", xref("Trail_FindBonePath", 0x9A, 0x1))
-stable.data("bone_trail_path_buffer_y_2", xref("Trail_FindBonePath", 0x759, 0x1))
-stable.data("bone_trail_path_buffer_z_2", xref("Trail_FindBonePath", 0x760, 0x2))
 stable.data(
-    "pkg_resource_special_node_processing_flag",
+    "Trail_ResetBone_PathNodeCount", xref("Trail_ResetBone", 0x18, 0x2)
+)
+stable.data(
+    "Trail_FindBonePath_End", xref("Trail_FindBonePath", 0x25F, 0x1)
+)
+stable.data(
+    "Trail_CheckBoneAvailable_Timer",
+    xref("Trail_CheckBoneAvailable", 0x13, 0x2),
+)
+stable.data(
+    "Trail_UpdateAndRenderBone_Entries",
+    xref("Trail_UpdateAndRenderBone", 0x497, 0x1),
+)
+stable.data(
+    "Trail_ResetBone_Entry0Timestamp", xref("Trail_ResetBone", 0x1E, 0x1)
+)
+stable.data(
+    "Trail_UpdateAndRenderBone_Entry0PosX",
+    xref("Trail_UpdateAndRenderBone", 0x40B, 0x1),
+)
+stable.data(
+    "Trail_UpdateAndRenderBone_PathNodes",
+    xref("Trail_UpdateAndRenderBone", 0x3B5, 0x6),
+)
+stable.data(
+    "Trail_UpdateAndRenderBone_PathBufferY",
+    xref("Trail_UpdateAndRenderBone", 0x44B, 0x2),
+)
+stable.data(
+    "Trail_UpdateAndRenderBone_PathBufferZ",
+    xref("Trail_UpdateAndRenderBone", 0x41E, 0x1),
+)
+stable.data(
+    "Trail_UpdateAndRenderBone_TargetPosition",
+    xref("Trail_UpdateAndRenderBone", 0x137, 0x2),
+)
+stable.data("Trail_ResetBone_AnimTime", xref("Trail_ResetBone", 0x28, 0x1))
+stable.data(
+    "Trail_UpdateAndRenderBone_PathBufferZ1",
+    xref("Trail_UpdateAndRenderBone", 0x157, 0x2),
+)
+stable.data(
+    "Trail_FindBonePath_BufferX2", xref("Trail_FindBonePath", 0x9A, 0x1)
+)
+stable.data(
+    "Trail_FindBonePath_BufferY2", xref("Trail_FindBonePath", 0x759, 0x1)
+)
+stable.data(
+    "Trail_FindBonePath_BufferZ2", xref("Trail_FindBonePath", 0x760, 0x2)
+)
+stable.data(
+    "PKG_FixUpResourceMeshNode_SpecialNodeProcessingFlag",
     xref("PKG_FixUpResourceMeshNode", 0x23D, 0x2),
 )
 stable.data(
-    "save_game_operation_state",
+    "Save_ProcessGameOperation_State",
     xref("Save_ProcessGameOperation", 0x3D, 0x2),
     type="uint32_t",
     doc=(
@@ -14954,9 +16046,10 @@ stable.data(
         "and polled by Save_ProcessGameOperation; byte 0 carries the result/status, byte 1 the success flag, "
         "byte 2 the requested operation, and byte 3 the file operation code."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_operation_buffer",
+    "Save_ProcessGameOperation_Buffer",
     xref("Save_ProcessGameOperation", 0x5D, 0x2),
     type="uint8_t*",
     doc=(
@@ -14964,192 +16057,238 @@ stable.data(
         "save-file/slot span rooted at pcdogs.exe+0x9B798 (PC EN) is consistent with "
         "five slot-sized records."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_size",
+    "Save_ProcessGameOperation_Size",
     xref("Save_ProcessGameOperation", 0x29, 0x1),
     type="uint32_t",
     doc="Byte count passed to save read/write/verify helpers by Save_ProcessGameOperation.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "save_game_verify_buffer",
+    "Save_ProcessGameOperation_VerifyBuffer",
     xref("Save_ProcessGameOperation", 0x2E, 0x2),
     type="uint8_t*",
     doc="Comparison buffer used by Save_ProcessGameOperation's operation 12 verify path.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_skip_requested",
+    "Video_PlayMovieFile_SkipRequested",
     xref("Video_PlayMovieFile", 0x3C, 0x2),
     type="int32_t",
     doc="Movie playback skip/shutdown flag cleared by Video_PlayMovieIntro and set by Video_PlayMovieFile when the user skips or closes playback.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "video_avi_playback_started",
+    "Video_PlayMovieIntro_AVIPlaybackStarted",
     xref("Video_PlayMovieIntro", 0x112, 0x2),
     type="int32_t",
     doc="AVI playback-start latch toggled by Video_PlayMovieIntro around Video_IsAVIPlaying during the AVI fallback path.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("window_message_state", xref("Window_ProcessGameProc", 0x10, 0x2))
-stable.data("debug_show_fps_counter", xref("Graphics_DrawSortedLists", 0x9F, 0x1))
 stable.data(
-    "input_keyboard_mapping_keys",
+    "Window_ProcessGameProc_MessageState",
+    xref("Window_ProcessGameProc", 0x10, 0x2),
+)
+stable.data(
+    "Graphics_DrawSortedLists_DebugShowFPSCounter",
+    xref("Graphics_DrawSortedLists", 0x9F, 0x1),
+)
+stable.data(
+    "Input_RegisterButtonMapping_KeyboardMappingKeys",
     xref("Input_RegisterButtonMapping", 0x20, 0x1),
     type="int32_t*",
     doc="Heap array of registered keyboard virtual-key codes, grown by Input_RegisterButtonMapping.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_keyboard_mapping_buttons",
+    "Input_RegisterButtonMapping_KeyboardMappingButtons",
     xref("Input_RegisterButtonMapping", 0x3E, 0x1),
     type="uint32_t*",
     doc="Heap array parallel to keyboard_mapping_keys; each entry is the Input_State.button_bits mask for that key.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("graphics_last_frame_tick", xref("Graphics_RenderFrame", 0xA5, 0x2))
-stable.data("input_processed_flag", xref("Graphics_DrawQuad", 0x38A, 0x2))
 stable.data(
-    "graphics_frame_start_time_sec",
+    "Graphics_RenderFrame_LastFrameTick",
+    xref("Graphics_RenderFrame", 0xA5, 0x2),
+)
+stable.data(
+    "Graphics_DrawQuad_InputProcessedFlag", xref("Graphics_DrawQuad", 0x38A, 0x2)
+)
+stable.data(
+    "Graphics_RenderFrame_StartTimeSec",
     xref("Graphics_RenderFrame", 0xE, 0x2),
     type="float",
     doc="Timer_GetGameTime value captured at the start of Graphics_RenderFrame.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_frame_end_time_sec",
+    "Graphics_RenderFrame_EndTimeSec",
     xref("Graphics_RenderFrame", 0x1C2, 0x2),
     type="float",
     doc="Timer_GetGameTime value captured after rendering/flip handling in Graphics_RenderFrame.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "debug_current_fps",
+    "Debug_RenderOverlay_CurrentFPS",
     xref("Debug_RenderOverlay", 0x93, 0x2),
     type="float",
     doc="Frames-per-second value rendered by the debug overlay after Graphics_RenderFrame updates the accumulator.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "debug_fps_accumulated_frame_time",
+    "Graphics_RenderFrame_DebugFPSAccumulatedFrameTime",
     xref("Graphics_RenderFrame", 0x1CC, 0x2),
     type="float",
     doc="Accumulated frame-time seconds used with fps_frame_count to refresh current_fps.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "debug_fps_frame_count",
+    "Graphics_RenderFrame_DebugFPSFrameCount",
     xref("Graphics_RenderFrame", 0x1EB, 0x1),
     type="int32_t",
     doc="Number of frames accumulated since the last current_fps refresh.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "level_menu_load_state",
+    "PKG_CleanupResourceGameState_LevelMenuLoadState",
     xref("PKG_CleanupResourceGameState", 0x1D, 0x2),
     type="uint8_t",
     doc=(
         "Top-level menu/load dispatch state byte used by Level_Load, UI_Update, PKG_CleanupResourceGameState, "
         "and transition helpers."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_level_stream_load_state",
+    "Level_LoadStateMachine_PKGLevelStreamLoadState",
     xref("Level_LoadStateMachine", 0xC, 0x1),
     type="int32_t",
     doc=(
         "Async package-stream loader stage dword used only by Level_LoadStateMachine; stages 0,1,2,4,5,7 "
         "load level TOC entries and then reset this state to zero."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_level_tex_data_a",
+    "Level_LoadStateMachine_PKGResourceLevelTexDataA",
     xref("Level_LoadStateMachine", 0x20, 0x1),
     type="void*",
     doc="Opaque first level package-entry buffer loaded from TOC entry 0x24 + level_index * 3 by Level_LoadStateMachine stage 0.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_level_tex_data_b",
+    "Level_LoadStateMachine_PKGResourceLevelTexDataB",
     xref("Level_LoadStateMachine", 0x68, 0x1),
     type="void*",
     doc="Opaque second level package-entry buffer loaded from TOC entry 0x25 + level_index * 3 by Level_LoadStateMachine stage 2.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("debug_logging_enabled", xref("PKG_FixUpResourceLevelPointers", 0x0, 0x1))
 stable.data(
-    "pkg_file_handle",
+    "PKG_FixUpResourceLevelPointers_DebugLoggingEnabled",
+    xref("PKG_FixUpResourceLevelPointers", 0x0, 0x1),
+)
+stable.data(
+    "PKG_LoadEntry_FileHandle",
     xref("PKG_LoadEntry", 0x4C, 0x1),
     type="File_Handle*",
     doc="Open package File_Handle consumed by PKG_LoadEntry while reading aligned package entries.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_toc",
+    "PKG_LoadEntry_Toc",
     xref("PKG_LoadEntry", 0x45, 0x3),
     type="PKG_TOCEntry",
     doc=(
         "Base of the 0x8a-entry / 0x450-byte package table of contents at "
         "pcdogs.exe+0x9CA80 (PC EN); each 8-byte PKG_TOCEntry stores file offset and size."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "pkg_toc_file_sizes",
+    "PKG_LoadEntry_TocFileSizes",
     xref("PKG_LoadEntry", 0x7, 0x3),
     type="uint32_t",
     doc=(
         "Size-field view at pkg_toc + 4 (PC EN) used by PKG_LoadEntry; this overlaps the "
         "PKG_TOCEntry.size lane within the package TOC allocation."
     ),
+    write_policy=WritePolicy.READ_ONLY,
 )
-stable.data("tree_map_buckets", xref("Tree_RebalanceMap", 0x15, 0x3))
-stable.data("signal_timed_list_head", xref("Timer_ClearEventList", 0x0, 0x2))
-stable.data("signal_queue_count", xref("Input_ClearEventQueue", 0x0, 0x2))
-stable.data("signal_queue", xref("Signal_Poll", 0x1D, 0x1))
+stable.data("Tree_RebalanceMap_Buckets", xref("Tree_RebalanceMap", 0x15, 0x3))
 stable.data(
-    "audio_sound_playback_rate_table",
+    "Timer_ClearEventList_SignalTimedListHead", xref("Timer_ClearEventList", 0x0, 0x2)
+)
+stable.data(
+    "Input_ClearEventQueue_SignalQueueCount", xref("Input_ClearEventQueue", 0x0, 0x2)
+)
+stable.data("Signal_Poll_Queue", xref("Signal_Poll", 0x1D, 0x1))
+stable.data(
+    "Audio_ProcessSoundQueue_PlaybackRateTable",
     xref("Audio_ProcessSoundQueue", 0x1F2, 0x4),
     type="uint16_t",
     doc="First halfword/base of the 9-entry sound pitch/playback-rate cache used before AIL_set_sample_playback_rate.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_entries",
+    "Audio_FreeSoundSlot_Entries",
     xref("Audio_FreeSoundSlot", 0xA, 0x1),
     type="Audio_SoundEntry",
     doc="Base of the nine-entry active/free sound-entry pool; Audio_AllocateSoundSlot computes slot indices from this base with stride 0x30.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_slot_reserved",
+    "Audio_AllocateSoundSlot_Reserved",
     xref("Audio_AllocateSoundSlot", 0x11, 0x1),
     type="Audio_SoundEntry",
     doc="Ninth Audio_SoundEntry at sound_entries[8], reserved for Audio_SoundDefinition flags bit 0x80 before being linked into the active list.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_active_sound_list",
+    "Audio_FreeSoundSlot_ActiveSoundList",
     xref("Audio_FreeSoundSlot", 0x33, 0x2),
     type="Audio_SoundEntry*",
     doc="Head pointer for the doubly linked active Audio_SoundEntry list maintained by Audio_AllocateSoundSlot and Audio_FreeSoundSlot.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_slot_tail",
+    "Audio_FreeSoundSlot_Tail",
     xref("Audio_FreeSoundSlot", 0x4A, 0x2),
     type="Audio_SoundEntry*",
     doc="Tail pointer for the active Audio_SoundEntry list; new allocated entries are appended here.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_slot_list_ptr",
+    "Audio_FreeSoundSlot_ListPtr",
     xref("Audio_FreeSoundSlot", 0x5C, 0x2),
     type="Audio_SoundEntry*",
     doc="Head pointer for the free Audio_SoundEntry list read by Audio_AllocateSoundSlot and replenished by Audio_FreeSoundSlot.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_sound_timer",
+    "Audio_UpdateSoundChannels_Timer",
     xref("Audio_UpdateSoundChannels", 0xA3, 0x1),
     type="int32_t",
     doc="Last Timer_GetElapsedTickCount value captured by Audio_UpdateSoundChannels for per-channel sound timing updates.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "replay_input_ptr",
+    "Replay_StartDemoPlayback_InputPtr",
     xref("Replay_StartDemoPlayback", 0xE, 0x2),
     type="int32_t*",
     doc="Pointer to the current demo replay input-frame stream, loaded from replay_data[1] by Replay_StartDemoPlayback when replay playback begins.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "frame_counter",
+    "Audio_TriggerMusicTransition_FrameCounter",
     xref("Audio_TriggerMusicTransition", 0x60, 0x2),
     type="int32_t",
     doc="Data frame counter used by music fade/transition timing and other frame-based game state checks.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_system_flags",
+    "Audio_TriggerMusicTransition_InputSystemFlags",
     xref("Audio_TriggerMusicTransition", 0xC, 0x2),
     type="uint32_t",
     doc=(
@@ -15159,78 +16298,118 @@ stable.data(
         "rendering, bit 0x4000 requests Level_Load, bit 0x04 marks post-load actor/audio initialization, and "
         "bit 0x02 allows active scene update/render."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "string_table",
+    "String_SetTable_Table",
     xref("String_SetTable", 0x4, 0x1),
     type="int16_t*",
     doc="Active package/localization string table pointer consumed by String_GetByIndex; split from input button-name buffers.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_button_name_buffers",
+    "Menu_RenderFormattedText_InputButtonNameBuffers",
     xref("Menu_RenderFormattedText", 0x32, 0x3),
     type="char*",
     doc="First entry/base of the heap-allocated input button-name buffer pointer array.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("title_spots_active_count", xref("Title_InitializeSpots", 0xE, 0x3))
 stable.data(
-    "audio_title_music_data",
+    "Title_InitializeSpots_ActiveCount",
+    xref("Title_InitializeSpots", 0xE, 0x3),
+)
+stable.data(
+    "PKG_LoadTitleScreenResources_AudioTitleMusicData",
     xref("PKG_LoadTitleScreenResources", 0x97, 0x2),
     type="int32_t*",
     doc="Title-screen music stream-record pointer loaded from the title package and armed by Audio_StartMusicWithFade.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_title_material_base", xref("PKG_LoadTitleScreenResources", 0x55, 0x2)
+    "PKGResourceTitleMaterialBase", xref("PKG_LoadTitleScreenResources", 0x55, 0x2)
 )
-stable.data("title_spots_cycle_length", xref("Title_InitializeSpots", 0x1A6, 0x2))
-stable.data("title_screen_counter", xref("Title_UpdateAndRenderScreen", 0x82, 0x3))
-stable.data("title_spots_material_index", xref("Title_InitializeSpots", 0x3F, 0x1))
 stable.data(
-    "pkg_resource_title_package", xref("PKG_LoadTitleScreenResources", 0x3E, 0x1)
+    "Title_InitializeSpots_CycleLength",
+    xref("Title_InitializeSpots", 0x1A6, 0x2),
 )
-stable.data("title_screen_fade_level", xref("Title_UpdateAndRenderScreen", 0xA8, 0x3))
-stable.data("title_spots_data_array", xref("Title_InitializeSpots", 0x17, 0x1))
-stable.data("title_spots_timer_array", xref("Title_InitializeSpots", 0x152, 0x4))
 stable.data(
-    "pkg_resource_title_bonus_replay_resource",
+    "Title_UpdateAndRenderScreen_Counter",
+    xref("Title_UpdateAndRenderScreen", 0x82, 0x3),
+)
+stable.data(
+    "Title_InitializeSpots_MaterialIndex",
+    xref("Title_InitializeSpots", 0x3F, 0x1),
+)
+stable.data("PKGResourceTitlePackage", xref("PKG_LoadTitleScreenResources", 0x3E, 0x1))
+stable.data(
+    "Title_UpdateAndRenderScreen_FadeLevel",
+    xref("Title_UpdateAndRenderScreen", 0xA8, 0x3),
+)
+stable.data(
+    "Title_InitializeSpots_DataArray",
+    xref("Title_InitializeSpots", 0x17, 0x1),
+)
+stable.data(
+    "Title_InitializeSpots_TimerArray",
+    xref("Title_InitializeSpots", 0x152, 0x4),
+)
+stable.data(
+    "Title_CleanupScreenResources_PKGResourceTitleBonusReplayResource",
     xref("Title_CleanupScreenResources", 0xC, 0x1),
 )
-stable.data("title_screen_state", xref("Title_UpdateAndRenderScreen", 0x10, 0x3))
 stable.data(
-    "pkg_resource_title_handle_1", xref("PKG_LoadTitleScreenResources", 0x24, 0x1)
+    "Title_UpdateAndRenderScreen_State",
+    xref("Title_UpdateAndRenderScreen", 0x10, 0x3),
+)
+stable.data("PKGResourceTitleHandle1", xref("PKG_LoadTitleScreenResources", 0x24, 0x1))
+stable.data("PKGResourceTitleHandle0", xref("PKG_LoadTitleScreenResources", 0xC, 0x1))
+stable.data("Title_UpdateSpots_SoundID", xref("Title_UpdateSpots", 0x5C, 0x1))
+stable.data(
+    "Title_InitializeSpots_FrameCounter",
+    xref("Title_InitializeSpots", 0x7, 0x3),
+)
+stable.data("Mem_AllocateHandle_Pool", xref("Mem_AllocateHandle", 0x52, 0x2))
+stable.data(
+    "Mem_InitializeAllocator_HandlePoolHandleID",
+    xref("Mem_InitializeAllocator", 0xA, 0x1),
 )
 stable.data(
-    "pkg_resource_title_handle_0", xref("PKG_LoadTitleScreenResources", 0xC, 0x1)
+    "Mem_InitializeAllocator_HeapAllocatorInitialized",
+    xref("Mem_InitializeAllocator", 0x2D, 0x2),
 )
-stable.data("title_spots_sound_id", xref("Title_UpdateSpots", 0x5C, 0x1))
-stable.data("title_spots_frame_counter", xref("Title_InitializeSpots", 0x7, 0x3))
-stable.data("mem_handle_pool", xref("Mem_AllocateHandle", 0x52, 0x2))
-stable.data("mem_handle_pool_handle_id", xref("Mem_InitializeAllocator", 0xA, 0x1))
 stable.data(
-    "mem_heap_allocator_initialized", xref("Mem_InitializeAllocator", 0x2D, 0x2)
+    "Mem_AllocateHandle_PoolHead", xref("Mem_AllocateHandle", 0x1, 0x2)
 )
-stable.data("mem_handle_pool_head", xref("Mem_AllocateHandle", 0x1, 0x2))
 stable.data(
-    "input_state_buffer",
+    "Input_ClearState_Buffer",
     xref("Input_ClearState", 0x8, 0x1),
     type="uint8_t[0x100]",
     doc=(
         "0x100-byte raw input/VK state clear buffer zeroed by Input_ClearState. "
         "Public fixed-array accessors use pointer-to-array read/write signatures."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("display_current_mode", xref("Display_IsActive", 0x0, 0x2))
+stable.data("Display_IsActive_CurrentMode", xref("Display_IsActive", 0x0, 0x2))
 stable.data(
-    "string_float_format_precision", xref("String_ConvertFloatToExponential", 0x11, 0x1)
+    "String_ConvertFloatToExponential_FormatPrecision",
+    xref("String_ConvertFloatToExponential", 0x11, 0x1),
 )
 stable.data(
-    "string_float_format_flags", xref("String_ConvertFloatToExponential", 0x3, 0x2)
+    "String_ConvertFloatToExponential_FormatFlags",
+    xref("String_ConvertFloatToExponential", 0x3, 0x2),
 )
-stable.data("mem_debug_enabled", xref("Mem_AllocateHandle", 0x69, 0x2))
-stable.data("camera_data", xref("Level_InitializeActorSystem", 0x1FD, 0x1))
-stable.data("player_facing_angle", xref("Player_ProcessMovement", 0x159, 0x3))
+stable.data("Mem_AllocateHandle_DebugEnabled", xref("Mem_AllocateHandle", 0x69, 0x2))
 stable.data(
-    "camera_yaw_angle",
+    "Level_InitializeActorSystem_CameraData",
+    xref("Level_InitializeActorSystem", 0x1FD, 0x1),
+)
+stable.data(
+    "Player_ProcessMovement_FacingAngle",
+    xref("Player_ProcessMovement", 0x159, 0x3),
+)
+stable.data(
+    "Player_ProcessMovement_CameraYawAngle",
     xref("Player_ProcessMovement", 0x162, 0x3),
     type="uint32_t",
     doc=(
@@ -15238,53 +16417,69 @@ stable.data(
         "the signed yaw angle; the low 16 bits are reserved, and a zero high word is "
         "a valid yaw sample."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("camera_viewport_height", xref("Camera_SetViewport", 0x36, 0x2))
-stable.data("camera_far_clip_plane", xref("Camera_SetViewport", 0x3C, 0x2))
 stable.data(
-    "checkers_player_1_camera_pos",
+    "Camera_SetViewport_Height", xref("Camera_SetViewport", 0x36, 0x2)
+)
+stable.data(
+    "Camera_SetViewport_FarClipPlane", xref("Camera_SetViewport", 0x3C, 0x2)
+)
+stable.data(
+    "Checkers_UpdateStateMachine_Player1CameraPos",
     xref("Checkers_UpdateStateMachine", 0x73, 0x6),
     type="Math_Vec3I32",
     doc="Primary listener/camera position vector at pcdogs.exe+0x224350 (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is set.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "player_2_camera_pos",
+    "Audio_PlaySoundDefinition3D_Player2CameraPos",
     xref("Audio_PlaySoundDefinition3D", 0x67, 0x1),
     type="Math_Vec3I32",
     doc="Alternate listener/camera position vector at pcdogs.exe+0x22435C (PC EN); used by positional-audio panning when input_system_flags bit 0x10 is clear.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("graphics_flags", xref("PKG_InitializeSystem", 0x14, 0x2))
 stable.data(
-    "pkg_resource_level_init_callback_2",
+    "PKG_InitializeSystem_GraphicsFlags", xref("PKG_InitializeSystem", 0x14, 0x2)
+)
+stable.data(
+    "PKG_UnloadResourceGameData_LevelInitCallback2",
     xref("PKG_UnloadResourceGameData", 0x43, 0x2),
     doc=(
         "Untyped native level cleanup/init callback slot touched by PKG_UnloadResourceGameData. "
         "Kept engine-managed and untyped until the callback signature is proven."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "pkg_resource_level_init_callback_1",
+    "PKG_UnloadResourceGameData_LevelInitCallback1",
     xref("PKG_UnloadResourceGameData", 0x3D, 0x2),
     doc=(
         "Untyped native level cleanup/init callback slot touched by PKG_UnloadResourceGameData. "
         "Kept engine-managed and untyped until the callback signature is proven."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("vertex_batch_buffer", xref("Scene_RenderFrame", 0x57A, 0x1))
 stable.data(
-    "input_state_previous_p_1",
+    "Scene_RenderFrame_VertexBatchBuffer", xref("Scene_RenderFrame", 0x57A, 0x1)
+)
+stable.data(
+    "Menu_UpdateInput_StatePreviousP1",
     xref("Menu_UpdateInput", 0x0, 0x2),
     doc=(
         "First/base byte of the two-player previous Input_State snapshot rows at pcdogs.exe+0x234420 "
         "(PC EN); player 2 follows at +0x0C (PC EN). Scalar aliases overlap the row."
     ),
 )
-stable.data("input_toggle_mask_p_1", xref("Menu_ProcessMenuState", 0x1A2, 0x2))
 stable.data(
-    "replay_saved_random_seed", xref("Replay_StartDemoPlayback", 0x1E, 0x1)
+    "Menu_ProcessMenuState_InputToggleMaskP1", xref("Menu_ProcessMenuState", 0x1A2, 0x2)
 )
 stable.data(
-    "input_state_current_p_1",
+    "Replay_StartDemoPlayback_SavedRandomSeed",
+    xref("Replay_StartDemoPlayback", 0x1E, 0x1),
+)
+stable.data(
+    "Camera_CalculateFollowAngles_InputStateCurrentP1",
     xref("Camera_CalculateFollowAngles", 0x33C, 0x2),
     doc=(
         "First/base byte of the two-player current Input_State snapshot rows at pcdogs.exe+0x234460 "
@@ -15292,7 +16487,7 @@ stable.data(
     ),
 )
 stable.data(
-    "input_current_x",
+    "InputCurrentX",
     xref("Input_CalculateMovementVector", 0xAD, 0x3),
     xref("Input_Update", 0x9E, 0x1),
     doc=(
@@ -15300,677 +16495,1021 @@ stable.data(
         "Input_CalculateMovementVector."
     ),
 )
-stable.data("replay_data", xref("Replay_LoadDemoBonusReplay", 0x24, 0x1))
 stable.data(
-    "graphics_render_color_adjustment_flag", xref("Graphics_RenderMeshNode", 0x6D8, 0x2)
+    "Replay_LoadDemoBonusReplay_Data",
+    xref("Replay_LoadDemoBonusReplay", 0x24, 0x1),
 )
 stable.data(
-    "script_current_actor",
-    xref("Script_MoveToTarget", 0x87, 0x2),
+    "Graphics_RenderMeshNode_ColorAdjustmentFlag",
+    xref("Graphics_RenderMeshNode", 0x6D8, 0x2),
+)
+stable.data(
+    "Script_OpMoveToTarget_CurrentActor",
+    xref("Script_OpMoveToTarget", 0x87, 0x2),
     type="Actor_State*",
     doc=(
         "Script-dispatch current actor context written by Script_ExecuteBehaviorScript "
         "and read by script command handlers; engine-managed transient state."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("script_entity_index", xref("Script_CheckTerminator", 0x116, 0x1))
 stable.data(
-    "model_physics_callback_table",
+    "Script_OpCheckTerminator_EntityIndex",
+    xref("Script_OpCheckTerminator", 0x116, 0x1),
+)
+stable.data(
+    "Model_UpdateTransformAndPhysics_CallbackTable",
     xref("Model_UpdateTransformAndPhysics", 0x8F9, 0x3),
     type="Actor_BehaviorCallback",
     doc="First slot/base of the eight-slot model/physics callback vector at pcdogs.exe+0x2344A0 (PC EN)..pcdogs.exe+0x2344BC (PC EN).",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "behavior_process_actor_func",
+    "Level_InitializeActorSystem_BehaviorProcessActorFunc",
     xref("Level_InitializeActorSystem", 0x2F, 0x2),
     type="Actor_BehaviorCallback",
     doc="Actor behavior dispatch callback initialized by Level_InitializeActorSystem.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "behavior_process_projectile_func",
+    "Collision_InitializeFunctionPointers_BehaviorProcessProjectileFunc",
     xref("Collision_InitializeFunctionPointers", 0x14, 0x2),
     type="Actor_BehaviorCallback",
     doc=(
         "Projectile behavior lifecycle callback slot initialized to "
         "Collision_ProcessProjectileLifecycle; the native return is data-var status."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "behavior_process_snap_func",
+    "Level_InitializeActorSystem_BehaviorProcessSnapFunc",
     xref("Level_InitializeActorSystem", 0x39, 0x2),
     doc="Snap/entity update callback slot initialized to Actor_ProcessSnapAndEntityUpdate.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "behavior_target_actor",
+    "Graphics_InitializeDispatchTables_BehaviorTargetActor",
     xref("Graphics_InitializeDispatchTables", 0x31, 0x2),
     type="Actor_BehaviorCallback",
     doc="Behavior/movement callback slot initialized to Actor_ApplyVerticalMovement by Graphics_InitializeDispatchTables.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "behavior_param_0",
+    "Graphics_InitializeDispatchTables_BehaviorParam0",
     xref("Graphics_InitializeDispatchTables", 0x3B, 0x2),
     type="Actor_BehaviorCallback",
     doc="Behavior/movement callback slot initialized to Actor_ProcessMovementCommands by Graphics_InitializeDispatchTables.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "behavior_param_1",
+    "Graphics_InitializeDispatchTables_BehaviorParam1",
     xref("Graphics_InitializeDispatchTables", 0x45, 0x2),
     type="Actor_BehaviorCallback",
     doc="Behavior/movement callback slot initialized to Actor_FollowAttachedMovement by Graphics_InitializeDispatchTables.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "behavior_param_2",
+    "Graphics_InitializeDispatchTables_BehaviorParam2",
     xref("Graphics_InitializeDispatchTables", 0x4F, 0x2),
     type="Actor_BehaviorCallback",
     doc="Behavior/movement callback slot initialized to Actor_ProcessMovementBehavior by Graphics_InitializeDispatchTables.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "powerup_update_func",
+    "Powerup_InitializeSystem_UpdateFunc",
     xref("Powerup_InitializeSystem", 0x9, 0x2),
     type="Powerup_UpdateCallback",
     doc="Powerup actor update callback slot initialized by Powerup_InitializeSystem.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "movement_handler_table",
+    "Physics_UpdateActorPreprocess_MovementHandlerTable",
     xref("Physics_UpdateActorPreprocess", 0x8D, 0x3),
     type="Actor_BehaviorCallback",
     doc="Read-only base of the movement handler callback table indexed by actor movement/collision state at pcdogs.exe+0x2344D0 (PC EN). unload_delay_counter at pcdogs.exe+0x2344DC (PC EN) bounds the known range.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "player_movement_func",
+    "Level_InitializeActorSystem_PlayerMovementFunc",
     xref("Level_InitializeActorSystem", 0x25, 0x2),
     type="Actor_BehaviorCallback",
     doc="Player movement callback slot initialized by Level_InitializeActorSystem.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "projectile_logic_func",
+    "Collision_InitializeFunctionPointers_ProjectileLogicFunc",
     xref("Collision_InitializeFunctionPointers", 0x0, 0x2),
     doc="Projectile behavior lifecycle callback slot initialized to Collision_ProcessProjectileLifecycle.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("unload_delay_counter", xref("Menu_RenderSaveGame", 0x5D, 0x1))
 stable.data(
-    "powerup_actor_list_head",
+    "Menu_RenderSaveGame_UnloadDelayCounter", xref("Menu_RenderSaveGame", 0x5D, 0x1)
+)
+stable.data(
+    "Collision_ProcessPowerupCollisions_ActorListHead",
     xref("Collision_ProcessPowerupCollisions", 0x9, 0x2),
     doc=(
         "Live powerup actor list head linked by Powerup_CloneActor. Powerup collision "
         "handling and clone-source templates use separate SDK symbols."
     ),
 )
-stable.data("powerup_spawn_delay", xref("Powerup_HandleCollection", 0x5C, 0x2))
-stable.data("graphics_capabilities", xref("Graphics_ProcessMeshCommands", 0x3B, 0x2))
 stable.data(
-    "pkg_base_path",
+    "Powerup_HandleCollection_SpawnDelay",
+    xref("Powerup_HandleCollection", 0x5C, 0x2),
+)
+stable.data(
+    "Graphics_ProcessMeshCommands_Capabilities",
+    xref("Graphics_ProcessMeshCommands", 0x3B, 0x2),
+)
+stable.data(
+    "Audio_OpenStream_PKGBasePath",
     xref("Audio_OpenStream", 0x22, 0x1),
     type="char[0x104]",
     doc="Mutable NUL-terminated package base path buffer used to build package and data/music stream paths.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("graphics_batch_triangle_count", xref("Graphics_IsQuadClipped", 0x81D, 0x2))
-stable.data("window_main_instance_handle", xref("Window_RunWinMain", 0x21C, 0x1))
 stable.data(
-    "graphics_batch_primitive_count", xref("Graphics_IsQuadClipped", 0x7CF, 0x1)
+    "Graphics_IsQuadClipped_BatchTriangleCount",
+    xref("Graphics_IsQuadClipped", 0x81D, 0x2),
 )
-stable.data("window_accelerator_table", xref("Input_ProcessWindowMessages", 0x8B, 0x1))
-stable.data("window_main_show_cmd", xref("Window_RunWinMain", 0x18C, 0x2))
-stable.data("graphics_render_frame_count", xref("Graphics_DrawQuad", 0xB9D, 0x2))
-stable.data("string_localization_language_id", xref("String_GetByIndex", 0xA1, 0x1))
-stable.data("string_table_loaded", xref("String_GetByIndex", 0x7C, 0x1))
-stable.data("string_menu_buffer_ptr", xref("Menu_RenderConfirmPrompt", 0x50, 0x2))
-stable.data("string_table_size", xref("String_GetByIndex", 0x61, 0x2))
 stable.data(
-    "input_no_key_assigned_string",
+    "Window_RunWinMain_InstanceHandle", xref("Window_RunWinMain", 0x21C, 0x1)
+)
+stable.data(
+    "Graphics_IsQuadClipped_BatchPrimitiveCount",
+    xref("Graphics_IsQuadClipped", 0x7CF, 0x1),
+)
+stable.data(
+    "Input_ProcessWindowMessages_AcceleratorTable",
+    xref("Input_ProcessWindowMessages", 0x8B, 0x1),
+)
+stable.data(
+    "Window_RunWinMain_ShowCmd", xref("Window_RunWinMain", 0x18C, 0x2)
+)
+stable.data(
+    "Graphics_DrawQuad_RenderFrameCount", xref("Graphics_DrawQuad", 0xB9D, 0x2)
+)
+stable.data(
+    "String_GetByIndex_LocalizationLanguageID",
+    xref("String_GetByIndex", 0xA1, 0x1),
+)
+stable.data("String_GetByIndex_TableLoaded", xref("String_GetByIndex", 0x7C, 0x1))
+stable.data(
+    "Menu_RenderConfirmPrompt_StringMenuBufferPtr",
+    xref("Menu_RenderConfirmPrompt", 0x50, 0x2),
+)
+stable.data("String_GetByIndex_TableSize", xref("String_GetByIndex", 0x61, 0x2))
+stable.data(
+    "Input_FormatButtonName_NoKeyAssignedString",
     xref("Input_FormatButtonName", 0x5C, 0x1),
     type="char*",
     doc=(
         'Cached heap string for "No key assigned"; slot 12 of input_button_name_buffers aliases this '
         "address, but the label remains a separate symbol."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "ui_initialized_flag",
+    "UIInitializedFlag",
     xref("Menu_AnimateSlots", 0x124, 0x1),
     xref("UI_Update", 0x0, 0x1),
 )
-stable.data("graphics_render_frame_index", xref("Graphics_RenderFrame", 0x122, 0x2))
 stable.data(
-    "input_mapping_count",
+    "Graphics_RenderFrame_Index",
+    xref("Graphics_RenderFrame", 0x122, 0x2),
+)
+stable.data(
+    "Input_RegisterButtonMapping_Count",
     xref("Input_RegisterButtonMapping", 0x1A, 0x2),
     type="int32_t",
     doc="Number of entries in the keyboard_mapping_keys/keyboard_mapping_buttons arrays.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_y_negative_mask",
+    "Input_ReadGamepad_AxisYNegativeMask",
     xref("Input_ReadGamepad", 0x86, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3e8; ORed when DIJOYSTATE.lY < -700.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_y_positive_mask",
+    "Input_ReadGamepad_AxisYPositiveMask",
     xref("Input_ReadGamepad", 0x9A, 0x1),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3e9; ORed when DIJOYSTATE.lY > 700.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_x_negative_mask",
+    "Input_ReadGamepad_AxisXNegativeMask",
     xref("Input_ReadGamepad", 0x5F, 0x1),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ea; ORed when DIJOYSTATE.lX < -700.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_x_positive_mask",
+    "Input_ReadGamepad_AxisXPositiveMask",
     xref("Input_ReadGamepad", 0x72, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3eb; ORed when DIJOYSTATE.lX > 700.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_rz_negative_mask",
+    "Input_ReadGamepad_AxisRzNegativeMask",
     xref("Input_ReadGamepad", 0x1F5, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ec; ORed when DIJOYSTATE.lRz < -600.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_axis_rz_positive_mask",
+    "Input_ReadGamepad_AxisRzPositiveMask",
     xref("Input_ReadGamepad", 0x209, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ed; ORed when DIJOYSTATE.lRz > 600.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_0_mask",
+    "Input_ReadGamepad_Button0Mask",
     xref("Input_ReadGamepad", 0x229, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ee; ORed when DIJOYSTATE.rgbButtons[0] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_1_mask",
+    "Input_ReadGamepad_Button1Mask",
     xref("Input_ReadGamepad", 0x24A, 0x1),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ef; ORed when DIJOYSTATE.rgbButtons[1] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_2_mask",
+    "Input_ReadGamepad_Button2Mask",
     xref("Input_ReadGamepad", 0x26A, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f0; ORed when DIJOYSTATE.rgbButtons[2] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_3_mask",
+    "Input_ReadGamepad_Button3Mask",
     xref("Input_ReadGamepad", 0x28A, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f1; ORed when DIJOYSTATE.rgbButtons[3] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_4_mask",
+    "Input_ReadGamepad_Button4Mask",
     xref("Input_ReadGamepad", 0x2AB, 0x1),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f2; ORed when DIJOYSTATE.rgbButtons[4] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_5_mask",
+    "Input_ReadGamepad_Button5Mask",
     xref("Input_ReadGamepad", 0x2CB, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f3; ORed when DIJOYSTATE.rgbButtons[5] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_6_mask",
+    "Input_ReadGamepad_Button6Mask",
     xref("Input_ReadGamepad", 0x2EB, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f4; ORed when DIJOYSTATE.rgbButtons[6] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_7_mask",
+    "Input_ReadGamepad_Button7Mask",
     xref("Input_ReadGamepad", 0x30C, 0x1),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f5; ORed when DIJOYSTATE.rgbButtons[7] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_8_mask",
+    "Input_ReadGamepad_Button8Mask",
     xref("Input_ReadGamepad", 0x32C, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f6; ORed when DIJOYSTATE.rgbButtons[8] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_9_mask",
+    "Input_ReadGamepad_Button9Mask",
     xref("Input_ReadGamepad", 0x34C, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f7; ORed when DIJOYSTATE.rgbButtons[9] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_10_mask",
+    "Input_ReadGamepad_Button10Mask",
     xref("Input_ReadGamepad", 0x36D, 0x1),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f8; ORed when DIJOYSTATE.rgbButtons[10] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_11_mask",
+    "Input_ReadGamepad_Button11Mask",
     xref("Input_ReadGamepad", 0x38D, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3f9; ORed when DIJOYSTATE.rgbButtons[11] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_gamepad_button_12_mask",
+    "Input_ReadGamepad_Button12Mask",
     xref("Input_ReadGamepad", 0x3AD, 0x2),
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3fa; ORed when DIJOYSTATE.rgbButtons[12] is pressed.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "display_menu_setting",
+    "Menu_HandleOptionsLogic_DisplayMenuSetting",
     xref("Menu_HandleOptionsLogic", 0x37F, 0x1),
     type="uint8_t",
     doc="Saved display/detail setting byte from pcdogs.ini; clamped to 0..10 before being applied.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_player_1_controls",
+    "Config_ApplySettings_InputPlayer1Controls",
     xref("Config_ApplySettings", 0x77, 0x2),
     type="int32_t",
     doc=(
         "First dword/base of the 13-dword player-1 pcdogs.ini binding block; Config_ApplySettings applies "
         "the first 10 normal mappings."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_player_1_down_key", xref("Input_InitializeButtonMappings", 0x167, 0x2)
+    "Input_InitializeButtonMappings_Player1DownKey",
+    xref("Input_InitializeButtonMappings", 0x167, 0x2),
 )
 stable.data(
-    "input_button_map",
+    "Input_InitializeButtonMappings_Map",
     xref("Input_InitializeButtonMappings", 0x171, 0x2),
     type="int32_t[8]",
     doc="Eight adjacent player-1 button mapping dwords after the down-key entry.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_special_button",
+    "Config_ApplySettings_InputSpecialButton",
     xref("Config_ApplySettings", 0x8F, 0x2),
     type="int32_t",
     doc="Additional pcdogs.ini button binding mapped to Input_State mask 0x4000; defaults to VK_SPACE (0x20) when unset.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_player_2_controls",
+    "Config_ApplySettings_InputPlayer2Controls",
     xref("Config_ApplySettings", 0x57, 0x2),
     type="int32_t",
     doc=(
         "First dword/base of the 13-dword player-2/gamepad pcdogs.ini binding block; Config_ApplySettings "
         "applies the first 10 normal mappings."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_player_2_down_button", xref("Input_InitializeButtonMappings", 0x1D5, 0x2)
+    "Input_InitializeButtonMappings_Player2DownButton",
+    xref("Input_InitializeButtonMappings", 0x1D5, 0x2),
 )
 stable.data(
-    "input_button_map_alt",
+    "Input_InitializeButtonMappings_MapAlt",
     xref("Input_InitializeButtonMappings", 0x1DF, 0x2),
     type="int32_t[8]",
     doc="Eight adjacent player-2/gamepad button mapping dwords after the down-button entry.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "file_config_path",
+    "Video_PlayMovieIntro_FileConfigPath",
     xref("Video_PlayMovieIntro", 0x8E, 0x2),
     type="int32_t",
     doc="Post-config-block dword used as the exclusive end sentinel for pcdogs.ini control binding loops and zeroed on the AVI movie path.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_level_material_section",
+    "PKG_FixUpResourceModelNode_LevelMaterialSection",
     xref("PKG_FixUpResourceModelNode", 0x115, 0x1),
     type="Material_SectionHeader*",
     doc="Active level material section header/base used while rebasing model-node material references.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_level_blob_ptr",
+    "PKG_FixUpResourceObjectNode_LevelBlobPtr",
     xref("PKG_FixUpResourceObjectNode", 0xC, 0x2),
     type="uint32_t*",
     doc=(
         "Active level blob relocation base loaded from TOC entry 0x26 + level_index * 3; used while rebasing "
         "material/object/level relative offsets and returned by Level_LoadStateMachine after final fixups."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("shadow_render_list", xref("Graphics_ClearShadowList", 0x0, 0x2))
-stable.data("powerup_collision_list_head", xref("Script_PauseToggle", 0x1D3, 0x1))
 stable.data(
-    "collision_state_handler_table",
+    "Graphics_ClearShadowList_RenderList",
+    xref("Graphics_ClearShadowList", 0x0, 0x2),
+)
+stable.data(
+    "Script_OpPauseToggle_PowerupCollisionListHead",
+    xref("Script_OpPauseToggle", 0x1D3, 0x1),
+)
+stable.data(
+    "Collision_ProcessActorToActorCollisions_StateHandlerTable",
     xref("Collision_ProcessActorToActorCollisions", 0xC6, 0x3),
     type="Collision_ProcessCallback",
     doc="Read-only first entry/base of the collision-state callback table indexed by actor collision subtype; slot 2 aliases collision_process_func.",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "collision_process_func",
+    "Level_InitializeActorSystem_CollisionProcessFunc",
     xref("Level_InitializeActorSystem", 0x1B, 0x2),
     type="Collision_ProcessCallback",
     doc="Engine-managed scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
-)
-stable.data("debug_polygon_counts", xref("Graphics_IsPolygonInDebugList", 0x0, 0x1))
-stable.data(
-    "powerup_active_list_head", xref("Graphics_IsPolygonInDebugList", 0x27, 0x3)
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "pkg_resource_material_buffer_offset",
+    "Graphics_IsPolygonInDebugList_Counts",
+    xref("Graphics_IsPolygonInDebugList", 0x0, 0x1),
+)
+stable.data(
+    "Graphics_IsPolygonInDebugList_PowerupActiveListHead",
+    xref("Graphics_IsPolygonInDebugList", 0x27, 0x3),
+)
+stable.data(
+    "Shared_LoadCommonResources_PKGResourceMaterialBufferOffset",
     xref("Shared_LoadCommonResources", 0xC4, 0x2),
     type="Material_FrameSet*",
     doc="Cursor into shared material frame-set storage advanced by Material_BuildTextureArray.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("screen_fade_duration", xref("Player_RespawnAfterDeath", 0x69, 0x2))
-stable.data("screen_fade_counter", xref("Audio_ProcessMusicFade", 0x47, 0x1))
-stable.data("is_loading_level", xref("Player_RespawnAfterDeath", 0x58, 0x2))
 stable.data(
-    "menu_level_index",
+    "Player_RespawnAfterDeath_ScreenFadeDuration",
+    xref("Player_RespawnAfterDeath", 0x69, 0x2),
+)
+stable.data(
+    "Audio_ProcessMusicFade_ScreenFadeCounter",
+    xref("Audio_ProcessMusicFade", 0x47, 0x1),
+)
+stable.data(
+    "Player_RespawnAfterDeath_IsLoadingLevel",
+    xref("Player_RespawnAfterDeath", 0x58, 0x2),
+)
+stable.data(
+    "Menu_ProcessMenuTransition_LevelIndex",
     xref("Menu_ProcessMenuTransition", 0x57, 0x2),
     type="int16_t",
     doc="Menu/load level index. Cross-check against player_current_level_id before using it as live runtime state.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("rendering_state_flag", xref("Level_InitializeActorSystem", 0x102, 0x3))
 stable.data(
-    "pkg_resource_shared_material_section",
+    "Level_InitializeActorSystem_RenderingStateFlag",
+    xref("Level_InitializeActorSystem", 0x102, 0x3),
+)
+stable.data(
+    "Shared_LoadCommonResources_PKGResourceSharedMaterialSection",
     xref("Shared_LoadCommonResources", 0x0, 0x1),
     type="Material_SectionHeader*",
     doc="Shared/common material section header/base loaded by Shared_LoadCommonResources.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_controller_hammerhead_name", xref("Menu_RenderMusicSelection", 0x1A, 0x1)
+    "Menu_RenderMusicSelection_InputControllerHammerheadName",
+    xref("Menu_RenderMusicSelection", 0x1A, 0x1),
 )
 stable.data(
-    "input_controller_hammerhead_buttons",
+    "Menu_HandleOptionsLogic_InputControllerHammerheadButtons",
     xref("Menu_HandleOptionsLogic", 0x154, 0x3),
     type="int32_t[10]",
     doc="Ten adjacent Hammerhead button preset dwords inside a 0x8c-byte controller profile record.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_controller_sidewinder_buttons",
+    "Input_InitializeControllerMappings_SidewinderButtons",
     xref("Input_InitializeControllerMappings", 0x94, 0x2),
     type="int32_t[10]",
     doc="Ten adjacent SideWinder button preset dwords inside a 0x8c-byte controller profile record.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_controller_gravis_buttons",
+    "Input_InitializeControllerMappings_GravisButtons",
     xref("Input_InitializeControllerMappings", 0xF7, 0x2),
     type="int32_t[10]",
     doc="Ten adjacent Gravis button preset dwords inside a 0x8c-byte controller profile record.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_controller_wingman_button_ref",
+    "Input_InitializeControllerMappings_WingmanButtonRef",
     xref("Input_InitializeControllerMappings", 0x16E, 0x2),
     type="int32_t",
     doc=(
         "One validated WingMan button preset dword. The surrounding WingMan writes are "
         "not grouped because their xref order does not prove a contiguous public array."
     ),
-)
-stable.data("pkg_resource_font_data_ptr", xref("Shared_LoadCommonResources", 0xB8, 0x2))
-stable.data(
-    "pkg_resource_texture_data_refs_ptr", xref("Shared_LoadCommonResources", 0xB0, 0x1)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "pkg_resource_current_usable_materials", xref("Menu_AnimateSlots", 0x16, 0x2)
+    "Shared_LoadCommonResources_PKGResourceFontDataPtr",
+    xref("Shared_LoadCommonResources", 0xB8, 0x2),
 )
-stable.data("menu_gradient_color_value", xref("Menu_ProcessMenuState", 0x9E3, 0x2))
 stable.data(
-    "graphics_render_transform_matrix",
+    "Shared_LoadCommonResources_PKGResourceTextureDataRefsPtr",
+    xref("Shared_LoadCommonResources", 0xB0, 0x1),
+)
+stable.data(
+    "Menu_AnimateSlots_PKGResourceCurrentUsableMaterials",
+    xref("Menu_AnimateSlots", 0x16, 0x2),
+)
+stable.data(
+    "Menu_ProcessMenuState_GradientColorValue",
+    xref("Menu_ProcessMenuState", 0x9E3, 0x2),
+)
+stable.data(
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderTransformMatrix",
     xref("Bone_TransformForRenderWeightedVerts", 0x1C, 0x1),
 )
 stable.data(
-    "graphics_render_matrix_01", xref("Bone_TransformForRenderWeightedVerts", 0x23, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix01",
+    xref("Bone_TransformForRenderWeightedVerts", 0x23, 0x3),
 )
 stable.data(
-    "graphics_render_matrix_02", xref("Bone_TransformForRenderWeightedVerts", 0x3C, 0x2)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix02",
+    xref("Bone_TransformForRenderWeightedVerts", 0x3C, 0x2),
 )
 stable.data(
-    "graphics_render_matrix_10", xref("Bone_TransformForRenderWeightedVerts", 0x35, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix10",
+    xref("Bone_TransformForRenderWeightedVerts", 0x35, 0x3),
 )
 stable.data(
-    "graphics_render_matrix_11", xref("Bone_TransformForRenderWeightedVerts", 0xA1, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix11",
+    xref("Bone_TransformForRenderWeightedVerts", 0xA1, 0x3),
 )
 stable.data(
-    "graphics_render_matrix_12", xref("Bone_TransformForRenderWeightedVerts", 0x57, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix12",
+    xref("Bone_TransformForRenderWeightedVerts", 0x57, 0x3),
 )
 stable.data(
-    "graphics_render_matrix_20", xref("Bone_TransformForRenderWeightedVerts", 0x50, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix20",
+    xref("Bone_TransformForRenderWeightedVerts", 0x50, 0x3),
 )
 stable.data(
-    "graphics_render_matrix_21", xref("Bone_TransformForRenderWeightedVerts", 0x62, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix21",
+    xref("Bone_TransformForRenderWeightedVerts", 0x62, 0x3),
 )
 stable.data(
-    "graphics_render_matrix_22", xref("Bone_TransformForRenderWeightedVerts", 0xCD, 0x3)
+    "Bone_TransformForRenderWeightedVerts_GraphicsRenderMatrix22",
+    xref("Bone_TransformForRenderWeightedVerts", 0xCD, 0x3),
 )
 stable.data(
-    "graphics_polygon_highlight_mode", xref("Graphics_RenderPolygonBatch", 0x1AAE, 0x1)
+    "Graphics_RenderPolygonBatch_HighlightMode",
+    xref("Graphics_RenderPolygonBatch", 0x1AAE, 0x1),
 )
-stable.data("graphics_view_direction_x", xref("Graphics_RenderPolygonBatch", 0x3C, 0x3))
-stable.data("graphics_view_direction_y", xref("Graphics_RenderPolygonBatch", 0x32, 0x3))
-stable.data("graphics_view_direction_z", xref("Graphics_RenderPolygonBatch", 0x1D, 0x3))
 stable.data(
-    "graphics_current_polygon_batch_index",
+    "Graphics_RenderPolygonBatch_ViewDirectionX",
+    xref("Graphics_RenderPolygonBatch", 0x3C, 0x3),
+)
+stable.data(
+    "Graphics_RenderPolygonBatch_ViewDirectionY",
+    xref("Graphics_RenderPolygonBatch", 0x32, 0x3),
+)
+stable.data(
+    "Graphics_RenderPolygonBatch_ViewDirectionZ",
+    xref("Graphics_RenderPolygonBatch", 0x1D, 0x3),
+)
+stable.data(
+    "Graphics_RenderPolygonMesh_CurrentPolygonBatchIndex",
     xref("Graphics_RenderPolygonMesh", 0x5DF, 0x1),
 )
 stable.data(
-    "graphics_camera_transform_matrix", xref("Graphics_SetPolygonUVs", 0x15B, 0x3)
+    "Graphics_SetPolygonUVs_CameraTransformMatrix",
+    xref("Graphics_SetPolygonUVs", 0x15B, 0x3),
 )
 stable.data(
-    "graphics_transform_matrix_element_1", xref("Graphics_SetPolygonUVs", 0x13E, 0x3)
-)
-stable.data("graphics_camera_matrix_m02", xref("Graphics_SetPolygonUVs", 0x167, 0x3))
-stable.data("graphics_camera_matrix_m10", xref("Graphics_SetPolygonUVs", 0x130, 0x3))
-stable.data("graphics_camera_matrix_m11", xref("Graphics_SetPolygonUVs", 0x173, 0x3))
-stable.data("graphics_camera_matrix_m12", xref("Graphics_SetPolygonUVs", 0x17F, 0x3))
-stable.data("graphics_camera_matrix_m20", xref("Graphics_SetPolygonUVs", 0x18B, 0x3))
-stable.data("graphics_camera_matrix_m21", xref("Graphics_SetPolygonUVs", 0x195, 0x3))
-stable.data("graphics_camera_matrix_m22", xref("Graphics_SetPolygonUVs", 0x19F, 0x3))
-stable.data(
-    "graphics_node_view_translation_x", xref("Graphics_RenderPolygonMesh", 0x62, 0x2)
+    "Graphics_SetPolygonUVs_TransformMatrixElement1",
+    xref("Graphics_SetPolygonUVs", 0x13E, 0x3),
 )
 stable.data(
-    "graphics_node_view_translation_y", xref("Graphics_RenderPolygonMesh", 0xAE, 0x2)
+    "Graphics_SetPolygonUVs_CameraMatrixM02",
+    xref("Graphics_SetPolygonUVs", 0x167, 0x3),
 )
 stable.data(
-    "graphics_node_view_translation_z", xref("Graphics_RenderPolygonMesh", 0x104, 0x2)
+    "Graphics_SetPolygonUVs_CameraMatrixM10",
+    xref("Graphics_SetPolygonUVs", 0x130, 0x3),
 )
 stable.data(
-    "graphics_polygon_batch_records", xref("Graphics_RenderPolygonMesh", 0x5F2, 0x3)
+    "Graphics_SetPolygonUVs_CameraMatrixM11",
+    xref("Graphics_SetPolygonUVs", 0x173, 0x3),
 )
 stable.data(
-    "video_player_error_code",
+    "Graphics_SetPolygonUVs_CameraMatrixM12",
+    xref("Graphics_SetPolygonUVs", 0x17F, 0x3),
+)
+stable.data(
+    "Graphics_SetPolygonUVs_CameraMatrixM20",
+    xref("Graphics_SetPolygonUVs", 0x18B, 0x3),
+)
+stable.data(
+    "Graphics_SetPolygonUVs_CameraMatrixM21",
+    xref("Graphics_SetPolygonUVs", 0x195, 0x3),
+)
+stable.data(
+    "Graphics_SetPolygonUVs_CameraMatrixM22",
+    xref("Graphics_SetPolygonUVs", 0x19F, 0x3),
+)
+stable.data(
+    "Graphics_RenderPolygonMesh_NodeViewTranslationX",
+    xref("Graphics_RenderPolygonMesh", 0x62, 0x2),
+)
+stable.data(
+    "Graphics_RenderPolygonMesh_NodeViewTranslationY",
+    xref("Graphics_RenderPolygonMesh", 0xAE, 0x2),
+)
+stable.data(
+    "Graphics_RenderPolygonMesh_NodeViewTranslationZ",
+    xref("Graphics_RenderPolygonMesh", 0x104, 0x2),
+)
+stable.data(
+    "Graphics_RenderPolygonMesh_BatchRecords",
+    xref("Graphics_RenderPolygonMesh", 0x5F2, 0x3),
+)
+stable.data(
+    "Video_InitPlayer_ErrorCode",
     xref("Video_InitPlayer", 0x10, 0x1),
     type="int32_t",
     doc="Last winplay video/sound/movie initialization or playback status code.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "dinput_force_feedback_available",
+    "DInput_EnumerateForceFeedbackJoysticks_Available",
     xref("DInput_EnumerateForceFeedbackJoysticks", 0x39, 0x2),
     type="int32_t",
     doc="Set to 1 when force-feedback joystick enumeration finds at least one attached device; allows constant-force effect creation and playback.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "input_window_handle",
+    "DInput_InitializeJoystickInput_WindowHandle",
     xref("DInput_InitializeJoystickInput", 0xE, 0x1),
     type="HWND",
     doc="Main game window handle used by DirectInput cooperative-level setup.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "dinput_enum_device_seen",
+    "DInput_EnumJoystickDeviceCallback_Seen",
     xref("DInput_EnumJoystickDeviceCallback", 0x3F, 0x1),
     type="int32_t",
     doc="Set by the DirectInput joystick enumeration callback after copying an enumerated device GUID into the caller-provided list.",
-)
-stable.data("graphics_initialized", xref("D3D_InitializeGraphicsSubsystem", 0x19, 0x1))
-stable.data(
-    "graphics_text_rendering_mode", xref("D3D_SetBlendMode", 0xE, 0x1), type="int32_t"
-)
-stable.data("graphics_quad_color_blue", xref("Graphics_IsQuadClipped", 0x26C, 0x3))
-stable.data(
-    "graphics_temp_vertex_color_blue_vertex_1", xref("Graphics_DrawQuad", 0x7BB, 0x2)
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_temp_vertex_color_blue_vertex_2", xref("Graphics_DrawQuad", 0x87D, 0x2)
+    "D3D_InitializeGraphicsSubsystem_Initialized",
+    xref("D3D_InitializeGraphicsSubsystem", 0x19, 0x1),
 )
 stable.data(
-    "graphics_temp_vertex_color_blue_vertex_3", xref("Graphics_DrawQuad", 0x98, 0x2)
-)
-stable.data("graphics_quad_color_green", xref("Graphics_IsQuadClipped", 0x247, 0x3))
-stable.data(
-    "graphics_temp_vertex_color_green_vertex_1", xref("Graphics_DrawQuad", 0x7A4, 0x2)
-)
-stable.data(
-    "graphics_temp_vertex_color_green_vertex_2", xref("Graphics_DrawQuad", 0x866, 0x2)
+    "D3D_SetBlendMode_GraphicsTextRenderingMode",
+    xref("D3D_SetBlendMode", 0xE, 0x1),
+    type="int32_t",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_temp_vertex_color_green_vertex_3", xref("Graphics_DrawQuad", 0x8D, 0x2)
-)
-stable.data("graphics_quad_color_red", xref("Graphics_IsQuadClipped", 0x229, 0x3))
-stable.data(
-    "graphics_temp_vertex_color_red_vertex_1", xref("Graphics_DrawQuad", 0x791, 0x1)
+    "Graphics_IsQuadClipped_ColorBlue",
+    xref("Graphics_IsQuadClipped", 0x26C, 0x3),
 )
 stable.data(
-    "graphics_temp_vertex_color_red_vertex_2", xref("Graphics_DrawQuad", 0x851, 0x2)
+    "Graphics_DrawQuad_TempVertexColorBlueVertex1",
+    xref("Graphics_DrawQuad", 0x7BB, 0x2),
 )
 stable.data(
-    "graphics_temp_vertex_color_red_vertex_3", xref("Graphics_DrawQuad", 0x194, 0x2)
+    "Graphics_DrawQuad_TempVertexColorBlueVertex2",
+    xref("Graphics_DrawQuad", 0x87D, 0x2),
 )
-stable.data("graphics_can_flip_surfaces", xref("D3D_InitializeDirectDraw", 0x252, 0x2))
 stable.data(
-    "d3d_direct3d7_interface",
+    "Graphics_DrawQuad_TempVertexColorBlueVertex3",
+    xref("Graphics_DrawQuad", 0x98, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ColorGreen",
+    xref("Graphics_IsQuadClipped", 0x247, 0x3),
+)
+stable.data(
+    "Graphics_DrawQuad_TempVertexColorGreenVertex1",
+    xref("Graphics_DrawQuad", 0x7A4, 0x2),
+)
+stable.data(
+    "Graphics_DrawQuad_TempVertexColorGreenVertex2",
+    xref("Graphics_DrawQuad", 0x866, 0x2),
+)
+stable.data(
+    "Graphics_DrawQuad_TempVertexColorGreenVertex3",
+    xref("Graphics_DrawQuad", 0x8D, 0x2),
+)
+stable.data(
+    "Graphics_IsQuadClipped_ColorRed",
+    xref("Graphics_IsQuadClipped", 0x229, 0x3),
+)
+stable.data(
+    "Graphics_DrawQuad_TempVertexColorRedVertex1",
+    xref("Graphics_DrawQuad", 0x791, 0x1),
+)
+stable.data(
+    "Graphics_DrawQuad_TempVertexColorRedVertex2",
+    xref("Graphics_DrawQuad", 0x851, 0x2),
+)
+stable.data(
+    "Graphics_DrawQuad_TempVertexColorRedVertex3",
+    xref("Graphics_DrawQuad", 0x194, 0x2),
+)
+stable.data(
+    "D3D_InitializeDirectDraw_GraphicsCanFlipSurfaces",
+    xref("D3D_InitializeDirectDraw", 0x252, 0x2),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_3D7Interface",
     xref("D3D_InitDirectDrawAndDirect3D", 0x189, 0x1),
     type="D3D_IDirect3D7*",
     doc="IDirect3D7 interface obtained from IDirectDraw7::QueryInterface; used for device enumeration and device creation.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("graphics_pixel_blue_mask", xref("D3D_CreateTextureSurface", 0x1C3, 0x2))
 stable.data(
-    "graphics_texture_pow2_width",
+    "D3D_CreateTextureSurface_GraphicsPixelBlueMask",
+    xref("D3D_CreateTextureSurface", 0x1C3, 0x2),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsTexturePow2Width",
     xref("D3D_CreateTextureSurface", 0x134, 0x2),
     type="uint32_t",
     doc="Power-of-two texture width computed by D3D_CreateTextureSurface: rounds requested width up, clamps to 256, and mirrors height when device caps require square textures.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "ddraw_back_buffer",
+    "D3D_InitDirectDrawAndDirect3D_DDrawBackBuffer",
     xref("D3D_InitDirectDrawAndDirect3D", 0x14D, 0x1),
     type="DDraw_IDirectDrawSurface7*",
     doc="Attached DirectDraw back buffer used as the active D3D render target and screenshot source.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "ddraw_primary_surface",
+    "D3D_InitDirectDrawAndDirect3D_DDrawPrimarySurface",
     xref("D3D_InitDirectDrawAndDirect3D", 0x128, 0x1),
     type="DDraw_IDirectDrawSurface7*",
     doc="Primary/front DirectDraw surface created during D3D initialization and flipped/presented by frame rendering.",
-)
-stable.data("d3d_state", xref("Camera_SetupClipPlanes", 0x5B, 0x2))
-stable.data(
-    "camera_clip_left_0", xref("Graphics_ClipPolygonByCameraPyramid", 0x6D, 0x1)
-)
-stable.data("camera_clip_left_1", xref("Camera_SetupClipPlanes", 0xC6, 0x1))
-stable.data("camera_clip_left_2", xref("Camera_SetupClipPlanes", 0xCF, 0x2))
-stable.data("camera_clip_right_0", xref("Camera_SetupClipPlanes", 0xF1, 0x2))
-stable.data("camera_clip_right_1", xref("Camera_SetupClipPlanes", 0x158, 0x2))
-stable.data("camera_clip_right_2", xref("Camera_SetupClipPlanes", 0x166, 0x1))
-stable.data("camera_clip_top_0", xref("Camera_SetupClipPlanes", 0x16F, 0x2))
-stable.data("camera_clip_top_1", xref("Camera_SetupClipPlanes", 0x191, 0x2))
-stable.data("camera_clip_top_2", xref("Camera_SetupClipPlanes", 0x1AF, 0x2))
-stable.data("camera_clip_bottom_0", xref("Camera_SetupClipPlanes", 0x1B5, 0x1))
-stable.data("camera_clip_bottom_1", xref("Camera_SetupClipPlanes", 0x1BA, 0x2))
-stable.data("camera_clip_bottom_2", xref("Camera_SetupClipPlanes", 0x1C0, 0x2))
-stable.data(
-    "camera_near_clip_distance", xref("Graphics_ClipPolygonByCameraPyramid", 0xA1, 0x2)
-)
-stable.data("camera_near_clip_0", xref("Camera_SetupClipPlanes", 0x116, 0x1))
-stable.data("camera_near_clip_1", xref("Camera_SetupClipPlanes", 0x11F, 0x2))
-stable.data("camera_near_clip_2", xref("Camera_SetupClipPlanes", 0x141, 0x2))
-stable.data("graphics_pixel_red_shift", xref("D3D_CreateTextureSurface", 0x1C9, 0x2))
-stable.data(
-    "graphics_pixel_red_bits_to_discard", xref("D3D_CreateTextureSurface", 0x1F9, 0x2)
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "d3d_device7",
+    "Camera_SetupClipPlanes_D3DState", xref("Camera_SetupClipPlanes", 0x5B, 0x2)
+)
+stable.data(
+    "Graphics_ClipPolygonByCameraPyramid_Left0",
+    xref("Graphics_ClipPolygonByCameraPyramid", 0x6D, 0x1),
+)
+stable.data(
+    "Camera_SetupClipPlanes_Left1", xref("Camera_SetupClipPlanes", 0xC6, 0x1)
+)
+stable.data(
+    "Camera_SetupClipPlanes_Left2", xref("Camera_SetupClipPlanes", 0xCF, 0x2)
+)
+stable.data(
+    "Camera_SetupClipPlanes_Right0", xref("Camera_SetupClipPlanes", 0xF1, 0x2)
+)
+stable.data(
+    "Camera_SetupClipPlanes_Right1",
+    xref("Camera_SetupClipPlanes", 0x158, 0x2),
+)
+stable.data(
+    "Camera_SetupClipPlanes_Right2",
+    xref("Camera_SetupClipPlanes", 0x166, 0x1),
+)
+stable.data(
+    "Camera_SetupClipPlanes_Top0", xref("Camera_SetupClipPlanes", 0x16F, 0x2)
+)
+stable.data(
+    "Camera_SetupClipPlanes_Top1", xref("Camera_SetupClipPlanes", 0x191, 0x2)
+)
+stable.data(
+    "Camera_SetupClipPlanes_Top2", xref("Camera_SetupClipPlanes", 0x1AF, 0x2)
+)
+stable.data(
+    "Camera_SetupClipPlanes_Bottom0",
+    xref("Camera_SetupClipPlanes", 0x1B5, 0x1),
+)
+stable.data(
+    "Camera_SetupClipPlanes_Bottom1",
+    xref("Camera_SetupClipPlanes", 0x1BA, 0x2),
+)
+stable.data(
+    "Camera_SetupClipPlanes_Bottom2",
+    xref("Camera_SetupClipPlanes", 0x1C0, 0x2),
+)
+stable.data(
+    "Graphics_ClipPolygonByCameraPyramid_NearClipDistance",
+    xref("Graphics_ClipPolygonByCameraPyramid", 0xA1, 0x2),
+)
+stable.data(
+    "Camera_SetupClipPlanes_NearClip0", xref("Camera_SetupClipPlanes", 0x116, 0x1)
+)
+stable.data(
+    "Camera_SetupClipPlanes_NearClip1", xref("Camera_SetupClipPlanes", 0x11F, 0x2)
+)
+stable.data(
+    "Camera_SetupClipPlanes_NearClip2", xref("Camera_SetupClipPlanes", 0x141, 0x2)
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsPixelRedShift",
+    xref("D3D_CreateTextureSurface", 0x1C9, 0x2),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsPixelRedBitsToDiscard",
+    xref("D3D_CreateTextureSurface", 0x1F9, 0x2),
+)
+stable.data(
+    "Material_ReleaseTextureArray_D3DDevice7",
     xref("Material_ReleaseTextureArray", 0x3B, 0x1),
     type="D3D_IDirect3DDevice7*",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "graphics_current_vertex_format", xref("Graphics_IsQuadClipped", 0x1A5, 0x1)
+    "Graphics_IsQuadClipped_CurrentVertexFormat",
+    xref("Graphics_IsQuadClipped", 0x1A5, 0x1),
 )
-stable.data("graphics_pixel_red_mask", xref("D3D_CreateTextureSurface", 0x1E0, 0x1))
-stable.data("graphics_pixel_green_mask", xref("D3D_CreateTextureSurface", 0x1E7, 0x2))
-stable.data("camera_near_clip_plane", xref("Camera_SetupClipPlanes", 0xB, 0x2))
 stable.data(
-    "graphics_texture_pow2_height",
+    "D3D_CreateTextureSurface_GraphicsPixelRedMask",
+    xref("D3D_CreateTextureSurface", 0x1E0, 0x1),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsPixelGreenMask",
+    xref("D3D_CreateTextureSurface", 0x1E7, 0x2),
+)
+stable.data(
+    "Camera_SetupClipPlanes_NearClipPlane",
+    xref("Camera_SetupClipPlanes", 0xB, 0x2),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsTexturePow2Height",
     xref("D3D_CreateTextureSurface", 0x126, 0x1),
     type="uint32_t",
     doc="Power-of-two texture height computed by D3D_CreateTextureSurface: rounds requested height up, clamps to 256, and mirrors width when device caps require square textures.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "graphics_texture_surface_desc",
+    "D3D_CreateTextureSurface_GraphicsTextureSurfaceDesc",
     xref("D3D_CreateTextureSurface", 0x1AE, 0x1),
     type="uint32_t",
     doc="First word of the cached 0x7c-byte DDSURFACEDESC2 texture surface descriptor copied by D3D_CreateTextureSurface before IDirectDraw7::CreateSurface; SDK typed globals expose the base word.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("script_variable_ref_base", xref("Script_ResolveVariableRef", 0x45, 0x3))
 stable.data(
-    "ddraw_z_buffer",
+    "Script_ResolveVariableRef_Base",
+    xref("Script_ResolveVariableRef", 0x45, 0x3),
+)
+stable.data(
+    "D3D_InitDirectDrawAndDirect3D_DDrawZBuffer",
     xref("D3D_InitDirectDrawAndDirect3D", 0x2C8, 0x1),
     type="DDraw_IDirectDrawSurface7*",
     doc="DirectDraw z-buffer surface attached to the D3D render target and released during D3D/DirectDraw shutdown.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "graphics_pixel_blue_bits_to_discard", xref("D3D_CreateTextureSurface", 0x205, 0x2)
+    "D3D_CreateTextureSurface_GraphicsPixelBlueBitsToDiscard",
+    xref("D3D_CreateTextureSurface", 0x205, 0x2),
 )
-stable.data("debug_log_file", xref("Debug_Log", 0x0, 0x1))
-stable.data("graphics_pixel_blue_shift", xref("D3D_CreateTextureSurface", 0x1F3, 0x2))
-stable.data("graphics_reciprocal_z", xref("Graphics_IsQuadClipped", 0x611, 0x2))
-stable.data("level_actor_system_state", xref("Level_InitializeActorSystem", 0x1EF, 0x2))
+stable.data("Debug_Log_File", xref("Debug_Log", 0x0, 0x1))
 stable.data(
-    "graphics_pixel_alpha_bits_to_discard", xref("D3D_CreateTextureSurface", 0x20B, 0x2)
+    "D3D_CreateTextureSurface_GraphicsPixelBlueShift",
+    xref("D3D_CreateTextureSurface", 0x1F3, 0x2),
 )
-stable.data("graphics_pixel_alpha_shift", xref("D3D_CreateTextureSurface", 0x1CF, 0x2))
-stable.data("graphics_pixel_alpha_mask", xref("D3D_CreateTextureSurface", 0x1B3, 0x2))
-stable.data("graphics_pixel_green_shift", xref("D3D_CreateTextureSurface", 0x1ED, 0x2))
 stable.data(
-    "graphics_pixel_green_bits_to_discard", xref("D3D_CreateTextureSurface", 0x1FF, 0x2)
+    "Graphics_IsQuadClipped_ReciprocalZ",
+    xref("Graphics_IsQuadClipped", 0x611, 0x2),
 )
-stable.data("object_node_root", xref("Level_InitializeActorSystem", 0x1A7, 0x1))
-stable.data("dalmatian_spawn_states", xref("Checkers_UpdateStateMachine", 0x9, 0x1))
-stable.data("submenu_count", xref("Level_SetMenuProgressState", 0x4A, 0x2))
-stable.data("menu_items", xref("Save_SaveGameLevelCompletion", 0x7B, 0x3))
-stable.data("menu_slots", xref("Level_InitializeSaveState", 0xF6, 0x2))
-stable.data("confirm_text_enabled", xref("Actor_UpdateAnimationState", 0x2F8, 0x1))
-stable.data("menu_initial_entry_flag", xref("Level_ResetBonusState", 0xC, 0x3))
-stable.data("checkers_player_is_human", xref("Checkers_UpdateStateMachine", 0x3D1, 0x3))
 stable.data(
-    "save_game_bonus_progress_value", xref("Level_InitializeSaveState", 0x1E5, 0x1)
+    "Level_InitializeActorSystem_State",
+    xref("Level_InitializeActorSystem", 0x1EF, 0x2),
 )
-stable.data("save_game_state_init_flag", xref("Level_InitializeSaveState", 0x1F0, 0x2))
 stable.data(
-    "checkers_enforce_capture_rule", xref("Checkers_UpdateStateMachine", 0x26D, 0x2)
+    "D3D_CreateTextureSurface_GraphicsPixelAlphaBitsToDiscard",
+    xref("D3D_CreateTextureSurface", 0x20B, 0x2),
 )
-stable.data("checkers_ai_difficulty", xref("Checkers_UpdateStateMachine", 0x598, 0x1))
 stable.data(
-    "checkers_current_player",
+    "D3D_CreateTextureSurface_GraphicsPixelAlphaShift",
+    xref("D3D_CreateTextureSurface", 0x1CF, 0x2),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsPixelAlphaMask",
+    xref("D3D_CreateTextureSurface", 0x1B3, 0x2),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsPixelGreenShift",
+    xref("D3D_CreateTextureSurface", 0x1ED, 0x2),
+)
+stable.data(
+    "D3D_CreateTextureSurface_GraphicsPixelGreenBitsToDiscard",
+    xref("D3D_CreateTextureSurface", 0x1FF, 0x2),
+)
+stable.data(
+    "Level_InitializeActorSystem_ObjectNodeRoot",
+    xref("Level_InitializeActorSystem", 0x1A7, 0x1),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_DalmatianSpawnStates",
+    xref("Checkers_UpdateStateMachine", 0x9, 0x1),
+)
+stable.data(
+    "Level_SetMenuProgressState_SubmenuCount",
+    xref("Level_SetMenuProgressState", 0x4A, 0x2),
+)
+stable.data(
+    "Save_GameLevelCompletion_MenuItems",
+    xref("Save_SaveGameLevelCompletion", 0x7B, 0x3),
+)
+stable.data(
+    "Level_InitializeSaveState_MenuSlots", xref("Level_InitializeSaveState", 0xF6, 0x2)
+)
+stable.data(
+    "Actor_UpdateAnimationState_ConfirmTextEnabled",
+    xref("Actor_UpdateAnimationState", 0x2F8, 0x1),
+)
+stable.data(
+    "Level_ResetBonusState_MenuInitialEntryFlag",
+    xref("Level_ResetBonusState", 0xC, 0x3),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_PlayerIsHuman",
+    xref("Checkers_UpdateStateMachine", 0x3D1, 0x3),
+)
+stable.data(
+    "Level_InitializeSaveState_GameBonusProgressValue",
+    xref("Level_InitializeSaveState", 0x1E5, 0x1),
+)
+stable.data(
+    "Level_InitializeSaveState_GameStateInitFlag",
+    xref("Level_InitializeSaveState", 0x1F0, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_EnforceCaptureRule",
+    xref("Checkers_UpdateStateMachine", 0x26D, 0x2),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_AIDifficulty",
+    xref("Checkers_UpdateStateMachine", 0x598, 0x1),
+)
+stable.data(
+    "Checkers_UpdateStateMachine_CurrentPlayer",
     xref("Checkers_UpdateStateMachine", 0x105, 0x2),
     doc="Current checkers side: live play uses player values 1 and 2, toggled with xor 3, and is set to 0 for the no-move/end state.",
 )
 stable.data(
-    "script_pause_camera_transition_counter", xref("Script_PauseToggle", 0x199, 0x1)
+    "Script_OpPauseToggle_CameraTransitionCounter",
+    xref("Script_OpPauseToggle", 0x199, 0x1),
 )
 stable.data(
-    "script_pause_camera_rotation_angle", xref("Script_PauseToggle", 0x19E, 0x1)
+    "Script_OpPauseToggle_CameraRotationAngle",
+    xref("Script_OpPauseToggle", 0x19E, 0x1),
 )
 stable.data(
-    "script_pause_target_rotation_angle", xref("Script_PauseToggle", 0x1A3, 0x2)
-)
-stable.data("script_pause_target_y_offset", xref("Script_PauseToggle", 0x1A9, 0x2))
-stable.data("script_pause_target_distance", xref("Script_PauseToggle", 0x1AF, 0x2))
-stable.data("script_pause_camera_fov", xref("Script_PauseToggle", 0x1C3, 0x2))
-stable.data(
-    "save_game_world_0_completion_bits", xref("Checkers_UpdateStateMachine", 0x518, 0x2)
+    "Script_OpPauseToggle_TargetRotationAngle",
+    xref("Script_OpPauseToggle", 0x1A3, 0x2),
 )
 stable.data(
-    "save_game_world_1_completion_bits", xref("Save_SaveGameBonusProgress", 0x5, 0x2)
+    "Script_OpPauseToggle_TargetYOffset",
+    xref("Script_OpPauseToggle", 0x1A9, 0x2),
 )
 stable.data(
-    "save_game_world_2_completion_bits", xref("Save_SaveGameBonusProgress", 0xB, 0x2)
+    "Script_OpPauseToggle_TargetDistance",
+    xref("Script_OpPauseToggle", 0x1AF, 0x2),
 )
 stable.data(
-    "save_game_world_3_completion_bits", xref("Save_SaveGameBonusProgress", 0x16, 0x1)
+    "Script_OpPauseToggle_CameraFOV", xref("Script_OpPauseToggle", 0x1C3, 0x2)
 )
-stable.data("level_bonus_unlocked", xref("Level_InitializeSaveState", 0xA9, 0x2))
-stable.data("bone_trail_path_count", xref("Trail_ResetBone", 0xC, 0x2))
 stable.data(
-    "save_game_world_4_completion_bits", xref("Save_SaveGameBonusProgress", 0x21, 0x2)
+    "Checkers_UpdateStateMachine_SaveGameWorld0CompletionBits",
+    xref("Checkers_UpdateStateMachine", 0x518, 0x2),
 )
-stable.data("level_bonus_parameter_1", xref("Level_InitializeBonusData", 0x7B, 0x2))
-stable.data("level_bonus_parameter_2", xref("Level_InitializeBonusData", 0x81, 0x2))
-stable.data("level_bonus_parameter_3", xref("Level_InitializeBonusData", 0x87, 0x1))
 stable.data(
-    "pkg_resource_current_level_data",
+    "Save_GameBonusProgress_World1CompletionBits",
+    xref("Save_SaveGameBonusProgress", 0x5, 0x2),
+)
+stable.data(
+    "Save_GameBonusProgress_World2CompletionBits",
+    xref("Save_SaveGameBonusProgress", 0xB, 0x2),
+)
+stable.data(
+    "Save_GameBonusProgress_World3CompletionBits",
+    xref("Save_SaveGameBonusProgress", 0x16, 0x1),
+)
+stable.data(
+    "Level_InitializeSaveState_BonusUnlocked",
+    xref("Level_InitializeSaveState", 0xA9, 0x2),
+)
+stable.data("Trail_ResetBone_PathCount", xref("Trail_ResetBone", 0xC, 0x2))
+stable.data(
+    "Save_GameBonusProgress_World4CompletionBits",
+    xref("Save_SaveGameBonusProgress", 0x21, 0x2),
+)
+stable.data(
+    "Level_InitializeBonusData_Parameter1",
+    xref("Level_InitializeBonusData", 0x7B, 0x2),
+)
+stable.data(
+    "Level_InitializeBonusData_Parameter2",
+    xref("Level_InitializeBonusData", 0x81, 0x2),
+)
+stable.data(
+    "Level_InitializeBonusData_Parameter3",
+    xref("Level_InitializeBonusData", 0x87, 0x1),
+)
+stable.data(
+    "Audio_TriggerMusicTransition_PKGResourceCurrentLevelData",
     xref("Audio_TriggerMusicTransition", 0x41, 0x1),
     type="Level_Data*",
     doc=(
@@ -15978,23 +17517,39 @@ stable.data(
         "Level_RuntimeData.entity_array/entity_count plus Entity_State.active_actor through "
         "dttr_pcdogs_unstable.h conversion helpers."
     ),
-)
-stable.data("level_scale_factor", xref("Graphics_AdjustLevelScale", 0x3F, 0x2))
-stable.data("level_render_distance", xref("Level_InitializeActorSystem", 0x185, 0x2))
-stable.data("level_transition_state", xref("Level_InitializeActorSystem", 0xE4, 0x2))
-stable.data("current_game_mode", xref("Script_PauseToggle", 0x0, 0x1))
-stable.data(
-    "level_render_distance_quarter", xref("Level_InitializeActorSystem", 0x1AF, 0x2)
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
-    "level_render_distance_third", xref("Level_InitializeActorSystem", 0x1C1, 0x2)
+    "Graphics_AdjustLevelScale_Factor",
+    xref("Graphics_AdjustLevelScale", 0x3F, 0x2),
 )
 stable.data(
-    "actor_behavior_ai_state_0", xref("Actor_ProcessPlayerBehavior", 0x863, 0x1)
+    "Level_InitializeActorSystem_RenderDistance",
+    xref("Level_InitializeActorSystem", 0x185, 0x2),
 )
-stable.data("rendering_depth_mode", xref("Actor_ProcessPlayerBehavior", 0x86E, 0x2))
 stable.data(
-    "dynamic_level_scale",
+    "Level_InitializeActorSystem_TransitionState",
+    xref("Level_InitializeActorSystem", 0xE4, 0x2),
+)
+stable.data("Script_OpPauseToggle_CurrentGameMode", xref("Script_OpPauseToggle", 0x0, 0x1))
+stable.data(
+    "Level_InitializeActorSystem_RenderDistanceQuarter",
+    xref("Level_InitializeActorSystem", 0x1AF, 0x2),
+)
+stable.data(
+    "Level_InitializeActorSystem_RenderDistanceThird",
+    xref("Level_InitializeActorSystem", 0x1C1, 0x2),
+)
+stable.data(
+    "Actor_ProcessPlayerBehavior_AIState0",
+    xref("Actor_ProcessPlayerBehavior", 0x863, 0x1),
+)
+stable.data(
+    "Actor_ProcessPlayerBehavior_RenderingDepthMode",
+    xref("Actor_ProcessPlayerBehavior", 0x86E, 0x2),
+)
+stable.data(
+    "Camera_UpdateFollow_DynamicLevelScale",
     xref("Camera_UpdateFollow", 0xA0B, 0x1),
     type="int32_t",
     doc=(
@@ -16002,16 +17557,21 @@ stable.data(
         "writes this value shifted left by 12 into Graphics_ListState.dynamic_level_scale at offset "
         "+0xB8 (PC EN)."
     ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "audio_music_transition_active",
+    "Audio_TriggerMusicTransition_Active",
     xref("Audio_TriggerMusicTransition", 0x29, 0x2),
     type="uint8_t",
     doc="Byte-sized music transition active/selected-state flag read by Audio_TriggerMusicTransition.",
+    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data("graphics_world_transform_ptr", xref("Graphics_RenderMeshNode", 0xB, 0x2))
 stable.data(
-    "player_actor",
+    "Graphics_RenderMeshNode_WorldTransformPtr",
+    xref("Graphics_RenderMeshNode", 0xB, 0x2),
+)
+stable.data(
+    "Actor_ProcessRendering_PlayerActor",
     xref("Actor_ProcessRendering", 0x8, 0x2),
     type="Actor_State*",
     doc=(
@@ -16020,50 +17580,76 @@ stable.data(
         "current_level_data->Level_RuntimeData.entity_array->Entity_State.active_actor for "
         "current-player authority."
     ),
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
-stable.data("script_pause_toggle_state", xref("Script_PauseToggle", 0x1B, 0x1))
 stable.data(
-    "script_pause_saved_camera_x",
-    xref("Script_PauseToggle", 0x29, 0x2),
+    "Script_OpPauseToggle_State", xref("Script_OpPauseToggle", 0x1B, 0x1)
+)
+stable.data(
+    "Script_OpPauseToggle_SavedCameraX",
+    xref("Script_OpPauseToggle", 0x29, 0x2),
     doc="Saved active actor world_render_pos_x used for pause/menu camera distance checks.",
 )
 stable.data(
-    "script_pause_saved_camera_y",
-    xref("Script_PauseToggle", 0x32, 0x2),
+    "Script_OpPauseToggle_SavedCameraY",
+    xref("Script_OpPauseToggle", 0x32, 0x2),
     doc="Saved active actor world_render_pos_y used for pause/menu camera distance checks.",
 )
 stable.data(
-    "script_pause_saved_camera_z",
-    xref("Script_PauseToggle", 0x3B, 0x1),
+    "Script_OpPauseToggle_SavedCameraZ",
+    xref("Script_OpPauseToggle", 0x3B, 0x1),
     doc="Saved active actor world_render_pos_z used for pause/menu camera distance checks.",
 )
 stable.data(
-    "projectile_actor_list_head",
+    "Trail_SpawnFromEntry_ProjectileActorListHead",
     xref("Trail_SpawnFromEntry", 0x5C, 0x1),
     doc=(
         "Live projectile actor linked-list head walked by Actor_UpdateProjectileList. "
         "Use generated read access for inspection."
     ),
 )
-stable.data("file_descriptor_table", xref("File_SeekAndGetPosition", 0x5C, 0x3))
-stable.data("file_io_buffer_high_water_mark", xref("File_FlushToDisk", 0x4, 0x2))
-stable.data("mem_heap_max_segments", xref("Mem_InitializeHeapAllocator", 0x32, 0x2))
-stable.data("mem_heap_last_freed_page_index", xref("Mem_FreeHeapBlock", 0x239, 0x2))
 stable.data(
-    "mem_heap_segment_table_cached", xref("Mem_InitializeHeapAllocator", 0x2D, 0x1)
+    "File_SeekAndGetPosition_DescriptorTable",
+    xref("File_SeekAndGetPosition", 0x5C, 0x3),
 )
 stable.data(
-    "mem_heap_last_freed_segment", xref("Mem_InitializeHeapAllocator", 0x1D, 0x2)
+    "File_FlushToDisk_IoBufferHighWaterMark", xref("File_FlushToDisk", 0x4, 0x2)
 )
-stable.data("mem_heap_segment_count", xref("Mem_InitializeHeapAllocator", 0x24, 0x2))
-stable.data("mem_heap_allocator_state", xref("Mem_InitializeHeapAllocator", 0x15, 0x1))
 stable.data(
-    "input_get_async_key_state",
+    "Mem_InitializeHeapAllocator_MaxSegments",
+    xref("Mem_InitializeHeapAllocator", 0x32, 0x2),
+)
+stable.data(
+    "Mem_FreeHeapBlock_LastFreedPageIndex", xref("Mem_FreeHeapBlock", 0x239, 0x2)
+)
+stable.data(
+    "Mem_InitializeHeapAllocator_SegmentTableCached",
+    xref("Mem_InitializeHeapAllocator", 0x2D, 0x1),
+)
+stable.data(
+    "Mem_InitializeHeapAllocator_LastFreedSegment",
+    xref("Mem_InitializeHeapAllocator", 0x1D, 0x2),
+)
+stable.data(
+    "Mem_InitializeHeapAllocator_SegmentCount",
+    xref("Mem_InitializeHeapAllocator", 0x24, 0x2),
+)
+stable.data(
+    "Mem_InitializeHeapAllocator_State",
+    xref("Mem_InitializeHeapAllocator", 0x15, 0x1),
+)
+stable.data(
+    "Video_PlayMovieLoop_InputGetAsyncKeyState",
     xref("Video_PlayMovieLoop", 0x29, 0x2),
     stable_reason="sidecar input hook patches this IAT slot through the stable data id",
 )
-stable.data("audio_ail_release_sample_handle", xref("Audio_ShutdownSystem", 0xA, 0x2))
-stable.data("audio_ail_shutdown", xref("Audio_ShutdownSystem", 0x37, 0x2))
+stable.data(
+    "Audio_ShutdownSystem_AilReleaseSampleHandle",
+    xref("Audio_ShutdownSystem", 0xA, 0x2),
+)
+stable.data(
+    "Audio_ShutdownSystem_AilShutdown", xref("Audio_ShutdownSystem", 0x37, 0x2)
+)
 
 # Lower-confidence rows live in the canonical blueprint and carry unstable=True.
 _unstable_rows = Blueprint("unstable", unstable=True)
@@ -16128,11 +17714,12 @@ _unstable_rows.fn(
 
 
 stable.data(
-    "graphics_list_state",
+    "Graphics_AdjustLevelScale_ListState",
     xref("Graphics_AdjustLevelScale", 0x65, 0x2),
     type="Graphics_ListState*",
     unstable=True,
     doc="Data pointer to active Graphics_ListState; Graphics_AdjustLevelScale writes dynamic level scale at +0xB8 (PC EN).",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 
 _unstable_rows.struct(

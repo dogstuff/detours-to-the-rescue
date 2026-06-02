@@ -950,7 +950,7 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	DTTR_Core_Hook *hook = NULL;
 	DTTR_Result result = DTTR_PCDOGS_Hook_DataPointer(
 		&ctx,
-		DTTR_PCDOGS_DATA_DDRAW_OBJECT,
+		DTTR_PCDOGS_DATA_D3D_CREATE_TEXTURE_SURFACE_DDRAW_OBJECT,
 		NULL,
 		&out_original,
 		&hook
@@ -967,7 +967,8 @@ static void test_pcdogs_data_pointer_hooks_accept_null_replacement(void **state)
 	DTTR_Core_PatchGroup *group = NULL;
 	DTTR_PCDOGS_T_Patch_Report report = {0};
 	const DTTR_PCDOGS_T_Patch_Spec specs[] = {
-		DTTR_PCDOGS_D_DDraw_Object->PatchSpec(true, NULL, &out_original),
+		DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject
+			->PatchSpec(true, NULL, &out_original),
 	};
 
 	result = DTTR_PCDOGS_INSTALL_PATCHES(&ctx, specs, &group, &report);
@@ -1063,10 +1064,13 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 		DTTR_PCDOGS_F_Video_PlayMovieFile->SymbolId,
 		DTTR_PCDOGS_SYMBOL_FUNCTION_ID_VIDEO_PLAY_MOVIE_FILE
 	);
-	assert_int_equal(DTTR_PCDOGS_D_PKG_BasePath->DataId, DTTR_PCDOGS_DATA_PKG_BASE_PATH);
 	assert_int_equal(
-		DTTR_PCDOGS_D_PKG_BasePath->SymbolId,
-		DTTR_PCDOGS_SYMBOL_DATA_ID_PKG_BASE_PATH
+		DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->DataId,
+		DTTR_PCDOGS_DATA_AUDIO_OPEN_STREAM_PKG_BASE_PATH
+	);
+	assert_int_equal(
+		DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->SymbolId,
+		DTTR_PCDOGS_SYMBOL_DATA_ID_AUDIO_OPEN_STREAM_PKG_BASE_PATH
 	);
 
 	const DTTR_PCDOGS_T_Symbol_Function *fn = DTTR_PCDOGS_SymbolFunctionAt(
@@ -1098,14 +1102,14 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 	assert_true(hotpatch_spec.required);
 
 	const DTTR_PCDOGS_T_Symbol_Data *data = DTTR_PCDOGS_SymbolDataAt(
-		(uint32_t)DTTR_PCDOGS_D_PKG_BasePath->SymbolId
+		(uint32_t)DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->SymbolId
 	);
 	assert_non_null(data);
 
 	DTTR_Core_Hook *hook = (DTTR_Core_Hook *)0x1;
 	DTTR_Result result = DTTR_PCDOGS_Hook_DataPointer(
 		NULL,
-		DTTR_PCDOGS_DATA_PKG_BASE_PATH,
+		DTTR_PCDOGS_DATA_AUDIO_OPEN_STREAM_PKG_BASE_PATH,
 		rel32_detour,
 		NULL,
 		&hook
@@ -1115,7 +1119,7 @@ static void test_pcdogs_symbol_facade_exposes_object_metadata(void **state) {
 
 	result = DTTR_PCDOGS_PatchGroup_HookDataPointer(
 		NULL,
-		DTTR_PCDOGS_DATA_PKG_BASE_PATH,
+		DTTR_PCDOGS_DATA_AUDIO_OPEN_STREAM_PKG_BASE_PATH,
 		rel32_detour,
 		NULL
 	);

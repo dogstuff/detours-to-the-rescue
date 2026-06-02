@@ -105,7 +105,7 @@ static void write_child_dump(HANDLE process, DWORD pid, DWORD tid, DWORD excepti
 	if (dttr_config.show_crash_popup) {
 		DTTR_Errors_ShowMessage(DTTR_ERROR_TITLE, report_message);
 	}
-	
+
 	sdsfree(report_message);
 }
 

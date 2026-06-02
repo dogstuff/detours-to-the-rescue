@@ -43,20 +43,45 @@ static void runtime_storage_api_compile_check() {
 	} while (0)
 
 static void stable_grouped_data_compile_check() {
-	int32_t input_map[DTTR_PCDOGS_D_INPUT_BUTTON_MAP_COUNT] = {0};
-	int32_t input_map_alt[DTTR_PCDOGS_D_INPUT_BUTTON_MAP_ALT_COUNT] = {0};
-	int32_t hammerhead[DTTR_PCDOGS_D_INPUT_CONTROLLER_HAMMERHEAD_BUTTONS_COUNT] = {0};
-	int32_t sidewinder[DTTR_PCDOGS_D_INPUT_CONTROLLER_SIDEWINDER_BUTTONS_COUNT] = {0};
-	int32_t gravis[DTTR_PCDOGS_D_INPUT_CONTROLLER_GRAVIS_BUTTONS_COUNT] = {0};
+	int32_t
+		input_map[DTTR_PCDOGS_D_INPUT_INITIALIZE_BUTTON_MAPPINGS_MAP_COUNT]
+		= {0};
+	int32_t input_map_alt
+		[DTTR_PCDOGS_D_INPUT_INITIALIZE_BUTTON_MAPPINGS_MAP_ALT_COUNT]
+		= {0};
+	int32_t hammerhead
+		[DTTR_PCDOGS_D_MENU_HANDLE_OPTIONS_LOGIC_INPUT_CONTROLLER_HAMMERHEAD_BUTTONS_COUNT]
+		= {0};
+	int32_t sidewinder
+		[DTTR_PCDOGS_D_INPUT_INITIALIZE_CONTROLLER_MAPPINGS_SIDEWINDER_BUTTONS_COUNT]
+		= {0};
+	int32_t gravis
+		[DTTR_PCDOGS_D_INPUT_INITIALIZE_CONTROLLER_MAPPINGS_GRAVIS_BUTTONS_COUNT]
+		= {0};
 
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ButtonMap, input_map);
-	DTTR_PCDOGS_D_Input_ButtonMap->Write(&input_map);
-	DTTR_PCDOGS_D_Input_ButtonMap->UnsafeWrite(&input_map);
+	SDK_READ_GROUPED_DATA(
+		DTTR_PCDOGS_D_Input_InitializeButtonMappings_Map,
+		input_map
+	);
+	DTTR_PCDOGS_D_Input_InitializeButtonMappings_Map->Write(&input_map);
+	DTTR_PCDOGS_D_Input_InitializeButtonMappings_Map->UnsafeWrite(&input_map);
 
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ButtonMapAlt, input_map_alt);
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ControllerHammerheadButtons, hammerhead);
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ControllerSidewinderButtons, sidewinder);
-	SDK_READ_GROUPED_DATA(DTTR_PCDOGS_D_Input_ControllerGravisButtons, gravis);
+	SDK_READ_GROUPED_DATA(
+		DTTR_PCDOGS_D_Input_InitializeButtonMappings_MapAlt,
+		input_map_alt
+	);
+	SDK_READ_GROUPED_DATA(
+		DTTR_PCDOGS_D_Menu_HandleOptionsLogic_InputControllerHammerheadButtons,
+		hammerhead
+	);
+	SDK_READ_GROUPED_DATA(
+		DTTR_PCDOGS_D_Input_InitializeControllerMappings_SidewinderButtons,
+		sidewinder
+	);
+	SDK_READ_GROUPED_DATA(
+		DTTR_PCDOGS_D_Input_InitializeControllerMappings_GravisButtons,
+		gravis
+	);
 }
 
 #undef SDK_READ_GROUPED_DATA

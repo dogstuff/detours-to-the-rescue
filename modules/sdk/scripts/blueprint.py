@@ -27,6 +27,7 @@ __all__ = [
     "TypeAlias",
     "TypedFunction",
     "TypedData",
+    "WritePolicy",
     "UNKNOWN_PARAMS",
     "enum_value",
     "fx",
@@ -66,6 +67,13 @@ class HookKind(StrEnum):
 class AbiStatus(StrEnum):
     VERIFIED = "verified"
     PLACEHOLDER = "placeholder"
+
+
+class WritePolicy(StrEnum):
+    READ_ONLY = "read_only"
+    ENGINE_MANAGED = "engine_managed"
+    RAW_MEMORY = "raw_memory"
+    PATCH_ONLY = "patch_only"
 
 
 @dataclass(frozen=True)
@@ -213,6 +221,7 @@ class Data:
     unstable: bool = False
     doc: str | None = None
     stable_reason: str | None = None
+    write_policy: WritePolicy | None = None
 
 
 FunctionRef: TypeAlias = Function | str
@@ -375,6 +384,7 @@ class Blueprint:
         unstable: bool | None = None,
         stable_reason: str | None = None,
         doc: str | None = None,
+        write_policy: WritePolicy | None = None,
     ) -> Data:
         """Add global symbol metadata and merge refs from reverse-engineered sites."""
 
@@ -418,6 +428,13 @@ class Blueprint:
                 and existing.stable_reason != stable_reason
             ):
                 raise ValueError(f"conflicting stable reason for {name}")
+            merged_write_policy = existing.write_policy or write_policy
+            if (
+                existing.write_policy
+                and write_policy
+                and existing.write_policy != write_policy
+            ):
+                raise ValueError(f"conflicting write policy for {name}")
 
             row = Data(
                 name,
@@ -426,11 +443,14 @@ class Blueprint:
                 existing.unstable or row_unstable,
                 merged_doc,
                 merged_stable_reason,
+                merged_write_policy,
             )
             self.globals[i] = row
             return row
 
-        row = Data(name, typed, list(refs), row_unstable, doc, stable_reason)
+        row = Data(
+            name, typed, list(refs), row_unstable, doc, stable_reason, write_policy
+        )
         self.globals.append(row)
         return row
 

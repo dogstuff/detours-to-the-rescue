@@ -95,11 +95,12 @@ static void compile_unstable_hook_helpers(const DTTR_Core_Context *ctx) {
 
 // Compile generated global read, write, and policy helpers.
 static void compile_global_helpers() {
-	char value[DTTR_PCDOGS_D_PKG_BASE_PATH_COUNT] = {0};
-	DTTR_PCDOGS_T_Data_Id data_id = DTTR_PCDOGS_D_PKG_BasePath->DataId;
-	DTTR_PCDOGS_T_Symbol_Data_Id symbol_id = DTTR_PCDOGS_D_PKG_BasePath->SymbolId;
-	if (data_id != DTTR_PCDOGS_DATA_PKG_BASE_PATH
-		|| symbol_id != DTTR_PCDOGS_SYMBOL_DATA_ID_PKG_BASE_PATH) {
+	char value[DTTR_PCDOGS_D_AUDIO_OPEN_STREAM_PKG_BASE_PATH_COUNT] = {0};
+	DTTR_PCDOGS_T_Data_Id data_id = DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->DataId;
+	DTTR_PCDOGS_T_Symbol_Data_Id symbol_id = DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath
+												 ->SymbolId;
+	if (data_id != DTTR_PCDOGS_DATA_AUDIO_OPEN_STREAM_PKG_BASE_PATH
+		|| symbol_id != DTTR_PCDOGS_SYMBOL_DATA_ID_AUDIO_OPEN_STREAM_PKG_BASE_PATH) {
 		return;
 	}
 
@@ -110,52 +111,56 @@ static void compile_global_helpers() {
 		return;
 	}
 
-	DTTR_PCDOGS_D_PKG_BasePath->Ptr();
-	DTTR_PCDOGS_D_PKG_BasePath->Read(&value);
-	DTTR_PCDOGS_D_PKG_BasePath->Write(&value);
-	DTTR_PCDOGS_D_PKG_BasePath->UnsafeWrite(&value);
-	DTTR_PCDOGS_D_PKG_BasePath->Status();
-	if (DTTR_PCDOGS_D_PKG_BasePath->Policy() != DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
-		return;
-	}
-
-	if (DTTR_PCDOGS_D_Dynamic_LevelScale->Policy()
+	DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Ptr();
+	DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Read(&value);
+	DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Write(&value);
+	DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->UnsafeWrite(&value);
+	DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Status();
+	if (DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Policy()
 		!= DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_PKG_ResourceCurrentLevelData->Policy()
+	if (DTTR_PCDOGS_D_Camera_UpdateFollow_DynamicLevelScale->Policy()
+		!= DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY) {
+		return;
+	}
+
+	if (DTTR_PCDOGS_D_Audio_TriggerMusicTransition_PKGResourceCurrentLevelData->Policy()
 		!= DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_Graphics_ListState->Policy()
+	if (DTTR_PCDOGS_D_Graphics_AdjustLevelScale_ListState->Policy()
 		!= DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED) {
 		return;
 	}
 
-	DTTR_PCDOGS_T_Patch_Spec current_level_data_patch = DTTR_PCDOGS_D_PKG_ResourceCurrentLevelData
-															->PatchSpec(true, 0, 0);
+	DTTR_PCDOGS_T_Patch_Spec current_level_data_patch
+		= DTTR_PCDOGS_D_Audio_TriggerMusicTransition_PKGResourceCurrentLevelData
+			  ->PatchSpec(true, 0, 0);
 	if (current_level_data_patch.kind != DTTR_PCDOGS_PATCH_DATA_POINTER_HOOK
 		|| current_level_data_patch.global
-			   != DTTR_PCDOGS_DATA_PKG_RESOURCE_CURRENT_LEVEL_DATA) {
+			   != DTTR_PCDOGS_DATA_AUDIO_TRIGGER_MUSIC_TRANSITION_PKG_RESOURCE_CURRENT_LEVEL_DATA) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_Window_LowMessageDispatchTable->Policy()
+	if (DTTR_PCDOGS_D_Window_ProcessGameProc_LowMessageDispatchTable->Policy()
 		!= DTTR_PCDOGS_WRITE_POLICY_READ_ONLY) {
 		return;
 	}
 
-	if (DTTR_PCDOGS_D_Script_SetVariableOpJumpTable->Policy()
+	if (DTTR_PCDOGS_D_Script_OpSetVariable_OpJumpTable->Policy()
 		!= DTTR_PCDOGS_WRITE_POLICY_READ_ONLY) {
 		return;
 	}
 
 	int32_t player_current_level_id = -1;
 	int16_t menu_level_index = -1;
-	DTTR_PCDOGS_D_Player_CurrentLevelId->Read(&player_current_level_id);
-	DTTR_PCDOGS_D_Menu_LevelIndex->Read(&menu_level_index);
+	DTTR_PCDOGS_D_Player_ProcessMovement_CurrentLevelID->Read(
+		&player_current_level_id
+	);
+	DTTR_PCDOGS_D_Menu_ProcessMenuTransition_LevelIndex->Read(&menu_level_index);
 }
 
 // Compile stateless active-actor utilities.

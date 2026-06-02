@@ -128,7 +128,7 @@ static bool resolve_toc(
 	uintptr_t toc_addr = 0;
 	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(
 		ctx,
-		DTTR_PCDOGS_DATA_PKG_TOC,
+		DTTR_PCDOGS_DATA_PKG_LOAD_ENTRY_TOC,
 		&toc_addr
 	);
 	if (!DTTR_ResultOK(resolved) || !toc_addr) {

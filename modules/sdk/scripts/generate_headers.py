@@ -116,58 +116,6 @@ TYPED_FIELDS = (
     TypedField.CALLABLE,
 )
 
-READ_ONLY_DATA_SUFFIXES = (
-    "_dispatch_table",
-    "_index_table",
-    "_jump_table",
-    "_lookup_table",
-    "_opcode_table",
-    "_op_table",
-)
-
-READ_ONLY_DATA_NAMES = {
-    "script_command_table",
-    "pkg_toc",
-    "pkg_toc_file_sizes",
-    "model_physics_callback_table",
-    "movement_handler_table",
-    "collision_state_handler_table",
-}
-
-ENGINE_MANAGED_DATA_NAMES = {
-    "player_current_level_id",
-    "menu_level_index",
-    "player_actor",
-    "active_entity_work_list",
-    "current_entity_camera",
-    "render_list_state",
-    "pkg_resource_current_level_data",
-    "navigation_command_queue",
-    "navigation_queue_head",
-    "d3d_device7",
-    "ddraw_back_buffer",
-    "ddraw_primary_surface",
-    "ddraw_z_buffer",
-    "script_current_actor",
-    "actor_default_update_callback_slot",
-    "collision_dispatch_actor_func",
-    "collision_process_func",
-    "collision_response_actor_func",
-    "powerup_collision_handler",
-    "behavior_process_actor_func",
-    "behavior_process_projectile_func",
-    "behavior_process_snap_func",
-    "behavior_target_actor",
-    "behavior_param_0",
-    "behavior_param_1",
-    "behavior_param_2",
-    "level_init_callback_1",
-    "level_init_callback_2",
-    "powerup_update_func",
-    "player_movement_func",
-    "projectile_logic_func",
-}
-
 
 @dataclass(frozen=True, slots=True)
 class HeaderTypes:
@@ -270,6 +218,7 @@ class GlobalRow:
     name: str
     unstable: bool
     doc: str | None
+    write_policy: object | None = None
     typed: TypedData | None = None
     symbol_id: str = ""
     public_index: int = 0
@@ -714,7 +663,7 @@ def global_entry(
         )
         for ref in row.xrefs
     ]
-    return GlobalRow(name, row.unstable, row.doc, typed), xrefs
+    return GlobalRow(name, row.unstable, row.doc, row.write_policy, typed), xrefs
 
 
 def attach_symbol_metadata(blueprint: BlueprintRows) -> None:
@@ -1022,11 +971,15 @@ def c_pascal_part(part: str) -> str:
 
 
 def c_public_token(value: object) -> str:
-    """Render public SDK identifiers with the namespace boundary preserved."""
+    """Render public SDK identifiers with authored PascalCase boundaries preserved."""
 
-    parts = [part for part in str(value).split("_") if part]
+    text = str(value)
+    parts = [part for part in text.split("_") if part]
     if not parts:
         return ""
+
+    if all(part[:1].isupper() or part[:1].isdigit() for part in parts):
+        return "_".join(parts)
 
     namespace = c_pascal_part(parts[0])
     rest = "".join(c_pascal_part(part) for part in parts[1:])
@@ -1434,21 +1387,23 @@ def hidden_function_rows(functions: list[FunctionRow]) -> list[FunctionRow]:
     return [row for row in functions if not row.public]
 
 
+WRITE_POLICY_ENUM = {
+    "read_only": "DTTR_PCDOGS_WRITE_POLICY_READ_ONLY",
+    "engine_managed": "DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED",
+    "raw_memory": "DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY",
+    "patch_only": "DTTR_PCDOGS_WRITE_POLICY_PATCH_ONLY",
+}
+
+
 def data_write_policy(row: GlobalRow) -> str:
-    """Classify how generated data helpers may write a symbol."""
+    """Return the write policy declared by the blueprint row."""
 
-    name = row.name.lower()
-    if name.endswith(READ_ONLY_DATA_SUFFIXES):
-        return "DTTR_PCDOGS_WRITE_POLICY_READ_ONLY"
-
-    if name in READ_ONLY_DATA_NAMES:
-        return "DTTR_PCDOGS_WRITE_POLICY_READ_ONLY"
-
-    if name in ENGINE_MANAGED_DATA_NAMES:
-        return "DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED"
-
-    if row.typed:
-        return "DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY"
+    if row.write_policy is not None:
+        key = str(row.write_policy)
+        try:
+            return WRITE_POLICY_ENUM[key]
+        except KeyError as exc:
+            raise ValueError(f"unknown write policy for {row.name}: {key}") from exc
 
     return "DTTR_PCDOGS_WRITE_POLICY_UNKNOWN"
 
