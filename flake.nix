@@ -113,32 +113,40 @@
             '';
           };
           mcfgthreads = mingw.windows.mcfgthreads;
-          baseShellPackages = with pkgs; [
-            just
-            cmake
-            gnumake
-            ninja
-            stb
-            pkg-config
-            nasm
-            perl
-            python3
-            python3Packages.mako
-            xxd
-            mingwCc
-            cmocka
+          pythonRequirements = with pkgs.python3Packages; [
+            mako
+            pefile
           ];
+          baseShellPackages =
+            with pkgs;
+            [
+              just
+              cmake
+              gnumake
+              ninja
+              stb
+              pkg-config
+              nasm
+              perl
+              python3
+              xxd
+              mingwCc
+              cmocka
+            ]
+            ++ pythonRequirements;
           formatPackages = with pkgs; [
             clang-tools
             python3Packages.black
           ];
-          docsPackages = with pkgs; [
-            just
-            doxygen
-            python3
-            python3Packages.mako
-            zensical
-          ];
+          docsPackages =
+            with pkgs;
+            [
+              just
+              doxygen
+              python3
+              zensical
+            ]
+            ++ pythonRequirements;
           secureFilesPackages = with pkgs; [ glab ];
           archivePackages = with pkgs; [ zip ];
           uploadPackages = with pkgs; [

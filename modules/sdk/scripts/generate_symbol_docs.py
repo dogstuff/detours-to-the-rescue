@@ -751,6 +751,7 @@ def function_xref_cards(
             indirections=int(xref.indirections),
         )
         for xref in xrefs
+        if str(getattr(xref, "required", "all")) == "all"
     ]
 
 
@@ -765,6 +766,7 @@ def data_xref_cards(
             offsets=offset_pair(xref.instr_off, xref.addr_off),
         )
         for xref in xrefs
+        if str(getattr(xref, "required", "all")) == "all"
     ]
 
 
@@ -861,8 +863,8 @@ def merge_related(*groups: list[RelatedEntry]) -> list[RelatedEntry]:
 
 
 def type_reference_matches(text: object, card: TypeCard) -> bool:
-    haystack = str(text)
-    if not haystack or haystack == "-":
+    reference_text = str(text)
+    if not reference_text or reference_text == "-":
         return False
 
     names = [card.name, card.c_name]
@@ -871,7 +873,7 @@ def type_reference_matches(text: object, card: TypeCard) -> bool:
         name
         and re.search(
             rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])",
-            haystack,
+            reference_text,
         )
         for name in names
     )

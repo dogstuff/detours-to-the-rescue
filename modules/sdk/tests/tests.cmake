@@ -44,43 +44,56 @@ add_custom_target(dttr_sdk_tests
 )
 add_dependencies(dttr_tests dttr_sdk_tests)
 
-if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
-    add_test(
-        NAME dttr_pcdogs_generated_headers
-        COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND} --check
-    )
-    set_tests_properties(dttr_pcdogs_generated_headers PROPERTIES
-        LABELS "sdk;pcdogs;generated"
-    )
+add_test(
+    NAME dttr_pcdogs_generated_headers
+    COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND} --check
+)
+set_tests_properties(dttr_pcdogs_generated_headers PROPERTIES
+    LABELS "sdk;pcdogs;generated"
+)
 
-    add_test(
-        NAME dttr_sdk_bundle_header
-        COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
-            "${DTTR_SDK_BUNDLE_GENERATOR}"
-            --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
-            --include-dir "${CMAKE_CURRENT_SOURCE_DIR}/include"
-            --output "${DTTR_SDK_BUNDLE_HEADER}"
-            --check
-    )
-    set_tests_properties(dttr_sdk_bundle_header PROPERTIES
-        LABELS "sdk;generated"
-    )
+add_test(
+    NAME dttr_sdk_bundle_header
+    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
+        "${DTTR_SDK_BUNDLE_GENERATOR}"
+        --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+        --include-dir "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        --output "${DTTR_SDK_BUNDLE_HEADER}"
+        --check
+)
+set_tests_properties(dttr_sdk_bundle_header PROPERTIES
+    LABELS "sdk;generated"
+)
 
-    add_test(
-        NAME dttr_pcdogs_symbol_docs
-        COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_symbol_docs.py"
-            --generator "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_symbol_docs.py"
-            --output-dir "${DTTR_SDK_TEST_BINARY_DIR}/symbol-docs"
-    )
-    set_tests_properties(dttr_pcdogs_symbol_docs PROPERTIES
-        LABELS "sdk;pcdogs;generated;docs"
-    )
-else()
-    message(WARNING
-        "PCDOGS SDK generator unavailable; skipping generated SDK freshness tests"
+add_test(
+    NAME dttr_pcdogs_symbol_docs
+    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_symbol_docs.py"
+        --generator "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_symbol_docs.py"
+        --output-dir "${DTTR_SDK_TEST_BINARY_DIR}/symbol-docs"
+)
+set_tests_properties(dttr_pcdogs_symbol_docs PROPERTIES
+    LABELS "sdk;pcdogs;generated;docs"
+)
+
+add_test(
+    NAME dttr_pcdogs_resolve_symbol_addresses
+    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_resolve_symbol_addresses.py"
+)
+set(DTTR_PCDOGS_RESOLVER_TEST_ENV
+    "DTTR_PCDOGS_FIXTURE_DIR=${DTTR_PCDOGS_FIXTURE_DIR}"
+)
+if(DTTR_REQUIRE_PCDOGS_FIXTURES)
+    list(APPEND DTTR_PCDOGS_RESOLVER_TEST_ENV
+        "DTTR_REQUIRE_PCDOGS_FIXTURES=1"
     )
 endif()
+
+set_tests_properties(dttr_pcdogs_resolve_symbol_addresses PROPERTIES
+    ENVIRONMENT "${DTTR_PCDOGS_RESOLVER_TEST_ENV}"
+    LABELS "sdk;pcdogs;generated"
+)
 
 if(NOT DTTR_CMOCKA_FOUND)
     if(DTTR_REQUIRE_TEST_DEPS)
@@ -132,51 +145,45 @@ add_dependencies(dttr_sdk_tests
     dttr_hook_registry_tests
 )
 
-if(DTTR_PCDOGS_GENERATOR_AVAILABLE)
-    set(DTTR_PCDOGS_BLUEPRINT_TEST_ROWS "${DTTR_SDK_TEST_BINARY_DIR}/pcdogs_blueprint_test_rows.h")
-    set(DTTR_PCDOGS_TEST_GENERATOR_ARGS
-        --rows-output "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
+set(DTTR_PCDOGS_BLUEPRINT_TEST_ROWS "${DTTR_SDK_TEST_BINARY_DIR}/pcdogs_blueprint_test_rows.h")
+set(DTTR_PCDOGS_TEST_GENERATOR_ARGS
+    --rows-output "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
+)
+add_custom_command(
+    OUTPUT "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
+    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
+        ${DTTR_PCDOGS_TEST_GENERATOR_ARGS}
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
-    )
-    add_custom_command(
-        OUTPUT "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
-        COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
-            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
-            ${DTTR_PCDOGS_TEST_GENERATOR_ARGS}
-        DEPENDS
-            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
-            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
-            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
-            "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
-            COMMENT "Generating PCDOGS blueprint test rows"
-        VERBATIM
-    )
-    add_custom_target(dttr_pcdogs_blueprint_test_rows
-        DEPENDS "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
-    )
+        COMMENT "Generating PCDOGS blueprint test rows"
+    VERBATIM
+)
+add_custom_target(dttr_pcdogs_blueprint_test_rows
+    DEPENDS "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
+)
 
-    dttr_add_cmocka_test_suite(dttr_pcdogs_sig_tests
-        SOURCES
-            "${DTTR_SDK_TEST_SOURCE_DIR}/pcdogs.c"
-            "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
-        INCLUDE_DIRS
-            "${DTTR_SDK_TEST_BINARY_DIR}"
-            ${DTTR_SDK_TEST_INCLUDE_DIRS}
-        LINK_LIBRARIES
-            dttr_pcdogs_signatures
-            dttr_pcdogs_test_fixtures
-            dttr_test_support
-        LABELS
-            sdk
-            pcdogs
-            fixtures
-        TIMEOUT 300
-    )
+dttr_add_cmocka_test_suite(dttr_pcdogs_sig_tests
+    SOURCES
+        "${DTTR_SDK_TEST_SOURCE_DIR}/pcdogs.c"
+        "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
+    INCLUDE_DIRS
+        "${DTTR_SDK_TEST_BINARY_DIR}"
+        ${DTTR_SDK_TEST_INCLUDE_DIRS}
+    LINK_LIBRARIES
+        dttr_pcdogs_signatures
+        dttr_pcdogs_test_fixtures
+        dttr_test_support
+    LABELS
+        sdk
+        pcdogs
+        fixtures
+    TIMEOUT 300
+)
 
-    add_dependencies(dttr_pcdogs_sig_tests dttr_pcdogs_blueprint_test_rows)
-    add_dependencies(dttr_sdk_tests dttr_pcdogs_sig_tests)
-else()
-    message(WARNING
-        "PCDOGS SDK generator unavailable; skipping generated blueprint signature tests"
-    )
-endif()
+add_dependencies(dttr_pcdogs_sig_tests dttr_pcdogs_blueprint_test_rows)
+add_dependencies(dttr_sdk_tests dttr_pcdogs_sig_tests)

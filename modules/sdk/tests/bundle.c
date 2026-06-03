@@ -89,6 +89,21 @@ static bool exception_report_compile_check(
 		   && report->struct_size == sizeof(*report);
 }
 
+static DTTR_Mods_API api_for_abi(uint32_t abi_version, size_t struct_size) {
+	return (DTTR_Mods_API){
+		.struct_size = struct_size,
+		.abi_version = abi_version,
+		.write_exception_report = exception_report_compile_check,
+	};
+}
+
+static DTTR_Mods_Context context_for_abi(uint32_t abi_version, size_t struct_size) {
+	return (DTTR_Mods_Context){
+		.abi_version = abi_version,
+		.struct_size = struct_size,
+	};
+}
+
 static int stable_compile_check() {
 	DTTR_Core_Context ctx = {0};
 	DTTR_Result result = {DTTR_OK};
@@ -100,29 +115,28 @@ static int stable_compile_check() {
 	DTTR_Mods_ExceptionReport exception_report = {
 		.struct_size = sizeof(DTTR_Mods_ExceptionReport),
 	};
-	DTTR_Mods_API api = {
-		.struct_size = sizeof(DTTR_Mods_API),
-		.abi_version = DTTR_SDK_ABI_VERSION,
-		.write_exception_report = exception_report_compile_check,
-	};
-	DTTR_Mods_API older_api = api;
-	older_api.abi_version = DTTR_SDK_ABI_VERSION - 1u;
+	DTTR_Mods_API api = api_for_abi(DTTR_SDK_ABI_VERSION, sizeof(DTTR_Mods_API));
+	DTTR_Mods_API older_api = api_for_abi(
+		DTTR_SDK_ABI_VERSION - 1u,
+		sizeof(DTTR_Mods_API)
+	);
+	DTTR_Mods_API future_api = api_for_abi(
+		DTTR_SDK_ABI_VERSION + 1u,
+		sizeof(DTTR_Mods_API) + 1u
+	);
 
-	DTTR_Mods_API future_api = api;
-	future_api.abi_version = DTTR_SDK_ABI_VERSION + 1u;
-	future_api.struct_size = sizeof(DTTR_Mods_API) + 1u;
-
-	DTTR_Mods_Context compatible_context = {
-		.abi_version = DTTR_SDK_ABI_VERSION,
-		.struct_size = sizeof(DTTR_Mods_Context),
-	};
-
-	DTTR_Mods_Context older_context = compatible_context;
-	older_context.abi_version = DTTR_SDK_ABI_VERSION - 1u;
-
-	DTTR_Mods_Context future_context = compatible_context;
-	future_context.abi_version = DTTR_SDK_ABI_VERSION + 1u;
-	future_context.struct_size = sizeof(DTTR_Mods_Context) + 1u;
+	DTTR_Mods_Context compatible_context = context_for_abi(
+		DTTR_SDK_ABI_VERSION,
+		sizeof(DTTR_Mods_Context)
+	);
+	DTTR_Mods_Context older_context = context_for_abi(
+		DTTR_SDK_ABI_VERSION - 1u,
+		sizeof(DTTR_Mods_Context)
+	);
+	DTTR_Mods_Context future_context = context_for_abi(
+		DTTR_SDK_ABI_VERSION + 1u,
+		sizeof(DTTR_Mods_Context) + 1u
+	);
 
 	DTTR_Mods_WriteExceptionReportFn exception_reporter = DTTR_Mods_GetWriteExceptionReportFn(
 		&api

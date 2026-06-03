@@ -207,6 +207,16 @@ static char **movie_file_names_ptr() {
 	return symbol && symbol->address ? (char **)symbol->address : NULL;
 }
 
+static void write_should_quit(const int32_t value) {
+	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(value);
+}
+
+static int32_t read_should_quit() {
+	int32_t value = 0;
+	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&value);
+	return value;
+}
+
 // Populates SDK symbol storage before enforcing the sidecar startup contract.
 static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
 	DTTR_PCDOGS_ResolveAll(runtime);
@@ -414,7 +424,7 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 
 	switch (event->type) {
 	case SDL_EVENT_QUIT:
-		DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(1);
+		write_should_quit(1);
 		after_sdl_event(event, true);
 		return;
 
@@ -612,7 +622,7 @@ static void attempt_play_startup_movies() {
 		const DTTR_MovieResult ret = DTTR_Movies_Stop();
 
 		if (ret == DTTR_MOVIE_QUIT) {
-			DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(1);
+			write_should_quit(1);
 		}
 
 		if (ret != DTTR_MOVIE_ENDED) {
@@ -766,19 +776,15 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_late_init();
 #endif
-	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(0);
-
+	write_should_quit(0);
 	DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Write(1);
 	DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Write(1);
 
 	DTTR_LOG_INFO("Ready!");
 
-	int32_t should_quit = 0;
-	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&should_quit);
-	while (should_quit == 0) {
+	while (read_should_quit() == 0) {
 		dttr_sidecar_poll_sdl_events();
 		tick_main_loop();
-		DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&should_quit);
 	}
 
 cleanup_sidecar_runtime:

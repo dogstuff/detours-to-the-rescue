@@ -110,7 +110,6 @@ void DTTR_Inputs_HandleDeviceEvent(const SDL_Event *event) {
 
 		DTTR_LOG_INFO("Gamepad disconnected: %s", SDL_GetGamepadName(dttr_gamepad));
 		close_gamepad();
-		DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(0);
 		return;
 	default:
 		return;

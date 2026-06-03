@@ -9,8 +9,8 @@
 
 #include <dttr_test_support.h>
 
-static void assert_contains(const char *text, const char *needle) {
-	assert_non_null(strstr(text, needle));
+static void assert_contains(const char *text, const char *expected_substring) {
+	assert_non_null(strstr(text, expected_substring));
 }
 
 static void stack_trace_formatter_includes_marker(void **state) {

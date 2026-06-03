@@ -45,63 +45,44 @@ set(DTTR_SDK_BUNDLE_HEADER "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_sdk.h"
 )
 set_property(GLOBAL PROPERTY DTTR_SDK_BUNDLE_HEADER "${DTTR_SDK_BUNDLE_HEADER}")
 
-find_package(Python3 COMPONENTS Interpreter QUIET)
-set(DTTR_PCDOGS_SCRIPT_RUNNER)
-set(DTTR_PCDOGS_GENERATOR_COMMAND)
-set(DTTR_PCDOGS_GENERATOR_AVAILABLE OFF)
-if(Python3_Interpreter_FOUND)
-    execute_process(
-        COMMAND "${Python3_EXECUTABLE}" -c "import mako"
-        RESULT_VARIABLE DTTR_PCDOGS_MAKO_STATUS
-        OUTPUT_QUIET
-        ERROR_QUIET
-    )
-    if(DTTR_PCDOGS_MAKO_STATUS EQUAL 0)
-        set(DTTR_PCDOGS_SCRIPT_RUNNER
-            "${CMAKE_COMMAND}" -E env
-                PYTHONDONTWRITEBYTECODE=1
-                "${Python3_EXECUTABLE}"
-        )
-    endif()
-endif()
-
-if(NOT DTTR_PCDOGS_SCRIPT_RUNNER)
-    find_program(DTTR_NIX_EXECUTABLE nix)
-    if(DTTR_NIX_EXECUTABLE)
-        set(DTTR_PCDOGS_SCRIPT_RUNNER
-            "${DTTR_NIX_EXECUTABLE}" develop "${CMAKE_SOURCE_DIR}" --command
-                "${CMAKE_COMMAND}" -E env
-                    PYTHONDONTWRITEBYTECODE=1
-        )
-    endif()
-endif()
-
-if(DTTR_PCDOGS_SCRIPT_RUNNER)
-    set(DTTR_PCDOGS_GENERATOR_AVAILABLE ON)
-    set(DTTR_PCDOGS_GENERATOR_COMMAND
-        ${DTTR_PCDOGS_SCRIPT_RUNNER}
-        "${DTTR_PCDOGS_GENERATOR}"
-        --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
-        --src-dir "${DTTR_SDK_GENERATED_SRC_DIR}"
-    )
-
-    add_custom_command(
-        OUTPUT ${DTTR_PCDOGS_GENERATED_OUTPUTS}
-        COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND}
-        DEPENDS ${DTTR_PCDOGS_GENERATOR_INPUTS}
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        COMMENT "Regenerating PCDOGS SDK headers and implementation stubs"
-        VERBATIM
-    )
-    add_custom_target(dttr_pcdogs_generated_headers
-        DEPENDS ${DTTR_PCDOGS_GENERATED_OUTPUTS}
-    )
-else()
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "import mako, pefile"
+    RESULT_VARIABLE DTTR_PCDOGS_PYTHON_MODULE_STATUS
+    ERROR_VARIABLE DTTR_PCDOGS_PYTHON_MODULE_ERROR
+    OUTPUT_QUIET
+)
+if(NOT DTTR_PCDOGS_PYTHON_MODULE_STATUS EQUAL 0)
     message(FATAL_ERROR
-        "PCDOGS SDK generator unavailable; install Python with Mako or nix so "
-        "build-tree generated SDK outputs can be produced"
+        "PCDOGS SDK scripts require Python modules from requirements.txt "
+        "(mako, pefile). Install them for ${Python3_EXECUTABLE} or use nix develop. "
+        "Import error: ${DTTR_PCDOGS_PYTHON_MODULE_ERROR}"
     )
 endif()
+
+set(DTTR_PCDOGS_SCRIPT_RUNNER
+    "${CMAKE_COMMAND}" -E env
+        PYTHONDONTWRITEBYTECODE=1
+        "${Python3_EXECUTABLE}"
+)
+set(DTTR_PCDOGS_GENERATOR_COMMAND
+    ${DTTR_PCDOGS_SCRIPT_RUNNER}
+    "${DTTR_PCDOGS_GENERATOR}"
+    --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+    --src-dir "${DTTR_SDK_GENERATED_SRC_DIR}"
+)
+
+add_custom_command(
+    OUTPUT ${DTTR_PCDOGS_GENERATED_OUTPUTS}
+    COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND}
+    DEPENDS ${DTTR_PCDOGS_GENERATOR_INPUTS}
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Regenerating PCDOGS SDK headers and implementation stubs"
+    VERBATIM
+)
+add_custom_target(dttr_pcdogs_generated_headers
+    DEPENDS ${DTTR_PCDOGS_GENERATED_OUTPUTS}
+)
 
 add_custom_command(
     OUTPUT "${DTTR_SDK_BUNDLE_HEADER}"

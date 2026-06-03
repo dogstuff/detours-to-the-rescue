@@ -53,6 +53,8 @@ class Resolver(StrEnum):
 class Required(StrEnum):
     ALL = "all"
     EN = "en"
+    EU = "eu"
+    SC = "sc"
     EU_SC = "eu_sc"
     EN_EU = "en_eu"
     EN_SC = "en_sc"
@@ -175,6 +177,7 @@ class XRef:
     instr_off: int
     addr_off: int
     indirections: int = 0
+    required: Required = Required.ALL
 
 
 @dataclass(frozen=True)
@@ -183,6 +186,7 @@ class FunctionXRef:
     instr_off: int
     addr_off: int
     indirections: int = 0
+    required: Required = Required.ALL
 
 
 @dataclass(frozen=True)
@@ -211,6 +215,7 @@ class TypedData:
     addr_off: int
     resolver: Resolver = Resolver.XREF_U32
     indirections: int = 0
+    required: Required = Required.ALL
 
 
 @dataclass(frozen=True)
@@ -251,19 +256,29 @@ def typed(
 
 
 def xref(
-    function: FunctionRef, instr_off: int, addr_off: int, indirections: int = 0
+    function: FunctionRef,
+    instr_off: int,
+    addr_off: int,
+    indirections: int = 0,
+    *,
+    required: Required = Required.ALL,
 ) -> XRef:
     """Record where a generated global resolver should read an address from function code."""
 
-    return XRef(function, instr_off, addr_off, indirections)
+    return XRef(function, instr_off, addr_off, indirections, required)
 
 
 def fx(
-    ref_function: FunctionRef, instr_off: int, addr_off: int, indirections: int = 0
+    ref_function: FunctionRef,
+    instr_off: int,
+    addr_off: int,
+    indirections: int = 0,
+    *,
+    required: Required = Required.ALL,
 ) -> FunctionXRef:
     """Record a function xref used when one generated symbol is discovered through another."""
 
-    return FunctionXRef(ref_function, instr_off, addr_off, indirections)
+    return FunctionXRef(ref_function, instr_off, addr_off, indirections, required)
 
 
 def member(
@@ -394,6 +409,12 @@ class Blueprint:
             if ref is None:
                 raise ValueError(f"typed global {name} needs a resolver XRef")
 
+            if ref.required != Required.ALL:
+                raise ValueError(
+                    f"typed global {name} canonical resolver must use Required.ALL; "
+                    "add build-specific resolver candidates as positional xrefs"
+                )
+
             typed = TypedData(
                 type,
                 ref.function,
@@ -401,7 +422,9 @@ class Blueprint:
                 ref.addr_off,
                 resolver,
                 indirections,
+                ref.required,
             )
+
         row_unstable = self.row_unstable(unstable)
         for i, existing in enumerate(self.globals):
             if existing.name != name:
@@ -415,12 +438,14 @@ class Blueprint:
             merged_typed = existing.typed
             if merged_typed is None:
                 merged_typed = typed
-            elif typed is not None and typed != merged_typed:
+
+            if typed is not None and typed != merged_typed:
                 raise ValueError(f"conflicting typed global metadata for {name}")
 
             merged_doc = existing.doc or doc
             if existing.doc and doc and existing.doc != doc:
                 raise ValueError(f"conflicting global documentation for {name}")
+
             merged_stable_reason = existing.stable_reason or stable_reason
             if (
                 existing.stable_reason
@@ -428,6 +453,7 @@ class Blueprint:
                 and existing.stable_reason != stable_reason
             ):
                 raise ValueError(f"conflicting stable reason for {name}")
+
             merged_write_policy = existing.write_policy or write_policy
             if (
                 existing.write_policy

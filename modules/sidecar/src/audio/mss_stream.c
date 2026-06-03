@@ -42,11 +42,11 @@ static mss_stream *find_stream(const void *ptr) {
 }
 
 // Returns the zero-based slot for an active SDL_mixer stream handle.
-static int stream_slot(const mss_stream *needle) {
+static int stream_slot(const mss_stream *target_stream) {
 	int index = 0;
 
 	for (mss_stream *stream = streams; stream; stream = stream->next, index++) {
-		if (stream == needle) {
+		if (stream == target_stream) {
 			return index;
 		}
 	}

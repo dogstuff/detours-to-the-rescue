@@ -74,32 +74,13 @@ set(DTTR_SUPPORT_STUB_RUNTIME_DLLS ${DTTR_SUPPORT_STUB_TARGETS})
 list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS PREPEND "$<TARGET_FILE:")
 list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS APPEND ">")
 
-find_package(Python3 COMPONENTS Interpreter QUIET)
-set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
-if(Python3_Interpreter_FOUND)
-  set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
-        "${CMAKE_COMMAND}" -E env
-            PYTHONDONTWRITEBYTECODE=1
-            "${Python3_EXECUTABLE}"
-    )
-else()
-  find_program(DTTR_NIX_EXECUTABLE nix)
-  if(DTTR_NIX_EXECUTABLE)
-    set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
-            "${DTTR_NIX_EXECUTABLE}" develop "${CMAKE_SOURCE_DIR}" --command
-                "${CMAKE_COMMAND}" -E env
-                    PYTHONDONTWRITEBYTECODE=1
-        )
-  endif()
-endif()
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-if(NOT DTTR_SUPPORT_STUB_SCRIPT_RUNNER)
-  message(FATAL_ERROR
-        "Support-stub generator unavailable; install Python or nix so "
-        "support DLL stub sources can be produced"
-    )
-endif()
-
+set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
+    "${CMAKE_COMMAND}" -E env
+        PYTHONDONTWRITEBYTECODE=1
+        "${Python3_EXECUTABLE}"
+)
 add_custom_command(
     OUTPUT ${DTTR_SUPPORT_STUB_ASM} ${DTTR_SUPPORT_STUB_DEFS}
     COMMAND ${DTTR_SUPPORT_STUB_SCRIPT_RUNNER}
