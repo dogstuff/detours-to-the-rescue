@@ -3,39 +3,13 @@ image: docker.io/nixos/nix:2.24.11
 
 variables:
   NIX_CONFIG: "experimental-features = nix-command flakes"
-  CI_NIX_PROFILE_DIR: ".nix-profiles"
+  CI_IMAGE: "$CI_REGISTRY_IMAGE:main"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_TAG}"
   DTTR_REQUIRE_TEST_DEPS: "ON"
   DTTR_REQUIRE_PCDOGS_FIXTURES: "ON"
   DTTR_PCDOGS_FIXTURE_DIR: "gamefiles"
   DTTR_GAMEFILES_SECURE_FILE: "gamefiles.tar.gz"
   DTTR_USE_CACHED_SDL3GPU_SHADERS: "ON"
-
-.nix-cache:
-  before_script:
-    - |
-      export CI_NIX_PROFILE="${CI_PROJECT_DIR}/${CI_NIX_PROFILE_DIR}/${CI_JOB_NAME_SLUG}"
-      mkdir -p "$(dirname "$CI_NIX_PROFILE")"
-      if [ "${CI_NIX_PACKAGE_CACHE_RESTORE:-false}" = "true" ]; then
-        scripts/ci-nix-package-cache.sh restore || true
-      fi
-      if [ -d .nix-cache ]; then
-        echo "Restoring package registry Nix cache..."
-        nix copy --all --from "file://${CI_PROJECT_DIR}/.nix-cache" --no-check-sigs || true
-      fi
-      echo "Realizing CI Nix profile for ${CI_NIX_SHELL} with cache key ${CI_NIX_CACHE_KEY}..."
-      nix develop --profile "$CI_NIX_PROFILE" "$CI_NIX_SHELL" --command true
-  after_script:
-    - |
-      export CI_NIX_PROFILE="${CI_PROJECT_DIR}/${CI_NIX_PROFILE_DIR}/${CI_JOB_NAME_SLUG}"
-      if [ "${CI_NIX_PACKAGE_CACHE_SAVE:-false}" = "true" ] && [ "${CI_JOB_STATUS}" = "success" ] && [ -e "$CI_NIX_PROFILE" ]; then
-        echo "Saving CI Nix profile closure to package registry cache..."
-        mkdir -p .nix-cache
-        nix copy --to "file://${CI_PROJECT_DIR}/.nix-cache" "$(readlink -f "$CI_NIX_PROFILE")"
-        scripts/ci-nix-package-cache.sh save || true
-      else
-        echo "Skipping package registry cache save (status=${CI_JOB_STATUS}, save=${CI_NIX_PACKAGE_CACHE_SAVE:-false})."
-      fi
 
 .ci-rules:
   rules:
@@ -44,9 +18,12 @@ variables:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_REF_PROTECTED == "true"
 
+.ci-image-job:
+  image: "$CI_IMAGE"
+
 .build-job:
   extends:
-    - .nix-cache
+    - .ci-image-job
     - .ci-rules
   stage: build
   needs:
@@ -57,17 +34,16 @@ variables:
   extends: .build-job
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-package"
-    CI_NIX_CACHE_KEY: "ci-package"
 
 .upload-job:
   extends:
-    - .nix-cache
+    - .ci-image-job
   stage: package
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-upload"
-    CI_NIX_CACHE_KEY: "ci-upload"
 
 stages:
+  - toolchain
   - prepare
   - build
   - test
@@ -75,25 +51,56 @@ stages:
   - deploy
   - release
 
+"build:ci-image":
+  image:
+    name: moby/buildkit:rootless
+    entrypoint: [""]
+  stage: toolchain
+  variables:
+    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
+    CACHE_IMAGE: "$CI_REGISTRY_IMAGE/cache:buildkit"
+  before_script:
+    - mkdir -p ~/.docker
+    - |
+      printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
+        "$CI_REGISTRY" \
+        "$CI_REGISTRY_USER" \
+        "$CI_REGISTRY_PASSWORD" \
+        > ~/.docker/config.json
+  script:
+    - >-
+      buildctl-daemonless.sh build
+      --frontend dockerfile.v0
+      --local context="$CI_PROJECT_DIR"
+      --local dockerfile="$CI_PROJECT_DIR"
+      --opt filename=ci/build.Containerfile
+      --import-cache type=registry,ref="$CACHE_IMAGE"
+      --export-cache type=registry,ref="$CACHE_IMAGE",mode=max
+      --output type=image,\"name=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA,$CI_REGISTRY_IMAGE:main\",push=true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - .gitlab-ci.yml
+        - ci/build.Containerfile
+        - flake.nix
+        - flake.lock
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
+
 "prepare:shaders":
   extends:
-    - .nix-cache
+    - .ci-image-job
   stage: prepare
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-shaders"
-    CI_NIX_CACHE_KEY: "ci-shaders"
-    CI_NIX_PACKAGE_CACHE_RESTORE: "true"
-    CI_NIX_PACKAGE_CACHE_SAVE: "false"
   script:
     - nix develop "$CI_NIX_SHELL" --command just ci-shader-build
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      variables:
-        CI_NIX_PACKAGE_CACHE_SAVE: "true"
     - if: $CI_COMMIT_REF_PROTECTED == "true"
-      variables:
-        CI_NIX_PACKAGE_CACHE_SAVE: "true"
     - if: $CI_COMMIT_TAG
   artifacts:
     paths:
@@ -104,7 +111,6 @@ stages:
   extends: .build-job
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-build"
-    CI_NIX_CACHE_KEY: "ci-build"
   script:
     - nix develop "$CI_NIX_SHELL" --command just ci-build-ctest
   artifacts:
@@ -115,19 +121,11 @@ stages:
 "build:debug":
   extends: .package-build-job
   script:
-    - |
-      package_registry_url=""
-      job_token=""
-      if [ "${CI_PIPELINE_SOURCE}" != "merge_request_event" ]; then
-        package_registry_url="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_REF_SLUG}"
-        job_token="${CI_JOB_TOKEN}"
-      fi
-      nix develop "$CI_NIX_SHELL" --command \
-        just package-debug \
-        "${CI_COMMIT_TAG:-dev}" \
-        "${CI_COMMIT_REF_SLUG}" \
-        "$package_registry_url" \
-        "$job_token"
+    - >-
+      nix develop "$CI_NIX_SHELL" --command
+      just package-debug
+      "${CI_COMMIT_TAG:-dev}"
+      "${CI_COMMIT_REF_SLUG}"
   artifacts:
     paths:
       - dttr-*-debug.zip
@@ -157,12 +155,11 @@ stages:
 
 "test:ctest":
   extends:
-    - .nix-cache
+    - .ci-image-job
     - .ci-rules
   stage: test
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-test"
-    CI_NIX_CACHE_KEY: "ci-test"
   needs:
     - job: "build:ctest"
       artifacts: true
@@ -176,11 +173,10 @@ stages:
 
 "test:docs":
   extends:
-    - .nix-cache
+    - .ci-image-job
   stage: test
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-docs"
-    CI_NIX_CACHE_KEY: "ci-docs"
   needs:
     - job: "build:ctest"
       artifacts: true
