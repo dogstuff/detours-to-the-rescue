@@ -4,6 +4,7 @@ image: docker.io/nixos/nix:2.24.11
 variables:
   NIX_CONFIG: "experimental-features = nix-command flakes"
   CI_IMAGE: "$CI_REGISTRY_IMAGE:main"
+  CI_NIX_SHELL: ".#devShells.x86_64-linux.default"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_TAG}"
   DTTR_REQUIRE_TEST_DEPS: "ON"
   DTTR_REQUIRE_PCDOGS_FIXTURES: "ON"
@@ -32,15 +33,11 @@ variables:
 
 .package-build-job:
   extends: .build-job
-  variables:
-    CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-package"
 
 .upload-job:
   extends:
     - .ci-image-job
   stage: package
-  variables:
-    CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-upload"
 
 stages:
   - toolchain
@@ -73,7 +70,7 @@ stages:
       --frontend dockerfile.v0
       --local context="$CI_PROJECT_DIR"
       --local dockerfile="$CI_PROJECT_DIR"
-      --opt filename=ci/build.Containerfile
+      --opt filename=build.Containerfile
       --import-cache type=registry,ref="$CACHE_IMAGE"
       --export-cache type=registry,ref="$CACHE_IMAGE",mode=max
       --output type=image,\"name=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA,$CI_REGISTRY_IMAGE:main\",push=true
@@ -82,7 +79,7 @@ stages:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes:
         - .gitlab-ci.yml
-        - ci/build.Containerfile
+        - build.Containerfile
         - flake.nix
         - flake.lock
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
@@ -93,8 +90,6 @@ stages:
   extends:
     - .ci-image-job
   stage: prepare
-  variables:
-    CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-shaders"
   script:
     - nix develop "$CI_NIX_SHELL" --command just ci-shader-build
   rules:
@@ -109,8 +104,6 @@ stages:
 
 "build:ctest":
   extends: .build-job
-  variables:
-    CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-build"
   script:
     - nix develop "$CI_NIX_SHELL" --command just ci-build-ctest
   artifacts:
@@ -158,8 +151,6 @@ stages:
     - .ci-image-job
     - .ci-rules
   stage: test
-  variables:
-    CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-test"
   needs:
     - job: "build:ctest"
       artifacts: true
@@ -175,8 +166,6 @@ stages:
   extends:
     - .ci-image-job
   stage: test
-  variables:
-    CI_NIX_SHELL: ".#devShells.x86_64-linux.ci-docs"
   needs:
     - job: "build:ctest"
       artifacts: true

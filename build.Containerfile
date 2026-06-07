@@ -11,9 +11,8 @@ WORKDIR /workspace
 
 COPY flake.nix flake.lock /workspace/
 
-RUN nix profile install --impure \
-  ".#devShells.$(nix eval --impure --raw --expr builtins.currentSystem).default" \
-  ".#packages.$(nix eval --impure --raw --expr builtins.currentSystem).shader-tools" \
+RUN nix develop --profile /nix/var/nix/profiles/dttr-default \
+      ".#devShells.$(nix eval --impure --raw --expr builtins.currentSystem).default" --command true \
  && nix-collect-garbage -d \
  && rm -rf /root/.cache/nix
 
