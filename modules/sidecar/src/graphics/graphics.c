@@ -38,8 +38,7 @@ typedef struct {
 	int end;
 } backend_range;
 
-// Rebuilds the window title from the active renderer and pixel size so users can see
-// which backend won initialization.
+// Show renderer and pixel size in the window title.
 static void update_window_title(const DTTR_BackendState *state) {
 	int w = 0, h = 0;
 	SDL_GetWindowSizeInPixels(state->window, &w, &h);
@@ -67,8 +66,7 @@ static void update_window_title(const DTTR_BackendState *state) {
 	SDL_SetWindowTitle(state->window, window_title);
 }
 
-// Rejects unusably small render dimensions and falls back to the game default instead
-// of creating zero-sized targets.
+// Clamp bogus render sizes to the game default.
 static int clamp_dim(int value, int fallback) {
 	return (value < DTTR_MIN_WINDOW_DIM) ? fallback : value;
 }

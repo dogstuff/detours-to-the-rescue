@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Downloads the DttR modding build & SDK matching required version.
+# Downloads the DttR modding build and SDK for dttr-version.txt.
 
 set -euo pipefail
 

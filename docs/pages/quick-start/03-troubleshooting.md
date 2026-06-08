@@ -55,7 +55,7 @@ Open `dttr-config.exe` and lower `MSS Sample Gain`. Very high gain values can cl
 
 If you are still having problems, report the issue through [DttR's GitLab repository](https://gitlab.com/dogstuff/detours-to-the-rescue).
 
-Be sure to include:
+Include:
 
 - The DttR version you are using.
 - Whether you downloaded Vanilla or Modding.

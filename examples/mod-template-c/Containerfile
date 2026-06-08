@@ -15,8 +15,8 @@ RUN apt-get update \
 WORKDIR /mod
 COPY . /mod
 
-# By default the container downloads the SDK version requested by dttr-version.txt.
-# Setting DTTR_FETCH_SDK=0 to build with a pre-populated SDK at DTTRSDK_DIR instead.
+# Default: Fetch the SDK version from dttr-version.txt.
+# Set DTTR_FETCH_SDK=0 to use an existing SDK at DTTRSDK_DIR.
 ARG DTTR_FETCH_SDK=1
 ARG DTTRSDK_DIR=.dttr/sdk
 ENV DTTRSDK_DIR=${DTTRSDK_DIR}

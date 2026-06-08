@@ -1,16 +1,16 @@
 #include "gui_internal.h"
 
 static const char *const GRAPHICS_API_TOOLTIPS[] = {
-	"Uses the best available graphics backend.",
-	"Uses the Vulkan graphics backend.",
-	"Uses the Direct3D 12 graphics backend.",
-	"Uses the OpenGL graphics backend.",
+	"Auto-selects the best available graphics backend.",
+	"Vulkan graphics backend.",
+	"Direct3D 12 graphics backend.",
+	"OpenGL graphics backend.",
 };
 
 static const char *const SCALING_FIT_TOOLTIPS[] = {
 	"Preserves aspect ratio and adds bars as needed.",
 	"Fills the whole window even if the image is distorted.",
-	"Uses whole-number scaling while preserving aspect ratio.",
+	"Whole-number scaling with aspect ratio preserved.",
 };
 
 static const char *const SCALING_METHOD_TOOLTIPS[] = {
@@ -19,13 +19,13 @@ static const char *const SCALING_METHOD_TOOLTIPS[] = {
 };
 
 static const char *const PRESENT_FILTER_TOOLTIPS[] = {
-	"Uses nearest-neighbor sampling when presenting frames.",
-	"Uses linear filtering when presenting frames.",
+	"Nearest-neighbor sampling for presented frames.",
+	"Linear filtering for presented frames.",
 };
 
 static const char *const VERTEX_PRECISION_TOOLTIPS[] = {
-	"Uses the game's original vertex coordinate precision.",
-	"Uses subpixel vertex coordinates for smoother 3D movement.\n\nNOTE: Subpixel mode "
+	"Game's original vertex coordinate precision.",
+	"Subpixel vertex coordinates for smoother 3D movement.\n\nNOTE: Subpixel mode "
 	"may make certain seams between polygons on the puppy models visible at higher "
 	"resolutions.",
 };

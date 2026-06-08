@@ -61,7 +61,7 @@ function(dttr_cmocka_test_environment out_var)
     set(${out_var} ${dttr_environment} PARENT_SCOPE)
 endfunction()
 
-# Adds a cmocka executable, applies common test settings, and registers it with ctest.
+# Registers a cmocka target with the repo's standard CTest settings.
 function(dttr_add_cmocka_test_suite target)
     cmake_parse_arguments(
         DTTR_SUITE

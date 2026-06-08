@@ -299,7 +299,7 @@ static void new_frame_no_input(uint32_t w, uint32_t h) {
 	igNewFrame();
 }
 
-// Renders game frame for the optional ImGui modding overlay across graphics backends.
+// Render mod game-layer ImGui draw data.
 static ImDrawData *render_game_frame(uint32_t w, uint32_t h) {
 	new_frame_no_input(w, h);
 
@@ -405,7 +405,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	}
 }
 
-// Renders overlay frame for the optional ImGui modding overlay across graphics backends.
+// Render mod overlay ImGui draw data.
 static ImDrawData *render_overlay_frame(
 	uint32_t swap_w,
 	uint32_t swap_h,
@@ -441,7 +441,7 @@ static void current_display_size(uint32_t *width, uint32_t *height) {
 	*height = (uint32_t)io->DisplaySize.y;
 }
 
-// Submits SDL3 GPU for the optional ImGui modding overlay across graphics backends.
+// Submit ImGui draw data to the SDL GPU target.
 static void submit_sdl3gpu(
 	ImDrawData *draw_data,
 	SDL_GPUCommandBuffer *cmd,
@@ -468,7 +468,7 @@ static void submit_sdl3gpu(
 	SDL_EndGPURenderPass(pass);
 }
 
-// Submits OpenGL for the optional ImGui modding overlay across graphics backends.
+// Submit ImGui draw data with OpenGL.
 static void submit_opengl(ImDrawData *draw_data) {
 	if (!has_draw_data(draw_data)) {
 		return;

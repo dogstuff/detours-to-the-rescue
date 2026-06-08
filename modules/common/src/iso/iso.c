@@ -338,7 +338,7 @@ static bool create_parent_dirs(const char *path) {
 	return true;
 }
 
-// Detects reusable cache files by comparing size and bytes with the mounted ISO file.
+// Reuse cached files only when size and bytes match the ISO.
 static bool file_matches_physfs_file(
 	const char *path,
 	PHYSFS_File *physfs_file,

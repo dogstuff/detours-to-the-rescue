@@ -2,12 +2,12 @@
 
 static const char *const GAMEPAD_AXIS_TOOLTIPS[] = {
 	"Disables this gamepad axis mapping.",
-	"Uses the left stick horizontal axis.",
-	"Uses the left stick vertical axis.",
-	"Uses the right stick horizontal axis.",
-	"Uses the right stick vertical axis.",
-	"Uses the left trigger axis.",
-	"Uses the right trigger axis.",
+	"Left stick horizontal axis.",
+	"Left stick vertical axis.",
+	"Right stick horizontal axis.",
+	"Right stick vertical axis.",
+	"Left trigger axis.",
+	"Right trigger axis.",
 };
 
 static const char *TOOLTIP_GAMEPAD_ENABLED = "Enable controller input. Default: true.";

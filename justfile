@@ -31,11 +31,11 @@ _default:
 # Configure the build; generated artifacts are produced by CMake in the build tree.
 prepare-build: setup-build
 
-# Build the default debug distribution.
+# Default debug build.
 build: prepare-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}"
 
-# Build the release distribution.
+# Optimized release build.
 build-release: prepare-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-release }}"
 
@@ -54,7 +54,7 @@ ci-test:
     ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" \
       --output-on-failure --parallel "{{ test-max-parallel }}" -L "common|sdk|sidecar"
 
-# Build and run common, SDK, and sidecar tests.
+# Full test pass for common, SDK, and sidecar.
 test-all: ci-compile-tests ci-test
 
 # Build and run SDK-only tests.
@@ -82,11 +82,11 @@ setup-build:
 clean:
     rm -rf "{{ build-dir }}" "{{ toolchain-dir }}"
 
-# Regenerate loader assembly outputs in the build tree.
+# Refresh generated loader assembly files.
 _build-asm:
     just --justfile modules/loader/justfile asm
 
-# Regenerate loader compatibility outputs in the build tree.
+# Refresh loader compatibility files.
 _build-compat:
     just --justfile modules/loader/justfile compat
 

@@ -75,8 +75,7 @@ static AVFrame *video_frame = NULL;
 static AVFrame *audio_frame = NULL;
 static AVPacket *packet = NULL;
 
-// Restores the movie decoder state to its idle defaults while preserving the final
-// result.
+// Reset decoder state but keep the final result.
 static void reset_movie_state(dttr_movie_result result) {
 	movie = (movie_state){
 		.video_stream = -1,
@@ -557,7 +556,7 @@ static void send_packet() {
 	}
 }
 
-// Advances packet decoding until a video frame is ready or playback reaches the end.
+// Decode until there is a frame to present.
 static bool decode_until_video_frame() {
 	while (movie.result == DTTR_MOVIE_PLAYING && !movie.video_frame_ready) {
 		if (receive_video_frame()) {
