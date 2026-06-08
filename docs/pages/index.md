@@ -1,10 +1,10 @@
-!!! info "Quick Start Guide"
+!!! example "Quick Start Guide"
 
     If this is your first time using DttR, the fastest way to get it running is by following the [quick start guide](quick-start/00-initial-setup.md).
 
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is a compatibility layer and modding runtime for the PC version of *102 Dalmatians: Puppies to the Rescue*. It helps the game run on modern systems.
+DttR is a launcher and runtime for the PC version of *102 Dalmatians: Puppies to the Rescue* that lets the game run on modern systems and load user-created mods.
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 

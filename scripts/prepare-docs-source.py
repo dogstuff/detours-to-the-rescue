@@ -15,10 +15,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SDK_SCRIPT_DIR = REPO_ROOT / "modules/sdk/scripts"
 PCDOGS_BLUEPRINT = REPO_ROOT / "modules/sdk/blueprints/dttr_pcdogs.py"
+SYMBOL_REFERENCE_TITLE = "PCDogs Symbols"
 SYMBOL_REFERENCE_BASE_PATH = "modding-sdk/symbols/pcdogs"
-EXPECTED_SYMBOL_NAV_ENTRY = """    { "PCDogs Symbols" = [
-      { "Overview" = "modding-sdk/symbols/pcdogs/index.md" },
-    ] },"""
+SYMBOL_REFERENCE_OVERVIEW_PATH = f"{SYMBOL_REFERENCE_BASE_PATH}/index.md"
+EXPECTED_SYMBOL_NAV_ENTRY = f"""    {{ "{SYMBOL_REFERENCE_TITLE}" = [
+      {{ "{SYMBOL_REFERENCE_TITLE}" = "{SYMBOL_REFERENCE_OVERVIEW_PATH}" }},
+    ] }},"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +62,6 @@ class SymbolOverviewManifest:
 class SymbolWrapperManifest:
     base_path: str
     overview: SymbolOverviewManifest
-    detail_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,10 +189,10 @@ def run_checked(command: list[str], *, label: str) -> None:
 
 
 def prepare_symbol_reference_docs(
-    symbol_docs_dir: Path, *, metadata_dir: Path, gamefile_dir: Path
+    symbols_root_dir: Path, *, metadata_dir: Path, gamefile_dir: Path
 ) -> list[XRefMetadataOutput]:
-    if symbol_docs_dir.exists():
-        shutil.rmtree(symbol_docs_dir)
+    # This directory also contains copied hand-authored wrapper pages.
+    symbols_root_dir.mkdir(parents=True, exist_ok=True)
 
     metadata = generate_xref_metadata(metadata_dir, gamefile_dir=gamefile_dir)
     metadata_args = [
@@ -202,7 +203,7 @@ def prepare_symbol_reference_docs(
             sys.executable,
             str(SDK_SCRIPT_DIR / "generate_symbol_docs.py"),
             "--output-dir",
-            str(symbol_docs_dir),
+            str(symbols_root_dir),
             *metadata_args,
         ],
         label="symbol docs generation",
@@ -258,10 +259,8 @@ def write_docs_manifest(
     output_dir: Path,
     source_dir: Path,
     config_path: Path,
-    symbol_docs_dir: Path,
     metadata_paths: list[Path],
 ) -> Path:
-    symbols_dir = symbol_docs_dir / "pcdogs" / "symbols"
     manifest = DocsManifest(
         schema_version=1,
         source_dir=source_dir.as_posix(),
@@ -270,10 +269,9 @@ def write_docs_manifest(
             symbol_wrappers=SymbolWrapperManifest(
                 base_path=SYMBOL_REFERENCE_BASE_PATH,
                 overview=SymbolOverviewManifest(
-                    title="PCDogs Symbols",
-                    path=f"{SYMBOL_REFERENCE_BASE_PATH}/index.md",
+                    title=SYMBOL_REFERENCE_TITLE,
+                    path=SYMBOL_REFERENCE_OVERVIEW_PATH,
                 ),
-                detail_count=len(list(symbols_dir.glob("*.md"))),
             )
         ),
         metadata=[relative_to_output(path, output_dir) for path in metadata_paths],
@@ -308,10 +306,10 @@ def main() -> int:
     pages_out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, pages_out)
 
-    symbol_docs_dir = pages_out / "modding-sdk" / "symbols"
+    symbols_root_dir = pages_out / "modding-sdk" / "symbols"
     try:
         metadata = prepare_symbol_reference_docs(
-            symbol_docs_dir,
+            symbols_root_dir,
             metadata_dir=metadata_dir,
             gamefile_dir=args.gamefile_dir,
         )
@@ -327,7 +325,6 @@ def main() -> int:
         output_dir=output_dir,
         source_dir=source_dir,
         config_path=config_path,
-        symbol_docs_dir=symbol_docs_dir,
         metadata_paths=[item.path for item in metadata],
     )
     return 0

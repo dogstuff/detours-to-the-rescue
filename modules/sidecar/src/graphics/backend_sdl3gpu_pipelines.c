@@ -7,10 +7,6 @@
 
 #include "gen/sdl3gpu_shaders.h"
 
-#define COMPUTE_WORKGROUP_X 16
-#define COMPUTE_WORKGROUP_Y 16
-#define COMPUTE_WORKGROUP_Z 1
-
 // Holds shader bytecode pointer/size pairs for SDL pipeline creation.
 typedef struct {
 	const Uint8 *code;
@@ -53,24 +49,6 @@ static graphics_shader_blob get_basic_frag_blob(SDL_GPUShaderFormat format) {
 	}
 }
 
-// Returns the embedded buffer-to-texture compute shader blob for the selected format.
-static graphics_shader_blob get_buf2tex_comp_blob(SDL_GPUShaderFormat format) {
-	switch (format) {
-	case SDL_GPU_SHADERFORMAT_SPIRV:
-		return (graphics_shader_blob){
-			buf2tex_comp_spv,
-			(size_t)buf2tex_comp_spv_len,
-		};
-	case SDL_GPU_SHADERFORMAT_DXIL:
-		return (graphics_shader_blob){
-			buf2tex_comp_dxil,
-			(size_t)buf2tex_comp_dxil_len,
-		};
-	default:
-		return (graphics_shader_blob){NULL, 0};
-	}
-}
-
 // Creates one graphics shader object from an embedded blob.
 static SDL_GPUShader *create_shader(
 	const graphics_shader_blob *blob,
@@ -99,34 +77,6 @@ static SDL_GPUShader *create_shader(
 	};
 
 	return SDL_CreateGPUShader(state->device, &info);
-}
-
-// Creates the compute pipeline used to expand upload buffers into textures.
-static SDL_GPUComputePipeline *create_compute_pipeline(const graphics_shader_blob *blob) {
-	DTTR_BackendState *state = &dttr_backend;
-
-	if (!blob || !blob->code || blob->size == 0) {
-		SDL_SetError(
-			"No precompiled compute shader blob for %s format",
-			dttr_graphics_shader_format_name(state->shader_format)
-		);
-		return NULL;
-	}
-
-	const SDL_GPUComputePipelineCreateInfo info = {
-		.code = blob->code,
-		.code_size = blob->size,
-		.entrypoint = "main",
-		.format = state->shader_format,
-		.num_readonly_storage_buffers = 1,
-		.num_readwrite_storage_textures = 1,
-		.num_uniform_buffers = 1,
-		.threadcount_x = COMPUTE_WORKGROUP_X,
-		.threadcount_y = COMPUTE_WORKGROUP_Y,
-		.threadcount_z = COMPUTE_WORKGROUP_Z,
-	};
-
-	return SDL_CreateGPUComputePipeline(state->device, &info);
 }
 
 // Releases a temporary vertex/fragment shader pair after pipeline creation.
@@ -253,20 +203,7 @@ static bool create_graphics_pipelines(
 	return true;
 }
 
-// Creates the compute pipeline used by staged texture uploads.
-static bool create_buf2tex_pipeline(DTTR_BackendState *state) {
-	const graphics_shader_blob buf2tex_blob = get_buf2tex_comp_blob(state->shader_format);
-	state->buf2tex_pipeline = create_compute_pipeline(&buf2tex_blob);
-
-	if (state->buf2tex_pipeline) {
-		return true;
-	}
-
-	DTTR_LOG_ERROR("Failed to create buf2tex compute pipeline: %s", SDL_GetError());
-	return false;
-}
-
-// Creates all graphics and compute pipelines required by the backend.
+// Creates all graphics pipelines required by the backend.
 bool dttr_graphics_sdl3gpu_create_pipelines() {
 	DTTR_BackendState *state = &dttr_backend;
 
@@ -294,6 +231,5 @@ bool dttr_graphics_sdl3gpu_create_pipelines() {
 	}
 
 	release_shader_pair(state, vert, frag);
-
-	return create_buf2tex_pipeline(state);
+	return true;
 }

@@ -32,7 +32,7 @@ static DTTR_PCDOGS_T_File_Handle *file_open_with_mode(
 			"File_OpenWithMode failed for \"%s\" (mode \"%s\"): %s",
 			path,
 			mode,
-			result.message ? result.message : DTTR_StatusName(result.status)
+			dttr_sidecar_result_detail(result)
 		);
 		return NULL;
 	}

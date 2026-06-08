@@ -15,8 +15,6 @@ bool DTTR_Log_IsEnabled(int level);
 void DTTR_Log(int level, const char *file, int line, const char *fmt, ...);
 void DTTR_Log_Unchecked(int level, const char *file, int line, const char *fmt, ...);
 void DTTR_Log_SetLevel(int level);
-void DTTR_Log_SetQuiet(bool enable);
-int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level);
 int DTTR_Log_AddFP(FILE *fp, int level);
 
 #define DTTR_LOG_AT(level, ...)                                                          \

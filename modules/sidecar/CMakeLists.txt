@@ -12,8 +12,6 @@ set(DTTR_SIDECAR_SDL3GPU_SHADER_OUTPUTS
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.spv"
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxil"
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.spv"
-    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.dxil"
-    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.spv"
 )
 set(DTTR_SIDECAR_GENERATED_SHADER_OUTPUTS
     "${DTTR_SIDECAR_OPENGL_SHADER_HEADER}"
@@ -37,8 +35,6 @@ set(DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUTS
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.spv"
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxil"
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.spv"
-    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.dxil"
-    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.spv"
 )
 file(GLOB DTTR_SIDECAR_OPENGL_SHADER_INPUTS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/opengl/*.glsl"
@@ -87,12 +83,6 @@ if(DTTR_USE_CACHED_SDL3GPU_SHADERS)
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.spv"
             "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.spv"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.dxil"
-            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.dxil"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/buf2tex.comp.spv"
-            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/buf2tex.comp.spv"
         DEPENDS ${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUTS}
         COMMENT "Copying cached sidecar SDL3 GPU shader headers and blobs"
         VERBATIM

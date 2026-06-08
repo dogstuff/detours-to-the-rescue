@@ -34,7 +34,7 @@ float DTTR_ImGuiDialog_ScaledFloat(const DTTR_ImGuiDialogContext *ctx, float val
 	return value * context_scale(ctx);
 }
 
-int DTTR_ImGuiDialog_ScaledInt(const DTTR_ImGuiDialogContext *ctx, float value) {
+static int scaled_int(const DTTR_ImGuiDialogContext *ctx, float value) {
 	const int scaled = (int)(DTTR_ImGuiDialog_ScaledFloat(ctx, value) + 0.5f);
 	return scaled > 0 ? scaled : 1;
 }
@@ -47,8 +47,8 @@ static void resize_dialog_window_for_scale(DTTR_ImGuiDialogContext *ctx) {
 
 	SDL_SetWindowSize(
 		ctx->window,
-		DTTR_ImGuiDialog_ScaledInt(ctx, (float)ctx->logical_window_width),
-		DTTR_ImGuiDialog_ScaledInt(ctx, (float)ctx->logical_window_height)
+		scaled_int(ctx, (float)ctx->logical_window_width),
+		scaled_int(ctx, (float)ctx->logical_window_height)
 	);
 }
 
@@ -356,7 +356,7 @@ void DTTR_ImGuiDialog_FitWindowToContent(
 	int width,
 	float padding_y
 ) {
-	const int scaled_width = DTTR_ImGuiDialog_ScaledInt(ctx, (float)width);
+	const int scaled_width = scaled_int(ctx, (float)width);
 	const int height = (int)(igGetCursorPosY()
 							 + DTTR_ImGuiDialog_ScaledFloat(ctx, padding_y) + 0.5f);
 	SDL_SetWindowSize(ctx->window, scaled_width, height);

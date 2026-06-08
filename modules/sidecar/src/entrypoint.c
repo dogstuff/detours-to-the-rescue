@@ -302,7 +302,7 @@ static bool require_pcdogs_call(const char *name, DTTR_Result result) {
 		DTTR_LOG_ERROR(
 			"Required PCDOGS operation failed: %s (%s)",
 			name,
-			result.message ? result.message : DTTR_StatusName(result.status)
+			dttr_sidecar_result_detail(result)
 		);
 		return false;
 	}

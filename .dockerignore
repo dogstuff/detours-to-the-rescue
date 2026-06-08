@@ -1,5 +1,3 @@
 *
 !flake.nix
 !flake.lock
-!ci/
-!ci/build.Containerfile

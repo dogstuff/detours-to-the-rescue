@@ -150,7 +150,7 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 	if (!DTTR_ResultOK(result)) {
 		DTTR_LOG_ERROR(
 			"Failed to publish DirectDraw object: %s",
-			result.message ? result.message : DTTR_StatusName(result.status)
+			dttr_sidecar_result_detail(result)
 		);
 		return E_FAIL;
 	}

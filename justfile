@@ -114,8 +114,6 @@ ci-shader-build: update-cached-sdl3gpu-shaders
       shaders/basic.frag.spv
       shaders/basic.vert.dxil
       shaders/basic.vert.spv
-      shaders/buf2tex.comp.dxil
-      shaders/buf2tex.comp.spv
     )
     for artifact in "${expected[@]}"; do
       test -s "$cache_dir/$artifact"

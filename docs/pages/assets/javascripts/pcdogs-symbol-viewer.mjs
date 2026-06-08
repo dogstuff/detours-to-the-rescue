@@ -17,6 +17,17 @@ const KIND_LABELS = {
   signature: "Signature",
 };
 const VERSION_LABELS = ["EN", "EU", "SC"];
+const FILTER_DEFAULTS = {
+  query: "",
+  stability: "all",
+  kind: "all",
+  version: "all",
+};
+const FILTER_OPTIONS = {
+  stability: ["all", "stable", "unstable"],
+  kind: ["all", ...Object.keys(KIND_LABELS)],
+  version: ["all", ...VERSION_LABELS],
+};
 
 function classes(...items) {
   return items.filter(Boolean).join(" ");
@@ -26,10 +37,66 @@ function text(value) {
   return value == null || value === "" ? "-" : String(value);
 }
 
+function getSessionStorage() {
+  try {
+    return typeof sessionStorage === "undefined" ? null : sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function storageKey(root, src) {
+  return `pcdogs-symbol-viewer-filters:${location.pathname}:${src}:${
+    root.id || "viewer"
+  }`;
+}
+
+function readStoredFilters(key) {
+  const storage = getSessionStorage();
+
+  if (!storage) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(storage.getItem(key) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredFilters(key, filters) {
+  const storage = getSessionStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(key, JSON.stringify(filters));
+  } catch {
+    // Ignore private-mode or quota failures; in-memory state still works.
+  }
+}
+
+function normalizeStoredFilters(filters) {
+  return {
+    query:
+      typeof filters.query === "string" ? filters.query : FILTER_DEFAULTS.query,
+    stability: FILTER_OPTIONS.stability.includes(filters.stability)
+      ? filters.stability
+      : FILTER_DEFAULTS.stability,
+    kind: FILTER_OPTIONS.kind.includes(filters.kind)
+      ? filters.kind
+      : FILTER_DEFAULTS.kind,
+    version: FILTER_OPTIONS.version.includes(filters.version)
+      ? filters.version
+      : FILTER_DEFAULTS.version,
+  };
+}
+
 function selectedHash() {
-  return (
-    new URLSearchParams(location.hash.replace(/^#/, "")).get("symbol") || ""
-  );
+  return new URLSearchParams(location.hash.slice(1)).get("symbol") || "";
 }
 
 function symbolHref(anchor) {
@@ -50,10 +117,6 @@ function selectHash(anchor) {
   if (location.hash) {
     history.pushState(null, "", `${location.pathname}${location.search}`);
   }
-}
-
-function scrollTo(root) {
-  root.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
 function slug(value) {
@@ -83,11 +146,13 @@ function versionsLabel(symbol) {
 }
 
 function matchesStability(symbol, filter) {
-  return filter === "all" || (isUnstable(symbol) ? "unstable" : "stable") === filter;
+  return (
+    filter === "all" || (isUnstable(symbol) ? "unstable" : "stable") === filter
+  );
 }
 
 function matchesVersion(symbol, filter) {
-  return filter === "all" || text(symbol.builds).split(/\s+/).includes(filter);
+  return filter === "all" || buildLabels(symbol.builds).includes(filter);
 }
 
 function matchesQuery(symbol, needle) {
@@ -130,23 +195,19 @@ function CodeBlock({ value, htmlValue }) {
   </div>`;
 }
 
-function ExampleTabs({ symbol, tabs }) {
-  const shown = tabs.filter((tab) => tab.value);
-
-  if (!shown.length) {
+function TabbedSet({ base, extraClass = "", tabs, renderTab }) {
+  if (!tabs.length) {
     return null;
   }
 
-  const base = `pcdogs-symbol-example-${symbol.anchor}`;
-
   return html`<div
-    class="tabbed-set tabbed-alternate"
-    data-tabs=${`${base}:${shown.length}`}
+    class=${classes("tabbed-set tabbed-alternate", extraClass)}
+    data-tabs=${`${base}:${tabs.length}`}
   >
-    ${shown.map(
+    ${tabs.map(
       (_, index) =>
         html`<input
-          checked=${index === 0}
+          defaultChecked=${index === 0}
           id=${`${base}-${index + 1}`}
           name=${base}
           type="radio"
@@ -154,7 +215,7 @@ function ExampleTabs({ symbol, tabs }) {
         />`,
     )}
     <div class="tabbed-labels">
-      ${shown.map(
+      ${tabs.map(
         (tab, index) =>
           html`<label for=${`${base}-${index + 1}`} key=${tab.label}
             >${tab.label}</label
@@ -162,14 +223,23 @@ function ExampleTabs({ symbol, tabs }) {
       )}
     </div>
     <div class="tabbed-content">
-      ${shown.map(
+      ${tabs.map(
         (tab) =>
           html`<div class="tabbed-block" key=${tab.label}>
-            <${CodeBlock} value=${tab.value} htmlValue=${tab.htmlValue} />
+            ${renderTab(tab)}
           </div>`,
       )}
     </div>
   </div>`;
+}
+
+function ExampleTabs({ symbol, tabs }) {
+  return html`<${TabbedSet}
+    base=${`pcdogs-symbol-example-${symbol.anchor}`}
+    tabs=${tabs.filter((tab) => tab.value)}
+    renderTab=${(tab) =>
+      html`<${CodeBlock} value=${tab.value} htmlValue=${tab.htmlValue} />`}
+  />`;
 }
 
 function Facts({ rows }) {
@@ -195,12 +265,16 @@ function Facts({ rows }) {
   </div>`;
 }
 
-function addressLabel(label) {
-  return label.replace(/^Address \(([^)]+)\)$/, "Location ($1)");
+function metadataLabel(row, isAddress) {
+  return isAddress ? "Location" : row.label;
 }
 
 function isAddressRow(row) {
   return row.label.startsWith("Address (");
+}
+
+function addressBuild(row) {
+  return /^Address \(([^)]+)\)$/.exec(row.label)?.[1] || "";
 }
 
 function HexValue({ value, split = false }) {
@@ -223,15 +297,91 @@ function HexValue({ value, split = false }) {
     ><span class="pcdogs-address-table__prefix">${value.slice(end)}</span>`;
 }
 
-function MetadataValue({ row }) {
-  if (
-    ["Patch Size", "Entry Patch Size"].includes(row.label) &&
-    /^0x[0-9a-fA-F]+$/.test(row.value)
-  ) {
-    return html`<${HexValue} value=${row.value} />`;
+function ResolverValue({ value }) {
+  const match = /^(.*?)\s+([+-].*)$/.exec(text(value).trim());
+
+  if (!match) {
+    return text(value);
   }
 
-  return row.value;
+  return html`<span class="pcdogs-metadata-table__resolver">
+    <code class="pcdogs-metadata-table__resolver-name">${match[1]}</code>
+    <${XRefOffset} offsets=${match[2]} />
+  </span>`;
+}
+
+function MetadataValue({ row }) {
+  const value = row.value;
+
+  if (/^-?0x[0-9a-fA-F]+$/.test(value)) {
+    return html`<${HexValue} value=${value} />`;
+  }
+
+  if (row.label === "AOB Pattern" || row.label === "Signature") {
+    return html`<code>${value}</code>`;
+  }
+
+  if (row.label === "Resolver") {
+    return html`<${ResolverValue} value=${value} />`;
+  }
+
+  return value;
+}
+
+function MetadataTable({ rows }) {
+  return html`<table class="pcdogs-type-table pcdogs-metadata-table__body">
+    <tbody>
+      ${rows.map((row) => {
+        const isAddress = isAddressRow(row);
+
+        return html`<tr
+          class=${classes(
+            "pcdogs-metadata-table__row",
+            isAddress && "pcdogs-metadata-table__row--address",
+          )}
+          key=${`${row.label}:${row.value}`}
+        >
+          <th
+            scope="row"
+            class=${classes(
+              "pcdogs-metadata-table__label",
+              isAddress && "pcdogs-address-table__version",
+            )}
+          >
+            ${metadataLabel(row, isAddress)}
+          </th>
+          <td
+            class=${classes(
+              "pcdogs-metadata-table__value",
+              isAddress && "pcdogs-address-table__address",
+            )}
+          >
+            ${isAddress
+              ? html`<${HexValue} value=${row.value} split=${true} />`
+              : html`<${MetadataValue} row=${row} />`}
+          </td>
+        </tr>`;
+      })}
+    </tbody>
+  </table>`;
+}
+
+function metadataRowsForVersion(rows, version) {
+  const addressRows = [];
+  const otherRows = [];
+
+  for (const row of rows) {
+    if (!isAddressRow(row)) {
+      otherRows.push(row);
+      continue;
+    }
+
+    if (addressBuild(row) === version) {
+      addressRows.push(row);
+    }
+  }
+
+  return [...addressRows, ...otherRows];
 }
 
 function Metadata({ rows }) {
@@ -239,70 +389,36 @@ function Metadata({ rows }) {
     return null;
   }
 
-  const addressRows = [];
-  const otherRows = [];
-
-  for (const row of rows) {
-    (isAddressRow(row) ? addressRows : otherRows).push(row);
-  }
-
   return html`<div
     class="pcdogs-reference-table pcdogs-reference-table--metadata"
   >
     <${TableFrame}
-      title="Resolution"
+      title="Metadata"
       extraClass="pcdogs-xref-table pcdogs-metadata-table"
     >
-      <table class="pcdogs-type-table pcdogs-metadata-table__body">
-        <tbody>
-          ${[...addressRows, ...otherRows].map((row) => {
-            const isAddress = isAddressRow(row);
-            return html`<tr
-              class=${classes(
-                "pcdogs-metadata-table__row",
-                isAddress && "pcdogs-metadata-table__row--address",
-              )}
-              key=${`${row.label}:${row.value}`}
-            >
-              <th
-                scope="row"
-                class=${classes(
-                  "pcdogs-metadata-table__label",
-                  isAddress && "pcdogs-address-table__version",
-                )}
-              >
-                ${isAddress ? addressLabel(row.label) : row.label}
-              </th>
-              <td
-                class=${classes(
-                  "pcdogs-metadata-table__value",
-                  isAddress && "pcdogs-address-table__address",
-                )}
-              >
-                ${isAddress
-                  ? html`<${HexValue} value=${row.value} split=${true} />`
-                  : html`<${MetadataValue} row=${row} />`}
-              </td>
-            </tr>`;
-          })}
-        </tbody>
-      </table>
+      <${MetadataTable} rows=${rows} />
     <//>
   </div>`;
 }
 
+function normalizeSignedOffsets(value) {
+  return text(value).replace(/([+-])\s*(0x[0-9a-fA-F]+)/g, "$1 $2");
+}
+
 function offsetParts(offsets) {
-  const value = text(offsets).trim();
+  const value = normalizeSignedOffsets(offsets).trim();
 
   if (value === "-") {
     return { prefix: "", offset: "" };
   }
 
-  if (value.startsWith("+")) {
-    return { prefix: "+ ", offset: value.slice(1).trimStart() };
+  const signed = /^([+-])\s+(.*)$/.exec(value);
+
+  if (signed) {
+    return { prefix: ` ${signed[1]} `, offset: signed[2] };
   }
 
-  return { prefix: "+ ", offset: value };
+  return { prefix: " + ", offset: value };
 }
 
 function XRefOffset({ offsets }) {
@@ -337,34 +453,91 @@ function XRefRows({ rows, incoming, onSelect }) {
                 </button>`
               : text(row.text || row.value)}
             <${XRefOffset} offsets=${row.offsets} />
-            ${row.builds
-              ? html`<span class="pcdogs-xref-table__provenance"
-                  >${" "}${row.builds}</span
-                >`
-              : null}
           </div>
         </td>
       </tr>`,
   );
 }
 
-function References({ symbol, onSelect }) {
-  const from = symbol.referenced_by || [];
-  const to = symbol.references || [];
+function buildLabels(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
 
+function rowMatchesVersion(row, version) {
+  const builds = buildLabels(row.builds);
+  return !builds.length || builds.includes(version);
+}
+
+function ReferenceTable({ from, to, onSelect }) {
   if (!from.length && !to.length) {
+    return html`<p class="pcdogs-xref-table__empty">
+      No references for this region.
+    </p>`;
+  }
+
+  return html`<table class="pcdogs-type-table pcdogs-xref-table__body">
+    <tbody>
+      <${XRefRows} rows=${from} incoming=${true} onSelect=${onSelect} />
+      <${XRefRows} rows=${to} incoming=${false} onSelect=${onSelect} />
+    </tbody>
+  </table>`;
+}
+
+function ReferenceCard({ modifier, children }) {
+  return html`<div
+    class=${classes(
+      "pcdogs-symbol-reference-tables__reference-card",
+      `pcdogs-symbol-reference-tables__reference-card--${modifier}`,
+    )}
+  >
+    ${children}
+  </div>`;
+}
+
+function DetailRegionTables({ symbol, selectedVersion, onSelect }) {
+  const metadataRows = symbol.metadata || [];
+  const referencedBy = symbol.referenced_by || [];
+  const references = symbol.references || [];
+  const hasMetadata = metadataRows.length > 0;
+  const hasReferences = referencedBy.length > 0 || references.length > 0;
+
+  if (!hasMetadata && !hasReferences) {
     return null;
   }
 
-  return html`<div class="pcdogs-reference-table pcdogs-reference-table--xref">
-    <${TableFrame} title="References" extraClass="pcdogs-xref-table">
-      <table class="pcdogs-type-table pcdogs-xref-table__body">
-        <tbody>
-          <${XRefRows} rows=${from} incoming=${true} onSelect=${onSelect} />
-          <${XRefRows} rows=${to} incoming=${false} onSelect=${onSelect} />
-        </tbody>
-      </table>
-    <//>
+  const filteredMetadataRows = metadataRowsForVersion(
+    metadataRows,
+    selectedVersion,
+  );
+  const filteredReferencedBy = referencedBy.filter((row) =>
+    rowMatchesVersion(row, selectedVersion),
+  );
+  const filteredReferences = references.filter((row) =>
+    rowMatchesVersion(row, selectedVersion),
+  );
+
+  return html`<div class="pcdogs-symbol-reference-tables">
+    ${hasMetadata
+      ? html`<div class="pcdogs-symbol-reference-tables__metadata">
+          <${Metadata} rows=${filteredMetadataRows} />
+        </div>`
+      : null}
+    ${hasReferences
+      ? html`<${ReferenceCard} modifier="references">
+          <div class="pcdogs-reference-table pcdogs-reference-table--xref">
+            <${TableFrame} title="References" extraClass="pcdogs-xref-table">
+              <${ReferenceTable}
+                from=${filteredReferencedBy}
+                to=${filteredReferences}
+                onSelect=${onSelect}
+              />
+            <//>
+          </div>
+        <//>`
+      : null}
   </div>`;
 }
 
@@ -429,6 +602,7 @@ function HierarchyLink({ anchor, current, byAnchor, onSelect }) {
     aria-current=${anchor === current ? "page" : undefined}
     onClick=${(event) => {
       event.preventDefault();
+      event.stopPropagation();
       onSelect(anchor);
     }}
     >${target?.name || anchor}</a
@@ -447,7 +621,7 @@ function HierarchyPathView({ anchors, current, byAnchor, onSelect }) {
             ? html`<span
                 class="pcdogs-reference-hierarchy-tree__separator"
                 aria-hidden="true"
-                >›</span
+                >${">"}</span
               >`
             : null}
           <${HierarchyLink}
@@ -470,11 +644,6 @@ function HierarchyBranch({ node, depth, current, byAnchor, onSelect }) {
   return html`<ul class=${listClass}>
     ${sortedHierarchyAnchors(node, byAnchor).map((anchor) => {
       const child = node.children.get(anchor);
-
-      if (!child) {
-        return null;
-      }
-
       const compacted = compactHierarchyPath(anchor, child);
       const children = childAnchors(compacted.node);
       const hasChildren = children.length > 0;
@@ -508,11 +677,16 @@ function HierarchyBranch({ node, depth, current, byAnchor, onSelect }) {
 }
 
 function Hierarchy({ symbol, byAnchor, onSelect }) {
-  if (!symbol.reference_hierarchy_paths?.length) {
+  const paths = symbol.reference_hierarchy_paths || [];
+
+  const tree = useMemo(
+    () => buildHierarchyTree(paths),
+    [paths],
+  );
+
+  if (!paths.length) {
     return null;
   }
-
-  const tree = buildHierarchyTree(symbol.reference_hierarchy_paths);
 
   return html`<div
     class="pcdogs-reference-table pcdogs-reference-table--reference-hierarchy"
@@ -653,29 +827,102 @@ function DetailsForKind({ symbol }) {
     : null;
 }
 
-function Overview({ symbols, onSelect }) {
-  const [query, setQuery] = useState("");
-  const [stabilityFilter, setStabilityFilter] = useState("all");
-  const [kindFilter, setKindFilter] = useState("all");
-  const [versionFilter, setVersionFilter] = useState("all");
+function OverviewRow({ symbol, onSelect }) {
+  const select = (event) => {
+    if (
+      event.target.closest?.(
+        "a,button,input,select,textarea,[role='button'],[role='link']",
+      )
+    ) {
+      return;
+    }
 
+    onSelect(symbol.anchor);
+  };
+
+  return html`<tr
+    data-kind=${symbol.kind}
+    key=${symbol.anchor}
+    role="link"
+    tabindex="0"
+    aria-label=${`Open ${symbol.name}`}
+    onClick=${select}
+    onKeyDown=${(event) => {
+      if (event.target !== event.currentTarget) {
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onSelect(symbol.anchor);
+      }
+    }}
+  >
+    <td class="pcdogs-symbol-overview-name" data-label="Symbol">
+      <span class="pcdogs-symbol-overview-cell-scroll">
+        <a
+          href=${symbolHref(symbol.anchor)}
+          tabindex="-1"
+          onClick=${(event) => {
+            event.preventDefault();
+            onSelect(symbol.anchor);
+          }}
+          ><code>${symbol.name}</code></a
+        >
+        ${isUnstable(symbol)
+          ? html`<span
+              class="pcdogs-symbol-overview-warning"
+              role="img"
+              aria-label="This symbol is unstable and may change without warning in the future."
+              data-tooltip="This symbol is unstable and may change without warning in the future."
+              title="This symbol is unstable and may change without warning in the future."
+              >⚠</span
+            >`
+          : null}
+        <span class="pcdogs-symbol-overview-meta"
+          >${KIND_LABELS[symbol.kind] || text(symbol.kind)}</span
+        >
+      </span>
+    </td>
+    <td class="pcdogs-symbol-overview-summary" data-label="Summary">
+      <span
+        class=${summaryClass(symbol.summary, "pcdogs-symbol-overview-summary-text")}
+        title=${text(symbol.summary)}
+        >${text(symbol.summary)}</span
+      >
+    </td>
+    <td class="pcdogs-symbol-overview-versions" data-label="Versions">
+      ${versionsLabel(symbol)}
+    </td>
+  </tr>`;
+}
+
+function Overview({ symbols, filters, onFilterChange, onSelect }) {
   const filteredSymbols = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = filters.query.trim().toLowerCase();
 
     return symbols
       .filter(
         (symbol) =>
-          matchesStability(symbol, stabilityFilter) &&
-          (kindFilter === "all" || symbol.kind === kindFilter) &&
-          matchesVersion(symbol, versionFilter) &&
+          matchesStability(symbol, filters.stability) &&
+          (filters.kind === "all" || symbol.kind === filters.kind) &&
+          matchesVersion(symbol, filters.version) &&
           matchesQuery(symbol, needle),
       )
       .sort((a, b) => overviewSortKey(a).localeCompare(overviewSortKey(b)));
-  }, [symbols, query, stabilityFilter, kindFilter, versionFilter]);
+  }, [symbols, filters]);
 
   return html`<section class="pcdogs-symbol-overview">
-    <h1>SDK Symbols</h1>
+    <h1>PCDogs Symbols</h1>
     <p>Reference for PCDogs symbols wrapped by the modding SDK.</p>
+    <p>
+      If you're interested in contributing, the source of truth for these
+      wrappers can be found${" "}
+      <a
+        href="https://gitlab.com/dogstuff/detours-to-the-rescue/-/blob/main/modules/sdk/blueprints/dttr_pcdogs.py"
+        >here</a
+      >.
+    </p>
     <div
       class="pcdogs-symbol-overview-controls"
       role="search"
@@ -687,16 +934,16 @@ function Overview({ symbols, onSelect }) {
         <span>Search</span>
         <input
           type="search"
-          value=${query}
+          value=${filters.query}
           placeholder="Name, summary, or something else"
-          onInput=${(event) => setQuery(event.currentTarget.value)}
+          onInput=${(event) => onFilterChange("query", event.currentTarget.value)}
         />
       </label>
       <label class="pcdogs-symbol-overview-control">
         <span>Stability</span>
         <select
-          value=${stabilityFilter}
-          onChange=${(event) => setStabilityFilter(event.currentTarget.value)}
+          value=${filters.stability}
+          onChange=${(event) => onFilterChange("stability", event.currentTarget.value)}
         >
           <option value="all">All</option>
           <option value="stable">Stable</option>
@@ -706,8 +953,8 @@ function Overview({ symbols, onSelect }) {
       <label class="pcdogs-symbol-overview-control">
         <span>Kind</span>
         <select
-          value=${kindFilter}
-          onChange=${(event) => setKindFilter(event.currentTarget.value)}
+          value=${filters.kind}
+          onChange=${(event) => onFilterChange("kind", event.currentTarget.value)}
         >
           <option value="all">All</option>
           ${Object.entries(KIND_LABELS).map(
@@ -719,8 +966,8 @@ function Overview({ symbols, onSelect }) {
       <label class="pcdogs-symbol-overview-control">
         <span>Version</span>
         <select
-          value=${versionFilter}
-          onChange=${(event) => setVersionFilter(event.currentTarget.value)}
+          value=${filters.version}
+          onChange=${(event) => onFilterChange("version", event.currentTarget.value)}
         >
           <option value="all">All</option>
           ${VERSION_LABELS.map(
@@ -729,7 +976,10 @@ function Overview({ symbols, onSelect }) {
           )}
         </select>
       </label>
-      <span class="pcdogs-symbol-overview-count"
+      <span
+        class="pcdogs-symbol-overview-count"
+        aria-live="polite"
+        role="status"
         >${filteredSymbols.length} / ${symbols.length}</span
       >
     </div>
@@ -747,52 +997,12 @@ function Overview({ symbols, onSelect }) {
         <tbody>
           ${filteredSymbols.length
             ? filteredSymbols.map(
-                (symbol) => html`<tr data-kind=${symbol.kind} key=${symbol.anchor}>
-                  <td class="pcdogs-symbol-overview-name" data-label="Symbol">
-                    <span class="pcdogs-symbol-overview-cell-scroll">
-                      <a
-                        href=${symbolHref(symbol.anchor)}
-                        onClick=${(event) => {
-                          event.preventDefault();
-                          onSelect(symbol.anchor);
-                        }}
-                        ><code>${symbol.name}</code></a
-                      >
-                      ${isUnstable(symbol)
-                        ? html`<span
-                            class="pcdogs-symbol-overview-warning"
-                            role="img"
-                            tabindex="0"
-                            aria-label="Unstable symbol"
-                            data-tooltip="Unstable symbol"
-                            >⚠</span
-                          >`
-                        : null}
-                      <span class="pcdogs-symbol-overview-meta"
-                        >${KIND_LABELS[symbol.kind] || text(symbol.kind)}</span
-                      >
-                    </span>
-                  </td>
-                  <td
-                    class="pcdogs-symbol-overview-summary"
-                    data-label="Summary"
-                  >
-                    <span
-                      class=${summaryClass(
-                        symbol.summary,
-                        "pcdogs-symbol-overview-summary-text",
-                      )}
-                      title=${text(symbol.summary)}
-                      >${text(symbol.summary)}</span
-                    >
-                  </td>
-                  <td
-                    class="pcdogs-symbol-overview-versions"
-                    data-label="Versions"
-                  >
-                    ${versionsLabel(symbol)}
-                  </td>
-                </tr>`,
+                (symbol) =>
+                  html`<${OverviewRow}
+                    symbol=${symbol}
+                    onSelect=${onSelect}
+                    key=${symbol.anchor}
+                  />`,
               )
             : html`<tr class="pcdogs-symbol-overview-empty">
                 <td colspan="3">No symbols match these filters.</td>
@@ -845,8 +1055,51 @@ function useDetailFramePosition() {
   return { detailRef, frameLeft, frameTop };
 }
 
-function Detail({ symbol, byAnchor, onSelect }) {
+function supportedVersions(symbol) {
+  const versions = buildLabels(symbol.builds).filter((version) =>
+    VERSION_LABELS.includes(version),
+  );
+
+  return versions.length ? versions : VERSION_LABELS;
+}
+
+function HeaderVersionPicker({ versions, selectedVersion, onVersionChange }) {
+  return html`<span
+    class="pcdogs-symbol-detail-versions"
+    role="group"
+    aria-label="Symbol versions"
+  >
+    ${versions.map((version) => {
+      const selected = version === selectedVersion;
+
+      return html`<button
+        type="button"
+        class=${classes(
+          "pcdogs-symbol-detail-version",
+          selected && "pcdogs-symbol-detail-version--selected",
+        )}
+        aria-pressed=${selected}
+        onClick=${() => onVersionChange(version)}
+        key=${version}
+      >
+        ${version}
+      </button>`;
+    })}
+  </span>`;
+}
+
+function Detail({
+  symbol,
+  byAnchor,
+  selectedVersion,
+  onVersionChange,
+  onSelect,
+}) {
   const frame = useDetailFramePosition();
+  const versions = supportedVersions(symbol);
+  const effectiveVersion = versions.includes(selectedVersion)
+    ? selectedVersion
+    : versions[0];
 
   return html`<article
     ref=${frame.detailRef}
@@ -863,62 +1116,96 @@ function Detail({ symbol, byAnchor, onSelect }) {
     >
       ${"<- Back to symbol overview"}
     </button>
-    <h1 class="pcdogs-symbol-heading">${symbol.name}</h1>
-    <${Facts} rows=${symbol.facts} />
     ${isUnstable(symbol)
       ? html`<div class="admonition warning pcdogs-symbol-warning">
           <p class="admonition-title">Unstable symbol</p>
           <p>
-            This symbol is generated from unstable SDK metadata and may change
-            between releases.
+            This symbol is unstable and may change without warning in the
+            future.
           </p>
         </div>`
       : null}
+    <h1 class="pcdogs-symbol-heading">
+      <span>${symbol.name}</span>
+      <${HeaderVersionPicker}
+        versions=${versions}
+        selectedVersion=${effectiveVersion}
+        onVersionChange=${onVersionChange}
+      />
+    </h1>
+    <${Facts} rows=${symbol.facts} />
     <p class=${summaryClass(symbol.summary, "pcdogs-symbol-summary")}>
       ${text(symbol.summary)}
     </p>
-    <div class="pcdogs-block-heading">Examples</div>
     <${DetailsForKind} symbol=${symbol} />
-    <div class="pcdogs-symbol-reference-tables">
-      ${symbol.metadata?.length
-        ? html`<div class="pcdogs-symbol-reference-tables__metadata">
-            <${Metadata} rows=${symbol.metadata} />
-          </div>`
-        : null}
-      ${symbol.references?.length || symbol.referenced_by?.length
-        ? html`<div
-            class="pcdogs-symbol-reference-tables__reference-card pcdogs-symbol-reference-tables__reference-card--references"
-          >
-            <${References} symbol=${symbol} onSelect=${onSelect} />
-          </div>`
-        : null}
-      ${symbol.reference_hierarchy_paths?.length
-        ? html`<div
-            class="pcdogs-symbol-reference-tables__reference-card pcdogs-symbol-reference-tables__reference-card--reference-hierarchy"
-          >
+    <${DetailRegionTables}
+      symbol=${symbol}
+      selectedVersion=${effectiveVersion}
+      onSelect=${onSelect}
+    />
+    ${symbol.reference_hierarchy_paths?.length
+      ? html`<div class="pcdogs-symbol-reference-tables">
+          <${ReferenceCard} modifier="reference-hierarchy">
             <${Hierarchy}
               symbol=${symbol}
               byAnchor=${byAnchor}
               onSelect=${onSelect}
             />
-          </div>`
-        : null}
-    </div>
+          <//>
+        </div>`
+      : null}
   </article>`;
 }
 
 function Viewer({ root, src }) {
   const [status, setStatus] = useState("loading");
   const [symbols, setSymbols] = useState([]);
+  const filtersStorageKey = useMemo(() => storageKey(root, src), [root, src]);
   const [selected, setSelected] = useState(selectedHash());
+  const [selectedVersion, setSelectedVersion] = useState("EN");
+  const [overviewFilters, setOverviewFilters] = useState(() =>
+    normalizeStoredFilters(readStoredFilters(filtersStorageKey)),
+  );
   const [error, setError] = useState("");
+  const overviewScrollY = useRef(0);
+  const pendingDetailScroll = useRef(false);
+  const pendingOverviewRestore = useRef(false);
+  const byAnchor = useMemo(
+    () => new Map(symbols.map((symbol) => [symbol.anchor, symbol])),
+    [symbols],
+  );
+
+  const updateOverviewFilter = useCallback((name, value) => {
+    setOverviewFilters((filters) =>
+      normalizeStoredFilters({ ...filters, [name]: value }),
+    );
+  }, []);
 
   const select = useCallback(
     (anchor) => {
+      if (anchor) {
+        if (!selected) {
+          overviewScrollY.current = window.scrollY;
+        }
+
+        const symbol = byAnchor.get(anchor);
+        if (
+          symbol &&
+          overviewFilters.version !== "all" &&
+          supportedVersions(symbol).includes(overviewFilters.version)
+        ) {
+          setSelectedVersion(overviewFilters.version);
+        }
+
+        pendingDetailScroll.current = true;
+      } else if (selected) {
+        pendingOverviewRestore.current = true;
+      }
+
       selectHash(anchor);
       setSelected(anchor);
     },
-    [],
+    [byAnchor, overviewFilters.version, selected],
   );
 
   useEffect(() => {
@@ -940,7 +1227,7 @@ function Viewer({ root, src }) {
         setStatus("ready");
 
         if (selectedHash()) {
-          scrollTo(root);
+          root.scrollIntoView({ block: "start", behavior: "smooth" });
         }
       })
       .catch((err) => {
@@ -959,14 +1246,34 @@ function Viewer({ root, src }) {
     };
   }, [root, src]);
 
-  const byAnchor = useMemo(
-    () => new Map(symbols.map((symbol) => [symbol.anchor, symbol])),
-    [symbols],
-  );
+  useEffect(() => {
+    writeStoredFilters(filtersStorageKey, overviewFilters);
+  }, [filtersStorageKey, overviewFilters]);
+
   const symbol = selected ? byAnchor.get(selected) || null : null;
 
+  useEffect(() => {
+    if (status !== "ready") {
+      return;
+    }
+
+    if (selected && symbol && pendingDetailScroll.current) {
+      pendingDetailScroll.current = false;
+      requestAnimationFrame(() => {
+        root.scrollIntoView({ block: "start", behavior: "auto" });
+      });
+    }
+
+    if (!selected && pendingOverviewRestore.current) {
+      pendingOverviewRestore.current = false;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: overviewScrollY.current, behavior: "auto" });
+      });
+    }
+  }, [root, selected, status, symbol]);
+
   if (status === "loading") {
-    return html`<p>Loading symbol data…</p>`;
+    return html`<p>Loading symbol data...</p>`;
   }
 
   if (status === "error") {
@@ -977,13 +1284,21 @@ function Viewer({ root, src }) {
     return html`<${Detail}
       symbol=${symbol}
       byAnchor=${byAnchor}
+      selectedVersion=${selectedVersion}
+      onVersionChange=${setSelectedVersion}
       onSelect=${select}
     />`;
   }
 
   return html`${selected
       ? html`<p>Symbol not found: <code>${selected}</code></p>`
-      : null} <${Overview} symbols=${symbols} onSelect=${select} />`;
+      : null}
+    <${Overview}
+      symbols=${symbols}
+      filters=${overviewFilters}
+      onFilterChange=${updateOverviewFilter}
+      onSelect=${select}
+    />`;
 }
 
 function mount(root) {

@@ -325,10 +325,6 @@ static void cleanup(DTTR_BackendState *state) {
 		}
 	}
 
-	if (state->buf2tex_pipeline) {
-		SDL_ReleaseGPUComputePipeline(state->device, state->buf2tex_pipeline);
-	}
-
 	release_window_device(state);
 	free(state->backend_data);
 	state->backend_data = NULL;

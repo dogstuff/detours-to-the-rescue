@@ -619,10 +619,6 @@ void dttr_mods_late_init() {
 	MOD_DISPATCH(late_init);
 }
 
-void dttr_mods_before_unload() {
-	MOD_DISPATCH(before_unload);
-}
-
 void dttr_mods_frame_begin(const DTTR_Mods_FrameContext *ctx) {
 	MOD_DISPATCH(frame_begin, ctx);
 }

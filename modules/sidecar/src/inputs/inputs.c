@@ -12,10 +12,6 @@ SDL_Gamepad *dttr_inputs_gamepad;
 
 static DTTR_Core_PatchGroup *inputs_targets;
 
-static const char *pcdogs_result_detail(DTTR_Result result) {
-	return result.message ? result.message : DTTR_StatusName(result.status);
-}
-
 static bool set_joystick_available(int32_t available) {
 	DTTR_Result result = DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(
 		available
@@ -23,7 +19,7 @@ static bool set_joystick_available(int32_t available) {
 	if (!DTTR_ResultOK(result)) {
 		DTTR_LOG_ERROR(
 			"Failed to update joystick availability: %s",
-			pcdogs_result_detail(result)
+			dttr_sidecar_result_detail(result)
 		);
 		return false;
 	}
@@ -82,7 +78,7 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 	if (!DTTR_ResultOK(alloc_status)) {
 		DTTR_LOG_ERROR(
 			"Required DInput allocator unavailable: %s",
-			pcdogs_result_detail(alloc_status)
+			dttr_sidecar_result_detail(alloc_status)
 		);
 		return false;
 	}
@@ -130,7 +126,7 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 		if (!DTTR_ResultOK(result)) {
 			DTTR_LOG_ERROR(
 				"Failed to read game input init state: %s",
-				pcdogs_result_detail(result)
+				dttr_sidecar_result_detail(result)
 			);
 			close_gamepad();
 			return;

@@ -13,7 +13,6 @@ typedef struct {
 } log_callback;
 
 static int s_level = LOG_TRACE;
-static bool quiet;
 static log_callback callbacks[MAX_CALLBACKS];
 static int callback_count;
 
@@ -78,7 +77,7 @@ static void file_callback(log_Event *ev) {
 }
 
 bool DTTR_Log_IsEnabled(int log_level) {
-	if (!quiet && log_level >= s_level) {
+	if (log_level >= s_level) {
 		return true;
 	}
 
@@ -105,7 +104,7 @@ static void dttr_vlog_unchecked(
 		.level = log_level,
 	};
 
-	if (!quiet && log_level >= s_level) {
+	if (log_level >= s_level) {
 		init_event(&ev, stderr);
 		va_copy(ev.ap, args);
 		stderr_callback(&ev);
@@ -145,11 +144,7 @@ void DTTR_Log_SetLevel(int log_level) {
 	s_level = log_level;
 }
 
-void DTTR_Log_SetQuiet(bool enable) {
-	quiet = enable;
-}
-
-int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level) {
+static int add_log_callback(log_LogFn fn, void *udata, int level) {
 	if (!fn || callback_count >= MAX_CALLBACKS) {
 		return -1;
 	}
@@ -164,5 +159,5 @@ int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level) {
 }
 
 int DTTR_Log_AddFP(FILE *fp, int level) {
-	return DTTR_Log_AddCallback(file_callback, fp, level);
+	return add_log_callback(file_callback, fp, level);
 }

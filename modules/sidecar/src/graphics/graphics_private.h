@@ -195,7 +195,6 @@ struct DTTR_BackendState {
 	SDL_GPURenderPass *render_pass;
 
 	SDL_GPUGraphicsPipeline *pipelines[DTTR_PIPELINE_COUNT];
-	SDL_GPUComputePipeline *buf2tex_pipeline;
 
 	SDL_GPUSampler *samplers[DTTR_SAMPLER_COUNT];
 	SDL_GPUTexture *dummy_texture;

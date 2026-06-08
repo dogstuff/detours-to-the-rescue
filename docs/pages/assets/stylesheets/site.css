@@ -3,10 +3,6 @@
         max-width: 76rem;
     }
 
-    body:has(.pcdogs-symbol-detail) .md-main .md-grid,
-    body:has(.pcdogs-symbol-detail) .md-content {
-        max-width: 100%;
-    }
 }
 
 .md-main__inner {
@@ -76,7 +72,10 @@
 
 .md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis::before,
 .md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"]::before {
+    height: 1.05em;
     mask-image: var(--pcdogs-icon-download);
+    vertical-align: -0.22em;
+    width: 1.05em;
     -webkit-mask-image: var(--pcdogs-icon-download);
 }
 
@@ -302,6 +301,7 @@
 .md-typeset table.pcdogs-metadata-table__body th {
     color: var(--pcdogs-muted-fg);
     font-weight: 700;
+    padding-right: 0.34rem;
     text-align: center;
     width: 1%;
 }
@@ -313,6 +313,18 @@
     letter-spacing: normal;
     text-align: center;
     text-transform: none;
+}
+
+.md-typeset .pcdogs-metadata-table__resolver {
+    align-items: baseline;
+    display: inline-flex;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.md-typeset .pcdogs-metadata-table__resolver-name {
+    color: var(--pcdogs-function-fg);
+    font-weight: 600;
 }
 
 .md-typeset table.pcdogs-metadata-table__body td {
@@ -356,6 +368,21 @@
 .md-typeset .pcdogs-xref-table__provenance {
     font-size: 0.9em;
     white-space: nowrap;
+}
+
+.md-typeset .pcdogs-xref-table__tabs {
+    margin: 0;
+}
+
+.md-typeset .pcdogs-xref-table__tabs .tabbed-block {
+    padding: 0;
+}
+
+.md-typeset .pcdogs-xref-table__empty {
+    color: var(--pcdogs-muted-fg);
+    font-size: 0.64rem;
+    margin: 0;
+    padding: 0.45rem 0.55rem;
 }
 
 .md-typeset .pcdogs-xref-table__name {
@@ -509,6 +536,20 @@
     width: 12rem;
 }
 
+.md-typeset table.pcdogs-symbol-overview-table tbody tr[data-kind] {
+    cursor: pointer;
+}
+
+.md-typeset table.pcdogs-symbol-overview-table tbody tr[data-kind]:hover,
+.md-typeset table.pcdogs-symbol-overview-table tbody tr[data-kind]:focus-visible {
+    background: color-mix(in srgb, var(--md-default-fg-color, #e5e7eb) 5%, transparent);
+}
+
+.md-typeset table.pcdogs-symbol-overview-table tbody tr[data-kind]:focus-visible {
+    outline: 2px solid var(--md-accent-fg-color);
+    outline-offset: -2px;
+}
+
 .md-typeset table.pcdogs-symbol-overview-table .pcdogs-symbol-overview-name code {
     color: var(--md-code-hl-name-color);
     font-size: 0.6rem;
@@ -613,8 +654,7 @@
     z-index: 2;
 }
 
-.md-typeset .pcdogs-symbol-overview-warning:hover::after,
-.md-typeset .pcdogs-symbol-overview-warning:focus-visible::after {
+.md-typeset .pcdogs-symbol-overview-warning:hover::after {
     opacity: 1;
 }
 
@@ -745,9 +785,41 @@
 }
 
 .md-typeset .pcdogs-symbol-detail-page > h1 {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.28rem 0.55rem;
     line-height: 1.15;
     margin: 0 0 0.55rem;
     overflow-wrap: anywhere;
+}
+
+.md-typeset .pcdogs-symbol-detail-versions {
+    align-items: baseline;
+    display: inline-flex;
+    gap: 0.3rem;
+}
+
+.md-typeset .pcdogs-symbol-detail-version {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: #22c55e;
+    cursor: pointer;
+    font: 700 0.68rem/1 var(--md-code-font-family, var(--md-code-font));
+    opacity: 0.38;
+    padding: 0;
+}
+
+.md-typeset .pcdogs-symbol-detail-version:hover,
+.md-typeset .pcdogs-symbol-detail-version:focus-visible,
+.md-typeset .pcdogs-symbol-detail-version--selected {
+    opacity: 1;
+}
+
+.md-typeset .pcdogs-symbol-detail-version:focus-visible {
+    outline: 2px solid #22c55e;
+    outline-offset: 0.12rem;
 }
 
 .md-typeset .pcdogs-symbol-detail-page > .pcdogs-symbol-summary {

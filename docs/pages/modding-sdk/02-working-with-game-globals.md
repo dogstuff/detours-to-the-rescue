@@ -31,7 +31,6 @@ Writing game memory is not always safe. Check `Policy()` before writing to a glo
 
 `Write()` only succeeds for `RAW_MEMORY` globals. For every other policy, design the related functions around reading, patching, or hooking instead.
 
-
 Read/write helpers return `DTTR_Result`, so callers always get a status and may also get a detail message:
 
 - `Status()` reports whether the SDK data descriptor is resolved.
@@ -39,12 +38,10 @@ Read/write helpers return `DTTR_Result`, so callers always get a status and may 
 - `Write(...)` returns `DTTR_ERR_POLICY_MISMATCH` when the symbol is not `RAW_MEMORY`.
 - `UnsafeWrite(...)` still bypasses policy, but it reports unresolved and write-failed states explicitly.
 
-
-## Writing through policy-aware helpers
+## Bypassing write policies
 
 `UnsafeWrite()` bypasses `Policy()`. It still requires writable process memory but that does not imply the write is safe.
 
 Using `UnsafeWrite()` in normal mod behavior bypasses the SDK's safety policy and can corrupt game-managed state. Reserve it for reverse-engineering experiments, explicit patching work, or SDK internals.
-
 
 If another SDK API requires an address or if you are doing unsupported reverse-engineering work, see [Manually Resolving Symbols](07-resolving-symbols.md).

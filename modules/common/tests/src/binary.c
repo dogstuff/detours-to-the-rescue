@@ -11,6 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void dttr_test_pe_free_image(DTTR_TestPEImage *image);
+static bool dttr_test_pe_fixture_hash_matches(
+	const DTTR_TestBinaryFixture *fixture,
+	const DTTR_TestPEImage *image
+);
+
 // Returns mapped PE bytes only after the requested RVA range is proven in bounds.
 static const uint8_t *pe_rva_bytes(
 	const DTTR_TestPEImage *image,
@@ -24,7 +30,7 @@ static const uint8_t *pe_rva_bytes(
 	return image->image + rva;
 }
 
-sds dttr_test_join_path(const char *dir, const char *file) {
+static sds dttr_test_join_path(const char *dir, const char *file) {
 	sds path = sdsnew(dir ? dir : "");
 
 	if (!path) {
@@ -168,7 +174,7 @@ uintptr_t dttr_test_offset_site(uintptr_t base, int32_t offset) {
 	return offset < 0 ? base - magnitude : base + magnitude;
 }
 
-bool dttr_test_bytes_match_mask(
+static bool dttr_test_bytes_match_mask(
 	const uint8_t *actual,
 	const uint8_t *expected,
 	const char *mask,
@@ -364,7 +370,7 @@ fail:
 	return false;
 }
 
-bool dttr_test_pe_load_fixture(
+static bool dttr_test_pe_load_fixture(
 	const DTTR_TestBinaryFixture *fixtures,
 	size_t fixture_count,
 	size_t fixture_index,
@@ -448,7 +454,7 @@ bool dttr_test_pe_for_each_fixture(
 	return true;
 }
 
-void dttr_test_pe_free_image(DTTR_TestPEImage *image) {
+static void dttr_test_pe_free_image(DTTR_TestPEImage *image) {
 	if (!image) {
 		return;
 	}
@@ -541,7 +547,7 @@ uintptr_t DTTR_TestPE_Sigscan(
 	return match ? (uintptr_t)(match - image->image) : DTTR_TEST_SIG_NOT_FOUND;
 }
 
-uint64_t dttr_test_pe_file_hash(const DTTR_TestPEImage *image) {
+static uint64_t dttr_test_pe_file_hash(const DTTR_TestPEImage *image) {
 	if (!image || !image->file) {
 		return 0;
 	}
@@ -549,7 +555,7 @@ uint64_t dttr_test_pe_file_hash(const DTTR_TestPEImage *image) {
 	return XXH3_64bits(image->file, image->file_size);
 }
 
-bool dttr_test_pe_fixture_hash_matches(
+static bool dttr_test_pe_fixture_hash_matches(
 	const DTTR_TestBinaryFixture *fixture,
 	const DTTR_TestPEImage *image
 ) {
@@ -561,7 +567,7 @@ bool dttr_test_pe_fixture_hash_matches(
 		   && dttr_test_pe_file_hash(image) == fixture->xxh3;
 }
 
-const char *dttr_test_pe_cstr(const DTTR_TestPEImage *image, uintptr_t rva) {
+static const char *dttr_test_pe_cstr(const DTTR_TestPEImage *image, uintptr_t rva) {
 	const char *str = (const char *)pe_rva_bytes(image, rva, 1);
 
 	if (!str) {
@@ -662,7 +668,7 @@ static ZydisDecoder *zydis_decoder32() {
 	return &decoder;
 }
 
-bool dttr_test_zydis_decode32(
+static bool dttr_test_zydis_decode32(
 	const uint8_t *bytes,
 	size_t size,
 	DTTR_TestDecodedInstruction *out
@@ -695,7 +701,7 @@ bool dttr_test_zydis_decode32_at(
 	);
 }
 
-bool dttr_test_zydis_decode32_prefix(
+static bool dttr_test_zydis_decode32_prefix(
 	const DTTR_TestPEImage *image,
 	uintptr_t rva,
 	size_t required_size,
@@ -725,7 +731,7 @@ bool dttr_test_zydis_decode32_prefix(
 	return true;
 }
 
-bool dttr_test_zydis_absolute_operand(
+static bool dttr_test_zydis_absolute_operand(
 	const DTTR_TestDecodedInstruction *decoded,
 	size_t operand_index,
 	uintptr_t runtime_address,

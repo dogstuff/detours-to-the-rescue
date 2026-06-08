@@ -18,10 +18,6 @@ typedef struct {
 	DTTR_Core_Hook *handle;
 } mss_import_hook;
 
-static const char *dttr_mss_result_detail(DTTR_Result result) {
-	return result.message ? result.message : DTTR_StatusName(result.status);
-}
-
 static mss_import_hook mss_import_hooks[] = {
 	{"dttr_hook_mss_ail_allocate_sample_handle",
 	 "_AIL_allocate_sample_handle@4",
@@ -137,7 +133,7 @@ static bool install_pointer_hook(
 			ctx,
 			"%s: pointer hook failed: %s",
 			name,
-			dttr_mss_result_detail(result)
+			dttr_sidecar_result_detail(result)
 		);
 		return false;
 	}
@@ -219,7 +215,7 @@ void dttr_mss_sdl_release_hooks() {
 			DTTR_LOG_ERROR(
 				"%s: pointer unhook failed: %s",
 				hook->hook_name,
-				dttr_mss_result_detail(result)
+				dttr_sidecar_result_detail(result)
 			);
 			continue;
 		}

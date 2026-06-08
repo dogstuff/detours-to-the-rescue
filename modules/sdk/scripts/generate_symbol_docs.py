@@ -74,6 +74,7 @@ DECIMAL_PLUS_OFFSET = re.compile(r"(?<![eE])\+([0-9]+)\b")
 INTEGER_C_TYPES = re.compile(
     r"^(u?int(8|16|32|64)_t|DWORD|WORD|BYTE|BOOL|int|uint32_t|uintptr_t)$"
 )
+SDK_C_NAME_LABEL = "SDK Name (C)"
 
 CODE_METADATA_LABELS = {
     "AOB Target",
@@ -82,12 +83,8 @@ CODE_METADATA_LABELS = {
     "Patch Size",
     "Entry Patch Size",
     "Match Offset",
-    "Symbol ID",
-    "SDK Accessor / ID",
     "Resolver",
-    "C Name",
-    "Type",
-    "Write Policy",
+    SDK_C_NAME_LABEL,
 }
 
 
@@ -100,6 +97,13 @@ BUILD_BIT_BY_LABEL = dict(BUILD_BITS)
 
 
 JsonObject = dict[str, object]
+TYPE_SHAPE_METADATA_FIELDS = (
+    ("Size", "size"),
+    ("Fields", "fields"),
+    ("Values", "values"),
+    ("Target", "target"),
+    ("Signature", "signature"),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,16 +131,7 @@ class SymbolDataReference:
         )
 
     def to_json(self) -> JsonObject:
-        return {
-            "kind": self.kind,
-            "value": symbol_data_value(self.value),
-            "offsets": symbol_data_string(self.offsets),
-            "detail": symbol_data_string(self.detail),
-            "builds": symbol_data_string(self.builds),
-            "provenance": symbol_data_string(self.provenance),
-            "target_anchor": symbol_data_string(self.target_anchor),
-            "text": symbol_data_string(self.text),
-        }
+        return symbol_data_object(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,8 +165,7 @@ class SymbolDataSymbol:
         )
 
     def to_json(self) -> JsonObject:
-        payload = symbol_data_value(self.card)
-        assert isinstance(payload, dict)
+        payload = symbol_data_object(self.card)
 
         snippet_html = {
             output_field: highlighted_c_snippet(getattr(self.card, input_field, ""))
@@ -248,6 +242,24 @@ class FunctionCallXRefAccumulator:
     def finish(self) -> FunctionXRefCard:
         self.card.builds = html.escape(merged_build_label(self.builds))
         return self.card
+
+
+@dataclass(frozen=True, slots=True)
+class TypeShape:
+    shape: str = "-"
+    size: str = "-"
+    fields: str = "-"
+    values: str = "-"
+    completeness: str = "-"
+    target: str = "-"
+    signature: str = "-"
+
+    def metadata_lines(self) -> list[str]:
+        return [
+            f"{label}: {value}"
+            for label, field_name in TYPE_SHAPE_METADATA_FIELDS
+            if (value := getattr(self, field_name)) != "-"
+        ]
 
 
 @dataclass(frozen=True, slots=True)
@@ -446,6 +458,10 @@ def title_case_metadata_label(label: str) -> str:
     acronyms = {"aob": "AOB", "c": "C", "id": "ID", "sdk": "SDK"}
 
     def title_word(word: str) -> str:
+        if word.startswith("(") and word.endswith(")"):
+            inner = word[1:-1]
+            return f"({acronyms.get(inner.lower(), inner)})"
+
         return acronyms.get(word.lower(), word[:1].upper() + word[1:].lower())
 
     return " / ".join(
@@ -543,7 +559,7 @@ def aob_target(kind: str, match_offset: object = 0) -> str:
         if offset == 0:
             return "Function Prologue"
 
-        return f"Function Body (entry = match {hex_signed(offset)})"
+        return "Function Body"
 
     if kind == "signature":
         return "Signature Match"
@@ -938,9 +954,8 @@ def function_cards(
                 summary=markdown_text(symbol_doc(SymbolDocKind.FUNCTION, fn)),
                 metadata=metadata_items(
                     [
-                        f"AOB target: {aob_target('function', fn.match_offset)}",
-                        f"AOB pattern: {fn.pattern}",
                         f"Hook type: {fn.hook.kind}",
+                        f"AOB target: {aob_target('function', fn.match_offset)}",
                         f"Patch size: {f'0x{int(fn.hook.patch_size):X}' if fn.hook.patch_size else '-'}",
                         (
                             f"Entry patch size: 0x{int(fn.hook.entry_patch_size):X}"
@@ -948,12 +963,12 @@ def function_cards(
                             and fn.hook.entry_patch_size != fn.hook.patch_size
                             else ""
                         ),
+                        f"AOB pattern: {fn.pattern}",
                         (
                             f"Match offset: {hex_signed(fn.match_offset)}"
                             if int(fn.match_offset) != 0
                             else ""
                         ),
-                        f"Symbol ID: {fn.symbol_id}",
                     ]
                 )
                 + symbol_rvas.function_metadata(fn.name),
@@ -1046,11 +1061,8 @@ def global_cards(
                 metadata=metadata_items(
                     [
                         f"SDK accessor / ID: {global_accessor(unstable, glob)}",
-                        f"Type: {global_type(glob, c_type_fn)}",
                         f"Resolver target: {'Data address xref' if glob.typed else 'Raw data symbol'}",
                         f"Resolver: {global_resolver(glob)}",
-                        f"Write policy: {policy}",
-                        f"Symbol ID: {glob.symbol_id}",
                     ]
                 )
                 + symbol_rvas.data_metadata(glob.name),
@@ -1065,27 +1077,37 @@ def global_cards(
     return cards
 
 
-def type_summary(row: object, c_type_fn: Callable[[object], str]) -> str:
+def type_shape_from_row(
+    row: object, c_type_fn: Callable[[object], str]
+) -> TypeShape:
     kind = type_row_kind(row)
+
     if kind == TypeRowKind.TYPE_ALIAS:
-        return f"alias of `{docs_type_label(c_type_fn(row.source_type))}`"
+        target = docs_type_label(c_type_fn(row.source_type))
+        return TypeShape(shape=f"alias of `{target}`", target=target)
 
     if kind == TypeRowKind.FUNCTION_TYPE_ALIAS:
         params = ", ".join(
             f"{docs_type_label(c_type_fn(param.type))} {param.name}"
             for param in row.params
         )
-        return f"callback `{docs_type_label(c_type_fn(row.ret))} (*)({params})`"
+        signature = f"{docs_type_label(c_type_fn(row.ret))} (*)({params})"
+        return TypeShape(shape=f"callback `{signature}`", signature=signature)
 
     if kind == TypeRowKind.STRUCT:
-        size = f", size 0x{row.size:X}" if row.size is not None else ""
+        size = f"0x{row.size:X}" if row.size is not None else "-"
         completeness = "incomplete" if row.incomplete else "complete"
-        return f"{len(row.members)} fields, {completeness}{size}"
+        return TypeShape(
+            shape=f"{len(row.members)} fields, {completeness}, size {size}",
+            size=size,
+            fields=str(len(row.members)),
+            completeness=completeness,
+        )
 
     if kind == TypeRowKind.ENUM:
-        return f"{len(row.values)} values"
+        return TypeShape(shape=f"{len(row.values)} values", values=str(len(row.values)))
 
-    return "-"
+    return TypeShape()
 
 
 def member_cards(row: object, c_type_fn: Callable[[object], str]) -> list[MemberCard]:
@@ -1148,7 +1170,7 @@ def type_cards(
         kind = type_row_kind(row)
         docs = row_doc(row)
         c_name = pcdogs_type_name(row.name)
-        shape = type_summary(row, c_type_fn)
+        type_shape = type_shape_from_row(row, c_type_fn)
         cards.append(
             TypeCard(
                 name=str(row.name),
@@ -1156,15 +1178,15 @@ def type_cards(
                 anchor=anchor("unstable-type" if unstable else "type", row.name),
                 kind_label=title_case_metadata_label(kind.value.replace("_", " ")),
                 c_name=c_name,
-                shape=shape,
+                shape=type_shape.shape,
                 builds=build_mask_label(Required.ALL),
                 summary=markdown_text(docs),
                 members=member_cards(row, c_type_fn),
                 enum_values=enum_values(row),
                 metadata=metadata_items(
                     [
-                        f"C name: {c_name}",
-                        f"Shape: {shape}",
+                        f"{SDK_C_NAME_LABEL}: {c_name}",
+                        *type_shape.metadata_lines(),
                     ]
                 ),
                 related_type_texts=type_related_texts(row, c_type_fn),
@@ -1351,37 +1373,6 @@ def type_references(
 
 def docs_type_label(text: object) -> str:
     return re.sub(r"\bDTTR_PCDOGS_T_", "", str(text))
-
-
-def linked_type_code(
-    text: object, type_card: TypeCard, *, display_text: object | None = None
-) -> str:
-    value = str(docs_type_label(text) if display_text is None else display_text)
-    return (
-        f'<a href="{html.escape(rendered_symbol_link(type_card), quote=True)}">'
-        f"<code>{html.escape(value)}</code></a>"
-    )
-
-
-def link_type_names(text: object, types: list[TypeCard], *, exclude: str = "") -> str:
-    escaped = html.escape(str(text), quote=True)
-
-    for card in sorted(types, key=lambda item: len(item.c_name), reverse=True):
-        if card.name == exclude:
-            continue
-
-        for name in (card.c_name, card.name):
-            if not name:
-                continue
-
-            escaped_name = html.escape(name, quote=True)
-            escaped = re.sub(
-                rf"(?<![A-Za-z0-9_]){re.escape(escaped_name)}(?![A-Za-z0-9_])",
-                linked_type_code(name, card),
-                escaped,
-            )
-
-    return escaped
 
 
 GENERATED_HTML_TAG_RE = re.compile(r"</?(?:a|code|span|wbr)\b[^>]*>")
@@ -1668,14 +1659,6 @@ def attach_related(cards: SurfaceCards) -> None:
         for type_card in type_refs[id(card)]:
             add_type_usage_xref(card, type_card, source_kind="Type")
 
-        for item in card.metadata:
-            if item.label == "Shape":
-                item.value = link_type_names(
-                    html.unescape(item.value),
-                    types,
-                    exclude=card.name,
-                )
-
         card.facts = [symbol_fact("Kind", card.kind_label)]
 
     normalize_xrefs(cards)
@@ -1871,36 +1854,6 @@ def symbol_doc_categories(
     )
 
 
-def symbol_overview_output_path() -> str:
-    return "pcdogs/index.md"
-
-
-def symbol_data_output_path() -> str:
-    return "pcdogs/symbols-data.json"
-
-
-def symbol_overview_markdown() -> str:
-    return normalize_rendered_markdown(
-        """---
-hide:
-  - toc
-title: "SDK Symbols"
-description: "Reference for PC symbols wrapped by the SDK."
-tags:
-  - "PCDOGS"
-  - "SDK Symbol"
-  - "SDK"
-  - "Symbol Reference"
----
-
-<div class="pcdogs-symbol-docs" aria-hidden="true"><h1 id="__skip" hidden>SDK Symbols</h1></div>
-<div id="pcdogs-symbol-viewer" data-symbols-json="symbols-data.json"></div>
-""".strip(
-            "\n"
-        )
-    )
-
-
 def symbol_data_string(value: object) -> str:
     return html.unescape(GENERATED_HTML_TAG_RE.sub("", str(value)))
 
@@ -1936,6 +1889,14 @@ def symbol_data_value(value: object) -> object:
     return value
 
 
+def symbol_data_object(value: object) -> JsonObject:
+    payload = symbol_data_value(value)
+    if not isinstance(payload, dict):
+        raise TypeError(f"expected object payload for {type(value).__name__}")
+
+    return payload
+
+
 def display_offset(value: object) -> str:
     text = str(value or "-")
     return text.split("/", 1)[0]
@@ -1965,13 +1926,8 @@ def symbol_data_json(categories: list[Category]) -> str:
 
 def render_outputs(categories: list[Category]) -> dict[str, str]:
     return {
-        symbol_overview_output_path(): symbol_overview_markdown(),
-        symbol_data_output_path(): symbol_data_json(categories),
+        "pcdogs/symbols-data.json": symbol_data_json(categories),
     }
-
-
-def normalize_rendered_markdown(text: str) -> str:
-    return re.sub(r"\n{3,}", "\n\n", text)
 
 
 def combined_outputs(

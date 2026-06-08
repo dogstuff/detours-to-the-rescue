@@ -11,7 +11,6 @@
 void dttr_mods_init();
 void dttr_mods_tick();
 void dttr_mods_late_init();
-void dttr_mods_before_unload();
 void dttr_mods_frame_begin(const DTTR_Mods_FrameContext *ctx);
 void dttr_mods_before_game_frame(const DTTR_Mods_FrameContext *ctx);
 void dttr_mods_after_game_frame(const DTTR_Mods_FrameContext *ctx);
