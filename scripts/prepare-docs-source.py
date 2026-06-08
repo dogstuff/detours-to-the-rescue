@@ -9,26 +9,16 @@ import os
 import shutil
 import subprocess
 import sys
-from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol
-
-if TYPE_CHECKING:
-
-    class SymbolPage(Protocol):
-        name: object
-        anchor: object
-
-    class SymbolCategory(Protocol):
-        display: object
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SDK_SCRIPT_DIR = REPO_ROOT / "modules/sdk/scripts"
 PCDOGS_BLUEPRINT = REPO_ROOT / "modules/sdk/blueprints/dttr_pcdogs.py"
 SYMBOL_REFERENCE_BASE_PATH = "modding-sdk/symbols/pcdogs"
-SYMBOL_NAV_STUB = '    { "PCDogs Symbols" = "modding-sdk/symbols/pcdogs/index.md" },'
+EXPECTED_SYMBOL_NAV_ENTRY = """    { "PCDogs Symbols" = [
+      { "Overview" = "modding-sdk/symbols/pcdogs/index.md" },
+    ] },"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,38 +51,7 @@ class XRefMetadataOutput:
 
 
 @dataclass(frozen=True, slots=True)
-class SymbolMetadataInputs:
-    symbol_addresses: list[Path]
-    function_call_xrefs: list[Path]
-
-    @classmethod
-    def from_outputs(cls, metadata: list[XRefMetadataOutput]) -> SymbolMetadataInputs:
-        return cls(
-            symbol_addresses=[
-                item.path for item in metadata if item.arg_name == "--symbol-addresses"
-            ],
-            function_call_xrefs=[
-                item.path
-                for item in metadata
-                if item.arg_name == "--function-call-xrefs"
-            ],
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class NavPage:
-    title: str
-    path: str
-
-
-@dataclass(frozen=True, slots=True)
-class NavGroup:
-    title: str
-    entries: tuple[NavPage | NavGroup, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class OverviewManifest:
+class SymbolOverviewManifest:
     title: str
     path: str
 
@@ -100,7 +59,7 @@ class OverviewManifest:
 @dataclass(frozen=True, slots=True)
 class SymbolWrapperManifest:
     base_path: str
-    overview: OverviewManifest
+    overview: SymbolOverviewManifest
     detail_count: int
 
 
@@ -175,13 +134,15 @@ def paths_overlap(left: Path, right: Path) -> bool:
     return left == right or left in right.parents or right in left.parents
 
 
-def validate_nav_stub(config_path: Path) -> None:
+def validate_symbol_nav_entry(config_path: Path) -> None:
     config_text = config_path.read_text()
-    if SYMBOL_NAV_STUB not in config_text:
+    if EXPECTED_SYMBOL_NAV_ENTRY not in config_text:
         raise ValueError(f"could not find the PCDogs symbol nav entry in {config_path}")
 
 
-def validate_output_dir(output_dir: Path, *, source_dir: Path, config_path: Path) -> Path:
+def validate_output_dir(
+    output_dir: Path, *, source_dir: Path, config_path: Path
+) -> Path:
     output_dir = resolved_path(output_dir)
     exact_protected = {
         "repository root": REPO_ROOT,
@@ -201,7 +162,9 @@ def validate_output_dir(output_dir: Path, *, source_dir: Path, config_path: Path
 
     for label, path in overlap_protected.items():
         if paths_overlap(output_dir, path):
-            raise ValueError(f"refusing output dir {output_dir}: overlaps {label} {path}")
+            raise ValueError(
+                f"refusing output dir {output_dir}: overlaps {label} {path}"
+            )
 
     return output_dir
 
@@ -286,106 +249,8 @@ def relative_to_output(path: Path, output_dir: Path) -> str:
         return path.as_posix()
 
 
-def ensure_sdk_script_dir_on_path() -> None:
-    script_dir = str(SDK_SCRIPT_DIR)
-    if script_dir not in sys.path:
-        sys.path.insert(0, script_dir)
-
-
-def toml_nav_lines(entry: NavPage | NavGroup, indent: int) -> list[str]:
-    prefix = " " * indent
-    if isinstance(entry, NavPage):
-        return [f"{prefix}{{ {json.dumps(entry.title)} = {json.dumps(entry.path)} }},"]
-
-    lines = [f"{prefix}{{ {json.dumps(entry.title)} = ["]
-    for child in entry.entries:
-        lines.extend(toml_nav_lines(child, indent + 2))
-    lines.append(f"{prefix}] }},")
-    return lines
-
-
-def symbol_reference_path(path: str) -> str:
-    return f"modding-sdk/symbols/{path}"
-
-
-def blueprint_symbol_categories(
-    metadata: list[XRefMetadataOutput],
-) -> list[SymbolCategory]:
-    ensure_sdk_script_dir_on_path()
-    from generate_headers import load_blueprint, split_row_unstable_rows
-    from generate_symbol_docs import symbol_doc_categories
-
-    blueprint = load_blueprint(PCDOGS_BLUEPRINT)
-    stable, unstable = split_row_unstable_rows(blueprint)
-    inputs = SymbolMetadataInputs.from_outputs(metadata)
-    return symbol_doc_categories(
-        stable,
-        unstable,
-        function_call_xrefs=inputs.function_call_xrefs,
-        symbol_addresses=inputs.symbol_addresses,
-    )
-
-
-def symbol_page_title(
-    kind: str,
-    page: SymbolPage,
-    duplicate_names: Counter[str],
-) -> str:
-    title = str(page.name)
-    return f"{title} ({kind})" if duplicate_names[title] > 1 else title
-
-
-def symbol_nav_group(metadata: list[XRefMetadataOutput]) -> NavGroup:
-    ensure_sdk_script_dir_on_path()
-    from generate_symbol_docs import (
-        iter_category_cards,
-        symbol_detail_output_path,
-        symbol_overview_output_path,
-    )
-
-    category_entries: list[NavPage | NavGroup] = [
-        NavPage("Overview", symbol_reference_path(symbol_overview_output_path()))
-    ]
-
-    for category in blueprint_symbol_categories(metadata):
-        symbol_pages = sorted(
-            iter_category_cards(category),
-            key=lambda item: (
-                str(item[1].name).casefold(),
-                str(item[0]),
-                str(item[1].anchor),
-            ),
-        )
-        duplicate_names = Counter(str(page.name) for _kind, page in symbol_pages)
-        pages = tuple(
-            NavPage(
-                symbol_page_title(kind, page, duplicate_names),
-                symbol_reference_path(symbol_detail_output_path(page)),
-            )
-            for kind, page in symbol_pages
-        )
-        if pages:
-            category_entries.append(NavGroup(str(category.display), pages))
-
-    return NavGroup("PCDogs Symbols", tuple(category_entries))
-
-
-def symbol_nav_entry(metadata: list[XRefMetadataOutput]) -> str:
-    return "\n".join(
-        toml_nav_lines(
-            symbol_nav_group(metadata),
-            4,
-        )
-    )
-
-
-def write_prepared_config(
-    config_path: Path, output_path: Path, metadata: list[XRefMetadataOutput]
-) -> None:
-    config_text = config_path.read_text()
-    replacement = symbol_nav_entry(metadata)
-    rewritten = config_text.replace(SYMBOL_NAV_STUB, replacement, 1)
-    output_path.write_text(rewritten)
+def copy_docs_config(config_path: Path, output_path: Path) -> None:
+    output_path.write_text(config_path.read_text())
 
 
 def write_docs_manifest(
@@ -404,7 +269,7 @@ def write_docs_manifest(
         symbols=SymbolReferenceManifest(
             symbol_wrappers=SymbolWrapperManifest(
                 base_path=SYMBOL_REFERENCE_BASE_PATH,
-                overview=OverviewManifest(
+                overview=SymbolOverviewManifest(
                     title="PCDogs Symbols",
                     path=f"{SYMBOL_REFERENCE_BASE_PATH}/index.md",
                 ),
@@ -424,7 +289,7 @@ def main() -> int:
     config_path = resolved_path(args.config)
 
     try:
-        validate_nav_stub(config_path)
+        validate_symbol_nav_entry(config_path)
         validate_source_tree(source_dir)
         output_dir = validate_output_dir(
             args.output_dir,
@@ -454,10 +319,9 @@ def main() -> int:
         print(exc, file=sys.stderr)
         return 1
 
-    write_prepared_config(
+    copy_docs_config(
         config_path,
         output_dir / "zensical.toml",
-        metadata,
     )
     write_docs_manifest(
         output_dir=output_dir,

@@ -16,6 +16,7 @@
 :root {
     --pcdogs-icon-download: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>');
     --pcdogs-icon-link: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg>');
+    --pcdogs-link-accent-fg: #77bfff;
 }
 
 .md-typeset {
@@ -37,7 +38,7 @@
 }
 
 .md-typeset :not(pre) > code {
-    color: #77bfff;
+    color: var(--pcdogs-link-accent-fg);
 }
 
 @media screen and (max-width: 44.984375em) {
@@ -50,7 +51,7 @@
 .md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis,
 .md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"],
 .md-typeset a[href*="/releases/permalink/latest/downloads/dttr-"] {
-    color: #77bfff;
+    color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
 }
 
@@ -86,7 +87,7 @@
 }
 
 .md-nav__link[href$="internal/"] .md-ellipsis {
-    color: #77bfff;
+    color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
 }
 
@@ -259,11 +260,11 @@
     margin-top: 0;
 }
 
-.md-typeset .pcdogs-symbol-facts + p {
+.md-typeset .pcdogs-symbol-summary {
     margin-top: 0.76rem;
 }
 
-.md-typeset .pcdogs-symbol-facts + p + .pcdogs-block-heading,
+.md-typeset .pcdogs-symbol-summary + .pcdogs-block-heading,
 .md-typeset .tabbed-set + .pcdogs-symbol-reference-tables {
     margin-top: 1rem;
 }
@@ -301,7 +302,7 @@
 .md-typeset table.pcdogs-metadata-table__body th {
     color: var(--pcdogs-muted-fg);
     font-weight: 700;
-    text-align: left;
+    text-align: center;
     width: 1%;
 }
 
@@ -310,7 +311,7 @@
     font-style: normal;
     font-weight: 700;
     letter-spacing: normal;
-    text-align: left;
+    text-align: center;
     text-transform: none;
 }
 
@@ -321,7 +322,6 @@
 }
 
 .md-typeset .pcdogs-address-table__prefix,
-.md-typeset .pcdogs-xref-table__location-kind,
 .md-typeset .pcdogs-xref-table__location-offset-prefix,
 .md-typeset .pcdogs-xref-table__provenance,
 .md-typeset .pcdogs-reference-hierarchy-tree__separator {
@@ -351,7 +351,6 @@
 
 .md-typeset .pcdogs-xref-table__relation,
 .md-typeset .pcdogs-address-table__version,
-.md-typeset .pcdogs-xref-table__location-kind,
 .md-typeset .pcdogs-xref-table__location-offset-prefix,
 .md-typeset .pcdogs-xref-table__location-offset,
 .md-typeset .pcdogs-xref-table__provenance {
@@ -367,7 +366,18 @@
     white-space: nowrap;
 }
 
-.md-typeset :is(.pcdogs-xref-table__row--function, .pcdogs-xref-table__row--data, .pcdogs-xref-table__row--type) .pcdogs-xref-table__name :is(a, a:visited),
+.md-typeset .pcdogs-symbol-link-button {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    margin: 0;
+    padding: 0;
+    text-align: inherit;
+}
+
+.md-typeset .pcdogs-xref-table__name .pcdogs-symbol-link-button,
 .md-typeset .pcdogs-symbol-fact__value--type,
 .md-typeset .pcdogs-symbol-fact__value--type :is(a, a:visited),
 .md-typeset table.pcdogs-type-table--struct td:nth-child(3) :is(a, a:visited),
@@ -425,11 +435,6 @@
     color: color-mix(in srgb, #c084fc 82%, var(--pcdogs-code-fg));
 }
 
-.md-typeset .pcdogs-symbol-facts + .tabbed-set,
-.md-typeset .pcdogs-symbol-facts + table.pcdogs-type-table {
-    margin: 0;
-}
-
 .md-typeset .pcdogs-symbol-heading {
     align-items: center;
     display: flex;
@@ -437,15 +442,58 @@
     margin-bottom: 0.35rem;
 }
 
-.md-typeset .pcdogs-symbol-heading:target {
-    background: color-mix(in srgb, #60a5fa 10%, transparent);
-    border-radius: 0.24rem;
-    scroll-margin-top: 4.2rem;
+.md-typeset .pcdogs-symbol-overview-controls {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 0.65rem;
+}
+
+.md-typeset .pcdogs-symbol-overview-control {
+    color: var(--pcdogs-muted-fg);
+    display: grid;
+    font-size: 0.58rem;
+    font-weight: 700;
+    gap: 0.18rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.md-typeset .pcdogs-symbol-overview-control--search {
+    flex: 1 1 16rem;
+}
+
+.md-typeset .pcdogs-symbol-overview-control input,
+.md-typeset .pcdogs-symbol-overview-control select {
+    background: var(--pcdogs-panel-bg);
+    border: 1px solid var(--pcdogs-panel-border);
+    border-radius: 0.25rem;
+    color: var(--pcdogs-default-fg);
+    font: inherit;
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: normal;
+    min-height: 1.55rem;
+    padding: 0.22rem 0.42rem;
+    text-transform: none;
+}
+
+.md-typeset .pcdogs-symbol-overview-control input {
+    width: 100%;
+}
+
+.md-typeset .pcdogs-symbol-overview-count {
+    color: var(--pcdogs-muted-fg);
+    font-size: 0.62rem;
+    line-height: 1.55rem;
+    margin-left: auto;
+    white-space: nowrap;
 }
 
 .md-typeset table.pcdogs-symbol-overview-table {
     font-size: 0.64rem;
-    min-width: 44rem;
+    min-width: 46rem;
     width: 100%;
 }
 
@@ -473,24 +521,26 @@
 
 .md-typeset table.pcdogs-symbol-overview-table .pcdogs-symbol-overview-name a:hover,
 .md-typeset table.pcdogs-symbol-overview-table .pcdogs-symbol-overview-name a:focus-visible,
+.md-typeset .pcdogs-symbol-link-button:hover,
+.md-typeset .pcdogs-symbol-link-button:focus-visible,
 .md-typeset .pcdogs-reference-hierarchy-tree__symbol:hover,
 .md-typeset .pcdogs-reference-hierarchy-tree__symbol:focus-visible {
     text-decoration: underline;
 }
 
-.md-typeset .pcdogs-xref-table__row--function .pcdogs-xref-table__name :is(a, a:visited),
+.md-typeset .pcdogs-xref-table__row--function .pcdogs-xref-table__name .pcdogs-symbol-link-button,
 .md-typeset table.pcdogs-symbol-overview-table tr[data-kind="function"] .pcdogs-symbol-overview-name code,
 .md-typeset .pcdogs-reference-hierarchy-tree__symbol--function:is(a, a:visited) {
     color: var(--pcdogs-function-fg);
 }
 
-.md-typeset .pcdogs-xref-table__row--data .pcdogs-xref-table__name :is(a, a:visited),
+.md-typeset .pcdogs-xref-table__row--data .pcdogs-xref-table__name .pcdogs-symbol-link-button,
 .md-typeset table.pcdogs-symbol-overview-table tr[data-kind="data"] .pcdogs-symbol-overview-name code,
 .md-typeset .pcdogs-reference-hierarchy-tree__symbol--data:is(a, a:visited) {
     color: var(--pcdogs-data-fg);
 }
 
-.md-typeset .pcdogs-xref-table__row--type .pcdogs-xref-table__name :is(a, a:visited),
+.md-typeset .pcdogs-xref-table__row--type .pcdogs-xref-table__name .pcdogs-symbol-link-button,
 .md-typeset .pcdogs-symbol-fact__value--type,
 .md-typeset .pcdogs-symbol-fact__value--type :is(a, a:visited, code),
 .md-typeset table.pcdogs-type-table--struct td:nth-child(3) :is(a, a:visited, code),
@@ -522,21 +572,50 @@
     width: 28rem;
 }
 
-.md-typeset table.pcdogs-symbol-overview-table :is(th, td).pcdogs-symbol-overview-stability {
-    text-align: right;
+.md-typeset table.pcdogs-symbol-overview-table :is(th, td).pcdogs-symbol-overview-versions {
+    text-align: center;
     white-space: nowrap;
     width: 1%;
 }
 
-.md-typeset .pcdogs-symbol-overview-stability-value {
-    color: #fff;
-    font-size: 0.58rem;
+.md-typeset table.pcdogs-symbol-overview-table td.pcdogs-symbol-overview-versions {
+    color: var(--pcdogs-muted-fg);
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 0.01em;
 }
 
-.md-typeset .pcdogs-symbol-overview-stability-value--unstable {
+.md-typeset .pcdogs-symbol-overview-warning {
     color: #f59e0b;
+    display: inline-block;
+    font-size: 0.62rem;
+    margin-left: 0.25rem;
+    position: relative;
+    vertical-align: 0.03rem;
+}
+
+.md-typeset .pcdogs-symbol-overview-warning::after {
+    background: var(--md-default-fg-color);
+    border-radius: 0.2rem;
+    bottom: calc(100% + 0.32rem);
+    color: var(--md-default-bg-color);
+    content: attr(data-tooltip);
+    font-size: 0.58rem;
+    font-weight: 600;
+    left: 50%;
+    line-height: 1.2;
+    opacity: 0;
+    padding: 0.2rem 0.34rem;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    transition: opacity 120ms ease;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.md-typeset .pcdogs-symbol-overview-warning:hover::after,
+.md-typeset .pcdogs-symbol-overview-warning:focus-visible::after {
+    opacity: 1;
 }
 
 .md-typeset .pcdogs-symbol-overview-summary-text {
@@ -551,6 +630,12 @@
 
 .md-typeset table.pcdogs-symbol-overview-table tbody tr + tr td {
     border-top-color: color-mix(in srgb, var(--md-default-fg-color--lightest) 92%, transparent);
+}
+
+.md-typeset table.pcdogs-symbol-overview-table .pcdogs-symbol-overview-empty td {
+    color: var(--pcdogs-muted-fg);
+    padding: 0.8rem;
+    text-align: center;
 }
 
 .md-typeset .pcdogs-reference-table--reference-hierarchy {
@@ -636,4 +721,52 @@
 
 .md-typeset .pcdogs-reference-hierarchy-tree__symbol--current:is(a, a:visited) {
     color: var(--md-accent-fg-color);
+}
+
+.md-typeset .pcdogs-symbol-detail-back {
+    backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--md-default-bg-color) 86%, transparent);
+    border: 1px solid var(--pcdogs-panel-border);
+    border-radius: 999px;
+    box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.18);
+    display: inline-flex;
+    left: var(--pcdogs-detail-left, max(0.75rem, env(safe-area-inset-left)));
+    padding: 0.22rem 0.58rem;
+    position: fixed;
+    top: max(var(--pcdogs-detail-top, 0.75rem), calc(var(--md-header-height, 2.4rem) + 0.55rem));
+    z-index: 20;
+}
+
+.md-typeset .pcdogs-symbol-detail-page {
+    box-sizing: border-box;
+    margin: 0 auto;
+    max-width: min(100%, 72rem);
+    padding: 2.35rem 0 2rem;
+}
+
+.md-typeset .pcdogs-symbol-detail-page > h1 {
+    line-height: 1.15;
+    margin: 0 0 0.55rem;
+    overflow-wrap: anywhere;
+}
+
+.md-typeset .pcdogs-symbol-detail-page > .pcdogs-symbol-summary {
+    color: color-mix(in srgb, var(--pcdogs-default-fg) 84%, var(--pcdogs-muted-fg));
+    font-size: 0.8rem;
+    line-height: 1.55;
+    margin: 0.65rem 0 1rem;
+}
+
+.md-typeset .pcdogs-symbol-detail-page .tabbed-set {
+    margin-bottom: 1rem;
+    max-width: 100%;
+}
+
+.md-typeset .pcdogs-symbol-detail-page .tabbed-block {
+    padding: 0;
+}
+
+.md-typeset .pcdogs-symbol-detail-page .highlight,
+.md-typeset .pcdogs-symbol-detail-page .highlight pre {
+    margin: 0;
 }

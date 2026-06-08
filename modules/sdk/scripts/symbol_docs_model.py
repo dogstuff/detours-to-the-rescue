@@ -25,6 +25,7 @@ class XRefItem:
     detail: str
     builds: str = ""
     provenance: str = ""
+    target_anchor: str = ""
 
 
 @dataclass(slots=True)
@@ -33,7 +34,6 @@ class MemberCard:
     type: str
     offset: str
     doc: str
-    type_link: str = ""
 
 
 @dataclass(slots=True)
@@ -148,34 +148,6 @@ class Category:
     globals: list[GlobalCard] = field(default_factory=list)
     types: list[TypeCard] = field(default_factory=list)
     signatures: list[SignatureCard] = field(default_factory=list)
-
-
-@dataclass(frozen=True, slots=True)
-class OverviewRow:
-    name: str
-    kind: str
-    category: str
-    stability: str
-    stability_slug: str
-    href: str
-    builds: str
-    refs_in: int
-    refs_out: int
-    summary: str
-
-
-@dataclass(frozen=True, slots=True)
-class OverviewTotals:
-    symbols: int
-    functions: int
-    globals: int
-    types: int
-    signatures: int
-    stable: int
-    unstable: int
-    build_en: int
-    build_eu: int
-    build_sc: int
 
 
 @dataclass(slots=True)

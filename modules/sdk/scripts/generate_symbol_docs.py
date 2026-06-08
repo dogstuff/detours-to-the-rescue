@@ -9,8 +9,8 @@ import html
 import json
 import re
 import sys
-from collections import Counter, deque
-from dataclasses import dataclass, field, replace
+from collections import deque
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Iterator
@@ -20,6 +20,16 @@ try:
 except ImportError as exc:
     raise SystemExit(
         "generate_symbol_docs.py requires Mako; install it or enter the Nix dev shell."
+    ) from exc
+
+try:
+    from pygments import highlight
+    from pygments.formatters import HtmlFormatter
+    from pygments.lexers import get_lexer_by_name
+except ImportError as exc:
+    raise SystemExit(
+        "generate_symbol_docs.py requires Pygments for symbol example highlighting; "
+        "install it or enter the docs build environment."
     ) from exc
 
 sys.dont_write_bytecode = True
@@ -51,8 +61,6 @@ from symbol_docs_model import (  # noqa: E402
     GlobalCard,
     MemberCard,
     MetadataItem,
-    OverviewRow,
-    OverviewTotals,
     SignatureCard,
     SurfaceCards,
     SymbolFact,
@@ -89,6 +97,97 @@ BUILD_BITS = (
     ("SC", 0b100),
 )
 BUILD_BIT_BY_LABEL = dict(BUILD_BITS)
+
+
+JsonObject = dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class SymbolDataReference:
+    kind: str
+    value: object
+    offsets: str
+    detail: str
+    builds: str
+    provenance: str
+    target_anchor: str
+    text: str
+
+    @classmethod
+    def from_row(cls, row: XRefItem) -> SymbolDataReference:
+        return cls(
+            kind=row.kind,
+            value=row.value,
+            offsets=display_offset(row.offsets),
+            detail=row.detail,
+            builds=row.builds,
+            provenance=row.provenance,
+            target_anchor=row.target_anchor,
+            text=plain_symbol_text(row.value),
+        )
+
+    def to_json(self) -> JsonObject:
+        return {
+            "kind": self.kind,
+            "value": symbol_data_value(self.value),
+            "offsets": symbol_data_string(self.offsets),
+            "detail": symbol_data_string(self.detail),
+            "builds": symbol_data_string(self.builds),
+            "provenance": symbol_data_string(self.provenance),
+            "target_anchor": symbol_data_string(self.target_anchor),
+            "text": symbol_data_string(self.text),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class SymbolDataSymbol:
+    kind: str
+    category_display: str
+    card: SymbolPage
+    references: list[SymbolDataReference]
+    referenced_by: list[SymbolDataReference]
+    reference_hierarchy_paths: list[list[str]]
+
+    @classmethod
+    def from_card(
+        cls, kind: str, category: Category, card: SymbolPage
+    ) -> SymbolDataSymbol:
+        return cls(
+            kind=kind,
+            category_display=category.display,
+            card=card,
+            references=[
+                SymbolDataReference.from_row(row)
+                for row in getattr(card, "references", [])
+            ],
+            referenced_by=[
+                SymbolDataReference.from_row(row)
+                for row in getattr(card, "referenced_by", [])
+            ],
+            reference_hierarchy_paths=[
+                list(path) for path in getattr(card, "reference_hierarchy_paths", [])
+            ],
+        )
+
+    def to_json(self) -> JsonObject:
+        payload = symbol_data_value(self.card)
+        assert isinstance(payload, dict)
+
+        snippet_html = {
+            output_field: highlighted_c_snippet(getattr(self.card, input_field, ""))
+            for input_field, output_field in CODE_SNIPPET_HTML_FIELDS.items()
+            if hasattr(self.card, input_field)
+        }
+
+        return {
+            **payload,
+            **snippet_html,
+            "kind": self.kind,
+            "category_display": symbol_data_string(self.category_display),
+            "references": [row.to_json() for row in self.references],
+            "referenced_by": [row.to_json() for row in self.referenced_by],
+            "reference_hierarchy_paths": self.reference_hierarchy_paths,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -1176,6 +1275,10 @@ def rendered_symbol_link(card: object) -> str:
     return f"../{card.anchor}/"
 
 
+def xref_target_anchor(card: object | None) -> str:
+    return str(getattr(card, "anchor", "")) if card is not None else ""
+
+
 def xref_link(name: str, card: object | None) -> str:
     if card is None:
         return html.escape(name, quote=True)
@@ -1198,6 +1301,7 @@ def xref_items(rows: list[XRefItem]) -> list[XRefItem]:
                 detail=html.escape(str(row.detail or "-"), quote=True),
                 builds=html.escape(str(row.builds or ""), quote=True),
                 provenance=html.escape(str(row.provenance or ""), quote=True),
+                target_anchor=html.escape(str(row.target_anchor or ""), quote=True),
             )
         )
 
@@ -1280,16 +1384,19 @@ def link_type_names(text: object, types: list[TypeCard], *, exclude: str = "") -
     return escaped
 
 
-SYMBOL_HREF_RE = re.compile(
-    r'href="(?:(?:\.\./)?symbols/|\.\./)?(?P<anchor>[^"#/.]+)(?:/)?"'
-)
+GENERATED_HTML_TAG_RE = re.compile(r"</?(?:a|code|span|wbr)\b[^>]*>")
+PYGMENTS_C_LEXER = get_lexer_by_name("c")
+PYGMENTS_CODE_FORMATTER = HtmlFormatter(nowrap=True)
+CODE_SNIPPET_HTML_FIELDS = {
+    "pseudo_usage": "pseudo_usage_html",
+    "call_example": "call_example_html",
+    "patch_spec_example": "patch_spec_example_html",
+    "hook_example": "hook_example_html",
+    "read_example": "read_example_html",
+    "write_example": "write_example_html",
+}
 REFERENCE_HIERARCHY_ENTRYPOINT_NAME = "Window_RunWinMain"
 REFERENCE_HIERARCHY_MAX_PATHS_PER_SYMBOL = 128
-
-
-def referenced_anchor(value: str) -> str:
-    match = SYMBOL_HREF_RE.search(str(value))
-    return match.group("anchor") if match else ""
 
 
 def attach_reference_hierarchy_paths(cards: SurfaceCards) -> None:
@@ -1303,7 +1410,7 @@ def attach_reference_hierarchy_paths(cards: SurfaceCards) -> None:
 
     for card in cards.functions:
         for row in getattr(card, "references", []):
-            target_anchor = referenced_anchor(row.value)
+            target_anchor = row.target_anchor
             if (
                 not target_anchor
                 or target_anchor == card.anchor
@@ -1451,6 +1558,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
                     detail=detail,
                     builds=xref.builds,
                     provenance=xref.provenance,
+                    target_anchor=xref_target_anchor(callee),
                 )
             )
 
@@ -1463,6 +1571,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
                     detail=detail,
                     builds=xref.builds,
                     provenance=xref.provenance,
+                    target_anchor=xref_target_anchor(caller),
                 )
             )
 
@@ -1478,6 +1587,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
                     offsets=xref.offsets,
                     detail=xref.access,
                     builds=xref.builds,
+                    target_anchor=xref_target_anchor(target),
                 )
             )
 
@@ -1489,6 +1599,7 @@ def attach_xrefs(cards: SurfaceCards) -> None:
                     offsets=xref.offsets,
                     detail=xref.access,
                     builds=xref.builds,
+                    target_anchor=xref_target_anchor(source),
                 )
             )
 
@@ -1507,6 +1618,7 @@ def add_type_usage_xref(
             offsets="-",
             detail="type usage",
             builds=builds,
+            target_anchor=xref_target_anchor(target),
         )
     )
     target.referenced_by.append(
@@ -1516,6 +1628,7 @@ def add_type_usage_xref(
             offsets="-",
             detail="type usage",
             builds=builds,
+            target_anchor=xref_target_anchor(source),
         )
     )
 
@@ -1562,17 +1675,6 @@ def attach_related(cards: SurfaceCards) -> None:
                     types,
                     exclude=card.name,
                 )
-
-        for member in card.members:
-            member_refs = type_references([member.type], types)
-            member_display_type = docs_type_label(member.type)
-            member.type_link = (
-                linked_type_code(
-                    member.type, member_refs[0], display_text=member_display_type
-                )
-                if member_refs
-                else f"<code>{html.escape(member_display_type)}</code>"
-            )
 
         card.facts = [symbol_fact("Kind", card.kind_label)]
 
@@ -1733,30 +1835,6 @@ def symbol_doc_cards(
     return cards
 
 
-def overview_totals(rows: list[OverviewRow]) -> OverviewTotals:
-    kind_counts = Counter(row.kind for row in rows)
-    stability_counts = Counter(row.stability_slug for row in rows)
-    build_counts = Counter(
-        build
-        for row in rows
-        for build in row.builds.split()
-        if build in BUILD_BIT_BY_LABEL
-    )
-
-    return OverviewTotals(
-        symbols=sum(kind_counts.values()),
-        functions=kind_counts["function"],
-        globals=kind_counts["data"],
-        types=kind_counts["type"],
-        signatures=kind_counts["signature"],
-        stable=stability_counts["stable"],
-        unstable=stability_counts["unstable"],
-        build_en=build_counts["EN"],
-        build_eu=build_counts["EU"],
-        build_sc=build_counts["SC"],
-    )
-
-
 def iter_category_cards(category: Category) -> Iterator[tuple[str, SymbolPage]]:
     for kind, cards in (
         ("function", category.functions),
@@ -1766,31 +1844,6 @@ def iter_category_cards(category: Category) -> Iterator[tuple[str, SymbolPage]]:
     ):
         for card in cards:
             yield kind, card
-
-
-def overview_rows(categories: list[Category]) -> list[OverviewRow]:
-    rows: list[OverviewRow] = []
-
-    for category in categories:
-        for kind, card in iter_category_cards(category):
-            unstable = str(card.anchor).startswith("unstable-")
-            rows.append(
-                OverviewRow(
-                    name=str(card.name),
-                    kind=kind,
-                    category=category.display,
-                    stability="Unstable" if unstable else "Stable",
-                    stability_slug="unstable" if unstable else "stable",
-                    href=f"symbols/{card.anchor}",
-                    builds=str(getattr(card, "builds", "")),
-                    refs_in=len(getattr(card, "referenced_by", [])),
-                    refs_out=len(getattr(card, "references", [])),
-                    summary=str(getattr(card, "summary", "")),
-                )
-            )
-
-    rows.sort(key=lambda row: (row.name.casefold(), row.category.casefold()))
-    return rows
 
 
 def iter_symbol_cards(
@@ -1822,38 +1875,99 @@ def symbol_overview_output_path() -> str:
     return "pcdogs/index.md"
 
 
-def symbol_detail_output_path(page: SymbolPage) -> str:
-    return f"pcdogs/symbols/{page.anchor}.md"
+def symbol_data_output_path() -> str:
+    return "pcdogs/symbols-data.json"
+
+
+def symbol_overview_markdown() -> str:
+    return normalize_rendered_markdown(
+        """---
+hide:
+  - toc
+title: "SDK Symbols"
+description: "Reference for PC symbols wrapped by the SDK."
+tags:
+  - "PCDOGS"
+  - "SDK Symbol"
+  - "SDK"
+  - "Symbol Reference"
+---
+
+<div class="pcdogs-symbol-docs" aria-hidden="true"><h1 id="__skip" hidden>SDK Symbols</h1></div>
+<div id="pcdogs-symbol-viewer" data-symbols-json="symbols-data.json"></div>
+""".strip(
+            "\n"
+        )
+    )
+
+
+def symbol_data_string(value: object) -> str:
+    return html.unescape(GENERATED_HTML_TAG_RE.sub("", str(value)))
+
+
+def plain_symbol_text(value: object) -> str:
+    return " ".join(symbol_data_string(value).split())
+
+
+def highlighted_c_snippet(value: object) -> str:
+    text = symbol_data_string(value)
+    if not text:
+        return ""
+
+    return highlight(text, PYGMENTS_C_LEXER, PYGMENTS_CODE_FORMATTER).rstrip("\n")
+
+
+def symbol_data_value(value: object) -> object:
+    if isinstance(value, str):
+        return symbol_data_string(value)
+
+    if is_dataclass(value):
+        return {
+            item.name: symbol_data_value(getattr(value, item.name))
+            for item in fields(value)
+        }
+
+    if isinstance(value, dict):
+        return {str(key): symbol_data_value(item) for key, item in value.items()}
+
+    if isinstance(value, (list, tuple)):
+        return [symbol_data_value(item) for item in value]
+
+    return value
+
+
+def display_offset(value: object) -> str:
+    text = str(value or "-")
+    return text.split("/", 1)[0]
+
+
+def symbol_data_payload(categories: list[Category]) -> JsonObject:
+    return {
+        "schema_version": 1,
+        "symbols": [
+            SymbolDataSymbol.from_card(kind, category, card).to_json()
+            for kind, category, card in iter_symbol_cards(categories)
+        ],
+    }
+
+
+def symbol_data_json(categories: list[Category]) -> str:
+    return (
+        json.dumps(
+            symbol_data_payload(categories),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
 
 
 def render_outputs(categories: list[Category]) -> dict[str, str]:
-    detail_template = template("symbol_docs_detail_template.md.mako")
-    overview_template = template("symbol_docs_overview_template.md.mako")
-    rows = overview_rows(categories)
-    cards_by_anchor = {
-        card.anchor: card for _, _, card in iter_symbol_cards(categories)
+    return {
+        symbol_overview_output_path(): symbol_overview_markdown(),
+        symbol_data_output_path(): symbol_data_json(categories),
     }
-    outputs = {
-        symbol_overview_output_path(): normalize_rendered_markdown(
-            overview_template.render_unicode(
-                categories=categories,
-                rows=rows,
-                totals=overview_totals(rows),
-            ).strip("\n")
-        )
-    }
-
-    for kind, category, card in iter_symbol_cards(categories):
-        outputs[symbol_detail_output_path(card)] = normalize_rendered_markdown(
-            detail_template.render_unicode(
-                category=category,
-                kind=kind,
-                card=card,
-                cards_by_anchor=cards_by_anchor,
-            ).strip("\n")
-        )
-
-    return outputs
 
 
 def normalize_rendered_markdown(text: str) -> str:
