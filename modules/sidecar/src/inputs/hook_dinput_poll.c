@@ -1,13 +1,14 @@
 #include <SDL3/SDL.h>
 #include <dttr_pcdogs.h>
-#include <dttr_sidecar.h>
 #include <stdint.h>
 #include <string.h>
 #include <windows.h>
 
+#include <dttr_config.h>
 #include <dttr_log.h>
 
 #include "hooks_private.h"
+#include "inputs_private.h"
 #include "sidecar_private.h"
 
 typedef struct {
@@ -64,7 +65,7 @@ static void apply_direction_state(
 }
 
 static bool is_source_pressed(int source) {
-	if (!dttr_gamepad) {
+	if (!dttr_inputs_gamepad) {
 		return false;
 	}
 
@@ -73,21 +74,21 @@ static bool is_source_pressed(int source) {
 		const SDL_GamepadAxis axis = (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT)
 										 ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER
 										 : SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
-		return SDL_GetGamepadAxis(dttr_gamepad, axis) / DTTR_DINPUT_AXIS_SCALE
+		return SDL_GetGamepadAxis(dttr_inputs_gamepad, axis) / DTTR_DINPUT_AXIS_SCALE
 			   > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
 	}
 
-	return SDL_GetGamepadButton(dttr_gamepad, (SDL_GamepadButton)source);
+	return SDL_GetGamepadButton(dttr_inputs_gamepad, (SDL_GamepadButton)source);
 }
 
 static LONG read_axis(int axis_idx) {
 	const int sdl_axis = dttr_config.gamepad_axes[axis_idx];
 
-	if (!dttr_gamepad || sdl_axis == DTTR_GAMEPAD_MAPPING_NONE) {
+	if (!dttr_inputs_gamepad || sdl_axis == DTTR_GAMEPAD_MAPPING_NONE) {
 		return 0;
 	}
 
-	const LONG value = SDL_GetGamepadAxis(dttr_gamepad, sdl_axis)
+	const LONG value = SDL_GetGamepadAxis(dttr_inputs_gamepad, sdl_axis)
 					   / DTTR_DINPUT_AXIS_SCALE;
 	const LONG deadzone = dttr_config.gamepad_axis_deadzone[axis_idx];
 
@@ -103,13 +104,17 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	);
 
 	if (!DTTR_ResultOK(alloc_result) || !state) {
-		DTTR_LOG_ERROR("Failed to allocate joystick poll state");
+		DTTR_LOG_ERROR(
+			"Failed to allocate joystick poll state: %s",
+			alloc_result.message ? alloc_result.message
+								 : DTTR_StatusName(alloc_result.status)
+		);
 		return NULL;
 	}
 
 	init_poll_state(state);
 
-	if (!dttr_gamepad || !dttr_config.gamepad_enabled) {
+	if (!dttr_inputs_gamepad || !dttr_config.gamepad_enabled) {
 		return state;
 	}
 

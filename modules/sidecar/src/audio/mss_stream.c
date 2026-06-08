@@ -171,7 +171,8 @@ void dttr_mss_stream_apply_master_gain() {
 	}
 }
 
-// Resolves a game-relative stream path through override data and the cached game data tree.
+// Resolves a game-relative stream path through override data and the cached game data
+// tree.
 static sds resolve_game_relative_stream_path(const char *relative) {
 	char (*base_path)[DTTR_PCDOGS_D_AUDIO_OPEN_STREAM_PKG_BASE_PATH_COUNT]
 		= DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Ptr();
@@ -213,11 +214,13 @@ static const char *find_data_segment(const char *path) {
 	for (const char *p = path; *p;) {
 		const size_t segment_len = DTTR_Path_SegmentLen(p);
 
-		if (segment_len == 4 && DTTR_Path_AsciiIeqN(p, "data", 4)) {
+		if (segment_len == sizeof("data") - 1
+			&& DTTR_Path_AsciiIeqN(p, "data", sizeof("data") - 1)) {
 			return p;
 		}
 
-		if (segment_len == 10 && DTTR_Path_AsciiIeqN(p, "pcdogs.pkg", 10)) {
+		if (segment_len == sizeof("pcdogs.pkg") - 1
+			&& DTTR_Path_AsciiIeqN(p, "pcdogs.pkg", sizeof("pcdogs.pkg") - 1)) {
 			return p;
 		}
 

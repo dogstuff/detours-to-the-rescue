@@ -41,7 +41,9 @@ static float clamp_float(float value, float min_value, float max_value) {
 	return value;
 }
 
-bool dttr_mss_core_has_driver() { return driver_open_count > 0 && mixer; }
+bool dttr_mss_core_has_driver() {
+	return driver_open_count > 0 && mixer;
+}
 
 void dttr_mss_core_reset_preferences() {
 	dttr_mss_reset_preferences(preferences, SDL_arraysize(preferences));
@@ -153,9 +155,13 @@ void dttr_mss_core_destroy_mixer() {
 	clear_desired_spec();
 }
 
-MIX_Mixer *dttr_mss_core_mixer() { return mixer; }
+MIX_Mixer *dttr_mss_core_mixer() {
+	return mixer;
+}
 
-SDL_AudioSpec dttr_mss_core_mixer_spec() { return mixer_spec; }
+SDL_AudioSpec dttr_mss_core_mixer_spec() {
+	return mixer_spec;
+}
 
 void dttr_mss_core_set_desired_spec(const SDL_AudioSpec *spec) {
 	if (!spec) {
@@ -167,9 +173,13 @@ void dttr_mss_core_set_desired_spec(const SDL_AudioSpec *spec) {
 	has_desired_spec = true;
 }
 
-int dttr_mss_core_driver_open_count() { return driver_open_count; }
+int dttr_mss_core_driver_open_count() {
+	return driver_open_count;
+}
 
-void dttr_mss_core_increment_driver_open_count() { driver_open_count++; }
+void dttr_mss_core_increment_driver_open_count() {
+	driver_open_count++;
+}
 
 void dttr_mss_core_decrement_driver_open_count() {
 	if (driver_open_count <= 0) {
@@ -179,8 +189,14 @@ void dttr_mss_core_decrement_driver_open_count() {
 	driver_open_count--;
 }
 
-void dttr_mss_core_reset_driver_open_count() { driver_open_count = 0; }
+void dttr_mss_core_reset_driver_open_count() {
+	driver_open_count = 0;
+}
 
-float dttr_mss_core_master_gain() { return master_gain; }
+float dttr_mss_core_master_gain() {
+	return master_gain;
+}
 
-void dttr_mss_core_set_master_gain(float gain) { master_gain = gain; }
+void dttr_mss_core_set_master_gain(float gain) {
+	master_gain = gain;
+}

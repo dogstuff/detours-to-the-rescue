@@ -1,7 +1,8 @@
 #include <dttr_pcdogs.h>
 
-#include "dttr_sidecar.h"
+#include "../graphics/graphics_private.h"
 #include "hooks_private.h"
+#include "movies_private.h"
 #include "sidecar_private.h"
 #include <dttr_log.h>
 #include <dttr_path.h>
@@ -21,7 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-static DTTR_PCDOGS_F_Video_PlayMovieFile_proto movie_play_file_original;
+static DTTR_Core_PatchGroup *movie_patch_group;
 
 // Replaces the game's blocking movie call with sidecar-managed FFmpeg playback.
 static BOOL __cdecl movie_play_file_detour(
@@ -60,7 +61,7 @@ typedef struct {
 	double next_video_time;
 	double last_video_pts;
 	double frame_duration;
-	DTTR_MovieResult result;
+	dttr_movie_result result;
 } movie_state;
 
 static movie_state movie = {
@@ -74,8 +75,9 @@ static AVFrame *video_frame = NULL;
 static AVFrame *audio_frame = NULL;
 static AVPacket *packet = NULL;
 
-// Restores the movie decoder state to its idle defaults while preserving the final result.
-static void reset_movie_state(DTTR_MovieResult result) {
+// Restores the movie decoder state to its idle defaults while preserving the final
+// result.
+static void reset_movie_state(dttr_movie_result result) {
 	movie = (movie_state){
 		.video_stream = -1,
 		.audio_stream_index = -1,
@@ -84,10 +86,12 @@ static void reset_movie_state(DTTR_MovieResult result) {
 	};
 }
 
-// Formats the latest FFmpeg error into a reusable buffer for sidecar log messages.
+// Formats an FFmpeg error code into a reusable buffer for sidecar log messages.
 static const char *av_error(const int err) {
 	static char buf[AV_ERROR_MAX_STRING_SIZE];
+
 	av_strerror(err, buf, sizeof(buf));
+
 	return buf;
 }
 
@@ -113,7 +117,7 @@ static void close_audio() {
 
 // Releases all FFmpeg and SDL movie resources while keeping the playback result intact.
 static void close_movie() {
-	const DTTR_MovieResult result = movie.result;
+	const dttr_movie_result result = movie.result;
 	close_audio();
 	sws_freeContext(movie.sws);
 	avcodec_free_context(&movie.video_codec);
@@ -522,7 +526,7 @@ static bool drain_eof() {
 	return false;
 }
 
-// Sends the current packet to the matching decoder and handles end-of-stream flushing.
+// Sends the current packet to the matching decoder.
 static void send_packet() {
 	if (packet->stream_index == movie.video_stream) {
 		if (packet->size <= 0) {
@@ -590,7 +594,7 @@ static bool decode_until_video_frame() {
 }
 
 // Allocates reusable FFmpeg frames and packet storage for movie playback.
-void DTTR_Movies_Init() {
+void dttr_movies_init() {
 	video_frame = av_frame_alloc();
 	audio_frame = av_frame_alloc();
 	packet = av_packet_alloc();
@@ -599,25 +603,28 @@ void DTTR_Movies_Init() {
 	}
 }
 
-// Installs the game movie hook so sidecar playback replaces the original routine.
+// Installs the movie patch group so sidecar playback replaces the original routine.
 bool dttr_movies_hooks_init(const DTTR_Mods_Context *ctx) {
-	if (!DTTR_PCDOGS_F_Video_PlayMovieFile
-			 ->Hook(&ctx->runtime, movie_play_file_detour, &movie_play_file_original)) {
-		DTTR_MODS_LOG_ERROR(ctx, "movie_playfile: hook failed");
-		return false;
-	}
+	const DTTR_PCDOGS_T_Patch_Spec movie_patches[] = {
+		DTTR_PCDOGS_F_Video_PlayMovieFile->PatchSpec(true, movie_play_file_detour, NULL),
+	};
 
-	return true;
+	return dttr_sidecar_install_pcdogs_patch_group(
+		ctx,
+		"sidecar/movie",
+		movie_patches,
+		DTTR_ARRAY_COUNT(movie_patches),
+		&movie_patch_group
+	);
 }
 
-// Removes the game movie hook and clears the saved original function pointer.
-void dttr_movies_hooks_cleanup(const DTTR_Mods_Context *ctx) {
-	DTTR_PCDOGS_F_Video_PlayMovieFile->Unhook(&ctx->runtime);
-	movie_play_file_original = NULL;
+// Releases the movie patch group.
+void dttr_movies_hooks_cleanup(const DTTR_Mods_Context *) {
+	DTTR_Core_PatchGroupRelease(&movie_patch_group);
 }
 
 // Releases persistent FFmpeg frame and packet storage during sidecar shutdown.
-void DTTR_Movies_Cleanup() {
+void dttr_movies_cleanup() {
 	close_movie();
 	av_packet_free(&packet);
 	av_frame_free(&audio_frame);
@@ -668,7 +675,7 @@ static sds resolve_movie_path(const char *path) {
 }
 
 // Resolves and opens a movie file, then marks playback active when decoders are ready.
-void DTTR_Movies_Start(const char *path) {
+void dttr_movies_start(const char *path) {
 	if (!video_frame || !audio_frame || !packet) {
 		DTTR_LOG_ERROR("Missing movie playback state");
 		movie.result = DTTR_MOVIE_ENDED;
@@ -692,7 +699,7 @@ void DTTR_Movies_Start(const char *path) {
 }
 
 // Decodes and presents movie frames on the sidecar loop according to the video clock.
-void DTTR_Movies_Tick() {
+void dttr_movies_tick() {
 	if (movie.result != DTTR_MOVIE_PLAYING) {
 		return;
 	}
@@ -711,7 +718,7 @@ void DTTR_Movies_Tick() {
 		return;
 	}
 
-	if (!DTTR_Graphics_PresentVideoFrameBGRA(
+	if (!dttr_graphics_present_video_frame_bgra(
 			movie.buffer,
 			movie.buf_w,
 			movie.buf_h,
@@ -729,7 +736,7 @@ void DTTR_Movies_Tick() {
 }
 
 // Handles skip, quit, and gamepad input while a sidecar movie is playing.
-bool DTTR_Movies_HandleEvent(const SDL_Event *event) {
+bool dttr_movies_handle_event(const SDL_Event *event) {
 	if (movie.result != DTTR_MOVIE_PLAYING) {
 		return false;
 	}
@@ -765,27 +772,29 @@ bool DTTR_Movies_HandleEvent(const SDL_Event *event) {
 }
 
 // Stops playback, releases per-movie resources, and returns the final movie result.
-DTTR_MovieResult DTTR_Movies_Stop() {
-	const DTTR_MovieResult result = movie.result;
+dttr_movie_result dttr_movies_stop() {
+	const dttr_movie_result result = movie.result;
 	close_movie();
 	DTTR_LOG_INFO("Stopped movie with result %d", result);
 	return result;
 }
 
 // Reports whether the blocking movie hook should keep pumping events and decoding frames.
-bool DTTR_Movies_MovieIsPlaying() { return movie.result == DTTR_MOVIE_PLAYING; }
+bool dttr_movies_is_playing() {
+	return movie.result == DTTR_MOVIE_PLAYING;
+}
 
 // Runs replacement movie playback to completion while pumping sidecar events.
 int32_t __cdecl dttr_movies_hook_movie_play_file_callback(
 	const char *path,
 	const int32_t use_alt_rect
 ) {
-	DTTR_Movies_Start(path);
+	dttr_movies_start(path);
 
-	while (DTTR_Movies_MovieIsPlaying()) {
+	while (dttr_movies_is_playing()) {
 		dttr_sidecar_poll_sdl_events();
-		DTTR_Movies_Tick();
+		dttr_movies_tick();
 	}
 
-	return DTTR_Movies_Stop();
+	return dttr_movies_stop();
 }

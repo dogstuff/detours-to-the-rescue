@@ -3,33 +3,26 @@
 
 #include <dttr_pcdogs.h>
 
-static const DTTR_PCDOGS_T_Patch_Spec game_patches[] = {
-	{
-		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
-		.required = true,
-		.function = DTTR_PCDOGS_FUNCTION_FILE_OPEN,
-		.detour = dttr_crt_hook_open_file_callback,
-		.out_original = NULL,
-	},
-	{
-		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
-		.required = true,
-		.function = DTTR_PCDOGS_FUNCTION_TITLE_CLEANUP_SCREEN_RESOURCES,
-		.detour = dttr_hook_cleanup_title_resources_callback,
-		.out_original = (void **)&dttr_hook_cleanup_title_resources_original,
-	},
-	DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
-		false,
-		"51 8D 44 24 ?? 57",
-		0,
-		dttr_hook_resolve_pcdogs_path_callback
-	),
-};
-
 static DTTR_Core_PatchGroup *game_targets;
 
-// Installs the game-level patch group and clears cleanup state if any required hook fails.
+// Installs the game-level patch group and clears cleanup state if any required hook
+// fails.
 bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
+	const DTTR_PCDOGS_T_Patch_Spec game_patches[] = {
+		DTTR_PCDOGS_F_File_Open->PatchSpec(true, dttr_crt_hook_open_file_callback, NULL),
+		DTTR_PCDOGS_F_Title_CleanupScreenResources->PatchSpec(
+			true,
+			dttr_hook_cleanup_title_resources_callback,
+			&dttr_hook_cleanup_title_resources_original
+		),
+		DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
+			false,
+			"51 8D 44 24 ?? 57",
+			0,
+			dttr_hook_resolve_pcdogs_path_callback
+		),
+	};
+
 	if (!dttr_sidecar_install_pcdogs_patch_group(
 			ctx,
 			"sidecar/game",
@@ -45,7 +38,7 @@ bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
 }
 
 // Releases all game-level patches and drops the saved cleanup callback pointer.
-void dttr_game_hooks_cleanup(const DTTR_Mods_Context *ctx) {
+void dttr_game_hooks_cleanup(const DTTR_Mods_Context *) {
 	DTTR_Core_PatchGroupRelease(&game_targets);
 	dttr_hook_cleanup_title_resources_original = NULL;
 }

@@ -38,12 +38,8 @@ static bool launcher_dll_path(char *out, size_t out_size) {
 		return false;
 	}
 
-	const int written = snprintf(
-		out + len,
-		out_size - len,
-		"%s",
-		LAUNCHER_DLL_RELATIVE_PATH
-	);
+	const int
+		written = snprintf(out + len, out_size - len, "%s", LAUNCHER_DLL_RELATIVE_PATH);
 	return written > 0 && (size_t)written < out_size - len;
 }
 

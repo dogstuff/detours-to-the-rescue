@@ -125,6 +125,7 @@ class HeaderTypes:
     external_forward_names: list[str]
     forward_names: list[str]
     generated_type_names: dict[str, str]
+    unstable_type_names: set[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,6 +236,7 @@ class XRefRow:
     addr_off: int
     indirections: int = 0
     required: object = "all"
+    access: str = "R/W"
     global_symbol: str = ""
     function_symbol: str = ""
 
@@ -324,6 +326,7 @@ class TypedFunctionRow:
     function_id: str
     symbol_id: str
     symbol_name: str
+    unstable: bool
     doc: str
     group_doc: str
     param_docs: list[tuple[str, str]]
@@ -345,6 +348,7 @@ class HeaderContext:
     external_type_rows: list[object]
     external_forward_names: list[str]
     forward_names: list[str]
+    unstable_type_names: set[str]
     signatures: list[SignatureRow]
     functions: list[FunctionRow]
     globals: list[GlobalRow]
@@ -668,6 +672,7 @@ def global_entry(
             addr_off=ref.addr_off,
             indirections=ref.indirections,
             required=ref.required,
+            access=ref.access,
         )
         for ref in row.xrefs
     ]
@@ -836,25 +841,12 @@ def check_public_token_unique(rows: list[object], label: str) -> None:
         seen[token] = row.name
 
 
-def check_pascal_namespace_shape(rows: list[object], label: str) -> None:
-    """Reject stale Pascal Namespace_Subnamespace_Name shapes."""
-
-    for row in rows:
-        if re.match(r"^[A-Z][A-Za-z0-9]*_[A-Z][A-Za-z0-9]*_", row.name):
-            raise ValueError(
-                f"{label} name has a stale subnamespace separator: {row.name}"
-            )
-
-
 def validate_blueprint(blueprint: BlueprintRows) -> None:
     """Validate blueprint names and xrefs before emitting headers or implementation stubs."""
 
     check_unique(blueprint.signatures, "signature")
     check_unique(blueprint.functions, "function", allow_stable_unstable_pair=True)
     check_unique(blueprint.globals, "global")
-    check_pascal_namespace_shape(blueprint.signatures, "signature")
-    check_pascal_namespace_shape(blueprint.functions, "function")
-    check_pascal_namespace_shape(blueprint.structs, "type")
     check_public_token_unique(blueprint.functions, "function")
     check_public_token_unique([row for row in blueprint.globals if row.typed], "data")
     check_public_token_unique(blueprint.structs, "type")
@@ -1142,9 +1134,6 @@ def c_data_write_source(value: object, name: str) -> str:
 
 def pcdogs_type_name(name: str) -> str:
     """Return the public C name for a generated PCDOGS type."""
-
-    if re.match(r"^[A-Z][A-Za-z0-9]*_[A-Z][A-Za-z0-9]*_", name):
-        raise ValueError(f"PCDOGS type name has a stale subnamespace separator: {name}")
 
     if name.startswith("DTTR_PCDOGS_T_"):
         return name
@@ -1518,6 +1507,7 @@ def typed_function_template_row(
         function_id=f"DTTR_PCDOGS_FUNCTION_{fn.symbol_id}",
         symbol_id=f"DTTR_PCDOGS_SYMBOL_FUNCTION_ID_{fn.symbol_id}",
         symbol_name=fn.name,
+        unstable=fn.unstable,
         doc=symbol_doc(SymbolDocKind.FUNCTION, fn),
         group_doc=f"Helpers for `{display_name}`.",
         param_docs=param_docs,
@@ -1612,7 +1602,7 @@ def sort_struct_rows_by_value_dependencies(rows: list[object]) -> list[object]:
 
 
 def is_struct_ref(name: str, excluded_names: set[str]) -> bool:
-    """Identify struct-like types that need forward declarations in generated headers."""
+    """Find struct-like types that need forward declarations in generated headers."""
 
     if not name or name in excluded_names or name.startswith("DTTR_"):
         return False
@@ -1729,6 +1719,7 @@ def header_type_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderTy
         external_forward_names=external_forward_names,
         forward_names=forward_names,
         generated_type_names=generated_type_names,
+        unstable_type_names={row.name for row in blueprint.structs if row.unstable},
     )
 
 
@@ -1771,7 +1762,7 @@ STATIC_TEMPLATE_CONTEXT = {
 def header_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderContext:
     """Build the stable or unstable template context used for generated PCDOGS headers."""
 
-    guard = "DTTR_PCDOGS_UNSTABLE_H" if unstable else "DTTR_PCDOGS_H"
+    guard = "DTTR_PCDOGS_H"
     header_types = header_type_context(blueprint, unstable=unstable)
 
     def local_c_type(value: object) -> str:
@@ -1797,14 +1788,13 @@ def header_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderContext
 
     return HeaderContext(
         header_guard=guard,
-        hook_macro_name=(
-            "DTTR_PCDOGS_UNSTABLE_HOOK" if unstable else "DTTR_PCDOGS_HOOK"
-        ),
+        hook_macro_name="DTTR_PCDOGS_HOOK",
         type_prefix_rows=header_types.type_prefix_rows,
         packed_type_rows=header_types.packed_type_rows,
         external_type_rows=header_types.external_type_rows,
         external_forward_names=header_types.external_forward_names,
         forward_names=header_types.forward_names,
+        unstable_type_names=header_types.unstable_type_names,
         signatures=blueprint.signatures,
         functions=blueprint.functions,
         globals=blueprint.globals,
@@ -1939,15 +1929,6 @@ def header_blueprint(
     return replace(blueprint, external_structs=stable_type_rows)
 
 
-def header_names(is_unstable: bool) -> tuple[str, str]:
-    """Return the public and private generated header names."""
-
-    if is_unstable:
-        return "dttr_pcdogs_unstable.h", "dttr_pcdogs_unstable_full.h"
-
-    return "dttr_pcdogs.h", "dttr_pcdogs_full.h"
-
-
 def write_blueprint_outputs(
     blueprint: BlueprintRows,
     *,
@@ -1959,8 +1940,6 @@ def write_blueprint_outputs(
 ) -> bool:
     """Render and write the generated outputs for one blueprint."""
 
-    public_header_name, private_header_name = header_names(is_unstable)
-
     full_header = header_h(
         header_blueprint(
             blueprint,
@@ -1970,8 +1949,8 @@ def write_blueprint_outputs(
         unstable=is_unstable,
     )
 
-    public_header_path = include_dir / public_header_name
-    private_header_path = src_dir / "generated" / private_header_name
+    public_header_path = include_dir / "dttr_pcdogs.h"
+    private_header_path = src_dir / "generated" / "dttr_pcdogs_full.h"
     public_header = clang_format_header(
         public_header_path,
         public_header_from_full(full_header),
@@ -2113,28 +2092,44 @@ def main() -> int:
     blueprint_path = default_blueprint_path(args, sdk_root)
     include_dir, src_dir = output_dirs(args, repo_root)
 
-    stable_blueprint, unstable_blueprint = split_row_unstable_rows(
-        load_blueprint(blueprint_path)
+    blueprint = load_blueprint(blueprint_path)
+
+    def stable_first(rows: list[object]) -> list[object]:
+        stable_rows, unstable_rows = _split_stability(rows)
+        return [*stable_rows, *unstable_rows]
+
+    combined_blueprint = replace(
+        blueprint,
+        signatures=stable_first(blueprint.signatures),
+        functions=stable_first(blueprint.functions),
+        globals=stable_first(blueprint.globals),
+        structs=stable_first(blueprint.structs),
+        external_structs=[],
+    )
+    attach_symbol_metadata(combined_blueprint)
+    validate_blueprint(combined_blueprint)
+
+    ok = write_blueprint_outputs(
+        combined_blueprint,
+        is_unstable=False,
+        stable_type_rows=[],
+        include_dir=include_dir,
+        src_dir=src_dir,
+        check=args.check,
     )
 
-    stable_type_rows = list(stable_blueprint.structs)
-    ok = True
-
-    for is_unstable, output_blueprint in (
-        (False, stable_blueprint),
-        (True, unstable_blueprint),
-    ):
-        ok = (
-            write_blueprint_outputs(
-                output_blueprint,
-                is_unstable=is_unstable,
-                stable_type_rows=stable_type_rows,
-                include_dir=include_dir,
-                src_dir=src_dir,
-                check=args.check,
-            )
-            and ok
-        )
+    obsolete_outputs = [
+        include_dir / "dttr_pcdogs_unstable.h",
+        src_dir / "generated" / "dttr_pcdogs_unstable_full.h",
+    ]
+    if args.check:
+        for path in obsolete_outputs:
+            if path.exists():
+                print(f"obsolete generated output remains: {path}", file=sys.stderr)
+                ok = False
+    else:
+        for path in obsolete_outputs:
+            path.unlink(missing_ok=True)
 
     if not ok:
         print(

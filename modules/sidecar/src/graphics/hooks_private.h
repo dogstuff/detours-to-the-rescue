@@ -2,16 +2,17 @@
 #define DTTR_GRAPHICS_HOOKS_PRIVATE_H
 
 #include <dttr_mods.h>
+#include <dttr_pcdogs.h>
 #include <windows.h>
 
 bool dttr_graphics_hooks_init(const DTTR_Mods_Context *ctx);
 void dttr_graphics_hooks_cleanup(const DTTR_Mods_Context *ctx);
 
 HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
-	GUID *guid,
+	DTTR_PCDOGS_T_Win32_GUID *guid,
 	void **ddraw_out,
-	GUID *iid,
-	IUnknown *outer
+	DTTR_PCDOGS_T_Win32_GUID *iid,
+	DTTR_PCDOGS_T_COM_IUnknown *outer
 );
 
 typedef BOOL(__stdcall *DDraw_EnumCallbackExA)(

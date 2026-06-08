@@ -4,12 +4,19 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <windows.h>
 
 #include <dttr_mods.h>
 #include <dttr_pcdogs.h>
 #include <dttr_runtime.h>
 
 #include <SDL3/SDL.h>
+
+enum { DTTR_EXE_HASH_LENGTH = 16 };
+
+extern HINSTANCE dttr_sidecar_module;
+extern char dttr_loader_dir[MAX_PATH];
+extern char dttr_exe_hash[DTTR_EXE_HASH_LENGTH + 1];
 
 DTTR_HOOK_STORAGE_SLOT(dttr_hook_win_main)
 DTTR_STORAGE_SLOT(
@@ -29,25 +36,6 @@ bool dttr_game_data_resolve_read_path(
 	char *out_path,
 	size_t out_path_size
 );
-
-static inline bool dttr_pcdogs_crash_symbol_should_add(
-	bool resolved,
-	uintptr_t address,
-	const char *name,
-	uintptr_t module_base,
-	uint32_t image_size
-) {
-	if (!resolved || !name || !name[0] || image_size == 0) {
-		return false;
-	}
-
-	const uintptr_t image_end = module_base + image_size;
-	if (image_end < module_base) {
-		return false;
-	}
-
-	return address >= module_base && address < image_end;
-}
 
 void dttr_pcdogs_crash_symbols_register(const DTTR_Core_Context *runtime);
 void dttr_pcdogs_crash_symbols_clear();
@@ -79,7 +67,7 @@ static inline bool dttr_sidecar_install_pcdogs_patch_group(
 			"%s: patch %u failed: %s",
 			label,
 			(unsigned)report.failed_index,
-			result.message
+			result.message ? result.message : DTTR_StatusName(result.status)
 		);
 		DTTR_Core_PatchGroupRelease(group);
 		return false;

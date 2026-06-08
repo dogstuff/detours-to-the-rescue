@@ -1,4 +1,4 @@
-#include "dttr_sidecar.h"
+#include "../graphics/graphics_private.h"
 #include "mods_private.h"
 #include "sidecar_private.h"
 #include <dttr_runtime.h>
@@ -31,7 +31,7 @@ static DTTR_Mods_Context mod_context(const DTTR_Mods_Context *base_ctx) {
 		.abi_version = base_ctx->abi_version,
 		.runtime = base_ctx->runtime,
 		.sidecar_module = base_ctx->sidecar_module,
-		.window = DTTR_Graphics_GetWindow(),
+		.window = dttr_graphics_get_window(),
 		.loader_dir = dttr_loader_dir,
 		.exe_hash = dttr_exe_hash,
 		.config = base_ctx->config,
@@ -615,9 +615,13 @@ void dttr_mods_tick() {
 	}
 }
 
-void dttr_mods_late_init() { MOD_DISPATCH(late_init); }
+void dttr_mods_late_init() {
+	MOD_DISPATCH(late_init);
+}
 
-void dttr_mods_before_unload() { MOD_DISPATCH(before_unload); }
+void dttr_mods_before_unload() {
+	MOD_DISPATCH(before_unload);
+}
 
 void dttr_mods_frame_begin(const DTTR_Mods_FrameContext *ctx) {
 	MOD_DISPATCH(frame_begin, ctx);
@@ -730,9 +734,13 @@ bool dttr_mods_should_advance_game_frame() {
 	return true;
 }
 
-void dttr_mods_game_frame_advanced() { MOD_DISPATCH(game_frame_advanced); }
+void dttr_mods_game_frame_advanced() {
+	MOD_DISPATCH(game_frame_advanced);
+}
 
-void dttr_mods_game_frame_blocked() { MOD_DISPATCH(game_frame_blocked); }
+void dttr_mods_game_frame_blocked() {
+	MOD_DISPATCH(game_frame_blocked);
+}
 
 bool dttr_mods_has_render_game() {
 	for (size_t i = 0; i < kv_size(loaded_mods); i++) {
@@ -748,13 +756,17 @@ void dttr_mods_render_game(const DTTR_Mods_RenderGameContext *ctx) {
 	MOD_DISPATCH(render_game, ctx);
 }
 
-void dttr_mods_render(const DTTR_Mods_RenderContext *ctx) { MOD_DISPATCH(render, ctx); }
+void dttr_mods_render(const DTTR_Mods_RenderContext *ctx) {
+	MOD_DISPATCH(render, ctx);
+}
 
 bool dttr_mods_handle_event(const SDL_Event *event) {
 	return dispatch_event_until_consumed(event, false);
 }
 
-size_t dttr_mods_loaded_count() { return kv_size(loaded_mods); }
+size_t dttr_mods_loaded_count() {
+	return kv_size(loaded_mods);
+}
 
 const char *dttr_mods_loaded_name(size_t index) {
 	if (index >= kv_size(loaded_mods)) {
@@ -773,7 +785,9 @@ DWORD dttr_mods_loaded_elapsed_ms(size_t index) {
 	return GetTickCount() - kv_A(loaded_mods, index).loaded_at_ms;
 }
 
-bool dttr_mods_hot_reload_enabled() { return dttr_config.hot_reload; }
+bool dttr_mods_hot_reload_enabled() {
+	return dttr_config.hot_reload;
+}
 
 void dttr_mods_cleanup() {
 	remove_all_mods(false);

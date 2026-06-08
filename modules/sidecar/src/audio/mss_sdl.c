@@ -15,7 +15,6 @@ typedef struct {
 	const char *hook_name;
 	const char *import_name;
 	void *callback;
-	uintptr_t site;
 	DTTR_Core_Hook *handle;
 } mss_import_hook;
 
@@ -109,9 +108,6 @@ static bool wave_format_spec(const void *format, SDL_AudioSpec *spec) {
 	return true;
 }
 
-// Reports whether the SDL-backed MSS shim has an active driver.
-bool dttr_mss_sdl_has_driver() { return dttr_mss_core_has_driver(); }
-
 // Tears down the SDL-backed MSS mixer and resets driver state.
 void dttr_mss_sdl_shutdown() {
 	dttr_mss_stream_shutdown_all();
@@ -125,7 +121,6 @@ void dttr_mss_sdl_shutdown() {
 static bool install_pointer_hook(
 	const DTTR_Mods_Context *ctx,
 	const char *name,
-	uintptr_t *site,
 	DTTR_Core_Hook **handle,
 	uintptr_t addr,
 	void *callback
@@ -134,13 +129,8 @@ static bool install_pointer_hook(
 		return true;
 	}
 
-	DTTR_Result result = DTTR_Core_HookPointer(
-		&ctx->runtime,
-		addr,
-		callback,
-		NULL,
-		handle
-	);
+	DTTR_Result
+		result = DTTR_Core_HookPointer(&ctx->runtime, addr, callback, NULL, handle);
 
 	if (!DTTR_ResultOK(result)) {
 		DTTR_MODS_LOG_ERROR(
@@ -152,7 +142,6 @@ static bool install_pointer_hook(
 		return false;
 	}
 
-	*site = addr;
 	DTTR_MODS_LOG_DEBUG(ctx, "Installed %s at 0x%08X", name, (unsigned)addr);
 	return true;
 }
@@ -173,7 +162,6 @@ static bool install_mss_import_hook(
 		return install_pointer_hook(
 			ctx,
 			hook->hook_name,
-			&hook->site,
 			&hook->handle,
 			site,
 			hook->callback
@@ -198,14 +186,18 @@ static bool install_mss_import_descriptor(
 			continue;
 		}
 
-		IMAGE_IMPORT_BY_NAME *import_name = (IMAGE_IMPORT_BY_NAME
-												 *)(base + name_thunk->u1.AddressOfData);
+		IMAGE_IMPORT_BY_NAME
+		*import_name = (IMAGE_IMPORT_BY_NAME *)(base + name_thunk->u1.AddressOfData);
 		if (!install_mss_import_hook(
 				ctx,
 				(const char *)import_name->Name,
 				(uintptr_t)&addr_thunk->u1.Function
 			)) {
-			DTTR_LOG_ERROR("Unhandled or unhooked MSS32 import: %s", import_name->Name);
+			DTTR_MODS_LOG_ERROR(
+				ctx,
+				"Unhandled or unhooked MSS32 import: %s",
+				import_name->Name
+			);
 			ok = false;
 		}
 	}
@@ -233,7 +225,6 @@ void dttr_mss_sdl_release_hooks() {
 		}
 
 		hook->handle = NULL;
-		hook->site = 0;
 	}
 }
 
@@ -245,8 +236,8 @@ bool dttr_mss_sdl_install_hooks(const DTTR_Mods_Context *ctx) {
 	IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(base + dos->e_lfanew);
 	IMAGE_DATA_DIRECTORY imports_dir = nt->OptionalHeader
 										   .DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
-	IMAGE_IMPORT_DESCRIPTOR *desc = (IMAGE_IMPORT_DESCRIPTOR
-										 *)(base + imports_dir.VirtualAddress);
+	IMAGE_IMPORT_DESCRIPTOR
+	*desc = (IMAGE_IMPORT_DESCRIPTOR *)(base + imports_dir.VirtualAddress);
 
 	for (; desc && desc->Name; desc++) {
 		if (_stricmp((const char *)(base + desc->Name), "mss32.dll") != 0) {
@@ -280,7 +271,9 @@ int __stdcall dttr_mss_ail_startup() {
 }
 
 // Shuts down the SDL-backed MSS shim for Miles AIL shutdown.
-void __stdcall dttr_mss_ail_shutdown() { dttr_mss_sdl_shutdown(); }
+void __stdcall dttr_mss_ail_shutdown() {
+	dttr_mss_sdl_shutdown();
+}
 
 // Stores one Miles AIL preference in the SDL-backed MSS shim.
 int __stdcall dttr_mss_ail_set_preference(unsigned int preference, int value) {

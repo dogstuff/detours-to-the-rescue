@@ -1,5 +1,4 @@
 #include <SDL3/SDL.h>
-#include <dttr_sidecar.h>
 #include <windows.h>
 
 #include "hooks_private.h"

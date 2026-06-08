@@ -27,9 +27,12 @@ static void detach_watchdog(DWORD process_id) {
 
 static bool should_disable_watchdog() {
 	const HMODULE kernel32 = GetModuleHandleA("kernel32.dll");
-	const is_wow64_process2_fn is_wow64_process2
-		= (is_wow64_process2_fn)(kernel32 ? GetProcAddress(kernel32, "IsWow64Process2")
-										  : NULL);
+	const is_wow64_process2_fn
+		is_wow64_process2 = (is_wow64_process2_fn)(kernel32 ? GetProcAddress(
+																  kernel32,
+																  "IsWow64Process2"
+															  )
+															: NULL);
 
 	if (is_wow64_process2) {
 		uint16_t process_machine = IMAGE_FILE_MACHINE_UNKNOWN;

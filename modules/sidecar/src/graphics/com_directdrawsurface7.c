@@ -179,12 +179,8 @@ static void surface_texture_cache_insert_locked(uint64_t key, DTTR_Texture tex) 
 	}
 
 	int put_ret = 0;
-	const khint_t it = kh_put(
-		dttr_surface_texture_cache,
-		surface_texture_cache,
-		key,
-		&put_ret
-	);
+	const khint_t
+		it = kh_put(dttr_surface_texture_cache, surface_texture_cache, key, &put_ret);
 	if (it == kh_end(surface_texture_cache)) {
 		return;
 	}
@@ -570,7 +566,8 @@ static void surface_texture_release(DTTR_Texture tex) {
 	SDL_UnlockMutex(state->texture_mutex);
 }
 
-/// Replaces pixel data and dimensions for an existing uniquely-owned staged texture handle.
+/// Replaces pixel data and dimensions for an existing uniquely-owned staged texture
+/// handle.
 static bool surface_texture_update_unique(
 	DTTR_Texture tex,
 	int width,
@@ -661,12 +658,8 @@ static void surface_upload_texture(DTTR_Graphics_COM_DirectDrawSurface7 *self) {
 	const uint32_t upload_w = self->content_width ? self->content_width : self->width;
 	const uint32_t upload_h = self->content_height ? self->content_height : self->height;
 	const uint64_t source_hash = surface_hash_source_pixels(self, upload_w, upload_h);
-	const uint64_t cache_key = surface_texture_cache_key(
-		self,
-		upload_w,
-		upload_h,
-		source_hash
-	);
+	const uint64_t
+		cache_key = surface_texture_cache_key(self, upload_w, upload_h, source_hash);
 
 	if (self->dttr_texture != DTTR_INVALID_TEXTURE && self->last_upload_valid
 		&& self->last_upload_width == upload_w && self->last_upload_height == upload_h
@@ -845,8 +838,8 @@ static HRESULT __stdcall ddrawsurface7_blt(
 
 	// Blit from source surface to destination
 	if (srcSurf) {
-		const DTTR_Graphics_COM_DirectDrawSurface7 *src
-			= (const DTTR_Graphics_COM_DirectDrawSurface7 *)srcSurf;
+		const DTTR_Graphics_COM_DirectDrawSurface7
+			*src = (const DTTR_Graphics_COM_DirectDrawSurface7 *)srcSurf;
 
 		if (src->pixels && self->pixels && src->bpp == self->bpp) {
 			const uint32_t bpp = src->bpp / 8;
@@ -891,8 +884,8 @@ static HRESULT __stdcall ddrawsurface7_blt(
 			}
 
 			// Source regions larger than the destination use nearest-neighbor downscale.
-			const bool needs_scale
-				= (src_region.w > dst_region.w || src_region.h > dst_region.h);
+			const bool
+				needs_scale = (src_region.w > dst_region.w || src_region.h > dst_region.h);
 
 			if (needs_scale) {
 				const uint32_t out_w = dst_region.w;

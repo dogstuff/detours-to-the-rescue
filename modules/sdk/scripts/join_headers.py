@@ -15,7 +15,7 @@ STABLE_PREFIX_HEADERS = [
     "dttr_pcdogs.h",
 ]
 UTIL_HEADER = "dttr_util.h"
-UNSTABLE_HEADERS = ["dttr_pcdogs_unstable.h", "dttr_util_unstable.h"]
+UNSTABLE_HEADERS = ["dttr_util_unstable.h"]
 INTERNAL_INCLUDES = {*STABLE_PREFIX_HEADERS, UTIL_HEADER, *UNSTABLE_HEADERS}
 
 

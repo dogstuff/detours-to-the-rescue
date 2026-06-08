@@ -37,9 +37,13 @@ static text_span span(const char *text, const char *end) {
 	return (text_span){text, end};
 }
 
-static size_t span_len(text_span span) { return (size_t)(span.end - span.text); }
+static size_t span_len(text_span span) {
+	return (size_t)(span.end - span.text);
+}
 
-static sds sdsnewspan(text_span span) { return sdsnewlen(span.text, span_len(span)); }
+static sds sdsnewspan(text_span span) {
+	return sdsnewlen(span.text, span_len(span));
+}
 
 static float text_padding_x(const DTTR_ImGuiDialogContext *ctx) {
 	return DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_ERROR_UI_TEXT_PADDING_X);
@@ -201,8 +205,9 @@ static void draw_copyable_stack_trace(
 		"##stack_trace",
 		message->stack_trace,
 		sdslen(message->stack_trace) + 1,
-		(ImVec2_c){stack_width,
-				   DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_ERROR_UI_STACK_BOX_H)},
+		(
+			ImVec2_c
+		){stack_width, DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_ERROR_UI_STACK_BOX_H)},
 		ImGuiInputTextFlags_ReadOnly,
 		NULL,
 		NULL

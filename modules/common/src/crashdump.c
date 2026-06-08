@@ -30,7 +30,9 @@ static void enter_dbghelp_lock() {
 	EnterCriticalSection(&dbghelp_lock);
 }
 
-static void leave_dbghelp_lock() { LeaveCriticalSection(&dbghelp_lock); }
+static void leave_dbghelp_lock() {
+	LeaveCriticalSection(&dbghelp_lock);
+}
 
 static void invoke_symbol_provider(HANDLE process) {
 	if (crash_symbol_provider) {
@@ -465,15 +467,8 @@ sds DTTR_CrashDump_Write(
 	};
 
 	enter_dbghelp_lock();
-	const BOOL success = MiniDumpWriteDump(
-		process,
-		pid,
-		file,
-		minidump_type(),
-		&mei,
-		NULL,
-		NULL
-	);
+	const BOOL
+		success = MiniDumpWriteDump(process, pid, file, minidump_type(), &mei, NULL, NULL);
 	leave_dbghelp_lock();
 	CloseHandle(file);
 

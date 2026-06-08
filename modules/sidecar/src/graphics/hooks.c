@@ -5,7 +5,6 @@
 
 #include <dttr_config.h>
 
-#include "dttr_sidecar.h"
 #include "graphics_com_private.h"
 #include "graphics_private.h"
 #include "hooks_private.h"
@@ -14,23 +13,6 @@
 
 static DTTR_Graphics_COM_DirectDraw7 *graphics_hook_ddraw7;
 static HWND graphics_hook_hwnd;
-
-static const DTTR_PCDOGS_T_Patch_Spec graphics_import_thunk_patches[] = {
-	{
-		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
-		.required = true,
-		.function = DTTR_PCDOGS_FUNCTION_DDRAW_CREATE_EX,
-		.detour = dttr_hook_directdraw_create_ex_callback,
-		.out_original = NULL,
-	},
-	{
-		.kind = DTTR_PCDOGS_PATCH_FUNCTION_HOOK,
-		.required = true,
-		.function = DTTR_PCDOGS_FUNCTION_DDRAW_ENUMERATE_EX_A,
-		.detour = dttr_hook_directdraw_enumerate_ex_a_callback,
-		.out_original = NULL,
-	},
-};
 
 static const DTTR_PCDOGS_T_Patch_Spec graphics_byte_patches[] = {
 	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
@@ -151,10 +133,10 @@ static void store_pointer(void **slot, void *value) {
 // Replaces DirectDrawCreateEx with the sidecar facade so the game renders through the
 // selected backend.
 HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
-	GUID *guid,
+	DTTR_PCDOGS_T_Win32_GUID *guid,
 	void **ddraw_out,
-	GUID *iid,
-	IUnknown *outer
+	DTTR_PCDOGS_T_Win32_GUID *iid,
+	DTTR_PCDOGS_T_COM_IUnknown *outer
 ) {
 	DTTR_Graphics_COM_DirectDraw7 *const ddraw7 = get_or_create_ddraw7();
 
@@ -162,9 +144,16 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 		return E_OUTOFMEMORY;
 	}
 
-	DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->Write(
+	DTTR_Result result = DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->Write(
 		(DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7
 	);
+	if (!DTTR_ResultOK(result)) {
+		DTTR_LOG_ERROR(
+			"Failed to publish DirectDraw object: %s",
+			result.message ? result.message : DTTR_StatusName(result.status)
+		);
+		return E_FAIL;
+	}
 
 	if (ddraw_out) {
 		store_pointer(ddraw_out, ddraw7);
@@ -174,8 +163,8 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 	return S_OK;
 }
 
-// Reports a single compatible DirectDraw device to keep the game enumeration path on the
-// sidecar renderer.
+// Reports a single compatible DirectDraw device to keep the game enumeration path on
+// the sidecar renderer.
 HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 	DDraw_EnumCallbackExA lpCallback,
 	LPVOID lpContext,
@@ -199,7 +188,7 @@ HRESULT __stdcall dttr_hook_directdraw_enumerate_ex_a_callback(
 
 // Initializes the sidecar renderer before DirectDraw callbacks hand it to the game.
 bool dttr_graphics_hooks_init(const DTTR_Mods_Context *ctx) {
-	graphics_hook_hwnd = DTTR_Graphics_Init();
+	graphics_hook_hwnd = dttr_graphics_init();
 
 	if (!graphics_hook_hwnd) {
 		DTTR_LOG_ERROR("Failed to initialize backend");
@@ -210,6 +199,13 @@ bool dttr_graphics_hooks_init(const DTTR_Mods_Context *ctx) {
 		DTTR_LOG_ERROR("Failed to create DirectDraw translator");
 		return false;
 	}
+
+	const DTTR_PCDOGS_T_Patch_Spec graphics_import_thunk_patches[] = {
+		DTTR_PCDOGS_F_DDraw_CreateEx
+			->PatchSpec(true, dttr_hook_directdraw_create_ex_callback, NULL),
+		DTTR_PCDOGS_F_DDraw_EnumerateExA
+			->PatchSpec(true, dttr_hook_directdraw_enumerate_ex_a_callback, NULL),
+	};
 
 	if (!dttr_sidecar_install_pcdogs_patch_group(
 			ctx,

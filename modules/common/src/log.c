@@ -141,9 +141,13 @@ void DTTR_Log_Unchecked(int level, const char *file, int line, const char *fmt, 
 	va_end(args);
 }
 
-void DTTR_Log_SetLevel(int log_level) { s_level = log_level; }
+void DTTR_Log_SetLevel(int log_level) {
+	s_level = log_level;
+}
 
-void DTTR_Log_SetQuiet(bool enable) { quiet = enable; }
+void DTTR_Log_SetQuiet(bool enable) {
+	quiet = enable;
+}
 
 int DTTR_Log_AddCallback(log_LogFn fn, void *udata, int level) {
 	if (!fn || callback_count >= MAX_CALLBACKS) {

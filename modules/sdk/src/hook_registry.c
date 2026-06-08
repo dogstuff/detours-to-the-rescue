@@ -83,13 +83,17 @@ static ZydisDecoder decoder;
 static bool decoder_initialized = false;
 static DTTR_Result hook_last_error = {DTTR_OK, "ok"};
 
-DTTR_Result dttr_core_hook_last_error() { return hook_last_error; }
+DTTR_Result dttr_core_hook_last_error() {
+	return hook_last_error;
+}
 
 void dttr_core_hook_set_last_error(DTTR_Status status, const char *message) {
 	hook_last_error = dttr_core_result(status, message);
 }
 
-static void hook_error_clear() { dttr_core_hook_set_last_error(DTTR_OK, "ok"); }
+static void hook_error_clear() {
+	dttr_core_hook_set_last_error(DTTR_OK, "ok");
+}
 
 // Initialize the 32-bit Zydis decoder used to choose safe trampoline cut points.
 static bool decoder_init() {
@@ -244,7 +248,8 @@ static bool decode_prologue(
 		}
 	} else if (requested_size < 0) {
 		DTTR_LOG_WARN(
-			"hook_attach_function: negative requested prologue=%d at 0x%08X; using auto",
+			"hook_attach_function: negative requested prologue=%d at 0x%08X; using "
+			"auto",
 			requested_size,
 			(unsigned)addr
 		);
@@ -348,7 +353,8 @@ static bool decode_prologue(
 
 		if (out->rel_size == 4 && (size_t)out->rel_offset + out->rel_size > out->length) {
 			DTTR_LOG_ERROR(
-				"hook_attach_function: invalid relative-immediate layout at 0x%08X+0x%X",
+				"hook_attach_function: invalid relative-immediate layout at "
+				"0x%08X+0x%X",
 				(unsigned)addr,
 				(unsigned)offset
 			);
@@ -388,7 +394,8 @@ static bool decode_prologue(
 	return true;
 }
 
-// Copy decoded prologue instructions into a trampoline and fix supported relative operands.
+// Copy decoded prologue instructions into a trampoline and fix supported relative
+// operands.
 static bool trampoline_relocate(
 	uint8_t *trampoline,
 	uintptr_t site,
@@ -801,7 +808,8 @@ static bool function_link_detach(DTTR_Core_Hook *hook) {
 	if (removing_last) {
 		if (!write_bytes("hook_detach", chain->addr, chain->original, chain->patch_size)) {
 			DTTR_LOG_ERROR(
-				"hook_detach: leaving function hook registered because restore failed at "
+				"hook_detach: leaving function hook registered because restore failed "
+				"at "
 				"0x%08X",
 				(unsigned)chain->addr
 			);
@@ -810,7 +818,8 @@ static bool function_link_detach(DTTR_Core_Hook *hook) {
 	} else if (removing_head) {
 		if (!write_function_jump(chain->addr, hook->next->detour)) {
 			DTTR_LOG_ERROR(
-				"hook_detach: leaving function hook registered because relink failed at "
+				"hook_detach: leaving function hook registered because relink failed "
+				"at "
 				"0x%08X",
 				(unsigned)chain->addr
 			);
@@ -1098,7 +1107,9 @@ bool DTTR_Core_HookDetachChecked(DTTR_Core_Hook *hook) {
 }
 
 // Detach one registered hook or patch if the handle is still active.
-void DTTR_Core_HookDetach(DTTR_Core_Hook *hook) { DTTR_Core_HookDetachChecked(hook); }
+void DTTR_Core_HookDetach(DTTR_Core_Hook *hook) {
+	DTTR_Core_HookDetachChecked(hook);
+}
 
 bool DTTR_Core_HookIsActive(DTTR_Core_Hook *hook) {
 	return hook && hook_find_index(hook) != kv_size(hooks);
@@ -1129,7 +1140,9 @@ void *DTTR_Core_HookSetOwner(void *owner) {
 }
 
 // Detach every hook tagged with an owner during context teardown.
-void DTTR_Core_HookDetachOwner(void *owner) { DTTR_Core_HookDetachOwnerChecked(owner); }
+void DTTR_Core_HookDetachOwner(void *owner) {
+	DTTR_Core_HookDetachOwnerChecked(owner);
+}
 
 static void cleanup_sigscan_cache() {
 	if (cache) {

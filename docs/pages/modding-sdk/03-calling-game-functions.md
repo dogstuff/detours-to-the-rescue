@@ -54,4 +54,4 @@ Fail init for required functions and check `Call()` results for optional functio
 
 ## Passing game-managed types
 
-When a wrapper takes a game-managed pointer or struct, use the generated SDK type. Guessing a struct layout can cause incorrect reads, corrupt writes, or crashes.
+When a wrapper takes a game-managed pointer or struct, use the SDK type. Guessing a struct layout can cause incorrect reads, corrupt writes, or crashes.

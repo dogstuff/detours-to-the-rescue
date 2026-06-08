@@ -67,11 +67,17 @@ const char *DTTR_StatusName(DTTR_Status status) {
 	}
 }
 
-bool DTTR_StatusOK(DTTR_Status status) { return status == DTTR_OK; }
+bool DTTR_StatusOK(DTTR_Status status) {
+	return status == DTTR_OK;
+}
 
-bool DTTR_StatusFailed(DTTR_Status status) { return !DTTR_StatusOK(status); }
+bool DTTR_StatusFailed(DTTR_Status status) {
+	return !DTTR_StatusOK(status);
+}
 
-bool DTTR_ResultOK(DTTR_Result result) { return DTTR_StatusOK(result.status); }
+bool DTTR_ResultOK(DTTR_Result result) {
+	return DTTR_StatusOK(result.status);
+}
 
 static bool runtime_context_valid(const DTTR_Core_Context *ctx) {
 	return ctx && ctx->game_module && ctx->api;
@@ -355,12 +361,8 @@ DTTR_Result DTTR_Core_HookFunction(
 		);
 	}
 
-	DTTR_Core_Hook *hook = runtime->hook_function(
-		address,
-		prologue_size,
-		detour,
-		out_original
-	);
+	DTTR_Core_Hook
+		*hook = runtime->hook_function(address, prologue_size, detour, out_original);
 
 	if (!hook) {
 		DTTR_Result hook_error = dttr_core_hook_last_error();

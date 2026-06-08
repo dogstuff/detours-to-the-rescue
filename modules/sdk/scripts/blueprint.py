@@ -178,6 +178,15 @@ class XRef:
     addr_off: int
     indirections: int = 0
     required: Required = Required.ALL
+    access: str = "R/W"
+
+
+XREF_ACCESS_LABELS = {
+    "read": "Read",
+    "write": "Write",
+    "r/w": "R/W",
+    "rw": "R/W",
+}
 
 
 @dataclass(frozen=True)
@@ -262,10 +271,15 @@ def xref(
     indirections: int = 0,
     *,
     required: Required = Required.ALL,
+    access: str = "R/W",
 ) -> XRef:
     """Record where a generated global resolver should read an address from function code."""
 
-    return XRef(function, instr_off, addr_off, indirections, required)
+    access_label = XREF_ACCESS_LABELS.get(str(access).strip().lower())
+    if access_label is None:
+        raise ValueError("xref access must be Read, Write, or R/W")
+
+    return XRef(function, instr_off, addr_off, indirections, required, access_label)
 
 
 def fx(

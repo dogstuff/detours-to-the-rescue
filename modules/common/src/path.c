@@ -73,7 +73,9 @@ bool DTTR_Path_CopySds(char *out, size_t out_size, sds value) {
 	return copy_path_value(out, out_size, value, value ? sdslen(value) : 0, true);
 }
 
-bool DTTR_Path_IsSeparator(char ch) { return ch == '\\' || ch == '/'; }
+bool DTTR_Path_IsSeparator(char ch) {
+	return ch == '\\' || ch == '/';
+}
 
 const char *DTTR_Path_SkipSeparators(const char *path) {
 	while (*path && DTTR_Path_IsSeparator(*path)) {

@@ -170,7 +170,7 @@ stages:
     - job: "build:ctest"
       artifacts: true
   script:
-    - nix develop "$CI_NIX_SHELL" --command just build-docs-from-build
+    - nix develop "$CI_NIX_SHELL" --command bash -lc 'scripts/fetch-ci-gamefiles.sh && just build-docs-from-build'
   artifacts:
     paths:
       - docs/build

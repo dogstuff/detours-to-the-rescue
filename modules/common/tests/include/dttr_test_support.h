@@ -218,7 +218,8 @@ bool dttr_test_case_equal(const char *a, const char *b);
 // Tests whether a target expectation applies to the current binary fixture index.
 bool dttr_test_fixture_required(DTTR_TestFixtureMask required, size_t fixture_index);
 
-// Checks fixture availability before fixture-dependent tests decide whether to run or skip.
+// Checks fixture availability before fixture-dependent tests decide whether to run or
+// skip.
 bool dttr_test_fixtures_available(
 	const DTTR_TestBinaryFixture *fixtures,
 	size_t fixture_count,

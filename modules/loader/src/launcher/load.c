@@ -61,7 +61,8 @@ static bool read_remote_bytes(
 		|| bytes_read != out_size) {
 		log_win32_failure("ReadProcessMemory");
 		DTTR_LOG_ERROR(
-			"Could not read %s from child process (address=0x%08X, expected=%u, got=%u)",
+			"Could not read %s from child process (address=0x%08X, expected=%u, "
+			"got=%u)",
 			name,
 			(unsigned)address,
 			(unsigned)out_size,

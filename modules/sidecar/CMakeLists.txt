@@ -162,6 +162,8 @@ add_library(dttr_sidecar SHARED
 
 add_dependencies(dttr_sidecar dttr_pcdogs_generated_headers dttr_sidecar_generated_shaders)
 
+target_compile_definitions(dttr_sidecar PRIVATE DTTR_SDK_ENABLE_UNSTABLE)
+
 target_include_directories(dttr_sidecar PRIVATE
     "${DTTR_SIDECAR_GENERATED_INCLUDE_DIR}"
     include

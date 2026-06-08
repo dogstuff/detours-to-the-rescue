@@ -242,7 +242,9 @@ typedef void (*DTTR_Mods_GameFrameBlockedFn)();
 		mod_version,                                                                     \
 		mod_author,                                                                      \
 	};                                                                                   \
-	DTTR_EXPORT const DTTR_Mods_Info *DTTR_Mod_Info() { return &dttr_mod_info_; }
+	DTTR_EXPORT const DTTR_Mods_Info *DTTR_Mod_Info() {                                  \
+		return &dttr_mod_info_;                                                          \
+	}
 
 static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 	return ctx && ctx->abi_version >= DTTR_SDK_ABI_VERSION

@@ -61,38 +61,6 @@ function(dttr_cmocka_test_environment out_var)
     set(${out_var} ${dttr_environment} PARENT_SCOPE)
 endfunction()
 
-# Adds an object library used only to verify headers and macros compile.
-function(dttr_add_object_compile_check target)
-    cmake_parse_arguments(
-        DTTR_CHECK
-        ""
-        ""
-        "SOURCES;INCLUDE_DIRS;COMPILE_DEFINITIONS;LINK_LIBRARIES"
-        ${ARGN}
-    )
-
-    add_library("${target}" OBJECT
-        ${DTTR_CHECK_SOURCES}
-    )
-    if(DTTR_CHECK_INCLUDE_DIRS)
-        target_include_directories("${target}" PRIVATE
-            ${DTTR_CHECK_INCLUDE_DIRS}
-        )
-    endif()
-
-    if(DTTR_CHECK_COMPILE_DEFINITIONS)
-        target_compile_definitions("${target}" PRIVATE
-            ${DTTR_CHECK_COMPILE_DEFINITIONS}
-        )
-    endif()
-
-    if(DTTR_CHECK_LINK_LIBRARIES)
-        target_link_libraries("${target}" PRIVATE
-            ${DTTR_CHECK_LINK_LIBRARIES}
-        )
-    endif()
-endfunction()
-
 # Adds a cmocka executable, applies common test settings, and registers it with ctest.
 function(dttr_add_cmocka_test_suite target)
     cmake_parse_arguments(

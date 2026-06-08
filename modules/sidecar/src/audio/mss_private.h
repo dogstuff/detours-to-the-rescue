@@ -66,9 +66,13 @@ static inline bool dttr_mss_wave_bits_supported(uint16_t bits_per_sample) {
 	return bits_per_sample == 8 || bits_per_sample == 16;
 }
 
-static inline bool dttr_mss_sample_rate_pauses_playback(int rate) { return rate <= 0; }
+static inline bool dttr_mss_sample_rate_pauses_playback(int rate) {
+	return rate <= 0;
+}
 
-static inline int dttr_mss_pan_table_byte(int pan) { return pan >= 63 ? 128 : pan * 2; }
+static inline int dttr_mss_pan_table_byte(int pan) {
+	return pan >= 63 ? 128 : pan * 2;
+}
 
 static inline void dttr_mss_pan_to_stereo_bytes(int pan, int *left_out, int *right_out) {
 	const int clamped_pan = pan < 0 ? 0 : (pan > 127 ? 127 : pan);
@@ -135,8 +139,6 @@ bool dttr_mss_wave_decode_f32(
 );
 void dttr_mss_wave_free(void *ptr);
 
-bool dttr_mss_sdl_has_driver();
-void dttr_mss_sdl_stop_all_samples();
 void dttr_mss_sdl_shutdown();
 void dttr_mss_sdl_release_hooks();
 bool dttr_mss_sdl_install_hooks(const DTTR_Mods_Context *ctx);

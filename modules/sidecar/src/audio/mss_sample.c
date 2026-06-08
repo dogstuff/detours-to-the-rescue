@@ -298,8 +298,10 @@ static bool render_sample_audio(mss_sample *sample) {
 			const size_t source_index = source_frame * (size_t)channels + (size_t)channel;
 			const float value = sample->pcm_frames[source_index];
 
-			converted[(size_t)frame * (size_t)channels + (size_t)channel]
-				= value + preemphasis * (value - previous_values[channel]);
+			converted
+				[(size_t)frame * (size_t)channels
+				 + (size_t)channel] = value
+									  + preemphasis * (value - previous_values[channel]);
 			previous_values[channel] = value;
 		}
 
@@ -363,8 +365,6 @@ void dttr_mss_sample_apply_master_gain() {
 		apply_sample_gain(&samples[i]);
 	}
 }
-
-void dttr_mss_sdl_stop_all_samples() { dttr_mss_sample_stop_all(); }
 
 void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
 	DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle(driver=%p)", driver);
@@ -458,7 +458,8 @@ int __stdcall dttr_mss_ail_set_sample_file(
 	}
 
 	DTTR_LOG_TRACE(
-		"MSS AIL_set_sample_file sample[%d] RIFF size=%zu format=%u channels=%u rate=%u "
+		"MSS AIL_set_sample_file sample[%d] RIFF size=%zu format=%u channels=%u "
+		"rate=%u "
 		"bits=%u data=%zu",
 		sample_slot(sample),
 		size,
@@ -516,7 +517,8 @@ void __stdcall dttr_mss_ail_start_sample(void *sample_ptr) {
 	}
 
 	DTTR_LOG_TRACE(
-		"MSS AIL_start_sample(sample[%d]=%p status=%d loops=%d volume=%d pan=%d rate=%d "
+		"MSS AIL_start_sample(sample[%d]=%p status=%d loops=%d volume=%d pan=%d "
+		"rate=%d "
 		"track=%p audio=%p)",
 		sample_slot(sample),
 		sample,
@@ -658,7 +660,8 @@ void __stdcall dttr_mss_ail_set_sample_playback_rate(void *sample_ptr, int rate)
 
 	sample->paused_by_rate = false;
 	DTTR_LOG_TRACE(
-		"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d current=%d "
+		"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d "
+		"current=%d "
 		"base=%d resumed=%d)",
 		sample_slot(sample),
 		sample,

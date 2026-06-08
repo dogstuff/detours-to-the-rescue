@@ -41,7 +41,9 @@ static void set_physfs_error(const char *context) {
 }
 
 // Returns the current ISO error or a stable default before the first failure.
-const char *DTTR_ISO_LastError() { return last_error[0] ? last_error : "no error"; }
+const char *DTTR_ISO_LastError() {
+	return last_error[0] ? last_error : "no error";
+}
 
 static bool is_iso_version_suffix(const char *suffix) {
 	if (!suffix || suffix[0] != ';' || !suffix[1]) {

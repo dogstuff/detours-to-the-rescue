@@ -62,13 +62,19 @@
 #define DTTR_D3DPT_TRIANGLEFAN 6
 
 #define DTTR_COM_NOOP_HRESULT(fn, ...)                                                   \
-	static HRESULT __stdcall fn(__VA_ARGS__) { return S_OK; }
+	static HRESULT __stdcall fn(__VA_ARGS__) {                                           \
+		return S_OK;                                                                     \
+	}
 
 #define DTTR_COM_ADDREF(fn, type)                                                        \
-	static ULONG __stdcall fn(type *self) { return 1; }
+	static ULONG __stdcall fn(type *self) {                                              \
+		return 1;                                                                        \
+	}
 
 #define DTTR_COM_RELEASE(fn, type)                                                       \
-	static ULONG __stdcall fn(type *self) { return 0; }
+	static ULONG __stdcall fn(type *self) {                                              \
+		return 0;                                                                        \
+	}
 
 #define DTTR_COM_QI_SELF(fn, type)                                                       \
 	static HRESULT __stdcall fn(type *self, void *riid, void **ppv) {                    \
@@ -196,7 +202,10 @@ typedef struct DTTR_Graphics_COM_Direct3DDevice7_VT {
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
 		DWORD *block
 	); // 0x5C
-	HRESULT(__stdcall *PreLoad)(DTTR_Graphics_COM_Direct3DDevice7 *self, void *tex); // 0x60
+	HRESULT(__stdcall *PreLoad)(
+		DTTR_Graphics_COM_Direct3DDevice7 *self,
+		void *tex
+	); // 0x60
 	HRESULT(__stdcall *DrawPrimitive)(
 		DTTR_Graphics_COM_Direct3DDevice7 *self,
 		DWORD prim,
@@ -428,7 +437,10 @@ typedef struct DTTR_Graphics_COM_DirectDraw7_VT {
 		DTTR_Graphics_COM_DirectDraw7 *self,
 		DWORD *inVB
 	); // 0x44
-	HRESULT(__stdcall *Initialize)(DTTR_Graphics_COM_DirectDraw7 *self, void *guid); // 0x48
+	HRESULT(__stdcall *Initialize)(
+		DTTR_Graphics_COM_DirectDraw7 *self,
+		void *guid
+	);																			 // 0x48
 	HRESULT(__stdcall *RestoreDisplayMode)(DTTR_Graphics_COM_DirectDraw7 *self); // 0x4C
 	HRESULT(__stdcall *SetCooperativeLevel)(
 		DTTR_Graphics_COM_DirectDraw7 *self,

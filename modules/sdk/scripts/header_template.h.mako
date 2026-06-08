@@ -1,13 +1,7 @@
-% if unstable:
-
-/// @file dttr_pcdogs_unstable.h
-/// Experimental PCDOGS symbols.
-/// These declarations may change as symbols get renamed or pinned down.
-% else:
 
 /// @file dttr_pcdogs.h
-/// Stable PCDOGS symbols and typed wrappers.
-% endif
+/// PCDOGS symbols and typed wrappers. Define `DTTR_SDK_ENABLE_UNSTABLE`
+/// before including this header to expose experimental symbols.
 #ifndef ${header_guard}
 #define ${header_guard}
 
@@ -18,20 +12,7 @@
 #include <windows.h>
 
 #include <dttr_core.h>
-% if unstable:
-// Public unstable users extend the stable surface. Include it first and keep
-// duplicate symbol metadata out of this header. The private implementation
-// stays standalone because the stable full header defines the same DTTR_* APIs.
-#ifndef DTTR_PCDOGS_IMPLEMENTATION
-#include <dttr_pcdogs.h>
-#endif
-% endif
 
-% if unstable:
-
-% else:
-
-% endif
 
 <%def name="render_type_row(row)">
 % if type_row_kind(row) == TYPE_ROW.TYPE_ALIAS:
@@ -41,14 +22,14 @@ typedef ${c_type(row.source_type)} ${alias_name(row.name)};
 ${doxy_comment(row_doc(row) or "PCDOGS callback type.", params=param_doc_pairs(row.params))}
 typedef ${c_type(row.ret)}(${row.calling}*${function_type_name(row.name)})${c_params(row.params)};
 % elif type_row_kind(row) == TYPE_ROW.STRUCT:
-% if row.incomplete and not unstable:
-#ifdef DTTR_PCDOGS_IMPLEMENTATION
+% if row.incomplete:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
 ${doxy_brief(row_doc(row)) if row_doc(row) else ""}
 % else:
 ${doxy_brief(row_doc(row)) if row_doc(row) else ""}
 % endif
 % if row.incomplete and row.size is not None:
-// Size 0x${format(row.size, "X")}; layout is generated from currently known fields.
+// Size 0x${format(row.size, "X")}; layout reflects currently known fields.
 % elif row.size is not None:
 // Size 0x${format(row.size, "X")}
 % endif
@@ -57,7 +38,7 @@ struct ${struct_name(row.name)} {
 	${c_type(member.type)} ${member.name};${" ///< " + member_doc(member) if member_doc(member) else ""}
 % endfor
 };
-% if row.incomplete and not unstable:
+% if row.incomplete:
 #endif
 % endif
 % elif type_row_kind(row) == TYPE_ROW.ENUM:
@@ -96,10 +77,22 @@ typedef enum ${enum_name(row.name)} {
 		% endif
 		% endif
 % for name in forward_names:
+% if name in unstable_type_names:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 typedef struct ${struct_name(name)} ${struct_name(name)};
+% if name in unstable_type_names:
+#endif
+% endif
 % endfor
 	% for row in type_prefix_rows:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 	${render_type_row(row).strip()}
+% if row.unstable:
+#endif
+% endif
 	% endfor
 % if packed_type_rows:
 <% in_pack = False %>
@@ -112,7 +105,13 @@ typedef struct ${struct_name(name)} ${struct_name(name)};
 #pragma pack(pop)
 <% in_pack = False %>
 % endif
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 ${render_type_row(row).strip()}
+% if row.unstable:
+#endif
+% endif
 % endfor
 % if in_pack:
 #pragma pack(pop)
@@ -123,19 +122,16 @@ ${render_type_row(row).strip()}
 #define DTTR_PCDOGS_API extern
 #endif
 
-% if unstable:
-#ifndef DTTR_PCDOGS_H
-% endif
-/// Generated hook-site shape for a PCDOGS function.
+/// Hook-site shape for a PCDOGS function.
 ///
-/// `REL32` sites can use the generated `Hook()` helper and `PatchSpec()` helper because
+/// `REL32` sites can use the `Hook()` helper and `PatchSpec()` helper because
 /// the function entry has a full trampoline prologue window. `HOTPATCH` sites describe a
 /// two-part hotpatch layout: a five-byte pre-entry jump slot plus the short entry
-/// instruction window reported by `HookPrologueSize()`. The generated typed helper does
+/// instruction window reported by `HookPrologueSize()`. The typed helper does
 /// not install those hotpatch hooks yet; use the metadata for audits or explicit low-level
 /// patching only.
 typedef enum DTTR_PCDOGS_T_Hook_Kind {
-	DTTR_PCDOGS_HOOK_UNSUPPORTED = 0, ///< No generated hook metadata is available.
+	DTTR_PCDOGS_HOOK_UNSUPPORTED = 0, ///< No hook metadata is available.
 	DTTR_PCDOGS_HOOK_REL32 = 1,       ///< Entry can be detoured with a trampoline `E9 <rel32>` hook.
 	DTTR_PCDOGS_HOOK_HOTPATCH = 2,    ///< Hotpatch layout: pre-entry slot plus entry-window metadata.
 } DTTR_PCDOGS_T_Hook_Kind;
@@ -144,23 +140,23 @@ typedef enum DTTR_PCDOGS_T_Data_Resolver {
 	DTTR_PCDOGS_DATA_RESOLVE_XREF_U32 = 1,
 } DTTR_PCDOGS_T_Data_Resolver;
 
-/// Generated data-symbol write policy.
+/// Data-symbol write policy.
 ///
 /// `Write` enforces this policy and only writes `RAW_MEMORY` symbols. `UnsafeWrite`
 /// bypasses the policy check but still requires writable process memory. Reserve
 /// `UnsafeWrite` for explicit patching, reverse-engineering work, or SDK internals.
 /// `READ_ONLY` marks decoded dispatch/jump/lookup/opcode/index tables. `ENGINE_MANAGED`
 /// marks live pointers or state that the game may replace or overwrite. `PATCH_ONLY`
-/// is for symbols that should be changed through generated patch specs or patch groups.
+/// is for symbols that should be changed through patch specs or patch groups.
 typedef enum DTTR_PCDOGS_T_Write_Policy {
 	DTTR_PCDOGS_WRITE_POLICY_UNKNOWN = 0,     ///< Untyped or insufficiently classified symbol.
 	DTTR_PCDOGS_WRITE_POLICY_READ_ONLY = 1,   ///< Decoded table data for read-only inspection through `Read`.
 	DTTR_PCDOGS_WRITE_POLICY_ENGINE_MANAGED = 2, ///< Live game-managed pointer/state; use higher-level helpers or patch flows.
-	DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY = 3,  ///< Plain generated data slot writable through `Write`.
-	DTTR_PCDOGS_WRITE_POLICY_PATCH_ONLY = 4,  ///< Change through generated patch specs or patch groups.
+	DTTR_PCDOGS_WRITE_POLICY_RAW_MEMORY = 3,  ///< Plain data slot writable through `Write`.
+	DTTR_PCDOGS_WRITE_POLICY_PATCH_ONLY = 4,  ///< Change through patch specs or patch groups.
 } DTTR_PCDOGS_T_Write_Policy;
 
-/// Generated descriptor/accessor helpers return `DTTR_Result`.
+/// Descriptor/accessor helpers return `DTTR_Result`.
 ///
 /// PCDOGS-specific failures use `DTTR_ERR_*` values for missing symbols,
 /// unresolved addresses, unsafe calls or writes, policy mismatches, unsupported
@@ -258,40 +254,62 @@ enum {
 #define DTTR_PCDOGS_SYMBOL_XREF_COUNT ((uint32_t)DTTR_PCDOGS_SYMBOL_XREF_COUNT_VALUE)
 
 /// Function symbol identifiers.
-typedef enum DTTR_PCDOGS_T_Symbol_Function_Id {
+typedef enum DTTR_PCDOGS_T_Symbol_Function_ID {
 % for row in public_functions:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 	DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id} = ${row.index}, ///< ${doxy_inline(symbol_doc(DOC_KIND.FUNCTION, row))}
+% if row.unstable:
+#endif
+% endif
 % endfor
-} DTTR_PCDOGS_T_Symbol_Function_Id;
+} DTTR_PCDOGS_T_Symbol_Function_ID;
 
 /// Data symbol identifiers.
-typedef enum DTTR_PCDOGS_T_Symbol_Data_Id {
+typedef enum DTTR_PCDOGS_T_Symbol_Data_ID {
 % if not globals:
 	DTTR_PCDOGS_SYMBOL_DATA_ID_NONE = -1,
 % endif
 % for row in globals:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 	DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id}, ///< ${doxy_inline(symbol_doc(DOC_KIND.GLOBAL, row))}
+% if row.unstable:
+#endif
+% endif
 % endfor
-} DTTR_PCDOGS_T_Symbol_Data_Id;
+} DTTR_PCDOGS_T_Symbol_Data_ID;
 
-% if not unstable:
-
-/// Stable function identifiers for the public SDK facade.
-typedef enum DTTR_PCDOGS_T_Function_Id {
+/// Function identifiers for the public SDK facade.
+typedef enum DTTR_PCDOGS_T_Function_ID {
 % for row in public_functions:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 	DTTR_PCDOGS_FUNCTION_${row.symbol_id} = ${row.public_index}, ///< ${doxy_inline(symbol_doc(DOC_KIND.FUNCTION, row))}
+% if row.unstable:
+#endif
+% endif
 % endfor
-} DTTR_PCDOGS_T_Function_Id;
+} DTTR_PCDOGS_T_Function_ID;
 
 /// Stable global identifiers for the public SDK facade.
-typedef enum DTTR_PCDOGS_T_Data_Id {
+typedef enum DTTR_PCDOGS_T_Data_ID {
 % if not globals:
 	DTTR_PCDOGS_DATA_NONE = -1,
 % endif
 % for row in globals:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 	DTTR_PCDOGS_DATA_${row.symbol_id} = ${row.public_index}, ///< ${doxy_inline(symbol_doc(DOC_KIND.GLOBAL, row))}
+% if row.unstable:
+#endif
+% endif
 % endfor
-} DTTR_PCDOGS_T_Data_Id;
+} DTTR_PCDOGS_T_Data_ID;
 
 typedef enum DTTR_PCDOGS_T_Patch_Kind {
 	DTTR_PCDOGS_PATCH_UNSUPPORTED = 0,
@@ -306,8 +324,8 @@ typedef enum DTTR_PCDOGS_T_Patch_Kind {
 typedef struct DTTR_PCDOGS_T_Patch_Spec {
 	DTTR_PCDOGS_T_Patch_Kind kind;
 	bool required;
-	DTTR_PCDOGS_T_Function_Id function;
-	DTTR_PCDOGS_T_Data_Id global;
+	DTTR_PCDOGS_T_Function_ID function;
+	DTTR_PCDOGS_T_Data_ID global;
 	DTTR_Core_TargetSpec target;
 	uintptr_t address;
 	const char* aob;
@@ -376,50 +394,50 @@ typedef struct DTTR_PCDOGS_T_Patch_Report {
 extern "C" {
 #endif
 
-bool DTTR_PCDOGS_FunctionSymbolId(
-	DTTR_PCDOGS_T_Function_Id id,
-	DTTR_PCDOGS_T_Symbol_Function_Id* out_symbol_id
+bool DTTR_PCDOGS_FunctionSymbolID(
+	DTTR_PCDOGS_T_Function_ID id,
+	DTTR_PCDOGS_T_Symbol_Function_ID* out_symbol_id
 );
-bool DTTR_PCDOGS_DataSymbolId(
-	DTTR_PCDOGS_T_Data_Id id,
-	DTTR_PCDOGS_T_Symbol_Data_Id* out_symbol_id
+bool DTTR_PCDOGS_DataSymbolID(
+	DTTR_PCDOGS_T_Data_ID id,
+	DTTR_PCDOGS_T_Symbol_Data_ID* out_symbol_id
 );
 DTTR_Result DTTR_PCDOGS_FunctionResolve(
 	const DTTR_Core_Context* ctx,
-	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Function_ID id,
 	uintptr_t* out_addr
 );
 DTTR_Result DTTR_PCDOGS_SymbolFunctionResolve(
 	const DTTR_Core_Context* ctx,
-	DTTR_PCDOGS_T_Symbol_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_ID id,
 	uintptr_t* out_addr
 );
 DTTR_Result DTTR_PCDOGS_DataResolve(
 	const DTTR_Core_Context* ctx,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Data_ID id,
 	uintptr_t* out_addr
 );
 DTTR_Result DTTR_PCDOGS_SymbolDataResolve(
 	const DTTR_Core_Context* ctx,
-	DTTR_PCDOGS_T_Symbol_Data_Id id,
+	DTTR_PCDOGS_T_Symbol_Data_ID id,
 	uintptr_t* out_addr
 );
 DTTR_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 	DTTR_Core_PatchGroup* group,
-	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Function_ID id,
 	void* detour,
 	void** out_original
 );
 DTTR_Result DTTR_PCDOGS_Hook_DataPointer(
 	const DTTR_Core_Context* ctx,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Data_ID id,
 	void* new_value,
 	void** out_original,
 	DTTR_Core_Hook** out_hook
 );
 DTTR_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 	DTTR_Core_PatchGroup* group,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Data_ID id,
 	void* new_value,
 	void** out_original
 );
@@ -435,7 +453,6 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 }
 #endif
 
-% endif
 #ifdef DTTR_PCDOGS_IMPLEMENTATION
 
 % if hidden_functions:
@@ -601,13 +618,13 @@ static DTTR_PCDOGS_T_Symbol_Data dttr_pcdogs_symbol_globals[DTTR_PCDOGS_SYMBOL_D
 };
 
 % if not unstable:
-static const DTTR_PCDOGS_T_Symbol_Function_Id dttr_pcdogs_public_function_symbol_ids[DTTR_PCDOGS_FUNCTION_COUNT_VALUE] = {
+static const DTTR_PCDOGS_T_Symbol_Function_ID dttr_pcdogs_public_function_symbol_ids[DTTR_PCDOGS_FUNCTION_COUNT_VALUE] = {
 % for row in public_functions:
 	[DTTR_PCDOGS_FUNCTION_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id},
 % endfor
 };
 
-static const DTTR_PCDOGS_T_Symbol_Data_Id dttr_pcdogs_public_data_symbol_ids[DTTR_PCDOGS_DATA_COUNT_VALUE] = {
+static const DTTR_PCDOGS_T_Symbol_Data_ID dttr_pcdogs_public_data_symbol_ids[DTTR_PCDOGS_DATA_COUNT_VALUE] = {
 % for row in globals:
 	[DTTR_PCDOGS_DATA_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
 % endfor
@@ -690,18 +707,19 @@ static bool dttr_pcdogs_unhook_checked(
 #endif  // DTTR_PCDOGS_CORE_HOOK_HELPERS_DEFINED
 
 % for row in typed_function_rows:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 
 ${doxy_comment(row.doc, params=row.param_docs)}
 typedef ${row.ret}(${row.cc}*${row.typedef_name}) ${row.params};
 
-/// Accessor table for the generated `${row.display_name}` symbol object.
+/// Accessor table for the `${row.display_name}` symbol object.
 struct ${row.accessor_struct_name} {
-	/// Stable generated symbol ID.
-	DTTR_PCDOGS_T_Symbol_Function_Id SymbolId;
-% if not unstable:
-	/// Public stable function ID.
-	DTTR_PCDOGS_T_Function_Id FunctionId;
-% endif
+	/// Stable SDK symbol ID.
+	DTTR_PCDOGS_T_Symbol_Function_ID SymbolID;
+	/// Public function ID.
+	DTTR_PCDOGS_T_Function_ID FunctionID;
 	/// Returns true after this symbol has resolved in the active process.
 	bool (*IsResolved)();
 	/// Returns this function descriptor's status in the active process.
@@ -710,67 +728,70 @@ struct ${row.accessor_struct_name} {
 	bool (*IsCallable)(const DTTR_Core_Context* ctx);
 	/// Returns the resolved function address, or zero when unresolved.
 	uintptr_t (*Address)();
-	/// Returns the generated hook-site shape.
+	/// Returns the hook-site shape.
 	DTTR_PCDOGS_T_Hook_Kind (*HookKind)();
 	/// Returns the REL32 trampoline size or HOTPATCH entry-window size.
 	uint32_t (*HookPrologueSize)();
 	/// Calls the resolved function; value-returning wrappers write through `out_ret`.
 	DTTR_Result (*Call) ${row.try_params};
-	/// Installs generated REL32 hooks; HOTPATCH metadata returns false.
+	/// Installs REL32 hooks; HOTPATCH metadata returns false.
 	bool (*Hook)(
 		const DTTR_Core_Context* ctx,
 		${row.typedef_name} detour,
 		${row.typedef_name}* out_original
 	);
-% if not unstable:
 	/// Builds a REL32 function-hook spec; HOTPATCH metadata returns an unsupported spec.
 	DTTR_PCDOGS_T_Patch_Spec (*PatchSpec)(
 		bool required,
 		${row.typedef_name} detour,
 		${row.typedef_name}* out_original
 	);
-% endif
 	/// Detaches the hook installed through this accessor, if any.
 	void (*Unhook)(const DTTR_Core_Context* ctx);
 };
 
-/// Generated accessor object for `${row.display_name}`.
+/// Accessor object for `${row.display_name}`.
 DTTR_PCDOGS_API const struct ${row.accessor_struct_name}* const DTTR_PCDOGS_F_${row.public};
+% if row.unstable:
+#endif
+% endif
 
 % endfor
 % for row in globals:
 % if row.typed:
+% if row.unstable:
+#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
+% endif
 % if is_c_array_type(row.typed.type):
 #define DTTR_PCDOGS_D_${row.symbol_id}_COUNT ${c_array_type_count(row.typed.type)}
 
 % endif
 ${doxy_comment(symbol_doc(DOC_KIND.GLOBAL, row), returns="Typed data symbol object.")}
 struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type {
-	DTTR_PCDOGS_T_Symbol_Data_Id SymbolId;
-% if not unstable:
-	DTTR_PCDOGS_T_Data_Id DataId;
-% endif
+	DTTR_PCDOGS_T_Symbol_Data_ID SymbolID;
+	DTTR_PCDOGS_T_Data_ID DataID;
 	DTTR_PCDOGS_T_Write_Policy (*Policy)();
 	DTTR_Result (*Status)();
 	bool (*IsResolved)();
 	uintptr_t (*Address)();
 	${c_data_ptr_decl(row.typed.type, '(*Ptr)()')};
 	DTTR_Result (*Read)(${c_data_read_param(row.typed.type, 'out_value')});
-	/// Policy-gated writer. Returns `DTTR_ERR_POLICY_MISMATCH` unless Policy() is RAW_MEMORY.
+	/// Writer that enforces the symbol write policy. Returns `DTTR_ERR_POLICY_MISMATCH` unless Policy() is RAW_MEMORY.
 	DTTR_Result (*Write)(${c_data_write_param(row.typed.type, 'value')});
 	/// Bypasses Policy(); still requires resolved, writable memory.
 	DTTR_Result (*UnsafeWrite)(${c_data_write_param(row.typed.type, 'value')});
-% if not unstable:
-		// Builds a pointer-hook spec for pointer data; scalar data returns unsupported.
+	// Builds a pointer-hook spec for pointer data; scalar data returns unsupported.
 	DTTR_PCDOGS_T_Patch_Spec (*PatchSpec)(
 		bool required,
 		void* new_value,
 		void** out_original
 	);
-% endif
 };
 
 DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* const DTTR_PCDOGS_D_${c_public_token(row.name)};
+% if row.unstable:
+#endif
+% endif
 
 % endif
 % endfor
@@ -798,10 +819,6 @@ DTTR_PCDOGS_API bool DTTR_PCDOGS_SymbolFunctionIsCallable(
 	const DTTR_Core_Context* ctx,
 	const DTTR_PCDOGS_T_Symbol_Function* fn
 );
-% if unstable:
-#endif  // !DTTR_PCDOGS_H
-% endif
-
 #ifdef DTTR_PCDOGS_IMPLEMENTATION
 
 #define DTTR_PCDOGS_COUNT_ONE(...) +1u
@@ -1010,9 +1027,9 @@ static uintptr_t dttr_pcdogs_resolve_global_address(
 }
 
 % if not unstable:
-bool DTTR_PCDOGS_FunctionSymbolId(
-	DTTR_PCDOGS_T_Function_Id id,
-	DTTR_PCDOGS_T_Symbol_Function_Id* out_symbol_id
+bool DTTR_PCDOGS_FunctionSymbolID(
+	DTTR_PCDOGS_T_Function_ID id,
+	DTTR_PCDOGS_T_Symbol_Function_ID* out_symbol_id
 ) {
 	if (!out_symbol_id || (int)id < 0 || (uint32_t)id >= DTTR_PCDOGS_FUNCTION_COUNT) {
 		return false;
@@ -1021,9 +1038,9 @@ bool DTTR_PCDOGS_FunctionSymbolId(
 	return true;
 }
 
-bool DTTR_PCDOGS_DataSymbolId(
-	DTTR_PCDOGS_T_Data_Id id,
-	DTTR_PCDOGS_T_Symbol_Data_Id* out_symbol_id
+bool DTTR_PCDOGS_DataSymbolID(
+	DTTR_PCDOGS_T_Data_ID id,
+	DTTR_PCDOGS_T_Symbol_Data_ID* out_symbol_id
 ) {
 	if (!out_symbol_id || (int)id < 0 || (uint32_t)id >= DTTR_PCDOGS_DATA_COUNT) {
 		return false;
@@ -1264,7 +1281,6 @@ static bool dttr_pcdogs_${row.name}_Hook(
 	return true;
 }
 
-% if not unstable:
 static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name}_PatchSpec(
 	bool required,
 	${row.typedef_name} detour,
@@ -1284,7 +1300,6 @@ static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.name}_PatchSpec(
 	return spec_;
 }
 
-% endif
 static void dttr_pcdogs_${row.name}_Unhook(const DTTR_Core_Context* ctx) {
 	if (!ctx || !ctx->api || !dttr_pcdogs_${row.name}_hook) {
 		return;
@@ -1296,10 +1311,8 @@ static void dttr_pcdogs_${row.name}_Unhook(const DTTR_Core_Context* ctx) {
 }
 
 static const struct ${row.accessor_struct_name} dttr_pcdogs_${row.name}_symbol = {
-	.SymbolId = ${row.symbol_id},
-% if not unstable:
-	.FunctionId = ${row.function_id},
-% endif
+	.SymbolID = ${row.symbol_id},
+	.FunctionID = ${row.function_id},
 	.IsResolved = dttr_pcdogs_${row.name}_IsResolved,
 	.Status = dttr_pcdogs_${row.name}_Status,
 	.IsCallable = dttr_pcdogs_${row.name}_IsCallable,
@@ -1308,9 +1321,7 @@ static const struct ${row.accessor_struct_name} dttr_pcdogs_${row.name}_symbol =
 	.HookPrologueSize = dttr_pcdogs_${row.name}_HookPrologueSize,
 	.Call = dttr_pcdogs_${row.name}_Call,
 	.Hook = dttr_pcdogs_${row.name}_Hook,
-% if not unstable:
 	.PatchSpec = dttr_pcdogs_${row.name}_PatchSpec,
-% endif
 	.Unhook = dttr_pcdogs_${row.name}_Unhook,
 };
 
@@ -1394,7 +1405,6 @@ static DTTR_Result dttr_pcdogs_${row.symbol_id.lower()}_Write(${c_data_write_par
 }
 
 
-% if not unstable:
 static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.symbol_id.lower()}_PatchSpec(
 	bool required,
 	void* new_value,
@@ -1410,12 +1420,9 @@ static DTTR_PCDOGS_T_Patch_Spec dttr_pcdogs_${row.symbol_id.lower()}_PatchSpec(
 	return spec_;
 }
 
-% endif
 static const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type dttr_pcdogs_${row.symbol_id.lower()}_symbol = {
-	.SymbolId = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
-% if not unstable:
-	.DataId = DTTR_PCDOGS_DATA_${row.symbol_id},
-% endif
+	.SymbolID = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
+	.DataID = DTTR_PCDOGS_DATA_${row.symbol_id},
 	.Policy = dttr_pcdogs_${row.symbol_id.lower()}_Policy,
 	.Status = dttr_pcdogs_${row.symbol_id.lower()}_Status,
 	.IsResolved = dttr_pcdogs_${row.symbol_id.lower()}_IsResolved,
@@ -1505,9 +1512,9 @@ DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_CLEAR_DATA)
 		const DTTR_PCDOGS_T_Symbol_Data* symbol_data_ =                                  \
 			DTTR_PCDOGS_SymbolDataAt((uint32_t)data_id);                                 \
 % else:
-		DTTR_PCDOGS_T_Symbol_Data_Id symbol_id_;                                       \
+		DTTR_PCDOGS_T_Symbol_Data_ID symbol_id_;                                       \
 		const DTTR_PCDOGS_T_Symbol_Data* symbol_data_ =                                  \
-			DTTR_PCDOGS_DataSymbolId((DTTR_PCDOGS_T_Data_Id)data_id, &symbol_id_)         \
+			DTTR_PCDOGS_DataSymbolID((DTTR_PCDOGS_T_Data_ID)data_id, &symbol_id_)         \
 				? DTTR_PCDOGS_SymbolDataAt((uint32_t)symbol_id_)                           \
 				: NULL;                                                                     \
 % endif
