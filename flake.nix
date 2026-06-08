@@ -195,6 +195,7 @@
               (with pkgs; [
                 just
                 python3
+                xxd
               ])
               ++ lib.optionals (pkgs.stdenv.hostPlatform.isLinux && pkgs ? shaderc) [
                 pkgs.shaderc
