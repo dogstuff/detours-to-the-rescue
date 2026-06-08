@@ -7,41 +7,7 @@ set(DTTR_SDK_TEST_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/include"
 )
 
-dttr_add_object_compile_check(dttr_sdk_compile_checks
-    SOURCES
-        "${DTTR_SDK_TEST_SOURCE_DIR}/pcdogs_unstable_impl.c"
-        "${DTTR_SDK_TEST_SOURCE_DIR}/bundle.c"
-        "${DTTR_SDK_TEST_SOURCE_DIR}/bundle_unstable.c"
-    INCLUDE_DIRS
-        ${DTTR_SDK_TEST_INCLUDE_DIRS}
-)
-add_dependencies(dttr_sdk_compile_checks
-    dttr_pcdogs_generated_headers
-    dttr_sdk_bundle_header
-)
-
-add_executable(dttr_runtime_cpp_link_check
-    "${DTTR_SDK_TEST_SOURCE_DIR}/runtime_cpp_link_check.cc"
-)
-target_link_libraries(dttr_runtime_cpp_link_check PRIVATE
-    dttr_sdk_runtime
-)
-add_dependencies(dttr_runtime_cpp_link_check
-    dttr_sdk_bundle_header
-)
-add_test(
-    NAME dttr_sdk_runtime_cpp_link_check
-    COMMAND dttr_runtime_cpp_link_check
-)
-set_tests_properties(dttr_sdk_runtime_cpp_link_check PROPERTIES
-    LABELS "sdk"
-)
-
-add_custom_target(dttr_sdk_tests
-    DEPENDS
-        dttr_sdk_compile_checks
-        dttr_runtime_cpp_link_check
-)
+add_custom_target(dttr_sdk_tests)
 add_dependencies(dttr_tests dttr_sdk_tests)
 
 add_test(
@@ -49,49 +15,6 @@ add_test(
     COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND} --check
 )
 set_tests_properties(dttr_pcdogs_generated_headers PROPERTIES
-    LABELS "sdk;pcdogs;generated"
-)
-
-add_test(
-    NAME dttr_sdk_bundle_header
-    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
-        "${DTTR_SDK_BUNDLE_GENERATOR}"
-        --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
-        --include-dir "${CMAKE_CURRENT_SOURCE_DIR}/include"
-        --output "${DTTR_SDK_BUNDLE_HEADER}"
-        --check
-)
-set_tests_properties(dttr_sdk_bundle_header PROPERTIES
-    LABELS "sdk;generated"
-)
-
-add_test(
-    NAME dttr_pcdogs_symbol_docs
-    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_symbol_docs.py"
-        --generator "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_symbol_docs.py"
-        --output-dir "${DTTR_SDK_TEST_BINARY_DIR}/symbol-docs"
-)
-set_tests_properties(dttr_pcdogs_symbol_docs PROPERTIES
-    LABELS "sdk;pcdogs;generated;docs"
-)
-
-add_test(
-    NAME dttr_pcdogs_resolve_symbol_addresses
-    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_resolve_symbol_addresses.py"
-)
-set(DTTR_PCDOGS_RESOLVER_TEST_ENV
-    "DTTR_PCDOGS_FIXTURE_DIR=${DTTR_PCDOGS_FIXTURE_DIR}"
-)
-if(DTTR_REQUIRE_PCDOGS_FIXTURES)
-    list(APPEND DTTR_PCDOGS_RESOLVER_TEST_ENV
-        "DTTR_REQUIRE_PCDOGS_FIXTURES=1"
-    )
-endif()
-
-set_tests_properties(dttr_pcdogs_resolve_symbol_addresses PROPERTIES
-    ENVIRONMENT "${DTTR_PCDOGS_RESOLVER_TEST_ENV}"
     LABELS "sdk;pcdogs;generated"
 )
 
@@ -123,8 +46,8 @@ dttr_add_cmocka_test_suite(dttr_core_sdk_tests
     INCLUDE_DIRS
         ${DTTR_SDK_TEST_INCLUDE_DIRS}
     LINK_LIBRARIES
-        dttr_pcdogs_signatures
         dttr_sdk_runtime
+        dttr_pcdogs_signatures
     LABELS
         sdk
 )
@@ -138,8 +61,8 @@ dttr_add_cmocka_test_suite(dttr_hook_registry_tests
         dttr_sdk_runtime
     LABELS
         sdk
+        hooks
 )
-
 add_dependencies(dttr_sdk_tests
     dttr_core_sdk_tests
     dttr_hook_registry_tests

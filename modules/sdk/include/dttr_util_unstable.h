@@ -13,8 +13,10 @@
 #include <stdint.h>
 
 #include <dttr_core.h>
+#ifndef DTTR_SDK_ENABLE_UNSTABLE
+#error "Define DTTR_SDK_ENABLE_UNSTABLE before including dttr_util_unstable.h"
+#endif
 #include <dttr_pcdogs.h>
-#include <dttr_pcdogs_unstable.h>
 
 #ifndef DTTR_UTIL_API
 #define DTTR_UTIL_API extern
@@ -42,6 +44,27 @@ static inline const DTTR_PCDOGS_T_Level_RuntimeData *DTTR_Util_LevelDataAsRuntim
 	const void *ptr_
 ) {
 	return (const DTTR_PCDOGS_T_Level_RuntimeData *)ptr_;
+}
+
+/// Return the current active actor, or `NULL` when unavailable or inactive.
+/// @param ctx Runtime context for generated PCDOGS symbol calls.
+static inline DTTR_PCDOGS_T_Actor_State *DTTR_Util_GetActiveActor(
+	const DTTR_Core_Context *ctx
+) {
+	DTTR_PCDOGS_T_Actor_State *actor = NULL;
+	return DTTR_ResultOK(DTTR_PCDOGS_F_Entity_GetActiveActorFromList->Call(ctx, &actor))
+			   ? actor
+			   : NULL;
+}
+
+/// Compare non-`NULL` live actor pointers directly.
+/// @param left First actor pointer.
+/// @param right Second actor pointer.
+static inline bool DTTR_Util_SameActor(
+	const DTTR_PCDOGS_T_Actor_State *left,
+	const DTTR_PCDOGS_T_Actor_State *right
+) {
+	return left != NULL && left == right;
 }
 
 /// Experimental package traversal helpers for reverse-engineering workflows.

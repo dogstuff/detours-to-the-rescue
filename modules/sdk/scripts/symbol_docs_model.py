@@ -18,17 +18,13 @@ class SymbolFact:
 
 
 @dataclass(slots=True)
-class RelatedEntry:
-    kind: str
-    value: str
-
-
-@dataclass(slots=True)
 class XRefItem:
     kind: str
     value: str
     offsets: str
     detail: str
+    builds: str = ""
+    provenance: str = ""
 
 
 @dataclass(slots=True)
@@ -54,7 +50,7 @@ class FunctionCard:
     heading: str
     category: str
     anchor: str
-    prototype: str
+    pseudo_usage: str
     call_example: str
     patch_spec_example: str
     hook_example: str
@@ -62,11 +58,11 @@ class FunctionCard:
     summary: str
     metadata: list[MetadataItem]
     related_type_texts: list[str]
+    call_signature_key: tuple[str, ...] = ()
     references: list[XRefItem] = field(default_factory=list)
     referenced_by: list[XRefItem] = field(default_factory=list)
-    xref_count: int = 0
-    related: list[RelatedEntry] = field(default_factory=list)
     facts: list[SymbolFact] = field(default_factory=list)
+    reference_hierarchy_paths: list[tuple[str, ...]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -86,9 +82,8 @@ class GlobalCard:
     related_type_texts: list[str]
     references: list[XRefItem] = field(default_factory=list)
     referenced_by: list[XRefItem] = field(default_factory=list)
-    xref_count: int = 0
-    related: list[RelatedEntry] = field(default_factory=list)
     facts: list[SymbolFact] = field(default_factory=list)
+    reference_hierarchy_paths: list[tuple[str, ...]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -105,8 +100,11 @@ class TypeCard:
     enum_values: list[EnumValueCard]
     metadata: list[MetadataItem]
     related_type_texts: list[str]
-    related: list[RelatedEntry] = field(default_factory=list)
+    call_signature_key: tuple[str, ...] = ()
+    references: list[XRefItem] = field(default_factory=list)
+    referenced_by: list[XRefItem] = field(default_factory=list)
     facts: list[SymbolFact] = field(default_factory=list)
+    reference_hierarchy_paths: list[tuple[str, ...]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -117,7 +115,6 @@ class SignatureCard:
     builds: str
     summary: str
     metadata: list[MetadataItem]
-    related: list[RelatedEntry] = field(default_factory=list)
     facts: list[SymbolFact] = field(default_factory=list)
 
 
@@ -128,6 +125,9 @@ class FunctionXRefCard:
     ref_function: str
     offsets: str
     indirections: int
+    builds: str = ""
+    detail: str = ""
+    provenance: str = ""
 
 
 @dataclass(slots=True)
@@ -136,19 +136,46 @@ class DataXRefCard:
     global_name: str
     function: str
     offsets: str
+    access: str = "R/W"
+    builds: str = ""
 
 
 @dataclass(slots=True)
 class Category:
     display: str
     slug: str
-    filename: str
     functions: list[FunctionCard] = field(default_factory=list)
     globals: list[GlobalCard] = field(default_factory=list)
     types: list[TypeCard] = field(default_factory=list)
     signatures: list[SignatureCard] = field(default_factory=list)
-    function_xrefs: list[FunctionXRefCard] = field(default_factory=list)
-    data_xrefs: list[DataXRefCard] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class OverviewRow:
+    name: str
+    kind: str
+    category: str
+    stability: str
+    stability_slug: str
+    href: str
+    builds: str
+    refs_in: int
+    refs_out: int
+    summary: str
+
+
+@dataclass(frozen=True, slots=True)
+class OverviewTotals:
+    symbols: int
+    functions: int
+    globals: int
+    types: int
+    signatures: int
+    stable: int
+    unstable: int
+    build_en: int
+    build_eu: int
+    build_sc: int
 
 
 @dataclass(slots=True)

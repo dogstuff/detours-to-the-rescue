@@ -12,7 +12,7 @@ SDK wrappers include a function-pointer type for each known function, suffixed w
 static DTTR_PCDOGS_F_Player_SetLives_proto original_player_set_lives;
 ```
 
-Hook signatures that diverge from the game function can cause crashes or memory corruption. If the generated type does not exist, hooking the function requires additional reverse engineering work.
+Hook signatures that diverge from the game function can cause crashes or memory corruption. If the SDK type does not exist, hooking the function requires additional reverse engineering work.
 
 ## Writing a detour
 
@@ -34,7 +34,7 @@ The `original` pointer is only valid while the hook is installed.
 
 ## Installing hooks through patch groups
 
-When applying related hooks and patches, install the generated `PatchSpec()` through a patch group to simplify rollbacks and cleanup.
+When applying related hooks and patches, install the SDK `PatchSpec()` through a patch group to simplify rollbacks and cleanup.
 
 ```c
 static DTTR_Core_PatchGroup *patches;
@@ -79,7 +79,7 @@ DTTR_PCDOGS_F_Player_SetLives->Hook(
 DTTR_PCDOGS_F_Player_SetLives->Unhook(&ctx->runtime);
 ```
 
-Using `Hook()` while another mod or patch group owns the same hook slot can cause hook conflicts. Use it for simple hooks your mod fully owns, and use patch groups for most hooks.
+`Hook()` stores one direct hook handle on the accessor. Use it for simple hooks your mod fully owns; use patch groups when you need grouped ownership and cleanup. Compatible lower-level function hooks can still chain through the runtime hook registry.
 
 ## Hooking functions without SDK wrappers
 
@@ -87,7 +87,7 @@ The SDK also has raw APIs for hooking functions when no SDK wrapper exists.
 
 The raw hook APIs require reverse engineering work. Prefer SDK wrappers or patch groups in most cases.
 
-Before passing a generated address to a raw hook API, check both conditions:
+Before passing an SDK symbol address to a raw hook API, check both conditions:
 
 ```c
 if (!DTTR_PCDOGS_F_Player_SetLives->IsCallable(&ctx->runtime)) {

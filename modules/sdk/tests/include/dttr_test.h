@@ -32,7 +32,7 @@ typedef enum {
 	DTTR_TEST_PCDOGS_EU,
 	DTTR_TEST_PCDOGS_SC,
 	DTTR_TEST_PCDOGS_FIXTURE_COUNT,
-} DTTR_TestPCDOGSFixtureId;
+} DTTR_TestPCDOGSFixtureID;
 
 typedef DTTR_TestBinaryFixture DTTR_TestPCDOGSFixture;
 typedef DTTR_TestPatternExpectation DTTR_TestPCDOGSSignatureExpectation;

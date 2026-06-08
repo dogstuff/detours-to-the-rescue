@@ -56,13 +56,21 @@ const wchar_t *DTTR_Loader_GameSubpathAt(size_t index) {
 	return index < DTTR_Loader_GameSubpathCount() ? GAME_SUBPATHS[index] : NULL;
 }
 
-const char *DTTR_LoaderISO_GameRoot() { return ISO_GAME_ROOT; }
+const char *DTTR_LoaderISO_GameRoot() {
+	return ISO_GAME_ROOT;
+}
 
-const char *DTTR_LoaderISO_GameEXEPath() { return ISO_GAME_EXE_PATH; }
+const char *DTTR_LoaderISO_GameEXEPath() {
+	return ISO_GAME_EXE_PATH;
+}
 
-const char *DTTR_LoaderISO_GamePkgPath() { return ISO_GAME_PKG_PATH; }
+const char *DTTR_LoaderISO_GamePkgPath() {
+	return ISO_GAME_PKG_PATH;
+}
 
-const char *DTTR_LoaderISO_GameDataPath() { return ISO_GAME_DATA_PATH; }
+const char *DTTR_LoaderISO_GameDataPath() {
+	return ISO_GAME_DATA_PATH;
+}
 
 static uint64_t hash_path(const char *path) {
 	sds normalized = sdsnew(path);

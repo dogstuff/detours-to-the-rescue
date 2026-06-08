@@ -1,7 +1,6 @@
 #ifndef GRAPHICS_PRIVATE_H
 #define GRAPHICS_PRIVATE_H
 
-#include "dttr_sidecar.h"
 #include <SDL3/SDL.h>
 #include <dttr_mods.h>
 #include <kvec.h>
@@ -272,14 +271,20 @@ struct DTTR_BackendState {
 
 extern DTTR_BackendState dttr_backend;
 
-void dttr_graphics_begin_frame();
-void dttr_graphics_end_frame();
-bool DTTR_Graphics_PresentVideoFrameBGRA(
+HWND dttr_graphics_init();
+void dttr_graphics_cleanup();
+SDL_Window *dttr_graphics_get_window();
+SDL_GPUDevice *dttr_graphics_get_device();
+void dttr_graphics_handle_window_resize(int width, int height);
+bool dttr_graphics_present_video_frame_bgra(
 	const uint8_t *pixels,
 	int width,
 	int height,
 	int stride
 );
+
+void dttr_graphics_begin_frame();
+void dttr_graphics_end_frame();
 
 bool dttr_graphics_is_gpu_thread();
 /// Returns true when a draw call should receive subpixel logical-scaling seam fill.
@@ -386,8 +391,6 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 );
 
 void dttr_graphics_set_logical_resolution(int width, int height);
-void DTTR_Graphics_HandleWindowResize(int width, int height);
-
 void dttr_graphics_surface_texture_cache_reset();
 
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state);

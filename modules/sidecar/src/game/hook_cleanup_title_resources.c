@@ -10,12 +10,10 @@ BOOL __cdecl dttr_hook_cleanup_title_resources_callback() {
 		result = dttr_hook_cleanup_title_resources_original();
 	}
 
-	DTTR_PCDOGS_D_Title_CleanupScreenResources_PKGResourceTitleBonusReplayResource->Write(
-		NULL
-	);
-	DTTR_PCDOGS_D_PKGResourceTitleHandle1->Write(NULL);
-	DTTR_PCDOGS_D_PKGResourceTitleHandle0->Write(NULL);
-	DTTR_PCDOGS_D_PKGResourceTitleMaterialBase->Write(NULL);
-	DTTR_PCDOGS_D_PKGResourceTitlePackage->Write(NULL);
+	DTTR_PCDOGS_D_PKG_ResourceTitleBonusReplayResource->Write(NULL);
+	DTTR_PCDOGS_D_Title_ResourceHandle1->Write(NULL);
+	DTTR_PCDOGS_D_Title_ResourceHandle0->Write(NULL);
+	DTTR_PCDOGS_D_PKG_ResourceTitleMaterialBase->Write(NULL);
+	DTTR_PCDOGS_D_PKG_ResourceTitlePackage->Write(NULL);
 	return result;
 }

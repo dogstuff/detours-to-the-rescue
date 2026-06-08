@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <windows.h>
 
-/// Bridges the Win32 main callback into the exported Window_RunWinMain hook surface.
+/// Callback target for the patched game Window_RunWinMain routine.
 int32_t _stdcall DTTR_Hook_WinMainCallback(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,

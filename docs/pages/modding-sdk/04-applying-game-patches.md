@@ -20,23 +20,23 @@ A simple mod usually does this during `DTTR_MODS_INIT`:
 
 Do not expose related behavior until its required patches have installed successfully; otherwise it can run against unpatched game code or data.
 
-## Starting from generated patch specs
+## Starting from SDK patch specs
 
-For known PCDogs globals and patch sites, use generated patch specs first. They already include the target and patch type.
+For function hooks, pointer globals, and explicit PCDogs patch sites, use SDK patch specs first. They already include the target and patch type.
 
 Use lower-level target specs only when there is no SDK wrapper for the patch you need.
 
 ```c
 static DTTR_Core_PatchGroup *patches;
-static void *original_level_data;
+static void *original_ddraw;
 
 DTTR_MODS_INIT {
     DTTR_PCDOGS_T_Patch_Report report = {0};
     const DTTR_PCDOGS_T_Patch_Spec specs[] = {
-        DTTR_PCDOGS_D_PKG_ResourceCurrentLevelData->PatchSpec(
+        DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->PatchSpec(
             true,
-            replacement_level_data,
-            &original_level_data
+            replacement_ddraw,
+            &original_ddraw
         ),
     };
 
@@ -56,7 +56,6 @@ DTTR_MODS_INIT {
 
 DTTR_MODS_CLEANUP {
     DTTR_Core_PatchGroupRelease(&patches);
-    
     original_level_data = NULL;
 }
 ```

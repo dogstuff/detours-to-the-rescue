@@ -19,23 +19,28 @@ typedef struct {
 
 static game_data_source source;
 
-static void clear_source() { memset(&source, 0, sizeof(source)); }
-
-static bool copy_env(char *out, size_t out_size, const char *name) {
-	return DTTR_Path_CopyString(out, out_size, getenv(name));
+void dttr_game_data_cleanup() {
+	memset(&source, 0, sizeof(source));
 }
 
-void dttr_game_data_cleanup() { clear_source(); }
-
 void dttr_game_data_init() {
-	dttr_game_data_cleanup();
-	if (!copy_env(source.cache_root, sizeof(source.cache_root), "DTTR_ISO_CACHE_ROOT")
-		|| !copy_env(source.game_root, sizeof(source.game_root), "DTTR_ISO_GAME_ROOT")) {
-		clear_source();
+	game_data_source next = {0};
+	if (!DTTR_Path_CopyString(
+			next.cache_root,
+			sizeof(next.cache_root),
+			getenv("DTTR_ISO_CACHE_ROOT")
+		)
+		|| !DTTR_Path_CopyString(
+			next.game_root,
+			sizeof(next.game_root),
+			getenv("DTTR_ISO_GAME_ROOT")
+		)) {
+		dttr_game_data_cleanup();
 		return;
 	}
 
-	source.is_iso = true;
+	next.is_iso = true;
+	source = next;
 }
 
 static bool name_matches_segment(
@@ -77,8 +82,7 @@ static bool find_case_match(
 	bool found = false;
 	do {
 		if (name_matches_segment(data.cFileName, segment, segment_len)) {
-			DTTR_Path_CopyString(out_name, out_name_size, data.cFileName);
-			found = true;
+			found = DTTR_Path_CopyString(out_name, out_name_size, data.cFileName);
 			break;
 		}
 	} while (FindNextFileA(find, &data));
@@ -143,11 +147,13 @@ static const char *find_cached_segment(const char *path) {
 
 	for (const char *p = path; *p;) {
 		const size_t segment_len = DTTR_Path_SegmentLen(p);
-		if (segment_len == 4 && DTTR_Path_AsciiIeqN(p, "data", 4)) {
+		if (segment_len == sizeof("data") - 1
+			&& DTTR_Path_AsciiIeqN(p, "data", sizeof("data") - 1)) {
 			return p;
 		}
 
-		if (segment_len == 10 && DTTR_Path_AsciiIeqN(p, "pcdogs.pkg", 10)) {
+		if (segment_len == sizeof("pcdogs.pkg") - 1
+			&& DTTR_Path_AsciiIeqN(p, "pcdogs.pkg", sizeof("pcdogs.pkg") - 1)) {
 			return p;
 		}
 

@@ -34,13 +34,17 @@ static float overlay_text_width(const char *text) {
 	return size.x;
 }
 
-static float overlay_line_height() { return igGetTextLineHeight(); }
+static float overlay_line_height() {
+	return igGetTextLineHeight();
+}
 
 static float overlay_line_advance() {
 	return igGetTextLineHeight() * MODDING_BADGE_LINE_ADVANCE_FACTOR;
 }
 
-static float max_float(float a, float b) { return a > b ? a : b; }
+static float max_float(float a, float b) {
+	return a > b ? a : b;
+}
 
 static float overlay_mod_gap() {
 	const ImGuiStyle *style = igGetStyle();
@@ -146,10 +150,14 @@ static void draw_mod_overlay_row(
 }
 
 // Selects the SDL GPU ImGui backend only when the active renderer is SDL GPU.
-static bool uses_sdl_gpu() { return backend_type == DTTR_BACKEND_SDL_GPU; }
+static bool uses_sdl_gpu() {
+	return backend_type == DTTR_BACKEND_SDL_GPU;
+}
 
 // Returns the ImGui backend label used in overlay startup logs.
-static const char *backend_name() { return uses_sdl_gpu() ? "SDL_GPU" : "OpenGL"; }
+static const char *backend_name() {
+	return uses_sdl_gpu() ? "SDL_GPU" : "OpenGL";
+}
 
 // Skips backend submission when ImGui produced no command lists for this frame.
 static bool has_draw_data(const ImDrawData *draw_data) {
@@ -281,7 +289,8 @@ static void new_frame() {
 	igNewFrame();
 }
 
-// Starts an offscreen ImGui frame for game rendering callbacks that should not read input.
+// Starts an offscreen ImGui frame for game rendering callbacks that should not read
+// input.
 static void new_frame_no_input(uint32_t w, uint32_t h) {
 	backend_new_frame();
 	DTTR_ImGui_ApplyWindowDesktopScale(&imgui_scale, window);

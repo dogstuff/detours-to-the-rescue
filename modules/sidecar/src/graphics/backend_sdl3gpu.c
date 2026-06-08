@@ -4,7 +4,6 @@
 #include <dttr_log.h>
 
 #include <dttr_config.h>
-#include <dttr_sidecar.h>
 
 #define DRIVER_DISPLAY_VULKAN "Vulkan"
 #define DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
@@ -601,8 +600,8 @@ static bool upload_texture_data(
 	return true;
 }
 
-// Detaches queued texture uploads under the mutex, uploads them, and keeps failed entries
-// queued for retry.
+// Detaches queued texture uploads under the mutex, uploads them, and keeps failed
+// entries queued for retry.
 static int collect_and_upload_pending(
 	DTTR_BackendState *state,
 	SDL_GPUCopyPass *copy,
@@ -1196,8 +1195,8 @@ static void end_frame(DTTR_BackendState *state) {
 														   : (Uint32)state->width;
 		const Uint32 swap_h = (state->swapchain_height > 0) ? state->swapchain_height
 															: (Uint32)state->height;
-		const bool is_internal_method
-			= (dttr_config.scaling_method == DTTR_SCALING_METHOD_LOGICAL);
+		const bool
+			is_internal_method = (dttr_config.scaling_method == DTTR_SCALING_METHOD_LOGICAL);
 		present = compute_present_rect(
 			swap_w,
 			swap_h,
@@ -1291,7 +1290,8 @@ static bool ensure_video_texture(DTTR_BackendState *state, int width, int height
 	return true;
 }
 
-// Uploads a BGRA movie frame and presents it directly while normal frame rendering is idle.
+// Uploads a BGRA movie frame and presents it directly while normal frame rendering is
+// idle.
 static bool present_video_frame_bgra(
 	DTTR_BackendState *state,
 	const uint8_t *pixels,

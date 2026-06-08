@@ -232,8 +232,8 @@ static bool assert_targets_for_fixture(
 
 	for (size_t target_index = 0; target_index < DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT;
 		 target_index++) {
-		const pcdogs_target_expectation *target = &DTTR_TEST_PCDOGS_SIDECAR_TARGETS
-													  [target_index];
+		const pcdogs_target_expectation
+			*target = &DTTR_TEST_PCDOGS_SIDECAR_TARGETS[target_index];
 
 		if (target->kind != filter->kind
 			|| !dttr_test_fixture_required(target->required, fixture_index)) {

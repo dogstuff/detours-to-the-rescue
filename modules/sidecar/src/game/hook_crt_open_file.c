@@ -1,6 +1,6 @@
-#include "dttr_sidecar.h"
 #include "hooks_private.h"
 #include "sidecar_private.h"
+#include <dttr_config.h>
 #include <dttr_log.h>
 #include <dttr_path.h>
 #include <dttr_pcdogs.h>
@@ -20,13 +20,30 @@ static DTTR_PCDOGS_T_File_Handle *file_open_with_mode(
 	uint8_t sharing_flag
 ) {
 	DTTR_PCDOGS_T_File_Handle *handle = NULL;
-	DTTR_PCDOGS_F_File_OpenWithMode
-		->Call(dttr_sidecar_runtime_context(), path, mode, sharing_flag, &handle);
+	DTTR_Result result = DTTR_PCDOGS_F_File_OpenWithMode->Call(
+		dttr_sidecar_runtime_context(),
+		path,
+		mode,
+		sharing_flag,
+		&handle
+	);
+	if (!DTTR_ResultOK(result)) {
+		DTTR_LOG_ERROR(
+			"File_OpenWithMode failed for \"%s\" (mode \"%s\"): %s",
+			path,
+			mode,
+			result.message ? result.message : DTTR_StatusName(result.status)
+		);
+		return NULL;
+	}
+
 	return handle;
 }
 
 // Accepts only non-empty relative paths for save redirection and game-data lookup.
-static bool is_relative_path(const char *path) { return DTTR_Path_IsSafeRelative(path); }
+static bool is_relative_path(const char *path) {
+	return DTTR_Path_IsSafeRelative(path);
+}
 
 // Detects write modes so permission repair prompts for the correct file bits.
 static bool mode_wants_write(const char *mode) {
@@ -161,7 +178,8 @@ static DTTR_PCDOGS_T_File_Handle *try_fix_permissions(const char *path, const ch
 	sds prompt = sdscatprintf(
 		sdsempty(),
 		"Failed to open file \"%s\" (mode \"%s\"): %s\n\n"
-		"This is typically the result of a permissions issue, especially if you're using "
+		"This is typically the result of a permissions issue, especially if you're "
+		"using "
 		"Wine.\n\n"
 		"Try granting permissions 0o%03o?",
 		path,
@@ -178,7 +196,7 @@ static DTTR_PCDOGS_T_File_Handle *try_fix_permissions(const char *path, const ch
 	const SDL_MessageBoxData msgbox = {
 		.flags = SDL_MESSAGEBOX_WARNING,
 		.window = NULL,
-		.title = "DttR: File Permission Error Jumpscare",
+		.title = "DttR: File Permission Error",
 		.message = prompt,
 		.numbuttons = 2,
 		.buttons = buttons,

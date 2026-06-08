@@ -120,8 +120,8 @@ static HRESULT __stdcall ddraw7_createsurface(
 		return validation;
 	}
 
-	DTTR_Graphics_COM_DirectDrawSurface7 *created
-		= dttr_graphics_com_create_directdrawsurface7(
+	DTTR_Graphics_COM_DirectDrawSurface7
+		*created = dttr_graphics_com_create_directdrawsurface7(
 			width,
 			height,
 			bpp,

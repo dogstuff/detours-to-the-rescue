@@ -102,7 +102,8 @@ bool dttr_graphics_is_gpu_thread() {
 	return SDL_GetCurrentThreadID() == state->gpu_thread_id;
 }
 
-// Restricts seam fill to the rendering mode and draw states that expose solid mesh cracks.
+// Restricts seam fill to the rendering mode and draw states that expose solid mesh
+// cracks.
 bool dttr_graphics_should_fill_mesh_seams(
 	DTTR_PrimitiveType type,
 	bool transformed,

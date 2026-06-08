@@ -1,6 +1,15 @@
+#ifndef DTTR_SDK_ENABLE_UNSTABLE
 #define DTTR_SDK_ENABLE_UNSTABLE
+#endif
+
+#include <stdint.h>
+#include <string.h>
 
 #include <dttr_util_unstable.h>
+
+enum {
+	PKG_LOAD_ENTRY_TOC_OPERAND_OFFSET = 0x48u,
+};
 
 static DTTR_Util_PkgWalkResult make_result(DTTR_Util_PkgVisitStatus status) {
 	DTTR_Util_PkgWalkResult result = {0};
@@ -125,17 +134,25 @@ static bool resolve_toc(
 		return true;
 	}
 
-	uintptr_t toc_addr = 0;
-	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(
+	uintptr_t pkg_load_entry_addr = 0;
+	DTTR_Result resolved = DTTR_PCDOGS_FunctionResolve(
 		ctx,
-		DTTR_PCDOGS_DATA_PKG_LOAD_ENTRY_TOC,
-		&toc_addr
+		DTTR_PCDOGS_FUNCTION_PKG_LOAD_ENTRY,
+		&pkg_load_entry_addr
 	);
-	if (!DTTR_ResultOK(resolved) || !toc_addr) {
+	if (!DTTR_ResultOK(resolved) || !pkg_load_entry_addr) {
 		return false;
 	}
 
-	*out_entries = (const DTTR_PCDOGS_T_PKG_TOCEntry *)toc_addr;
+	uint32_t toc_addr = 0;
+	const uintptr_t toc_operand_addr = pkg_load_entry_addr
+									   + PKG_LOAD_ENTRY_TOC_OPERAND_OFFSET;
+	memcpy(&toc_addr, (const void *)toc_operand_addr, sizeof(toc_addr));
+	if (!toc_addr) {
+		return false;
+	}
+
+	*out_entries = (const DTTR_PCDOGS_T_PKG_TOCEntry *)(uintptr_t)toc_addr;
 	*out_count = requested_count;
 
 	return true;
@@ -234,12 +251,8 @@ static bool emit_decode_boundary(
 		loaded_visit->loaded_entry_size,
 		loaded_visit
 	);
-	DTTR_Util_PkgVisitAction action = emit_visit(
-		result,
-		visitor,
-		visitor_userdata,
-		&unsupported_visit
-	);
+	DTTR_Util_PkgVisitAction
+		action = emit_visit(result, visitor, visitor_userdata, &unsupported_visit);
 	if (action == DTTR_UTIL_PKG_VISIT_STOP) {
 		result->stopped = true;
 		return true;
@@ -296,12 +309,8 @@ DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 			NULL
 		);
 
-		DTTR_Util_PkgVisitAction toc_action = emit_visit(
-			&result,
-			visitor,
-			userdata,
-			&toc_visit
-		);
+		DTTR_Util_PkgVisitAction
+			toc_action = emit_visit(&result, visitor, userdata, &toc_visit);
 
 		if (toc_action == DTTR_UTIL_PKG_VISIT_STOP) {
 			result.stopped = true;
@@ -345,12 +354,8 @@ DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 				&toc_visit
 			);
 
-			DTTR_Util_PkgVisitAction failed_action = emit_visit(
-				&result,
-				visitor,
-				userdata,
-				&failed_visit
-			);
+			DTTR_Util_PkgVisitAction
+				failed_action = emit_visit(&result, visitor, userdata, &failed_visit);
 
 			if (failed_action == DTTR_UTIL_PKG_VISIT_STOP) {
 				result.stopped = true;
@@ -375,12 +380,8 @@ DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 			&toc_visit
 		);
 
-		DTTR_Util_PkgVisitAction loaded_action = emit_visit(
-			&result,
-			visitor,
-			userdata,
-			&loaded_visit
-		);
+		DTTR_Util_PkgVisitAction
+			loaded_action = emit_visit(&result, visitor, userdata, &loaded_visit);
 
 		if (loaded_action == DTTR_UTIL_PKG_VISIT_STOP) {
 			result.stopped = true;

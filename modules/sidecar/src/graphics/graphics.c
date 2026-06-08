@@ -1,6 +1,7 @@
 #include "graphics_private.h"
 #include "hooks_private.h"
 
+#include <dttr_config.h>
 #include <dttr_errors.h>
 #include <dttr_log.h>
 #include <dttr_sdl.h>
@@ -11,7 +12,6 @@
 #ifdef DTTR_MODS_ENABLED
 #include "mods/mods_private.h"
 #endif
-#include "dttr_sidecar.h"
 #include "sds.h"
 #include "sidecar_private.h"
 
@@ -67,8 +67,8 @@ static void update_window_title(const DTTR_BackendState *state) {
 	SDL_SetWindowTitle(state->window, window_title);
 }
 
-// Rejects unusably small render dimensions and falls back to the game default instead of
-// creating zero-sized targets.
+// Rejects unusably small render dimensions and falls back to the game default instead
+// of creating zero-sized targets.
 static int clamp_dim(int value, int fallback) {
 	return (value < DTTR_MIN_WINDOW_DIM) ? fallback : value;
 }
@@ -192,8 +192,8 @@ static float graphics_scale(uint32_t height) {
 	return height > 0 ? (float)height / 480.0f : 1.0f;
 }
 
-// Reads the real SDL window size and falls back to render-target dimensions during early
-// startup.
+// Reads the real SDL window size and falls back to render-target dimensions during
+// early startup.
 static void graphics_window_size(const DTTR_BackendState *state, uint32_t *w, uint32_t *h) {
 	int win_w = 0;
 	int win_h = 0;
@@ -455,8 +455,8 @@ static void destroy_window(DTTR_BackendState *state) {
 	state->window = NULL;
 }
 
-// Limits backend probing to the user-selected API while preserving the fallback order for
-// automatic graphics selection.
+// Limits backend probing to the user-selected API while preserving the fallback order
+// for automatic graphics selection.
 static backend_range select_backend_range(DTTR_GraphicsApi api) {
 	switch (api) {
 	case DTTR_GRAPHICS_API_OPENGL:
@@ -470,7 +470,7 @@ static backend_range select_backend_range(DTTR_GraphicsApi api) {
 
 // Probes the configured graphics backends, creates the game window, and publishes the
 // chosen device to mods.
-HWND DTTR_Graphics_Init() {
+HWND dttr_graphics_init() {
 	DTTR_BackendState *state = &dttr_backend;
 
 	if (state->initialized && state->window) {
@@ -566,13 +566,17 @@ void dttr_graphics_set_logical_resolution(int width, int height) {
 }
 
 // Returns the SDL window owned by the active graphics backend.
-SDL_Window *DTTR_Graphics_GetWindow() { return dttr_backend.window; }
+SDL_Window *dttr_graphics_get_window() {
+	return dttr_backend.window;
+}
 
 // Returns the SDL GPU device when the active backend owns one.
-SDL_GPUDevice *DTTR_Graphics_GetDevice() { return dttr_backend.device; }
+SDL_GPUDevice *dttr_graphics_get_device() {
+	return dttr_backend.device;
+}
 
 // Applies a user window resize to render targets before notifying mods.
-void DTTR_Graphics_HandleWindowResize(int width, int height) {
+void dttr_graphics_handle_window_resize(int width, int height) {
 	if (width < DTTR_MIN_WINDOW_DIM || height < DTTR_MIN_WINDOW_DIM) {
 		return;
 	}
@@ -605,7 +609,7 @@ void dttr_graphics_end_frame() {
 }
 
 // Uploads a decoded BGRA movie frame through the active renderer for fullscreen playback.
-bool DTTR_Graphics_PresentVideoFrameBGRA(
+bool dttr_graphics_present_video_frame_bgra(
 	const uint8_t *pixels,
 	int width,
 	int height,
@@ -620,8 +624,9 @@ bool DTTR_Graphics_PresentVideoFrameBGRA(
 	return state->renderer->present_video_frame_bgra(state, pixels, width, height, stride);
 }
 
-// Tears down graphics lifecycle callbacks, backend resources, and the SDL window in order.
-void DTTR_Graphics_Cleanup() {
+// Tears down graphics lifecycle callbacks, backend resources, and the SDL window in
+// order.
+void dttr_graphics_cleanup() {
 	dttr_graphics_mod_device_lost(&dttr_backend);
 	dttr_graphics_mod_device_destroying(&dttr_backend);
 

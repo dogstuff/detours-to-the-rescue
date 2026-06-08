@@ -911,13 +911,8 @@ static bool present_video_frame_bgra(
 	glUseProgram(gl->program);
 	glBindVertexArray(gl->vao);
 
-	const opengl_present_rect present = compute_present_rect(
-		window_w,
-		window_h,
-		width,
-		height,
-		0.0f
-	);
+	const opengl_present_rect
+		present = compute_present_rect(window_w, window_h, width, height, 0.0f);
 	const float x0 = (float)present.x;
 	const float y0 = (float)present.y;
 	const float x1 = (float)(present.x + present.w);

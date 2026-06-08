@@ -73,7 +73,9 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 
 static khash_t(dttr_config_lookup) *config_lookup = NULL;
 
-int DTTR_Config_SchemaCount() { return CONFIG_SCHEMA_COUNT; }
+int DTTR_Config_SchemaCount() {
+	return CONFIG_SCHEMA_COUNT;
+}
 
 const DTTR_ConfigFieldSpec *DTTR_Config_SchemaGet(int index) {
 	if (index < 0 || index >= CONFIG_SCHEMA_COUNT) {
@@ -132,12 +134,8 @@ static void config_schema_init() {
 	for (int i = 0; i < CONFIG_SCHEMA_COUNT; i++) {
 		const DTTR_ConfigFieldSpec *const spec = &config_schema[i];
 		int put_ret = 0;
-		const khint_t it = kh_put(
-			dttr_config_lookup,
-			config_lookup,
-			(char *)spec->key,
-			&put_ret
-		);
+		const khint_t
+			it = kh_put(dttr_config_lookup, config_lookup, (char *)spec->key, &put_ret);
 		if (it != kh_end(config_lookup)) {
 			kh_value(config_lookup, it) = i;
 		}

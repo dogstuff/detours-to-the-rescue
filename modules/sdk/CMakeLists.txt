@@ -1,5 +1,6 @@
 set(DTTR_PCDOGS_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_headers.py")
 set(DTTR_PCDOGS_GENERATOR_INPUTS
+    "${CMAKE_SOURCE_DIR}/.clang-format"
     "${DTTR_PCDOGS_GENERATOR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
@@ -14,7 +15,6 @@ set(DTTR_SDK_GENERATED_INCLUDE_DIR "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
 file(MAKE_DIRECTORY "${DTTR_SDK_GENERATED_INCLUDE_DIR}")
 set(DTTR_PCDOGS_GENERATED_PUBLIC_OUTPUTS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs.h"
-    "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs_unstable.h"
 )
 set(DTTR_SDK_STABLE_HEADERS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_versions.h"
@@ -33,7 +33,6 @@ configure_file(
 set(DTTR_PCDOGS_GENERATED_PRIVATE_OUTPUTS
     "${DTTR_SDK_GENERATED_SRC_DIR}/pcdogs.c"
     "${DTTR_SDK_GENERATED_SRC_DIR}/generated/dttr_pcdogs_full.h"
-    "${DTTR_SDK_GENERATED_SRC_DIR}/generated/dttr_pcdogs_unstable_full.h"
 )
 set(DTTR_PCDOGS_GENERATED_OUTPUTS
     ${DTTR_PCDOGS_GENERATED_PUBLIC_OUTPUTS}
@@ -95,7 +94,6 @@ add_custom_command(
         dttr_pcdogs_generated_headers
         "${DTTR_SDK_BUNDLE_GENERATOR}"
         ${DTTR_SDK_STABLE_HEADERS}
-        "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs_unstable.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_unstable.h"
     COMMENT "Generating DttR SDK bundle header"
     VERBATIM

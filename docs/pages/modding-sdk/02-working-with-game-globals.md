@@ -12,8 +12,8 @@ A global helper can tell you whether the symbol was found, read the value with t
 static int32_t last_lives;
 
 DTTR_MODS_FRAME_BEGIN {
-    int32_t lives = 0;
-    if (DTTR_ResultOK(DTTR_PCDOGS_D_Save_FilePlayerLives->Read(&lives))) {
+    int16_t lives = 0;
+    if (DTTR_ResultOK(DTTR_PCDOGS_D_UI_LivesCounterLastValue->Read(&lives))) {
         last_lives = lives;
     }
 }
@@ -32,9 +32,9 @@ Writing game memory is not always safe. Check `Policy()` before writing to a glo
 `Write()` only succeeds for `RAW_MEMORY` globals. For every other policy, design the related functions around reading, patching, or hooking instead.
 
 
-Read/write helpers return `DTTR_Result`, so callers keep the failure reason and may get an optional message:
+Read/write helpers return `DTTR_Result`, so callers always get a status and may also get a detail message:
 
-- `Status()` reports whether the generated data descriptor is resolved.
+- `Status()` reports whether the SDK data descriptor is resolved.
 - `Read(...)` distinguishes unresolved descriptors from read failures.
 - `Write(...)` returns `DTTR_ERR_POLICY_MISMATCH` when the symbol is not `RAW_MEMORY`.
 - `UnsafeWrite(...)` still bypasses policy, but it reports unresolved and write-failed states explicitly.

@@ -5,6 +5,25 @@
 #include <dttr_crashdump.h>
 #include <dttr_pcdogs.h>
 
+static bool pcdogs_crash_symbol_should_add(
+	bool resolved,
+	uintptr_t address,
+	const char *name,
+	uintptr_t module_base,
+	uint32_t image_size
+) {
+	if (!resolved || !name || !name[0] || image_size == 0) {
+		return false;
+	}
+
+	const uintptr_t image_end = module_base + image_size;
+	if (image_end < module_base) {
+		return false;
+	}
+
+	return address >= module_base && address < image_end;
+}
+
 static bool pcdogs_module_image_size(HMODULE module, DWORD *out_image_size) {
 	if (!module || !out_image_size) {
 		return false;
@@ -77,7 +96,7 @@ static bool dttr_pcdogs_crash_symbol_provider(HANDLE process, void *context) {
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SymbolFunctionCount(); i++) {
 		const DTTR_PCDOGS_T_Symbol_Function *fn = DTTR_PCDOGS_SymbolFunctionAt(i);
 		const char *name = DTTR_PCDOGS_SymbolFunctionNameAt(i);
-		if (!dttr_pcdogs_crash_symbol_should_add(
+		if (!pcdogs_crash_symbol_should_add(
 				fn->resolved,
 				fn->address,
 				name,
@@ -104,4 +123,6 @@ void dttr_pcdogs_crash_symbols_register(const DTTR_Core_Context *runtime) {
 	DTTR_CrashDump_SetSymbolProvider(dttr_pcdogs_crash_symbol_provider, (void *)runtime);
 }
 
-void dttr_pcdogs_crash_symbols_clear() { DTTR_CrashDump_ClearSymbolProvider(); }
+void dttr_pcdogs_crash_symbols_clear() {
+	DTTR_CrashDump_ClearSymbolProvider();
+}

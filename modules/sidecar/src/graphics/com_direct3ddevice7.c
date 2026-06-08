@@ -1,9 +1,9 @@
 // Translates IDirect3DDevice7 calls to the SDL3 GPU backend
 // https://archive.org/details/dx7sdk-7001
 
-#include "dttr_sidecar.h"
 #include "graphics_com_private.h"
 #include "graphics_private.h"
+#include <dttr_config.h>
 #include <dttr_log.h>
 #include <math.h>
 #include <stdlib.h>
@@ -488,17 +488,29 @@ static void d3d_device7_set_viewport(int x, int y, int w, int h, float min_z, fl
 }
 
 /// Sets the color combine operation.
-static void d3d_device7_set_color_op(int op) { dttr_backend.stage_color_op = (DWORD)op; }
+static void d3d_device7_set_color_op(int op) {
+	dttr_backend.stage_color_op = (DWORD)op;
+}
 /// Sets the first color combine argument.
-static void d3d_device7_set_color_arg1(DWORD arg) { dttr_backend.stage_color_arg1 = arg; }
+static void d3d_device7_set_color_arg1(DWORD arg) {
+	dttr_backend.stage_color_arg1 = arg;
+}
 /// Sets the second color combine argument.
-static void d3d_device7_set_color_arg2(DWORD arg) { dttr_backend.stage_color_arg2 = arg; }
+static void d3d_device7_set_color_arg2(DWORD arg) {
+	dttr_backend.stage_color_arg2 = arg;
+}
 /// Sets the alpha combine operation.
-static void d3d_device7_set_alpha_op(int op) { dttr_backend.stage_alpha_op = (DWORD)op; }
+static void d3d_device7_set_alpha_op(int op) {
+	dttr_backend.stage_alpha_op = (DWORD)op;
+}
 /// Sets the first alpha combine argument.
-static void d3d_device7_set_alpha_arg1(DWORD arg) { dttr_backend.stage_alpha_arg1 = arg; }
+static void d3d_device7_set_alpha_arg1(DWORD arg) {
+	dttr_backend.stage_alpha_arg1 = arg;
+}
 /// Sets the second alpha combine argument.
-static void d3d_device7_set_alpha_arg2(DWORD arg) { dttr_backend.stage_alpha_arg2 = arg; }
+static void d3d_device7_set_alpha_arg2(DWORD arg) {
+	dttr_backend.stage_alpha_arg2 = arg;
+}
 
 DTTR_COM_QI_SELF(d3ddevice7_queryinterface, DTTR_Graphics_COM_Direct3DDevice7)
 
@@ -1044,8 +1056,8 @@ static HRESULT __stdcall d3ddevice7_settexture(
 		return S_OK;
 	}
 
-	const DTTR_Graphics_COM_DirectDrawSurface7 *surf
-		= (const DTTR_Graphics_COM_DirectDrawSurface7 *)texture;
+	const DTTR_Graphics_COM_DirectDrawSurface7
+		*surf = (const DTTR_Graphics_COM_DirectDrawSurface7 *)texture;
 	d3d_device7_texture_bind(surf->dttr_texture);
 
 	return S_OK;

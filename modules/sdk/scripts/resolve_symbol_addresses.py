@@ -16,8 +16,8 @@ import pefile
 
 sys.dont_write_bytecode = True
 
-from codegen import pattern_tokens  # noqa: E402
-from generate_headers import build_mask_bits, load_blueprint  # noqa: E402
+from codegen import pattern_tokens
+from generate_headers import build_mask_bits, load_blueprint
 
 
 class Region(StrEnum):
@@ -48,10 +48,16 @@ class RefSite:
 
 
 @dataclass(frozen=True, slots=True)
+class UnresolvedSymbol:
+    name: str
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
 class UnresolvedSymbols:
-    signatures: list[dict[str, str]]
-    functions: list[dict[str, str]]
-    data: list[dict[str, str]]
+    signatures: list[UnresolvedSymbol]
+    functions: list[UnresolvedSymbol]
+    data: list[UnresolvedSymbol]
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,9 +228,10 @@ def hex_addr(value: int) -> str:
     return f"0x{value:X}"
 
 
-def unresolved_rows(reasons: dict[str, str]) -> list[dict[str, str]]:
+def unresolved_rows(reasons: dict[str, str]) -> list[UnresolvedSymbol]:
     return [
-        {"name": name, "reason": reason} for name, reason in sorted(reasons.items())
+        UnresolvedSymbol(name=name, reason=reason)
+        for name, reason in sorted(reasons.items())
     ]
 
 
@@ -267,7 +274,7 @@ def scan_rows(
 
 def resolve_signatures(
     blueprint: object, image: Image, region: Region
-) -> tuple[dict[str, int], list[dict[str, str]]]:
+) -> tuple[dict[str, int], list[UnresolvedSymbol]]:
     rows = [row for row in blueprint.signatures if supported(row.required, region)]
     resolved, unresolved = scan_rows(image, rows)
     return resolved, unresolved_rows(unresolved)
@@ -286,7 +293,7 @@ def resolve_xref_u32(
 
 def resolve_functions(
     blueprint: object, image: Image, region: Region
-) -> tuple[dict[str, int], list[dict[str, str]]]:
+) -> tuple[dict[str, int], list[UnresolvedSymbol]]:
     rows = [row for row in blueprint.functions if supported(row.required, region)]
     supported_names = {row.name for row in rows}
     xrefs = [
@@ -369,7 +376,7 @@ def iter_global_refs(
 
 def resolve_data(
     blueprint: object, image: Image, functions: dict[str, int], region: Region
-) -> tuple[dict[str, int], list[dict[str, str]]]:
+) -> tuple[dict[str, int], list[UnresolvedSymbol]]:
     supported_functions = {
         row.name for row in blueprint.functions if supported(row.required, region)
     }

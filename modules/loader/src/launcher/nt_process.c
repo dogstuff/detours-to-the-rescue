@@ -237,14 +237,18 @@ void DTTR_Compat_CreateProcess(
 	attribute_list attr_list = {0};
 
 	attr_list.total_length = sizeof(attr_list);
-	attr_list.attributes[0] = (attribute){PS_ATTRIBUTE_IMAGE_NAME,
-										  us_image.length,
-										  {.value_ptr = us_image.buffer},
-										  NULL};
-	attr_list.attributes[1] = (attribute){PS_ATTRIBUTE_CLIENT_ID,
-										  sizeof(client_id),
-										  {.value_ptr = &client_id},
-										  NULL};
+	attr_list.attributes[0] = (attribute){
+		PS_ATTRIBUTE_IMAGE_NAME,
+		us_image.length,
+		{.value_ptr = us_image.buffer},
+		NULL
+	};
+	attr_list.attributes[1] = (attribute){
+		PS_ATTRIBUTE_CLIENT_ID,
+		sizeof(client_id),
+		{.value_ptr = &client_id},
+		NULL
+	};
 
 	create_info create_info = {0};
 	create_info.size = sizeof(create_info);

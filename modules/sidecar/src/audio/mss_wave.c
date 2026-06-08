@@ -112,4 +112,6 @@ bool dttr_mss_wave_decode_f32(
 	return true;
 }
 
-void dttr_mss_wave_free(void *ptr) { drwav_free(ptr, NULL); }
+void dttr_mss_wave_free(void *ptr) {
+	drwav_free(ptr, NULL);
+}

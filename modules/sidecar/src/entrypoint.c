@@ -4,8 +4,9 @@
 #include <windows.h>
 
 #include "dttr_crashdump.h"
-#include "dttr_sidecar.h"
 #include "graphics/graphics_com_private.h"
+#include "inputs/inputs_private.h"
+#include <dttr_config.h>
 #include <dttr_log.h>
 #include <dttr_path.h>
 #include <sds.h>
@@ -20,6 +21,7 @@
 #include "graphics/hooks_private.h"
 #include "inputs/hooks_private.h"
 #include "movies/hooks_private.h"
+#include "movies/movies_private.h"
 #include "sidecar_private.h"
 #include <dttr_pcdogs.h>
 #include <dttr_runtime.h>
@@ -147,15 +149,13 @@ static const DTTR_Core_API RUNTIME_API = {
 };
 
 // Exposes the single sidecar context shared by hooks, mods, and runtime calls.
-const DTTR_Mods_Context *dttr_sidecar_context() { return &sidecar_ctx; }
-const DTTR_Core_Context *dttr_sidecar_runtime_context() { return &sidecar_ctx.runtime; }
+const DTTR_Mods_Context *dttr_sidecar_context() {
+	return &sidecar_ctx;
+}
 
-typedef bool (*dttr_required_symbol_check_fn)();
-
-typedef struct dttr_required_symbol {
-	const char *name;
-	dttr_required_symbol_check_fn is_resolved;
-} dttr_required_symbol;
+const DTTR_Core_Context *dttr_sidecar_runtime_context() {
+	return &sidecar_ctx.runtime;
+}
 
 // Captures module handles and APIs before callbacks expose sidecar state.
 static void init_sidecar_context(HMODULE game_module, HMODULE sidecar_module) {
@@ -178,117 +178,17 @@ static void init_sidecar_context(HMODULE game_module, HMODULE sidecar_module) {
 	};
 }
 
-static bool check_required_symbol(const dttr_required_symbol *symbol) {
-	if (symbol->is_resolved()) {
-		return true;
-	}
-
-	DTTR_LOG_ERROR("Required SDK game symbol was not resolved: %s", symbol->name);
-	return false;
-}
-
-static const DTTR_PCDOGS_T_Symbol_Data *pcdogs_symbol_data(
-	DTTR_PCDOGS_T_Symbol_Data_Id id
-) {
-	return DTTR_PCDOGS_SymbolDataAt((uint32_t)id);
-}
-
-static bool movie_file_names_resolved() {
-	const DTTR_PCDOGS_T_Symbol_Data *symbol = pcdogs_symbol_data(
-		DTTR_PCDOGS_SYMBOL_DATA_ID_VIDEO_PLAY_MOVIE_INTRO_FILE_NAMES
-	);
-	return symbol && symbol->address != 0;
-}
-
-static char **movie_file_names_ptr() {
-	const DTTR_PCDOGS_T_Symbol_Data *symbol = pcdogs_symbol_data(
-		DTTR_PCDOGS_SYMBOL_DATA_ID_VIDEO_PLAY_MOVIE_INTRO_FILE_NAMES
-	);
-	return symbol && symbol->address ? (char **)symbol->address : NULL;
-}
-
-static void write_should_quit(const int32_t value) {
-	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(value);
-}
-
-static int32_t read_should_quit() {
-	int32_t value = 0;
-	DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&value);
-	return value;
-}
-
-// Populates SDK symbol storage before enforcing the sidecar startup contract.
-static bool resolve_required_sidecar_symbols(const DTTR_Core_Context *runtime) {
-	DTTR_PCDOGS_ResolveAll(runtime);
-
-	const dttr_required_symbol required_symbols[] = {
-		{"PKG_FindAndOpenFile", DTTR_PCDOGS_F_PKG_FindAndOpenFile->IsResolved},
-		{"PKG_InitializeResourceGameEngine",
-		 DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->IsResolved},
-		{"D3D_InitializeGraphicsSubsystem",
-		 DTTR_PCDOGS_F_D3D_InitializeGraphicsSubsystem->IsResolved},
-		{"PKG_InitializeSystem", DTTR_PCDOGS_F_PKG_InitializeSystem->IsResolved},
-		{"Display_SetMode", DTTR_PCDOGS_F_Display_SetMode->IsResolved},
-		{"Input_ResetState", DTTR_PCDOGS_F_Input_ResetState->IsResolved},
-		{"Config_LoadAlternateFromINI",
-		 DTTR_PCDOGS_F_Config_LoadAlternateFromINI->IsResolved},
-		{"Graphics_RenderFrame", DTTR_PCDOGS_F_Graphics_RenderFrame->IsResolved},
-		{"File_OpenWithMode", DTTR_PCDOGS_F_File_OpenWithMode->IsResolved},
-		{"Mem_MallocCRT", DTTR_PCDOGS_F_Mem_MallocCRT->IsResolved},
-		{"Audio_InitializeSystem", DTTR_PCDOGS_F_Audio_InitializeSystem->IsResolved},
-		{"Audio_ShutdownSystem", DTTR_PCDOGS_F_Audio_ShutdownSystem->IsResolved},
-		{"Audio_StopAllSamples", DTTR_PCDOGS_F_Audio_StopAllSamples->IsResolved},
-		{"Audio_StopAllSounds", DTTR_PCDOGS_F_Audio_StopAllSounds->IsResolved},
-		{"Audio_InitializeLevelAudio",
-		 DTTR_PCDOGS_F_Audio_InitializeLevelAudio->IsResolved},
-		{"Video_PlayMovieFile", DTTR_PCDOGS_F_Video_PlayMovieFile->IsResolved},
-		{"DDraw_Object", DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->IsResolved},
-		{"Window_GameInitialized",
-		 DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->IsResolved},
-		{"Input_JoystickAvailable",
-		 DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->IsResolved},
-		{"Window_MainHandle",
-		 DTTR_PCDOGS_D_D3D_InitDirectDrawAndDirect3D_WindowMainHandle->IsResolved},
-		{"Window_MainHandle2", DTTR_PCDOGS_D_Window_RunWinMain_Handle2->IsResolved},
-		{"Rendering_Enabled",
-		 DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->IsResolved},
-		{"Window_ShouldQuit",
-		 DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->IsResolved},
-		{"PKG_BasePath", DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->IsResolved},
-		{"Audio_DigitalDriver",
-		 DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->IsResolved},
-		{"Video_MovieFileNames", movie_file_names_resolved},
-		{"Video_MoviePathPrefix",
-		 DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->IsResolved},
-		{"PKG_ResourceTitleBonusReplayResource",
-		 DTTR_PCDOGS_D_Title_CleanupScreenResources_PKGResourceTitleBonusReplayResource
-			 ->IsResolved},
-		{"PKG_ResourceTitleHandle1", DTTR_PCDOGS_D_PKGResourceTitleHandle1->IsResolved},
-		{"PKG_ResourceTitleHandle0", DTTR_PCDOGS_D_PKGResourceTitleHandle0->IsResolved},
-		{"PKG_ResourceTitleMaterialBase",
-		 DTTR_PCDOGS_D_PKGResourceTitleMaterialBase->IsResolved},
-		{"PKG_ResourceTitlePackage", DTTR_PCDOGS_D_PKGResourceTitlePackage->IsResolved},
-	};
-
-	bool ok = true;
-	for (size_t i = 0; i < DTTR_ARRAY_COUNT(required_symbols); ++i) {
-		ok = check_required_symbol(&required_symbols[i]) && ok;
-	}
-
-	return ok;
-}
-
 // Initializes subsystems that own required hooks. The order mirrors cleanup_runtime().
 static bool install_required_sidecar_hooks(const DTTR_Mods_Context *ctx) {
 	bool ok = true;
 	ok = dttr_game_hooks_init(ctx) && ok;
 
-	DTTR_Inputs_Init();
+	dttr_inputs_init();
 	ok = dttr_inputs_hooks_init(ctx) && ok;
 	ok = dttr_graphics_hooks_init(ctx) && ok;
 	ok = dttr_audio_init(ctx) && ok;
 
-	DTTR_Movies_Init();
+	dttr_movies_init();
 	ok = dttr_movies_hooks_init(ctx) && ok;
 
 	return ok;
@@ -397,6 +297,21 @@ static void after_sdl_event(const SDL_Event *event, bool consumed) {
 	} while (0)
 #endif
 
+static bool require_pcdogs_call(const char *name, DTTR_Result result) {
+	if (!DTTR_ResultOK(result)) {
+		DTTR_LOG_ERROR(
+			"Required PCDOGS operation failed: %s (%s)",
+			name,
+			result.message ? result.message : DTTR_StatusName(result.status)
+		);
+		return false;
+	}
+
+	return true;
+}
+
+#define REQUIRE_PCDOGS_CALL(expr_) require_pcdogs_call(#expr_, (expr_))
+
 // Routes SDL events through sidecar handlers before game input observes them.
 void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 #ifdef DTTR_MODS_ENABLED
@@ -417,20 +332,22 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 
 #endif
 
-	if (DTTR_Movies_HandleEvent(event)) {
+	if (dttr_movies_handle_event(event)) {
 		after_sdl_event(event, true);
 		return;
 	}
 
 	switch (event->type) {
 	case SDL_EVENT_QUIT:
-		write_should_quit(1);
+		REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(1)
+		);
 		after_sdl_event(event, true);
 		return;
 
 	case SDL_EVENT_GAMEPAD_ADDED:
 	case SDL_EVENT_GAMEPAD_REMOVED:
-		DTTR_Inputs_HandleDeviceEvent(event);
+		dttr_inputs_handle_device_event(event);
 		after_sdl_event(event, true);
 		return;
 
@@ -451,7 +368,7 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 
 	case SDL_EVENT_WINDOW_RESIZED:
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-		DTTR_Graphics_HandleWindowResize(event->window.data1, event->window.data2);
+		dttr_graphics_handle_window_resize(event->window.data1, event->window.data2);
 		after_sdl_event(event, true);
 		return;
 
@@ -462,7 +379,7 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 	after_sdl_event(event, false);
 }
 
-// Drains SDL events through the sidecar event bridge during modding builds.
+// Drains SDL events through the sidecar event bridge.
 void dttr_sidecar_poll_sdl_events() {
 	SDL_Event event;
 
@@ -481,92 +398,77 @@ static void cleanup_runtime(const DTTR_Mods_Context *ctx) {
 #endif
 
 	dttr_movies_hooks_cleanup(ctx);
-	DTTR_Movies_Cleanup();
+	dttr_movies_cleanup();
 	dttr_audio_cleanup(ctx);
 	dttr_game_hooks_cleanup(ctx);
 	dttr_graphics_hooks_cleanup(ctx);
 	dttr_inputs_hooks_cleanup(ctx);
-	DTTR_Inputs_Cleanup();
-	DTTR_Graphics_Cleanup();
+	dttr_inputs_cleanup();
+	dttr_graphics_cleanup();
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_cleanup();
 #endif
 	DTTR_Core_HookCleanupAll();
 }
 
-static bool require_pcdogs_call(const char *name, DTTR_Result result) {
-	if (!DTTR_ResultOK(result)) {
-		DTTR_LOG_ERROR(
-			"Required PCDOGS startup call failed: %s (%s)",
-			name,
-			DTTR_StatusName(result.status)
-		);
-		return false;
-	}
-
-	return true;
-}
-
-// Publishes the runtime API once the game window exists.
+// Runs required PCDOGS startup calls after the game window exists.
 static bool initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t ret = 0;
 
-	return require_pcdogs_call(
-			   "PKG_FindAndOpenFile",
-			   DTTR_PCDOGS_F_PKG_FindAndOpenFile->Call(ctx, &ret)
-		   )
-		   && require_pcdogs_call(
-			   "PKG_InitializeResourceGameEngine",
+	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_FindAndOpenFile->Call(ctx, &ret))
+		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->Call(ctx, &ret)
 		   )
-		   && require_pcdogs_call(
-			   "D3D_InitializeGraphicsSubsystem",
+		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_D3D_InitializeGraphicsSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )
-		   && require_pcdogs_call(
-			   "PKG_InitializeSystem",
-			   DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, &ret)
-		   );
+		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, &ret));
 }
 
 // Moves the modding runtime into its started state after initialization succeeds.
 static bool start_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t ret = 0;
 	int32_t config_ret = 0;
-	return require_pcdogs_call(
-			   "Display_SetMode",
-			   DTTR_PCDOGS_F_Display_SetMode->Call(ctx, hwnd, &ret)
-		   )
-		   && require_pcdogs_call(
-			   "Input_ResetState",
-			   DTTR_PCDOGS_F_Input_ResetState->Call(ctx, &ret)
-		   )
-		   && require_pcdogs_call(
-			   "Config_LoadAlternateFromINI",
+	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Display_SetMode->Call(ctx, hwnd, &ret))
+		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Input_ResetState->Call(ctx, &ret))
+		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_Config_LoadAlternateFromINI->Call(ctx, &config_ret)
 		   );
 }
 
+typedef enum {
+	DTTR_STARTUP_MOVIES_CONTINUE,
+	DTTR_STARTUP_MOVIES_QUIT,
+	DTTR_STARTUP_MOVIES_FAILED,
+} dttr_startup_movies_result;
+
 // Runs per-frame sidecar systems before yielding back to the original game loop.
-static void tick_main_loop() {
-	if (DTTR_Movies_MovieIsPlaying()) {
-		DTTR_Movies_Tick();
-		return;
+static bool tick_main_loop() {
+	if (dttr_movies_is_playing()) {
+		dttr_movies_tick();
+		return true;
 	}
 
 	SDL_DelayNS(1);
 
 	int32_t rendering_enabled = 0;
-	DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Read(&rendering_enabled);
+	if (!REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Read(&rendering_enabled)
+		)) {
+		return false;
+	}
 
 	if (rendering_enabled) {
 #ifdef DTTR_MODS_ENABLED
 		if (dttr_mods_should_advance_game_frame()) {
 			uint8_t frame_status = 0;
-			DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
-				dttr_sidecar_runtime_context(),
-				&frame_status
-			);
+			if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
+					dttr_sidecar_runtime_context(),
+					&frame_status
+				))) {
+				return false;
+			}
+
 			dttr_mods_game_frame_advanced();
 		} else {
 			dttr_graphics_begin_frame();
@@ -576,28 +478,32 @@ static void tick_main_loop() {
 
 #else
 		uint8_t frame_status = 0;
-		DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
-			dttr_sidecar_runtime_context(),
-			&frame_status
-		);
+		if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
+				dttr_sidecar_runtime_context(),
+				&frame_status
+			))) {
+			return false;
+		}
 #endif
 	}
 
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_tick();
 #endif
+	return true;
 }
 
 // Plays startup movies through the normal sidecar tick loop.
-static void attempt_play_startup_movies() {
+static dttr_startup_movies_result attempt_play_startup_movies() {
 	if (dttr_config.skip_intro_movies) {
-		return;
+		return DTTR_STARTUP_MOVIES_CONTINUE;
 	}
 
 	const char *const prefix = DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->Ptr();
-	char **const names = movie_file_names_ptr();
+	char **const names = (char **)DTTR_PCDOGS_D_Video_PlayMovieIntro_FileNames->Ptr();
 	if (!prefix || !names) {
-		return;
+		DTTR_LOG_WARN("Startup movie metadata unavailable; skipping intro movies");
+		return DTTR_STARTUP_MOVIES_CONTINUE;
 	}
 
 	for (int i = 0; i < 4; i++) {
@@ -611,24 +517,35 @@ static void attempt_play_startup_movies() {
 			break;
 		}
 
-		DTTR_Movies_Start(path);
+		dttr_movies_start(path);
 		sdsfree(path);
 
-		while (DTTR_Movies_MovieIsPlaying()) {
+		while (dttr_movies_is_playing()) {
 			dttr_sidecar_poll_sdl_events();
-			tick_main_loop();
+			if (!tick_main_loop()) {
+				dttr_movies_stop();
+				return DTTR_STARTUP_MOVIES_FAILED;
+			}
 		}
 
-		const DTTR_MovieResult ret = DTTR_Movies_Stop();
+		const dttr_movie_result ret = dttr_movies_stop();
 
 		if (ret == DTTR_MOVIE_QUIT) {
-			write_should_quit(1);
+			if (!REQUIRE_PCDOGS_CALL(
+					DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(1)
+				)) {
+				return DTTR_STARTUP_MOVIES_FAILED;
+			}
+
+			return DTTR_STARTUP_MOVIES_QUIT;
 		}
 
 		if (ret != DTTR_MOVIE_ENDED) {
 			break;
 		}
 	}
+
+	return DTTR_STARTUP_MOVIES_CONTINUE;
 }
 
 // Hooks Window_RunWinMain so sidecar initialization can wrap game startup and shutdown.
@@ -707,7 +624,7 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 	init_sidecar_context(pc_dogs_module, dttr_sidecar_module);
 	const DTTR_Mods_Context *ctx = dttr_sidecar_context();
 
-	HWND hwnd = DTTR_Graphics_Init();
+	HWND hwnd = dttr_graphics_init();
 
 	if (!hwnd) {
 		DTTR_LOG_ERROR("Failed to initialize - aborting");
@@ -715,15 +632,8 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 		goto cleanup;
 	}
 
-	DTTR_LOG_INFO("Resolving required sidecar SDK game symbols...");
-	if (!resolve_required_sidecar_symbols(&ctx->runtime)) {
-		DTTR_LOG_ERROR("Failed to resolve required SDK game symbols - aborting");
-		DTTR_Graphics_Cleanup();
-		DTTR_Core_HookCleanupAll();
-		exit_code = 1;
-		goto cleanup;
-	}
-
+	DTTR_LOG_INFO("Resolving sidecar SDK game symbols...");
+	DTTR_PCDOGS_ResolveAll(&ctx->runtime);
 	dttr_pcdogs_crash_symbols_register(&ctx->runtime);
 
 	if (!install_required_sidecar_hooks(ctx)) {
@@ -734,8 +644,8 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 
 #ifdef DTTR_MODS_ENABLED
 	dttr_imgui_init(
-		DTTR_Graphics_GetWindow(),
-		DTTR_Graphics_GetDevice(),
+		dttr_graphics_get_window(),
+		dttr_graphics_get_device(),
 		dttr_backend.backend_type
 	);
 	dttr_mods_init();
@@ -751,15 +661,24 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 	dttr_mods_overlay_visible_changed(false);
 #endif
 
-	DTTR_PCDOGS_D_Window_RunWinMain_Handle2->Write(hwnd);
-	DTTR_PCDOGS_D_D3D_InitDirectDrawAndDirect3D_WindowMainHandle->Write(hwnd);
+	if (!REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Window_RunWinMain_SecondaryWindowHandle->Write(hwnd)
+		)
+		|| !REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Window_MainHandle->Write(hwnd))) {
+		exit_code = 1;
+		goto cleanup_sidecar_runtime;
+	}
 
 	if (!initialize_pcdogs_runtime(&ctx->runtime, hwnd)) {
 		exit_code = 1;
 		goto cleanup_sidecar_runtime;
 	}
 
-	attempt_play_startup_movies();
+	const dttr_startup_movies_result startup_movies = attempt_play_startup_movies();
+	if (startup_movies == DTTR_STARTUP_MOVIES_FAILED) {
+		exit_code = 1;
+		goto cleanup_sidecar_runtime;
+	}
 
 	if (!start_pcdogs_runtime(&ctx->runtime, hwnd)) {
 		exit_code = 1;
@@ -767,24 +686,57 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 	}
 
 	void *audio_driver = NULL;
-	DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver);
+	if (!REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver)
+		)) {
+		exit_code = 1;
+		goto cleanup_sidecar_runtime;
+	}
+
 	if (audio_driver == NULL) {
 		DTTR_LOG_WARN("No audio device available - audio disabled");
 	}
 
-	DTTR_Inputs_LateInit();
+	if (!dttr_inputs_late_init()) {
+		exit_code = 1;
+		goto cleanup_sidecar_runtime;
+	}
+
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_late_init();
 #endif
-	write_should_quit(0);
-	DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Write(1);
-	DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Write(1);
+	if ((startup_movies != DTTR_STARTUP_MOVIES_QUIT
+		 && !REQUIRE_PCDOGS_CALL(
+			 DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Write(0)
+		 ))
+		|| !REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Write(1))
+		|| !REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Window_RunWinMain_RenderingEnabled->Write(1)
+		)) {
+		exit_code = 1;
+		goto cleanup_sidecar_runtime;
+	}
 
 	DTTR_LOG_INFO("Ready!");
 
-	while (read_should_quit() == 0) {
+	for (;;) {
+		int32_t should_quit = 0;
+		if (!REQUIRE_PCDOGS_CALL(
+				DTTR_PCDOGS_D_Input_ProcessWindowMessages_ShouldQuit->Read(&should_quit)
+			)) {
+			exit_code = 1;
+			break;
+		}
+
+		if (should_quit != 0) {
+			break;
+		}
+
 		dttr_sidecar_poll_sdl_events();
-		tick_main_loop();
+		if (!tick_main_loop()) {
+			exit_code = 1;
+			break;
+		}
 	}
 
 cleanup_sidecar_runtime:
@@ -804,7 +756,7 @@ cleanup:
 	}
 
 	if (should_exit_process) {
-		ExitProcess(0);
+		ExitProcess((UINT)exit_code);
 	}
 
 	return exit_code;

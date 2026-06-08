@@ -65,7 +65,7 @@ static DTTR_Result resolve_symbol(
 
 DTTR_Result DTTR_PCDOGS_SymbolFunctionResolve(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Symbol_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_ID id,
 	uintptr_t *out_addr
 ) {
 	return resolve_symbol(
@@ -81,11 +81,11 @@ DTTR_Result DTTR_PCDOGS_SymbolFunctionResolve(
 
 DTTR_Result DTTR_PCDOGS_FunctionResolve(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Function_ID id,
 	uintptr_t *out_addr
 ) {
-	DTTR_PCDOGS_T_Symbol_Function_Id symbol_id;
-	if (!DTTR_PCDOGS_FunctionSymbolId(id, &symbol_id)) {
+	DTTR_PCDOGS_T_Symbol_Function_ID symbol_id;
+	if (!DTTR_PCDOGS_FunctionSymbolID(id, &symbol_id)) {
 		return dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
 			"invalid PCDOGS function resolve arguments"
@@ -97,7 +97,7 @@ DTTR_Result DTTR_PCDOGS_FunctionResolve(
 
 DTTR_Result DTTR_PCDOGS_SymbolDataResolve(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Symbol_Data_Id id,
+	DTTR_PCDOGS_T_Symbol_Data_ID id,
 	uintptr_t *out_addr
 ) {
 	return resolve_symbol(
@@ -113,11 +113,11 @@ DTTR_Result DTTR_PCDOGS_SymbolDataResolve(
 
 DTTR_Result DTTR_PCDOGS_DataResolve(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Data_ID id,
 	uintptr_t *out_addr
 ) {
-	DTTR_PCDOGS_T_Symbol_Data_Id symbol_id;
-	if (!DTTR_PCDOGS_DataSymbolId(id, &symbol_id)) {
+	DTTR_PCDOGS_T_Symbol_Data_ID symbol_id;
+	if (!DTTR_PCDOGS_DataSymbolID(id, &symbol_id)) {
 		return dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
 			"invalid PCDOGS global resolve arguments"
@@ -129,7 +129,7 @@ DTTR_Result DTTR_PCDOGS_DataResolve(
 
 DTTR_Result DTTR_PCDOGS_Hook_DataPointer(
 	const DTTR_Core_Context *ctx,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Data_ID id,
 	void *new_value,
 	void **out_original,
 	DTTR_Core_Hook **out_hook
@@ -156,7 +156,7 @@ DTTR_Result DTTR_PCDOGS_Hook_DataPointer(
 
 static DTTR_Result patch_group_hook_symbol_function(
 	DTTR_Core_PatchGroup *group,
-	DTTR_PCDOGS_T_Symbol_Function_Id id,
+	DTTR_PCDOGS_T_Symbol_Function_ID id,
 	void *detour,
 	void **out_original
 ) {
@@ -194,12 +194,12 @@ static DTTR_Result patch_group_hook_symbol_function(
 
 DTTR_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 	DTTR_Core_PatchGroup *group,
-	DTTR_PCDOGS_T_Function_Id id,
+	DTTR_PCDOGS_T_Function_ID id,
 	void *detour,
 	void **out_original
 ) {
-	DTTR_PCDOGS_T_Symbol_Function_Id symbol_id;
-	if (!DTTR_PCDOGS_FunctionSymbolId(id, &symbol_id)) {
+	DTTR_PCDOGS_T_Symbol_Function_ID symbol_id;
+	if (!DTTR_PCDOGS_FunctionSymbolID(id, &symbol_id)) {
 		return dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
 			"invalid PCDOGS patch group function hook arguments"
@@ -211,7 +211,7 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_HookFunction(
 
 DTTR_Result DTTR_PCDOGS_PatchGroup_HookDataPointer(
 	DTTR_Core_PatchGroup *group,
-	DTTR_PCDOGS_T_Data_Id id,
+	DTTR_PCDOGS_T_Data_ID id,
 	void *new_value,
 	void **out_original
 ) {

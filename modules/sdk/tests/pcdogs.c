@@ -173,7 +173,7 @@ static uintptr_t blueprint_function_site(
 	return dttr_test_offset_site(match, fn->match_offset);
 }
 
-// Identify prologue instructions that the trampoline relocator cannot support.
+// Find prologue instructions that the trampoline relocator cannot support.
 static bool instruction_has_unsupported_reloc(const DTTR_TestDecodedInstruction *decoded) {
 	for (size_t imm_idx = 0; imm_idx < 2; imm_idx++) {
 		if (!decoded->instruction.raw.imm[imm_idx].size
@@ -260,7 +260,8 @@ static void assert_abi_return_matches(
 		DTTR_TestDecodedInstruction decoded = {0};
 		if (!dttr_test_zydis_decode32_at(image, rva, &decoded)) {
 			fail_msg(
-				"blueprint function %s decode failed in %s while scanning for ABI RET at "
+				"blueprint function %s decode failed in %s while scanning for ABI RET "
+				"at "
 				"0x%08X",
 				fn->name,
 				fixture->id,

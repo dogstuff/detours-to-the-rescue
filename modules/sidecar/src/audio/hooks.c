@@ -10,6 +10,7 @@ static DTTR_PCDOGS_F_Audio_InitializeSystem_proto audio_init_system_original;
 static DTTR_PCDOGS_F_Audio_StopAllSounds_proto audio_stop_all_sounds_original;
 static DTTR_PCDOGS_F_Audio_InitializeLevelAudio_proto audio_init_level_audio_original;
 static DTTR_PCDOGS_F_Audio_StopAllSamples_proto audio_stop_all_samples_original;
+static DTTR_Core_PatchGroup *audio_patch_group;
 
 static int32_t audio_init_system();
 static int32_t __cdecl audio_init_system_detour();
@@ -30,13 +31,13 @@ static bool has_audio_driver() {
 	void *audio_driver = NULL;
 	DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver);
 
-	return audio_driver || dttr_mss_sdl_has_driver();
+	return audio_driver || dttr_mss_core_has_driver();
 }
 
 // Stops SDL-backed samples before delegating only while an audio driver is alive.
 static int32_t run_guarded_audio_hook(int32_t(__cdecl *original)(), bool stop_all_samples) {
 	if (stop_all_samples) {
-		dttr_mss_sdl_stop_all_samples();
+		dttr_mss_sample_stop_all();
 	}
 
 	if (!original || !has_audio_driver()) {
@@ -87,7 +88,9 @@ static int32_t audio_init_system() {
 }
 
 // Funnels game audio initialization through the SDL device guard.
-static int32_t __cdecl audio_init_system_detour() { return audio_init_system(); }
+static int32_t __cdecl audio_init_system_detour() {
+	return audio_init_system();
+}
 
 // Mirrors stop-all-sounds into the SDL sample backend before delegating.
 static int32_t __cdecl audio_stop_all_sounds_detour() {
@@ -104,16 +107,6 @@ static int32_t __cdecl audio_stop_all_samples_detour() {
 	return run_guarded_audio_hook(audio_stop_all_samples_original, true);
 }
 
-// Reports failed audio hook installation without adding success noise to normal startup.
-static bool log_hook_result(const DTTR_Mods_Context *ctx, const char *name, bool ok) {
-	if (!ok) {
-		DTTR_MODS_LOG_ERROR(ctx, "%s: hook failed", name);
-		return false;
-	}
-
-	return true;
-}
-
 // Keeps the game MSS driver matched to SDL audio device availability.
 void dttr_audio_handle_device_event(const SDL_Event *event) {
 	switch (event->type) {
@@ -128,63 +121,46 @@ void dttr_audio_handle_device_event(const SDL_Event *event) {
 	}
 }
 
-// Installs MSS audio detours after SDL audio startup.
+// Installs the MSS audio patch group after SDL audio startup.
 bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 	if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
 		DTTR_LOG_ERROR("SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s", SDL_GetError());
 	}
 
-	bool ok = dttr_mss_sdl_install_hooks(ctx);
+	const bool imports_ok = dttr_mss_sdl_install_hooks(ctx);
+	const DTTR_PCDOGS_T_Patch_Spec audio_patches[] = {
+		DTTR_PCDOGS_F_Audio_InitializeSystem
+			->PatchSpec(true, audio_init_system_detour, &audio_init_system_original),
+		DTTR_PCDOGS_F_Audio_StopAllSounds->PatchSpec(
+			true,
+			audio_stop_all_sounds_detour,
+			&audio_stop_all_sounds_original
+		),
+		DTTR_PCDOGS_F_Audio_InitializeLevelAudio->PatchSpec(
+			true,
+			audio_init_level_audio_detour,
+			&audio_init_level_audio_original
+		),
+		DTTR_PCDOGS_F_Audio_StopAllSamples->PatchSpec(
+			true,
+			audio_stop_all_samples_detour,
+			&audio_stop_all_samples_original
+		),
+	};
 
-	ok = log_hook_result(
-			 ctx,
-			 "audio_initializesystem",
-			 DTTR_PCDOGS_F_Audio_InitializeSystem->Hook(
-				 &ctx->runtime,
-				 audio_init_system_detour,
-				 &audio_init_system_original
-			 )
-		 )
-		 && ok;
-	ok = log_hook_result(
-			 ctx,
-			 "audio_stopallsounds",
-			 DTTR_PCDOGS_F_Audio_StopAllSounds->Hook(
-				 &ctx->runtime,
-				 audio_stop_all_sounds_detour,
-				 &audio_stop_all_sounds_original
-			 )
-		 )
-		 && ok;
-	ok = log_hook_result(
-			 ctx,
-			 "audio_initializelevelaudio",
-			 DTTR_PCDOGS_F_Audio_InitializeLevelAudio->Hook(
-				 &ctx->runtime,
-				 audio_init_level_audio_detour,
-				 &audio_init_level_audio_original
-			 )
-		 )
-		 && ok;
-	ok = log_hook_result(
-			 ctx,
-			 "audio_stopallsamples",
-			 DTTR_PCDOGS_F_Audio_StopAllSamples->Hook(
-				 &ctx->runtime,
-				 audio_stop_all_samples_detour,
-				 &audio_stop_all_samples_original
-			 )
-		 )
-		 && ok;
-	return ok;
+	const bool patches_ok = dttr_sidecar_install_pcdogs_patch_group(
+		ctx,
+		"sidecar/audio",
+		audio_patches,
+		DTTR_ARRAY_COUNT(audio_patches),
+		&audio_patch_group
+	);
+	return imports_ok && patches_ok;
 }
 
-// Removes audio detours before shutting down the SDL replacement backend.
-void dttr_audio_cleanup(const DTTR_Mods_Context *ctx) {
-	DTTR_PCDOGS_F_Audio_StopAllSamples->Unhook(&ctx->runtime);
-	DTTR_PCDOGS_F_Audio_InitializeLevelAudio->Unhook(&ctx->runtime);
-	DTTR_PCDOGS_F_Audio_StopAllSounds->Unhook(&ctx->runtime);
-	DTTR_PCDOGS_F_Audio_InitializeSystem->Unhook(&ctx->runtime);
+// Releases audio patches before shutting down the SDL replacement backend.
+void dttr_audio_cleanup(const DTTR_Mods_Context *) {
+	DTTR_Core_PatchGroupRelease(&audio_patch_group);
 	audio_init_system_original = NULL;
 	audio_stop_all_sounds_original = NULL;
 	audio_init_level_audio_original = NULL;

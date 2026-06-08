@@ -11,7 +11,6 @@ site_dir = "build"
 repo_name = "dogstuff/detours-to-the-rescue"
 repo_url = "https://gitlab.com/dogstuff/detours-to-the-rescue"
 extra_css = ["assets/stylesheets/site.css"]
-extra_javascript = ["assets/javascripts/code-tokens.js"]
 nav = [
   { "Home" = "index.md" },
   { "Quick Start" = [
@@ -31,7 +30,7 @@ nav = [
       { "Drawing a GUI" = "modding-sdk/06-drawing-a-gui.md" },
       { "Manually Resolving Symbols" = "modding-sdk/07-resolving-symbols.md" },
     ] },
-    { "Symbol Wrappers" = "modding-sdk/generated/pcdogs/" },
+    { "PCDogs Symbols" = "modding-sdk/symbols/pcdogs/index.md" },
   ] },
   { "Technical Details" = [
     { "Configuration" = "technical-reference/00-configuration.md" },
@@ -55,10 +54,14 @@ features = [
   "content.code.annotate",
   "content.code.copy",
   "content.code.select",
+  "content.tabs.link",
+  "content.tooltips",
   "navigation.footer",
+  "navigation.indexes",
   "navigation.tabs",
   "navigation.instant",
   "navigation.instant.prefetch",
+  "navigation.prune",
   "navigation.top",
   "navigation.tracking",
   "search.highlight",
@@ -77,6 +80,8 @@ scheme = "slate"
 [project.markdown_extensions.pymdownx.details]
 [project.markdown_extensions.pymdownx.inlinehilite]
 [project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.snippets]
+base_path = ["docs/pages"]
 [project.markdown_extensions.pymdownx.blocks.caption]
 
 [project.markdown_extensions.pymdownx.highlight]

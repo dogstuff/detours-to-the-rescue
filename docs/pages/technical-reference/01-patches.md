@@ -31,8 +31,8 @@ DttR resolves most sites against the loaded game module with `DTTR_Core_HookSigs
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `dttr_hook_directdraw_create_ex` | Generated `DDraw_CreateEx` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawCreateEx` thunk body (`FF 25 <IAT slot>`) | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
-| `dttr_hook_directdraw_enumerate_ex_a` | Generated `DDraw_EnumerateExA` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawEnumerateExA` thunk body (`FF 25 <IAT slot>`) | Enumerates DttR's virtual display device. |
+| `dttr_hook_directdraw_create_ex` | `DDraw_CreateEx` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawCreateEx` thunk body (`FF 25 <IAT slot>`) | Returns DttR's DirectDraw 7 translator and stores it in the game-side DirectDraw pointer. |
+| `dttr_hook_directdraw_enumerate_ex_a` | `DDraw_EnumerateExA` import-thunk symbol, trampoline hook on import thunk | `ddraw!DirectDrawEnumerateExA` thunk body (`FF 25 <IAT slot>`) | Enumerates DttR's virtual display device. |
 
 ### Subpixel Vertex Precision Byte Patches
 
@@ -61,7 +61,7 @@ subpixel cracks between adjacent mesh pieces.
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
 | `dttr_inputs_hook_dinput_poll` | Signature `56 8B 74 24 ?? 56 8B 06`, jump hook at match | Game DirectInput joystick poll function | Maps SDL gamepad state into the game's joystick layout. |
-| `dttr_inputs_hook_get_async_key_state` | Finds `8B 1D ?? ?? ?? ?? 56 33 F6`, then patches `*(uint32_t *)(match_ + 2)` as an IAT hook | IAT-style slot loaded by `mov ebx, [GetAsyncKeyStateSlot]` | Routes keyboard state through SDL and limits input to the SDL window. |
+| `dttr_inputs_hook_get_async_key_state` | `Video_PlayMovieLoop_GetAsyncKeyStateThunk->PatchSpec()` in the `sidecar/inputs` patch group | IAT-style slot loaded by `mov ebx, [GetAsyncKeyStateSlot]` | Routes keyboard state through SDL and limits input to the SDL window. |
 
 ## Audio
 
@@ -71,16 +71,10 @@ These hooks keep game audio paths safe while DttR routes MSS through SDL.
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `DTTR_PCDOGS_F_Audio_InitializeSystem` | Signature `81 EC 90 ?? ?? ?? 55 56 57 FF 15`, generated `Hook()` helper | Game audio system init, captured as `audio_init_system_original` | Skips MSS init when SDL reports no playback devices. |
-| `DTTR_PCDOGS_F_Audio_StopAllSounds` | Signature `A1 ?? ?? ?? ?? 6A ?? 50 FF 15`, generated `Hook()` helper | Game stop-all-sounds routine, captured as `audio_stop_all_sounds_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
-| `DTTR_PCDOGS_F_Audio_InitializeLevelAudio` | Signature `A1 ?? ?? ?? ?? 6A 7F 50 FF 15`, generated `Hook()` helper | Game level-audio init routine, captured as `audio_init_level_audio_original` | Guards level audio init when no driver is active. |
-| `DTTR_PCDOGS_F_Audio_StopAllSamples` | Signature `56 57 8B 3D ?? ?? ?? ?? BE`, generated `Hook()` helper | Game stop-all-samples routine, captured as `audio_stop_all_samples_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
-
-## Movies
-
-| Site | Signature | Target | Effect |
-| --- | --- | --- | --- |
-| `dttr_movies_hook_movie_play_file` | Signature `8B 44 24 08 8B 0D ?? ?? ?? ?? 8B 54 24 04 56 50`, jump hook at match | Game `Video_PlayMovieFile` routine | Replaces MCI playback with DttR's FFmpeg/SDL-backed movie player. |
+| `DTTR_PCDOGS_F_Audio_InitializeSystem` | Signature `81 EC 90 ?? ?? ?? 55 56 57 FF 15`, `PatchSpec()` in the `sidecar/audio` patch group | Game audio system init, captured as `audio_init_system_original` | Skips MSS init when SDL reports no playback devices. |
+| `DTTR_PCDOGS_F_Audio_StopAllSounds` | Signature `A1 ?? ?? ?? ?? 6A ?? 50 FF 15`, `PatchSpec()` in the `sidecar/audio` patch group | Game stop-all-sounds routine, captured as `audio_stop_all_sounds_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
+| `DTTR_PCDOGS_F_Audio_InitializeLevelAudio` | Signature `A1 ?? ?? ?? ?? 6A 7F 50 FF 15`, `PatchSpec()` in the `sidecar/audio` patch group | Game level-audio init routine, captured as `audio_init_level_audio_original` | Guards level audio init when no driver is active. |
+| `DTTR_PCDOGS_F_Audio_StopAllSamples` | Signature `56 57 8B 3D ?? ?? ?? ?? BE`, `PatchSpec()` in the `sidecar/audio` patch group | Game stop-all-samples routine, captured as `audio_stop_all_samples_original` | Stops DttR's SDL samples first, then calls the original only if a digital driver exists. |
 
 ### Miles Sound System Import Hooks
 
@@ -115,3 +109,9 @@ DttR patches the `mss32.dll` import address table by name. It keeps the original
 | `dttr_hook_mss_ail_stream_status` | `_AIL_stream_status@4` | `dttr_mss_ail_stream_status` |
 | `dttr_hook_mss_ail_waveOutClose` | `_AIL_waveOutClose@4` | `dttr_mss_ail_waveOutClose` |
 | `dttr_hook_mss_ail_waveOutOpen` | `_AIL_waveOutOpen@16` | `dttr_mss_ail_waveOutOpen` |
+
+## Movies
+
+| Site | Signature | Target | Effect |
+| --- | --- | --- | --- |
+| `dttr_movies_hook_movie_play_file` | `PatchSpec()` in the `sidecar/movie` patch group | Game `Video_PlayMovieFile` routine | Replaces MCI playback with DttR's FFmpeg/SDL-backed movie player. |

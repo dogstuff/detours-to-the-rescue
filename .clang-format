@@ -7,15 +7,25 @@ ContinuationIndentWidth: 4
 ColumnLimit: 90
 
 BinPackArguments: false
-BinPackParameters: false
+BinPackLongBracedList: true
+BinPackParameters: OnePerLine
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 
 AlignAfterOpenBracket: BlockIndent
+BreakAfterOpenBracketFunction: true
+BreakBeforeCloseBracketFunction: true
+BreakAfterOpenBracketIf: true
+BreakBeforeCloseBracketIf: true
 Cpp11BracedListStyle: true
 
 BreakBeforeBinaryOperators: All
 
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+
 PenaltyBreakAssignment: 1000
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakOpenParenthesis: 0
 PenaltyReturnTypeOnItsOwnLine: 10000
 PenaltyExcessCharacter: 100
