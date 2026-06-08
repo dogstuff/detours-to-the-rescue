@@ -22,11 +22,13 @@ const FILTER_DEFAULTS = {
   stability: "all",
   kind: "all",
   version: "all",
+  limit: "100",
 };
 const FILTER_OPTIONS = {
   stability: ["all", "stable", "unstable"],
   kind: ["all", ...Object.keys(KIND_LABELS)],
   version: ["all", ...VERSION_LABELS],
+  limit: ["100", "250", "500", "1000", "all"],
 };
 
 function classes(...items) {
@@ -92,6 +94,9 @@ function normalizeStoredFilters(filters) {
     version: FILTER_OPTIONS.version.includes(filters.version)
       ? filters.version
       : FILTER_DEFAULTS.version,
+    limit: FILTER_OPTIONS.limit.includes(filters.limit)
+      ? filters.limit
+      : FILTER_DEFAULTS.limit,
   };
 }
 
@@ -679,10 +684,7 @@ function HierarchyBranch({ node, depth, current, byAnchor, onSelect }) {
 function Hierarchy({ symbol, byAnchor, onSelect }) {
   const paths = symbol.reference_hierarchy_paths || [];
 
-  const tree = useMemo(
-    () => buildHierarchyTree(paths),
-    [paths],
-  );
+  const tree = useMemo(() => buildHierarchyTree(paths), [paths]);
 
   if (!paths.length) {
     return null;
@@ -829,11 +831,11 @@ function DetailsForKind({ symbol }) {
 
 function OverviewRow({ symbol, onSelect }) {
   const select = (event) => {
-    if (
-      event.target.closest?.(
-        "a,button,input,select,textarea,[role='button'],[role='link']",
-      )
-    ) {
+    const interactive = event.target.closest?.(
+      "a,button,input,select,textarea,[role='button'],[role='link']",
+    );
+
+    if (interactive && interactive !== event.currentTarget) {
       return;
     }
 
@@ -886,7 +888,10 @@ function OverviewRow({ symbol, onSelect }) {
     </td>
     <td class="pcdogs-symbol-overview-summary" data-label="Summary">
       <span
-        class=${summaryClass(symbol.summary, "pcdogs-symbol-overview-summary-text")}
+        class=${summaryClass(
+          symbol.summary,
+          "pcdogs-symbol-overview-summary-text",
+        )}
         title=${text(symbol.summary)}
         >${text(symbol.summary)}</span
       >
@@ -910,7 +915,17 @@ function Overview({ symbols, filters, onFilterChange, onSelect }) {
           matchesQuery(symbol, needle),
       )
       .sort((a, b) => overviewSortKey(a).localeCompare(overviewSortKey(b)));
-  }, [symbols, filters]);
+  }, [
+    symbols,
+    filters.query,
+    filters.stability,
+    filters.kind,
+    filters.version,
+  ]);
+  const limitedSymbols =
+    filters.limit === "all"
+      ? filteredSymbols
+      : filteredSymbols.slice(0, Number(filters.limit));
 
   return html`<section class="pcdogs-symbol-overview">
     <h1>PCDogs Symbols</h1>
@@ -936,14 +951,31 @@ function Overview({ symbols, filters, onFilterChange, onSelect }) {
           type="search"
           value=${filters.query}
           placeholder="Name, summary, or something else"
-          onInput=${(event) => onFilterChange("query", event.currentTarget.value)}
+          onInput=${(event) =>
+            onFilterChange("query", event.currentTarget.value)}
         />
+      </label>
+      <label class="pcdogs-symbol-overview-control">
+        <span>Results</span>
+        <select
+          value=${filters.limit}
+          onChange=${(event) =>
+            onFilterChange("limit", event.currentTarget.value)}
+        >
+          ${FILTER_OPTIONS.limit.map(
+            (limit) =>
+              html`<option value=${limit} key=${limit}>
+                ${limit === "all" ? "All" : limit}
+              </option>`,
+          )}
+        </select>
       </label>
       <label class="pcdogs-symbol-overview-control">
         <span>Stability</span>
         <select
           value=${filters.stability}
-          onChange=${(event) => onFilterChange("stability", event.currentTarget.value)}
+          onChange=${(event) =>
+            onFilterChange("stability", event.currentTarget.value)}
         >
           <option value="all">All</option>
           <option value="stable">Stable</option>
@@ -954,7 +986,8 @@ function Overview({ symbols, filters, onFilterChange, onSelect }) {
         <span>Kind</span>
         <select
           value=${filters.kind}
-          onChange=${(event) => onFilterChange("kind", event.currentTarget.value)}
+          onChange=${(event) =>
+            onFilterChange("kind", event.currentTarget.value)}
         >
           <option value="all">All</option>
           ${Object.entries(KIND_LABELS).map(
@@ -967,7 +1000,8 @@ function Overview({ symbols, filters, onFilterChange, onSelect }) {
         <span>Version</span>
         <select
           value=${filters.version}
-          onChange=${(event) => onFilterChange("version", event.currentTarget.value)}
+          onChange=${(event) =>
+            onFilterChange("version", event.currentTarget.value)}
         >
           <option value="all">All</option>
           ${VERSION_LABELS.map(
@@ -995,8 +1029,8 @@ function Overview({ symbols, filters, onFilterChange, onSelect }) {
           </tr>
         </thead>
         <tbody>
-          ${filteredSymbols.length
-            ? filteredSymbols.map(
+          ${limitedSymbols.length
+            ? limitedSymbols.map(
                 (symbol) =>
                   html`<${OverviewRow}
                     symbol=${symbol}
