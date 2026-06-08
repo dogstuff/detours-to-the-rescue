@@ -1,5 +1,5 @@
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
   outputs =
     { nixpkgs, ... }:
@@ -10,7 +10,7 @@
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-      # Map package and shell outputs across supported host platforms.
+
       forEachSystem = f: nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
     in
     {
@@ -19,67 +19,39 @@
       devShells = forEachSystem (
         pkgs:
         let
-          lib = pkgs.lib;
+          inherit (pkgs) lib;
+
+          target = "i686-w64-mingw32";
           mingw = pkgs.pkgsCross.mingw32;
           mingwCc = mingw.stdenv.cc;
           crossBinPrefix = "${mingwCc}/bin/${mingwCc.targetPrefix}";
-          pkgConfigBin = "${pkgs.pkg-config}/bin/pkg-config";
-          sdl3 = pkgs.fetchzip {
-            url = "https://github.com/libsdl-org/SDL/releases/download/release-3.4.0/SDL3-devel-3.4.0-mingw.tar.gz";
-            hash = "sha256-BadBFy3kWT4v6JJthHaovBvK69AJB9N4ogOIEIL29LQ=";
-          };
-          sdl3Mixer = pkgs.fetchzip {
-            url = "https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.0-mingw.tar.gz";
-            hash = "sha256-rgwPYQpO1IwCqT+gWtvlk3LzS9u00NxGqLS+A4kwv+8=";
-          };
           cmocka = mingw.cmocka;
-          pkgConfigLibDir = lib.concatStringsSep ":" [
-            "${sdl3}/i686-w64-mingw32/lib/pkgconfig"
-            "${sdl3Mixer}/i686-w64-mingw32/lib/pkgconfig"
-            "${cmocka}/lib/pkgconfig"
+          mcfgthreads = mingw.windows.mcfgthreads;
+
+          fetchMingwZip = url: hash: pkgs.fetchzip { inherit url hash; };
+          sdl3 = fetchMingwZip
+            "https://github.com/libsdl-org/SDL/releases/download/release-3.4.0/SDL3-devel-3.4.0-mingw.tar.gz"
+            "sha256-BadBFy3kWT4v6JJthHaovBvK69AJB9N4ogOIEIL29LQ=";
+          sdl3Mixer = fetchMingwZip
+            "https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.0-mingw.tar.gz"
+            "sha256-rgwPYQpO1IwCqT+gWtvlk3LzS9u00NxGqLS+A4kwv+8=";
+
+          pkgConfigLibDir = lib.makeSearchPathOutput "" "lib/pkgconfig" [
+            "${sdl3}/${target}"
+            "${sdl3Mixer}/${target}"
+            cmocka
           ];
-          ffmpegFlags = [
-            "--target-os=mingw32"
-            "--arch=x86"
-            "--enable-cross-compile"
-            "--disable-everything"
-            "--disable-autodetect"
-            "--disable-programs"
-            "--disable-doc"
-            "--disable-debug"
-            "--disable-network"
-            "--disable-avdevice"
-            "--disable-avfilter"
-            "--enable-small"
-            "--disable-static"
-            "--enable-shared"
-            "--enable-avcodec"
-            "--enable-avformat"
-            "--enable-avutil"
-            "--enable-swresample"
-            "--enable-swscale"
-            "--enable-protocol=file"
-            "--enable-demuxer=rpl"
-            "--enable-demuxer=mp3"
-            "--enable-parser=mpegaudio"
-            "--enable-decoder=mp3float"
-            "--enable-decoder=escape124"
-            "--enable-decoder=escape130"
-            "--enable-decoder=pcm_s16le"
-            "--enable-decoder=pcm_s8"
-            "--enable-decoder=pcm_u8"
-            "--enable-decoder=pcm_vidc"
-            "--enable-decoder=adpcm_ima_ea_sead"
-          ];
-          ffmpegFlagsText = lib.concatStringsSep " \\\n                " ffmpegFlags;
+
           ffmpeg = mingw.stdenv.mkDerivation {
             pname = "ffmpeg-rpl-i686";
             version = pkgs.ffmpeg-headless.version;
             src = pkgs.ffmpeg-headless.src;
-            nativeBuildInputs = [
-              pkgs.nasm
-              pkgs.perl
+
+            nativeBuildInputs = with pkgs; [
+              nasm
+              perl
             ];
+
             configurePhase = ''
               runHook preConfigure
               ./configure \
@@ -93,117 +65,148 @@
                 --nm=${crossBinPrefix}nm \
                 --strip=${crossBinPrefix}strip \
                 --host-cc=${pkgs.stdenv.cc}/bin/cc \
-                ${ffmpegFlagsText}
+                ${lib.escapeShellArgs [
+                  "--target-os=mingw32"
+                  "--arch=x86"
+                  "--enable-cross-compile"
+                  "--disable-everything"
+                  "--disable-autodetect"
+                  "--disable-programs"
+                  "--disable-doc"
+                  "--disable-debug"
+                  "--disable-network"
+                  "--disable-avdevice"
+                  "--disable-avfilter"
+                  "--enable-small"
+                  "--disable-static"
+                  "--enable-shared"
+                  "--enable-avcodec"
+                  "--enable-avformat"
+                  "--enable-avutil"
+                  "--enable-swresample"
+                  "--enable-swscale"
+                  "--enable-protocol=file"
+                  "--enable-demuxer=rpl"
+                  "--enable-demuxer=mp3"
+                  "--enable-parser=mpegaudio"
+                  "--enable-decoder=mp3float"
+                  "--enable-decoder=escape124"
+                  "--enable-decoder=escape130"
+                  "--enable-decoder=pcm_s16le"
+                  "--enable-decoder=pcm_s8"
+                  "--enable-decoder=pcm_u8"
+                  "--enable-decoder=pcm_vidc"
+                  "--enable-decoder=adpcm_ima_ea_sead"
+                ]}
               runHook postConfigure
             '';
           };
-          mcfgthreads = mingw.windows.mcfgthreads;
-          pythonRequirements = with pkgs.python3Packages; [
-            mako
-            pefile
-          ];
-          baseShellPackages =
-            with pkgs;
-            [
-              just
-              cmake
-              gnumake
-              ninja
-              stb
-              pkg-config
-              nasm
-              perl
-              python3
-              xxd
-              mingwCc
-              cmocka
-            ]
-            ++ pythonRequirements;
-          formatPackages = with pkgs; [
-            clang-tools
-            python3Packages.black
-          ];
-          docsPackages = with pkgs; [
-            doxygen
-            zensical
-          ];
-          defaultPackages =
-            baseShellPackages
-            ++ formatPackages
-            ++ docsPackages
-            ++ (with pkgs; [
-              curl
-              glab
-              zip
-            ])
-            ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux (
-              with pkgs;
-              [
-                sdl3-shadercross
-                shaderc
-                gnused
-                wineWowPackages.stable
+
+          toolchainLinks = {
+            inherit cmocka ffmpeg sdl3;
+            sdl3_mixer = sdl3Mixer;
+          };
+          linkToolchainDeps = lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (name: path: ''ln -sfn "${path}" "$toolchain_dir/${name}"'') toolchainLinks
+          );
+        in
+        {
+          default = pkgs.mkShell {
+            packages =
+              (with pkgs; [
+                just
+                cmake
+                gnumake
+                ninja
+                stb
+                pkg-config
+                nasm
+                perl
+                python3
+                python3Packages.black
+                python3Packages.mako
+                python3Packages.pefile
+                xxd
+                llvmPackages_22.clang-tools
+                doxygen
+                zensical
+                curl
+                glab
+                zip
+              ])
+              ++ [
+                mingwCc
+                cmocka
               ]
-            );
-          defaultShell = pkgs.mkShell {
-            packages = defaultPackages;
+              ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux (with pkgs; [
+                gnused
+                wineWow64Packages.stable
+              ]);
 
             shellHook = ''
               toolchain_dir="''${DTTR_TOOLCHAIN_DIR:-.toolchain}"
               mkdir -p "$toolchain_dir"
-              ln -sfn "${sdl3}" "$toolchain_dir/sdl3"
-              ln -sfn "${sdl3Mixer}" "$toolchain_dir/sdl3_mixer"
-              ln -sfn "${cmocka}" "$toolchain_dir/cmocka"
-              ln -sfn "${ffmpeg}" "$toolchain_dir/ffmpeg"
-
+              ${linkToolchainDeps}
 
               write_tool_wrapper() {
-                local wrapper tool
-                wrapper="$1"
-                tool="$2"
-                cat > "$toolchain_dir/i686-w64-mingw32-$wrapper" <<WRAPPER
+                local wrapper="$1"
+                local tool="$2"
+                cat > "$toolchain_dir/${target}-$wrapper" <<WRAPPER
               #!/usr/bin/env bash
               exec "${crossBinPrefix}$tool" "\$@"
               WRAPPER
-                chmod +x "$toolchain_dir/i686-w64-mingw32-$wrapper"
+                chmod +x "$toolchain_dir/${target}-$wrapper"
               }
 
-              for wrapper in gcc g++ windres; do
-                write_tool_wrapper "$wrapper" "$wrapper"
+              for wrapper in gcc:gcc g++:g++ windres:windres gcc-ar:ar gcc-ranlib:ranlib; do
+                write_tool_wrapper "''${wrapper%%:*}" "''${wrapper#*:}"
               done
-              write_tool_wrapper gcc-ar ar
-              write_tool_wrapper gcc-ranlib ranlib
 
-              cat > "$toolchain_dir/i686-w64-mingw32-pkg-config" <<WRAPPER
+              cat > "$toolchain_dir/${target}-pkg-config" <<WRAPPER
               #!/usr/bin/env bash
               set -e
               export PKG_CONFIG_LIBDIR="${pkgConfigLibDir}"
-              exec "${pkgConfigBin}" "\$@"
+              exec "${pkgs.pkg-config}/bin/pkg-config" "\$@"
               WRAPPER
-              chmod +x "$toolchain_dir/i686-w64-mingw32-pkg-config"
+              chmod +x "$toolchain_dir/${target}-pkg-config"
 
               cat > "$toolchain_dir/toolchain.cmake" <<CMAKE
               get_filename_component(TOOLCHAIN_DIR "\''${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
               set(CMAKE_SYSTEM_NAME Windows)
               set(CMAKE_SYSTEM_PROCESSOR i686)
-              set(CMAKE_C_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc")
-              set(CMAKE_CXX_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-g++")
-              set(CMAKE_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
-              set(CMAKE_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
-              set(CMAKE_C_COMPILER_AR "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ar")
-              set(CMAKE_C_COMPILER_RANLIB "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-gcc-ranlib")
-              set(CMAKE_RC_COMPILER "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-windres")
+              set(CMAKE_C_COMPILER "\''${TOOLCHAIN_DIR}/${target}-gcc")
+              set(CMAKE_CXX_COMPILER "\''${TOOLCHAIN_DIR}/${target}-g++")
+              set(CMAKE_AR "\''${TOOLCHAIN_DIR}/${target}-gcc-ar")
+              set(CMAKE_RANLIB "\''${TOOLCHAIN_DIR}/${target}-gcc-ranlib")
+              set(CMAKE_C_COMPILER_AR "\''${TOOLCHAIN_DIR}/${target}-gcc-ar")
+              set(CMAKE_C_COMPILER_RANLIB "\''${TOOLCHAIN_DIR}/${target}-gcc-ranlib")
+              set(CMAKE_RC_COMPILER "\''${TOOLCHAIN_DIR}/${target}-windres")
               set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
               set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-              set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/i686-w64-mingw32-pkg-config")
+              set(PKG_CONFIG_EXECUTABLE "\''${TOOLCHAIN_DIR}/${target}-pkg-config")
               add_link_options("-L${mcfgthreads}/lib" -static-libgcc -static-libstdc++)
               set(CMAKE_CROSSCOMPILING_EMULATOR wine)
               CMAKE
             '';
           };
-        in
-        {
-          default = defaultShell;
+
+          shader = pkgs.mkShell {
+            packages =
+              (with pkgs; [
+                just
+                python3
+              ])
+              ++ lib.optionals (pkgs.stdenv.hostPlatform.isLinux && pkgs ? shaderc) [
+                pkgs.shaderc
+              ]
+              ++ lib.optionals (pkgs.stdenv.hostPlatform.isLinux && pkgs ? sdl3-shadercross) [
+                pkgs.sdl3-shadercross
+              ];
+
+            shellHook = lib.optionalString (pkgs.stdenv.hostPlatform.isLinux && !(pkgs ? sdl3-shadercross)) ''
+              echo "sdl3-shadercross is not packaged for this nixpkgs/system; use a nixpkgs revision that provides it." >&2
+            '';
+          };
         }
       );
     };
