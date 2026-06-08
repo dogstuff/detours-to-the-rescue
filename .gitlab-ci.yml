@@ -90,6 +90,8 @@ stages:
   extends:
     - .ci-image-job
   stage: prepare
+  variables:
+    CI_NIX_SHELL: ".#devShells.x86_64-linux.shader"
   script:
     - nix develop "$CI_NIX_SHELL" --command just ci-shader-build
   rules:
