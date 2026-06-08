@@ -1077,9 +1077,7 @@ def global_cards(
     return cards
 
 
-def type_shape_from_row(
-    row: object, c_type_fn: Callable[[object], str]
-) -> TypeShape:
+def type_shape_from_row(row: object, c_type_fn: Callable[[object], str]) -> TypeShape:
     kind = type_row_kind(row)
 
     if kind == TypeRowKind.TYPE_ALIAS:

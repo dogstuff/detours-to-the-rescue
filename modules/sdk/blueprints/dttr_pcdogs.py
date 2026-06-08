@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import re
-from collections.abc import Callable
-from dataclasses import replace
-
 from blueprint import (
     UNKNOWN_PARAMS,
     AbiStatus,
     Blueprint,
     CallingConvention,
-    Data,
-    Enum as BlueprintEnum,
-    Function,
-    FunctionTypeAlias,
     HookKind,
-    Param,
     Required,
-    Struct,
-    TypeAlias,
     WritePolicy,
     enum_value,
     hook,
@@ -34,7 +23,12 @@ stable.type_alias("Audio_AILHSample", "void*")
 
 stable.type_alias("Audio_AILHStream", "void*")
 
-stable.type_alias("Audio_AILHDigitalDriver", "void*")
+stable.type_alias(
+    "Audio_AILHDigitalDriver",
+    "void*",
+    doc="Miles digital-driver handle stored by audio initialization and used by playback guards.",
+    stable=True,
+)
 
 stable.struct(
     "DInput_DeviceEnumContext",
@@ -953,6 +947,7 @@ stable.struct(
     member("char*", "tmpfname", 0x1C),
     size=0x20,
     doc="CRT-compatible file handle layout, used by package and asset loading streams.",
+    stable=True,
 )
 
 stable.struct(
@@ -2741,7 +2736,7 @@ stable.struct(
         "uint8_t",
         "reserved_74[20]",
         0x74,
-        doc="Opaque node payload between geometry arrays and flags.",
+        doc="Internal node payload between geometry arrays and flags.",
     ),
     member(
         "uint32_t",
@@ -3985,7 +3980,12 @@ stable.struct(
 )
 
 
-stable.type_alias("Win32_GUID", "GUID")
+stable.type_alias(
+    "Win32_GUID",
+    "GUID",
+    doc="Win32 GUID value used by DirectDraw import entries.",
+    stable=True,
+)
 
 stable.callback_type(
     "DDraw_EnumCallbackExA",
@@ -3998,6 +3998,8 @@ stable.callback_type(
         param("HMONITOR", "monitor"),
     ],
     calling="CALLBACK",
+    doc="DirectDrawEnumerateExA callback signature used when enumerating DirectDraw devices.",
+    stable=True,
 )
 
 stable.callback_type(
@@ -6481,6 +6483,11 @@ stable.fn(
     hook=0x6,
     ret="DDraw_IDirectDrawSurface7*",
     params=[param("int32_t", "width"), param("int32_t", "height")],
+    doc=(
+        "Creates a DirectDraw texture surface for the requested dimensions, using the "
+        "global IDirectDraw7 interface and cached texture-format state."
+    ),
+    stable=True,
 )
 
 stable.fn(
@@ -6845,6 +6852,11 @@ stable.fn(
     "A1 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 81",
     ret="int32_t",
     params=[param("HWND", "hwnd")],
+    doc=(
+        "Initializes DirectDraw and Direct3D for the main game window, creating the "
+        "primary/back/z-buffer surfaces and selected Direct3DDevice7."
+    ),
+    stable=True,
 )
 
 stable.fn(
@@ -7557,6 +7569,7 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc="Runs movie playback until the movie ends, an error or joystick input occurs, or ESC/ENTER/Alt+F4 is pressed; returns 1 for normal/enter/joystick stop, 2 for ESC, and 3 for Alt+F4.",
+    stable=True,
 )
 
 stable.fn(
@@ -7902,7 +7915,7 @@ stable.fn(
     ],
     doc=(
         "Finds or walks to the ground/contact polygon under actor and returns "
-        "actor->ground_collision_node; the paired ground_contact_ptr context stays opaque."
+        "actor->ground_collision_node; the paired ground_contact_ptr context is still not decoded."
     ),
     unstable=True,
 )
@@ -7947,7 +7960,7 @@ stable.fn(
     ],
     doc=(
         "Thin wrapper around Collision_FindGroundPolygonUnderActor for actor/out_polygon. "
-        "This forwards directly to the ground-contact helper while Actor_State.ground_contact_ptr stays opaque."
+        "This forwards directly to the ground-contact helper while Actor_State.ground_contact_ptr is still not decoded."
     ),
     unstable=True,
 )
@@ -8729,6 +8742,7 @@ stable.fn(
         "Initialize the core memory/resource and DirectDraw-backed game engine subsystems; returns nonzero on "
         "initialization success even though native Window_RunWinMain ignores the status."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -9322,7 +9336,7 @@ stable.fn(
     doc=(
         "Initializes Component_Instance projectile runtime fields including projectile_state, "
         "projectile_timer, and homing velocity slots before calling Component_CalculateOrientation. "
-        "Projectile tail layout stays opaque."
+        "Projectile tail layout is still not decoded."
     ),
     unstable=True,
 )
@@ -9365,7 +9379,7 @@ stable.fn(
         param("int32_t", "collision_depth"),
     ],
     doc=(
-        "Component and projectile collision-response callback target. It consumes the contextual Collision_Polygon and collision_depth from the collision query, handles sentinel collisionDepth values -2/-1, updates projectile runtime state, records a hit cache in spawn-context storage, and dispatches hit behavior; projectile tail layout stays opaque."
+        "Component and projectile collision-response callback target. It consumes the contextual Collision_Polygon and collision_depth from the collision query, handles sentinel collisionDepth values -2/-1, updates projectile runtime state, records a hit cache in spawn-context storage, and dispatches hit behavior; projectile tail layout is still not decoded."
     ),
     unstable=True,
 )
@@ -9798,6 +9812,8 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[],
+    doc="Initializes the Miles audio system and opens the digital driver handle used by game audio playback.",
+    stable=True,
 )
 
 stable.fn(
@@ -9810,6 +9826,7 @@ stable.fn(
         "handles across Audio_SoundSlot entries, clearing slot sample/base-rate fields, calling "
         "AIL_shutdown, and clearing audio_digital_driver. Returns 0 when already inactive."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -9819,6 +9836,8 @@ stable.fn(
     hook=0x8,
     ret="int32_t",
     params=[],
+    doc="Stops all active Miles sample playback slots while leaving the audio system initialized.",
+    stable=True,
 )
 
 stable.fn(
@@ -9827,6 +9846,8 @@ stable.fn(
     match=-0x5,
     ret="int32_t",
     params=[],
+    doc="Stops all currently playing game sounds through the active Miles digital driver.",
+    stable=True,
 )
 
 stable.fn(
@@ -9835,6 +9856,8 @@ stable.fn(
     match=-0x5,
     ret="int32_t",
     params=[],
+    doc="Initializes level audio playback state using the active Miles digital driver.",
+    stable=True,
 )
 
 stable.fn(
@@ -9896,6 +9919,7 @@ stable.fn(
         "Open streamRecord[0] from the music filename stored at streamRecord+4 under the data/music directory; "
         "clears the handle when audio is unavailable or the filename is empty."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -10127,7 +10151,7 @@ stable.fn(
         param(
             "void*",
             "open_set",
-            doc="Opaque priority/open-set handle allocated by the pathfinding queue helpers.",
+            doc="Internal priority/open-set handle allocated by the pathfinding queue helpers.",
         ),
         param(
             "Nav_Network*",
@@ -10619,6 +10643,7 @@ stable.fn(
         ),
     ],
     doc="Open and play the supplied movie path; closes playback on normal stop and requests shutdown on skip/Alt+F4 paths.",
+    stable=True,
 )
 
 stable.fn(
@@ -10633,6 +10658,7 @@ stable.fn(
         )
     ],
     doc="Build and play one startup movie path selected by movieIndex; movie 0 initializes the player and movie 2 selects the alternate video rectangle.",
+    stable=True,
 )
 
 stable.fn(
@@ -10756,6 +10782,7 @@ stable.fn(
         ),
     ],
     doc="Clears input state, initializes joystick/force-feedback support for the game window, and sets the global D3D scale factor.",
+    stable=True,
 )
 
 stable.fn(
@@ -10764,6 +10791,7 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc="Alternate config-loading entry point that initializes controller and button mappings before tail-calling Config_LoadFromINI.",
+    stable=True,
 )
 
 stable.fn(
@@ -10928,12 +10956,18 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc="Returns the first pressed keyboard virtual-key code, or gamepad codes 0x3e8..0x3fa for axis/button input, or -1 when no control is pressed.",
+    stable=True,
 )
 
 stable.fn("Graphics_HasFogCapability", "A1 ?? ?? ?? ?? 25 00", ret="int32_t", params=[])
 
 stable.fn(
-    "Input_ProcessWindowMessages", "A1 ?? ?? ?? ?? 83 EC 1C", ret="int32_t", params=[]
+    "Input_ProcessWindowMessages",
+    "A1 ?? ?? ?? ?? 83 EC 1C",
+    ret="int32_t",
+    params=[],
+    doc="Pumps pending Win32 messages and updates the game quit flag when window processing requests shutdown.",
+    stable=True,
 )
 
 stable.fn(
@@ -10947,10 +10981,16 @@ stable.fn(
         "handles surface restore/flip, enforces the 30 FPS limiter, and updates FPS counters. "
         "Return is an AL status byte: 1 when the frame was skipped/aborted, otherwise 0."
     ),
+    stable=True,
 )
 
 stable.fn(
-    "Input_ResetState", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 25", ret="int32_t", params=[]
+    "Input_ResetState",
+    "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 25",
+    ret="int32_t",
+    params=[],
+    doc="Clears the current game input state before normal frame/input processing resumes.",
+    stable=True,
 )
 
 stable.fn(
@@ -10970,6 +11010,7 @@ stable.fn(
         "messages, blocks selected system-menu commands, and defers unhandled messages "
         "to DefWindowProcA."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -11001,6 +11042,11 @@ stable.fn(
         param("LPSTR", "lp_cmd_line"),
         param("int32_t", "n_cmd_show"),
     ],
+    doc=(
+        "Native WinMain body that creates the main window, initializes startup state, "
+        "and runs the game message/render loop."
+    ),
+    stable=True,
 )
 
 stable.fn(
@@ -11009,6 +11055,7 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc="Bootstraps package/resource startup by opening and reading the package TOC, initializing audio, initializing render dispatch tables, and seeding graphics flags/capabilities; returns the resulting graphics capability word/status value.",
+    stable=True,
 )
 
 stable.fn(
@@ -11178,6 +11225,7 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc="Package-file lookup/open routine. EN enters directly into the shared body; EU/SC include a nearby pre-open path-resolution divergence that the sidecar patches via its game hook AOB. The SDK entry signature anchors the common function prologue.",
+    stable=True,
 )
 
 stable.fn(
@@ -12160,6 +12208,7 @@ stable.fn(
     ret="BOOL",
     params=[],
     doc="Loads title packages/materials/sound refs and returns nonzero on success.",
+    stable=True,
 )
 
 stable.fn(
@@ -12169,6 +12218,8 @@ stable.fn(
     hook=0x7,
     ret="BOOL",
     params=[],
+    doc="Releases title-screen package resources, material pointers, and related resource handles.",
+    stable=True,
 )
 
 stable.fn(
@@ -12281,6 +12332,8 @@ stable.fn(
     hook=0x6,
     ret="void*",
     params=[param("uint32_t", "size")],
+    doc="Allocates size bytes through the game's CRT malloc path and returns the allocated pointer.",
+    stable=True,
 )
 
 stable.fn(
@@ -12398,6 +12451,7 @@ stable.fn(
         )
     ],
     doc="Initializes or reuses the active display/D3D mode for hwnd, stores Display_CurrentWindowHandle on success, and resets input state.",
+    stable=True,
 )
 
 stable.fn(
@@ -12430,8 +12484,8 @@ stable.fn(
         param("Win32_GUID*", "iid"),
         param("COM_IUnknown*", "p_unk_outer"),
     ],
-    doc="Import thunk for ddraw!DirectDrawCreateEx; used by graphics initialization to create the primary DirectDraw7 interface.",
-    unstable=True,
+    doc="Import entry for ddraw!DirectDrawCreateEx; used by graphics initialization to create the primary DirectDraw7 interface.",
+    stable=True,
 )
 
 stable.fn(
@@ -12446,7 +12500,8 @@ stable.fn(
         param("LPVOID", "lp_context"),
         param("DWORD", "dw_flags"),
     ],
-    doc="Import thunk for ddraw!DirectDrawEnumerateExA; used by D3D_EnumerateDirectDrawDevices with DDraw_EnumerateCallback and enumeration flags.",
+    doc="Import entry for ddraw!DirectDrawEnumerateExA; used by D3D_EnumerateDirectDrawDevices with DDraw_EnumerateCallback and enumeration flags.",
+    stable=True,
 )
 
 stable.fn(
@@ -12461,7 +12516,7 @@ stable.fn(
         param("DInput_IDirectInputA**", "pp_di"),
         param("COM_IUnknown*", "p_unk_outer"),
     ],
-    doc="Import thunk for dinput!DirectInputCreateA; used by DInput_CreateInterface to create the DirectInput 7 interface.",
+    doc="Import entry for dinput!DirectInputCreateA; used by DInput_CreateInterface to create the DirectInput 7 interface.",
 )
 
 stable.fn(
@@ -12729,6 +12784,8 @@ stable.fn(
         param("char const*", "mode"),
         param("uint8_t", "sharing_flag"),
     ],
+    doc="Opens a file with an explicit mode string and sharing flag, returning the game's CRT-compatible file handle.",
+    stable=True,
 )
 
 stable.fn(
@@ -12738,6 +12795,8 @@ stable.fn(
     hook=0x6,
     ret="File_Handle*",
     params=[param("char const*", "filename"), param("char const*", "mode")],
+    doc="Opens a file with the game's default sharing behavior and returns the CRT-compatible file handle.",
+    stable=True,
 )
 
 stable.fn(
@@ -13184,7 +13243,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[],
-    doc="Import thunk for RtlUnwind used by the CRT/SEH exception path.",
+    doc="Import entry for RtlUnwind used by the CRT/SEH exception path.",
 )
 
 stable.data(
@@ -13215,6 +13274,7 @@ stable.data(
     type="DDraw_IDirectDraw7*",
     doc="Primary IDirectDraw7 interface used for texture/work/z-buffer surface creation and released during DirectDraw shutdown.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Window_ProcessGameProc_Initialized",
@@ -13222,6 +13282,7 @@ stable.data(
     type="int32_t",
     doc="Non-zero after the main game window and runtime initialization have completed.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_GetPressedButton_JoystickAvailable",
@@ -13229,6 +13290,7 @@ stable.data(
     type="uint8_t",
     doc="Non-zero when joystick/gamepad input is available; allows gamepad polling in Input_GetPressedButton.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Window_MainHandle",
@@ -13236,6 +13298,7 @@ stable.data(
     type="HWND",
     doc="Cached main game HWND written by WinMain and read by DirectDraw/Direct3D, video, input, and window paths.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Window_RunWinMain_SecondaryWindowHandle",
@@ -13246,6 +13309,7 @@ stable.data(
         "main_window_handle is the runtime window handle read by input/movie/DirectDraw paths."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Window_RunWinMain_RenderingEnabled",
@@ -13253,6 +13317,7 @@ stable.data(
     type="int32_t",
     doc="Flag checked by game rendering paths before drawing world content.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ProcessWindowMessages_ShouldQuit",
@@ -13260,6 +13325,7 @@ stable.data(
     type="int32_t",
     doc="Flag set by window-message processing for game exit.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_InitializeSystem_DigitalDriver",
@@ -13267,6 +13333,7 @@ stable.data(
     type="Audio_AILHDigitalDriver",
     doc="Miles digital driver handle opened by AIL_waveOutOpen and cleared by Audio_ShutdownSystem.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Video_PlayMovieIntro_FileNames",
@@ -13274,7 +13341,7 @@ stable.data(
     type="char*[4]",
     doc="First entry/base of the four-entry movie filename pointer table used by intro and movie playback routines.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Video_PlayMovieIntro_PathPrefix",
@@ -13282,6 +13349,7 @@ stable.data(
     type="char",
     doc="First byte/base of the NUL-terminated data/movies path prefix used by movie-loading routines.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "PKG_ResourceTitleBonusReplayResource",
@@ -13292,6 +13360,7 @@ stable.data(
         "Title_CleanupScreenResources and assigned/used by title-screen load/update paths."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Title_ResourceHandle1",
@@ -13303,6 +13372,7 @@ stable.data(
         "Title_CleanupScreenResources and loaded by PKG_LoadTitleScreenResources."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Title_ResourceHandle0",
@@ -13314,6 +13384,7 @@ stable.data(
         "Title_CleanupScreenResources and loaded by PKG_LoadTitleScreenResources."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "PKG_ResourceTitleMaterialBase",
@@ -13324,6 +13395,7 @@ stable.data(
         "during Title_CleanupScreenResources."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "PKG_ResourceTitlePackage",
@@ -13334,6 +13406,7 @@ stable.data(
         "Title_CleanupScreenResources."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Scene_TraverseNodeTree_TypeDispatchTable",
@@ -16471,7 +16544,7 @@ stable.data(
     "Level_LoadStateMachine_PKGResourceLevelTexDataA",
     xref("Level_LoadStateMachine", 0x20, 0x1),
     type="void*",
-    doc="Opaque first level package-entry buffer loaded from TOC entry 0x24 + level_index * 3 by Level_LoadStateMachine stage 0.",
+    doc="Internal first level package-entry buffer loaded from TOC entry 0x24 + level_index * 3 by Level_LoadStateMachine stage 0.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
@@ -16479,7 +16552,7 @@ stable.data(
     "Level_LoadStateMachine_PKGResourceLevelTexDataB",
     xref("Level_LoadStateMachine", 0x68, 0x1),
     type="void*",
-    doc="Opaque second level package-entry buffer loaded from TOC entry 0x25 + level_index * 3 by Level_LoadStateMachine stage 2.",
+    doc="Internal second level package-entry buffer loaded from TOC entry 0x25 + level_index * 3 by Level_LoadStateMachine stage 2.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
@@ -16644,7 +16717,8 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "PKG_ResourceTitleMaterialBase", xref("PKG_LoadTitleScreenResources", 0x55, 0x2)
+    "PKG_ResourceTitleMaterialBase",
+    xref("PKG_LoadTitleScreenResources", 0x55, 0x2),
 )
 stable.data(
     "Title_InitializeSpots_CycleLength",
@@ -16658,7 +16732,10 @@ stable.data(
     "Title_InitializeSpots_MaterialIndex",
     xref("Title_InitializeSpots", 0x3F, 0x1),
 )
-stable.data("PKG_ResourceTitlePackage", xref("PKG_LoadTitleScreenResources", 0x3E, 0x1))
+stable.data(
+    "PKG_ResourceTitlePackage",
+    xref("PKG_LoadTitleScreenResources", 0x3E, 0x1),
+)
 stable.data(
     "Title_UpdateAndRenderScreen_FadeLevel",
     xref("Title_UpdateAndRenderScreen", 0xA8, 0x3),
@@ -16963,6 +17040,7 @@ stable.data(
     type="char[0x104]",
     doc="Mutable NUL-terminated package base path buffer used to build package and data/music stream paths.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Graphics_IsQuadClipped_BatchTriangleCount",
@@ -18046,7 +18124,7 @@ stable.data(
     "Video_PlayMovieLoop_GetAsyncKeyStateThunk",
     xref("Video_PlayMovieLoop", 0x29, 0x2),
     type="void*",
-    doc="Movie-loop input thunk/import cell for GetAsyncKeyState-style key polling; exact API binding remains unstable.",
+    doc="Movie-loop input import cell for GetAsyncKeyState-style key polling; exact API binding remains unstable.",
     unstable=True,
 )
 stable.data(
@@ -18057,7 +18135,7 @@ stable.data(
 stable.data("Audio_ShutdownSystem_AILShutdown", xref("Audio_ShutdownSystem", 0x37, 0x2))
 
 # Lower-confidence rows live in the canonical blueprint and carry unstable=True.
-_unstable_rows = Blueprint("unstable", unstable=True)
+_unstable_rows = Blueprint("unstable")
 
 _unstable_rows.fn(
     "Component_UpdateProjectileLogic",
@@ -18220,8 +18298,8 @@ _unstable_rows.fn(
     doc="MSVC __rt_probe_read4 helper reached from _longjmp and used for guarded reads.",
 )
 
-# Lower-confidence structured types: resolved, with layout confidence below the
-# stable modder-facing surface threshold.
+# Lower-confidence structured types: resolved, but not documented enough for
+# stable=True.
 _unstable_rows.struct(
     "Level_State",
     member("void*", "collision_data", 0x0),
@@ -18573,13 +18651,13 @@ _unstable_rows.struct(
         "uint16_t",
         "padding_5c",
         0x5C,
-        doc="Pad/opaque mesh-node header word.",
+        doc="Padding/internal mesh-node header word.",
     ),
     member(
         "uint16_t",
         "padding_5e",
         0x5E,
-        doc="Pad/opaque mesh-node header word.",
+        doc="Padding/internal mesh-node header word.",
     ),
     member("uint32_t", "vertex_format", 0x60),
     member("uint8_t", "subtype_id", 0x64),
@@ -18663,7 +18741,7 @@ _unstable_rows.struct(
         "int16_t",
         "lod_reserved_0_c",
         0xC,
-        doc="Opaque LOD descriptor word used by render selection with lod_level, sprite_layer_count, render_data_ptr, face_count/start, and threshold.",
+        doc="Internal LOD descriptor word used by render selection with lod_level, sprite_layer_count, render_data_ptr, face_count/start, and threshold.",
     ),
     member("uint16_t", "lod_distance_threshold", 0xE),
     member("int16_t", "face_start_index", 0x10),
@@ -19037,151 +19115,5 @@ stable.signatures.extend(_unstable_rows.signatures)
 stable.functions.extend(_unstable_rows.functions)
 stable.globals.extend(_unstable_rows.globals)
 stable.types.extend(_unstable_rows.types)
-
-_AUDIT_TYPE_TOKEN_IGNORE = frozenset(
-    {
-        "BOOL",
-        "BYTE",
-        "DWORD",
-        "FALSE",
-        "GUID",
-        "HRESULT",
-        "HWND",
-        "LPVOID",
-        "NULL",
-        "TRUE",
-        "ULONG",
-        "Win32_GUID",
-        "bool",
-        "char",
-        "const",
-        "double",
-        "float",
-        "int",
-        "int16_t",
-        "int32_t",
-        "int64_t",
-        "int8_t",
-        "intptr_t",
-        "long",
-        "short",
-        "signed",
-        "size_t",
-        "uint16_t",
-        "uint32_t",
-        "uint64_t",
-        "uint8_t",
-        "uintptr_t",
-        "unsigned",
-        "void",
-        "volatile",
-    }
-)
-_AUDIT_TYPE_TOKEN_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
-
-
-def _audit_type_names(*values: str | None) -> set[str]:
-    return {
-        token
-        for value in values
-        if value is not None
-        for token in _AUDIT_TYPE_TOKEN_RE.findall(value)
-        if token not in _AUDIT_TYPE_TOKEN_IGNORE
-    }
-
-
-def _audit_param_type_names(params: list[Param] | None) -> set[str]:
-    return _audit_type_names(*(param_.type for param_ in params or ()))
-
-
-def _audit_function_type_refs(row: Function) -> set[str]:
-    if row.typed is None:
-        return set()
-
-    refs = _audit_type_names(row.typed.ret)
-    refs.update(_audit_param_type_names(row.typed.params))
-    refs.update(_audit_param_type_names(row.typed.try_params))
-    return refs
-
-
-def _audit_data_type_refs(row: Data) -> set[str]:
-    return _audit_type_names(row.typed.type) if row.typed is not None else set()
-
-
-def _audit_declared_type_refs(
-    row: TypeAlias | FunctionTypeAlias | Struct | BlueprintEnum,
-) -> set[str]:
-    match row:
-        case TypeAlias(source_type=source_type, name=name):
-            refs = _audit_type_names(source_type)
-        case FunctionTypeAlias(ret=ret, params=params, name=name):
-            refs = _audit_type_names(ret)
-            refs.update(_audit_param_type_names(params))
-        case Struct(members=members, name=name):
-            refs = _audit_type_names(*(member_.type for member_ in members))
-        case BlueprintEnum(alias=alias, name=name):
-            refs = _audit_type_names(alias)
-        case _:
-            return set()
-
-    refs.discard(name)
-    return refs
-
-
-def _mark_rows_referencing_unstable_types(
-    rows: list[object],
-    type_refs: Callable[[object], set[str]],
-    unstable_type_names: set[str],
-) -> bool:
-    changed = False
-    for index, row in enumerate(rows):
-        if row.unstable or not (type_refs(row) & unstable_type_names):
-            continue
-
-        rows[index] = replace(row, unstable=True)
-        changed = True
-
-    return changed
-
-
-def _mark_audit_unstable_rows() -> None:
-    for index, row in enumerate(stable.globals):
-        if row.typed is None and row.stable_reason is None:
-            stable.globals[index] = replace(row, unstable=True)
-
-    for index, row in enumerate(stable.functions):
-        unstable_abi = row.abi_status == AbiStatus.PLACEHOLDER
-        if row.stable_reason is None and (
-            row.required != Required.ALL or unstable_abi or not row.callable
-        ):
-            stable.functions[index] = replace(row, unstable=True)
-
-    for index, row in enumerate(stable.signatures):
-        if row.required != Required.ALL:
-            stable.signatures[index] = replace(row, unstable=True)
-
-    changed = True
-    while changed:
-        changed = False
-        unstable_type_names = {
-            row.name for row in stable.types if row.unstable and row.name is not None
-        }
-
-        for rows, type_refs in (
-            (stable.types, _audit_declared_type_refs),
-            (stable.functions, _audit_function_type_refs),
-            (stable.globals, _audit_data_type_refs),
-        ):
-            changed = (
-                _mark_rows_referencing_unstable_types(
-                    rows,
-                    type_refs,
-                    unstable_type_names,
-                )
-                or changed
-            )
-
-
-_mark_audit_unstable_rows()
 
 BLUEPRINT = stable

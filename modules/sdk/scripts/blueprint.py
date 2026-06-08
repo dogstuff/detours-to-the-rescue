@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field as dc_field
+from dataclasses import dataclass
+from dataclasses import field as dc_field
 from enum import StrEnum
 from typing import TypeAlias
 
@@ -318,26 +319,32 @@ def enum_value(name: str, value: int, *, doc: str | None = None) -> EnumValue:
 @dataclass(init=False)
 class Blueprint:
     name: str
-    unstable: bool = False
+    stable: bool = False
     signatures: list[Signature] = dc_field(default_factory=list)
     functions: list[Function] = dc_field(default_factory=list)
     globals: list[Data] = dc_field(default_factory=list)
     types: list[object] = dc_field(default_factory=list)
 
-    def __init__(self, name: str, unstable: bool = False) -> None:
-        """Start a symbol blueprint whose rows inherit the stable or unstable surface by default."""
+    def __init__(self, name: str, stable: bool = False) -> None:
+        """Start a symbol blueprint."""
 
         self.name = name
-        self.unstable = unstable
+        self.stable = stable
         self.signatures = []
         self.functions = []
         self.globals = []
         self.types = []
 
-    def row_unstable(self, unstable: bool | None) -> bool:
-        """Apply per-row stability overrides without repeating the blueprint-wide default."""
+    def row_unstable(self, unstable: bool | None, stable: bool) -> bool:
+        """Return whether a row is unstable."""
 
-        return self.unstable if unstable is None else unstable
+        if stable and unstable is not None:
+            raise ValueError("use stable=True or unstable=..., not both")
+
+        if stable:
+            return False
+
+        return not self.stable if unstable is None else unstable
 
     def sig(
         self,
@@ -345,12 +352,15 @@ class Blueprint:
         pattern: str,
         *,
         required: Required = Required.ALL,
+        stable: bool = False,
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Signature:
         """Add a raw pattern signature that can later back generated symbol lookup."""
 
-        row = Signature(pattern, name, required, self.row_unstable(unstable), doc)
+        row = Signature(
+            pattern, name, required, self.row_unstable(unstable, stable), doc
+        )
         self.signatures.append(row)
         return row
 
@@ -369,6 +379,7 @@ class Blueprint:
         params: list[Param] | None = None,
         typed: TypedFunction | None = None,
         xrefs: list[FunctionXRef] | None = None,
+        stable: bool = False,
         unstable: bool | None = None,
         abi_status: AbiStatus = AbiStatus.VERIFIED,
         stable_reason: str | None = None,
@@ -394,7 +405,7 @@ class Blueprint:
             required,
             typed_row,
             xrefs or [],
-            self.row_unstable(unstable),
+            self.row_unstable(unstable, stable),
             doc,
             abi_status,
             stable_reason,
@@ -410,6 +421,7 @@ class Blueprint:
         ref: XRef | None = None,
         resolver: Resolver = Resolver.XREF_U32,
         indirections: int = 0,
+        stable: bool = False,
         unstable: bool | None = None,
         stable_reason: str | None = None,
         doc: str | None = None,
@@ -439,7 +451,7 @@ class Blueprint:
                 ref.required,
             )
 
-        row_unstable = self.row_unstable(unstable)
+        row_unstable = self.row_unstable(unstable, stable)
         for i, existing in enumerate(self.globals):
             if existing.name != name:
                 continue
@@ -480,7 +492,7 @@ class Blueprint:
                 name,
                 merged_typed,
                 merged_refs,
-                existing.unstable or row_unstable,
+                existing.unstable,
                 merged_doc,
                 merged_stable_reason,
                 merged_write_policy,
@@ -499,12 +511,13 @@ class Blueprint:
         name: str,
         source_type: str,
         *,
+        stable: bool = False,
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> TypeAlias:
         """Add a generated C alias for game-facing types."""
 
-        row = TypeAlias(source_type, name, self.row_unstable(unstable), doc)
+        row = TypeAlias(source_type, name, self.row_unstable(unstable, stable), doc)
         self.types.append(row)
         return row
 
@@ -515,13 +528,14 @@ class Blueprint:
         ret: str,
         params: list[Param],
         calling: CallingConvention = CallingConvention.CALLBACK,
+        stable: bool = False,
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> FunctionTypeAlias:
         """Add a generated callback typedef used by hook helpers and detours."""
 
         row = FunctionTypeAlias(
-            ret, name, params, calling, self.row_unstable(unstable), doc
+            ret, name, params, calling, self.row_unstable(unstable, stable), doc
         )
         self.types.append(row)
         return row
@@ -532,13 +546,19 @@ class Blueprint:
         *members: StructMember,
         size: int | None = None,
         incomplete: bool = True,
+        stable: bool = False,
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Struct:
         """Add structure layout metadata for generated public type declarations."""
 
         row = Struct(
-            name, list(members), size, incomplete, self.row_unstable(unstable), doc
+            name,
+            list(members),
+            size,
+            incomplete,
+            self.row_unstable(unstable, stable),
+            doc,
         )
         self.types.append(row)
         return row
@@ -548,11 +568,12 @@ class Blueprint:
         name: str,
         *values: EnumValue,
         alias: str | None = None,
+        stable: bool = False,
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Enum:
         """Add enum metadata and the public alias exposed in generated headers."""
 
-        row = Enum(name, list(values), alias, self.row_unstable(unstable), doc)
+        row = Enum(name, list(values), alias, self.row_unstable(unstable, stable), doc)
         self.types.append(row)
         return row
