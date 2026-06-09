@@ -6,7 +6,7 @@ If you want to redirect a game function to your own code, see [Hooking Game Func
 
 Patch through a `DTTR_Core_PatchGroup` whenever possible. A patch group keeps related changes together, rolls back partial installs, and simplifies cleanup.
 
-## Grouping related patches
+## Patch Groups
 
 Create one patch group for each related set of patches.
 
@@ -20,7 +20,7 @@ A simple mod usually does this during `DTTR_MODS_INIT`:
 
 Do not expose related behavior until its required patches have installed successfully; otherwise it can run against unpatched game code or data.
 
-## Starting from SDK patch specs
+## SDK Patch Specs
 
 For function hooks, pointer globals, and explicit PCDogs patch sites, use SDK patch specs first. They already include the target and patch type.
 
@@ -60,7 +60,7 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Marking patches as required or optional
+## Required and Optional Patches
 
 A required patch is one the related behavior needs to work. If a required patch fails to install, stop instead of running against the wrong game code or data.
 
@@ -68,7 +68,7 @@ An optional patch is only for a target that legitimately exists in some supporte
 
 When an optional patch is skipped, `DTTR_PCDOGS_T_Patch_Report::skipped_optional` increases.
 
-## Disabling patched behavior temporarily
+## Disable Patched Behavior
 
 To turn off patched behavior without destroying the group, call:
 

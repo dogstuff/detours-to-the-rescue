@@ -138,9 +138,7 @@ static HRESULT __stdcall ddraw7_createsurface(
 		dttr_graphics_set_logical_resolution((int)width, (int)height);
 	}
 
-	if (surf) {
-		*surf = created;
-	}
+	*surf = created;
 
 	return S_OK;
 }

@@ -5,7 +5,7 @@ Symbol wrapper function helpers are the safest way to call known game functions.
 Raw addresses are only for unsupported reverse-engineering or low-level patch work.
 
 
-## Calling game functions through SDK wrappers
+## SDK Wrappers
 
 The SDK provides typed wrappers for most known game functions.
 
@@ -16,7 +16,7 @@ Use the SDK wrapper instead of casting the address yourself:
 - `IsCallable(&ctx->runtime)`: Check whether the function is available and safe to call.
 - `Call(&ctx->runtime, args..., out_ret)`: Call the function and return `DTTR_Result`.
 
-## Handling unavailable functions
+## Unavailable Functions
 
 Check `Call()` when a missing function should disable related behavior, show a warning, or write a log message.
 
@@ -35,7 +35,7 @@ if (!DTTR_ResultOK(DTTR_PCDOGS_F_Video_PlayMovieFile->Call(
 
 Your mod can then fail closed, warn, or skip the feature instead of pretending the game call worked.
 
-## Checking availability during setup
+## Setup Checks
 
 If your mod requires a game function to be available, check it during `DTTR_MODS_INIT`:
 
@@ -52,6 +52,6 @@ DTTR_MODS_INIT {
 
 Fail init for required functions and check `Call()` results for optional functions.
 
-## Passing game-managed types
+## Game-Managed Types
 
 When a wrapper takes a game-managed pointer or struct, use the SDK type. Guessing a struct layout can cause incorrect reads, corrupt writes, or crashes.

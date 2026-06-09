@@ -147,7 +147,6 @@ package-release version=dttr-version archive-id=dttr-version package-registry-ur
 
 # Format C sources and Python files.
 format:
-    echo "Running formatter"
     find {{ format-dirs }} \
       -path '*/include/gen/*' -prune -o \
       -path '*/src/generated/*' -prune -o \

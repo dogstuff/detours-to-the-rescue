@@ -274,7 +274,7 @@ static bool write_remote_payload(
 			process,
 			remote_buffer,
 			buffer_size,
-			PAGE_EXECUTE_READWRITE,
+			PAGE_EXECUTE_READ,
 			&old_protect
 		)) {
 		log_win32_failure("VirtualProtectEx");
@@ -282,7 +282,7 @@ static bool write_remote_payload(
 		return false;
 	}
 
-	DTTR_LOG_DEBUG("Remote memory protection set to PAGE_EXECUTE_READWRITE");
+	DTTR_LOG_DEBUG("Remote memory protection set to PAGE_EXECUTE_READ");
 
 	*out_remote_buffer = remote_buffer;
 	return true;

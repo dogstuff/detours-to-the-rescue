@@ -2,7 +2,7 @@
 
 Callbacks decide when your mod code runs. Prefer the simplest callback that fits before using lower-level render or window callbacks.
 
-## Setting up and cleaning up your mod
+## Setup and Cleanup
 
 Every mod should start with `DTTR_MODS_INIT` and clean up with `DTTR_MODS_CLEANUP`. Most simple mods only need those two lifecycle callbacks.
 
@@ -28,7 +28,7 @@ Use `DTTR_MODS_CLEANUP` to undo anything your mod set up:
 
 `DTTR_MODS_BEFORE_UNLOAD` is a final warning that unloading is about to start. Use it for last notifications or coordination between mods. Prefer `DTTR_MODS_CLEANUP` for ordinary cleanup.
 
-## Updating during ticks and frames
+## Tick and Frame Updates
 
 Use these for routine "per-tick" updates:
 
@@ -38,7 +38,7 @@ Use these for routine "per-tick" updates:
 
 Keep these callbacks light. If a task can be done once during init, do it during init instead of every frame.
 
-## Handling input and events
+## Input and Events
 
 Use these for SDL events, hotkeys, diagnostics, and input blocking:
 
@@ -48,7 +48,7 @@ Use these for SDL events, hotkeys, diagnostics, and input blocking:
 
 `DTTR_MODS_BEFORE_EVENT` can block delivery to the game. `DTTR_MODS_AFTER_EVENT` receives the final consumed state.
 
-## Drawing custom overlays
+## Custom Overlays
 
 Use these for custom drawing:
 
@@ -57,7 +57,7 @@ Use these for custom drawing:
 
 Use `DTTR_MODS_RENDER_GAME` for things that should line up with the game view. Use `DTTR_MODS_RENDER` for full-window overlays.
 
-## Choosing render-timing callbacks
+## Render-Timing Callbacks
 
 Use these only when your mod needs exact render-backend timing:
 
@@ -68,7 +68,7 @@ Use these only when your mod needs exact render-backend timing:
 
 Most mods do not need these. Prefer the simpler frame or drawing callbacks first.
 
-## Recreating window and graphics resources
+## Window and Graphics Resources
 
 Use these when your mod owns graphics resources that must follow the window:
 
@@ -85,7 +85,7 @@ Use these when your mod owns graphics resources that must follow the graphics de
 
 Create and destroy device-dependent resources in the matching lifetime callbacks. Using window or graphics-device resources outside their matching lifetime can cause stale-resource bugs or crashes.
 
-## Controlling frame advancement
+## Frame Advancement
 
 Use these when an overlay or tool needs the window to keep presenting while the game pauses:
 

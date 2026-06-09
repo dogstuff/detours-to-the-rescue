@@ -8,7 +8,7 @@ DttR is a launcher and runtime for the PC version of *102 Dalmatians: Puppies to
 
 ![Preview of DttR in gameplay](assets/preview.png){ width="600" }
 
-## What DttR includes
+## What DttR Includes
 
 By default, Detours to the Rescue includes:
 

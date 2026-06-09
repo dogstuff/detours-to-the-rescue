@@ -11,21 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define AIL_STATUS_DONE DTTR_MSS_STATUS_DONE
-#define AIL_STATUS_PLAYING DTTR_MSS_STATUS_PLAYING
-#define AIL_STATUS_STOPPED DTTR_MSS_STATUS_STOPPED
-#define MAX_SAMPLES DTTR_MSS_DEFAULT_MIXER_CHANNELS
-#define PREF_DIG_DEFAULT_VOLUME DTTR_MSS_PREF_DIG_DEFAULT_VOLUME
-
-typedef DTTR_MssWaveInfo wave_info;
-
 typedef struct {
 	uint32_t magic;
 	MIX_Audio *audio;
 	MIX_Track *track;
 	float *pcm_frames;
 	size_t pcm_frame_count;
-	wave_info wave;
+	mss_wave_info wave;
 	int base_rate;
 	int current_rate;
 	int rendered_rate;
@@ -40,10 +32,10 @@ typedef struct {
 
 static const uint32_t SAMPLE_MAGIC = 0x4453414d;
 
-static mss_sample samples[MAX_SAMPLES];
+static mss_sample samples[DTTR_MSS_DEFAULT_MIXER_CHANNELS];
 
 static void apply_rate(mss_sample *sample) {
-	if (!sample || !sample->track) {
+	if (!sample->track) {
 		return;
 	}
 
@@ -63,25 +55,24 @@ static void apply_rate(mss_sample *sample) {
 }
 
 static void reset_sample_defaults(mss_sample *sample) {
-	if (!sample) {
-		return;
-	}
-
 	sample->base_rate = DTTR_MSS_DEFAULT_RATE;
 	sample->current_rate = DTTR_MSS_DEFAULT_RATE;
 	dttr_mss_core_ensure_preferences();
-	const int default_volume = dttr_mss_core_get_preference(PREF_DIG_DEFAULT_VOLUME);
+	const int default_volume = dttr_mss_core_get_preference(
+		DTTR_MSS_PREF_DIG_DEFAULT_VOLUME
+	);
 	sample->volume = default_volume > 0 ? default_volume : DTTR_MSS_DEFAULT_VOLUME;
 	sample->pan = DTTR_MSS_DEFAULT_PAN;
 	sample->loops = DTTR_MSS_DEFAULT_LOOP_COUNT;
-	sample->status = AIL_STATUS_DONE;
+	sample->status = DTTR_MSS_STATUS_DONE;
 	sample->rate_overridden = false;
 	sample->paused_by_rate = false;
 }
 
 static bool is_sample(const void *ptr) {
 	const mss_sample *sample = ptr;
-	return sample && sample >= samples && sample < samples + MAX_SAMPLES
+	return sample && sample >= samples
+		   && sample < samples + DTTR_MSS_DEFAULT_MIXER_CHANNELS
 		   && sample->magic == SAMPLE_MAGIC && sample->allocated;
 }
 
@@ -98,7 +89,7 @@ static mss_sample *require_sample(void *sample_ptr) {
 }
 
 static void apply_sample_gain(mss_sample *sample) {
-	if (!sample || !sample->track) {
+	if (!sample->track) {
 		return;
 	}
 
@@ -113,10 +104,6 @@ static void apply_sample_gain(mss_sample *sample) {
 }
 
 static void destroy_sample_audio_object(mss_sample *sample) {
-	if (!sample) {
-		return;
-	}
-
 	if (sample->track) {
 		MIX_SetTrackAudio(sample->track, NULL);
 	}
@@ -131,10 +118,6 @@ static void destroy_sample_audio_object(mss_sample *sample) {
 }
 
 static void clear_sample_wave(mss_sample *sample) {
-	if (!sample) {
-		return;
-	}
-
 	dttr_mss_wave_free(sample->pcm_frames);
 	sample->pcm_frames = NULL;
 	sample->pcm_frame_count = 0;
@@ -142,10 +125,6 @@ static void clear_sample_wave(mss_sample *sample) {
 }
 
 static void free_sample_audio(mss_sample *sample) {
-	if (!sample) {
-		return;
-	}
-
 	destroy_sample_audio_object(sample);
 	if (sample->track) {
 		MIX_DestroyTrack(sample->track);
@@ -156,10 +135,6 @@ static void free_sample_audio(mss_sample *sample) {
 }
 
 static void reset_sample_slot(mss_sample *sample) {
-	if (!sample) {
-		return;
-	}
-
 	memset(sample, 0, sizeof(*sample));
 
 	sample->magic = SAMPLE_MAGIC;
@@ -173,15 +148,15 @@ static bool load_sample_frames(
 	mss_sample *sample,
 	const void *file_image,
 	size_t size,
-	const wave_info *wave
+	const mss_wave_info *wave
 ) {
-	wave_info decoded = *wave;
+	mss_wave_info decoded = *wave;
 	float *frames = NULL;
 	if (!dttr_mss_wave_decode_f32(file_image, size, &decoded, &frames)) {
 		return false;
 	}
 
-	if (decoded.frame_count > SIZE_MAX) {
+	if (decoded.frame_count > (uint64_t)SIZE_MAX) {
 		dttr_mss_wave_free(frames);
 		return false;
 	}
@@ -214,7 +189,7 @@ static bool load_sample_audio_from_memory(
 }
 
 static void apply_sample_track(mss_sample *sample) {
-	if (!sample || !sample->track || !sample->audio) {
+	if (!sample->track || !sample->audio) {
 		return;
 	}
 
@@ -225,22 +200,17 @@ static void apply_sample_track(mss_sample *sample) {
 }
 
 static void stop_sample(mss_sample *sample) {
-	if (!sample) {
-		return;
-	}
-
 	if (sample->track) {
 		MIX_StopTrack(sample->track, 0);
 	}
 
-	sample->status = AIL_STATUS_STOPPED;
+	sample->status = DTTR_MSS_STATUS_STOPPED;
 	sample->paused_by_rate = false;
 }
 
 static bool render_sample_audio(mss_sample *sample) {
-	if (!sample || !dttr_mss_core_mixer() || !sample->pcm_frames
-		|| sample->pcm_frame_count == 0 || sample->current_rate <= 0
-		|| sample->wave.channels == 0) {
+	if (!dttr_mss_core_mixer() || !sample->pcm_frames || sample->pcm_frame_count == 0
+		|| sample->current_rate <= 0 || sample->wave.channels == 0) {
 		return false;
 	}
 
@@ -340,14 +310,14 @@ static bool render_sample_audio(mss_sample *sample) {
 }
 
 void dttr_mss_sample_shutdown_all() {
-	for (int i = 0; i < MAX_SAMPLES; i++) {
+	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
 		free_sample_audio(&samples[i]);
 		memset(&samples[i], 0, sizeof(samples[i]));
 	}
 }
 
 void dttr_mss_sample_stop_all() {
-	for (int i = 0; i < MAX_SAMPLES; i++) {
+	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
 		if (!samples[i].allocated) {
 			continue;
 		}
@@ -357,7 +327,7 @@ void dttr_mss_sample_stop_all() {
 }
 
 void dttr_mss_sample_apply_master_gain() {
-	for (int i = 0; i < MAX_SAMPLES; i++) {
+	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
 		if (!samples[i].allocated) {
 			continue;
 		}
@@ -374,7 +344,7 @@ void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
 		return NULL;
 	}
 
-	for (int i = 0; i < MAX_SAMPLES; i++) {
+	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
 		if (samples[i].allocated) {
 			continue;
 		}
@@ -451,7 +421,7 @@ int __stdcall dttr_mss_ail_set_sample_file(
 		return 0;
 	}
 
-	wave_info wave = {0};
+	mss_wave_info wave = {0};
 	if (!size || !dttr_mss_wave_parse(file_image, &wave)) {
 		DTTR_LOG_ERROR("AIL_set_sample_file received non-WAVE data");
 		return 0;
@@ -547,7 +517,7 @@ void __stdcall dttr_mss_ail_start_sample(void *sample_ptr) {
 
 	apply_sample_track(sample);
 	sample->paused_by_rate = false;
-	sample->status = AIL_STATUS_PLAYING;
+	sample->status = DTTR_MSS_STATUS_PLAYING;
 	const int sdl_loops = dttr_mss_loops_to_sdl(sample->loops);
 	dttr_mss_track_play(sample->track, sdl_loops);
 	DTTR_LOG_TRACE(
@@ -579,7 +549,7 @@ void __stdcall dttr_mss_ail_end_sample(void *sample_ptr) {
 
 int __stdcall dttr_mss_ail_sample_status(void *sample_ptr) {
 	if (!is_sample(sample_ptr)) {
-		return AIL_STATUS_DONE;
+		return DTTR_MSS_STATUS_DONE;
 	}
 
 	mss_sample *sample = sample_ptr;
@@ -634,7 +604,7 @@ void __stdcall dttr_mss_ail_set_sample_playback_rate(void *sample_ptr, int rate)
 		}
 
 		sample->paused_by_rate = true;
-		sample->status = AIL_STATUS_PLAYING;
+		sample->status = DTTR_MSS_STATUS_PLAYING;
 		DTTR_LOG_TRACE(
 			"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d) "
 			"paused sample",

@@ -1,5 +1,7 @@
 #include "gui_internal.h"
 
+#include <math.h>
+
 void same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
 	igSameLine(
 		0.0f,
@@ -10,8 +12,6 @@ void same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
 void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height) {
 	igDummy((ImVec2_c){0.0f, DTTR_ImGuiDialog_ScaledFloat(ctx, height)});
 }
-
-static float config_max_float(float a, float b) { return a > b ? a : b; }
 
 typedef void (*config_path_dialog_fn)(
 	const DTTR_ImGuiDialogContext *ctx,
@@ -25,11 +25,6 @@ typedef struct {
 	config_path_dialog_fn open_dialog;
 } config_path_picker_button;
 
-static const ImGuiTableFlags CONFIG_TABLE_FLAGS = ImGuiTableFlags_BordersInnerH
-												  | ImGuiTableFlags_BordersOuterH
-												  | ImGuiTableFlags_SizingStretchProp
-												  | ImGuiTableFlags_NoSavedSettings
-												  | ImGuiTableFlags_PadOuterX;
 static const char *const FOOTER_HINT_TEXT = "Ctrl+S to save your changes.";
 
 static float config_path_control_width() {
@@ -39,7 +34,7 @@ static float config_path_control_width() {
 }
 
 float config_standard_input_width() {
-	return config_max_float(DTTR_CONFIG_UI_INPUT_W, config_path_control_width());
+	return fmaxf(DTTR_CONFIG_UI_INPUT_W, config_path_control_width());
 }
 
 static float config_standard_content_width() {
@@ -53,7 +48,7 @@ static float config_gamepad_content_width() {
 }
 
 int config_window_width() {
-	const float content_width = config_max_float(
+	const float content_width = fmaxf(
 		config_standard_content_width(),
 		config_gamepad_content_width()
 	);
@@ -237,32 +232,43 @@ bool themed_row_button(
 	return DTTR_ImGuiDialog_Button(ctx, id, label, size);
 }
 
+typedef struct {
+	ImGuiCol target;
+	ImVec4_c color;
+} config_theme_color;
+
+static const config_theme_color CONFIG_THEME_COLORS[] = {
+	{ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
+	{ImGuiCol_FrameBgActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
+	{ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG},
+	{ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
+	{ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
+	{ImGuiCol_Header, DTTR_IMGUI_COLOR_BUTTON_BG},
+	{ImGuiCol_HeaderHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
+	{ImGuiCol_HeaderActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
+	{ImGuiCol_Tab, DTTR_IMGUI_COLOR_BUTTON_BG},
+	{ImGuiCol_TabHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
+	{ImGuiCol_TabSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG},
+	{ImGuiCol_TabDimmed, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_TabDimmedSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG},
+	{ImGuiCol_MenuBarBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_Border, DTTR_CONFIG_UI_BORDER_COLOR},
+	{ImGuiCol_Separator, DTTR_CONFIG_UI_SEPARATOR_COLOR},
+	{ImGuiCol_SeparatorHovered, DTTR_CONFIG_UI_SEPARATOR_COLOR},
+	{ImGuiCol_SeparatorActive, DTTR_CONFIG_UI_SEPARATOR_COLOR},
+	{ImGuiCol_TableBorderStrong, DTTR_CONFIG_UI_TABLE_BORDER_COLOR},
+	{ImGuiCol_TableBorderLight, DTTR_CONFIG_UI_BORDER_COLOR},
+};
+
 void push_config_theme() {
-	igPushStyleColor_Vec4(ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
-	igPushStyleColor_Vec4(ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
-	igPushStyleColor_Vec4(ImGuiCol_FrameBgActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
-	igPushStyleColor_Vec4(ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
-	igPushStyleColor_Vec4(ImGuiCol_Header, DTTR_IMGUI_COLOR_BUTTON_BG);
-	igPushStyleColor_Vec4(ImGuiCol_HeaderHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
-	igPushStyleColor_Vec4(ImGuiCol_HeaderActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
-	igPushStyleColor_Vec4(ImGuiCol_Tab, DTTR_IMGUI_COLOR_BUTTON_BG);
-	igPushStyleColor_Vec4(ImGuiCol_TabHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
-	igPushStyleColor_Vec4(ImGuiCol_TabSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG);
-	igPushStyleColor_Vec4(ImGuiCol_TabDimmed, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
-	igPushStyleColor_Vec4(ImGuiCol_TabDimmedSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG);
-	igPushStyleColor_Vec4(ImGuiCol_MenuBarBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
-	igPushStyleColor_Vec4(ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG);
-	igPushStyleColor_Vec4(ImGuiCol_Border, DTTR_CONFIG_UI_BORDER_COLOR);
-	igPushStyleColor_Vec4(ImGuiCol_Separator, DTTR_CONFIG_UI_SEPARATOR_COLOR);
-	igPushStyleColor_Vec4(ImGuiCol_SeparatorHovered, DTTR_CONFIG_UI_SEPARATOR_COLOR);
-	igPushStyleColor_Vec4(ImGuiCol_SeparatorActive, DTTR_CONFIG_UI_SEPARATOR_COLOR);
-	igPushStyleColor_Vec4(ImGuiCol_TableBorderStrong, DTTR_CONFIG_UI_TABLE_BORDER_COLOR);
-	igPushStyleColor_Vec4(ImGuiCol_TableBorderLight, DTTR_CONFIG_UI_BORDER_COLOR);
+	for (size_t i = 0; i < SDL_arraysize(CONFIG_THEME_COLORS); i++) {
+		igPushStyleColor_Vec4(CONFIG_THEME_COLORS[i].target, CONFIG_THEME_COLORS[i].color);
+	}
 }
 
-void pop_config_theme() { igPopStyleColor(22); }
+void pop_config_theme() { igPopStyleColor((int)SDL_arraysize(CONFIG_THEME_COLORS)); }
 
 static bool format_status_text(
 	const config_ui_state *state,

@@ -2,7 +2,7 @@
 
 Most mods should not need to manually resolve PCDogs symbols. Prefer SDK wrappers when possible.
 
-## Checking symbols through SDK wrappers
+## SDK Wrapper Checks
 
 DttR resolves normal PCDogs symbols before loading mods. In most mod code, check the helper you plan to use:
 
@@ -12,13 +12,13 @@ DttR resolves normal PCDogs symbols before loading mods. In most mod code, check
 
 An SDK wrapper may say a symbol is unavailable, in which case it cannot be used.
 
-## Passing raw addresses between SDK APIs
+## Raw Addresses
 
 SDK wrappers expose `Address()` for cases where another SDK API needs a raw address.
 
 This is sometimes necessary, but the rest of your mod should use typed helpers wherever possible.
 
-## Resolving symbols without a typed helper
+## Untyped Helpers
 
 Use these SDK helpers only when no SDK wrapper exists for the game symbol you need:
 

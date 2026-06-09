@@ -126,10 +126,6 @@ static sds file_url_for_parent_dir(const char *path) {
 	return url;
 }
 
-static void add_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float amount) {
-	igSetCursorPosY(igGetCursorPosY() + DTTR_ImGuiDialog_ScaledFloat(ctx, amount));
-}
-
 static void draw_dump_text(const DTTR_ImGuiDialogContext *ctx, text_span dump_text) {
 	const char *newline = memchr(dump_text.text, '\n', span_len(dump_text));
 	if (!newline || newline + 1 >= dump_text.end) {
@@ -189,11 +185,11 @@ static void draw_copyable_stack_trace(
 ) {
 	const char *dump_text = find_summary_dump(message, summary);
 
-	add_vertical_spacing(ctx, DTTR_ERROR_UI_TEXT_PADDING_Y);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, DTTR_ERROR_UI_TEXT_PADDING_Y);
 
 	if (message->report_text) {
 		draw_report_text(ctx, message->report_text);
-		add_vertical_spacing(ctx, 8.0f);
+		DTTR_ImGuiDialog_OffsetCursorY(ctx, 8.0f);
 	}
 
 	set_text_padding_x(ctx);
@@ -215,11 +211,11 @@ static void draw_copyable_stack_trace(
 	igPopStyleColor(3);
 
 	if (dump_text) {
-		add_vertical_spacing(ctx, 8.0f);
+		DTTR_ImGuiDialog_OffsetCursorY(ctx, 8.0f);
 		draw_dump_text(ctx, span(dump_text + 2, message->summary_end));
 	}
 
-	add_vertical_spacing(ctx, DTTR_ERROR_UI_TEXT_PADDING_Y);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, DTTR_ERROR_UI_TEXT_PADDING_Y);
 }
 
 bool DTTR_ImGui_ErrorShow(const char *title, const char *message) {

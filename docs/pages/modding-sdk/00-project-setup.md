@@ -6,7 +6,7 @@ The easiest starting point is the C template from the latest release:
 
 [`dttr-mod-template-c.zip`](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-mod-template-c.zip)
 
-## Starting from the project template
+## Project Template
 
 Download and extract the template. It includes the CMake project, MinGW toolchain file, SDK linking scripts, container build, and a minimal mod source file.
 
@@ -30,7 +30,7 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Building the mod DLL
+## Build the Mod DLL
 
 Choose the tab for the system you are building on. Each tab includes the full setup, SDK fetch, and build flow for that system.
 

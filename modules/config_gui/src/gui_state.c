@@ -103,32 +103,15 @@ void set_mods_dir_from_config_path(config_ui_state *state) {
 		return;
 	}
 
-	char exe_path[MAX_PATH];
-	const DWORD len = GetModuleFileNameA(NULL, exe_path, (DWORD)sizeof(exe_path));
+	sds mods_dir = DTTR_Path_ModuleDir(NULL);
 
-	if (len == 0 || len >= sizeof(exe_path)) {
-		clear_mods_dir(state);
-		return;
-	}
-
-	char *last_sep = strrchr(exe_path, '\\');
-
-	if (!last_sep) {
-		clear_mods_dir(state);
-		return;
-	}
-
-	last_sep[1] = '\0';
-	const int written = snprintf(
-		state->mods_dir,
-		sizeof(state->mods_dir),
-		"%smods",
-		exe_path
-	);
-
-	if (written <= 0 || (size_t)written >= sizeof(state->mods_dir)) {
+	if (!mods_dir
+		|| !DTTR_Path_AppendSegment(&mods_dir, "mods", DTTR_PATH_NATIVE_SEPARATOR)
+		|| !DTTR_Path_CopySds(state->mods_dir, sizeof(state->mods_dir), mods_dir)) {
 		clear_mods_dir(state);
 	}
+
+	sdsfree(mods_dir);
 }
 
 void sync_rows_from_config(config_ui_state *state) {

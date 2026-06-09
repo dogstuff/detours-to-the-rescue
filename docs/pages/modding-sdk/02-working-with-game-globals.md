@@ -4,7 +4,7 @@ PCDogs globals are known pieces of game data exposed through the SDK. When possi
 
 A global helper can tell you whether the symbol was found, read the value with the right type, and decide whether normal writes are allowed.
 
-## Reading globals safely
+## Safe Reads
 
 `Read()` returns `DTTR_Result`. `DTTR_OK` means the value was read; failures such as unresolved symbol or read failure are reported in `result.status`.
 
@@ -19,7 +19,7 @@ DTTR_MODS_FRAME_BEGIN {
 }
 ```
 
-## Checking write policies
+## Write Policies
 
 Writing game memory is not always safe. Check `Policy()` before writing to a global.
 
@@ -38,7 +38,7 @@ Read/write helpers return `DTTR_Result`, so callers always get a status and may 
 - `Write(...)` returns `DTTR_ERR_POLICY_MISMATCH` when the symbol is not `RAW_MEMORY`.
 - `UnsafeWrite(...)` still bypasses policy, but it reports unresolved and write-failed states explicitly.
 
-## Bypassing write policies
+## Unsafe Writes
 
 `UnsafeWrite()` bypasses `Policy()`. It still requires writable process memory but that does not imply the write is safe.
 

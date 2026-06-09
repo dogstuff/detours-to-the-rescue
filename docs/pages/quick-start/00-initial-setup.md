@@ -2,7 +2,7 @@
 
 This guide gets DttR running with your original game files.
 
-## Downloading DttR
+## Download DttR
 
 1. Download the build of DttR you want to use:
 
@@ -12,7 +12,7 @@ This guide gets DttR running with your original game files.
 2. Extract the archive to a writable directory.
 3. Run `dttr.exe`.
 
-## Loading the original game files
+## Load Original Game Files
 
 DttR should open a prompt asking for the original game files:
 
@@ -44,7 +44,7 @@ Choose the method that matches your setup.
 
     ![Windows file picker selecting a 102 Puppies ISO image](../assets/load-iso.png)
 
-## You're done
+## Finish Setup
 
 Once DttR has the game files, setup is complete.
 

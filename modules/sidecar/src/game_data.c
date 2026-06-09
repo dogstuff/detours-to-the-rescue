@@ -2,6 +2,7 @@
 
 #include <dttr_iso.h>
 #include <dttr_path.h>
+#include <dttr_pcdogs.h>
 
 #include <sds.h>
 
@@ -140,7 +141,7 @@ bool dttr_game_data_resolve_existing_read_path(
 	return ok;
 }
 
-static const char *find_cached_segment(const char *path) {
+const char *dttr_game_data_find_data_segment(const char *path) {
 	if (!path) {
 		return NULL;
 	}
@@ -191,7 +192,7 @@ bool dttr_game_data_resolve_read_path(
 
 	const char *relative = path;
 	if (DTTR_Path_IsAnyAbsolute(path)) {
-		relative = find_cached_segment(path);
+		relative = dttr_game_data_find_data_segment(path);
 		if (!relative) {
 			return false;
 		}
@@ -204,4 +205,34 @@ bool dttr_game_data_resolve_read_path(
 
 	return DTTR_ISO_CachePathForFile(source.cache_root, iso_path, out_path, out_path_size)
 		   && DTTR_Path_ExactExists(out_path);
+}
+
+sds dttr_game_data_resolve_media_path(const char *relative) {
+	char (*base_path)[DTTR_PCDOGS_D_AUDIO_OPEN_STREAM_PKG_BASE_PATH_COUNT]
+		= DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Ptr();
+	sds requested = sdsnew(base_path ? *base_path : NULL);
+	if (!requested || !DTTR_Path_AppendSegment(&requested, relative, '\\')) {
+		sdsfree(requested);
+		return sdsempty();
+	}
+
+	char resolved[MAX_PATH];
+	const char *out_path = NULL;
+
+	if (dttr_game_data_resolve_existing_read_path(requested, resolved, sizeof(resolved))) {
+		out_path = resolved;
+	}
+
+	char cached[MAX_PATH];
+	if (!out_path && dttr_game_data_resolve_read_path(relative, cached, sizeof(cached))) {
+		out_path = cached;
+	}
+
+	if (!out_path) {
+		return requested;
+	}
+
+	sds out = sdsnew(out_path);
+	sdsfree(requested);
+	return out;
 }

@@ -36,7 +36,7 @@ typedef struct {
 } client_id;
 
 typedef struct {
-	ULONG attribute;
+	ULONG ps_attribute;
 	SIZE_T size;
 	union {
 		ULONG value;

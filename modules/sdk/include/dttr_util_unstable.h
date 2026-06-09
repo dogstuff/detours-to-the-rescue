@@ -253,12 +253,6 @@ static inline const DTTR_PCDOGS_T_Graphics_SpriteContext *DTTR_Util_PkgVisit_AsS
 			   : NULL;
 }
 
-static inline const DTTR_PCDOGS_T_Graphics_SpriteContext *DTTR_Util_PkgVisit_AsSpriteEntry(
-	const DTTR_Util_PkgVisit *visit
-) {
-	return DTTR_Util_PkgVisit_AsSpriteContext(visit);
-}
-
 static inline const DTTR_PCDOGS_T_PKG_CollisionShape *DTTR_Util_PkgVisit_AsCollisionShape(
 	const DTTR_Util_PkgVisit *visit
 ) {

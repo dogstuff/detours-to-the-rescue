@@ -133,10 +133,15 @@ static void prepend_modules_to_path() {
 	}
 
 	char new_path[PATH_ENV_BUFFER_SIZE];
-	int written = snprintf(new_path, sizeof(new_path), "%s", modules_dir);
-	if (old_len > 0) {
-		written = snprintf(new_path, sizeof(new_path), "%s;%s", modules_dir, old_path);
-	}
+	const int written = old_len > 0
+							? snprintf(
+								  new_path,
+								  sizeof(new_path),
+								  "%s;%s",
+								  modules_dir,
+								  old_path
+							  )
+							: snprintf(new_path, sizeof(new_path), "%s", modules_dir);
 
 	if (written <= 0 || (size_t)written >= sizeof(new_path)) {
 		DTTR_LOG_ERROR("PATH is too long after prepending DttR modules directory");

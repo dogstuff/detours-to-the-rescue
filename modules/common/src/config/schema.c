@@ -5,7 +5,10 @@
 #include <khash.h>
 
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
+
+#define CONFIG_LOOKUP_KEY_CAPACITY 64
 
 KHASH_MAP_INIT_STR(dttr_config_lookup, int)
 
@@ -72,6 +75,18 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 #undef FIELD_GAMEPAD_AXIS
 
 static khash_t(dttr_config_lookup) *config_lookup = NULL;
+static char config_lookup_keys[CONFIG_SCHEMA_COUNT][CONFIG_LOOKUP_KEY_CAPACITY];
+
+static bool config_build_lookup_key(
+	char *out,
+	size_t out_size,
+	const char *section,
+	const char *key
+) {
+	const int written = section ? snprintf(out, out_size, "%s.%s", section, key)
+								: snprintf(out, out_size, "%s", key);
+	return written > 0 && (size_t)written < out_size;
+}
 
 int DTTR_Config_SchemaCount() {
 	return CONFIG_SCHEMA_COUNT;
@@ -133,9 +148,22 @@ static void config_schema_init() {
 
 	for (int i = 0; i < CONFIG_SCHEMA_COUNT; i++) {
 		const DTTR_ConfigFieldSpec *const spec = &config_schema[i];
+		if (!config_build_lookup_key(
+				config_lookup_keys[i],
+				sizeof(config_lookup_keys[i]),
+				spec->section,
+				spec->key
+			)) {
+			continue;
+		}
+
 		int put_ret = 0;
-		const khint_t
-			it = kh_put(dttr_config_lookup, config_lookup, (char *)spec->key, &put_ret);
+		const khint_t it = kh_put(
+			dttr_config_lookup,
+			config_lookup,
+			config_lookup_keys[i],
+			&put_ret
+		);
 		if (it != kh_end(config_lookup)) {
 			kh_value(config_lookup, it) = i;
 		}
@@ -148,18 +176,18 @@ const DTTR_ConfigFieldSpec *config_schema_find(const char *section, const char *
 		return NULL;
 	}
 
-	const khint_t it = kh_get(dttr_config_lookup, config_lookup, key);
+	char lookup_key[CONFIG_LOOKUP_KEY_CAPACITY];
+	if (!config_build_lookup_key(lookup_key, sizeof(lookup_key), section, key)) {
+		return NULL;
+	}
+
+	const khint_t it = kh_get(dttr_config_lookup, config_lookup, lookup_key);
 	if (it == kh_end(config_lookup)) {
 		return NULL;
 	}
 
 	const int index = kh_value(config_lookup, it);
-	const DTTR_ConfigFieldSpec *const spec = DTTR_Config_SchemaGet(index);
-	if (!config_sections_match(spec->section, section)) {
-		return NULL;
-	}
-
-	return spec;
+	return DTTR_Config_SchemaGet(index);
 }
 
 #define CONFIG_ASSIGN_TYPES(X)                                                           \

@@ -2,6 +2,7 @@
 #include "dttr_test_support.h"
 #undef DTTR_TEST_BINARY_SUPPORT
 
+#include <dttr_path.h>
 #include <dttr_sigscan.h>
 
 #include <Zydis/Utils.h>
@@ -37,26 +38,12 @@ static sds dttr_test_join_path(const char *dir, const char *file) {
 		return NULL;
 	}
 
-	const size_t len = sdslen(path);
-
-	if (len > 0 && path[len - 1] != '/' && path[len - 1] != '\\') {
-		sds joined = sdscatlen(path, "/", 1);
-
-		if (!joined) {
-			sdsfree(path);
-			return NULL;
-		}
-
-		path = joined;
-	}
-
-	sds joined = sdscat(path, file ? file : "");
-
-	if (!joined) {
+	if (!DTTR_Path_AppendSegment(&path, file ? file : "", '/')) {
 		sdsfree(path);
+		return NULL;
 	}
 
-	return joined;
+	return path;
 }
 
 // Mounts fixture storage and records whether this helper owns the PhysicsFS lifetime.

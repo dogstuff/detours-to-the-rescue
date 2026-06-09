@@ -13,7 +13,6 @@
 #define DTTR_MAT4_ELEMS 16
 #define DTTR_MAT4_BYTES (sizeof(float) * DTTR_MAT4_ELEMS)
 static DTTR_Vertex d3d_device7_verts[MAX_VERTICES];
-static DTTR_Vertex d3d_device7_expanded_verts[DTTR_MAX_FRAME_VERTICES * 3];
 
 /// Multiplies two row-major 4x4 float matrices into `out`.
 static void d3d_device7_mat4_multiply_f(
@@ -372,26 +371,6 @@ static void d3d_device7_record_draw(
 	kv_push(DTTR_BatchRecord, state->batch_records, draw_rec);
 }
 
-// Lazily creates the GPU texture backing a staged texture slot
-static bool d3d_device7_ensure_staged_texture(DTTR_StagedTexture *st) {
-	DTTR_BackendState *state = &dttr_backend;
-	if (!st || st->gpu_tex || !state->device)
-		return st && st->gpu_tex != NULL;
-
-	const SDL_GPUTextureCreateInfo tex_info = {
-		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
-		.width = st->width,
-		.height = st->height,
-		.layer_count_or_depth = 1,
-		.num_levels = dttr_graphics_calc_mip_levels(st->width, st->height),
-	};
-
-	st->gpu_tex = SDL_CreateGPUTexture(state->device, &tex_info);
-	return st->gpu_tex != NULL;
-}
-
 static void d3d_device7_clear_bound_texture(DTTR_BackendState *state) {
 	state->bound_texture_handle = DTTR_INVALID_TEXTURE;
 	state->bound_texture = NULL;
@@ -428,7 +407,7 @@ static void d3d_device7_texture_bind(DTTR_Texture tex) {
 	SDL_LockMutex(state->texture_mutex);
 	DTTR_StagedTexture *st = &state->staged_textures[idx];
 	if (dttr_graphics_is_gpu_thread()) {
-		d3d_device7_ensure_staged_texture(st);
+		dttr_graphics_ensure_staged_texture(state, st);
 	}
 
 	state->bound_texture_handle = tex;
@@ -436,32 +415,11 @@ static void d3d_device7_texture_bind(DTTR_Texture tex) {
 	SDL_UnlockMutex(state->texture_mutex);
 }
 
-/// Sets whether depth testing is enabled.
-static void d3d_device7_set_depth_test(bool enabled) {
-	dttr_backend.depth_test = enabled;
-}
-
-/// Sets whether depth writes are enabled.
-static void d3d_device7_set_depth_write(bool enabled) {
-	dttr_backend.depth_write = enabled;
-}
-
-/// Sets the depth compare function.
-static void d3d_device7_set_depth_func(DTTR_CompareFunc func) {}
-
-/// Sets whether blending is enabled.
-static void d3d_device7_set_blend_enabled(bool enabled) {
-	dttr_backend.blend_enabled = enabled;
-}
-
 /// Sets source and destination blend factors.
 static void d3d_device7_set_blend_func(DTTR_BlendFactor src, DTTR_BlendFactor dst) {
 	if (dst)
 		dttr_backend.blend_dst = dst;
 }
-
-/// Sets triangle cull mode.
-static void d3d_device7_set_cull_mode(DTTR_CullMode mode) {}
 
 /// Sets texture addressing mode for U coordinates.
 static void d3d_device7_set_texture_address_u(DTTR_TextureAddress addr) {
@@ -485,31 +443,6 @@ static void d3d_device7_set_viewport(int x, int y, int w, int h, float min_z, fl
 	state->viewport_h = h;
 	state->viewport_min_z = min_z;
 	state->viewport_max_z = max_z;
-}
-
-/// Sets the color combine operation.
-static void d3d_device7_set_color_op(int op) {
-	dttr_backend.stage_color_op = (DWORD)op;
-}
-/// Sets the first color combine argument.
-static void d3d_device7_set_color_arg1(DWORD arg) {
-	dttr_backend.stage_color_arg1 = arg;
-}
-/// Sets the second color combine argument.
-static void d3d_device7_set_color_arg2(DWORD arg) {
-	dttr_backend.stage_color_arg2 = arg;
-}
-/// Sets the alpha combine operation.
-static void d3d_device7_set_alpha_op(int op) {
-	dttr_backend.stage_alpha_op = (DWORD)op;
-}
-/// Sets the first alpha combine argument.
-static void d3d_device7_set_alpha_arg1(DWORD arg) {
-	dttr_backend.stage_alpha_arg1 = arg;
-}
-/// Sets the second alpha combine argument.
-static void d3d_device7_set_alpha_arg2(DWORD arg) {
-	dttr_backend.stage_alpha_arg2 = arg;
 }
 
 DTTR_COM_QI_SELF(d3ddevice7_queryinterface, DTTR_Graphics_COM_Direct3DDevice7)
@@ -737,16 +670,15 @@ static HRESULT __stdcall d3ddevice7_setrenderstate(
 
 	switch (state) {
 	case D3DRENDERSTATE_ZENABLE:
-		d3d_device7_set_depth_test(value != 0);
+		dttr_backend.depth_test = value != 0;
 		break;
 	case D3DRENDERSTATE_ZWRITEENABLE:
-		d3d_device7_set_depth_write(value != 0);
+		dttr_backend.depth_write = value != 0;
 		break;
 	case D3DRENDERSTATE_ZFUNC:
-		d3d_device7_set_depth_func((DTTR_CompareFunc)value);
 		break;
 	case D3DRENDERSTATE_ALPHABLENDENABLE:
-		d3d_device7_set_blend_enabled(value != 0);
+		dttr_backend.blend_enabled = value != 0;
 		break;
 	case D3DRENDERSTATE_SRCBLEND:
 		d3d_device7_set_blend_func((DTTR_BlendFactor)value, (DTTR_BlendFactor)0);
@@ -755,7 +687,6 @@ static HRESULT __stdcall d3ddevice7_setrenderstate(
 		d3d_device7_set_blend_func((DTTR_BlendFactor)0, (DTTR_BlendFactor)value);
 		break;
 	case D3DRENDERSTATE_CULLMODE:
-		d3d_device7_set_cull_mode((DTTR_CullMode)value);
 		break;
 	}
 
@@ -1118,22 +1049,22 @@ static HRESULT __stdcall d3ddevice7_settexturestagestate(
 ) {
 	switch (type) {
 	case D3DTSS_COLOROP:
-		d3d_device7_set_color_op((int)value);
+		dttr_backend.stage_color_op = (DWORD)value;
 		break;
 	case D3DTSS_COLORARG1:
-		d3d_device7_set_color_arg1(value);
+		dttr_backend.stage_color_arg1 = value;
 		break;
 	case D3DTSS_COLORARG2:
-		d3d_device7_set_color_arg2(value);
+		dttr_backend.stage_color_arg2 = value;
 		break;
 	case D3DTSS_ALPHAOP:
-		d3d_device7_set_alpha_op((int)value);
+		dttr_backend.stage_alpha_op = (DWORD)value;
 		break;
 	case D3DTSS_ALPHAARG1:
-		d3d_device7_set_alpha_arg1(value);
+		dttr_backend.stage_alpha_arg1 = value;
 		break;
 	case D3DTSS_ALPHAARG2:
-		d3d_device7_set_alpha_arg2(value);
+		dttr_backend.stage_alpha_arg2 = value;
 		break;
 	case D3DTSS_ADDRESS:
 		// Legacy combined state sets both texture address axes.

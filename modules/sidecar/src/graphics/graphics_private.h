@@ -120,6 +120,14 @@ typedef enum {
 	DTTR_BACKEND_OPENGL,
 } DTTR_BackendType;
 
+/// Game-image placement within the present target, in target pixels.
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+} DTTR_PresentRect;
+
 typedef struct DTTR_BackendState DTTR_BackendState;
 
 /// Backend-specific operations dispatched through function pointers.
@@ -376,6 +384,28 @@ static inline void dttr_graphics_mod_device_restored(DTTR_BackendState *) {}
 
 static inline void dttr_graphics_mod_device_destroying(DTTR_BackendState *) {}
 #endif
+
+DTTR_PresentRect dttr_graphics_compute_present_rect(
+	int dst_w,
+	int dst_h,
+	int src_w,
+	int src_h,
+	bool stretch,
+	bool integer_fit,
+	float fallback_scale
+);
+
+void dttr_graphics_mod_present_rect_before(
+	DTTR_BackendState *state,
+	const DTTR_PresentRect *present
+);
+void dttr_graphics_mod_present_rect_after(
+	DTTR_BackendState *state,
+	const DTTR_PresentRect *present,
+	bool overlay_rendered
+);
+
+bool dttr_graphics_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st);
 
 int dttr_graphics_calc_mip_levels(int w, int h);
 void dttr_graphics_mat4_identity(float *m);

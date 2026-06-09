@@ -247,7 +247,16 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 		return 1;
 	}
 
-	SDL_InitSubSystem(SDL_INIT_GAMEPAD);
+	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+		char status[sizeof(state.status)];
+		snprintf(
+			status,
+			sizeof(status),
+			"Failed to initialize gamepad support: %s",
+			SDL_GetError()
+		);
+		set_status(&state, status);
+	}
 
 	bool running = true;
 	while (running) {

@@ -753,8 +753,16 @@ static HRESULT __stdcall ddrawsurface7_queryinterface(
 
 	const GUID *iid = (const GUID *)riid;
 
+	if (!iid) {
+		if (ppv) {
+			*ppv = NULL;
+		}
+
+		return E_NOINTERFACE;
+	}
+
 	// IDirect3DTexture2 queries return the surface texture interface.
-	if (iid && memcmp(iid, &IID_IDirect3DTexture2, sizeof(GUID)) == 0) {
+	if (memcmp(iid, &IID_IDirect3DTexture2, sizeof(GUID)) == 0) {
 
 		if (!self->texture) {
 			self->texture = dttr_graphics_com_create_direct3d_texture2(self);
@@ -767,13 +775,22 @@ static HRESULT __stdcall ddrawsurface7_queryinterface(
 		return S_OK;
 	}
 
-	// Surface interfaces share the surface object.
-	self->refcount++;
-	if (ppv) {
-		*ppv = self;
+	// The surface object answers its own and IUnknown queries.
+	if (memcmp(iid, &IID_IDirectDrawSurface7, sizeof(GUID)) == 0
+		|| memcmp(iid, &IID_IUnknown, sizeof(GUID)) == 0) {
+		self->refcount++;
+		if (ppv) {
+			*ppv = self;
+		}
+
+		return S_OK;
 	}
 
-	return S_OK;
+	if (ppv) {
+		*ppv = NULL;
+	}
+
+	return E_NOINTERFACE;
 }
 
 static ULONG __stdcall ddrawsurface7_addref(DTTR_Graphics_COM_DirectDrawSurface7 *self) {
@@ -1192,14 +1209,10 @@ static HRESULT __stdcall ddrawsurface7_lock(
 		// Preserve dwSize while clearing the caller-visible fields.
 		memset((char *)desc + 4, 0, size - 4);
 
-		d->dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PITCH | DDSD_LPSURFACE
-					 | DDSD_PIXELFORMAT;
-		d->dwHeight = self->height;
-		d->dwWidth = self->width;
-		d->lPitch = self->pitch;
-		d->lpSurface = self->pixels;
-
 		surface_fill_desc(self, d);
+
+		d->lpSurface = self->pixels;
+		d->dwFlags |= DDSD_LPSURFACE;
 	} else if (size == 0) {
 		d->dwSize = DTTR_SIZEOF_DDSURFACEDESC;
 		memset((char *)desc + 4, 0, DTTR_SIZEOF_DDSURFACEDESC - 4);
@@ -1459,13 +1472,13 @@ DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface
 		return NULL;
 	}
 
-	DTTR_Graphics_COM_DirectDrawSurface7 *surf = malloc(
+	DTTR_Graphics_COM_DirectDrawSurface7 *surf = calloc(
+		1,
 		sizeof(DTTR_Graphics_COM_DirectDrawSurface7)
 	);
 	if (surf) {
 		surf->vtbl = &vtbl;
 		surf->refcount = 1;
-		surf->back_buffer = NULL;
 		// Create the texture interface up front because the game can query it directly.
 		surf->texture = dttr_graphics_com_create_direct3d_texture2(surf);
 		if (!surf->texture) {
@@ -1482,26 +1495,12 @@ DTTR_Graphics_COM_DirectDrawSurface7 *dttr_graphics_com_create_directdrawsurface
 		surf->b_mask = b_mask;
 		surf->a_mask = a_mask;
 
-		surf->pixels = malloc(pixel_size);
-		if (surf->pixels) {
-			memset(surf->pixels, 0, pixel_size);
-		} else {
+		surf->pixels = calloc(1, pixel_size);
+		if (!surf->pixels) {
 			free(surf->texture);
 			free(surf);
 			return NULL;
 		}
-
-		surf->dttr_texture = DTTR_INVALID_TEXTURE;
-		surf->content_width = 0;
-		surf->content_height = 0;
-		surf->locked = false;
-		surf->dirty = false;
-		surf->convert_rgba = NULL;
-		surf->convert_rgba_capacity = 0;
-		surf->last_upload_valid = false;
-		surf->last_upload_width = 0;
-		surf->last_upload_height = 0;
-		surf->last_upload_hash = 0;
 	}
 
 	return surf;

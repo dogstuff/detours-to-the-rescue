@@ -45,7 +45,6 @@ struct hook_chain {
 	DTTR_Core_Hook *tail;
 };
 
-// Scan a loaded module image for a signature using the common byte scanner.
 uintptr_t DTTR_Core_HookSigscan(HMODULE mod, const char *sig, const char *mask) {
 	MODULEINFO module_info;
 
@@ -95,7 +94,6 @@ static void hook_error_clear() {
 	dttr_core_hook_set_last_error(DTTR_OK, "ok");
 }
 
-// Initialize the 32-bit Zydis decoder used to choose safe trampoline cut points.
 static bool decoder_init() {
 	if (decoder_initialized) {
 		return true;
@@ -503,7 +501,6 @@ typedef kvec_t(DTTR_Core_Hook *) hook_vec;
 static hook_vec hooks;
 static void *hook_owner = NULL;
 
-// Restore one hook or patch and release its original-byte storage.
 static void hook_destroy(DTTR_Core_Hook *hook) {
 	if (!hook) {
 		return;
@@ -606,8 +603,8 @@ static hook_chain *hook_find_function_chain(uintptr_t addr) {
 	return NULL;
 }
 
-// Temporarily make a patch site writable and flush the instruction cache after copying.
-static void flush_instruction_cache(const char *op, uintptr_t addr, size_t size) {
+// Flush the CPU instruction cache for a freshly patched range.
+static void flush_patched_range(const char *op, uintptr_t addr, size_t size) {
 	if (!FlushInstructionCache(GetCurrentProcess(), (const void *)addr, size)) {
 		DTTR_LOG_WARN("%s: FlushInstructionCache failed for 0x%08X", op, (unsigned)addr);
 	}
@@ -622,7 +619,7 @@ static bool write_bytes(const char *op, uintptr_t addr, const uint8_t *bytes, si
 
 	memcpy((void *)addr, bytes, size);
 	VirtualProtect((void *)addr, size, old_protect, &old_protect);
-	flush_instruction_cache(op, addr, size);
+	flush_patched_range(op, addr, size);
 	return true;
 }
 
@@ -668,7 +665,7 @@ static bool hook_thunk_set_target(uint8_t *thunk, void *target) {
 	const uint32_t target32 = (uint32_t)(uintptr_t)target;
 	memcpy(thunk + 2, &slot, sizeof(slot));
 	memcpy(thunk + 6, &target32, sizeof(target32));
-	flush_instruction_cache("hook_chain_thunk", (uintptr_t)thunk, 10u);
+	flush_patched_range("hook_chain_thunk", (uintptr_t)thunk, 10u);
 	return true;
 }
 
@@ -775,27 +772,6 @@ static DTTR_Core_Hook *function_chain_append(
 	return hook;
 }
 
-// Save original bytes, write replacement bytes, and register the patch handle.
-static bool save_and_write_bytes(
-	const char *op,
-	uintptr_t addr,
-	uint8_t *original,
-	const uint8_t *bytes,
-	size_t size
-) {
-	DWORD old_protect;
-	if (!VirtualProtect((void *)addr, size, PAGE_EXECUTE_READWRITE, &old_protect)) {
-		DTTR_LOG_ERROR("%s: VirtualProtect failed for 0x%08X", op, (unsigned)addr);
-		return false;
-	}
-
-	memcpy(original, (void *)addr, size);
-	memcpy((void *)addr, bytes, size);
-	VirtualProtect((void *)addr, size, old_protect, &old_protect);
-	flush_instruction_cache(op, addr, size);
-	return true;
-}
-
 static bool function_link_detach(DTTR_Core_Hook *hook) {
 	hook_chain *chain = hook->chain;
 	if (!chain) {
@@ -881,7 +857,8 @@ static bool hook_detach_index(size_t index) {
 	return true;
 }
 
-static DTTR_Core_Hook *hook_attach_function_common(
+// Install a JMP detour and build a trampoline for the overwritten prologue.
+DTTR_Core_Hook *DTTR_Core_HookAttachFunction(
 	uintptr_t addr,
 	int prologue_size,
 	void *handler,
@@ -1029,16 +1006,6 @@ static DTTR_Core_Hook *hook_attach_function_common(
 	return hook;
 }
 
-// Install a JMP detour and build a trampoline for the overwritten prologue.
-DTTR_Core_Hook *DTTR_Core_HookAttachFunction(
-	uintptr_t addr,
-	int prologue_size,
-	void *handler,
-	void **out_original
-) {
-	return hook_attach_function_common(addr, prologue_size, handler, out_original);
-}
-
 // Patch a pointer slot and return the previous slot value when requested.
 DTTR_Core_Hook *DTTR_Core_HookAttachPointer(
 	uintptr_t addr,
@@ -1083,7 +1050,8 @@ DTTR_Core_Hook *DTTR_Core_HookPatchBytes(
 		return NULL;
 	}
 
-	if (!save_and_write_bytes("hook_patch_bytes", addr, hook->original, bytes, size)) {
+	memcpy(hook->original, (const void *)addr, size);
+	if (!write_bytes("hook_patch_bytes", addr, bytes, size)) {
 		hook_destroy(hook);
 		return NULL;
 	}
@@ -1151,7 +1119,6 @@ static void cleanup_sigscan_cache() {
 	}
 }
 
-// Detach all hooks and clear cached sigscan entries for test and process shutdown.
 bool DTTR_Core_HookCleanupAllChecked() {
 	bool ok = true;
 	while (kv_size(hooks) > 0) {

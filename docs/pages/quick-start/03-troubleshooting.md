@@ -2,7 +2,7 @@
 
 Try these when DttR starts but crashes, renders incorrectly, or behaves differently than expected.
 
-## Game crashes on startup
+## Startup Crashes
 
 First, try a different `Graphics API`. Open `dttr-config.exe`, go to **Graphics**, and change `Graphics API` from `auto` to one of these:
 
@@ -18,7 +18,7 @@ If DttR still crashes:
 - Set `MSAA Samples` to `1`.
 - If you are using the Modding build, temporarily disable third-party mods or remove them from the `mods` directory.
 
-## Game crashes during intro movies
+## Intro Movie Crashes
 
 If DttR launches but crashes during the opening videos or before the main menu, try skipping the intro movies.
 
@@ -26,7 +26,7 @@ Open `dttr-config.exe`, enable `Skip Intro Movies`, save, then restart DttR.
 
 If this fixes the crash, mention that in any bug report.
 
-## Graphics are missing, flickering, or otherwise broken
+## Graphics Issues
 
 Try switching between `Graphics API` backends first.
 If the problem changes between backends, mention that in the bug report; renderer bugs are often backend-specific.
@@ -41,17 +41,17 @@ If that does not work, try these next:
 
 After each config change, save and restart the game.
 
-## Controller input is wrong or missing
+## Controller Input Issues
 
 Open `dttr-config.exe`, turn on `Enable Gamepad`, save, then restart DttR with the controller already connected.
 
 If DttR listens to the wrong controller, try changing `Gamepad Index`. If a stick drifts or feels unresponsive, adjust the matching deadzone field in small steps.
 
-## Audio is distorted or too loud
+## Audio Issues
 
 Open `dttr-config.exe` and lower `MSS Sample Gain`. Very high gain values can clip and sound distorted.
 
-## Still having issues?
+## More Help
 
 If you are still having problems, report the issue through [DttR's GitLab repository](https://gitlab.com/dogstuff/detours-to-the-rescue).
 

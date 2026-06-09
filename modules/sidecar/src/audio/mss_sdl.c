@@ -260,23 +260,19 @@ static float master_gain_for_volume(int volume) {
 	return (float)volume / DTTR_MSS_MAX_VOLUME;
 }
 
-// Starts the SDL-backed MSS shim for Miles AIL startup.
 int __stdcall dttr_mss_ail_startup() {
 	dttr_mss_core_ensure_preferences();
 	return dttr_mss_core_ensure_mix_initialized() ? 1 : 0;
 }
 
-// Shuts down the SDL-backed MSS shim for Miles AIL shutdown.
 void __stdcall dttr_mss_ail_shutdown() {
 	dttr_mss_sdl_shutdown();
 }
 
-// Stores one Miles AIL preference in the SDL-backed MSS shim.
 int __stdcall dttr_mss_ail_set_preference(unsigned int preference, int value) {
 	return dttr_mss_core_set_preference(preference, value);
 }
 
-// Reads one Miles AIL preference from the SDL-backed MSS shim.
 int __stdcall dttr_mss_ail_get_preference(unsigned int preference) {
 	return dttr_mss_core_get_preference(preference);
 }

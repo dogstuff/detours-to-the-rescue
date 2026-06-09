@@ -43,7 +43,7 @@ typedef struct {
 	AVCodecContext *audio_codec;
 	struct SwsContext *sws;
 	SwrContext *swr;
-	SDL_AudioStream *audio_stream;
+	SDL_AudioStream *audio_device;
 	uint8_t *buffer;
 	int video_stream;
 	int audio_stream_index;
@@ -86,7 +86,7 @@ static void reset_movie_state(dttr_movie_result result) {
 }
 
 // Formats an FFmpeg error code into a reusable buffer for sidecar log messages.
-static const char *av_error(const int err) {
+static const char *movie_error_string(const int err) {
 	static char buf[AV_ERROR_MAX_STRING_SIZE];
 
 	av_strerror(err, buf, sizeof(buf));
@@ -106,9 +106,9 @@ static void reset_video_buffer() {
 
 // Releases the SDL audio stream and resampler used by decoded movie audio.
 static void close_audio() {
-	if (movie.audio_stream) {
-		SDL_DestroyAudioStream(movie.audio_stream);
-		movie.audio_stream = NULL;
+	if (movie.audio_device) {
+		SDL_DestroyAudioStream(movie.audio_device);
+		movie.audio_device = NULL;
 	}
 
 	swr_free(&movie.swr);
@@ -145,14 +145,18 @@ static AVCodecContext *open_codec(const AVStream *stream) {
 
 	int err = avcodec_parameters_to_context(ctx, stream->codecpar);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to configure movie decoder: %s", av_error(err));
+		DTTR_LOG_ERROR("Failed to configure movie decoder: %s", movie_error_string(err));
 		avcodec_free_context(&ctx);
 		return NULL;
 	}
 
 	err = avcodec_open2(ctx, codec, NULL);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to open movie decoder %s: %s", codec->name, av_error(err));
+		DTTR_LOG_ERROR(
+			"Failed to open movie decoder %s: %s",
+			codec->name,
+			movie_error_string(err)
+		);
 		avcodec_free_context(&ctx);
 		return NULL;
 	}
@@ -183,7 +187,10 @@ static bool prepare_audio() {
 	av_channel_layout_uninit(&out_layout);
 
 	if (err < 0 || !movie.swr) {
-		DTTR_LOG_ERROR("Failed to allocate movie audio resampler: %s", av_error(err));
+		DTTR_LOG_ERROR(
+			"Failed to allocate movie audio resampler: %s",
+			movie_error_string(err)
+		);
 		return false;
 	}
 
@@ -191,7 +198,7 @@ static bool prepare_audio() {
 	if (init_err < 0) {
 		DTTR_LOG_ERROR(
 			"Failed to initialize movie audio resampler: %s",
-			av_error(init_err)
+			movie_error_string(init_err)
 		);
 		return false;
 	}
@@ -202,18 +209,18 @@ static bool prepare_audio() {
 		.freq = movie.audio_codec->sample_rate,
 	};
 
-	movie.audio_stream = SDL_OpenAudioDeviceStream(
+	movie.audio_device = SDL_OpenAudioDeviceStream(
 		SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
 		&spec,
 		NULL,
 		NULL
 	);
-	if (!movie.audio_stream) {
+	if (!movie.audio_device) {
 		DTTR_LOG_ERROR("Failed to open movie audio stream: %s", SDL_GetError());
 		return false;
 	}
 
-	SDL_ResumeAudioStreamDevice(movie.audio_stream);
+	SDL_ResumeAudioStreamDevice(movie.audio_device);
 	return true;
 }
 
@@ -221,13 +228,13 @@ static bool prepare_audio() {
 static bool open_movie(const char *path) {
 	int err = avformat_open_input(&movie.format, path, NULL, NULL);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to open movie %s: %s", path, av_error(err));
+		DTTR_LOG_ERROR("Failed to open movie %s: %s", path, movie_error_string(err));
 		return false;
 	}
 
 	err = avformat_find_stream_info(movie.format, NULL);
 	if (err < 0) {
-		DTTR_LOG_ERROR("Failed to read movie stream info: %s", av_error(err));
+		DTTR_LOG_ERROR("Failed to read movie stream info: %s", movie_error_string(err));
 		return false;
 	}
 
@@ -242,7 +249,7 @@ static bool open_movie(const char *path) {
 	if (movie.video_stream < 0) {
 		DTTR_LOG_ERROR(
 			"Movie has no playable video stream: %s",
-			av_error(movie.video_stream)
+			movie_error_string(movie.video_stream)
 		);
 		return false;
 	}
@@ -379,7 +386,7 @@ static bool queue_video_frame(const AVFrame *frame) {
 
 // Resamples decoded audio into the SDL stream while capping queued latency.
 static bool queue_audio_frame(const AVFrame *frame) {
-	if (!movie.audio_stream || !movie.swr) {
+	if (!movie.audio_device || !movie.swr) {
 		return true;
 	}
 
@@ -411,7 +418,7 @@ static bool queue_audio_frame(const AVFrame *frame) {
 		frame->nb_samples
 	);
 	if (converted < 0) {
-		DTTR_LOG_ERROR("Failed to convert movie audio: %s", av_error(converted));
+		DTTR_LOG_ERROR("Failed to convert movie audio: %s", movie_error_string(converted));
 		av_free(out);
 		return false;
 	}
@@ -424,7 +431,7 @@ static bool queue_audio_frame(const AVFrame *frame) {
 		1
 	);
 	if (converted_size > 0) {
-		SDL_PutAudioStreamData(movie.audio_stream, out, converted_size);
+		SDL_PutAudioStreamData(movie.audio_device, out, converted_size);
 	}
 
 	av_free(out);
@@ -433,7 +440,7 @@ static bool queue_audio_frame(const AVFrame *frame) {
 							 * av_get_bytes_per_sample(AUDIO_FORMAT)
 							 * AUDIO_QUEUE_LIMIT_MS)
 							/ 1000;
-	while (SDL_GetAudioStreamQueued(movie.audio_stream) > queue_limit) {
+	while (SDL_GetAudioStreamQueued(movie.audio_device) > queue_limit) {
 		SDL_Delay(1);
 	}
 
@@ -449,7 +456,7 @@ static bool receive_video_frame() {
 		}
 
 		if (err < 0) {
-			DTTR_LOG_ERROR("Failed to decode movie video: %s", av_error(err));
+			DTTR_LOG_ERROR("Failed to decode movie video: %s", movie_error_string(err));
 			movie.result = DTTR_MOVIE_ENDED;
 			return false;
 		}
@@ -477,7 +484,7 @@ static void receive_audio_frames() {
 		}
 
 		if (err < 0) {
-			DTTR_LOG_WARN("Failed to decode movie audio: %s", av_error(err));
+			DTTR_LOG_WARN("Failed to decode movie audio: %s", movie_error_string(err));
 			return;
 		}
 
@@ -503,14 +510,14 @@ static bool drain_eof() {
 		avcodec_send_packet(movie.audio_codec, NULL);
 		movie.audio_flushed = true;
 		receive_audio_frames();
-		if (movie.audio_stream) {
-			SDL_FlushAudioStream(movie.audio_stream);
+		if (movie.audio_device) {
+			SDL_FlushAudioStream(movie.audio_device);
 			movie.audio_drain_deadline_ticks = SDL_GetTicks() + AUDIO_DRAIN_LIMIT_MS;
 		}
 	}
 
-	if (movie.audio_stream) {
-		const int queued = SDL_GetAudioStreamQueued(movie.audio_stream);
+	if (movie.audio_device) {
+		const int queued = SDL_GetAudioStreamQueued(movie.audio_device);
 		if (queued > 0 && SDL_GetTicks() < movie.audio_drain_deadline_ticks) {
 			SDL_Delay(1);
 			return false;
@@ -539,7 +546,10 @@ static void send_packet() {
 
 		const int err = avcodec_send_packet(movie.video_codec, packet);
 		if (err < 0 && err != AVERROR(EAGAIN)) {
-			DTTR_LOG_ERROR("Failed to submit movie video packet: %s", av_error(err));
+			DTTR_LOG_ERROR(
+				"Failed to submit movie video packet: %s",
+				movie_error_string(err)
+			);
 			movie.result = DTTR_MOVIE_ENDED;
 		}
 
@@ -552,7 +562,7 @@ static void send_packet() {
 
 	const int err = avcodec_send_packet(movie.audio_codec, packet);
 	if (err < 0 && err != AVERROR(EAGAIN)) {
-		DTTR_LOG_WARN("Failed to submit movie audio packet: %s", av_error(err));
+		DTTR_LOG_WARN("Failed to submit movie audio packet: %s", movie_error_string(err));
 	}
 }
 
@@ -580,7 +590,7 @@ static bool decode_until_video_frame() {
 		}
 
 		if (err < 0) {
-			DTTR_LOG_ERROR("Failed to read movie packet: %s", av_error(err));
+			DTTR_LOG_ERROR("Failed to read movie packet: %s", movie_error_string(err));
 			movie.result = DTTR_MOVIE_ENDED;
 			return false;
 		}
@@ -617,7 +627,6 @@ bool dttr_movies_hooks_init(const DTTR_Mods_Context *ctx) {
 	);
 }
 
-// Releases the movie patch group.
 void dttr_movies_hooks_cleanup(const DTTR_Mods_Context *) {
 	DTTR_Core_PatchGroupRelease(&movie_patch_group);
 }
@@ -631,48 +640,6 @@ void dttr_movies_cleanup() {
 	DTTR_LOG_INFO("Released movie playback state");
 }
 
-// Maps the game movie filename to an override path or bundled data-file path.
-static sds resolve_movie_path(const char *path) {
-	char (*base_path)[DTTR_PCDOGS_D_AUDIO_OPEN_STREAM_PKG_BASE_PATH_COUNT]
-		= DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Ptr();
-	sds requested_path = sdsnew(base_path ? *base_path : NULL);
-	if (!requested_path || !DTTR_Path_AppendSegment(&requested_path, path, '\\')) {
-		sdsfree(requested_path);
-		return sdsempty();
-	}
-
-	char resolved[MAX_PATH];
-	const char *movie_path = NULL;
-
-	if (dttr_game_data_resolve_existing_read_path(
-			requested_path,
-			resolved,
-			sizeof(resolved)
-		)) {
-		movie_path = resolved;
-	}
-
-	char cached[MAX_PATH];
-	if (!movie_path) {
-		const bool got_cached = dttr_game_data_resolve_read_path(
-			path,
-			cached,
-			sizeof(cached)
-		);
-		if (got_cached) {
-			movie_path = cached;
-		}
-	}
-
-	if (!movie_path) {
-		return requested_path;
-	}
-
-	sds out = sdsnew(movie_path);
-	sdsfree(requested_path);
-	return out;
-}
-
 // Resolves and opens a movie file, then marks playback active when decoders are ready.
 void dttr_movies_start(const char *path) {
 	if (!video_frame || !audio_frame || !packet) {
@@ -683,7 +650,7 @@ void dttr_movies_start(const char *path) {
 
 	close_movie();
 
-	sds abs_path = resolve_movie_path(path);
+	sds abs_path = dttr_game_data_resolve_media_path(path);
 	DTTR_LOG_INFO("Playing movie %s", abs_path);
 
 	if (!open_movie(abs_path)) {
@@ -778,7 +745,6 @@ dttr_movie_result dttr_movies_stop() {
 	return result;
 }
 
-// Reports whether the blocking movie hook should keep pumping events and decoding frames.
 bool dttr_movies_is_playing() {
 	return movie.result == DTTR_MOVIE_PLAYING;
 }

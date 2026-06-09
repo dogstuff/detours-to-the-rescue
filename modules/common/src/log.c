@@ -12,7 +12,7 @@ typedef struct {
 	int level;
 } log_callback;
 
-static int s_level = LOG_TRACE;
+static int current_log_level = LOG_TRACE;
 static log_callback callbacks[MAX_CALLBACKS];
 static int callback_count;
 
@@ -77,7 +77,7 @@ static void file_callback(log_Event *ev) {
 }
 
 bool DTTR_Log_IsEnabled(int log_level) {
-	if (log_level >= s_level) {
+	if (log_level >= current_log_level) {
 		return true;
 	}
 
@@ -104,7 +104,7 @@ static void dttr_vlog_unchecked(
 		.level = log_level,
 	};
 
-	if (log_level >= s_level) {
+	if (log_level >= current_log_level) {
 		init_event(&ev, stderr);
 		va_copy(ev.ap, args);
 		stderr_callback(&ev);
@@ -141,7 +141,7 @@ void DTTR_Log_Unchecked(int level, const char *file, int line, const char *fmt, 
 }
 
 void DTTR_Log_SetLevel(int log_level) {
-	s_level = log_level;
+	current_log_level = log_level;
 }
 
 static int add_log_callback(log_LogFn fn, void *udata, int level) {

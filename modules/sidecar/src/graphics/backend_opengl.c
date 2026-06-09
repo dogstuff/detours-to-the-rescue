@@ -23,13 +23,6 @@ static const DTTR_RendererVtbl renderer;
 
 #include "gen/opengl_shaders.h"
 
-typedef struct {
-	int x;
-	int y;
-	int w;
-	int h;
-} opengl_present_rect;
-
 static GLuint compile_shader(GLenum type, const char *source) {
 	GLuint shader = glCreateShader(type);
 	glShaderSource(shader, 1, &source, NULL);
@@ -527,62 +520,6 @@ static void upload_pending_textures_gl(DTTR_BackendState *state, opengl_backend_
 	gl->pending_mipmap_count = 0;
 }
 
-static opengl_present_rect compute_present_rect(
-	int dst_w,
-	int dst_h,
-	int src_w,
-	int src_h,
-	float fallback_scale
-) {
-	const float sx = (float)dst_w / (float)src_w;
-	const float sy = (float)dst_h / (float)src_h;
-	float scale = sx < sy ? sx : sy;
-
-	if (scale < 0.001f) {
-		scale = fallback_scale;
-	}
-
-	const int present_w = (int)((float)src_w * scale);
-	const int present_h = (int)((float)src_h * scale);
-
-	return (opengl_present_rect){
-		.x = (dst_w - present_w) / 2,
-		.y = (dst_h - present_h) / 2,
-		.w = present_w,
-		.h = present_h,
-	};
-}
-
-static void mod_before_present(
-	DTTR_BackendState *state,
-	const opengl_present_rect *present
-) {
-	dttr_graphics_mod_before_present(
-		state,
-		(uint32_t)present->x,
-		(uint32_t)present->y,
-		(uint32_t)present->w,
-		(uint32_t)present->h,
-		false,
-		true
-	);
-}
-
-static void mod_after_present(
-	DTTR_BackendState *state,
-	const opengl_present_rect *present
-) {
-	dttr_graphics_mod_after_present(
-		state,
-		(uint32_t)present->x,
-		(uint32_t)present->y,
-		(uint32_t)present->w,
-		(uint32_t)present->h,
-		false,
-		true
-	);
-}
-
 static void upload_video_texture(
 	opengl_backend_data *gl,
 	const uint8_t *pixels,
@@ -823,11 +760,15 @@ static void end_frame(DTTR_BackendState *state) {
 		window_h = state->height;
 	}
 
-	const opengl_present_rect present = compute_present_rect(
+	const bool
+		is_internal_method = (dttr_config.scaling_method == DTTR_SCALING_METHOD_LOGICAL);
+	const DTTR_PresentRect present = dttr_graphics_compute_present_rect(
 		window_w,
 		window_h,
 		gl->fbo_width,
 		gl->fbo_height,
+		dttr_config.scaling_fit == DTTR_SCALING_MODE_STRETCH,
+		(!is_internal_method) && (dttr_config.scaling_fit == DTTR_SCALING_MODE_INTEGER),
 		1.0f
 	);
 
@@ -863,10 +804,10 @@ static void end_frame(DTTR_BackendState *state) {
 		(uint32_t)present.h
 	);
 #endif
-	mod_before_present(state, &present);
+	dttr_graphics_mod_present_rect_before(state, &present);
 
 	SDL_GL_SwapWindow(state->window);
-	mod_after_present(state, &present);
+	dttr_graphics_mod_present_rect_after(state, &present, true);
 	dttr_graphics_mod_frame_end(state);
 }
 
@@ -911,8 +852,15 @@ static bool present_video_frame_bgra(
 	glUseProgram(gl->program);
 	glBindVertexArray(gl->vao);
 
-	const opengl_present_rect
-		present = compute_present_rect(window_w, window_h, width, height, 0.0f);
+	const DTTR_PresentRect present = dttr_graphics_compute_present_rect(
+		window_w,
+		window_h,
+		width,
+		height,
+		false,
+		false,
+		0.0f
+	);
 	const float x0 = (float)present.x;
 	const float y0 = (float)present.y;
 	const float x1 = (float)(present.x + present.w);

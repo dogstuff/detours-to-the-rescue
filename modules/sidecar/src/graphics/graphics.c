@@ -294,13 +294,11 @@ static DTTR_Mods_GraphicsContext graphics_context(const DTTR_BackendState *state
 	};
 }
 
-// Builds the frame context once and forwards it to a mod frame callback.
 static void call_frame_mod(DTTR_BackendState *state, DTTR_Mods_FrameBeginFn callback) {
 	const DTTR_Mods_FrameContext ctx = graphics_frame_context(state);
 	callback(&ctx);
 }
 
-// Supplies game-viewport bounds to mod present callbacks around backend submission.
 static void call_present_mod(
 	DTTR_BackendState *state,
 	uint32_t game_x,
@@ -323,13 +321,11 @@ static void call_present_mod(
 	callback(&ctx);
 }
 
-// Converts backend window state into the mod window lifecycle payload.
 static void call_window_mod(DTTR_BackendState *state, DTTR_Mods_WindowCreatedFn callback) {
 	const DTTR_Mods_WindowContext ctx = graphics_window_context(state);
 	callback(&ctx);
 }
 
-// Exposes the active graphics backend and device pointer to mod lifecycle hooks.
 static void call_graphics_mod(
 	DTTR_BackendState *state,
 	DTTR_Mods_GraphicsDeviceCreatedFn callback
@@ -338,24 +334,18 @@ static void call_graphics_mod(
 	callback(&ctx);
 }
 
-// Notifies mods before sidecar frame work begins using the current render target
-// dimensions.
 void dttr_graphics_mod_frame_begin(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_frame_begin);
 }
 
-// Notifies mods before backend game-image submission for the current host frame.
 void dttr_graphics_mod_before_game_frame(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_before_game_frame);
 }
 
-// Notifies mods after backend game-image submission, before presentation begins.
 void dttr_graphics_mod_after_game_frame(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_after_game_frame);
 }
 
-// Sends the game viewport and overlay state after draw/blit work is queued and
-// before the backend submits or swaps.
 void dttr_graphics_mod_before_present(
 	DTTR_BackendState *state,
 	uint32_t game_x,
@@ -377,8 +367,6 @@ void dttr_graphics_mod_before_present(
 	);
 }
 
-// Sends the same present payload after submit or swap so mods can mirror
-// presentation timing.
 void dttr_graphics_mod_after_present(
 	DTTR_BackendState *state,
 	uint32_t game_x,
@@ -400,46 +388,69 @@ void dttr_graphics_mod_after_present(
 	);
 }
 
-// Closes the mod frame lifecycle after the renderer has finished its work.
 void dttr_graphics_mod_frame_end(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_frame_end);
 }
 
-// Announces the SDL window once a backend successfully claims it.
 void dttr_graphics_mod_window_created(DTTR_BackendState *state) {
 	call_window_mod(state, dttr_mods_window_created);
 }
 
-// Reports window size changes after the backend has accepted the new render dimensions.
 void dttr_graphics_mod_window_resized(DTTR_BackendState *state) {
 	call_window_mod(state, dttr_mods_window_resized);
 }
 
-// Gives mods one last window payload before the SDL window is destroyed.
 void dttr_graphics_mod_window_destroying(DTTR_BackendState *state) {
 	call_window_mod(state, dttr_mods_window_destroying);
 }
 
-// Announces graphics-device creation with the backend-specific device pointer.
 void dttr_graphics_mod_device_created(DTTR_BackendState *state) {
 	call_graphics_mod(state, dttr_mods_graphics_device_created);
 }
 
-// Signals device loss before backend resources are torn down or recreated.
 void dttr_graphics_mod_device_lost(DTTR_BackendState *state) {
 	call_graphics_mod(state, dttr_mods_graphics_device_lost);
 }
 
-// Signals that backend resources are valid again after initialization or restore.
 void dttr_graphics_mod_device_restored(DTTR_BackendState *state) {
 	call_graphics_mod(state, dttr_mods_graphics_device_restored);
 }
 
-// Gives mods a final graphics-device callback before backend destruction.
 void dttr_graphics_mod_device_destroying(DTTR_BackendState *state) {
 	call_graphics_mod(state, dttr_mods_graphics_device_destroying);
 }
 #endif
+
+void dttr_graphics_mod_present_rect_before(
+	DTTR_BackendState *state,
+	const DTTR_PresentRect *present
+) {
+	dttr_graphics_mod_before_present(
+		state,
+		(uint32_t)present->x,
+		(uint32_t)present->y,
+		(uint32_t)present->w,
+		(uint32_t)present->h,
+		false,
+		true
+	);
+}
+
+void dttr_graphics_mod_present_rect_after(
+	DTTR_BackendState *state,
+	const DTTR_PresentRect *present,
+	bool overlay_rendered
+) {
+	dttr_graphics_mod_after_present(
+		state,
+		(uint32_t)present->x,
+		(uint32_t)present->y,
+		(uint32_t)present->w,
+		(uint32_t)present->h,
+		false,
+		overlay_rendered
+	);
+}
 
 // Tears down the SDL window after notifying mods so no lifecycle callback sees a
 // dangling window handle.

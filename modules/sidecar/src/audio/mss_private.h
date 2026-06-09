@@ -45,7 +45,7 @@ typedef struct {
 	uint64_t frame_count;
 	bool has_fmt;
 	bool has_data;
-} DTTR_MssWaveInfo;
+} mss_wave_info;
 
 static inline void dttr_mss_reset_preferences(int *preferences, size_t count) {
 	if (!preferences) {
@@ -129,12 +129,12 @@ int dttr_mss_track_status(MIX_Track *track, int previous_status);
 uint16_t dttr_mss_wave_read_u16le(const uint8_t *p);
 uint32_t dttr_mss_wave_read_u32le(const uint8_t *p);
 size_t dttr_mss_wave_riff_size(const void *file_image);
-bool dttr_mss_wave_parse(const void *file_image, DTTR_MssWaveInfo *info);
-int dttr_mss_wave_rate(const DTTR_MssWaveInfo *info);
+bool dttr_mss_wave_parse(const void *file_image, mss_wave_info *info);
+int dttr_mss_wave_rate(const mss_wave_info *info);
 bool dttr_mss_wave_decode_f32(
 	const void *file_image,
 	size_t size,
-	DTTR_MssWaveInfo *info,
+	mss_wave_info *info,
 	float **frames_out
 );
 void dttr_mss_wave_free(void *ptr);

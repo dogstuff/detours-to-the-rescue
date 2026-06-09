@@ -29,18 +29,6 @@ static void clear_desired_spec() {
 	has_desired_spec = false;
 }
 
-static float clamp_float(float value, float min_value, float max_value) {
-	if (value < min_value) {
-		return min_value;
-	}
-
-	if (value > max_value) {
-		return max_value;
-	}
-
-	return value;
-}
-
 bool dttr_mss_core_has_driver() {
 	return driver_open_count > 0 && mixer;
 }
@@ -81,11 +69,11 @@ int dttr_mss_core_set_preference(unsigned int preference, int value) {
 }
 
 float dttr_mss_core_sample_headroom_gain() {
-	return clamp_float(dttr_config.mss_sample_gain, 0.0f, 2.0f);
+	return SDL_clamp(dttr_config.mss_sample_gain, 0.0f, 2.0f);
 }
 
 float dttr_mss_core_sample_preemphasis() {
-	return clamp_float(dttr_config.mss_sample_preemphasis, -1.0f, 2.0f);
+	return SDL_clamp(dttr_config.mss_sample_preemphasis, -1.0f, 2.0f);
 }
 
 bool dttr_mss_core_ensure_mix_initialized() {

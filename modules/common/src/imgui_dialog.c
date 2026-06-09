@@ -22,7 +22,7 @@ static void restore_previous_imgui_context(const DTTR_ImGuiDialogContext *ctx) {
 	igSetCurrentContext(ctx->previous_imgui_context);
 }
 
-static void offset_cursor_y(const DTTR_ImGuiDialogContext *ctx, float amount) {
+void DTTR_ImGuiDialog_OffsetCursorY(const DTTR_ImGuiDialogContext *ctx, float amount) {
 	igSetCursorPosY(igGetCursorPosY() + DTTR_ImGuiDialog_ScaledFloat(ctx, amount));
 }
 
@@ -326,15 +326,15 @@ void DTTR_ImGuiDialog_DrawHeader(
 	const char *title,
 	const char *version
 ) {
-	offset_cursor_y(ctx, 3.0f);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, 3.0f);
 	const ImGuiStyle *style = igGetStyle();
 	const float title_font_size = (style ? style->FontSizeBase : 0.0f) * 1.35f;
 	igPushFont(NULL, title_font_size);
 	draw_centered_text(title);
 	igPopFont();
-	offset_cursor_y(ctx, 4.0f);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, 4.0f);
 	draw_centered_text(version);
-	offset_cursor_y(ctx, 2.0f);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, 2.0f);
 }
 
 void DTTR_ImGuiDialog_DrawPaddedText(
@@ -344,11 +344,11 @@ void DTTR_ImGuiDialog_DrawPaddedText(
 	float padding_y
 ) {
 	igSetCursorPosX(DTTR_ImGuiDialog_ScaledFloat(ctx, padding_x));
-	offset_cursor_y(ctx, padding_y);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, padding_y);
 	igPushTextWrapPos(igGetWindowWidth() - DTTR_ImGuiDialog_ScaledFloat(ctx, padding_x));
 	igTextWrapped("%s", message ? message : "");
 	igPopTextWrapPos();
-	offset_cursor_y(ctx, padding_y);
+	DTTR_ImGuiDialog_OffsetCursorY(ctx, padding_y);
 }
 
 void DTTR_ImGuiDialog_FitWindowToContent(

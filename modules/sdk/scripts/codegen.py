@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import importlib.util
 import sys
 from pathlib import Path
@@ -49,3 +50,26 @@ def c_mask(pattern: str) -> str:
 
     body = "".join("?" if token == "??" else "x" for token in pattern_tokens(pattern))
     return f'"{body}"'
+
+
+def write_or_check(path: Path, text: str, check: bool = False) -> bool:
+    """Write generated SDK output, or print the stale diff used by CI check mode."""
+
+    old = path.read_text() if path.exists() else ""
+    if old == text:
+        return True
+
+    if check:
+        diff = difflib.unified_diff(
+            old.splitlines(),
+            text.splitlines(),
+            fromfile=str(path),
+            tofile=f"{path} (generated)",
+            lineterm="",
+        )
+        print("\n".join(diff), file=sys.stderr)
+        return False
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    return True

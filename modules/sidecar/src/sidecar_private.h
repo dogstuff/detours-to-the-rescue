@@ -10,6 +10,8 @@
 #include <dttr_pcdogs.h>
 #include <dttr_runtime.h>
 
+#include <sds.h>
+
 #include <SDL3/SDL.h>
 
 enum { DTTR_EXE_HASH_LENGTH = 16 };
@@ -36,6 +38,8 @@ bool dttr_game_data_resolve_read_path(
 	char *out_path,
 	size_t out_path_size
 );
+const char *dttr_game_data_find_data_segment(const char *path);
+sds dttr_game_data_resolve_media_path(const char *relative);
 
 void dttr_pcdogs_crash_symbols_register(const DTTR_Core_Context *runtime);
 void dttr_pcdogs_crash_symbols_clear();

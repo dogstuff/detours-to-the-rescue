@@ -61,6 +61,7 @@ void DTTR_CrashDump_ClearSymbolProvider() {
 #define DISASM_BYTES_AFTER 32u
 #define DISASM_MAX_BYTES (DISASM_BYTES_BEFORE + DISASM_BYTES_AFTER)
 #define DISASM_MAX_INSTRUCTIONS 6
+#define DISASM_MAX_LINES (DISASM_BYTES_BEFORE + DISASM_MAX_INSTRUCTIONS)
 #define DISASM_TEXT_CAPACITY 160
 
 static bool memory_protection_is_readable(DWORD protect) {
@@ -203,12 +204,12 @@ static sds append_disassembly_from_bytes(
 		return append_disassembly_unavailable(message, "decoder unavailable");
 	}
 
-	CrashDisasmLine lines[DISASM_MAX_BYTES] = {0};
+	CrashDisasmLine lines[DISASM_MAX_LINES] = {0};
 	size_t line_count = 0;
 	size_t failed_index = SIZE_MAX;
 	size_t offset = 0;
 
-	while (offset < size && line_count < DISASM_MAX_BYTES) {
+	while (offset < size && line_count < DISASM_MAX_LINES) {
 		ZydisDecodedInstruction instruction = {0};
 		if (!format_instruction_at(
 				&decoder,

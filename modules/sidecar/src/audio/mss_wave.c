@@ -26,7 +26,7 @@ size_t dttr_mss_wave_riff_size(const void *file_image) {
 	return dttr_mss_wave_read_u32le(bytes + 4) + 8;
 }
 
-bool dttr_mss_wave_parse(const void *file_image, DTTR_MssWaveInfo *info) {
+bool dttr_mss_wave_parse(const void *file_image, mss_wave_info *info) {
 	if (!file_image || !info) {
 		return false;
 	}
@@ -65,7 +65,7 @@ bool dttr_mss_wave_parse(const void *file_image, DTTR_MssWaveInfo *info) {
 	return true;
 }
 
-int dttr_mss_wave_rate(const DTTR_MssWaveInfo *info) {
+int dttr_mss_wave_rate(const mss_wave_info *info) {
 	if (!info || !info->has_fmt || info->sample_rate == 0
 		|| info->sample_rate > INT_MAX) {
 		return DTTR_MSS_DEFAULT_RATE;
@@ -77,7 +77,7 @@ int dttr_mss_wave_rate(const DTTR_MssWaveInfo *info) {
 bool dttr_mss_wave_decode_f32(
 	const void *file_image,
 	size_t size,
-	DTTR_MssWaveInfo *info,
+	mss_wave_info *info,
 	float **frames_out
 ) {
 	if (!file_image || size == 0 || !frames_out) {

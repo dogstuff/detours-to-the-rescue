@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from codegen import c_mask, c_sig
+from codegen import c_mask, c_sig, write_or_check
 from generate_headers import load_blueprint, split_row_unstable_rows
 
 try:
@@ -116,15 +116,6 @@ def load_blueprint_surfaces(path: Path) -> list[tuple[str, object]]:
     ]
 
 
-def write_if_changed(path: Path, text: str) -> None:
-    """Avoid unnecessary rewrites by updating generated test files only when content changes."""
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    old = path.read_text() if path.exists() else ""
-    if old != text:
-        path.write_text(text)
-
-
 def main() -> int:
     """Generate blueprint-driven C and CMake fixtures used by the SDK signature tests."""
 
@@ -134,7 +125,7 @@ def main() -> int:
     args = parser.parse_args()
 
     blueprints = load_blueprint_surfaces(args.blueprint)
-    write_if_changed(args.rows_output, render(ROWS_TEMPLATE, blueprints=blueprints))
+    write_or_check(args.rows_output, render(ROWS_TEMPLATE, blueprints=blueprints))
     return 0
 
 

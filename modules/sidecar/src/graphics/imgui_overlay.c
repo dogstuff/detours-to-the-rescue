@@ -6,6 +6,7 @@
 #include <dttr_imgui.h>
 #include <dttr_log.h>
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -14,16 +15,16 @@ static SDL_Window *window;
 static DTTR_ImGuiDesktopScaleState imgui_scale;
 static bool initialized;
 
-static const float MODDING_BADGE_FONT_FACTOR = 0.90f;
-static const float MODDING_BADGE_MIN_FONT_SIZE = 6.0f;
-static const float MODDING_BADGE_DEFAULT_FONT_SIZE = 13.0f;
-static const float MODDING_BADGE_LINE_ADVANCE_FACTOR = 0.86f;
-static const float MODDING_BADGE_BOLD_OFFSET = 0.5f;
-static const ImVec4_c MODDING_BADGE_HEADER_COLOR = {1.0f, 1.0f, 1.0f, 1.0f};
-static const ImVec4_c MODDING_BADGE_SECONDS_COLOR = {0.35f, 1.0f, 0.35f, 1.0f};
-static const ImVec4_c MODDING_BADGE_HOT_RELOAD_ON_COLOR = {0.35f, 1.0f, 0.35f, 1.0f};
-static const ImVec4_c MODDING_BADGE_HOT_RELOAD_OFF_COLOR = {1.0f, 0.35f, 0.35f, 1.0f};
-static const char MODDING_BADGE_HOT_RELOAD_LABEL[] = "Hot Reload:";
+static const float modding_badge_font_factor = 0.90f;
+static const float modding_badge_min_font_size = 6.0f;
+static const float modding_badge_default_font_size = 13.0f;
+static const float modding_badge_line_advance_factor = 0.86f;
+static const float modding_badge_bold_offset = 0.5f;
+static const ImVec4_c modding_badge_header_color = {1.0f, 1.0f, 1.0f, 1.0f};
+static const ImVec4_c modding_badge_seconds_color = {0.35f, 1.0f, 0.35f, 1.0f};
+static const ImVec4_c modding_badge_hot_reload_on_color = {0.35f, 1.0f, 0.35f, 1.0f};
+static const ImVec4_c modding_badge_hot_reload_off_color = {1.0f, 0.35f, 0.35f, 1.0f};
+static const char modding_badge_hot_reload_label[] = "Hot Reload:";
 
 static float overlay_text_width(const char *text) {
 	if (!text) {
@@ -39,11 +40,7 @@ static float overlay_line_height() {
 }
 
 static float overlay_line_advance() {
-	return igGetTextLineHeight() * MODDING_BADGE_LINE_ADVANCE_FACTOR;
-}
-
-static float max_float(float a, float b) {
-	return a > b ? a : b;
+	return igGetTextLineHeight() * modding_badge_line_advance_factor;
 }
 
 static float overlay_mod_gap() {
@@ -74,7 +71,7 @@ static void draw_bold_overlay_text(
 	draw_overlay_text_at(draw_list, pos, color, text);
 	draw_overlay_text_at(
 		draw_list,
-		(ImVec2_c){pos.x + MODDING_BADGE_BOLD_OFFSET, pos.y},
+		(ImVec2_c){pos.x + modding_badge_bold_offset, pos.y},
 		color,
 		text
 	);
@@ -82,7 +79,7 @@ static void draw_bold_overlay_text(
 
 static float hot_reload_width() {
 	const char *state = dttr_mods_hot_reload_enabled() ? "on" : "off";
-	return overlay_text_width(MODDING_BADGE_HOT_RELOAD_LABEL) + overlay_mod_gap()
+	return overlay_text_width(modding_badge_hot_reload_label) + overlay_mod_gap()
 		   + overlay_text_width(state);
 }
 
@@ -94,15 +91,15 @@ static void draw_hot_reload_header(float width) {
 
 	const bool hot_reload_enabled = dttr_mods_hot_reload_enabled();
 	const char *state = hot_reload_enabled ? "on" : "off";
-	const ImVec4_c state_color = hot_reload_enabled ? MODDING_BADGE_HOT_RELOAD_ON_COLOR
-													: MODDING_BADGE_HOT_RELOAD_OFF_COLOR;
+	const ImVec4_c state_color = hot_reload_enabled ? modding_badge_hot_reload_on_color
+													: modding_badge_hot_reload_off_color;
 	const float gap = overlay_mod_gap();
-	const float label_width = overlay_text_width(MODDING_BADGE_HOT_RELOAD_LABEL);
+	const float label_width = overlay_text_width(modding_badge_hot_reload_label);
 	const ImVec2_c cursor = igGetCursorScreenPos();
-	const ImU32 label_color = igGetColorU32_Vec4(MODDING_BADGE_HEADER_COLOR);
+	const ImU32 label_color = igGetColorU32_Vec4(modding_badge_header_color);
 	const ImU32 state_color_u32 = igGetColorU32_Vec4(state_color);
 
-	draw_bold_overlay_text(draw_list, cursor, label_color, MODDING_BADGE_HOT_RELOAD_LABEL);
+	draw_bold_overlay_text(draw_list, cursor, label_color, modding_badge_hot_reload_label);
 	draw_bold_overlay_text(
 		draw_list,
 		(ImVec2_c){cursor.x + label_width + gap, cursor.y},
@@ -134,7 +131,7 @@ static void draw_mod_overlay_row(
 
 	const ImVec2_c cursor = igGetCursorScreenPos();
 	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
-	const ImU32 seconds_color = igGetColorU32_Vec4(MODDING_BADGE_SECONDS_COLOR);
+	const ImU32 seconds_color = igGetColorU32_Vec4(modding_badge_seconds_color);
 	const char *mod_name = name ? name : "";
 	const float name_width = overlay_text_width(mod_name);
 
@@ -351,16 +348,16 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 		const float style_font_size = style ? style->FontSizeBase : 0.0f;
 
 		const float font_size = font->LegacySize > 0.0f ? font->LegacySize
-														: MODDING_BADGE_DEFAULT_FONT_SIZE;
+														: modding_badge_default_font_size;
 
 		const float base_font_size = style_font_size > 0.0f ? style_font_size : font_size;
 
-		const float scaled_font_size = base_font_size * MODDING_BADGE_FONT_FACTOR
+		const float scaled_font_size = base_font_size * modding_badge_font_factor
 									   * game_scale;
 
-		const float badge_font_size = scaled_font_size > MODDING_BADGE_MIN_FONT_SIZE
+		const float badge_font_size = scaled_font_size > modding_badge_min_font_size
 										  ? scaled_font_size
-										  : MODDING_BADGE_MIN_FONT_SIZE;
+										  : modding_badge_min_font_size;
 
 		igPushFont(font, badge_font_size);
 	}
@@ -376,10 +373,10 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 		const char *name = dttr_mods_loaded_name(i);
 		const float row_width = overlay_text_width(name ? name : "") + gap
 								+ overlay_text_width(seconds);
-		rows_width = max_float(rows_width, row_width);
+		rows_width = fmaxf(rows_width, row_width);
 	}
 
-	const float text_width = max_float(hot_reload_width(), rows_width);
+	const float text_width = fmaxf(hot_reload_width(), rows_width);
 
 	igSetNextWindowContentSize((ImVec2_c){text_width, 0.0f});
 

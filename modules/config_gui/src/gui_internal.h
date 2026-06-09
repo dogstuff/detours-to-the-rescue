@@ -46,6 +46,11 @@
 #define DTTR_CONFIG_UI_TOOLTIP_PADDING_Y 4.0f
 #define DTTR_CONFIG_UI_TOOLTIP_WRAP_W 360.0f
 
+#define CONFIG_TABLE_FLAGS                                                               \
+	(ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH                       \
+	 | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings               \
+	 | ImGuiTableFlags_PadOuterX)
+
 #ifndef DTTR_VERSION
 #define DTTR_VERSION "unknown"
 #endif

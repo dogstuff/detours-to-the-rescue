@@ -2,17 +2,10 @@
 
 #include "core_internal.h"
 
+// DTTR_PCDOGS_T_Patch_Report shares DTTR_Core_TargetReport's layout, so the core
+// helpers populate it directly.
 static void patch_report_init(DTTR_PCDOGS_T_Patch_Report *report) {
-	if (!report) {
-		return;
-	}
-
-	report->attempted = 0;
-	report->installed = 0;
-	report->skipped_optional = 0;
-	report->failed_index = (size_t)-1;
-	report->status = DTTR_OK;
-	report->message = "ok";
+	dttr_core_report_init((DTTR_Core_TargetReport *)report);
 }
 
 static void patch_report_fail(
@@ -20,13 +13,7 @@ static void patch_report_fail(
 	size_t index,
 	DTTR_Result result
 ) {
-	if (!report) {
-		return;
-	}
-
-	report->failed_index = index;
-	report->status = result.status;
-	report->message = result.message;
+	dttr_core_report_fail((DTTR_Core_TargetReport *)report, index, result);
 }
 
 static uintptr_t function_address_at(uint32_t index) {

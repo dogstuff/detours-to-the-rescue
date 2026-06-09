@@ -54,10 +54,8 @@ void DTTR_Errors_ShowMessage(const char *title, const char *message);
 			0,                                                                           \
 			NULL                                                                         \
 		);                                                                               \
-		if (message == NULL) {                                                           \
-			message = "unknown";                                                         \
-		}                                                                                \
-		DTTR_FATAL("Win32 API Error 0x%lX: %s", error_code, message);                    \
+		const char *message_text = message ? message : "unknown";                        \
+		DTTR_FATAL("Win32 API Error 0x%lX: %s", error_code, message_text);               \
 	} while (0)
 
 #define DTTR_UNWRAP_WINAPI_IF(result, is_error)                                          \

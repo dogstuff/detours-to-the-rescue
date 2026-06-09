@@ -106,8 +106,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	if (!DTTR_ResultOK(alloc_result) || !state) {
 		DTTR_LOG_ERROR(
 			"Failed to allocate joystick poll state: %s",
-			alloc_result.message ? alloc_result.message
-								 : DTTR_StatusName(alloc_result.status)
+			dttr_sidecar_result_detail(alloc_result)
 		);
 		return NULL;
 	}

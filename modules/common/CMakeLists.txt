@@ -77,6 +77,7 @@ if(BUILD_TESTING)
         )
         target_link_libraries(dttr_test_support PUBLIC
             ${DTTR_CMOCKA_TARGET}
+            common
             physfs-static
             sds
             xxhash

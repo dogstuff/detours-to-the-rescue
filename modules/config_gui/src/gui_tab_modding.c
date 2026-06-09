@@ -73,10 +73,7 @@ static void scan_mod_dlls(const config_ui_state *state, config_mod_dll_list *out
 }
 
 static bool begin_mod_table(const DTTR_ImGuiDialogContext *ctx) {
-	const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH
-								  | ImGuiTableFlags_BordersOuterH
-								  | ImGuiTableFlags_SizingStretchProp
-								  | ImGuiTableFlags_NoSavedSettings
+	const ImGuiTableFlags flags = (CONFIG_TABLE_FLAGS & ~ImGuiTableFlags_PadOuterX)
 								  | ImGuiTableFlags_NoPadOuterX;
 	if (!igBeginTable("##modding_mod_table", 2, flags, (ImVec2_c){0.0f, 0.0f}, 0.0f)) {
 		return false;

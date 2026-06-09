@@ -2,7 +2,7 @@
 
 DttR provides built-in ImGui support for mod overlay menus, including debug windows, mod options, small tools, and overlays that do not need to be drawn through the game renderer.
 
-## Drawing UI in ImGui callbacks
+## ImGui Callbacks
 
 Use these callbacks for ImGui widgets:
 
@@ -19,7 +19,7 @@ DTTR_MODS_IMGUI_BEGIN {
 }
 ```
 
-## Leaving the ImGui lifecycle to DttR
+## ImGui Lifecycle
 
 DttR owns the ImGui context, frame flow, SDL backend, and renderer backend. Submitting ImGui work outside a DttR ImGui callback can cause frame-order or backend-state bugs.
 
@@ -30,7 +30,7 @@ Calling these from a mod can break DttR's UI or another mod's UI:
 - `ImGui_ImplSDL3_*` init or shutdown functions
 - `ImGui_ImplOpenGL3_*` init or shutdown functions
 
-## Storing UI state in your mod
+## UI State
 
 Store checkbox values, window visibility, and other UI state in mod-owned variables.
 
@@ -50,7 +50,7 @@ DTTR_MODS_IMGUI_BEGIN {
 
 Storing pointers to short-lived ImGui data after the callback returns can create dangling-pointer bugs; copy any needed values instead.
 
-## Reading SDL events from callbacks
+## SDL Events
 
 For SDL event callbacks, include `SDL3/SDL.h` and read the callback data directly.
 

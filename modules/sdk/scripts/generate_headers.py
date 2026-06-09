@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import difflib
 import re
 import subprocess
 import sys
@@ -16,7 +15,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from codegen import c_mask, c_sig, load_python_module
+from codegen import c_mask, c_sig, load_python_module, write_or_check
 
 try:
     from mako.template import Template
@@ -99,22 +98,7 @@ class TypedField(StrEnum):
     CALLABLE = "callable"
 
 
-TYPED_FIELDS = (
-    TypedField.NAME,
-    TypedField.PUBLIC,
-    TypedField.CC,
-    TypedField.RET,
-    TypedField.RETURN_KIND,
-    TypedField.PARAMS,
-    TypedField.ARGS,
-    TypedField.TRY_PARAMS,
-    TypedField.TRY_ARGS,
-    TypedField.SIGNATURE,
-    TypedField.DELTA,
-    TypedField.HOOK_KIND,
-    TypedField.HOOK_PROLOGUE_SIZE,
-    TypedField.CALLABLE,
-)
+TYPED_FIELDS = tuple(TypedField)
 
 
 @dataclass(frozen=True, slots=True)
@@ -860,29 +844,6 @@ def validate_blueprint(blueprint: BlueprintRows) -> None:
         # unstable extension header.
 
 
-def write_or_check(path: Path, text: str, check: bool) -> bool:
-    """Write generated SDK output, or print the stale diff used by CI check mode."""
-
-    old = path.read_text() if path.exists() else ""
-    if old == text:
-        return True
-
-    if check:
-        diff = difflib.unified_diff(
-            old.splitlines(),
-            text.splitlines(),
-            fromfile=str(path),
-            tofile=f"{path} (generated)",
-            lineterm="",
-        )
-        print("\n".join(diff), file=sys.stderr)
-        return False
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
-    return True
-
-
 def clang_format_header(path: Path, text: str) -> str:
     """Format generated C headers the same way checked-in SDK headers are stored."""
 
@@ -1091,17 +1052,6 @@ def c_data_ptr_decl(value: object, declarator: str) -> str:
 
     base, count = parts
     return f"{base} (*{declarator})[{count}]"
-
-
-def c_data_read_param(value: object, name: str) -> str:
-    """Declare the output parameter for a generated data Read accessor."""
-
-    parts = c_array_type_parts(value)
-    if parts is None:
-        return f"{c_type(value)}* {name}"
-
-    base, count = parts
-    return f"{base} (*{name})[{count}]"
 
 
 def c_data_write_param(value: object, name: str) -> str:
@@ -1818,7 +1768,7 @@ def header_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderContext
         c_data_ptr_decl=lambda value, declarator: c_data_ptr_decl(
             local_c_type(value), declarator
         ),
-        c_data_read_param=lambda value, name: c_data_read_param(
+        c_data_read_param=lambda value, name: c_data_ptr_decl(
             local_c_type(value), name
         ),
         c_data_write_param=lambda value, name: c_data_write_param(

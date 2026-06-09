@@ -105,6 +105,7 @@ void DTTR_ImGuiDialog_End(DTTR_ImGuiDialogContext *ctx);
 void DTTR_ImGuiDialog_Shutdown();
 
 float DTTR_ImGuiDialog_ScaledFloat(const DTTR_ImGuiDialogContext *ctx, float value);
+void DTTR_ImGuiDialog_OffsetCursorY(const DTTR_ImGuiDialogContext *ctx, float amount);
 bool DTTR_ImGuiDialog_RefreshScale(DTTR_ImGuiDialogContext *ctx);
 
 void DTTR_ImGuiDialog_ProcessEvent(

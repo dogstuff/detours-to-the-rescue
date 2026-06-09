@@ -20,14 +20,6 @@
 static const DTTR_RendererVtbl renderer;
 static void cleanup(DTTR_BackendState *state);
 
-typedef struct {
-	Uint32 x;
-	Uint32 y;
-	Uint32 w;
-	Uint32 h;
-} graphics_present_rect;
-
-// Converts the configured MSAA sample count into SDL's GPU enum value.
 static SDL_GPUSampleCount msaa_sample_count_from_config(int value) {
 	switch (value) {
 	case 2:
@@ -41,7 +33,6 @@ static SDL_GPUSampleCount msaa_sample_count_from_config(int value) {
 	}
 }
 
-// Converts SDL's GPU sample-count enum back to the integer used in logs and config.
 static int msaa_sample_count_to_int(SDL_GPUSampleCount value) {
 	switch (value) {
 	case SDL_GPU_SAMPLECOUNT_2:
@@ -91,7 +82,6 @@ static SDL_GPUSampleCount select_msaa_sample_count(DTTR_BackendState *state) {
 	return SDL_GPU_SAMPLECOUNT_1;
 }
 
-// Releases the SDL GPU device and clears the backend pointer after ownership ends.
 static void destroy_device(DTTR_BackendState *state) {
 	if (!state->device) {
 		return;
@@ -101,7 +91,6 @@ static void destroy_device(DTTR_BackendState *state) {
 	state->device = NULL;
 }
 
-// Unclaims the SDL window before destroying the GPU device bound to it.
 static void release_window_device(DTTR_BackendState *state) {
 	if (!state->device) {
 		return;
@@ -350,7 +339,6 @@ typedef struct {
 	SDL_GPUSampler *last_sampler;
 } graphics_replay_state;
 
-// Treats MSAA as active only after the sample count and render target are both ready.
 static bool msaa_enabled(const DTTR_BackendState *state) {
 	return state->msaa_sample_count != SDL_GPU_SAMPLECOUNT_1
 		   && state->msaa_render_target != NULL;
@@ -368,7 +356,6 @@ static SDL_GPUTransferBuffer *create_upload_buffer(
 	return SDL_CreateGPUTransferBuffer(state->device, &info);
 }
 
-// Marks a transient upload buffer slot as reusable after texture upload completes.
 static void release_upload_pool_slot(DTTR_BackendState *state, int pool_slot) {
 	if (!state || pool_slot < 0 || pool_slot >= DTTR_UPLOAD_POOL_SIZE) {
 		return;
@@ -433,7 +420,6 @@ static int acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) {
 	return slot_index;
 }
 
-// Binds the shared quad vertex buffer used by replayed DirectDraw-style draw calls.
 static void bind_frame_vertex_buffer(
 	const DTTR_BackendState *state,
 	SDL_GPURenderPass *render_pass
@@ -449,7 +435,6 @@ static void bind_frame_vertex_buffer(
 	SDL_BindGPUVertexBuffers(render_pass, 0, &vbuf_binding, 1);
 }
 
-// Closes the current SDL GPU render pass before commands switch to copy or compute work.
 static void end_render_pass_if_active(DTTR_BackendState *state) {
 	if (!state->render_pass) {
 		return;
@@ -484,40 +469,10 @@ static void defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 	}
 
 	DTTR_StagedTexture *st = &state->staged_textures[texture_index];
-	if (st->gpu_tex && state->device) {
+	if (st->gpu_tex && state->device
+		&& bd->deferred_destroy_count < DTTR_MAX_STAGED_TEXTURES) {
 		bd->deferred_destroys[bd->deferred_destroy_count++] = st->gpu_tex;
 	}
-}
-
-// Creates the GPU texture backing a staged DirectDraw surface the first time it is used.
-static bool ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st) {
-	if (st->gpu_tex) {
-		return true;
-	}
-
-	const SDL_GPUTextureCreateInfo tex_info = {
-		.type = SDL_GPU_TEXTURETYPE_2D,
-		.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM,
-		.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET,
-		.width = st->width,
-		.height = st->height,
-		.layer_count_or_depth = 1,
-		.num_levels = dttr_graphics_calc_mip_levels(st->width, st->height),
-	};
-
-	st->gpu_tex = SDL_CreateGPUTexture(state->device, &tex_info);
-
-	if (!st->gpu_tex) {
-		DTTR_LOG_WARN(
-			"Failed to create GPU texture %dx%d: %s",
-			st->width,
-			st->height,
-			SDL_GetError()
-		);
-		return false;
-	}
-
-	return true;
 }
 
 // Copies one detached pixel buffer into a GPU texture using either the upload pool or a
@@ -645,7 +600,7 @@ static int collect_and_upload_pending(
 
 		st->pending_upload = false;
 
-		if (!ensure_staged_texture(state, st)) {
+		if (!dttr_graphics_ensure_staged_texture(state, st)) {
 			free(st->pixels);
 			st->pixels = NULL;
 			continue;
@@ -767,87 +722,6 @@ static void upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBuff
 	state->perf_upload_bytes_accum += uploaded_bytes;
 }
 
-// Fits the game render target into the swapchain according to stretch, fit, and integer
-// scaling settings.
-static graphics_present_rect compute_present_rect(
-	Uint32 dst_w,
-	Uint32 dst_h,
-	int src_w,
-	int src_h,
-	bool stretch,
-	bool integer_fit
-) {
-	graphics_present_rect rect = {
-		.x = 0,
-		.y = 0,
-		.w = dst_w,
-		.h = dst_h,
-	};
-
-	if (stretch) {
-		return rect;
-	}
-
-	const float sx = (float)dst_w / (float)src_w;
-	const float sy = (float)dst_h / (float)src_h;
-	float scale = SDL_min(sx, sy);
-
-	if (integer_fit && scale >= 1.0f) {
-		scale = floorf(scale);
-	}
-
-	rect.w = (Uint32)((float)src_w * scale);
-	rect.h = (Uint32)((float)src_h * scale);
-
-	if (rect.w == 0) {
-		rect.w = 1;
-	}
-
-	if (rect.h == 0) {
-		rect.h = 1;
-	}
-
-	rect.w = SDL_min(rect.w, dst_w);
-	rect.h = SDL_min(rect.h, dst_h);
-	rect.x = (dst_w - rect.w) / 2;
-	rect.y = (dst_h - rect.h) / 2;
-	return rect;
-}
-
-// Notifies mods after SDL GPU backend draw/blit work is queued and before submit.
-static void mod_before_present(
-	DTTR_BackendState *state,
-	const graphics_present_rect *present
-) {
-	dttr_graphics_mod_before_present(
-		state,
-		present->x,
-		present->y,
-		present->w,
-		present->h,
-		false,
-		true
-	);
-}
-
-// Notifies mods after SDL GPU presentation using the same game viewport payload.
-static void mod_after_present(
-	DTTR_BackendState *state,
-	const graphics_present_rect *present,
-	bool overlay_rendered
-) {
-	dttr_graphics_mod_after_present(
-		state,
-		present->x,
-		present->y,
-		present->w,
-		present->h,
-		false,
-		overlay_rendered
-	);
-}
-
-// Restores full-target viewport and scissor after custom game viewport changes.
 static void set_default_viewport(const DTTR_BackendState *state) {
 	if (!state->render_pass) {
 		return;
@@ -914,7 +788,6 @@ static bool begin_draw_pass_if_needed(DTTR_BackendState *state) {
 	return true;
 }
 
-// Clears cached pipeline and sampler bindings between replay passes.
 static void reset_replay_state(graphics_replay_state *replay_state) {
 	if (!replay_state) {
 		return;
@@ -1178,11 +1051,11 @@ static void end_frame(DTTR_BackendState *state) {
 #endif
 	dttr_graphics_mod_after_game_frame(state);
 
-	graphics_present_rect present = {
+	DTTR_PresentRect present = {
 		.x = 0,
 		.y = 0,
-		.w = (Uint32)state->width,
-		.h = (Uint32)state->height,
+		.w = state->width,
+		.h = state->height,
 	};
 
 	bool overlay_rendered = false;
@@ -1193,14 +1066,15 @@ static void end_frame(DTTR_BackendState *state) {
 															: (Uint32)state->height;
 		const bool
 			is_internal_method = (dttr_config.scaling_method == DTTR_SCALING_METHOD_LOGICAL);
-		present = compute_present_rect(
-			swap_w,
-			swap_h,
+		present = dttr_graphics_compute_present_rect(
+			(int)swap_w,
+			(int)swap_h,
 			state->width,
 			state->height,
 			dttr_config.scaling_fit == DTTR_SCALING_MODE_STRETCH,
 			(!is_internal_method)
-				&& (dttr_config.scaling_fit == DTTR_SCALING_MODE_INTEGER)
+				&& (dttr_config.scaling_fit == DTTR_SCALING_MODE_INTEGER),
+			1.0f
 		);
 		overlay_rendered = true;
 
@@ -1238,7 +1112,7 @@ static void end_frame(DTTR_BackendState *state) {
 			present.h
 		);
 #endif
-		mod_before_present(state, &present);
+		dttr_graphics_mod_present_rect_before(state, &present);
 	}
 
 	SDL_SubmitGPUCommandBuffer(state->cmd);
@@ -1247,7 +1121,7 @@ static void end_frame(DTTR_BackendState *state) {
 		SDL_WaitForGPUIdle(state->device);
 	}
 
-	mod_after_present(state, &present, overlay_rendered);
+	dttr_graphics_mod_present_rect_after(state, &present, overlay_rendered);
 	dttr_graphics_mod_frame_end(state);
 	state->cmd = NULL;
 }
@@ -1370,13 +1244,14 @@ static bool present_video_frame_bgra(
 	}
 
 	if (swapchain_tex) {
-		const graphics_present_rect present = compute_present_rect(
-			swapchain_w,
-			swapchain_h,
+		const DTTR_PresentRect present = dttr_graphics_compute_present_rect(
+			(int)swapchain_w,
+			(int)swapchain_h,
 			width,
 			height,
 			false,
-			false
+			false,
+			1.0f
 		);
 
 		const SDL_GPUBlitInfo blit = {
@@ -1415,7 +1290,6 @@ static bool present_video_frame_bgra(
 	return true;
 }
 
-// Recreates SDL GPU render targets for the requested game-space resolution.
 static bool resize(DTTR_BackendState *state, int width, int height) {
 	return dttr_graphics_sdl3gpu_resize_render_textures(width, height);
 }
@@ -1433,7 +1307,6 @@ static const char *driver_display_name(const char *driver) {
 	return driver;
 }
 
-// Reports the SDL GPU driver label shown in the window title and mod context.
 static const char *get_driver_name(const DTTR_BackendState *state) {
 	return driver_display_name(SDL_GetGPUDeviceDriver(state->device));
 }

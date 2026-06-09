@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import difflib
 import html
 import json
 import re
@@ -35,6 +34,7 @@ except ImportError as exc:
 sys.dont_write_bytecode = True
 
 from blueprint import Required  # noqa: E402
+from codegen import write_or_check  # noqa: E402
 from generate_headers import (  # noqa: E402
     CC_KEYWORD,
     SymbolDocKind,
@@ -767,34 +767,16 @@ def sample_argument_name(param: object, c_type: str) -> str:
     if c_type == "BOOL":
         return "flag"
 
-    if c_type == "float":
-        return "value"
-
-    if c_type == "double":
-        return "value"
-
     return "value"
 
 
 def sample_value(c_type: str) -> str:
     normalized = c_type.strip()
-    if "*" in normalized:
-        return f"({normalized})NULL"
-
     if normalized in {"HANDLE", "HINSTANCE", "HMODULE", "HWND"}:
         return f"({normalized})NULL"
 
-    if normalized == "bool":
-        return "false"
-
-    if normalized == "BOOL":
-        return "FALSE"
-
-    if normalized == "float":
-        return "0.0f"
-
-    if normalized == "double":
-        return "0.0"
+    if "*" in normalized or normalized in {"bool", "BOOL", "float", "double"}:
+        return data_default_value(normalized)
 
     return f"({normalized})0"
 
@@ -1943,28 +1925,6 @@ def combined_outputs(
             symbol_addresses=symbol_addresses,
         )
     )
-
-
-def write_or_check(path: Path, text: str, check: bool) -> bool:
-    old = path.read_text() if path.exists() else ""
-
-    if old == text:
-        return True
-
-    if check:
-        diff = difflib.unified_diff(
-            old.splitlines(),
-            text.splitlines(),
-            fromfile=str(path),
-            tofile=f"{path} (generated)",
-            lineterm="",
-        )
-        print("\n".join(diff), file=sys.stderr)
-        return False
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
-    return True
 
 
 def main() -> int:

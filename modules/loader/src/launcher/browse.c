@@ -4,16 +4,21 @@
 #include <dttr_loader_paths.h>
 #include <dttr_loader_ui.h>
 #include <dttr_log.h>
+#include <dttr_path.h>
 #include <dttr_sdl.h>
 
 #include <SDL3/SDL.h>
 #include <string.h>
 #include <windows.h>
 
-// Converts UTF-8 paths for Windows file probes.
-static void utf8_to_wide_path(WCHAR *out, const char *path) {
-	MultiByteToWideChar(CP_UTF8, 0, path, -1, out, MAX_PATH);
+static bool utf8_to_wide_path(WCHAR *out, const char *path) {
+	if (MultiByteToWideChar(CP_UTF8, 0, path, -1, out, MAX_PATH) == 0) {
+		out[0] = L'\0';
+		return false;
+	}
+
 	out[MAX_PATH - 1] = L'\0';
+	return true;
 }
 
 // Resolves user paths before deriving ISO cache keys.
@@ -67,13 +72,9 @@ static void copy_path(char *out, size_t out_size, const char *path) {
 		return;
 	}
 
-	if (!path) {
+	if (!path || !DTTR_Path_CopyString(out, out_size, path)) {
 		out[0] = '\0';
-		return;
 	}
-
-	strncpy(out, path, out_size - 1);
-	out[out_size - 1] = '\0';
 }
 
 // Extracts one required ISO member into cache.
@@ -181,7 +182,11 @@ static bool resolve_iso_direct(
 		goto done;
 	}
 
-	utf8_to_wide_path(out, exe_path);
+	if (!utf8_to_wide_path(out, exe_path)) {
+		DTTR_LOG_ERROR("Could not convert cached ISO executable path: %s", exe_path);
+		goto done;
+	}
+
 	iso_context->is_iso = true;
 	copy_path(
 		iso_context->game_root,
@@ -228,7 +233,10 @@ static bool try_configured_path(
 	DTTR_LoaderIsoContext *iso_context
 ) {
 	WCHAR wide_path[MAX_PATH];
-	utf8_to_wide_path(wide_path, configured_path);
+	if (!utf8_to_wide_path(wide_path, configured_path)) {
+		DTTR_LOG_ERROR("Could not convert configured path: %s", configured_path);
+		return false;
+	}
 
 	if (DTTR_LoaderPath_IsISOW(wide_path)) {
 		DTTR_LOG_INFO("Using configured ISO path: %s", configured_path);
@@ -327,9 +335,7 @@ static void scan_disc_candidates(
 // Revalidates a disc before saving it.
 static bool try_disc_candidate(WCHAR *out, const DTTR_LoaderUIDiscCandidate *candidate) {
 	WCHAR wide_path[MAX_PATH];
-	utf8_to_wide_path(wide_path, candidate->path);
-
-	if (!try_dir(out, wide_path)) {
+	if (!utf8_to_wide_path(wide_path, candidate->path) || !try_dir(out, wide_path)) {
 		DTTR_LoaderUI_ShowError(
 			"DttR: Disc Not Found",
 			"The selected disc no longer contains pcdogs.exe."
@@ -388,7 +394,13 @@ static bool try_browsed_path(
 	DTTR_LoaderIsoContext *iso_context
 ) {
 	WCHAR wide_path[MAX_PATH];
-	utf8_to_wide_path(wide_path, browse_result);
+	if (!utf8_to_wide_path(wide_path, browse_result)) {
+		DTTR_LoaderUI_ShowError(
+			"DttR: Game Not Found",
+			"The selected folder does not contain pcdogs.exe."
+		);
+		return false;
+	}
 
 	if (choice == DTTR_LOADER_UI_CHOICE_BROWSE_ISO || DTTR_LoaderPath_IsISOW(wide_path)) {
 		return resolve_iso(out, browse_result, iso_context);

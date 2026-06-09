@@ -29,24 +29,12 @@ package_build() {
   (cd "${build_dir}/dist" && zip -r "$archive_path" "${dist_name}/")
 }
 
-upload_build() {
-  local archive=$1
-
+upload_artifacts() {
   if [ -z "$package_registry_url" ] || [ -z "$job_token" ]; then
     return
   fi
 
-  curl --fail \
-    --header "JOB-TOKEN: ${job_token}" \
-    --upload-file "${archive}" \
-    "${package_registry_url}/${archive}"
-}
-
-upload_artifacts() {
-  local archive
-  for archive in "$@"; do
-    upload_build "$archive"
-  done
+  scripts/upload-package-artifacts.sh "$package_registry_url" "$job_token" "$@"
 }
 
 build_and_package() {

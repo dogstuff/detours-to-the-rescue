@@ -6,7 +6,7 @@ Run `dttr-config.exe` next to `dttr.exe` to change settings without hand-editing
 
 Choose **Save** before closing the tool. DttR reads the saved `dttr.json` the next time it starts, so restart the game after changing settings.
 
-## Switching game files
+## Switch Game Files
 
 Use `Game Directory or ISO` to switch discs, choose another installed copy, fix a path after moving files, or open the first-time setup prompt again.
 
@@ -14,17 +14,17 @@ Use `Game Directory or ISO` to switch discs, choose another installed copy, fix 
 - For an ISO, choose the original disc image.
 - For a disc, insert or mount it before opening DttR.
 
-## Moving your saves
+## Move Save Files
 
 By default, DttR reads and writes saves from a DttR-owned directory (`saves` next to `dttr.exe`). Each game executable variant gets its own subdirectory.
 
 If you need the game to use its original save paths, set `saves_path` to an empty string in `dttr.json`.
 
-## Skipping intro movies
+## Skip Intro Movies
 
 Turn on `Skip Intro Movies` to skip the opening videos. This is also worth trying if the game crashes before reaching the main menu.
 
-## Adjusting graphics
+## Graphics
 
 Start with the defaults unless you are fixing a specific problem or want a different look.
 
@@ -52,7 +52,7 @@ Other useful graphics settings:
 - Turn `Sprite Smooth` off for sharper sprite pixels.
 - Set `MSAA Samples` to `1` to disable MSAA.
 
-## Configuring a controller
+## Controller
 
 Turn on `Enable Gamepad`, save your changes, then start DttR with the controller connected.
 
@@ -64,26 +64,26 @@ To change a button, click its `Bind` button, then press the controller button or
 
 Use `Reset` to restore the default mapping, or `Clear` to leave an action unbound.
 
-## Adjusting audio
+## Audio
 
 Use `MSS Sample Gain` to make game audio louder or quieter.
 
 Leave `MSS Sample Preemphasis` at the default unless you have a specific need to adjust it.
 
-## Collecting logs and crash reports
+## Logs and Crash Reports
 
 Use `Log File Path` to configure where DttR should write `dttr.log`. Relative paths are based on the DttR directory.
 
 If you need more detail for troubleshooting, set `Log Level` to `debug` or `trace`.
 
 Use `Minidump Type` to control how much information crash dumps include. Posting crash dumps publicly can expose sensitive information; share them only when requested.
-## Configuring modding options
+## Modding Options
 
 The Modding tab is experimental and only exists in the Modding build.
 
 - Use `Hot Reload` to enable reloading updated mod DLLs automatically without needing to restart the game.
 - To disable specific installed mods, uncheck their DLLs in the mod list.
 
-## Editing the config file directly
+## Edit the Config File
 
 For direct JSON editing, alternate config files, and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).

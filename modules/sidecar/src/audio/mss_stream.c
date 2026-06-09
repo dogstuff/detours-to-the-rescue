@@ -1,6 +1,5 @@
 #include "mss_private.h"
 #include "sidecar_private.h"
-#include <dttr_pcdogs.h>
 
 #include <dttr_log.h>
 #include <dttr_path.h>
@@ -15,9 +14,6 @@
 #include <string.h>
 #include <windows.h>
 
-#define AIL_STATUS_DONE DTTR_MSS_STATUS_DONE
-#define AIL_STATUS_PLAYING DTTR_MSS_STATUS_PLAYING
-
 typedef struct mss_stream {
 	MIX_Audio *audio;
 	MIX_Track *track;
@@ -30,7 +26,6 @@ typedef struct mss_stream {
 
 static mss_stream *streams;
 
-// Finds the stream handle previously returned to the game by the SDL_mixer backend.
 static mss_stream *find_stream(const void *ptr) {
 	for (mss_stream *stream = streams; stream; stream = stream->next) {
 		if (stream == ptr) {
@@ -54,20 +49,15 @@ static int stream_slot(const mss_stream *target_stream) {
 	return -1;
 }
 
-// Restores MSS-compatible volume, loop count, and status defaults on a stream slot.
 static void reset_stream_defaults(mss_stream *stream) {
-	if (!stream) {
-		return;
-	}
-
 	stream->volume = DTTR_MSS_DEFAULT_VOLUME;
 	stream->loops = DTTR_MSS_DEFAULT_LOOP_COUNT;
-	stream->status = AIL_STATUS_DONE;
+	stream->status = DTTR_MSS_STATUS_DONE;
 }
 
 // Combines per-stream volume with the master gain before updating the SDL_mixer track.
 static void apply_stream_gain(mss_stream *stream) {
-	if (!stream || !stream->track) {
+	if (!stream->track) {
 		return;
 	}
 
@@ -83,7 +73,7 @@ static void apply_stream_gain(mss_stream *stream) {
 
 // Binds decoded audio to its track and reapplies gain after stream setup changes.
 static void apply_stream_track(mss_stream *stream) {
-	if (!stream || !stream->track || !stream->audio) {
+	if (!stream->track || !stream->audio) {
 		return;
 	}
 
@@ -93,10 +83,6 @@ static void apply_stream_track(mss_stream *stream) {
 
 // Adds a newly opened stream to the intrusive list used for handle validation.
 static void link_stream(mss_stream *stream) {
-	if (!stream) {
-		return;
-	}
-
 	stream->prev = NULL;
 	stream->next = streams;
 
@@ -109,10 +95,6 @@ static void link_stream(mss_stream *stream) {
 
 // Removes a stream from the active list before its handle memory is cleared.
 static void unlink_stream(mss_stream *stream) {
-	if (!stream) {
-		return;
-	}
-
 	if (stream->prev) {
 		stream->prev->next = stream->next;
 	} else if (streams == stream) {
@@ -129,10 +111,6 @@ static void unlink_stream(mss_stream *stream) {
 
 // Releases SDL_mixer track and audio objects owned by one MSS stream handle.
 static void destroy_stream_objects(mss_stream *stream) {
-	if (!stream) {
-		return;
-	}
-
 	if (stream->track) {
 		MIX_SetTrackAudio(stream->track, NULL);
 		MIX_DestroyTrack(stream->track);
@@ -147,10 +125,6 @@ static void destroy_stream_objects(mss_stream *stream) {
 
 // Unlinks, releases, clears, and frees one stream handle returned to the game.
 static void destroy_stream(mss_stream *stream) {
-	if (!stream) {
-		return;
-	}
-
 	unlink_stream(stream);
 	destroy_stream_objects(stream);
 	memset(stream, 0, sizeof(*stream));
@@ -171,65 +145,6 @@ void dttr_mss_stream_apply_master_gain() {
 	}
 }
 
-// Resolves a game-relative stream path through override data and the cached game data
-// tree.
-static sds resolve_game_relative_stream_path(const char *relative) {
-	char (*base_path)[DTTR_PCDOGS_D_AUDIO_OPEN_STREAM_PKG_BASE_PATH_COUNT]
-		= DTTR_PCDOGS_D_Audio_OpenStream_PKGBasePath->Ptr();
-	sds requested = sdsnew(base_path ? *base_path : NULL);
-
-	if (!requested || !DTTR_Path_AppendSegment(&requested, relative, '\\')) {
-		sdsfree(requested);
-		return sdsempty();
-	}
-
-	char case_resolved[MAX_PATH];
-	const char *resolved = NULL;
-
-	if (dttr_game_data_resolve_existing_read_path(
-			requested,
-			case_resolved,
-			sizeof(case_resolved)
-		)) {
-		resolved = case_resolved;
-	}
-
-	char cached[MAX_PATH];
-
-	if (!resolved && dttr_game_data_resolve_read_path(relative, cached, sizeof(cached))) {
-		resolved = cached;
-	}
-
-	if (!resolved) {
-		return requested;
-	}
-
-	sds out = sdsnew(resolved);
-	sdsfree(requested);
-	return out;
-}
-
-// Finds the game-data portion of an absolute path so stream lookup can reuse cache logic.
-static const char *find_data_segment(const char *path) {
-	for (const char *p = path; *p;) {
-		const size_t segment_len = DTTR_Path_SegmentLen(p);
-
-		if (segment_len == sizeof("data") - 1
-			&& DTTR_Path_AsciiIeqN(p, "data", sizeof("data") - 1)) {
-			return p;
-		}
-
-		if (segment_len == sizeof("pcdogs.pkg") - 1
-			&& DTTR_Path_AsciiIeqN(p, "pcdogs.pkg", sizeof("pcdogs.pkg") - 1)) {
-			return p;
-		}
-
-		p = DTTR_Path_SkipSeparators(p + segment_len);
-	}
-
-	return NULL;
-}
-
 // Normalizes absolute and relative stream paths into the file path SDL_mixer should load.
 static sds resolve_stream_path(const char *path) {
 	if (!path) {
@@ -237,8 +152,8 @@ static sds resolve_stream_path(const char *path) {
 	}
 
 	const bool absolute = DTTR_Path_IsWindowsAbsolute(path);
-	const char *relative = absolute ? find_data_segment(path + 3) : path;
-	sds resolved = relative ? resolve_game_relative_stream_path(relative) : sdsnew(path);
+	const char *relative = absolute ? dttr_game_data_find_data_segment(path + 3) : path;
+	sds resolved = relative ? dttr_game_data_resolve_media_path(relative) : sdsnew(path);
 
 	if (!resolved) {
 		return sdsempty();
@@ -340,7 +255,7 @@ void __stdcall dttr_mss_ail_start_stream(void *stream_ptr) {
 		stream->volume
 	);
 	apply_stream_track(stream);
-	stream->status = AIL_STATUS_PLAYING;
+	stream->status = DTTR_MSS_STATUS_PLAYING;
 	const int sdl_loops = dttr_mss_loops_to_sdl(stream->loops);
 	dttr_mss_track_play(stream->track, sdl_loops);
 	DTTR_LOG_TRACE(
@@ -355,7 +270,7 @@ int __stdcall dttr_mss_ail_stream_status(void *stream_ptr) {
 	mss_stream *stream = find_stream(stream_ptr);
 
 	if (!stream) {
-		return AIL_STATUS_DONE;
+		return DTTR_MSS_STATUS_DONE;
 	}
 
 	stream->status = dttr_mss_track_status(stream->track, stream->status);
@@ -376,7 +291,7 @@ void __stdcall dttr_mss_ail_pause_stream(void *stream_ptr, int pause) {
 		MIX_ResumeTrack(stream->track);
 	}
 
-	stream->status = AIL_STATUS_PLAYING;
+	stream->status = DTTR_MSS_STATUS_PLAYING;
 }
 
 // Applies Miles stream volume to an SDL_mixer stream handle.

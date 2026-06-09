@@ -4,7 +4,7 @@ A function hook redirects a game function to your detour. Your detour can run cu
 
 **Warning:** A detour signature or calling-convention mismatch can cause crashes or memory corruption.
 
-## Storing the original game function
+## Original Function Pointer
 
 SDK wrappers include a function-pointer type for each known function, suffixed with `_proto`. Use it to store your "original" game function pointer.
 
@@ -14,7 +14,7 @@ static DTTR_PCDOGS_F_Player_SetLives_proto original_player_set_lives;
 
 Hook signatures that diverge from the game function can cause crashes or memory corruption. If the SDK type does not exist, hooking the function requires additional reverse engineering work.
 
-## Writing a detour
+## Detour Function
 
 A detour has the same signature as the game function.
 
@@ -32,7 +32,7 @@ This detour calls `original_player_set_lives(...)` so normal game behavior conti
 
 The `original` pointer is only valid while the hook is installed.
 
-## Installing hooks through patch groups
+## Patch Group Installation
 
 When applying related hooks and patches, install the SDK `PatchSpec()` through a patch group to simplify rollbacks and cleanup.
 
@@ -65,7 +65,7 @@ DTTR_MODS_CLEANUP {
 }
 ```
 
-## Reserving direct hooks for simple cases
+## Direct Hooks
 
 SDK wrappers also expose `Hook()` and `Unhook()`:
 
@@ -81,7 +81,7 @@ DTTR_PCDOGS_F_Player_SetLives->Unhook(&ctx->runtime);
 
 `Hook()` stores one direct hook handle on the accessor. Use it for simple hooks your mod fully owns; use patch groups when you need grouped ownership and cleanup. Compatible lower-level function hooks can still chain through the runtime hook registry.
 
-## Hooking functions without SDK wrappers
+## Raw Hooks
 
 The SDK also has raw APIs for hooking functions when no SDK wrapper exists.
 
