@@ -715,7 +715,15 @@ stable.struct(
     member("int32_t", "distance", 0xC),
     member("int32_t", "edge_index", 0x10),
     member("int32_t", "polygon_index", 0x14),
-    member("int32_t", "surface_type", 0x18),
+    member(
+        "int32_t",
+        "surface_type",
+        0x18,
+        doc=(
+            "Surface/type discriminator copied from package collision face data. "
+            "Pair with Collision_Polygon.material_index and flags; values are not mapped yet."
+        ),
+    ),
     size=0x1C,
 )
 
@@ -732,13 +740,30 @@ stable.struct(
             "PKG_CollisionFacePlane normal fields and packed adj_edge words."
         ),
     ),
-    member("uint16_t", "flags", 0x10),
-    member("int16_t", "material_index", 0x12),
+    member(
+        "uint16_t",
+        "flags",
+        0x10,
+        doc=(
+            "Collision-polygon flags. Bit 0x4 is used by adjacency walking; "
+            "other bits mark face behavior."
+        ),
+    ),
+    member(
+        "int16_t",
+        "material_index",
+        0x12,
+        doc=(
+            "Collision material/face classifier copied from package collision metadata."
+        ),
+    ),
     member("int16_t", "adj_edge_0", 0x14),
     member("int16_t", "padding_16", 0x16),
     size=0x18,
     doc=(
-        "Collision polygon array element owned by Collision_Node.polygons. Vertex indices reference the owning node's vertex array."
+        "Collision polygon array element owned by Collision_Node.polygons. "
+        "Vertex indices reference the owning node's vertex array. flags, "
+        "material_index, and plane_data->surface_type classify collision faces."
     ),
 )
 
@@ -803,7 +828,12 @@ stable.struct(
     member("int16_t", "speed_min", 0x18),
     member("int16_t", "speed_variance", 0x1A),
     member("int32_t", "speed_max", 0x1C),
-    member("int32_t", "collision_damage_type", 0x20),
+    member(
+        "int32_t",
+        "collision_damage_type",
+        0x20,
+        doc="Component collision/damage classifier tied to the collision volume fields.",
+    ),
     member("int32_t", "scatter_angle_x", 0x24),
     member("int32_t", "scatter_angle_z", 0x28),
     member("int32_t", "bounce_factor", 0x2C),
@@ -1743,7 +1773,12 @@ stable.struct(
     member("int32_t", "state_word", 0x1C),
     member("int16_t", "flags", 0x20),
     member("int16_t", "flags_hi", 0x22),
-    member("int32_t", "collision_flags", 0x24),
+    member(
+        "int32_t",
+        "collision_flags",
+        0x24,
+        doc="Runtime component/object collision flags, separate from level polygons.",
+    ),
     member("int32_t", "behavior_state", 0x28),
     member("int32_t", "local_rot", 0x2C),
     member("int16_t", "local_rot_02", 0x30),
@@ -2005,7 +2040,7 @@ stable.struct(
 
 
 stable.struct(
-    "Math_Vec3u",
+    "Math_Vec3U",
     member("uint32_t", "x", 0x0),
     member("uint32_t", "y", 0x4),
     member("uint32_t", "z", 0x8),
@@ -2013,7 +2048,7 @@ stable.struct(
 )
 
 stable.struct(
-    "Math_Vec3f",
+    "Math_Vec3F",
     member("float", "x", 0x0),
     member("float", "y", 0x4),
     member("float", "z", 0x8),
@@ -2712,13 +2747,17 @@ stable.struct(
         "uint16_t",
         "vertex_count",
         0x68,
-        doc="Number of Collision_Vertex records in vertices.",
+        doc=(
+            "Number of Collision_Vertex records in vertices. This is not a polygon bound."
+        ),
     ),
     member(
         "uint16_t",
         "polygon_count",
         0x6A,
-        doc="Number of Collision_Polygon records in polygons.",
+        doc=(
+            "Number of Collision_Polygon records in polygons. Zero is a valid runtime value."
+        ),
     ),
     member(
         "Collision_Polygon*",
@@ -3113,7 +3152,7 @@ stable.struct(
 
 stable.struct(
     "Graphics_ClipPlane",
-    member("Math_Vec3f", "normal", 0x0),
+    member("Math_Vec3F", "normal", 0x0),
     member("float", "distance", 0xC),
     size=0x10,
 )
@@ -3563,8 +3602,18 @@ stable.struct(
     member("Math_Vec3I32XZY", "eye_pos", 0x10),
     member("Math_Vec3I32XZY", "target_pos", 0x1C),
     member("Entity_State*", "active_entity_slot_ptr", 0x28),
-    member("Math_SizeI16", "screen_half", 0x2C),
-    member("Math_Matrix3x3I16", "view_matrix", 0x30),
+    member(
+        "Math_SizeI16",
+        "screen_half",
+        0x2C,
+        doc="Projection center/size field.",
+    ),
+    member(
+        "Math_Matrix3x3I16",
+        "view_matrix",
+        0x30,
+        doc="Native camera/list-state basis matrix, not a projection matrix.",
+    ),
     member("int16_t", "view_matrix_padding", 0x42),
     member("Camera_FrustumPlane", "frustum_planes[3]", 0x44),
     member("int32_t", "frustum_plane_3_x", 0x68),
@@ -6906,7 +6955,10 @@ stable.fn(
             doc="Packed RGB source color; final diffuse alpha is supplied by blend state.",
         ),
     ],
-    doc="Draws a filled screen-space rectangle through Direct3D DrawPrimitive.",
+    doc=(
+        "Draws a filled screen-space rectangle through Direct3D DrawPrimitive. "
+        "Uses the native UI/render-list path."
+    ),
 )
 
 stable.fn(
@@ -6929,7 +6981,7 @@ stable.fn(
         param(
             "int32_t",
             "top_left_color",
-            doc="Packed color for the top-left vertex; its low byte is reused as the shared alpha byte.",
+            doc=("Packed color for the top-left vertex; low byte is the shared alpha."),
         ),
         param(
             "int32_t", "top_right_color", doc="Packed color for the top-right vertex."
@@ -7915,7 +7967,8 @@ stable.fn(
     ],
     doc=(
         "Finds or walks to the ground/contact polygon under actor and returns "
-        "actor->ground_collision_node; the paired ground_contact_ptr context is still not decoded."
+        "actor->ground_collision_node. This is ground-contact biased; "
+        "wall and invisible-wall contacts use Collision_BuildWallCollisionPlane."
     ),
     unstable=True,
 )
@@ -7960,7 +8013,7 @@ stable.fn(
     ],
     doc=(
         "Thin wrapper around Collision_FindGroundPolygonUnderActor for actor/out_polygon. "
-        "This forwards directly to the ground-contact helper while Actor_State.ground_contact_ptr is still not decoded."
+        "This forwards to the ground-contact helper and does not cover wall contacts."
     ),
     unstable=True,
 )
@@ -9555,13 +9608,33 @@ stable.fn(
     ret="int16_t*",
     params=[
         param("Actor_State*", "actor"),
-        param("Collision_Polygon*", "polygon"),
-        param("int16_t*", "normal"),
-        param("int32_t", "distance"),
-        param("Collision_Plane*", "plane"),
-        param("int32_t", "offset"),
-        param("Collision_Response*", "out_result"),
+        param(
+            "Collision_Node*",
+            "collision_node",
+            doc="Owning node whose vertex array supplies the wall edge.",
+        ),
+        param(
+            "Collision_Polygon*",
+            "polygon",
+            doc="Collision polygon containing the wall edge.",
+        ),
+        param("int32_t", "edge_index", doc="Polygon edge index for the wall segment."),
+        param("Collision_Plane*", "plane", doc="Output/runtime wall plane record."),
+        param(
+            "int16_t*",
+            "local_vertices",
+            doc="Local/output vertex buffer for wall-plane vertices.",
+        ),
+        param(
+            "int32_t",
+            "out_vertex_base",
+            doc="Base index into the local vertex output.",
+        ),
     ],
+    doc=(
+        "Builds a vertical wall collision plane from one edge of a collision polygon. "
+        "Used by wall and invisible-wall contact handling."
+    ),
 )
 
 stable.fn(
@@ -18229,8 +18302,18 @@ _unstable_rows.struct(
     member("Math_Vec3I32XZY", "eye_pos", 0x10),
     member("Math_Vec3I32XZY", "target_pos", 0x1C),
     member("Entity_State*", "active_entity_slot_ptr", 0x28),
-    member("Math_SizeI16", "screen_half", 0x2C),
-    member("Math_Matrix3x3I16", "view_matrix", 0x30),
+    member(
+        "Math_SizeI16",
+        "screen_half",
+        0x2C,
+        doc="Projection center/size field.",
+    ),
+    member(
+        "Math_Matrix3x3I16",
+        "view_matrix",
+        0x30,
+        doc="Native camera/list-state basis matrix, not a projection matrix.",
+    ),
     member("int16_t", "view_matrix_padding", 0x42),
     member(
         "uint8_t",
@@ -18244,10 +18327,20 @@ _unstable_rows.struct(
         0x58,
         doc="Five plane records written by Scene_RenderFrame and read by Graphics_CheckActorVisibilityAndFrustum.",
     ),
-    member("Math_Matrix3x3I16", "node_view_matrix", 0x94),
+    member(
+        "Math_Matrix3x3I16",
+        "node_view_matrix",
+        0x94,
+        doc="Native per-node/list-state basis matrix.",
+    ),
     member("int16_t", "node_view_matrix_padding", 0xA6),
     member("Math_Vec3I32", "node_view_translation", 0xA8),
-    member("int32_t", "projection_near_fp", 0xB4),
+    member(
+        "int32_t",
+        "projection_near_fp",
+        0xB4,
+        doc="Fixed-point near-plane threshold.",
+    ),
     member("int32_t", "dynamic_level_scale", 0xB8),
     member("Actor_State*", "render_actor_ptr", 0xBC),
     member("uint32_t", "render_pass_flags", 0xC0),
@@ -18262,7 +18355,10 @@ _unstable_rows.struct(
         doc="End/tail dword after the 16384 sorted bucket pointers.",
     ),
     size=0x100D4,
-    doc="Camera/render-list runtime state with five frustum planes.",
+    doc=(
+        "Camera/render-list runtime state with five frustum planes. eye_pos and "
+        "target_pos use Math_Vec3I32XZY storage."
+    ),
 )
 
 _unstable_rows.fn(
@@ -18676,7 +18772,7 @@ _unstable_rows.struct(
     member("uint32_t", "anim_state_index", 0x8C),
     member("uint32_t", "uv_data_ptr", 0x90),
     member("uint32_t", "aux_entry_array_ptr", 0x94),
-    member("Math_Vec3u", "cached_world_pos", 0x98),
+    member("Math_Vec3U", "cached_world_pos", 0x98),
     member("Math_BoundingSphereU16", "bounding_sphere", 0xA4),
     member("uint32_t", "bone_ref_array_ptr", 0xAC),
     member("uint32_t", "morph_target_list_ptr", 0xB0),
