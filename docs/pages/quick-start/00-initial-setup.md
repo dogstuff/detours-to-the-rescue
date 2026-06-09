@@ -44,7 +44,7 @@ Choose the method that matches your setup.
 
     ![Windows file picker selecting a 102 Puppies ISO image](../assets/load-iso.png)
 
-## Finish Setup
+## You're done!
 
 Once DttR has the game files, setup is complete.
 
