@@ -310,7 +310,7 @@ static bool require_pcdogs_call(const char *name, DTTR_Result result) {
 	return true;
 }
 
-#define REQUIRE_PCDOGS_CALL(expr_) require_pcdogs_call(#expr_, (expr_))
+#define REQUIRE_PCDOGS_CALL(expr) require_pcdogs_call(#expr, (expr))
 
 // Routes SDL events through sidecar handlers before game input observes them.
 void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {

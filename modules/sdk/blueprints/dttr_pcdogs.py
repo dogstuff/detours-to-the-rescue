@@ -719,10 +719,7 @@ stable.struct(
         "int32_t",
         "surface_type",
         0x18,
-        doc=(
-            "Surface/type discriminator copied from package collision face data. "
-            "Pair with Collision_Polygon.material_index and flags; values are not mapped yet."
-        ),
+        doc=("This surface classifier is copied from package collision face data."),
     ),
     size=0x1C,
 )
@@ -745,17 +742,22 @@ stable.struct(
         "flags",
         0x10,
         doc=(
-            "Collision-polygon flags. Bit 0x4 is used by adjacency walking; "
-            "other bits mark face behavior."
+            "Bit 0x1 marks triangles (3 edges) versus quads (4), bit 0x4 marks "
+            "walkable ground that adjacency crossing may enter, and bit 0x4000 "
+            "marks boundary polygons whose edges "
+            "Collision_ProcessActorGroundCheck scans for wall candidates. An "
+            "edge whose neighbor lacks bit 0x4 (or has no neighbor) is a wall "
+            "edge, bit 0x400 combined with bit 0 of the face-plane record "
+            "marks that wall as a one-way or disabled barrier, and bits "
+            "0x800/0x1800 reject polygons as standable ground in "
+            "dynamic-object and polygon-walk paths."
         ),
     ),
     member(
         "int16_t",
         "material_index",
         0x12,
-        doc=(
-            "Collision material/face classifier copied from package collision metadata."
-        ),
+        doc=("The face's material classifier comes from package collision metadata."),
     ),
     member("int16_t", "adj_edge_0", 0x14),
     member("int16_t", "padding_16", 0x16),
@@ -832,7 +834,10 @@ stable.struct(
         "int32_t",
         "collision_damage_type",
         0x20,
-        doc="Component collision/damage classifier tied to the collision volume fields.",
+        doc=(
+            "This classifies the damage dealt by the component's collision "
+            "volume and belongs with the surrounding collision volume fields."
+        ),
     ),
     member("int32_t", "scatter_angle_x", 0x24),
     member("int32_t", "scatter_angle_z", 0x28),
@@ -1777,7 +1782,10 @@ stable.struct(
         "int32_t",
         "collision_flags",
         0x24,
-        doc="Runtime component/object collision flags, separate from level polygons.",
+        doc=(
+            "These runtime collision flags describe the object itself, separate "
+            "from level polygon flags."
+        ),
     ),
     member("int32_t", "behavior_state", 0x28),
     member("int32_t", "local_rot", 0x2C),
@@ -2080,6 +2088,13 @@ stable.struct(
 )
 
 stable.struct(
+    "Math_Vec2F",
+    member("float", "x", 0x0),
+    member("float", "y", 0x4),
+    size=0x8,
+)
+
+stable.struct(
     "Math_BoundingSphereU16",
     member("uint16_t", "x", 0x0),
     member("uint16_t", "y", 0x2),
@@ -2109,6 +2124,16 @@ stable.struct(
     member("int16_t", "max_x", 0x4),
     member("int16_t", "max_y", 0x6),
     size=0x8,
+)
+
+stable.struct(
+    "Math_RectI32",
+    member("int32_t", "x", 0x0),
+    member("int32_t", "y", 0x4),
+    member("uint32_t", "width", 0x8),
+    member("uint32_t", "height", 0xC),
+    size=0x10,
+    doc="This rect is an origin plus unsigned size.",
 )
 
 stable.struct(
@@ -2709,7 +2734,12 @@ stable.struct(
         "int16_t",
         "reserved_0a",
         0xA,
-        doc="Reserved collision-vertex tail word. Only the xyz components are named.",
+        doc=(
+            "The high byte (offset 0xB) is the per-vertex wall tag, and the "
+            "low byte is unused. Collision_ProcessActorGroundCheck only "
+            "considers a polygon edge as a wall candidate when at least one "
+            "endpoint has a nonzero wall tag."
+        ),
     ),
     size=0xC,
     unstable=True,
@@ -2747,17 +2777,13 @@ stable.struct(
         "uint16_t",
         "vertex_count",
         0x68,
-        doc=(
-            "Number of Collision_Vertex records in vertices. This is not a polygon bound."
-        ),
+        doc=("This counts the Collision_Vertex records in vertices."),
     ),
     member(
         "uint16_t",
         "polygon_count",
         0x6A,
-        doc=(
-            "Number of Collision_Polygon records in polygons. Zero is a valid runtime value."
-        ),
+        doc=("This counts the Collision_Polygon records in polygons."),
     ),
     member(
         "Collision_Polygon*",
@@ -3590,6 +3616,9 @@ stable.struct(
     unstable=True,
 )
 
+# Camera_Runtime and Graphics_ListState alias the same camera-state layout.
+_SCREEN_HALF_DOC = "This holds the full display-mode size (640x480)"
+
 stable.struct(
     "Camera_Runtime",
     member("int16_t", "yaw", 0x0),
@@ -3606,13 +3635,16 @@ stable.struct(
         "Math_SizeI16",
         "screen_half",
         0x2C,
-        doc="Projection center/size field.",
+        doc=_SCREEN_HALF_DOC,
     ),
     member(
         "Math_Matrix3x3I16",
         "view_matrix",
         0x30,
-        doc="Native camera/list-state basis matrix, not a projection matrix.",
+        doc=(
+            "This is the camera basis matrix as the engine stores it, not a "
+            "projection matrix."
+        ),
     ),
     member("int16_t", "view_matrix_padding", 0x42),
     member("Camera_FrustumPlane", "frustum_planes[3]", 0x44),
@@ -6956,8 +6988,8 @@ stable.fn(
         ),
     ],
     doc=(
-        "Draws a filled screen-space rectangle through Direct3D DrawPrimitive. "
-        "Uses the native UI/render-list path."
+        "Draws a filled screen-space rectangle with Direct3D DrawPrimitive on "
+        "the game's own UI render path."
     ),
 )
 
@@ -7966,9 +7998,10 @@ stable.fn(
         param("Collision_Polygon* *", "out_polygon"),
     ],
     doc=(
-        "Finds or walks to the ground/contact polygon under actor and returns "
-        "actor->ground_collision_node. This is ground-contact biased; "
-        "wall and invisible-wall contacts use Collision_BuildWallCollisionPlane."
+        "Finds or walks to the ground polygon under actor and returns "
+        "actor->ground_collision_node. Only ground contacts go through here, "
+        "while wall and invisible-wall contacts use "
+        "Collision_BuildWallCollisionPlane."
     ),
     unstable=True,
 )
@@ -8012,8 +8045,8 @@ stable.fn(
         param("Collision_Polygon* *", "out_polygon"),
     ],
     doc=(
-        "Thin wrapper around Collision_FindGroundPolygonUnderActor for actor/out_polygon. "
-        "This forwards to the ground-contact helper and does not cover wall contacts."
+        "This thin wrapper forwards actor and out_polygon to "
+        "Collision_FindGroundPolygonUnderActor and does not cover wall contacts."
     ),
     unstable=True,
 )
@@ -9619,11 +9652,15 @@ stable.fn(
             doc="Collision polygon containing the wall edge.",
         ),
         param("int32_t", "edge_index", doc="Polygon edge index for the wall segment."),
-        param("Collision_Plane*", "plane", doc="Output/runtime wall plane record."),
+        param(
+            "Collision_Plane*",
+            "plane",
+            doc="Receives the resulting wall plane record.",
+        ),
         param(
             "int16_t*",
             "local_vertices",
-            doc="Local/output vertex buffer for wall-plane vertices.",
+            doc="Receives the wall-plane vertices.",
         ),
         param(
             "int32_t",
@@ -18066,9 +18103,8 @@ stable.data(
     xref("Audio_TriggerMusicTransition", 0x41, 0x1),
     type="Level_Data*",
     doc=(
-        "Active stable Level_Data pointer used by actor enumeration with "
-        "Level_RuntimeData.entity_array, Level_RuntimeData.entity_count, and "
-        "Entity_State.active_actor through dttr_util_unstable.h conversion helpers."
+        "This holds the active stable Level_Data pointer, which can be cast "
+        "to the unstable Level_RuntimeData layout."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
@@ -18306,13 +18342,16 @@ _unstable_rows.struct(
         "Math_SizeI16",
         "screen_half",
         0x2C,
-        doc="Projection center/size field.",
+        doc=_SCREEN_HALF_DOC,
     ),
     member(
         "Math_Matrix3x3I16",
         "view_matrix",
         0x30,
-        doc="Native camera/list-state basis matrix, not a projection matrix.",
+        doc=(
+            "This is the camera basis matrix as the engine stores it, not a "
+            "projection matrix."
+        ),
     ),
     member("int16_t", "view_matrix_padding", 0x42),
     member(
@@ -18331,7 +18370,7 @@ _unstable_rows.struct(
         "Math_Matrix3x3I16",
         "node_view_matrix",
         0x94,
-        doc="Native per-node/list-state basis matrix.",
+        doc="This per-node basis matrix uses the same native format as view_matrix.",
     ),
     member("int16_t", "node_view_matrix_padding", 0xA6),
     member("Math_Vec3I32", "node_view_translation", 0xA8),
@@ -18356,8 +18395,8 @@ _unstable_rows.struct(
     ),
     size=0x100D4,
     doc=(
-        "Camera/render-list runtime state with five frustum planes. eye_pos and "
-        "target_pos use Math_Vec3I32XZY storage."
+        "Runtime state for the camera and render lists, including five frustum "
+        "planes. eye_pos and target_pos use Math_Vec3I32XZY storage."
     ),
 )
 

@@ -15,7 +15,7 @@
 #include <dttr_runtime.h>
 
 #ifndef DTTR_ARRAY_COUNT
-#define DTTR_ARRAY_COUNT(array_) (sizeof(array_) / sizeof((array_)[0]))
+#define DTTR_ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 
 #ifdef __cplusplus
@@ -185,8 +185,6 @@ DTTR_Result DTTR_Core_HookPointer(
 );
 
 /// Detach a byte patch created by the SDK runtime.
-/// @param patch Patch handle returned by an SDK patching call, or `NULL`.
-/// @return `DTTR_OK` when detached or already null, otherwise an error.
 DTTR_Result DTTR_Core_Unpatch(DTTR_Core_Patch *patch);
 
 /// Detach a function or pointer hook created by the SDK runtime.

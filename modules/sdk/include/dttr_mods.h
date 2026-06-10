@@ -1,4 +1,3 @@
-/// @file dttr_mods.h
 /// Mod DLL API for modules loaded from `mods/`.
 ///
 /// Mods must export `DTTR_Mod_Init` and `DTTR_Mod_Cleanup`;
@@ -237,13 +236,13 @@ typedef void (*DTTR_Mods_GameFrameBlockedFn)();
 #endif
 
 #define DTTR_MODS_INFO(mod_name, mod_version, mod_author)                                \
-	static const DTTR_Mods_Info dttr_mod_info_ = {                                       \
+	static const DTTR_Mods_Info dttr_mod_info = {                                        \
 		mod_name,                                                                        \
 		mod_version,                                                                     \
 		mod_author,                                                                      \
 	};                                                                                   \
 	DTTR_EXPORT const DTTR_Mods_Info *DTTR_Mod_Info() {                                  \
-		return &dttr_mod_info_;                                                          \
+		return &dttr_mod_info;                                                           \
 	}
 
 static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
@@ -253,14 +252,14 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 
 // Check SDK ABI compatibility and delegate to the mod body.
 #define DTTR_MODS_INIT                                                                   \
-	static bool dttr_mod_init_(const DTTR_Mods_Context *);                               \
+	static bool dttr_mod_init(const DTTR_Mods_Context *);                                \
 	DTTR_EXPORT bool DTTR_Mod_Init(const DTTR_Mods_Context *ctx) {                       \
 		if (!DTTR_Mods_ContextIsCompatible(ctx)) {                                       \
 			return false;                                                                \
 		}                                                                                \
-		return dttr_mod_init_(ctx);                                                      \
+		return dttr_mod_init(ctx);                                                       \
 	}                                                                                    \
-	static bool dttr_mod_init_(const DTTR_Mods_Context *ctx)
+	static bool dttr_mod_init(const DTTR_Mods_Context *ctx)
 
 #define DTTR_MODS_CLEANUP DTTR_EXPORT void DTTR_Mod_Cleanup()
 #define DTTR_MODS_TICK DTTR_EXPORT void DTTR_Mod_Tick()

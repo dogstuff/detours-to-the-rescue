@@ -231,6 +231,23 @@ void dttr_imgui_init(
 	DTTR_LOG_INFO("ImGui overlay initialized (backend: %s)", backend_name());
 }
 
+// Hold SDL events until the interactive overlay frame. igNewFrame() drains all
+// queued ImGui input, so feeding events during the no-input game-layer frame
+// would consume them before the overlay can react.
+#define DTTR_IMGUI_MAX_PENDING_EVENTS 256u
+static SDL_Event pending_events[DTTR_IMGUI_MAX_PENDING_EVENTS];
+static uint32_t pending_event_count;
+static bool pending_event_overflow_warned;
+
+// Feed buffered SDL events before the interactive overlay frame.
+static void flush_pending_events() {
+	for (uint32_t i = 0; i < pending_event_count; i++) {
+		ImGui_ImplSDL3_ProcessEvent(&pending_events[i]);
+	}
+
+	pending_event_count = 0;
+}
+
 // Destroys ImGui state and clears cached backend handles during graphics shutdown.
 void dttr_imgui_cleanup() {
 	if (!initialized) {
@@ -242,6 +259,8 @@ void dttr_imgui_cleanup() {
 	igDestroyContext(NULL);
 	window = NULL;
 	imgui_scale = (DTTR_ImGuiDesktopScaleState){0};
+	pending_event_count = 0;
+	pending_event_overflow_warned = false;
 	initialized = false;
 	DTTR_LOG_INFO("ImGui overlay cleaned up");
 }
@@ -252,7 +271,21 @@ bool dttr_imgui_process_event(const SDL_Event *event) {
 		return false;
 	}
 
-	ImGui_ImplSDL3_ProcessEvent(event);
+	if (pending_event_count < DTTR_IMGUI_MAX_PENDING_EVENTS) {
+		pending_events[pending_event_count++] = *event;
+	} else {
+		// Deliver the event immediately rather than dropping it.
+		if (!pending_event_overflow_warned) {
+			pending_event_overflow_warned = true;
+			DTTR_LOG_WARN(
+				"ImGui pending event buffer full; delivering events immediately"
+			);
+		}
+
+		ImGui_ImplSDL3_ProcessEvent(event);
+	}
+
+	// Capture decisions use the previous interactive frame's hover state.
 	ImGuiIO *io = igGetIO_Nil();
 	switch (event->type) {
 	case SDL_EVENT_MOUSE_MOTION:
@@ -280,6 +313,7 @@ static void backend_new_frame() {
 
 // Starts a full interactive ImGui frame with SDL input and desktop scaling applied.
 static void new_frame() {
+	flush_pending_events();
 	backend_new_frame();
 	ImGui_ImplSDL3_NewFrame();
 	DTTR_ImGui_ApplyWindowDesktopScale(&imgui_scale, window);

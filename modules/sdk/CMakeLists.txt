@@ -22,7 +22,14 @@ set(DTTR_SDK_STABLE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_core.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_mods.h"
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util.h"
+)
+set(DTTR_SDK_UNSTABLE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_actor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_pkg.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_mem.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_collision.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_worldview.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_gamedraw.h"
 )
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_versions.h.in"
@@ -82,18 +89,25 @@ add_custom_target(dttr_pcdogs_generated_headers
     DEPENDS ${DTTR_PCDOGS_GENERATED_OUTPUTS}
 )
 
+set(_DTTR_SDK_UNSTABLE_HEADER_ARGS "")
+foreach(_hdr IN LISTS DTTR_SDK_UNSTABLE_HEADERS)
+    cmake_path(GET _hdr FILENAME _hdr_name)
+    list(APPEND _DTTR_SDK_UNSTABLE_HEADER_ARGS --unstable-header "${_hdr_name}")
+endforeach()
+
 add_custom_command(
     OUTPUT "${DTTR_SDK_BUNDLE_HEADER}"
     COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
             "${DTTR_SDK_BUNDLE_GENERATOR}"
             --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
             --include-dir "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            ${_DTTR_SDK_UNSTABLE_HEADER_ARGS}
             --output "${DTTR_SDK_BUNDLE_HEADER}"
     DEPENDS
         dttr_pcdogs_generated_headers
         "${DTTR_SDK_BUNDLE_GENERATOR}"
         ${DTTR_SDK_STABLE_HEADERS}
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_unstable.h"
+        ${DTTR_SDK_UNSTABLE_HEADERS}
     COMMENT "Generating DttR SDK bundle header"
     VERBATIM
 )

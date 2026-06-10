@@ -5,30 +5,24 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <dttr_util_unstable.h>
+#include <dttr_util_pkg.h>
 
 enum {
 	PKG_LOAD_ENTRY_TOC_OPERAND_OFFSET = 0x48u,
 };
 
 static DTTR_Util_PkgWalkResult make_result(DTTR_Util_PkgVisitStatus status) {
-	DTTR_Util_PkgWalkResult result = {0};
-
-	result.status = status;
-
-	return result;
+	return (DTTR_Util_PkgWalkResult){.status = status};
 }
 
 DTTR_Util_PkgWalkOptions DTTR_Util_PkgWalk_DefaultOptions() {
-	DTTR_Util_PkgWalkOptions options = {0};
-
-	options.struct_size = sizeof(options);
-	options.domains = DTTR_UTIL_PKG_DOMAIN_ALL_KNOWN;
-	options.max_depth = 64;
-	options.load_entries = true;
-	options.toc_count = DTTR_UTIL_PKG_DEFAULT_TOC_COUNT;
-
-	return options;
+	return (DTTR_Util_PkgWalkOptions){
+		.struct_size = sizeof(DTTR_Util_PkgWalkOptions),
+		.domains = DTTR_UTIL_PKG_DOMAIN_ALL_KNOWN,
+		.max_depth = 64,
+		.load_entries = true,
+		.toc_count = DTTR_UTIL_PKG_DEFAULT_TOC_COUNT,
+	};
 }
 
 const char *DTTR_Util_PkgVisitStatusName(DTTR_Util_PkgVisitStatus status) {
