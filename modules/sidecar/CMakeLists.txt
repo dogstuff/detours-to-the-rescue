@@ -123,6 +123,8 @@ add_library(dttr_sidecar SHARED
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
     src/inputs/hook_read_gamepad.c
+    src/inputs/hook_rumble.c
+    src/inputs/rumble_mapping.c
 
     src/graphics/graphics.c
     src/graphics/util.c

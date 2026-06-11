@@ -88,6 +88,7 @@ static void close_gamepad() {
 		return;
 	}
 
+	SDL_RumbleGamepad(dttr_inputs_gamepad, 0, 0, 0);
 	SDL_CloseGamepad(dttr_inputs_gamepad);
 	dttr_inputs_gamepad = NULL;
 }
@@ -112,7 +113,7 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		return false;
 	}
 
-	DTTR_PCDOGS_T_Patch_Spec inputs_patches[3];
+	DTTR_PCDOGS_T_Patch_Spec inputs_patches[4];
 	size_t patch_count = 0;
 
 	inputs_patches[patch_count++] = (DTTR_PCDOGS_T_Patch_Spec)
@@ -128,6 +129,17 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 											dttr_inputs_hook_get_async_key_state_callback,
 											NULL
 										);
+
+	if (dttr_inputs_hook_rumble_prepare(ctx)) {
+		inputs_patches[patch_count++] = DTTR_PCDOGS_F_Input_TriggerRumbleIfAllowed
+											->PatchSpec(
+												false,
+												dttr_inputs_hook_rumble_callback,
+												&dttr_inputs_hook_rumble_original
+											);
+	} else {
+		DTTR_LOG_INFO("SDL rumble hook unavailable; deferring to original vibration");
+	}
 
 	if (dttr_config.gamepad_analog_remap) {
 		if (dttr_inputs_hook_read_gamepad_prepare(ctx)) {
@@ -218,6 +230,7 @@ bool dttr_inputs_late_init() {
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_PatchGroupRelease(&inputs_targets);
 	dttr_inputs_hook_read_gamepad_reset();
+	dttr_inputs_hook_rumble_reset();
 }
 
 void dttr_inputs_cleanup() {

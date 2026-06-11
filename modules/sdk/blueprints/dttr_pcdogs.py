@@ -7578,10 +7578,11 @@ stable.fn(
 )
 
 stable.fn(
-    "D3D_SetRenderTarget",
+    "DInput_StartConstantForceEffect",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? A1 ?? ?? ?? ?? 6A 00 6A 01 50 8B 08 FF 51 1C C3",
     ret="int32_t",
     params=[],
+    doc="Starts the global DirectInput constant-force effect; returns 0 when no effect object is available.",
 )
 
 stable.fn(
@@ -8135,7 +8136,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Player_SetLives",
+    "Settings_SetRumbleSuppressFlag",
     "8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8B 44 24 04 BA ??",
     required=Required.EN,
     hook=0x9,
@@ -8143,11 +8144,21 @@ stable.fn(
     params=[
         param(
             "char",
-            "lives",
-            doc="Player life-count byte to store in the player-lives global.",
+            "suppress",
+            doc="Nonzero suppresses controller vibration; zero allows rumble.",
         )
     ],
-    doc="Store the player lives byte and return the stored value.",
+    doc="Stores the controller-vibration suppress flag and returns the stored value.",
+)
+
+stable.fn(
+    "Settings_GetRumbleSuppressFlag",
+    "0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8B 44 24 04 BA ??",
+    required=Required.EN,
+    hook=0x7,
+    ret="int32_t",
+    params=[],
+    doc="Returns the signed controller-vibration suppress flag.",
 )
 
 stable.fn(
@@ -10970,14 +10981,14 @@ stable.fn(
 )
 
 stable.fn(
-    "Game_HandleGameOver",
+    "Input_TriggerRumbleIfAllowed",
     "E8 ?? ?? ?? ?? 85 C0 75 ?? DB",
     ret="int32_t",
     params=[
         param(
             "int32_t",
             "effect_source_id",
-            doc="Caller-supplied actor/type id preserved by the ABI.",
+            doc="Caller-supplied effect source id preserved by the ABI.",
         ),
         param(
             "int32_t",
@@ -10992,10 +11003,10 @@ stable.fn(
         param(
             "int32_t",
             "duration_units",
-            doc="Duration multiplier converted to DirectInput effect duration by multiplying by 100000.",
+            doc="Duration in units of 100000 microseconds.",
         ),
     ],
-    doc="If player lives are exhausted, computes and plays a constant-force feedback effect, then restarts the DirectInput effect/render-target helper.",
+    doc="Returns immediately when rumble is suppressed; otherwise computes DirectInput constant-force magnitude/duration and starts the effect.",
 )
 
 stable.fn(
@@ -14044,7 +14055,10 @@ stable.data(
     xref("Graphics_RenderPolygonBatch", 0x1831, 0x2),
 )
 stable.data("Timer_GetGameTime_MsToSec", xref("Timer_GetGameTime", 0x19, 0x2))
-stable.data("Game_HandleGameOver_FadeMul", xref("Game_HandleGameOver", 0x13, 0x2))
+stable.data(
+    "Input_TriggerRumbleIfAllowed_ForceScale",
+    xref("Input_TriggerRumbleIfAllowed", 0x13, 0x2),
+)
 stable.data(
     "D3D_SetFogDistance_GraphicsGammaStep", xref("D3D_SetFogDistance", 0x3A, 0x2)
 )
@@ -14069,10 +14083,12 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "Game_HandleGameOver_DifficultyNormal", xref("Game_HandleGameOver", 0x23, 0x2)
+    "Input_TriggerRumbleIfAllowed_StrongScale",
+    xref("Input_TriggerRumbleIfAllowed", 0x23, 0x2),
 )
 stable.data(
-    "Game_HandleGameOver_DifficultyEasy", xref("Game_HandleGameOver", 0x1B, 0x2)
+    "Input_TriggerRumbleIfAllowed_WeakScale",
+    xref("Input_TriggerRumbleIfAllowed", 0x1B, 0x2),
 )
 stable.data(
     "D3D_SetGammaRamp_DDrawGammaControlGUID", xref("D3D_SetGammaRamp", 0x82, 0x1)
@@ -15760,7 +15776,9 @@ stable.data(
     xref("Menu_ResetState", 0x2, 0x1),
 )
 stable.data("Save_GetGameSlotIndex_State", xref("Save_GetGameSlotIndex", 0x0, 0x1))
-stable.data("Player_SetLives_Lives", xref("Player_SetLives", 0x4, 0x1))
+stable.data(
+    "Settings_RumbleSuppressFlag", xref("Settings_SetRumbleSuppressFlag", 0x4, 0x1)
+)
 stable.data(
     "Menu_HandleOptionsLogic_OptionValueScratch",
     xref("Menu_HandleOptionsLogic", 0x95, 0x1),

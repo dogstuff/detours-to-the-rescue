@@ -55,7 +55,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
     "axis_camera_rz": "axis_right_x",
     "deadzone_stick_x": 333,
     "deadzone_stick_y": 333,
-    "deadzone_camera_rz": 600,
+    "deadzone_camera_rz": 700,
     "sensitivity_stick_x": 100,
     "sensitivity_stick_y": 100,
     "sensitivity_camera_rz": 100
@@ -67,7 +67,9 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
 
 `gamepad.analog_remap` is enabled by default. It routes left-stick X/Y through PS1-style analog scaling controlled by `deadzone_stick_x`, `deadzone_stick_y`, `sensitivity_stick_x`, and `sensitivity_stick_y`.
 
-Set it to `false` to keep the original DirectInput stick path.
+## Controller Vibration
+
+Vibration follows the game's own vibration option and the global `gamepad.enabled` switch.
 
 ## Gamepad Buttons (`gamepad.buttons`)
 

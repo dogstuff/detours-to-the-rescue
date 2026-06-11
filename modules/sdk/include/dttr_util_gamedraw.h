@@ -203,7 +203,7 @@ static inline bool DTTR_Util_WorldView_RefreshFromDraw(
 		.width = fallback_w,
 		.height = fallback_h,
 	};
-	(void)DTTR_Util_GameDraw_Viewport(draw, &target);
+	DTTR_Util_GameDraw_Viewport(draw, &target);
 	return DTTR_Util_WorldView_Refresh(view, &target);
 }
 
