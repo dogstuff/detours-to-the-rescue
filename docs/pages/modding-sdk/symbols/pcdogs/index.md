@@ -4,11 +4,6 @@ hide:
 title: "PCDogs Symbols"
 description: "Reference for PCDogs symbols exposed through the SDK, including functions, globals, types, signatures, and resolver metadata."
 seo_type: "tech_article"
-tags:
-  - "PCDOGS"
-  - "SDK Symbol"
-  - "SDK"
-  - "Symbol Reference"
 ---
 
 <div class="pcdogs-symbol-docs" aria-hidden="true"><h1 id="__skip" hidden>PCDogs Symbols</h1></div>

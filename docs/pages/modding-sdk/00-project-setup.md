@@ -4,7 +4,7 @@ description: "Create a C mod project with the template, SDK headers, CMake build
 seo_type: "article"
 ---
 
-# Project Setup (Creating a Mod)
+# Project Setup
 
 A DttR mod is a 32-bit Windows DLL that includes `dttr_sdk.h`, exports mod lifecycle symbols, and links against a build of the DttR SDK.
 

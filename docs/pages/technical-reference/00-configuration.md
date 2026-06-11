@@ -61,7 +61,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
     "axis_camera_rz": "axis_right_x",
     "deadzone_stick_x": 333,
     "deadzone_stick_y": 333,
-    "deadzone_camera_rz": 700,
+    "deadzone_camera_rz": 600,
     "sensitivity_stick_x": 100,
     "sensitivity_stick_y": 100,
     "sensitivity_camera_rz": 100
