@@ -147,7 +147,7 @@ static inline bool DTTR_Util_CollisionPolygonInNode(
 
 	// Records are quad-width, so all four indices must be valid, even for triangles.
 	for (uint32_t i = 0; i < 4u; ++i) {
-		if (polygon->vertex_indices[i] >= node->vertex_count) {
+		if (polygon->vertex_idx[i] >= node->vertex_count) {
 			return false;
 		}
 	}
@@ -167,15 +167,15 @@ static inline DTTR_PCDOGS_T_Collision_Polygon *DTTR_Util_CollisionAdjacentPolygo
 	uint32_t edge_index,
 	int32_t *out_neighbor_edge
 ) {
-	if (!node || !polygon || edge_index >= 4u || !polygon->adj_face_ptr
+	if (!node || !polygon || edge_index >= 4u || !polygon->face_plane
 		|| !DTTR_Util_MemReadable(
-			polygon->adj_face_ptr,
+			polygon->face_plane,
 			DTTR_UTIL_COLLISION_ADJ_FACE_MIN_SIZE
 		)) {
 		return NULL;
 	}
 
-	const uint16_t *adj_edges = (const uint16_t *)((const uint8_t *)polygon->adj_face_ptr
+	const uint16_t *adj_edges = (const uint16_t *)((const uint8_t *)polygon->face_plane
 												   + 0x0c);
 	const uint16_t encoded = adj_edges[edge_index];
 	const uint32_t one_based_index = (uint32_t)encoded >> 2;
@@ -208,8 +208,8 @@ static inline bool dttr_util_collision_edge_vertices(
 		return false;
 	}
 
-	const uint16_t i0 = polygon->vertex_indices[edge_index];
-	const uint16_t i1 = polygon->vertex_indices[(edge_index + 1u) & 3u];
+	const uint16_t i0 = polygon->vertex_idx[edge_index];
+	const uint16_t i1 = polygon->vertex_idx[(edge_index + 1u) & 3u];
 	if (i0 >= node->vertex_count || i1 >= node->vertex_count) {
 		return false;
 	}

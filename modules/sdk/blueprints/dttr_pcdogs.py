@@ -621,53 +621,14 @@ stable.struct(
 
 stable.struct(
     "Camera_Pose",
-    member(
-        "int16_t",
-        "angle_vertical",
-        0x0,
-        doc="First wrapped 12-bit camera angle used by Camera_CalculatePosition.",
-    ),
-    member(
-        "int16_t",
-        "angle_horizontal",
-        0x2,
-        doc="Second wrapped 12-bit camera angle used by Camera_CalculatePosition.",
-    ),
-    member(
-        "int16_t",
-        "orbit_yaw",
-        0x4,
-        doc="Wrapped 12-bit orbit yaw interpolated by Camera_InterpolateTransition.",
-    ),
-    member(
-        "int16_t",
-        "fov",
-        0x6,
-        doc="Field-of-view value interpolated during camera transitions.",
-    ),
-    member(
-        "int32_t",
-        "distance_or_clip",
-        0x8,
-        doc="Copied pose scalar used by camera pose interpolation paths.",
-    ),
-    member(
-        "Math_Vec3I32",
-        "eye_pos",
-        0xC,
-        doc="Eye/source position interpolated directly or recomputed from target distance.",
-    ),
-    member(
-        "Math_Vec3I32",
-        "target_pos",
-        0x18,
-        doc="Look-at/target position interpolated during camera transitions.",
-    ),
+    member("int16_t", "angle_vertical", 0x0),
+    member("int16_t", "angle_horizontal", 0x2),
+    member("int16_t", "orbit_yaw", 0x4),
+    member("int16_t", "fov", 0x6),
+    member("int32_t", "distance_or_clip", 0x8),
+    member("Math_Vec3I32XZY", "eye_pos", 0xC),
+    member("Math_Vec3I32XZY", "target_pos", 0x18),
     size=0x24,
-    doc=(
-        "Local camera pose copied during camera transition interpolation before easing back."
-    ),
-    unstable=True,
 )
 
 stable.struct(
@@ -727,46 +688,13 @@ stable.struct(
 stable.struct(
     "Collision_Polygon",
     member("Collision_Plane*", "plane_data", 0x0),
-    member("uint16_t", "vertex_indices[4]", 0x4),
-    member(
-        "void*",
-        "adj_face_ptr",
-        0xC,
-        doc=(
-            "Face-plane/adjacency data owned by the Collision_Node query, matching "
-            "PKG_CollisionFacePlane normal fields and packed adj_edge words."
-        ),
-    ),
-    member(
-        "uint16_t",
-        "flags",
-        0x10,
-        doc=(
-            "Bit 0x1 marks triangles (3 edges) versus quads (4), bit 0x4 marks "
-            "walkable ground that adjacency crossing may enter, and bit 0x4000 "
-            "marks boundary polygons whose edges "
-            "Collision_ProcessActorGroundCheck scans for wall candidates. An "
-            "edge whose neighbor lacks bit 0x4 (or has no neighbor) is a wall "
-            "edge, bit 0x400 combined with bit 0 of the face-plane record "
-            "marks that wall as a one-way or disabled barrier, and bits "
-            "0x800/0x1800 reject polygons as standable ground in "
-            "dynamic-object and polygon-walk paths."
-        ),
-    ),
-    member(
-        "int16_t",
-        "material_index",
-        0x12,
-        doc=("The face's material classifier comes from package collision metadata."),
-    ),
-    member("int16_t", "adj_edge_0", 0x14),
-    member("int16_t", "padding_16", 0x16),
+    member("uint16_t", "vertex_idx[4]", 0x4),
+    member("PKG_CollisionFacePlane*", "face_plane", 0xC),
+    member("uint16_t", "flags", 0x10),
+    member("int16_t", "material_index", 0x12),
+    member("int16_t", "adj_edge0", 0x14),
+    member("int16_t", "pad_16", 0x16),
     size=0x18,
-    doc=(
-        "Collision polygon array element owned by Collision_Node.polygons. "
-        "Vertex indices reference the owning node's vertex array. flags, "
-        "material_index, and plane_data->surface_type classify collision faces."
-    ),
 )
 
 stable.struct(
@@ -822,31 +750,21 @@ stable.struct(
 stable.struct(
     "Component_Definition",
     member("uint32_t", "flags", 0x0),
-    member("int32_t", "initial_vel_x", 0x4),
-    member("int32_t", "initial_vel_z", 0x8),
+    member("Math_Vec2I32XZ", "initial_vel_xz", 0x4),
     member("int32_t", "gravity", 0xC),
     member("int32_t", "homing_strength", 0x10),
     member("int32_t", "lifetime_range", 0x14),
     member("int16_t", "speed_min", 0x18),
     member("int16_t", "speed_variance", 0x1A),
     member("int32_t", "speed_max", 0x1C),
-    member(
-        "int32_t",
-        "collision_damage_type",
-        0x20,
-        doc=(
-            "This classifies the damage dealt by the component's collision "
-            "volume and belongs with the surrounding collision volume fields."
-        ),
-    ),
-    member("int32_t", "scatter_angle_x", 0x24),
-    member("int32_t", "scatter_angle_z", 0x28),
+    member("int32_t", "collision_damage_type", 0x20),
+    member("Math_Vec2I32XZ", "scatter_angle_xz", 0x24),
     member("int32_t", "bounce_factor", 0x2C),
     member("int32_t", "trail_effect_id", 0x30),
     member("int32_t", "return_to_owner", 0x34),
     member("int32_t", "collision_radius", 0x38),
     member("int32_t", "collision_height", 0x3C),
-    member("int32_t", "mini_game_params", 0x40),
+    member("int32_t", "minigame_params", 0x40),
     member("int32_t", "sound_effect_id", 0x44),
     member("uint8_t", "team_id", 0x48),
     member("uint8_t", "spawn_limit_counter", 0x49),
@@ -858,18 +776,10 @@ stable.struct(
     member("int32_t", "particle_count", 0x54),
     member("int32_t", "particle_spread", 0x58),
     member("int32_t", "particle_lifetime", 0x5C),
-    member("int32_t", "particle_color", 0x60),
-    member(
-        "int32_t",
-        "movement_mode",
-        0x64,
-        doc="Actor/component movement behavior selector consumed by movement/update paths.",
-    ),
-    member("int32_t", "visual_scale", 0x68),
-    member("int32_t", "attachment_bone_id", 0x6C),
-    size=0x70,
+    member("Actor_State*", "actor_templates[4]", 0x60),
+    member("int32_t", "sound_ids[3]", 0x70),
+    size=0x7C,
 )
-
 
 stable.struct(
     "Component_MeshHeader",
@@ -885,42 +795,38 @@ stable.struct(
 )
 
 stable.struct(
+    "Component_HitEvent",
+    member("Actor_State*", "actor", 0x0),
+    member("int32_t", "start_frame", 0x4),
+    member("int32_t", "expire_frame", 0x8),
+    size=0xC,
+)
+
+stable.struct(
     "Component_SpawnParams",
-    member(
-        "Actor_State*",
-        "owner_actor",
-        0x0,
-        doc="Owning live Actor_State/context for projectile/component spawn logic.",
-    ),
+    member("Actor_State*", "owner", 0x0),
     member("Component_Definition*", "definition", 0x4),
-    member(
-        "Actor_State*",
-        "source_actor",
-        0x8,
-        doc="Source/fallback actor context copied into the spawned component record when present.",
-    ),
-    member(
-        "int32_t",
-        "spawn_local_pos_x",
-        0xC,
-        doc="First dword of the fixed spawn-position block used when position_anchor_or_actor selects local position storage.",
-    ),
-    member("int32_t", "spawn_local_pos_y", 0x10),
-    member("int32_t", "spawn_local_pos_z", 0x14),
-    member(
-        "Actor_State*",
-        "position_anchor_or_actor",
-        0x18,
-        doc="Position anchor actor/context slot; value -1 selects spawn_local_pos_* local position storage.",
-    ),
-    member(
-        "uint32_t",
-        "state_flags",
-        0x28,
-        doc="Projectile/component spawn-state flags; update logic tests bits 0x1 and 0x4 here.",
-    ),
-    size=0x2C,
-    unstable=True,
+    member("Math_Vec3I32", "initial_pos", 0x8),
+    member("Actor_State*", "target_actor", 0x14),
+    member("int32_t", "spawn_flags", 0x18),
+    member("Actor_State*", "attached_actor", 0x1C),
+    member("int32_t", "reserved_20", 0x20),
+    member("int32_t", "reserved_24", 0x24),
+    member("uint8_t", "state_flags", 0x28),
+    member("uint8_t", "pad_29[3]", 0x29),
+    member("int32_t", "spawn_frame", 0x2C),
+    member("Component_HitEvent", "hit_events[8]", 0x30),
+    member("Actor_State*", "hit_actors[6]", 0x90),
+    member("int16_t", "hit_depths[6]", 0xA8),
+    member("Math_Vec3I32", "impact_velocities[6]", 0xB4),
+    member("uint8_t", "hit_count", 0xFC),
+    member("uint8_t", "pad_0FD", 0xFD),
+    member("Math_Vec3I16", "impact_normal", 0xFE),
+    member("uint8_t", "pad_104[4]", 0x104),
+    member("Math_Vec3I32", "impact_delta", 0x108),
+    member("int16_t", "homing_response_scale", 0x114),
+    member("int16_t", "pad_116", 0x116),
+    size=0x118,
 )
 
 stable.struct(
@@ -1042,37 +948,11 @@ stable.struct(
 
 stable.struct(
     "Input_State",
-    member(
-        "uint32_t", "button_bits", 0x0, doc="Current sampled button/control bitfield."
-    ),
-    member(
-        "int16_t",
-        "axis_x",
-        0x4,
-        doc="Primary horizontal analog axis in signed Q12-style units.",
-    ),
-    member(
-        "int16_t",
-        "axis_y",
-        0x6,
-        doc="Primary vertical analog axis in signed Q12-style units.",
-    ),
-    member(
-        "int16_t",
-        "axis_aux_0",
-        0x8,
-        doc="Secondary/alternate analog axis slot read by extended control codes.",
-    ),
-    member(
-        "int16_t",
-        "axis_aux_1",
-        0xA,
-        doc="Secondary/alternate analog axis slot read by extended control codes.",
-    ),
+    member("uint32_t", "button_bits", 0x0),
+    member("Math_Vec2I16", "axis", 0x4),
+    member("Math_Vec2I16", "axis_aux", 0x8),
     size=0xC,
-    doc="Runtime input snapshot, shared by keyboard, joystick, gamepad, and script input checks.",
 )
-
 
 stable.struct(
     "Level_BlobHeader",
@@ -1342,63 +1222,36 @@ stable.struct(
     size=0x14,
 )
 
+
+stable.struct(
+    "Math_UV8",
+    member("uint8_t", "u", 0x0),
+    member("uint8_t", "v", 0x1),
+    size=0x2,
+)
+
+stable.struct(
+    "Math_ColorRGB8",
+    member("uint8_t", "r", 0x0),
+    member("uint8_t", "g", 0x1),
+    member("uint8_t", "b", 0x2),
+    size=0x3,
+)
+
 stable.struct(
     "Material_TableEntry",
     member("uint16_t", "flags", 0x0),
     member("uint8_t", "flags_bytes[2]", 0x2),
-    member(
-        "Material_Entry*",
-        "material_ptr",
-        0x4,
-        doc="Runtime/fixed-up texture descriptor or material entry pointer for this render material record.",
-    ),
-    member(
-        "uint32_t",
-        "material_tint",
-        0x8,
-        doc="Tint/color word copied into render batches by Graphics_SetPolygonUVs.",
-    ),
-    member(
-        "Material_TextureInfo",
-        "texture_info",
-        0xC,
-        doc="Texture width/height plus reserved upper bytes copied into render batches.",
-    ),
-    member("PKG_UVCoord", "uv_tile_offset", 0x10),
-    member(
-        "uint8_t",
-        "texture_info_hi_reserved[2]",
-        0x12,
-        doc="Upper bytes of the packed texture and UV info area. No named read path uses these bits.",
-    ),
-    member(
-        "uint8_t",
-        "color_adjust_r",
-        0x14,
-        doc="RGB adjustment byte read by ComputeVertexColors.",
-    ),
-    member(
-        "uint8_t",
-        "color_adjust_g",
-        0x15,
-        doc="RGB adjustment byte read by ComputeVertexColors.",
-    ),
-    member(
-        "uint8_t",
-        "color_adjust_b",
-        0x16,
-        doc="RGB adjustment byte read by ComputeVertexColors.",
-    ),
+    member("Material_Entry*", "material_ptr", 0x4),
+    member("uint32_t", "avg_color", 0x8),
+    member("Material_TextureInfo", "texture_info", 0xC),
+    member("Math_UV8", "uv_tile_offset", 0x10),
+    member("uint8_t", "texture_info_hi_reserved[2]", 0x12),
+    member("Math_ColorRGB8", "color_adjust", 0x14),
     member("uint8_t", "reserved_17", 0x17),
-    member(
-        "Material_TableEntry*",
-        "next_material_entry",
-        0x18,
-        doc="Chained material-table entry pointer fixed up by Material_LoadAndFixup.",
-    ),
-    member("uint16_t", "explicit_uv[4]", 0x1C),
+    member("Material_TableEntry*", "next_material_entry", 0x18),
+    member("Math_UV8", "explicit_uvs[4]", 0x1C),
     size=0x24,
-    unstable=True,
 )
 
 stable.struct(
@@ -1421,6 +1274,60 @@ stable.struct(
     size=0xC,
     doc=("Single-corner bounds vector record with a vector footprint."),
     unstable=True,
+)
+
+stable.struct(
+    "Math_Vec2I32XZ",
+    member("int32_t", "x", 0x0),
+    member("int32_t", "z", 0x4),
+    size=0x8,
+)
+
+stable.struct(
+    "Math_RectF",
+    member("float", "x", 0x0),
+    member("float", "y", 0x4),
+    member("float", "w", 0x8),
+    member("float", "h", 0xC),
+    size=0x10,
+)
+
+stable.struct(
+    "Math_ColorBGRA8",
+    member("uint8_t", "b", 0x0),
+    member("uint8_t", "g", 0x1),
+    member("uint8_t", "r", 0x2),
+    member("uint8_t", "a", 0x3),
+    size=0x4,
+)
+
+stable.struct(
+    "Math_ColorRGBF",
+    member("float", "r", 0x0),
+    member("float", "g", 0x4),
+    member("float", "b", 0x8),
+    size=0xC,
+)
+
+stable.struct(
+    "Math_ScreenPointI16",
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    size=0x4,
+)
+
+stable.struct(
+    "Math_EasePairI32",
+    member("int32_t", "start", 0x0),
+    member("int32_t", "target", 0x4),
+    size=0x8,
+)
+
+stable.struct(
+    "Graphics_Render_ScreenVertexI16Z",
+    member("Math_ScreenPointI16", "screen", 0x0),
+    member("int32_t", "z", 0x4),
+    size=0x8,
 )
 
 stable.struct(
@@ -1451,7 +1358,8 @@ stable.struct(
     member("Entity_State*", "owner_entity", 0x8),
     member("int16_t", "anim_state", 0xC),
     member("int16_t", "anim_flags", 0xE),
-    member("int16_t", "contact_tangent[6]", 0x10),
+    member("int16_t", "contact_tangent", 0x10),
+    member("int16_t", "contact_tangent_array[5]", 0x12),
     member("int16_t", "contact_normal_z", 0x1C),
     member("int16_t", "contact_normal_z_hi", 0x1E),
     member("Math_Vec3I32", "attach_offset", 0x20),
@@ -1641,11 +1549,11 @@ stable.struct(
     member("int32_t", "path_best_distance", 0x144),
     member("Math_Vec3I32", "path_target", 0x148),
     member("int32_t", "path_result_x", 0x154),
-    member("int32_t", "path_result_y", 0x158),
+    member("int32_t", "camera_sin_factor", 0x158),
     member("int32_t", "path_result_z", 0x15C),
     member("int32_t", "path_waypoint_x", 0x160),
-    member("int32_t", "path_waypoint_y", 0x164),
-    member("int32_t", "path_waypoint_z", 0x168),
+    member("int32_t", "path_waypoint_z", 0x164),
+    member("int32_t", "path_waypoint_y2", 0x168),
     member("int32_t", "path_facing", 0x16C),
     member("int32_t", "live_velocity", 0x170),
     member(
@@ -1666,102 +1574,18 @@ stable.struct(
         0x17C,
         doc="Actor_State default flag mask restored by reset/despawn paths.",
     ),
-    member(
-        "int32_t",
-        "transition_saved_velocity_x",
-        0x180,
-        doc="Saved pre-transition velocity_x copied from the live actor and restored by Actor_SnapToPosition.",
-    ),
-    member(
-        "int32_t",
-        "transition_saved_velocity_y",
-        0x184,
-        doc="Saved pre-transition velocity_y copied from the live actor and restored by Actor_SnapToPosition.",
-    ),
-    member(
-        "int32_t",
-        "transition_saved_velocity_z",
-        0x188,
-        doc="Saved pre-transition velocity_z copied from the live actor and restored by Actor_SnapToPosition.",
-    ),
-    member(
-        "int16_t",
-        "transition_timer",
-        0x18C,
-        doc="Transition/countdown timer set by camera/snap setup and decremented by Actor_ProcessSnapAndEntityUpdate.",
-    ),
-    member(
-        "int16_t",
-        "transition_target_angle",
-        0x18E,
-        doc="Target facing angle passed into Actor_CalculateRotation during snap/transition updates.",
-    ),
-    member(
-        "int32_t",
-        "transition_rotation_param",
-        0x190,
-        doc="Rotation step/speed parameter passed as Actor_CalculateRotation third argument; the callee scales it before applying the facing update.",
-    ),
-    member(
-        "int16_t",
-        "behavior_state",
-        0x194,
-        doc="Player/AI behavior substate switched by Actor_ProcessPlayerBehavior; nonzero suppresses selected collision/despawn paths.",
-    ),
-    member(
-        "int16_t",
-        "behavior_timer",
-        0x196,
-        doc="Behavior phase timer/frame counter set to animation/countdown durations and decremented by player/AI behavior paths.",
-    ),
-    member(
-        "Component_Instance*",
-        "runtime_component_array",
-        0x198,
-        doc="Pointer to runtime Component_Instance array initialized by Entity_SpawnActor; entries use the public Component_Instance layout.",
-    ),
-    member(
-        "Actor_State*",
-        "tracked_actor_0",
-        0x19C,
-        doc="Tracked/attached actor pointer slot released by Actor_ReleaseBindings with target refcount decrement.",
-    ),
-    member(
-        "Actor_State*",
-        "tracked_actor_1",
-        0x1A0,
-        doc="Tracked/attached actor pointer slot released by Actor_ReleaseBindings/Actor_ReleaseAttachment with target refcount decrement.",
-    ),
-    member(
-        "int32_t",
-        "candidate_actor_distance_0",
-        0x1A4,
-        doc="Nearest/candidate actor distance for tracked slot 0 used by player behavior and collision scans.",
-    ),
-    member(
-        "Actor_State*",
-        "candidate_actor_0",
-        0x1A8,
-        doc="Candidate actor pointer for tracked slot 0 used by player behavior and collision scans.",
-    ),
-    member(
-        "int32_t",
-        "candidate_actor_distance_1",
-        0x1AC,
-        doc="Nearest/candidate actor distance for tracked slot 1 used by collision scans.",
-    ),
-    member(
-        "Actor_State*",
-        "candidate_actor_1",
-        0x1B0,
-        doc="Candidate actor pointer for tracked slot 1 used by collision scans.",
-    ),
-    member(
-        "int32_t",
-        "scratch_reserved[4]",
-        0x1B4,
-        doc="Zeroed actor scratch tail.",
-    ),
+    member("int32_t", "runtime_state_0", 0x180),
+    member("int32_t", "runtime_state_1", 0x184),
+    member("int32_t", "runtime_state_2", 0x188),
+    member("int32_t", "runtime_state_3", 0x18C),
+    member("int16_t", "runtime_jump_state", 0x190),
+    member("int16_t", "runtime_state_4_hi", 0x192),
+    member("int16_t", "runtime_counter", 0x194),
+    member("int16_t", "runtime_state_5_hi", 0x196),
+    member("int32_t", "runtime_state_6", 0x198),
+    member("int32_t", "runtime_state_7", 0x19C),
+    member("int32_t", "runtime_state_8", 0x1A0),
+    member("int32_t", "ai_scratch_pad[8]", 0x1A4),
     size=0x1C4,
     unstable=True,
 )
@@ -1846,148 +1670,46 @@ stable.struct(
 stable.struct(
     "Entity_State",
     member("uint32_t", "flags", 0x0),
-    member(
-        "Math_Vec3I32",
-        "bonus_respawn_pos",
-        0x4,
-        doc="Inactive/pre-spawn entity position; also mirrors Entity_State bonus respawn position.",
-    ),
-    member(
-        "int32_t",
-        "collision_radius_sq",
-        0x10,
-        doc="Squared visibility/collision radius used by Entity_UpdateVisibilityAndSpawn.",
-    ),
-    member(
-        "int32_t",
-        "collision_height_sq",
-        0x14,
-        doc="Squared visibility/collision height used by Entity_UpdateVisibilityAndSpawn.",
-    ),
+    member("Math_Vec3I32", "bonus_respawn_pos", 0x4),
+    member("int32_t", "collision_radius_sq", 0x10),
+    member("int32_t", "collision_height_sq", 0x14),
     member("uint8_t", "active_flag", 0x18),
-    member(
-        "uint8_t",
-        "bonus_respawn_mode",
-        0x19,
-        doc="Entity respawn mode byte; Player_RespawnAfterDeath checks entity-slot state at this position.",
-    ),
-    member(
-        "uint16_t",
-        "reserved_1a",
-        0x1A,
-        doc="Reserved entity record pad.",
-    ),
-    member("int32_t*", "bonus_respawn_target_pos", 0x1C),
+    member("uint8_t", "bonus_respawn_mode", 0x19),
+    member("uint16_t", "reserved_1A", 0x1A),
+    member("Math_Vec3I32*", "bonus_respawn_target_pos", 0x1C),
     member("int16_t", "attach_offset_x", 0x20),
-    member(
-        "int16_t",
-        "default_anim_state",
-        0x22,
-        doc="Default animation state reset to 0xFFFF by Entity_UpdateVisibilityAndSpawn/despawn paths.",
-    ),
+    member("int16_t", "default_anim_state", 0x22),
     member("int32_t", "local_vars[9]", 0x24),
     member("void*", "script_base_ptr", 0x48),
     member("void*", "actor_template_header_ref", 0x4C),
     member("void*", "shared_ref_50", 0x50),
     member("void*", "shared_ref_54", 0x54),
-    member(
-        "int32_t*",
-        "runtime_target_pos",
-        0x58,
-        doc="Runtime/default target-position pointer copied into cached_actor_defaults by Entity_SpawnActor.",
-    ),
-    member(
-        "uint8_t",
-        "reserved_5c[44]",
-        0x5C,
-        doc="Reserved portion copied by Entity_SpawnActor into cached_actor_defaults.",
-    ),
-    member(
-        "int32_t",
-        "respawn_transition_speed",
-        0x88,
-        doc="Default transition speed mirrored from Entity_State.",
-    ),
-    member(
-        "uint8_t",
-        "reserved_8c[52]",
-        0x8C,
-        doc="Continuation of the copied actor-default block.",
-    ),
-    member(
-        "uint8_t",
-        "cached_actor_defaults[104]",
-        0xC0,
-        doc="Entity_SpawnActor caches actor defaults here. Actor_CopyEntityDefaultsToRecord copies this block into the package actor record.",
-    ),
-    member(
-        "Actor_State*",
-        "active_actor",
-        0x128,
-        doc="Live Actor_State currently spawned from this Entity_State slot.",
-    ),
-    member("uint8_t", "padding_12c[16]", 0x12C),
+    member("Math_Vec3I32*", "runtime_target_pos", 0x58),
+    member("uint8_t", "reserved_5C[44]", 0x5C),
+    member("int32_t", "respawn_transition_speed", 0x88),
+    member("uint8_t", "reserved_8C[52]", 0x8C),
+    member("uint8_t", "cached_actor_defaults[104]", 0xC0),
+    member("Actor_State*", "runtime_actor", 0x128),
+    member("uint8_t", "pad_12C[16]", 0x12C),
     member("int32_t", "script_timer", 0x13C),
     member("uint8_t", "behavior_index", 0x140),
     member("uint8_t", "behavior_stack[3]", 0x141),
-    member(
-        "uint8_t",
-        "reserved_144[40]",
-        0x144,
-        doc="Runtime entity scratch before target_offset_phase.",
-    ),
-    member(
-        "int32_t",
-        "target_offset_phase",
-        0x16C,
-        doc="Runtime target-position accumulator advanced by Entity_UpdateVisibilityAndSpawn.",
-    ),
-    member(
-        "int32_t",
-        "target_offset_step",
-        0x170,
-        doc="Signed per-update target-position delta; Entity_UpdateVisibilityAndSpawn negates it at bounds.",
-    ),
-    member(
-        "int32_t",
-        "default_collision_radius_sq",
-        0x174,
-        doc="Default collision radius restored into collision_radius_sq by Entity_SetActorProperty/despawn reset paths.",
-    ),
-    member(
-        "int32_t",
-        "default_collision_height_sq",
-        0x178,
-        doc="Default collision height restored into collision_height_sq by Entity_SetActorProperty/despawn reset paths.",
-    ),
-    member(
-        "uint32_t",
-        "default_flags",
-        0x17C,
-        doc="Default flags restored by despawn/reset and used as the default flag mask by Entity_SetActorProperty.",
-    ),
+    member("uint8_t", "reserved_144[40]", 0x144),
+    member("int32_t", "target_offset_phase", 0x16C),
+    member("int32_t", "target_offset_step", 0x170),
+    member("int32_t", "saved_collision_radius_sq", 0x174),
+    member("int32_t", "saved_collision_height_sq", 0x178),
+    member("uint32_t", "saved_flags", 0x17C),
     size=0x180,
-    doc=(
-        "Runtime entity slot record used by spawn and visibility paths; current_level_data->entity_array "
-        "supplies the slot index."
-    ),
-    unstable=True,
 )
 
 stable.struct(
     "Math_QuaternionI16",
-    member("int16_t", "w", 0x0, doc="Scalar component in signed Q14 fixed-point form."),
-    member(
-        "int16_t", "x", 0x2, doc="X vector component in signed Q14 fixed-point form."
-    ),
-    member(
-        "int16_t", "y", 0x4, doc="Y vector component in signed Q14 fixed-point form."
-    ),
-    member(
-        "int16_t", "z", 0x6, doc="Z vector component in signed Q14 fixed-point form."
-    ),
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    member("int16_t", "z", 0x4),
+    member("int16_t", "w", 0x6),
     size=0x8,
-    doc="Four signed Q14 fixed-point quaternion components, used by animation rotation tracks.",
 )
 
 stable.struct(
@@ -2119,10 +1841,10 @@ stable.struct(
 
 stable.struct(
     "Math_RectI16",
-    member("int16_t", "min_x", 0x0),
-    member("int16_t", "min_y", 0x2),
-    member("int16_t", "max_x", 0x4),
-    member("int16_t", "max_y", 0x6),
+    member("int16_t", "x", 0x0),
+    member("int16_t", "y", 0x2),
+    member("int16_t", "w", 0x4),
+    member("int16_t", "h", 0x6),
     size=0x8,
 )
 
@@ -2130,10 +1852,9 @@ stable.struct(
     "Math_RectI32",
     member("int32_t", "x", 0x0),
     member("int32_t", "y", 0x4),
-    member("uint32_t", "width", 0x8),
-    member("uint32_t", "height", 0xC),
+    member("int32_t", "w", 0x8),
+    member("int32_t", "h", 0xC),
     size=0x10,
-    doc="This rect is an origin plus unsigned size.",
 )
 
 stable.struct(
@@ -2211,8 +1932,10 @@ stable.struct(
 
 stable.struct(
     "Mesh_AccumulatedNormal",
-    member("int32_t", "nx", 0x0),
-    member("int32_t", "ny", 0x4),
+    member("int16_t", "nx", 0x0),
+    member("int16_t", "ny", 0x2),
+    member("int16_t", "nz", 0x4),
+    member("int16_t", "pad_06", 0x6),
     size=0x8,
 )
 
@@ -2538,14 +2261,22 @@ stable.struct(
 
 
 stable.struct(
+    "EntityNavigationWorkListBuffer",
+    member("int32_t", "active_count", 0x0),
+    member("Entity_State*", "active_entities[4]", 0x4),
+    member("int32_t", "nav_command_count", 0x14),
+    member("Nav_Command", "nav_commands[100]", 0x18),
+    size=0x978,
+)
+
+stable.struct(
     "Nav_Command",
     member("uint32_t", "command_type", 0x0),
-    member("int16_t", "target_x", 0x4),
-    member("int16_t", "target_y", 0x6),
-    member("int32_t", "target_z", 0x8),
+    member("int16_t", "target_selector_a", 0x4),
+    member("int16_t", "target_selector_b", 0x6),
+    member("int32_t", "speed", 0x8),
     member("Math_Vec3I32", "pos", 0xC),
     size=0x18,
-    unstable=True,
 )
 
 stable.struct(
@@ -2569,10 +2300,9 @@ stable.struct(
     member("Math_Vec3I32", "pos", 0x0),
     member("uint16_t", "parent_link", 0xC),
     member("int16_t", "neighbor_count", 0xE),
-    member("int32_t*", "pathfind_state", 0x10),
+    member("Nav_PathState*", "pathfind_state", 0x10),
     member("Nav_NeighborEntry*", "neighbor_list", 0x14),
     size=0x18,
-    unstable=True,
 )
 
 stable.struct(
@@ -2676,7 +2406,7 @@ stable.struct(
 
 stable.struct(
     "PKG_CollisionHeader",
-    member("Math_SizeU32", "dimensions", 0x0),
+    member("Math_SizeU32", "grid_dimensions", 0x0),
     member("uint32_t", "cell_size", 0x8),
     member("uint32_t", "data_offset", 0xC),
     member("uint8_t", "collision_reserved[16]", 0x10),
@@ -2690,7 +2420,7 @@ stable.struct(
     member("uint32_t", "grid_params", 0x8),
     member("void*", "material_base_ptr", 0xC),
     member("uint32_t", "type_flags", 0x10),
-    member("Math_Vec3I32", "extent", 0x14),
+    member("Math_Vec3I32", "extents", 0x14),
     member("void*", "grid_cell_array", 0x20),
     member("PKG_CollisionFace*", "face_array", 0x24),
     member("PKG_CollisionFacePlane*", "plane_array", 0x28),
@@ -2704,12 +2434,8 @@ stable.struct(
 
 stable.struct(
     "PKG_CollisionVertex",
-    member("int16_t", "x", 0x0),
-    member("int16_t", "y", 0x2),
-    member("int16_t", "z", 0x4),
-    member("int16_t", "nx", 0x6),
-    member("int16_t", "ny", 0x8),
-    member("int16_t", "nz", 0xA),
+    member("Math_Vec3I16", "pos", 0x0),
+    member("Math_Vec3I16", "normal", 0x6),
     size=0xC,
 )
 
@@ -2747,75 +2473,24 @@ stable.struct(
 
 stable.struct(
     "Collision_Node",
-    member(
-        "Collision_Node*",
-        "next_in_list",
-        0x0,
-        doc="List link used by static collision-scene node lists.",
-    ),
-    member(
-        "uint8_t",
-        "reserved_04[40]",
-        0x4,
-        doc="Reserved prefix before the node transform matrix.",
-    ),
-    member(
-        "Math_Matrix3x3I16",
-        "transform_matrix",
-        0x2C,
-        doc="Q12 node rotation/scale matrix used when transformed-node flags are set.",
-    ),
+    member("Collision_Node*", "next_in_list", 0x0),
+    member("uint8_t", "reserved_04[40]", 0x4),
+    member("Math_Matrix3x3I16", "transform_matrix", 0x2C),
     member("int16_t", "transform_padding", 0x3E),
     member("Math_Vec3I32", "origin", 0x40),
-    member(
-        "uint8_t",
-        "reserved_4c[28]",
-        0x4C,
-        doc="Reserved collision-node payload before vertex and face counts.",
-    ),
-    member(
-        "uint16_t",
-        "vertex_count",
-        0x68,
-        doc=("This counts the Collision_Vertex records in vertices."),
-    ),
-    member(
-        "uint16_t",
-        "polygon_count",
-        0x6A,
-        doc=("This counts the Collision_Polygon records in polygons."),
-    ),
-    member(
-        "Collision_Polygon*",
-        "polygons",
-        0x6C,
-        doc="Collision polygon/face array; vertex indices live at positions +4/+6/+8/+10 in each record.",
-    ),
-    member(
-        "Collision_Vertex*",
-        "vertices",
-        0x70,
-        doc="Collision vertex array with signed int16 x/y/z components.",
-    ),
-    member(
-        "uint8_t",
-        "reserved_74[20]",
-        0x74,
-        doc="Internal node payload between geometry arrays and flags.",
-    ),
-    member(
-        "uint32_t",
-        "flags",
-        0x88,
-        doc="Node flags; collision polygon tests use transformed coordinates when bits 0x22 are set.",
-    ),
-    size=0x8C,
-    doc=(
-        "Runtime collision/scene-geometry node layout used by ground and static collision "
-        "paths. Vertices are signed int16 triples scaled by the owning level/caller; "
-        "matrix transforms are Q12 when enabled by flags."
-    ),
-    unstable=True,
+    member("uint8_t", "reserved_4c[28]", 0x4C),
+    member("uint16_t", "vertex_count", 0x68),
+    member("uint16_t", "polygon_count", 0x6A),
+    member("Collision_Polygon*", "polygons", 0x6C),
+    member("Collision_Vertex*", "vertices", 0x70),
+    member("uint8_t", "reserved_74[20]", 0x74),
+    member("uint32_t", "flags", 0x88),
+    member("int32_t", "collision_radius", 0x8C),
+    member("uint8_t", "reserved_90[8]", 0x90),
+    member("Math_Vec3I32", "bounds_center", 0x98),
+    member("uint8_t", "reserved_a4[6]", 0xA4),
+    member("int16_t", "bounds_radius", 0xAA),
+    size=0xAC,
 )
 
 stable.struct(
@@ -2975,14 +2650,12 @@ stable.struct(
     member("Material_Entry*", "material_ptr", 0x4),
     member("uint32_t", "material_tint", 0x8),
     member("Material_TextureInfo", "texture_info", 0xC),
-    member("PKG_UVCoord", "uv_tile_offset", 0x10),
+    member("Math_UV8", "uv_tile_offset", 0x10),
     member("uint8_t", "padding_12[2]", 0x12),
-    member("uint8_t", "color_adjust_r", 0x14),
-    member("uint8_t", "color_adjust_g", 0x15),
-    member("uint8_t", "color_adjust_b", 0x16),
+    member("Math_ColorRGB8", "color_adjust", 0x14),
     member("uint8_t", "padding_17", 0x17),
     member("PKG_PolygonData*", "next_polygon_data_ptr", 0x18),
-    member("uint16_t", "explicit_uv[4]", 0x1C),
+    member("Math_UV8", "explicit_uvs[4]", 0x1C),
     size=0x24,
 )
 
@@ -3038,14 +2711,8 @@ stable.struct(
 
 stable.struct(
     "PKG_ScriptHeader",
-    member("uint8_t", "size_b0", 0x0),
-    member("uint8_t", "size_b1", 0x1),
-    member("uint8_t", "size_b2", 0x2),
-    member("uint8_t", "size_b3", 0x3),
-    member("uint8_t", "end_b0", 0x4),
-    member("uint8_t", "end_b1", 0x5),
-    member("uint8_t", "end_b2", 0x6),
-    member("uint8_t", "end_b3", 0x7),
+    member("uint8_t", "size_bytes[4]", 0x0),
+    member("uint8_t", "end_bytes[4]", 0x4),
     size=0x8,
 )
 
@@ -3280,9 +2947,8 @@ stable.struct(
 
 stable.struct(
     "Graphics_ProjectedVertex",
-    member("int16_t", "screen_x", 0x0),
-    member("int16_t", "screen_y", 0x2),
-    member("int32_t", "screen_z", 0x4),
+    member("Math_ScreenPointI16", "screen", 0x0),
+    member("int32_t", "z", 0x4),
     size=0x8,
 )
 
@@ -3306,27 +2972,16 @@ stable.struct(
     member("uint32_t", "flags", 0x0),
     member("DDraw_IDirectDrawSurface7*", "texture_ptr", 0x4),
     member("uint32_t", "material_tint", 0x8),
-    member(
-        "Graphics_TexWrapMode",
-        "tex_wrap_mode",
-        0xC,
-        doc="Texture wrap/mode bytes copied from PKG_PolygonData texture info, plus reserved upper bytes.",
-    ),
+    member("uint32_t", "tex_wrap_mode", 0xC),
     member("Graphics_PolygonBatchRecord*", "next_in_bucket", 0x10),
-    member("Graphics_ProjectedVertex", "screen_vertices[4]", 0x14),
-    member("Graphics_ViewVertex", "view_vertices[4]", 0x34),
+    member("Graphics_Render_ScreenVertexI16Z", "screen_vertices[4]", 0x14),
+    member("Math_Vec3F", "view_vertices[4]", 0x34),
     member("float", "depth_bias", 0x64),
-    member(
-        "int32_t",
-        "face_normal_dot",
-        0x68,
-        doc="Signed face-normal/dot value used by draw and clipping paths; Graphics_IsQuadClipped tests it against zero.",
-    ),
+    member("int32_t", "face_normal_dot", 0x68),
     member("uint32_t", "vertex_colors[4]", 0x6C),
-    member("Graphics_TexCoord8", "tex_coords[4]", 0x7C),
+    member("Math_UV8", "tex_uvs[4]", 0x7C),
     member("uint32_t", "render_state_flags", 0x84),
     size=0x88,
-    unstable=True,
 )
 
 stable.struct(
@@ -3479,33 +3134,55 @@ stable.struct(
 )
 
 stable.struct(
+    "Config_Data",
+    member("char", "gamma_setting", 0x0),
+    member("uint8_t", "pad[3]", 0x1),
+    member("int32_t", "keyboard_bindings[13]", 0x4),
+    member("int32_t", "joystick_bindings[13]", 0x38),
+    size=0x6C,
+)
+
+stable.struct(
+    "Config_GameSettings",
+    member("uint8_t", "sound_enabled", 0x0),
+    member("uint8_t", "difficulty", 0x1),
+    member("uint8_t", "player_character", 0x2),
+    member("uint8_t", "initialized", 0x3),
+    size=0x4,
+)
+
+stable.struct(
+    "Save_GameState",
+    member("int16_t", "slot_index", 0x0),
+    member("int16_t", "current_level", 0x2),
+    size=0x4,
+)
+
+stable.struct(
+    "Save_OperationStatus",
+    member("uint8_t", "status_code", 0x0),
+    member("uint8_t", "success", 0x1),
+    member("uint8_t", "requested_operation", 0x2),
+    member("uint8_t", "completed_operation", 0x3),
+    size=0x4,
+)
+
+stable.struct(
+    "Menu_ActionResult",
+    member("uint8_t", "action", 0x0),
+    member("uint8_t", "selected_index", 0x1),
+    member("uint8_t", "sound_effect", 0x2),
+    member("uint8_t", "pad", 0x3),
+    size=0x4,
+)
+
+stable.struct(
     "Save_GameData",
-    member(
-        "int32_t",
-        "version_marker",
-        0x0,
-        doc="32-bit save-file marker set to 2 before Save_InitGameOperation writes the buffer; Save_LoadGameState compares the full dword to 2.",
-    ),
-    member(
-        "int32_t",
-        "game_state",
-        0x4,
-        doc="Copied from game_state by Save_SaveGameToSlot and restored by Save_LoadGameState.",
-    ),
-    member(
-        "int32_t",
-        "game_settings",
-        0x8,
-        doc="Copied from game_settings by Save_SaveGameToSlot and restored by Save_LoadGameState.",
-    ),
-    member(
-        "int32_t",
-        "player_lives_state",
-        0xC,
-        doc="Copied from player_lives by Save_SaveGameToSlot and restored by Save_LoadGameState.",
-    ),
+    member("int32_t", "version_marker", 0x0),
+    member("Save_GameState", "game_state", 0x4),
+    member("Config_GameSettings", "game_settings", 0x8),
+    member("uint32_t", "rumble_suppress_flag", 0xC),
     size=0x10,
-    doc="Save-file header plus save-slot payloads for game state, settings, and player-lives dwords.",
 )
 
 stable.struct(
@@ -4674,7 +4351,7 @@ stable.fn(
     ret="int32_t*",
     params=[
         param("Actor_State*", "actor"),
-        param("int32_t*", "target_pos"),
+        param("Math_Vec3I32*", "target_pos"),
         param("int16_t", "target_angle"),
         param("int32_t", "transition_speed"),
         param("int32_t", "duration"),
@@ -5534,27 +5211,10 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[
-        param(
-            "uint32_t",
-            "sample_time",
-            doc="Animation sample time used to evaluate morph channels.",
-        ),
-        param(
-            "Animation_SplineChannel*",
-            "morph_channels",
-            doc="Morph channel array; a -1 keyframe_table_or_minus_one_sentinel sentinel selects the base-copy path.",
-        ),
-        param(
-            "void*",
-            "actor_or_mesh_state",
-            doc="Render/actor mesh state whose morph table feeds output buffers and .",
-        ),
+        param("uint32_t", "sample_time"),
+        param("Animation_SplineChannel*", "morph_channels"),
+        param("void*", "actor_or_mesh_state"),
     ],
-    doc=(
-        "Transforms or copies morphed vertex and normal buffers for a render/actor mesh state. "
-        "The sentinel path copies the base morph table, while keyed paths evaluate active morph "
-        "weights and accumulate weighted deltas."
-    ),
     abi_status=AbiStatus.PLACEHOLDER,
 )
 
@@ -8975,15 +8635,8 @@ stable.fn(
     "PKG_LoadRandomSplashScreen",
     "A0 ?? ?? ?? ?? 53 33",
     required=Required.EN,
-    ret="BOOL",
-    params=[
-        param(
-            "int32_t",
-            "level_index",
-            doc="Level index used to choose loading text and splash image state.",
-        )
-    ],
-    doc="Advances the loading-screen state machine and returns nonzero when loading can continue.",
+    ret="Material_BlendTextureSet*",
+    params=[param("int32_t", "level_index")],
 )
 
 stable.fn(
@@ -18785,11 +18438,11 @@ _unstable_rows.struct(
     member("int32_t", "path_best_distance", 0x144),
     member("Math_Vec3I32", "path_target", 0x148),
     member("int32_t", "path_result_x", 0x154),
-    member("int32_t", "path_result_y", 0x158),
+    member("int32_t", "camera_sin_factor", 0x158),
     member("int32_t", "path_result_z", 0x15C),
     member("int32_t", "path_waypoint_x", 0x160),
-    member("int32_t", "path_waypoint_y", 0x164),
-    member("int32_t", "path_waypoint_z", 0x168),
+    member("int32_t", "path_waypoint_z", 0x164),
+    member("int32_t", "path_waypoint_y2", 0x168),
     member("int32_t", "path_facing", 0x16C),
     member("int32_t", "live_velocity", 0x170),
     member("int32_t", "transition_target_x", 0x174),

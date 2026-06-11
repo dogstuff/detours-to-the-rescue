@@ -172,8 +172,8 @@ void __cdecl dttr_inputs_hook_read_gamepad_callback(DTTR_PCDOGS_T_Input_State *s
 		dttr_config.gamepad_axis_sensitivity[DTTR_GAMEPAD_AXIS_IDX_STICK_X],
 		dttr_config.gamepad_axis_sensitivity[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]
 	);
-	state->axis_x = axes.axis_x;
-	state->axis_y = axes.axis_y;
+	state->axis.x = axes.axis_x;
+	state->axis.y = axes.axis_y;
 
 	apply_mapped_dpad(&state->button_bits);
 	apply_rz_and_buttons(state, joystick);
