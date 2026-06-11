@@ -57,16 +57,19 @@ Use these for custom drawing:
 
 Use `DTTR_MODS_RENDER_GAME` for things that should line up with the game view. Use `DTTR_MODS_RENDER` for full-window overlays.
 
-## Render-Timing Callbacks
+## Host Timing and Render Phases
 
-Use these only when your mod needs exact render-backend timing:
+If your mod relies on or needs to manipulate game speed, it should use the host-owned timing callbacks:
 
-- `DTTR_MODS_BEFORE_GAME_FRAME`: Runs immediately before the game frame is processed by the render backend.
-- `DTTR_MODS_AFTER_GAME_FRAME`: Runs immediately after the game frame has been processed by the render backend.
-- `DTTR_MODS_BEFORE_PRESENT`: Runs just before the rendered frame is presented to the window.
-- `DTTR_MODS_AFTER_PRESENT`: Runs just after the rendered frame has been presented to the window.
+- `DTTR_MODS_QUERY_TIMING_POLICY`: Opt into fixed simulation with variable rendering.
+- `DTTR_MODS_TIMING_HOST_FRAME_BEGIN` / `DTTR_MODS_TIMING_HOST_FRAME_END`: One OS/window render opportunity.
+- `DTTR_MODS_TIMING_SHOULD_RUN_SIMULATION_STEP`: Optional per-step veto.
+- `DTTR_MODS_TIMING_BEFORE_SIMULATION_STEP` / `DTTR_MODS_TIMING_AFTER_SIMULATION_STEP`: Run before and after the native game step.
+- `DTTR_MODS_TIMING_SIMULATION_STEP_DEFERRED`: A due simulation step did not run.
+- `DTTR_MODS_TIMING_BEFORE_RENDER_FRAME` / `DTTR_MODS_TIMING_AFTER_RENDER_FRAME`: A render of the current or previous simulation state.
+- `DTTR_MODS_TIMING_BEFORE_PRESENT_FRAME` / `DTTR_MODS_TIMING_AFTER_PRESENT_FRAME`: Command submission, swap, or presentation.
 
-Most mods do not need these. Prefer the simpler frame or drawing callbacks first.
+Export `DTTR_MODS_QUERY_TIMING_POLICY` to request a specifc timing policy. The host chooses one global policy for the game instance and then calls phase callbacks with `DTTR_Mods_TimingFrameState`.
 
 ## Window and Graphics Resources
 
@@ -85,12 +88,8 @@ Use these when your mod owns graphics resources that must follow the graphics de
 
 Create and destroy device-dependent resources in the matching lifetime callbacks. Using window or graphics-device resources outside their matching lifetime can cause stale-resource bugs or crashes.
 
-## Frame Advancement
+## Game Frame Advancement
 
-Use these when an overlay or tool needs the window to keep presenting while the game pauses:
-
-- `DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME`: Decide whether the game should advance.
 - `DTTR_MODS_GAME_FRAME_ADVANCED`: Run work after a game step advances.
-- `DTTR_MODS_GAME_FRAME_BLOCKED`: Run work when presentation continues but the game does not advance.
 
-Use `DTTR_MODS_GAME_FRAME_ADVANCED` for conditional game-step logic. Render callbacks may still run while game advancement is blocked.
+Use `DTTR_MODS_GAME_FRAME_ADVANCED` for conditional game-step logic. To keep the window presenting while the game pauses, return `false` from `DTTR_MODS_TIMING_SHOULD_RUN_SIMULATION_STEP`; render callbacks still run while simulation is held.

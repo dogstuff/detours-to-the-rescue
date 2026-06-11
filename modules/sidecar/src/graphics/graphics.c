@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #ifdef DTTR_MODS_ENABLED
+#include "../timing_private.h"
 #include "mods/mods_private.h"
 #endif
 #include "sds.h"
@@ -222,33 +223,6 @@ static DTTR_Mods_FrameContext graphics_frame_context(const DTTR_BackendState *st
 	};
 }
 
-// Combines viewport bounds, overlay state, and scale into the mod present payload.
-static DTTR_Mods_PresentContext graphics_present_context(
-	const DTTR_BackendState *state,
-	uint32_t game_x,
-	uint32_t game_y,
-	uint32_t game_w,
-	uint32_t game_h,
-	bool imgui_frame_active,
-	bool overlay_rendered
-) {
-	uint32_t window_w = 0;
-	uint32_t window_h = 0;
-	graphics_window_size(state, &window_w, &window_h);
-	return (DTTR_Mods_PresentContext){
-		.frame_index = state ? state->frame_index : 0,
-		.window_w = window_w,
-		.window_h = window_h,
-		.game_x = game_x,
-		.game_y = game_y,
-		.game_w = game_w,
-		.game_h = game_h,
-		.scale = graphics_scale(game_h),
-		.imgui_frame_active = imgui_frame_active,
-		.overlay_rendered = overlay_rendered,
-	};
-}
-
 // Converts the active SDL window into the mod window payload used by lifecycle
 // callbacks.
 static DTTR_Mods_WindowContext graphics_window_context(const DTTR_BackendState *state) {
@@ -299,28 +273,6 @@ static void call_frame_mod(DTTR_BackendState *state, DTTR_Mods_FrameBeginFn call
 	callback(&ctx);
 }
 
-static void call_present_mod(
-	DTTR_BackendState *state,
-	uint32_t game_x,
-	uint32_t game_y,
-	uint32_t game_w,
-	uint32_t game_h,
-	bool imgui_frame_active,
-	bool overlay_rendered,
-	DTTR_Mods_BeforePresentFn callback
-) {
-	const DTTR_Mods_PresentContext ctx = graphics_present_context(
-		state,
-		game_x,
-		game_y,
-		game_w,
-		game_h,
-		imgui_frame_active,
-		overlay_rendered
-	);
-	callback(&ctx);
-}
-
 static void call_window_mod(DTTR_BackendState *state, DTTR_Mods_WindowCreatedFn callback) {
 	const DTTR_Mods_WindowContext ctx = graphics_window_context(state);
 	callback(&ctx);
@@ -338,54 +290,20 @@ void dttr_graphics_mod_frame_begin(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_frame_begin);
 }
 
-void dttr_graphics_mod_before_game_frame(DTTR_BackendState *state) {
-	call_frame_mod(state, dttr_mods_before_game_frame);
+void dttr_graphics_mod_before_game_frame(void) {
+	dttr_timing_before_render_frame(false);
 }
 
-void dttr_graphics_mod_after_game_frame(DTTR_BackendState *state) {
-	call_frame_mod(state, dttr_mods_after_game_frame);
+void dttr_graphics_mod_after_game_frame(void) {
+	dttr_timing_after_render_frame(false);
 }
 
-void dttr_graphics_mod_before_present(
-	DTTR_BackendState *state,
-	uint32_t game_x,
-	uint32_t game_y,
-	uint32_t game_w,
-	uint32_t game_h,
-	bool imgui_frame_active,
-	bool overlay_rendered
-) {
-	call_present_mod(
-		state,
-		game_x,
-		game_y,
-		game_w,
-		game_h,
-		imgui_frame_active,
-		overlay_rendered,
-		dttr_mods_before_present
-	);
+void dttr_graphics_mod_before_present(void) {
+	dttr_timing_before_present_frame();
 }
 
-void dttr_graphics_mod_after_present(
-	DTTR_BackendState *state,
-	uint32_t game_x,
-	uint32_t game_y,
-	uint32_t game_w,
-	uint32_t game_h,
-	bool imgui_frame_active,
-	bool overlay_rendered
-) {
-	call_present_mod(
-		state,
-		game_x,
-		game_y,
-		game_w,
-		game_h,
-		imgui_frame_active,
-		overlay_rendered,
-		dttr_mods_after_present
-	);
+void dttr_graphics_mod_after_present(void) {
+	dttr_timing_after_present_frame();
 }
 
 void dttr_graphics_mod_frame_end(DTTR_BackendState *state) {
@@ -421,35 +339,12 @@ void dttr_graphics_mod_device_destroying(DTTR_BackendState *state) {
 }
 #endif
 
-void dttr_graphics_mod_present_rect_before(
-	DTTR_BackendState *state,
-	const DTTR_PresentRect *present
-) {
-	dttr_graphics_mod_before_present(
-		state,
-		(uint32_t)present->x,
-		(uint32_t)present->y,
-		(uint32_t)present->w,
-		(uint32_t)present->h,
-		false,
-		true
-	);
+void dttr_graphics_mod_present_rect_before(void) {
+	dttr_graphics_mod_before_present();
 }
 
-void dttr_graphics_mod_present_rect_after(
-	DTTR_BackendState *state,
-	const DTTR_PresentRect *present,
-	bool overlay_rendered
-) {
-	dttr_graphics_mod_after_present(
-		state,
-		(uint32_t)present->x,
-		(uint32_t)present->y,
-		(uint32_t)present->w,
-		(uint32_t)present->h,
-		false,
-		overlay_rendered
-	);
+void dttr_graphics_mod_present_rect_after(void) {
+	dttr_graphics_mod_after_present();
 }
 
 // Tears down the SDL window after notifying mods so no lifecycle callback sees a

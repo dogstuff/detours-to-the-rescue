@@ -1004,7 +1004,7 @@ static void begin_frame(DTTR_BackendState *state) {
 static void end_frame(DTTR_BackendState *state) {
 	state->frame_active = false;
 
-	dttr_graphics_mod_before_game_frame(state);
+	dttr_graphics_mod_before_game_frame();
 
 	if (state->transfer_mapped) {
 		SDL_UnmapGPUTransferBuffer(state->device, state->transfer_buffer);
@@ -1047,7 +1047,7 @@ static void end_frame(DTTR_BackendState *state) {
 		(uint32_t)state->height
 	);
 #endif
-	dttr_graphics_mod_after_game_frame(state);
+	dttr_graphics_mod_after_game_frame();
 
 	DTTR_PresentRect present = {
 		.x = 0,
@@ -1056,7 +1056,6 @@ static void end_frame(DTTR_BackendState *state) {
 		.h = state->height,
 	};
 
-	bool overlay_rendered = false;
 	if (state->swapchain_tex) {
 		const Uint32 swap_w = (state->swapchain_width > 0) ? state->swapchain_width
 														   : (Uint32)state->width;
@@ -1074,7 +1073,6 @@ static void end_frame(DTTR_BackendState *state) {
 				&& (dttr_config.scaling_fit == DTTR_SCALING_MODE_INTEGER),
 			1.0f
 		);
-		overlay_rendered = true;
 
 		const SDL_GPUBlitInfo blit = {
 			.source =
@@ -1110,7 +1108,7 @@ static void end_frame(DTTR_BackendState *state) {
 			present.h
 		);
 #endif
-		dttr_graphics_mod_present_rect_before(state, &present);
+		dttr_graphics_mod_present_rect_before();
 	}
 
 	SDL_SubmitGPUCommandBuffer(state->cmd);
@@ -1119,7 +1117,7 @@ static void end_frame(DTTR_BackendState *state) {
 		SDL_WaitForGPUIdle(state->device);
 	}
 
-	dttr_graphics_mod_present_rect_after(state, &present, overlay_rendered);
+	dttr_graphics_mod_present_rect_after();
 	dttr_graphics_mod_frame_end(state);
 	state->cmd = NULL;
 }

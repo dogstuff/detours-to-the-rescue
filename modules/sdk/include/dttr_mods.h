@@ -72,11 +72,11 @@ static inline DTTR_Mods_WriteExceptionReportFn DTTR_Mods_GetWriteExceptionReport
 	return api->write_exception_report;
 }
 
-// Host context passed to DTTR_Mod_Init. The pointer is valid until DTTR_Mod_Cleanup
-// returns, so mods may retain it for logging and runtime cleanup. Contained
-// window/graphics resources have shorter host lifetimes and may also outlive a
-// hot-reloaded mod: use destroying callbacks for host teardown/device loss, and
-// cleanup for resources owned by one mod instance.
+/// Host context passed to DTTR_Mod_Init. The pointer is valid until DTTR_Mod_Cleanup
+/// returns, so mods may retain it for logging and runtime cleanup. Contained
+/// window/graphics resources have shorter host lifetimes and may also outlive a
+/// hot-reloaded mod: use destroying callbacks for host teardown/device loss, and
+/// cleanup for resources owned by one mod instance.
 typedef struct {
 	uint32_t abi_version;
 	DTTR_Core_Context runtime;
@@ -116,18 +116,87 @@ typedef struct {
 	float scale;
 } DTTR_Mods_FrameContext;
 
+typedef enum {
+	/// Host-native timing.
+	DTTR_MODS_TIMING_NATIVE = 0,
+
+	/// Fixed-step accumulator loop.
+	DTTR_MODS_TIMING_FIXED_SIM_VARIABLE_RENDER = 1,
+} DTTR_Mods_TimingMode;
+
+/// Rational num/den Hz. den must be nonzero.
 typedef struct {
-	uint64_t frame_index;
-	uint32_t window_w;
-	uint32_t window_h;
-	uint32_t game_x;
-	uint32_t game_y;
-	uint32_t game_w;
-	uint32_t game_h;
-	float scale;
-	bool imgui_frame_active;
-	bool overlay_rendered;
-} DTTR_Mods_PresentContext;
+	uint32_t num;
+	uint32_t den;
+} DTTR_Mods_RatioU32;
+
+typedef struct {
+	uint32_t struct_size;
+	uint32_t abi_version;
+	uint32_t flags;
+	DTTR_Mods_TimingMode mode;
+
+	/// Slowest acceptable simulation rate.
+	DTTR_Mods_RatioU32 min_sim_hz;
+
+	/// Fastest acceptable simulation rate.
+	DTTR_Mods_RatioU32 max_sim_hz;
+
+	/// Target simulation rate; required for fixed timing.
+	DTTR_Mods_RatioU32 preferred_sim_hz;
+
+	/// Values above 1 cost one full render+present per step.
+	uint32_t max_sim_steps_per_host_frame;
+
+	/// Largest host frame delta before clamping.
+	uint64_t max_host_delta_ns;
+
+	/// Largest accumulated debt before clamping.
+	uint64_t max_accumulator_debt_ns;
+
+	void *reserved[4];
+} DTTR_Mods_TimingPolicyRequest;
+
+/// Identifies which timing callback a DTTR_Mods_TimingFrameState describes.
+typedef enum {
+	DTTR_MODS_TIMING_PHASE_HOST_FRAME_BEGIN = 1,
+	DTTR_MODS_TIMING_PHASE_BEFORE_SIMULATION_STEP = 2,
+	DTTR_MODS_TIMING_PHASE_AFTER_SIMULATION_STEP = 3,
+	DTTR_MODS_TIMING_PHASE_BEFORE_RENDER_FRAME = 4,
+	DTTR_MODS_TIMING_PHASE_AFTER_RENDER_FRAME = 5,
+	DTTR_MODS_TIMING_PHASE_BEFORE_PRESENT_FRAME = 6,
+	DTTR_MODS_TIMING_PHASE_AFTER_PRESENT_FRAME = 7,
+	DTTR_MODS_TIMING_PHASE_HOST_FRAME_END = 8,
+	DTTR_MODS_TIMING_PHASE_SIMULATION_STEP_DEFERRED = 9,
+} DTTR_Mods_TimingPhase;
+
+/// Per-phase snapshot passed to timing callbacks; values are only valid for the
+/// duration of the callback.
+typedef struct {
+	uint32_t struct_size;
+	uint32_t abi_version;
+	uint32_t flags;
+	DTTR_Mods_TimingPhase phase;
+	uint64_t host_frame_index;
+	uint64_t render_frame_index;
+	uint64_t simulation_tick_index;
+	uint64_t monotonic_time_ns;
+	uint64_t host_delta_ns;
+
+	/// Fixed-step duration; 0 under native timing.
+	uint64_t sim_step_ns;
+
+	/// Unconsumed simulation debt.
+	uint64_t accumulator_ns;
+
+	/// [0,1) render position between sim steps.
+	float interpolation_alpha;
+
+	uint32_t sim_steps_due;
+	uint32_t sim_steps_ran_this_host_frame;
+	uint32_t sim_steps_deferred_this_host_frame;
+	bool render_reuses_previous_sim_state;
+} DTTR_Mods_TimingFrameState;
 
 typedef struct {
 	SDL_Window *window;
@@ -176,10 +245,6 @@ typedef void (*DTTR_Mods_RenderGameFn)(const DTTR_Mods_RenderGameContext *ctx);
 typedef void (*DTTR_Mods_RenderFn)(const DTTR_Mods_RenderContext *ctx);
 
 typedef void (*DTTR_Mods_FrameBeginFn)(const DTTR_Mods_FrameContext *ctx);
-typedef void (*DTTR_Mods_BeforeGameFrameFn)(const DTTR_Mods_FrameContext *ctx);
-typedef void (*DTTR_Mods_AfterGameFrameFn)(const DTTR_Mods_FrameContext *ctx);
-typedef void (*DTTR_Mods_BeforePresentFn)(const DTTR_Mods_PresentContext *ctx);
-typedef void (*DTTR_Mods_AfterPresentFn)(const DTTR_Mods_PresentContext *ctx);
 typedef void (*DTTR_Mods_FrameEndFn)(const DTTR_Mods_FrameContext *ctx);
 typedef void (*DTTR_Mods_ImGuiBeginFn)(const DTTR_Mods_RenderContext *ctx);
 typedef void (*DTTR_Mods_ImGuiEndFn)(const DTTR_Mods_RenderContext *ctx);
@@ -195,9 +260,19 @@ typedef bool (*DTTR_Mods_BeforeEventFn)(const SDL_Event *event);
 typedef void (*DTTR_Mods_AfterEventFn)(const SDL_Event *event, bool consumed);
 typedef void (*DTTR_Mods_InputModeChangedFn)(const DTTR_Mods_InputContext *ctx);
 
-typedef bool (*DTTR_Mods_ShouldAdvanceGameFrameFn)();
+typedef bool (*DTTR_Mods_QueryTimingPolicyFn)(DTTR_Mods_TimingPolicyRequest *out_request);
+typedef void (*DTTR_Mods_TimingHostFrameBeginFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef bool (*DTTR_Mods_TimingShouldRunSimulationStepFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingBeforeSimulationStepFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingAfterSimulationStepFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingSimulationStepDeferredFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingBeforeRenderFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingAfterRenderFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingBeforePresentFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingAfterPresentFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingHostFrameEndFn)(const DTTR_Mods_TimingFrameState *ctx);
+
 typedef void (*DTTR_Mods_GameFrameAdvancedFn)();
-typedef void (*DTTR_Mods_GameFrameBlockedFn)();
 
 // Logging macros.
 
@@ -250,7 +325,7 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 		   && ctx->struct_size >= sizeof(DTTR_Mods_Context);
 }
 
-// Check SDK ABI compatibility and delegate to the mod body.
+/// Check SDK ABI compatibility and delegate to the mod body.
 #define DTTR_MODS_INIT                                                                   \
 	static bool dttr_mod_init(const DTTR_Mods_Context *);                                \
 	DTTR_EXPORT bool DTTR_Mod_Init(const DTTR_Mods_Context *ctx) {                       \
@@ -266,34 +341,12 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 #define DTTR_MODS_LATE_INIT DTTR_EXPORT void DTTR_Mod_LateInit()
 #define DTTR_MODS_BEFORE_UNLOAD DTTR_EXPORT void DTTR_Mod_BeforeUnload()
 
-// Called at the start of a host frame before game-frame advancement and presentation.
-// The context pointer is callback-local; copy values you need after return.
+/// Called at the start of a host frame before game-frame advancement and presentation.
+/// The context pointer is callback-local; copy values you need after return.
 #define DTTR_MODS_FRAME_BEGIN                                                            \
 	DTTR_EXPORT void DTTR_Mod_FrameBegin(const DTTR_Mods_FrameContext *ctx)
 
-// Called from the render backend immediately before game image submission for a host
-// frame. This currently runs even when DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME blocked
-// simulation; use DTTR_MODS_GAME_FRAME_ADVANCED for strictly advanced-frame work.
-#define DTTR_MODS_BEFORE_GAME_FRAME                                                      \
-	DTTR_EXPORT void DTTR_Mod_BeforeGameFrame(const DTTR_Mods_FrameContext *ctx)
-
-// Called from the render backend after game image submission for a host frame. This
-// also runs on blocked presentation frames; use DTTR_MODS_GAME_FRAME_ADVANCED for
-// strictly advanced-frame work.
-#define DTTR_MODS_AFTER_GAME_FRAME                                                       \
-	DTTR_EXPORT void DTTR_Mod_AfterGameFrame(const DTTR_Mods_FrameContext *ctx)
-
-// Called after the backend has queued game/overlay draw or blit work and
-// immediately before command-buffer submit or buffer swap. This can run even when
-// DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME blocked simulation.
-#define DTTR_MODS_BEFORE_PRESENT                                                         \
-	DTTR_EXPORT void DTTR_Mod_BeforePresent(const DTTR_Mods_PresentContext *ctx)
-
-// Called after presentation work for this host frame.
-#define DTTR_MODS_AFTER_PRESENT                                                          \
-	DTTR_EXPORT void DTTR_Mod_AfterPresent(const DTTR_Mods_PresentContext *ctx)
-
-// Called at the end of a host frame after game-frame and presentation callbacks.
+/// Called at the end of a host frame after game-frame and presentation callbacks.
 #define DTTR_MODS_FRAME_END                                                              \
 	DTTR_EXPORT void DTTR_Mod_FrameEnd(const DTTR_Mods_FrameContext *ctx)
 
@@ -338,25 +391,77 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 #define DTTR_MODS_INPUT_MODE_CHANGED                                                     \
 	DTTR_EXPORT void DTTR_Mod_InputModeChanged(const DTTR_Mods_InputContext *ctx)
 
-// Return true to consume the event.
+/// Return true to consume the event.
 #define DTTR_MODS_EVENT DTTR_EXPORT bool DTTR_Mod_Event(const SDL_Event *event)
 
-// Render at game resolution, letterboxed and scaled with the game image.
+/// Render at game resolution, letterboxed and scaled with the game image.
 #define DTTR_MODS_RENDER_GAME                                                            \
 	DTTR_EXPORT void DTTR_Mod_RenderGame(const DTTR_Mods_RenderGameContext *ctx)
 
-// Render at full window resolution, above letterbox bars.
+/// Render at full window resolution, above letterbox bars.
 #define DTTR_MODS_RENDER                                                                 \
 	DTTR_EXPORT void DTTR_Mod_Render(const DTTR_Mods_RenderContext *ctx)
 
-// Return false to skip this host-loop game frame while still presenting overlays.
-#define DTTR_MODS_SHOULD_ADVANCE_GAME_FRAME                                              \
-	DTTR_EXPORT bool DTTR_Mod_ShouldAdvanceGameFrame()
+/// Called once at the first host frame. Return true and fill out_request to opt into a
+/// timing policy; return false to stay on native timing.
+#define DTTR_MODS_QUERY_TIMING_POLICY                                                    \
+	DTTR_EXPORT bool DTTR_Mod_QueryTimingPolicy(                                         \
+		DTTR_Mods_TimingPolicyRequest *out_request                                       \
+	)
 
-// Called after a game frame was advanced because all mods allowed it.
+/// Called at the start of each host frame, before any simulation step.
+#define DTTR_MODS_TIMING_HOST_FRAME_BEGIN                                                \
+	DTTR_EXPORT void DTTR_Mod_TimingHostFrameBegin(const DTTR_Mods_TimingFrameState *ctx)
+
+/// Called before each due simulation step. Return false to defer the step.
+#define DTTR_MODS_TIMING_SHOULD_RUN_SIMULATION_STEP                                      \
+	DTTR_EXPORT bool DTTR_Mod_TimingShouldRunSimulationStep(                             \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
+
+/// Called immediately before a simulation step runs.
+#define DTTR_MODS_TIMING_BEFORE_SIMULATION_STEP                                          \
+	DTTR_EXPORT void DTTR_Mod_TimingBeforeSimulationStep(                                \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
+
+/// Called immediately after a simulation step runs.
+#define DTTR_MODS_TIMING_AFTER_SIMULATION_STEP                                           \
+	DTTR_EXPORT void DTTR_Mod_TimingAfterSimulationStep(                                 \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
+
+/// Called when a due simulation step did not run this host frame.
+#define DTTR_MODS_TIMING_SIMULATION_STEP_DEFERRED                                        \
+	DTTR_EXPORT void DTTR_Mod_TimingSimulationStepDeferred(                              \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
+
+/// Called immediately before the host renders the frame.
+#define DTTR_MODS_TIMING_BEFORE_RENDER_FRAME                                             \
+	DTTR_EXPORT void DTTR_Mod_TimingBeforeRenderFrame(const DTTR_Mods_TimingFrameState *ctx)
+
+/// Called immediately after the host renders the frame.
+#define DTTR_MODS_TIMING_AFTER_RENDER_FRAME                                              \
+	DTTR_EXPORT void DTTR_Mod_TimingAfterRenderFrame(const DTTR_Mods_TimingFrameState *ctx)
+
+/// Called immediately before the rendered frame is presented.
+#define DTTR_MODS_TIMING_BEFORE_PRESENT_FRAME                                            \
+	DTTR_EXPORT void DTTR_Mod_TimingBeforePresentFrame(                                  \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
+
+/// Called immediately after the rendered frame is presented.
+#define DTTR_MODS_TIMING_AFTER_PRESENT_FRAME                                             \
+	DTTR_EXPORT void DTTR_Mod_TimingAfterPresentFrame(                                   \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
+
+/// Called at the end of each host frame, after render and present.
+#define DTTR_MODS_TIMING_HOST_FRAME_END                                                  \
+	DTTR_EXPORT void DTTR_Mod_TimingHostFrameEnd(const DTTR_Mods_TimingFrameState *ctx)
+
+/// Called after a game frame was advanced because all mods allowed it.
 #define DTTR_MODS_GAME_FRAME_ADVANCED DTTR_EXPORT void DTTR_Mod_GameFrameAdvanced()
-
-// Called after a host frame presented overlays without advancing the game.
-#define DTTR_MODS_GAME_FRAME_BLOCKED DTTR_EXPORT void DTTR_Mod_GameFrameBlocked()
 
 #endif // DTTR_MODS_H

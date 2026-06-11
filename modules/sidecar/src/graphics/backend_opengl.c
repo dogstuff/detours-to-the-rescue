@@ -710,7 +710,7 @@ static void end_frame(DTTR_BackendState *state) {
 	}
 
 	state->frame_active = false;
-	dttr_graphics_mod_before_game_frame(state);
+	dttr_graphics_mod_before_game_frame();
 	state->transfer_mapped = NULL;
 
 	if (state->vertex_offset > 0) {
@@ -730,7 +730,7 @@ static void end_frame(DTTR_BackendState *state) {
 #ifdef DTTR_MODS_ENABLED
 	dttr_imgui_render_game_opengl();
 #endif
-	dttr_graphics_mod_after_game_frame(state);
+	dttr_graphics_mod_after_game_frame();
 
 	if (gl->msaa_samples > 0) {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, gl->msaa_fbo);
@@ -804,10 +804,10 @@ static void end_frame(DTTR_BackendState *state) {
 		(uint32_t)present.h
 	);
 #endif
-	dttr_graphics_mod_present_rect_before(state, &present);
+	dttr_graphics_mod_present_rect_before();
 
 	SDL_GL_SwapWindow(state->window);
-	dttr_graphics_mod_present_rect_after(state, &present, true);
+	dttr_graphics_mod_present_rect_after();
 	dttr_graphics_mod_frame_end(state);
 }
 

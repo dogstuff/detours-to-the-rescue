@@ -23,6 +23,7 @@
 #include "movies/hooks_private.h"
 #include "movies/movies_private.h"
 #include "sidecar_private.h"
+#include "timing_private.h"
 #include <dttr_pcdogs.h>
 #include <dttr_runtime.h>
 #include <xxhash.h>
@@ -473,21 +474,38 @@ static bool tick_main_loop() {
 
 	if (rendering_enabled) {
 #ifdef DTTR_MODS_ENABLED
-		if (dttr_mods_should_advance_game_frame()) {
+		dttr_timing_host_frame_begin();
+
+		bool ran_simulation_step = false;
+		while (dttr_timing_should_run_simulation_step()) {
+			dttr_timing_before_simulation_step();
+
 			uint8_t frame_status = 0;
-			if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
-					dttr_sidecar_runtime_context(),
-					&frame_status
-				))) {
+			const bool rendered = REQUIRE_PCDOGS_CALL(
+				DTTR_PCDOGS_F_Graphics_RenderFrame
+					->Call(dttr_sidecar_runtime_context(), &frame_status)
+			);
+			if (!rendered) {
+				dttr_timing_after_simulation_step();
+				dttr_timing_host_frame_end();
 				return false;
 			}
 
+			dttr_timing_after_simulation_step();
 			dttr_mods_game_frame_advanced();
-		} else {
+			ran_simulation_step = true;
+		}
+
+		if (dttr_timing_has_deferred_simulation_step()) {
+			dttr_timing_simulation_step_deferred();
+		}
+
+		if (!ran_simulation_step) {
 			dttr_graphics_begin_frame();
 			dttr_graphics_end_frame();
-			dttr_mods_game_frame_blocked();
 		}
+
+		dttr_timing_host_frame_end();
 
 #else
 		uint8_t frame_status = 0;
@@ -661,6 +679,7 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 		dttr_graphics_get_device(),
 		dttr_backend.backend_type
 	);
+	dttr_timing_reset();
 	dttr_mods_init();
 	dttr_graphics_mod_window_created(&dttr_backend);
 	dttr_graphics_mod_device_created(&dttr_backend);

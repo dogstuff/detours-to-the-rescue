@@ -313,26 +313,10 @@ void dttr_graphics_fill_mesh_seams(
 
 #ifdef DTTR_MODS_ENABLED
 void dttr_graphics_mod_frame_begin(DTTR_BackendState *state);
-void dttr_graphics_mod_before_game_frame(DTTR_BackendState *state);
-void dttr_graphics_mod_after_game_frame(DTTR_BackendState *state);
-void dttr_graphics_mod_before_present(
-	DTTR_BackendState *state,
-	uint32_t game_x,
-	uint32_t game_y,
-	uint32_t game_w,
-	uint32_t game_h,
-	bool imgui_frame_active,
-	bool overlay_rendered
-);
-void dttr_graphics_mod_after_present(
-	DTTR_BackendState *state,
-	uint32_t game_x,
-	uint32_t game_y,
-	uint32_t game_w,
-	uint32_t game_h,
-	bool imgui_frame_active,
-	bool overlay_rendered
-);
+void dttr_graphics_mod_before_game_frame(void);
+void dttr_graphics_mod_after_game_frame(void);
+void dttr_graphics_mod_before_present(void);
+void dttr_graphics_mod_after_present(void);
 void dttr_graphics_mod_frame_end(DTTR_BackendState *state);
 void dttr_graphics_mod_window_created(DTTR_BackendState *state);
 void dttr_graphics_mod_window_resized(DTTR_BackendState *state);
@@ -344,29 +328,13 @@ void dttr_graphics_mod_device_destroying(DTTR_BackendState *state);
 #else
 static inline void dttr_graphics_mod_frame_begin(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_mod_before_game_frame(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_before_game_frame(void) {}
 
-static inline void dttr_graphics_mod_after_game_frame(DTTR_BackendState *) {}
+static inline void dttr_graphics_mod_after_game_frame(void) {}
 
-static inline void dttr_graphics_mod_before_present(
-	DTTR_BackendState *,
-	uint32_t,
-	uint32_t,
-	uint32_t,
-	uint32_t,
-	bool,
-	bool
-) {}
+static inline void dttr_graphics_mod_before_present(void) {}
 
-static inline void dttr_graphics_mod_after_present(
-	DTTR_BackendState *,
-	uint32_t,
-	uint32_t,
-	uint32_t,
-	uint32_t,
-	bool,
-	bool
-) {}
+static inline void dttr_graphics_mod_after_present(void) {}
 
 static inline void dttr_graphics_mod_frame_end(DTTR_BackendState *) {}
 
@@ -395,15 +363,8 @@ DTTR_PresentRect dttr_graphics_compute_present_rect(
 	float fallback_scale
 );
 
-void dttr_graphics_mod_present_rect_before(
-	DTTR_BackendState *state,
-	const DTTR_PresentRect *present
-);
-void dttr_graphics_mod_present_rect_after(
-	DTTR_BackendState *state,
-	const DTTR_PresentRect *present,
-	bool overlay_rendered
-);
+void dttr_graphics_mod_present_rect_before(void);
+void dttr_graphics_mod_present_rect_after(void);
 
 bool dttr_graphics_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st);
 

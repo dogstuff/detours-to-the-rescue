@@ -127,6 +127,16 @@ static bool refresh_mod_context(loaded_mod *mod, const DTTR_Mods_Context *base_c
 		}                                                                                \
 	} while (0)
 
+#define MOD_DISPATCH_REVERSE(field, ...)                                                 \
+	do {                                                                                 \
+		for (size_t i = kv_size(loaded_mods); i > 0; i--) {                              \
+			loaded_mod *mod = &kv_A(loaded_mods, i - 1);                                 \
+			if (mod->field) {                                                            \
+				MOD_WITH_OWNER(mod, mod->field(__VA_ARGS__));                            \
+			}                                                                            \
+		}                                                                                \
+	} while (0)
+
 #define MOD_OPTIONAL_EXPORTS(X)                                                          \
 	X(tick, DTTR_Mods_TickFn, "DTTR_Mod_Tick")                                           \
 	X(event, DTTR_Mods_EventFn, "DTTR_Mod_Event")                                        \
@@ -134,10 +144,6 @@ static bool refresh_mod_context(loaded_mod *mod, const DTTR_Mods_Context *base_c
 	X(late_init, DTTR_Mods_LateInitFn, "DTTR_Mod_LateInit")                              \
 	X(before_unload, DTTR_Mods_BeforeUnloadFn, "DTTR_Mod_BeforeUnload")                  \
 	X(frame_begin, DTTR_Mods_FrameBeginFn, "DTTR_Mod_FrameBegin")                        \
-	X(before_game_frame, DTTR_Mods_BeforeGameFrameFn, "DTTR_Mod_BeforeGameFrame")        \
-	X(after_game_frame, DTTR_Mods_AfterGameFrameFn, "DTTR_Mod_AfterGameFrame")           \
-	X(before_present, DTTR_Mods_BeforePresentFn, "DTTR_Mod_BeforePresent")               \
-	X(after_present, DTTR_Mods_AfterPresentFn, "DTTR_Mod_AfterPresent")                  \
 	X(frame_end, DTTR_Mods_FrameEndFn, "DTTR_Mod_FrameEnd")                              \
 	X(imgui_begin, DTTR_Mods_ImGuiBeginFn, "DTTR_Mod_ImGuiBegin")                        \
 	X(imgui_end, DTTR_Mods_ImGuiEndFn, "DTTR_Mod_ImGuiEnd")                              \
@@ -164,11 +170,38 @@ static bool refresh_mod_context(loaded_mod *mod, const DTTR_Mods_Context *base_c
 	X(input_mode_changed, DTTR_Mods_InputModeChangedFn, "DTTR_Mod_InputModeChanged")     \
 	X(render_game, DTTR_Mods_RenderGameFn, "DTTR_Mod_RenderGame")                        \
 	X(render, DTTR_Mods_RenderFn, "DTTR_Mod_Render")                                     \
-	X(should_advance_game_frame,                                                         \
-	  DTTR_Mods_ShouldAdvanceGameFrameFn,                                                \
-	  "DTTR_Mod_ShouldAdvanceGameFrame")                                                 \
-	X(game_frame_advanced, DTTR_Mods_GameFrameAdvancedFn, "DTTR_Mod_GameFrameAdvanced")  \
-	X(game_frame_blocked, DTTR_Mods_GameFrameBlockedFn, "DTTR_Mod_GameFrameBlocked")
+	X(query_timing_policy, DTTR_Mods_QueryTimingPolicyFn, "DTTR_Mod_QueryTimingPolicy")  \
+	X(timing_host_frame_begin,                                                           \
+	  DTTR_Mods_TimingHostFrameBeginFn,                                                  \
+	  "DTTR_Mod_TimingHostFrameBegin")                                                   \
+	X(timing_should_run_simulation_step,                                                 \
+	  DTTR_Mods_TimingShouldRunSimulationStepFn,                                         \
+	  "DTTR_Mod_TimingShouldRunSimulationStep")                                          \
+	X(timing_before_simulation_step,                                                     \
+	  DTTR_Mods_TimingBeforeSimulationStepFn,                                            \
+	  "DTTR_Mod_TimingBeforeSimulationStep")                                             \
+	X(timing_after_simulation_step,                                                      \
+	  DTTR_Mods_TimingAfterSimulationStepFn,                                             \
+	  "DTTR_Mod_TimingAfterSimulationStep")                                              \
+	X(timing_simulation_step_deferred,                                                   \
+	  DTTR_Mods_TimingSimulationStepDeferredFn,                                          \
+	  "DTTR_Mod_TimingSimulationStepDeferred")                                           \
+	X(timing_before_render_frame,                                                        \
+	  DTTR_Mods_TimingBeforeRenderFrameFn,                                               \
+	  "DTTR_Mod_TimingBeforeRenderFrame")                                                \
+	X(timing_after_render_frame,                                                         \
+	  DTTR_Mods_TimingAfterRenderFrameFn,                                                \
+	  "DTTR_Mod_TimingAfterRenderFrame")                                                 \
+	X(timing_before_present_frame,                                                       \
+	  DTTR_Mods_TimingBeforePresentFrameFn,                                              \
+	  "DTTR_Mod_TimingBeforePresentFrame")                                               \
+	X(timing_after_present_frame,                                                        \
+	  DTTR_Mods_TimingAfterPresentFrameFn,                                               \
+	  "DTTR_Mod_TimingAfterPresentFrame")                                                \
+	X(timing_host_frame_end,                                                             \
+	  DTTR_Mods_TimingHostFrameEndFn,                                                    \
+	  "DTTR_Mod_TimingHostFrameEnd")                                                     \
+	X(game_frame_advanced, DTTR_Mods_GameFrameAdvancedFn, "DTTR_Mod_GameFrameAdvanced")
 
 static void delete_shadow_copy(loaded_mod *mod) {
 	if (!mod->shadow_path[0]) {
@@ -623,22 +656,6 @@ void dttr_mods_frame_begin(const DTTR_Mods_FrameContext *ctx) {
 	MOD_DISPATCH(frame_begin, ctx);
 }
 
-void dttr_mods_before_game_frame(const DTTR_Mods_FrameContext *ctx) {
-	MOD_DISPATCH(before_game_frame, ctx);
-}
-
-void dttr_mods_after_game_frame(const DTTR_Mods_FrameContext *ctx) {
-	MOD_DISPATCH(after_game_frame, ctx);
-}
-
-void dttr_mods_before_present(const DTTR_Mods_PresentContext *ctx) {
-	MOD_DISPATCH(before_present, ctx);
-}
-
-void dttr_mods_after_present(const DTTR_Mods_PresentContext *ctx) {
-	MOD_DISPATCH(after_present, ctx);
-}
-
 void dttr_mods_frame_end(const DTTR_Mods_FrameContext *ctx) {
 	MOD_DISPATCH(frame_end, ctx);
 }
@@ -713,16 +730,160 @@ void dttr_mods_input_mode_changed(const DTTR_Mods_InputContext *ctx) {
 	MOD_DISPATCH(input_mode_changed, ctx);
 }
 
-bool dttr_mods_should_advance_game_frame() {
+static bool ratio_is_set(DTTR_Mods_RatioU32 ratio) {
+	return ratio.num != 0 && ratio.den != 0;
+}
+
+static int compare_ratio(DTTR_Mods_RatioU32 lhs, DTTR_Mods_RatioU32 rhs) {
+	const uint64_t lhs_scaled = (uint64_t)lhs.num * rhs.den;
+	const uint64_t rhs_scaled = (uint64_t)rhs.num * lhs.den;
+	return (lhs_scaled > rhs_scaled) - (lhs_scaled < rhs_scaled);
+}
+
+static DTTR_Mods_RatioU32 max_ratio(DTTR_Mods_RatioU32 lhs, DTTR_Mods_RatioU32 rhs) {
+	if (!ratio_is_set(lhs)) {
+		return rhs;
+	}
+
+	if (!ratio_is_set(rhs)) {
+		return lhs;
+	}
+
+	return compare_ratio(lhs, rhs) >= 0 ? lhs : rhs;
+}
+
+static DTTR_Mods_RatioU32 min_ratio(DTTR_Mods_RatioU32 lhs, DTTR_Mods_RatioU32 rhs) {
+	if (!ratio_is_set(lhs)) {
+		return rhs;
+	}
+
+	if (!ratio_is_set(rhs)) {
+		return lhs;
+	}
+
+	return compare_ratio(lhs, rhs) <= 0 ? lhs : rhs;
+}
+
+static uint32_t min_nonzero_u32(uint32_t lhs, uint32_t rhs) {
+	if (!lhs) {
+		return rhs;
+	}
+
+	if (!rhs) {
+		return lhs;
+	}
+
+	return lhs < rhs ? lhs : rhs;
+}
+
+static uint64_t min_nonzero_u64(uint64_t lhs, uint64_t rhs) {
+	if (!lhs) {
+		return rhs;
+	}
+
+	if (!rhs) {
+		return lhs;
+	}
+
+	return lhs < rhs ? lhs : rhs;
+}
+
+bool dttr_mods_select_timing_policy(DTTR_Mods_TimingPolicyRequest *out_policy) {
+	if (!out_policy || out_policy->struct_size < sizeof(*out_policy)) {
+		return false;
+	}
+
+	DTTR_Mods_TimingPolicyRequest selected = {
+		.struct_size = sizeof(DTTR_Mods_TimingPolicyRequest),
+		.abi_version = DTTR_SDK_ABI_VERSION,
+		.mode = DTTR_MODS_TIMING_NATIVE,
+	};
+
 	for (size_t i = 0; i < kv_size(loaded_mods); i++) {
 		loaded_mod *mod = &kv_A(loaded_mods, i);
-		if (!mod->should_advance_game_frame) {
+		if (!mod->query_timing_policy) {
 			continue;
 		}
 
-		bool should_advance = true;
-		MOD_WITH_OWNER(mod, should_advance = mod->should_advance_game_frame());
-		if (!should_advance) {
+		DTTR_Mods_TimingPolicyRequest request = {
+			.struct_size = sizeof(DTTR_Mods_TimingPolicyRequest),
+			.abi_version = DTTR_SDK_ABI_VERSION,
+		};
+		bool requested = false;
+		MOD_WITH_OWNER(mod, requested = mod->query_timing_policy(&request));
+		if (!requested || request.mode == DTTR_MODS_TIMING_NATIVE) {
+			continue;
+		}
+
+		if (request.struct_size < offsetof(DTTR_Mods_TimingPolicyRequest, reserved)
+			|| request.mode != DTTR_MODS_TIMING_FIXED_SIM_VARIABLE_RENDER) {
+			DTTR_LOG_ERROR("Mod %s returned an invalid timing policy", mod->filename);
+			return false;
+		}
+
+		selected.mode = DTTR_MODS_TIMING_FIXED_SIM_VARIABLE_RENDER;
+		selected.min_sim_hz = max_ratio(selected.min_sim_hz, request.min_sim_hz);
+		selected.max_sim_hz = min_ratio(selected.max_sim_hz, request.max_sim_hz);
+		selected.preferred_sim_hz = max_ratio(
+			selected.preferred_sim_hz,
+			request.preferred_sim_hz
+		);
+		selected.max_sim_steps_per_host_frame = min_nonzero_u32(
+			selected.max_sim_steps_per_host_frame,
+			request.max_sim_steps_per_host_frame
+		);
+		selected.max_host_delta_ns = min_nonzero_u64(
+			selected.max_host_delta_ns,
+			request.max_host_delta_ns
+		);
+		selected.max_accumulator_debt_ns = min_nonzero_u64(
+			selected.max_accumulator_debt_ns,
+			request.max_accumulator_debt_ns
+		);
+	}
+
+	if (selected.mode == DTTR_MODS_TIMING_FIXED_SIM_VARIABLE_RENDER) {
+		if (ratio_is_set(selected.min_sim_hz) && ratio_is_set(selected.max_sim_hz)
+			&& compare_ratio(selected.min_sim_hz, selected.max_sim_hz) > 0) {
+			DTTR_LOG_ERROR("Conflicting DTTR fixed timing policy ranges");
+			return false;
+		}
+
+		if (!ratio_is_set(selected.preferred_sim_hz)) {
+			selected.preferred_sim_hz = ratio_is_set(selected.min_sim_hz)
+											? selected.min_sim_hz
+											: selected.max_sim_hz;
+		}
+
+		if (ratio_is_set(selected.min_sim_hz)
+			&& compare_ratio(selected.preferred_sim_hz, selected.min_sim_hz) < 0) {
+			selected.preferred_sim_hz = selected.min_sim_hz;
+		}
+
+		if (ratio_is_set(selected.max_sim_hz)
+			&& compare_ratio(selected.preferred_sim_hz, selected.max_sim_hz) > 0) {
+			selected.preferred_sim_hz = selected.max_sim_hz;
+		}
+	}
+
+	*out_policy = selected;
+	return true;
+}
+
+void dttr_mods_timing_host_frame_begin(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH(timing_host_frame_begin, ctx);
+}
+
+bool dttr_mods_timing_should_run_simulation_step(const DTTR_Mods_TimingFrameState *ctx) {
+	for (size_t i = 0; i < kv_size(loaded_mods); i++) {
+		loaded_mod *mod = &kv_A(loaded_mods, i);
+		if (!mod->timing_should_run_simulation_step) {
+			continue;
+		}
+
+		bool should_run = true;
+		MOD_WITH_OWNER(mod, should_run = mod->timing_should_run_simulation_step(ctx));
+		if (!should_run) {
 			return false;
 		}
 	}
@@ -730,12 +891,40 @@ bool dttr_mods_should_advance_game_frame() {
 	return true;
 }
 
-void dttr_mods_game_frame_advanced() {
-	MOD_DISPATCH(game_frame_advanced);
+void dttr_mods_timing_before_simulation_step(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH(timing_before_simulation_step, ctx);
 }
 
-void dttr_mods_game_frame_blocked() {
-	MOD_DISPATCH(game_frame_blocked);
+void dttr_mods_timing_after_simulation_step(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH_REVERSE(timing_after_simulation_step, ctx);
+}
+
+void dttr_mods_timing_simulation_step_deferred(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH(timing_simulation_step_deferred, ctx);
+}
+
+void dttr_mods_timing_before_render_frame(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH(timing_before_render_frame, ctx);
+}
+
+void dttr_mods_timing_after_render_frame(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH_REVERSE(timing_after_render_frame, ctx);
+}
+
+void dttr_mods_timing_before_present_frame(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH(timing_before_present_frame, ctx);
+}
+
+void dttr_mods_timing_after_present_frame(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH_REVERSE(timing_after_present_frame, ctx);
+}
+
+void dttr_mods_timing_host_frame_end(const DTTR_Mods_TimingFrameState *ctx) {
+	MOD_DISPATCH_REVERSE(timing_host_frame_end, ctx);
+}
+
+void dttr_mods_game_frame_advanced() {
+	MOD_DISPATCH(game_frame_advanced);
 }
 
 bool dttr_mods_has_render_game() {
