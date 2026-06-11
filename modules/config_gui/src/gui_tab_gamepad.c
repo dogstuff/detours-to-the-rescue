@@ -89,7 +89,7 @@ void close_gamepad_preview(config_ui_state *state) {
 
 static void open_preview_gamepad(config_ui_state *state) {
 	int count = 0;
-	SDL_JoystickID *const joysticks = SDL_GetGamepads(&count);
+	SDL_JoystickID *joysticks = SDL_GetGamepads(&count);
 	const int index = state->config.gamepad_index;
 
 	if (!joysticks || index < 0 || index >= count) {
@@ -316,7 +316,7 @@ static void draw_axis_position_preview(
 		center.x + x * (radius - dot_radius),
 		center.y + y * (radius - dot_radius),
 	};
-	ImDrawList *const draw_list = igGetWindowDrawList();
+	ImDrawList *draw_list = igGetWindowDrawList();
 	const ImU32 outline_color = igGetColorU32_Col(ImGuiCol_Border, 1.0f);
 	const ImU32 deadzone_color = igGetColorU32_Vec4((ImVec4_c){1.0f, 0.18f, 0.18f, 1.0f});
 	const ImU32 dot_color = axis_position_dot_color(x, y, deadzone_radius);
@@ -431,11 +431,11 @@ static void draw_axis_positions(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
 ) {
-	SDL_Gamepad *const gamepad = configured_preview_gamepad(state);
+	SDL_Gamepad *gamepad = configured_preview_gamepad(state);
 	const bool has_gamepad = gamepad != NULL;
-	const int *const axes = state->config.gamepad_axes;
-	const int *const deadzone = state->config.gamepad_axis_deadzone;
-	const int *const sensitivity = state->config.gamepad_axis_sensitivity;
+	const int *axes = state->config.gamepad_axes;
+	const int *deadzone = state->config.gamepad_axis_deadzone;
+	const int *sensitivity = state->config.gamepad_axis_sensitivity;
 	const int32_t raw_stick_x_dinput = preview_axis_dinput(
 		gamepad,
 		axes[DTTR_GAMEPAD_AXIS_IDX_STICK_X]
@@ -685,7 +685,7 @@ static void draw_gamepad_button_row(
 
 	const int action = state->button_actions[row];
 	const int source = state->button_sources[row];
-	SDL_Gamepad *const gamepad = configured_preview_gamepad(state);
+	SDL_Gamepad *gamepad = configured_preview_gamepad(state);
 	const bool pressed = source_is_pressed(gamepad, source);
 
 	begin_config_table_row();

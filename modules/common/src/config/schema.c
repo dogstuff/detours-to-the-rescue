@@ -132,7 +132,7 @@ bool DTTR_Config_FieldChanged(
 
 bool DTTR_Config_SchemaChanged(const DTTR_Config *current, const DTTR_Config *base) {
 	for (int i = 0; i < CONFIG_SCHEMA_COUNT; i++) {
-		const DTTR_ConfigFieldSpec *const spec = &config_schema[i];
+		const DTTR_ConfigFieldSpec *spec = &config_schema[i];
 		if (DTTR_Config_FieldChanged(current, base, spec)) {
 			return true;
 		}
@@ -152,7 +152,7 @@ static void config_schema_init() {
 	}
 
 	for (int i = 0; i < CONFIG_SCHEMA_COUNT; i++) {
-		const DTTR_ConfigFieldSpec *const spec = &config_schema[i];
+		const DTTR_ConfigFieldSpec *spec = &config_schema[i];
 		if (!config_build_lookup_key(
 				config_lookup_keys[i],
 				sizeof(config_lookup_keys[i]),
@@ -264,12 +264,12 @@ bool config_apply_entry(
 		return false;
 	}
 
-	const DTTR_ConfigFieldSpec *const spec = config_schema_find(section, key);
+	const DTTR_ConfigFieldSpec *spec = config_schema_find(section, key);
 	if (!spec) {
 		return false;
 	}
 
-	char *const field = ((char *)config) + spec->offset;
+	char *field = ((char *)config) + spec->offset;
 #define CONFIG_ASSIGN_CASE(value_type, type, default_val, parse_fn, fn_name)             \
 	case value_type:                                                                     \
 		return fn_name(field, value);

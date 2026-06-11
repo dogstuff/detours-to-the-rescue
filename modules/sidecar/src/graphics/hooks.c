@@ -138,7 +138,7 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 	DTTR_PCDOGS_T_Win32_GUID *iid,
 	DTTR_PCDOGS_T_COM_IUnknown *outer
 ) {
-	DTTR_Graphics_COM_DirectDraw7 *const ddraw7 = get_or_create_ddraw7();
+	DTTR_Graphics_COM_DirectDraw7 *ddraw7 = get_or_create_ddraw7();
 
 	if (!ddraw7) {
 		return E_OUTOFMEMORY;

@@ -279,7 +279,7 @@ static sds get_config_path() {
 
 // Applies the runtime fullscreen toggle to the active graphics window.
 static void toggle_fullscreen() {
-	SDL_Window *const window = dttr_backend.window;
+	SDL_Window *window = dttr_backend.window;
 	const bool is_fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
 	if (!SDL_SetWindowFullscreen(window, !is_fullscreen)) {
 		DTTR_LOG_WARN("SDL_SetWindowFullscreen failed: %s", SDL_GetError());
@@ -512,8 +512,8 @@ static dttr_startup_movies_result attempt_play_startup_movies() {
 		return DTTR_STARTUP_MOVIES_CONTINUE;
 	}
 
-	const char *const prefix = DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->Ptr();
-	char **const names = (char **)DTTR_PCDOGS_D_Video_PlayMovieIntro_FileNames->Ptr();
+	const char *prefix = DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->Ptr();
+	char **names = (char **)DTTR_PCDOGS_D_Video_PlayMovieIntro_FileNames->Ptr();
 	if (!prefix || !names) {
 		DTTR_LOG_WARN("Startup movie metadata unavailable; skipping intro movies");
 		return DTTR_STARTUP_MOVIES_CONTINUE;

@@ -186,9 +186,7 @@ static const char *graphics_api_driver_name(DTTR_GraphicsApi api) {
 // Creates an SDL GPU device using the configured driver or the supported fallback order.
 static bool create_device(DTTR_BackendState *state) {
 	const SDL_GPUShaderFormat requested_formats = dttr_graphics_requested_shader_formats();
-	const char *const requested_driver = graphics_api_driver_name(
-		dttr_config.graphics_api
-	);
+	const char *requested_driver = graphics_api_driver_name(dttr_config.graphics_api);
 
 	if (requested_driver) {
 		if (try_create_device_for_driver(state, requested_formats, requested_driver)) {
@@ -204,7 +202,7 @@ static bool create_device(DTTR_BackendState *state) {
 		return false;
 	}
 
-	const char *const driver_candidates[] = {
+	const char *driver_candidates[] = {
 		DTTR_DRIVER_VULKAN,
 		DTTR_DRIVER_DIRECT3D12,
 		NULL, // Falls back to the SDL default driver selection.

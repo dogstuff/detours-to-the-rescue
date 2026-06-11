@@ -254,7 +254,7 @@ static bool open_movie(const char *path) {
 		return false;
 	}
 
-	AVStream *const video_stream = movie.format->streams[movie.video_stream];
+	AVStream *video_stream = movie.format->streams[movie.video_stream];
 	movie.video_codec = open_codec(video_stream);
 	if (!movie.video_codec) {
 		return false;
@@ -269,7 +269,7 @@ static bool open_movie(const char *path) {
 		0
 	);
 	if (movie.audio_stream_index >= 0) {
-		AVStream *const audio_stream = movie.format->streams[movie.audio_stream_index];
+		AVStream *audio_stream = movie.format->streams[movie.audio_stream_index];
 		movie.audio_codec = open_codec(audio_stream);
 		if (!movie.audio_codec || !prepare_audio()) {
 			return false;

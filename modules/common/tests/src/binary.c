@@ -477,7 +477,7 @@ static size_t masked_sigscan_count(
 
 	const uint8_t anchor_byte = sig[anchor];
 	const uint8_t *cursor = bytes + anchor;
-	const uint8_t *const end = cursor + (size - mask_len + 1u);
+	const uint8_t *end = cursor + (size - mask_len + 1u);
 	size_t matches = 0;
 
 	while (cursor < end) {

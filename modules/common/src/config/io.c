@@ -168,7 +168,7 @@ static bool config_apply_json_value(
 		return false;
 	}
 
-	char *const field = ((char *)config) + spec->offset;
+	char *field = ((char *)config) + spec->offset;
 	switch (spec->value_type) {
 	case CONFIG_BOOL:
 		if (!yyjson_is_bool(val)) {
@@ -367,7 +367,7 @@ static const char *config_format_field_string(
 	const DTTR_Config *config,
 	const DTTR_ConfigFieldSpec *spec
 ) {
-	const char *const field = ((const char *)config) + spec->offset;
+	const char *field = ((const char *)config) + spec->offset;
 	switch (spec->value_type) {
 	case CONFIG_SCALING_FIT:
 		return config_format_scaling_fit(*(const DTTR_ScalingMode *)field);
@@ -403,7 +403,7 @@ static bool config_add_schema_field(
 		return false;
 	}
 
-	const char *const field = ((const char *)config) + spec->offset;
+	const char *field = ((const char *)config) + spec->offset;
 	switch (spec->value_type) {
 	case CONFIG_BOOL:
 		return yyjson_mut_obj_add_bool(doc, obj, spec->key, *(const bool *)field);

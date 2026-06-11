@@ -57,7 +57,7 @@ static bool set_joystick_available(int32_t available) {
 
 static bool try_open_configured_gamepad() {
 	int count = 0;
-	SDL_JoystickID *const joysticks = SDL_GetGamepads(&count);
+	SDL_JoystickID *joysticks = SDL_GetGamepads(&count);
 	const int index = dttr_config.gamepad_index;
 
 	if (!joysticks || index < 0 || index >= count) {

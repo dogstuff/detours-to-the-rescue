@@ -37,7 +37,7 @@ static const char *level_to_string(int level) {
 
 static void init_event(log_Event *ev, void *udata) {
 	if (!ev->time) {
-		time_t t = time(NULL);
+		const time_t t = time(NULL);
 		ev->time = localtime(&t);
 	}
 
@@ -112,7 +112,7 @@ static void dttr_vlog_unchecked(
 	}
 
 	for (int i = 0; i < callback_count; i++) {
-		log_callback *cb = &callbacks[i];
+		const log_callback *cb = &callbacks[i];
 		if (log_level >= cb->level) {
 			init_event(&ev, cb->udata);
 			va_copy(ev.ap, args);

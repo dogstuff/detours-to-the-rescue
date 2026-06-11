@@ -573,7 +573,7 @@ sds DTTR_CrashDump_FormatStackTrace(HANDLE process, HANDLE thread, const CONTEXT
 	return message;
 }
 
-static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *const exception_info) {
+static LONG WINAPI unhandled_exception_filter(EXCEPTION_POINTERS *exception_info) {
 	const DWORD code = exception_info->ExceptionRecord->ExceptionCode;
 	const HANDLE process = GetCurrentProcess();
 	const DWORD pid = GetCurrentProcessId();
@@ -633,7 +633,7 @@ static bool set_dump_dir(const char *base_dir) {
 	return true;
 }
 
-void DTTR_CrashDump_Init(const char *const dump_dir) {
+void DTTR_CrashDump_Init(const char *dump_dir) {
 	if (!set_dump_dir(dump_dir)) {
 		DTTR_LOG_ERROR("Could not initialize crash dump directory");
 		crash_dump_dir[0] = '\0';

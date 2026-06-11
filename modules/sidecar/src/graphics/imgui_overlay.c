@@ -286,7 +286,7 @@ bool dttr_imgui_process_event(const SDL_Event *event) {
 	}
 
 	// Capture decisions use the previous interactive frame's hover state.
-	ImGuiIO *io = igGetIO_Nil();
+	const ImGuiIO *io = igGetIO_Nil();
 	switch (event->type) {
 	case SDL_EVENT_MOUSE_MOTION:
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -467,7 +467,7 @@ static ImDrawData *render_overlay_frame(
 
 // Reads ImGui's current display size for OpenGL paths that present to the default target.
 static void current_display_size(uint32_t *width, uint32_t *height) {
-	ImGuiIO *io = igGetIO_Nil();
+	const ImGuiIO *io = igGetIO_Nil();
 	*width = (uint32_t)io->DisplaySize.x;
 	*height = (uint32_t)io->DisplaySize.y;
 }

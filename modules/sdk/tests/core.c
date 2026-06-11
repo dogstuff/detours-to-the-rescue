@@ -160,7 +160,7 @@ static HRESULT __stdcall pcdogs_ddraw_create_ex_detour(
 static void test_pcdogs_unstable_patch_specs_match_stable_shape(void **state) {
 	DTTR_PCDOGS_F_DDraw_CreateEx_proto ddraw_original = NULL;
 	void *movie_key_state_original = NULL;
-	void *const replacement = (void *)0x33333333u;
+	void *replacement = (void *)0x33333333u;
 
 	assert_int_equal(
 		DTTR_PCDOGS_F_DDraw_CreateEx->FunctionID,
@@ -230,8 +230,8 @@ static void test_pcdogs_generated_title_resource_patch_specs_use_current_names(
 ) {
 	void *handle1_original = NULL;
 	void *handle0_original = NULL;
-	void *const replacement1 = (void *)0x11111111u;
-	void *const replacement0 = (void *)0x22222222u;
+	void *replacement1 = (void *)0x11111111u;
+	void *replacement0 = (void *)0x22222222u;
 
 	DTTR_PCDOGS_T_Patch_Spec handle1 = DTTR_PCDOGS_D_Title_ResourceHandle1->PatchSpec(
 		true,

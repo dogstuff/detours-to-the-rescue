@@ -211,7 +211,7 @@ static bool build_sidecar_shellcode(
 		return false;
 	}
 
-	uint8_t *const buffer = malloc(out_size);
+	uint8_t *buffer = malloc(out_size);
 	if (!buffer) {
 		DTTR_LOG_ERROR("Could not allocate shellcode payload");
 		return false;

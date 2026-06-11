@@ -91,7 +91,7 @@ static int find_disabled_mod(const DTTR_Config *config, const char *mod_filename
 
 	const size_t mod_filename_len = strlen(mod_filename);
 	for (int i = 0; i < config->disabled_mod_count; i++) {
-		const char *const disabled_mod = config->disabled_mods[i];
+		const char *disabled_mod = config->disabled_mods[i];
 		const size_t disabled_mod_len = strlen(disabled_mod);
 		if (disabled_mod_len == mod_filename_len
 			&& DTTR_Path_AsciiIeqN(disabled_mod, mod_filename, disabled_mod_len)) {

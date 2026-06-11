@@ -119,7 +119,7 @@ static void resolve_nt_path_and_cwd(
 	memcpy(nt_path + 4, full_path, (full_path_len + 1) * sizeof(WCHAR));
 
 	memcpy(cwd, full_path, (full_path_len + 1) * sizeof(WCHAR));
-	WCHAR *const last_sep = wcsrchr(cwd, L'\\');
+	WCHAR *last_sep = wcsrchr(cwd, L'\\');
 	if (!last_sep) {
 		DTTR_FATAL("Game path is missing a parent directory");
 	}
