@@ -411,6 +411,19 @@ static void cleanup_runtime(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_HookCleanupAll();
 }
 
+// Enters PKG_InitializeSystem through its true per-build entry. EU/SC builds prefix
+// the shared body with the instruction that enables the multi-language boot flow
+// (the pre-title region/language select); entering past it suppresses that screen.
+static bool call_pkg_initialize_system(const DTTR_Core_Context *ctx, int32_t *ret) {
+	if (DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->IsCallable(ctx)) {
+		return REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->Call(ctx, ret)
+		);
+	}
+
+	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, ret));
+}
+
 // Runs required PCDOGS startup calls after the game window exists.
 static bool initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t ret = 0;
@@ -422,7 +435,7 @@ static bool initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_D3D_InitializeGraphicsSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )
-		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, &ret));
+		   && call_pkg_initialize_system(ctx, &ret);
 }
 
 // Moves the modding runtime into its started state after initialization succeeds.

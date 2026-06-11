@@ -11163,7 +11163,18 @@ stable.fn(
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1",
     ret="int32_t",
     params=[],
-    doc="Bootstraps package/resource startup by opening and reading the package TOC, initializing audio, initializing render dispatch tables, and seeding graphics flags/capabilities; returns the resulting graphics capability word/status value.",
+    doc="Bootstraps package/resource startup by opening and reading the package TOC, initializing audio, initializing render dispatch tables, and seeding graphics flags/capabilities; returns the resulting graphics capability word/status value. EU/SC builds prefix this body with an instruction that enables the multi-language boot flow; PKG_InitializeSystemMultiLanguage anchors that true entry and must be preferred when resolved.",
+    stable=True,
+)
+
+stable.fn(
+    "PKG_InitializeSystemMultiLanguage",
+    "81 0D ?? ?? ?? ?? 00 00 00 04 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1",
+    required=Required.EU_SC,
+    hook=0xA,
+    ret="int32_t",
+    params=[],
+    doc="The EU/SC version of PKG_InitializeSystem. Sets the multi-language game flag (bit 0x4000000) that is required to open the region/language select level, then falls through into the shared PKG_InitializeSystem body. Entering through PKG_InitializeSystem instead skips the flag and suppresses the language select screen.",
     stable=True,
 )
 
