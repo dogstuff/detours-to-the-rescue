@@ -65,6 +65,12 @@ const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {
 		"xxxx?xxx",
 		DTTR_TEST_PCDOGS_REQUIRED_ALL
 	),
+	SIDECAR_JMP_HOOK_TARGET(
+		"dttr_inputs_hook_read_gamepad",
+		"\xA0\x00\x00\x00\x00\x83\xEC\x08\x84\xC0\x0F\x84\x00",
+		"x????xxxxxxx?",
+		DTTR_TEST_PCDOGS_REQUIRED_ALL
+	),
 	SIDECAR_BYTE_PATCH_TARGET(
 		"dttr_hook_precision_fast_path",
 		"\x83\xF8?\x7C?\xD9\x43?\xD8\x1D????\xDF\xE0\xF6\xC4\x41\x0F????",

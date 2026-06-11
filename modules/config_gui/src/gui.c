@@ -277,6 +277,7 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 		DTTR_ImGuiDialog_Render(&ctx);
 	}
 
+	close_gamepad_preview(&state);
 	SDL_QuitSubSystem(SDL_INIT_GAMEPAD);
 	DTTR_ImGuiDialog_End(&ctx);
 	DTTR_ImGuiDialog_Shutdown();

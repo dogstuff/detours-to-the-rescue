@@ -27,6 +27,8 @@ KHASH_MAP_INIT_STR(dttr_config_lookup, int)
 	FIELD("gamepad", _key, gamepad_axes[_index], CONFIG_GAMEPAD_AXIS),
 #define FIELD_GAMEPAD_DEADZONE(_key, _index) \
 	FIELD("gamepad", _key, gamepad_axis_deadzone[_index], CONFIG_INT),
+#define FIELD_GAMEPAD_SENSITIVITY(_key, _index) \
+	FIELD("gamepad", _key, gamepad_axis_sensitivity[_index], CONFIG_INT),
 
 static const DTTR_ConfigFieldSpec config_schema[] = {
 	FIELD_TOP("schema_major_version", schema_major_version, CONFIG_INT),
@@ -62,15 +64,18 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 	FIELD_TOP("skip_intro_movies", skip_intro_movies, CONFIG_BOOL),
 
 	FIELD("gamepad", "enabled", gamepad_enabled, CONFIG_BOOL),
+	FIELD("gamepad", "analog_remap", gamepad_analog_remap, CONFIG_BOOL),
 	FIELD("gamepad", "index", gamepad_index, CONFIG_INT),
 	CONFIG_GAMEPAD_AXIS_FIELDS(FIELD_GAMEPAD_AXIS)
 	CONFIG_GAMEPAD_DEADZONE_FIELDS(FIELD_GAMEPAD_DEADZONE)
+	CONFIG_GAMEPAD_SENSITIVITY_FIELDS(FIELD_GAMEPAD_SENSITIVITY)
 };
 
 // clang-format on
 
 #define CONFIG_SCHEMA_COUNT ((int)SDL_arraysize(config_schema))
 
+#undef FIELD_GAMEPAD_SENSITIVITY
 #undef FIELD_GAMEPAD_DEADZONE
 #undef FIELD_GAMEPAD_AXIS
 

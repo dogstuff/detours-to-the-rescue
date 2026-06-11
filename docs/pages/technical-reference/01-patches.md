@@ -61,6 +61,7 @@ subpixel cracks between adjacent mesh pieces.
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
 | `dttr_inputs_hook_dinput_poll` | Signature `56 8B 74 24 ?? 56 8B 06`, jump hook at match | Game DirectInput joystick poll function | Maps SDL gamepad state into the game's joystick layout. |
+| `dttr_inputs_hook_read_gamepad` | `Input_ReadGamepad->PatchSpec()` in the `sidecar/inputs` patch group | Game gamepad-to-input-state routine | Analog remap path for left-stick X/Y. D-pad, RZ, and button mapping stay separate. |
 | `dttr_inputs_hook_get_async_key_state` | `Video_PlayMovieLoop_GetAsyncKeyStateThunk->PatchSpec()` in the `sidecar/inputs` patch group | IAT-style slot loaded by `mov ebx, [GetAsyncKeyStateSlot]` | Routes keyboard state through SDL and limits input to the SDL window. |
 
 ## Audio

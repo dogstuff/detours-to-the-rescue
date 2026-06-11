@@ -48,16 +48,26 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
   },
   "gamepad": {
     "enabled": true,
+    "analog_remap": true,
     "index": 0,
     "axis_stick_x": "axis_left_x",
     "axis_stick_y": "axis_left_y",
     "axis_camera_rz": "axis_right_x",
-    "deadzone_stick_x": 700,
-    "deadzone_stick_y": 700,
-    "deadzone_camera_rz": 700
+    "deadzone_stick_x": 333,
+    "deadzone_stick_y": 333,
+    "deadzone_camera_rz": 600,
+    "sensitivity_stick_x": 100,
+    "sensitivity_stick_y": 100,
+    "sensitivity_camera_rz": 100
   }
 }
 ```
+
+## Gamepad Analog Remap
+
+`gamepad.analog_remap` is enabled by default. It routes left-stick X/Y through PS1-style analog scaling controlled by `deadzone_stick_x`, `deadzone_stick_y`, `sensitivity_stick_x`, and `sensitivity_stick_y`.
+
+Set it to `false` to keep the original DirectInput stick path.
 
 ## Gamepad Buttons (`gamepad.buttons`)
 

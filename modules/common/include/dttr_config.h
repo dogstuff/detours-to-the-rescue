@@ -108,10 +108,12 @@ typedef struct {
 	float mss_sample_gain;
 	float mss_sample_preemphasis;
 	bool gamepad_enabled;
+	bool gamepad_analog_remap;
 	int gamepad_index;
 	int gamepad_button_map[DTTR_GAMEPAD_SOURCE_COUNT];
 	int gamepad_axes[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 	int gamepad_axis_deadzone[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
+	int gamepad_axis_sensitivity[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 } DTTR_Config;
 
 extern DTTR_Config dttr_config;
