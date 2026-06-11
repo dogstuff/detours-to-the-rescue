@@ -78,6 +78,7 @@
                   "--disable-avdevice"
                   "--disable-avfilter"
                   "--enable-small"
+                  "--enable-gpl"
                   "--disable-static"
                   "--enable-shared"
                   "--enable-avcodec"
@@ -97,6 +98,7 @@
                   "--enable-decoder=pcm_u8"
                   "--enable-decoder=pcm_vidc"
                   "--enable-decoder=adpcm_ima_ea_sead"
+                  "--enable-decoder=adpcm_ima_escape"
                 ]}
               runHook postConfigure
             '';
