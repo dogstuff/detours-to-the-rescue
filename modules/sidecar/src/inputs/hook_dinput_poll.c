@@ -74,17 +74,13 @@ static LONG read_axis(int axis_idx) {
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	di_joy_state *state = NULL;
-	DTTR_Result alloc_result = DTTR_PCDOGS_F_Mem_MallocCRT->Call(
-		dttr_sidecar_runtime_context(),
-		sizeof(di_joy_state),
-		(void **)&state
-	);
-
-	if (!DTTR_ResultOK(alloc_result) || !state) {
-		DTTR_LOG_ERROR(
-			"Failed to allocate joystick poll state: %s",
-			dttr_sidecar_result_detail(alloc_result)
-		);
+	if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Mem_MallocCRT->Call(
+			dttr_sidecar_runtime_context(),
+			sizeof(di_joy_state),
+			(void **)&state
+		))
+		|| !state) {
+		DTTR_LOG_ERROR("Failed to allocate joystick poll state");
 		return NULL;
 	}
 

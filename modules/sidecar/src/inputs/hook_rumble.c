@@ -145,8 +145,8 @@ int32_t __cdecl dttr_inputs_hook_rumble_callback(
 
 	int32_t suppress_rumble = 0;
 	if (!rumble_ctx
-		|| !DTTR_ResultOK(DTTR_PCDOGS_F_Settings_GetRumbleSuppressFlag
-							  ->Call(&rumble_ctx->runtime, &suppress_rumble))) {
+		|| !REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Settings_GetRumbleSuppressFlag
+									->Call(&rumble_ctx->runtime, &suppress_rumble))) {
 		return safe_call_original_rumble(
 			effect_source_id,
 			strong_feedback,

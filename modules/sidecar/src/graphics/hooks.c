@@ -144,14 +144,9 @@ HRESULT __stdcall dttr_hook_directdraw_create_ex_callback(
 		return E_OUTOFMEMORY;
 	}
 
-	DTTR_Result result = DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->Write(
-		(DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7
-	);
-	if (!DTTR_ResultOK(result)) {
-		DTTR_LOG_ERROR(
-			"Failed to publish DirectDraw object: %s",
-			dttr_sidecar_result_detail(result)
-		);
+	if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_D3D_CreateTextureSurface_DDrawObject->Write(
+			(DTTR_PCDOGS_T_DDraw_IDirectDraw7 *)ddraw7
+		))) {
 		return E_FAIL;
 	}
 

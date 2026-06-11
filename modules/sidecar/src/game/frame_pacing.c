@@ -23,13 +23,13 @@ void dttr_game_neutralize_frame_limiter(const DTTR_Core_Context *ctx) {
 	}
 
 	int32_t now = 0;
-	if (!DTTR_ResultOK(DTTR_PCDOGS_F_Timer_GetElapsedTickCount->Call(ctx, &now))) {
+	if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Timer_GetElapsedTickCount->Call(ctx, &now))) {
 		return;
 	}
 
-	DTTR_PCDOGS_D_Graphics_RenderFrame_LastFrameTick->Write(
+	REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Graphics_RenderFrame_LastFrameTick->Write(
 		(uint32_t)now - DTTR_GAME_FRAME_LIMITER_WINDOW_MS - 1u
-	);
+	));
 }
 
 // True when the game is in its steady scene-rendering state and Scene_RenderFrame
@@ -44,8 +44,10 @@ static bool game_scene_replay_allowed(const DTTR_Core_Context *ctx) {
 
 	uint32_t flags = 0;
 	uint8_t pause_counter = 0;
-	if (!DTTR_ResultOK(DTTR_PCDOGS_D_Game_FrameTransitionFlags->Read(&flags))
-		|| !DTTR_ResultOK(DTTR_PCDOGS_D_Game_PauseStateCounter->Read(&pause_counter))) {
+	if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Game_FrameTransitionFlags->Read(&flags))
+		|| !REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Game_PauseStateCounter->Read(&pause_counter)
+		)) {
 		return false;
 	}
 

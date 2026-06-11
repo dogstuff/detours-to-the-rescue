@@ -29,7 +29,11 @@ static bool has_playback_devices() {
 // Treats either the original MSS driver or SDL shim as an active audio backend.
 static bool has_audio_driver() {
 	void *audio_driver = NULL;
-	DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver);
+	if (!REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Audio_InitializeSystem_DigitalDriver->Read(&audio_driver)
+		)) {
+		return dttr_mss_core_has_driver();
+	}
 
 	return audio_driver || dttr_mss_core_has_driver();
 }
@@ -55,10 +59,8 @@ static void handle_audio_device_removed() {
 
 	DTTR_LOG_ERROR("Audio device removed, shutting down audio subsystem");
 	int32_t shutdown_result = 0;
-	DTTR_PCDOGS_F_Audio_ShutdownSystem->Call(
-		dttr_sidecar_runtime_context(),
-		&shutdown_result
-	);
+	REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Audio_ShutdownSystem
+							->Call(dttr_sidecar_runtime_context(), &shutdown_result));
 }
 
 // Reinitializes game audio when a playback device returns.

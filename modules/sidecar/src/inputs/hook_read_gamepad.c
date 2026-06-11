@@ -136,7 +136,9 @@ static void apply_rz_and_buttons(
 
 static void release_joystick_state(struct DIJOYSTATE *state) {
 	struct DIJOYSTATE **slot = DTTR_PCDOGS_D_Input_ReadGamepad_JoystickState->Ptr();
-	DTTR_PCDOGS_F_Mem_FreeCRT->Call(&read_gamepad_ctx->runtime, state);
+	REQUIRE_PCDOGS_CALL(
+		DTTR_PCDOGS_F_Mem_FreeCRT->Call(&read_gamepad_ctx->runtime, state)
+	);
 	*slot = NULL;
 }
 
@@ -146,7 +148,7 @@ void __cdecl dttr_inputs_hook_read_gamepad_callback(DTTR_PCDOGS_T_Input_State *s
 	}
 
 	uint8_t available = 0;
-	if (!DTTR_ResultOK(
+	if (!REQUIRE_PCDOGS_CALL(
 			DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Read(&available)
 		)
 		|| !available) {

@@ -41,18 +41,9 @@ int32_t dttr_inputs_read_raw_axis(int axis_idx) {
 }
 
 static bool set_joystick_available(int32_t available) {
-	DTTR_Result result = DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(
-		available
+	return REQUIRE_PCDOGS_CALL(
+		DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->Write(available)
 	);
-	if (!DTTR_ResultOK(result)) {
-		DTTR_LOG_ERROR(
-			"Failed to update joystick availability: %s",
-			dttr_sidecar_result_detail(result)
-		);
-		return false;
-	}
-
-	return true;
 }
 
 static bool try_open_configured_gamepad() {
@@ -182,14 +173,9 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 		}
 
 		int32_t game_initialized = 0;
-		DTTR_Result result = DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Read(
-			&game_initialized
-		);
-		if (!DTTR_ResultOK(result)) {
-			DTTR_LOG_ERROR(
-				"Failed to read game input init state: %s",
-				dttr_sidecar_result_detail(result)
-			);
+		if (!REQUIRE_PCDOGS_CALL(
+				DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Read(&game_initialized)
+			)) {
 			close_gamepad();
 			return;
 		}

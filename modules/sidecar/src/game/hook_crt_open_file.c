@@ -20,20 +20,11 @@ static DTTR_PCDOGS_T_File_Handle *file_open_with_mode(
 	uint8_t sharing_flag
 ) {
 	DTTR_PCDOGS_T_File_Handle *handle = NULL;
-	DTTR_Result result = DTTR_PCDOGS_F_File_OpenWithMode->Call(
-		dttr_sidecar_runtime_context(),
-		path,
-		mode,
-		sharing_flag,
-		&handle
-	);
-	if (!DTTR_ResultOK(result)) {
-		DTTR_LOG_ERROR(
-			"File_OpenWithMode failed for \"%s\" (mode \"%s\"): %s",
-			path,
-			mode,
-			dttr_sidecar_result_detail(result)
-		);
+	if (!REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_F_File_OpenWithMode
+				->Call(dttr_sidecar_runtime_context(), path, mode, sharing_flag, &handle)
+		)) {
+		DTTR_LOG_ERROR("File_OpenWithMode failed for \"%s\" (mode \"%s\")", path, mode);
 		return NULL;
 	}
 
