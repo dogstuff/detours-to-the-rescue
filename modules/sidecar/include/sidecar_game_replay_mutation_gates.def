@@ -1,0 +1,14 @@
+// Single source of truth for game functions suppressed while a render-only replay
+// consumes TIMING_BEFORE_RENDER_FRAME state.
+
+SIDECAR_GAME_REPLAY_MUTATION_GATE(
+	DTTR_PCDOGS_F_Model_AdvanceAnimation,
+	dttr_game_hook_model_advance_animation_callback,
+	&dttr_game_hook_model_advance_animation_original
+)
+
+SIDECAR_GAME_REPLAY_MUTATION_GATE(
+	DTTR_PCDOGS_F_Scene_UpdateNodeAnimation,
+	dttr_game_hook_scene_update_node_animation_callback,
+	&dttr_game_hook_scene_update_node_animation_original
+)

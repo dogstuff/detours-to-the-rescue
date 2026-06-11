@@ -56,10 +56,10 @@ static inline int DTTR_Sigscan_HexValue(char c) {
 	return -1;
 }
 
-// Converts a space-separated AOB string ("83 F8 ?? 7C") into the signature byte buffer and
-// 'x'/'?' mask consumed by DTTR_Sigscan_Bytes. Writes at most `cap` tokens plus a NUL into
-// each output buffer and returns the token count, or 0 when the pattern is empty, malformed,
-// or longer than `cap`.
+// Converts a space-separated AOB string ("83 F8 ?? 7C") into the signature byte buffer
+// and 'x'/'?' mask consumed by DTTR_Sigscan_Bytes. Writes at most `cap` tokens plus a NUL
+// into each output buffer and returns the token count, or 0 when the pattern is empty,
+// malformed, or longer than `cap`.
 static inline size_t DTTR_Sigscan_ParseAob(
 	const char *aob,
 	char *sig_out,

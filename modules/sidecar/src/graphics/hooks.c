@@ -17,21 +17,21 @@ static HWND graphics_hook_hwnd;
 
 // Expanded from the shared single source so the sidecar pcdogs test can assert these same
 // patch sites without re-specifying the signatures. See sidecar_graphics_byte_patches.def.
-#define SIDECAR_GFX_BYTE_PATCH(                                                           \
+#define SIDECAR_GFX_BYTE_PATCH(                                                          \
 	name,                                                                                \
-	rt_required,                                                                          \
-	test_required,                                                                        \
-	aob,                                                                                  \
-	offset,                                                                               \
-	patch_seq,                                                                            \
-	original_seq,                                                                         \
-	original_mask                                                                         \
+	rt_required,                                                                         \
+	test_required,                                                                       \
+	aob,                                                                                 \
+	offset,                                                                              \
+	patch_seq,                                                                           \
+	original_seq,                                                                        \
+	original_mask                                                                        \
 )                                                                                        \
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(                                                     \
-		rt_required,                                                                      \
-		aob,                                                                              \
-		offset,                                                                           \
-		DTTR_SIDECAR_UNPAREN patch_seq                                                    \
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(                                                    \
+		rt_required,                                                                     \
+		aob,                                                                             \
+		offset,                                                                          \
+		DTTR_SIDECAR_UNPAREN patch_seq                                                   \
 	),
 
 static const DTTR_PCDOGS_T_Patch_Spec graphics_byte_patches[] = {

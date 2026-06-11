@@ -4,10 +4,52 @@
 
 #include <dttr_pcdogs.h>
 
+#ifdef DTTR_MODS_ENABLED
+#include "frame_pacing_private.h"
+#endif
+
 DTTR_DEFINE_STORAGE(
 	DTTR_PCDOGS_F_Title_CleanupScreenResources_proto,
 	dttr_hook_cleanup_title_resources_original
 )
+
+#ifdef DTTR_MODS_ENABLED
+DTTR_DEFINE_STORAGE(
+	DTTR_PCDOGS_F_Model_AdvanceAnimation_proto,
+	dttr_game_hook_model_advance_animation_original
+)
+
+DTTR_DEFINE_STORAGE(
+	DTTR_PCDOGS_F_Scene_UpdateNodeAnimation_proto,
+	dttr_game_hook_scene_update_node_animation_original
+)
+
+int32_t __cdecl dttr_game_hook_model_advance_animation_callback(
+	DTTR_PCDOGS_T_Actor_State *actor
+) {
+	if (dttr_game_render_only_scene_replay_active()) {
+		return 0;
+	}
+
+	return dttr_game_hook_model_advance_animation_original
+			   ? dttr_game_hook_model_advance_animation_original(actor)
+			   : 0;
+}
+
+void __cdecl dttr_game_hook_scene_update_node_animation_callback(
+	DTTR_PCDOGS_T_Actor_State *actor,
+	DTTR_PCDOGS_T_Scene_Node *parent_node,
+	DTTR_PCDOGS_T_Scene_Node *node
+) {
+	if (dttr_game_render_only_scene_replay_active()) {
+		return;
+	}
+
+	if (dttr_game_hook_scene_update_node_animation_original) {
+		dttr_game_hook_scene_update_node_animation_original(actor, parent_node, node);
+	}
+}
+#endif
 
 static DTTR_Core_PatchGroup *game_targets;
 
@@ -27,6 +69,13 @@ bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
 			0,
 			dttr_hook_resolve_pcdogs_path_callback
 		),
+
+#ifdef DTTR_MODS_ENABLED
+#define SIDECAR_GAME_REPLAY_MUTATION_GATE(accessor, callback, original_ptr)              \
+	accessor->PatchSpec(true, callback, original_ptr),
+#include "sidecar_game_replay_mutation_gates.def"
+#undef SIDECAR_GAME_REPLAY_MUTATION_GATE
+#endif
 	};
 
 	if (!dttr_sidecar_install_pcdogs_patch_group(
@@ -37,6 +86,14 @@ bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
 			&game_targets
 		)) {
 		dttr_hook_cleanup_title_resources_original = NULL;
+
+#ifdef DTTR_MODS_ENABLED
+#define SIDECAR_GAME_REPLAY_MUTATION_GATE(accessor, callback, original_ptr)              \
+	*(original_ptr) = NULL;
+#include "sidecar_game_replay_mutation_gates.def"
+#undef SIDECAR_GAME_REPLAY_MUTATION_GATE
+#endif
+
 		return false;
 	}
 
@@ -47,4 +104,11 @@ bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
 void dttr_game_hooks_cleanup(const DTTR_Mods_Context *) {
 	DTTR_Core_PatchGroupRelease(&game_targets);
 	dttr_hook_cleanup_title_resources_original = NULL;
+
+#ifdef DTTR_MODS_ENABLED
+#define SIDECAR_GAME_REPLAY_MUTATION_GATE(accessor, callback, original_ptr)              \
+	*(original_ptr) = NULL;
+#include "sidecar_game_replay_mutation_gates.def"
+#undef SIDECAR_GAME_REPLAY_MUTATION_GATE
+#endif
 }

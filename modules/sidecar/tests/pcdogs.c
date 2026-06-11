@@ -4,18 +4,18 @@
 
 #include <sidecar_hook_sigs.h>
 
-// Expands one shared byte-patch row into a test expectation. The signature, offset, and patch
-// bytes come from the same sidecar_graphics_byte_patches.def the runtime installs; only the
-// fixture-required mask and expected-original bytes are test-specific.
-#define SIDECAR_GFX_BYTE_PATCH(                                                           \
+// Expands one shared byte-patch row into a test expectation. The signature, offset, and
+// patch bytes come from the same sidecar_graphics_byte_patches.def the runtime installs;
+// only the fixture-required mask and expected-original bytes are test-specific.
+#define SIDECAR_GFX_BYTE_PATCH(                                                          \
 	name,                                                                                \
-	rt_required,                                                                          \
-	test_required,                                                                        \
-	aob,                                                                                  \
-	offset,                                                                               \
-	patch_seq,                                                                            \
-	original_seq,                                                                         \
-	original_mask                                                                         \
+	rt_required,                                                                         \
+	test_required,                                                                       \
+	aob,                                                                                 \
+	offset,                                                                              \
+	patch_seq,                                                                           \
+	original_seq,                                                                        \
+	original_mask                                                                        \
 )                                                                                        \
 	{name,                                                                               \
 	 TARGET_BYTE_PATCH,                                                                  \
@@ -28,10 +28,10 @@
 	 original_mask},
 
 // JMP-hook targets the sidecar installs from inline AOB signatures, sourced from the same
-// shared macros the runtime uses (sidecar_hook_sigs.h). The Input_ReadGamepad hook is an SDK
-// blueprint symbol (DTTR_PCDOGS_F_Input_ReadGamepad); its signature is owned and asserted by
-// the SDK blueprint-function suite, so it is intentionally not duplicated here. Byte-patch
-// targets follow, expanded from sidecar_graphics_byte_patches.def.
+// shared macros the runtime uses (sidecar_hook_sigs.h). The Input_ReadGamepad hook is an
+// SDK blueprint symbol (DTTR_PCDOGS_F_Input_ReadGamepad); its signature is owned and
+// asserted by the SDK blueprint-function suite, so it is intentionally not duplicated
+// here. Byte-patch targets follow, expanded from sidecar_graphics_byte_patches.def.
 const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {
 	{"dttr_hook_win_main",
 	 TARGET_JMP_HOOK,
@@ -72,8 +72,8 @@ const size_t DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT = sizeof(
 														 *DTTR_TEST_PCDOGS_SIDECAR_TARGETS
 													 );
 
-// Expanded from the same sidecar_mss_imports.def the runtime installs, so the expected import
-// set never drifts from the hooked set.
+// Expanded from the same sidecar_mss_imports.def the runtime installs, so the expected
+// import set never drifts from the hooked set.
 #define SIDECAR_MSS_IMPORT(hook_name, import_name, callback) import_name,
 
 const char *const DTTR_TEST_PCDOGS_SIDECAR_MSS_IMPORT_HOOKS[] = {

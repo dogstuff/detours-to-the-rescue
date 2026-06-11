@@ -247,8 +247,8 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 		goto cleanup_sidecar_runtime;
 	}
 
-	const dttr_startup_movies_result startup_movies =
-		dttr_bootstrap_attempt_play_startup_movies();
+	const dttr_startup_movies_result
+		startup_movies = dttr_bootstrap_attempt_play_startup_movies();
 	if (startup_movies == DTTR_STARTUP_MOVIES_FAILED) {
 		exit_code = 1;
 		goto cleanup_sidecar_runtime;

@@ -18,9 +18,9 @@ typedef struct {
 	DTTR_Core_Hook *handle;
 } mss_import_hook;
 
-// Expanded from the shared single source so the sidecar pcdogs test asserts the same set of
-// hooked mss32 imports without re-listing them. See sidecar_mss_imports.def.
-#define SIDECAR_MSS_IMPORT(hook_name, import_name, callback)                              \
+// Expanded from the shared single source so the sidecar pcdogs test asserts the same set
+// of hooked mss32 imports without re-listing them. See sidecar_mss_imports.def.
+#define SIDECAR_MSS_IMPORT(hook_name, import_name, callback)                             \
 	{hook_name, import_name, callback},
 
 static mss_import_hook mss_import_hooks[] = {

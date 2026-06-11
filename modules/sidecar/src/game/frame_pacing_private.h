@@ -14,4 +14,8 @@ void dttr_game_neutralize_frame_limiter(const DTTR_Core_Context *ctx);
 // backend end-frame bracket must stay suppressed.
 bool dttr_game_render_only_scene_replay();
 
+// Returns true only while the host is re-entering Scene_RenderFrame for a render-only
+// replay.
+bool dttr_game_render_only_scene_replay_active();
+
 #endif // DTTR_GAME_FRAME_PACING_PRIVATE_H

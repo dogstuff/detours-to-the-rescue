@@ -17,8 +17,8 @@
 // PCDOGS save-path resolver hooked to redirect persisted data (EU/SC builds only).
 #define DTTR_SIDECAR_AOB_RESOLVE_PCDOGS_PATH "51 8D 44 24 ?? 57"
 
-// Expands a parenthesized byte list `(0xAA, 0xBB)` into its bare comma-separated form so it
-// can feed variadic patch-spec/compound-literal macros from a single `.def` field.
+// Expands a parenthesized byte list `(0xAA, 0xBB)` into its bare comma-separated form so
+// it can feed variadic patch-spec/compound-literal macros from a single `.def` field.
 #define DTTR_SIDECAR_UNPAREN(...) __VA_ARGS__
 
 #endif // DTTR_SIDECAR_HOOK_SIGS_H
