@@ -1,3 +1,9 @@
+---
+title: "Drawing a GUI"
+description: "Draw mod overlays and configuration UI with the built-in ImGui callback support."
+seo_type: "article"
+---
+
 # Drawing a GUI
 
 DttR provides built-in ImGui support for mod overlay menus, including debug windows, mod options, small tools, and overlays that do not need to be drawn through the game renderer.

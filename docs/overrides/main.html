@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {% if page.url %}
+    {% set seo_key = page.url %}
+  {% else %}
+    {% set seo_key = "/" %}
+  {% endif %}
+
+  {% if page.canonical_url %}
+    {% if page.meta and page.meta.description %}
+      {% set description = page.meta.description %}
+    {% else %}
+      {% set description = config.site_description %}
+    {% endif %}
+
+    {% if not page.url %}
+      {% set title = config.site_name %}
+      {% set schema_title = config.site_name %}
+    {% elif page.meta and page.meta.title %}
+      {% set title = page.meta.title ~ " - " ~ config.site_name %}
+      {% set schema_title = page.meta.title %}
+    {% elif page.title %}
+      {% set title = page.title ~ " - " ~ config.site_name %}
+      {% set schema_title = page.title %}
+    {% else %}
+      {% set title = config.site_name %}
+      {% set schema_title = config.site_name %}
+    {% endif %}
+
+    {% if config.extra.seo_keywords and config.extra.seo_keywords[seo_key] %}
+      {% set keywords = config.extra.seo_keywords[seo_key] %}
+    {% else %}
+      {% set keywords = none %}
+    {% endif %}
+
+    {% if description %}
+      <meta property="og:type" content="website">
+      <meta property="og:title" content="{{ title }}">
+      <meta property="og:description" content="{{ description }}">
+      <meta property="og:url" content="{{ page.canonical_url }}">
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:title" content="{{ title }}">
+      <meta name="twitter:description" content="{{ description }}">
+    {% endif %}
+
+    {% if page.meta and page.meta.seo_type == "software" %}
+      {% if keywords %}
+        {% set schema = {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "102 Patches: Detours to the Rescue! (DttR)",
+          "alternateName": "DttR",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Windows",
+          "url": page.canonical_url,
+          "description": description,
+          "keywords": keywords,
+        } %}
+      {% else %}
+        {% set schema = {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "102 Patches: Detours to the Rescue! (DttR)",
+          "alternateName": "DttR",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Windows",
+          "url": page.canonical_url,
+          "description": description,
+        } %}
+      {% endif %}
+      <script type="application/ld+json">{{ schema | tojson }}</script>
+    {% elif page.meta and page.meta.seo_type %}
+      {% if page.meta.seo_type == "tech_article" %}
+        {% set schema_type = "TechArticle" %}
+      {% else %}
+        {% set schema_type = "Article" %}
+      {% endif %}
+      {% if keywords %}
+        {% set schema = {
+          "@context": "https://schema.org",
+          "@type": schema_type,
+          "headline": schema_title,
+          "description": description,
+          "url": page.canonical_url,
+          "inLanguage": "en",
+          "keywords": keywords,
+        } %}
+      {% else %}
+        {% set schema = {
+          "@context": "https://schema.org",
+          "@type": schema_type,
+          "headline": schema_title,
+          "description": description,
+          "url": page.canonical_url,
+          "inLanguage": "en",
+        } %}
+      {% endif %}
+      <script type="application/ld+json">{{ schema | tojson }}</script>
+    {% endif %}
+  {% endif %}
+{% endblock %}

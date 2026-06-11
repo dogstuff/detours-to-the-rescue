@@ -1,3 +1,9 @@
+---
+title: "Applying Game Patches"
+description: "Apply reversible byte patches and runtime changes with the SDK patching helpers."
+seo_type: "article"
+---
+
 # Applying Game Patches
 
 A patch changes game code or data at runtime and can be reversed during cleanup. Use this page for byte patches, pointer patches, and other non-function-hook changes.

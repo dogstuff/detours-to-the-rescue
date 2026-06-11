@@ -1,3 +1,9 @@
+---
+title: "Hooking Game Functions"
+description: "Install function hooks from a mod while preserving original call behavior and cleanup."
+seo_type: "article"
+---
+
 # Hooking Game Functions
 
 A function hook redirects a game function to your detour. Your detour can run custom code, call the original function, change arguments, change the return value, or block the original call.

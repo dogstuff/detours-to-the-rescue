@@ -1,3 +1,9 @@
+---
+title: "102 Patches: Detours to the Rescue! (DttR)"
+description: "Run the PC version of 102 Dalmatians: Puppies to the Rescue on modern machines with crash fixes, windowed mode, controller support, and modding tools."
+seo_type: "software"
+---
+
 !!! example "Quick Start Guide"
 
     If this is your first time using DttR, the fastest way to get it running is by following the [quick start guide](quick-start/00-initial-setup.md).

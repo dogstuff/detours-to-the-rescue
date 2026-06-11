@@ -1,3 +1,9 @@
+---
+title: "Handling Mod Callbacks"
+description: "Reference for mod lifecycle, tick, frame, input, render, and timing callbacks."
+seo_type: "article"
+---
+
 # Handling Mod Callbacks
 
 Callbacks decide when your mod code runs. Prefer the simplest callback that fits before using lower-level render or window callbacks.

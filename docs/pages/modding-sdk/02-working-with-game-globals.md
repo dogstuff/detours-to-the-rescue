@@ -1,3 +1,9 @@
+---
+title: "Working with Game Globals"
+description: "Read and write game globals through SDK wrappers, with notes on when to avoid direct memory access."
+seo_type: "article"
+---
+
 # Working with Game Globals
 
 PCDogs globals are known pieces of game data exposed through the SDK. When possible, use those helpers instead of raw addresses.

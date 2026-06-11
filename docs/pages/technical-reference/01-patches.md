@@ -1,3 +1,9 @@
+---
+title: "Patches Reference"
+description: "Technical reference for runtime patches that replace legacy dependencies and adjust game compatibility behavior."
+seo_type: "article"
+---
+
 # Patches
 
 This page lists the runtime hooks and byte patches DttR installs.

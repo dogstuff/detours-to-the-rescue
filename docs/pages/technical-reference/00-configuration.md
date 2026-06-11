@@ -1,3 +1,9 @@
+---
+title: "Configuration Reference"
+description: "Reference for dttr.json settings, including schema version, game paths, graphics, audio, controller, logging, crash dumps, and modding options."
+seo_type: "article"
+---
+
 # Configuration
 
 DttR stores settings in `dttr.json` next to `dttr.exe`. Invalid JSON or a missing `schema_major_version` causes a configuration error.

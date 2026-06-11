@@ -1,3 +1,9 @@
+---
+title: "Troubleshooting"
+description: "Troubleshoot startup crashes, black screens, intro movie crashes, windowed mode, graphics, controller, and audio issues."
+seo_type: "article"
+---
+
 # Troubleshooting
 
 Try these when DttR starts but crashes, renders incorrectly, or behaves differently than expected.

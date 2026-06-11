@@ -2,7 +2,8 @@
 hide:
   - toc
 title: "PCDogs Symbols"
-description: "Reference for PC symbols wrapped by the SDK."
+description: "Reference for PCDogs symbols exposed through the SDK, including functions, globals, types, signatures, and resolver metadata."
+seo_type: "tech_article"
 tags:
   - "PCDOGS"
   - "SDK Symbol"

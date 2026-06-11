@@ -299,12 +299,17 @@ def main() -> int:
         return 1
 
     pages_out = output_dir / "pages"
+    overrides_dir = config_path.parent / "overrides"
+    overrides_out = output_dir / "overrides"
     metadata_dir = output_dir / "metadata" / "symbols"
     if output_dir.exists():
         shutil.rmtree(output_dir)
 
     pages_out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, pages_out)
+    if overrides_dir.exists():
+        validate_source_tree(overrides_dir)
+        shutil.copytree(overrides_dir, overrides_out)
 
     symbols_root_dir = pages_out / "modding-sdk" / "symbols"
     try:

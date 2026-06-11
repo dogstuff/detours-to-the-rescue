@@ -1,3 +1,9 @@
+---
+title: "Manually Resolving Symbols (Advanced)"
+description: "Resolve symbol metadata manually when a mod needs lower-level SDK access."
+seo_type: "article"
+---
+
 # Manually Resolving Symbols (Advanced)
 
 Most mods should not need to manually resolve PCDogs symbols. Prefer SDK wrappers when possible.

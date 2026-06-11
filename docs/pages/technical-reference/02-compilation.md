@@ -1,3 +1,9 @@
+---
+title: "Compiling the Project"
+description: "Build the project from source with the Nix MinGW toolchain, CMake presets, generated headers, tests, and release packaging."
+seo_type: "article"
+---
+
 # Compiling the Project
 
 Use the [Nix](https://github.com/NixOS/nix) shell for local Windows builds. It provides MinGW, project dependencies, and the expected build tools.

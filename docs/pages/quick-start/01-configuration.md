@@ -1,3 +1,9 @@
+---
+title: "Configuration"
+description: "Configure graphics, windowed and fullscreen behavior, controller input, audio, logging, and crash reports."
+seo_type: "article"
+---
+
 # Configuration
 
 Run `dttr-config.exe` next to `dttr.exe` to change settings without hand-editing `dttr.json`.

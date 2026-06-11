@@ -1,3 +1,9 @@
+---
+title: "Installing Mods"
+description: "Install mod DLLs and assets in the mods directory, and use the Modding build when needed."
+seo_type: "article"
+---
+
 # Installing Mods
 
 DttR mods require the "Modding" build. The "Vanilla" build is intended for speedruns and does not load third-party mods.

@@ -1,6 +1,6 @@
 [project]
 site_name = "102 Patches: Detours to the Rescue!"
-site_description = "Documentation for DttR, an alternate entrypoint for 102 Dalmatians: Puppies to the Rescue."
+site_description = "Run the PC version of 102 Dalmatians: Puppies to the Rescue on modern machines with crash fixes, windowed mode, controller support, and modding tools."
 site_author = "dogstuff"
 site_url = "https://dttr.102.dog/"
 copyright = "Copyright &copy; 2026 dogstuff"
@@ -12,6 +12,7 @@ repo_name = "dogstuff/detours-to-the-rescue"
 repo_url = "https://gitlab.com/dogstuff/detours-to-the-rescue"
 extra_css = ["assets/stylesheets/site.css"]
 extra_javascript = [{ path = "assets/javascripts/pcdogs-symbol-viewer.mjs", type = "module" }]
+extra_templates = ["robots.txt"]
 nav = [
   { "Home" = "index.md" },
   { "Quick Start" = [
@@ -50,6 +51,7 @@ plugins = [
 ]
 
 [project.theme]
+custom_dir = "overrides"
 language = "en"
 features = [
   "announce.dismiss",
@@ -76,6 +78,179 @@ generator = false
 
 [[project.theme.palette]]
 scheme = "slate"
+
+
+[project.extra.seo_keywords]
+"/" = [
+  "102 Dalmatians PC",
+  "102 Dalmatians PC game",
+  "102 Dalmatians computer game",
+  "102 Dalmatians Puppies to the Rescue PC",
+  "Puppies to the Rescue PC",
+  "Puppies to the Rescue computer game",
+  "102 Puppies to the Rescue PC",
+  "Disney Puppies to the Rescue PC",
+  "102 Dalmatians PC Windows",
+  "102 Dalmatians Windows 10",
+  "102 Dalmatians Windows 11",
+  "102 Dalmatians modern PC",
+  "102 Dalmatians modern computer",
+  "Puppies to the Rescue Windows 10",
+  "Puppies to the Rescue Windows 11",
+  "102 Dalmatians PC crash",
+  "102 Dalmatians PC not working",
+  "102 Dalmatians PC won't start",
+  "Puppies to the Rescue won't start",
+  "Puppies to the Rescue black screen",
+  "102 Dalmatians PC black screen",
+  "how to run 102 Dalmatians PC",
+  "how to run Puppies to the Rescue PC",
+  "play 102 Dalmatians on modern PC",
+  "play Puppies to the Rescue on modern PC",
+  "102 Dalmatians PC windowed mode",
+  "Puppies to the Rescue windowed mode",
+  "102 Dalmatians windower",
+  "102 Dalmatians PC controller",
+  "Puppies to the Rescue controller",
+  "102 Dalmatians PC gamepad",
+  "Puppies to the Rescue gamepad",
+  "102 Dalmatians PC modding",
+  "Puppies to the Rescue mods",
+  "102 Dalmatians PC quality of life",
+  "old 102 Dalmatians PC game",
+  "102 Dalmatians PC Wine",
+  "Puppies to the Rescue Wine",
+  "102 Dalmatians PC Linux",
+  "Puppies to the Rescue Linux",
+  "102 Dalmatians PC Proton",
+  "Puppies to the Rescue Proton",
+  "play 102 Dalmatians on Linux",
+  "play Puppies to the Rescue on Linux",
+  "102 Dalmatians PC Steam Deck",
+  "Puppies to the Rescue Steam Deck",
+]
+"quick-start/00-initial-setup/" = [
+  "how to run 102 Dalmatians PC",
+  "how to run Puppies to the Rescue PC",
+  "install 102 Dalmatians PC",
+  "install Puppies to the Rescue PC",
+  "setup 102 Dalmatians PC",
+  "setup Puppies to the Rescue PC",
+  "play 102 Dalmatians on modern PC",
+  "play Puppies to the Rescue on modern PC",
+  "102 Dalmatians Windows 10",
+  "102 Dalmatians Windows 11",
+  "Puppies to the Rescue Windows 10",
+  "Puppies to the Rescue Windows 11",
+  "old 102 Dalmatians PC game",
+  "old Puppies to the Rescue PC game",
+  "102 Dalmatians CD on modern computer",
+  "Puppies to the Rescue CD on modern computer",
+  "how to run 102 Dalmatians PC with Wine",
+  "how to run Puppies to the Rescue with Wine",
+  "install 102 Dalmatians PC on Linux",
+  "install Puppies to the Rescue on Linux",
+  "102 Dalmatians PC Wine setup",
+  "Puppies to the Rescue Wine setup",
+]
+"quick-start/01-configuration/" = [
+  "102 Dalmatians PC settings",
+  "Puppies to the Rescue settings",
+  "102 Dalmatians PC options",
+  "Puppies to the Rescue options",
+  "102 Dalmatians PC configuration",
+  "Puppies to the Rescue configuration",
+  "102 Dalmatians PC Windows settings",
+  "Puppies to the Rescue Windows settings",
+  "102 Dalmatians PC windowed mode",
+  "Puppies to the Rescue windowed mode",
+  "102 Dalmatians PC fullscreen",
+  "Puppies to the Rescue fullscreen",
+  "102 Dalmatians PC graphics settings",
+  "Puppies to the Rescue graphics settings",
+  "102 Dalmatians PC controller",
+  "Puppies to the Rescue controller",
+  "102 Dalmatians PC gamepad",
+  "Puppies to the Rescue gamepad",
+  "102 Dalmatians controller support",
+  "102 Dalmatians PC quality of life",
+  "Puppies to the Rescue quality of life",
+  "DttR config",
+  "102 Dalmatians PC Wine settings",
+  "Puppies to the Rescue Wine settings",
+  "102 Dalmatians PC Linux settings",
+  "Puppies to the Rescue Linux settings",
+  "102 Dalmatians PC Steam Deck controls",
+  "Puppies to the Rescue Steam Deck controls",
+]
+"quick-start/03-troubleshooting/" = [
+  "102 Dalmatians PC crash",
+  "Puppies to the Rescue crash",
+  "102 Dalmatians PC crashes",
+  "Puppies to the Rescue crashes",
+  "102 Dalmatians PC crashing",
+  "Puppies to the Rescue crashing",
+  "102 Dalmatians PC not working",
+  "Puppies to the Rescue not working",
+  "102 Dalmatians PC won't start",
+  "Puppies to the Rescue won't start",
+  "102 Dalmatians PC won't open",
+  "Puppies to the Rescue won't open",
+  "102 Dalmatians PC closes",
+  "Puppies to the Rescue closes",
+  "102 Dalmatians PC black screen",
+  "Puppies to the Rescue black screen",
+  "102 Dalmatians PC no picture",
+  "Puppies to the Rescue no picture",
+  "102 Dalmatians PC startup crash",
+  "Puppies to the Rescue startup crash",
+  "102 Dalmatians PC intro crash",
+  "Puppies to the Rescue intro crash",
+  "102 Dalmatians PC logo crash",
+  "Puppies to the Rescue logo crash",
+  "102 Dalmatians PC Windows 10 crash",
+  "Puppies to the Rescue Windows 10 crash",
+  "102 Dalmatians PC Windows 11 crash",
+  "Puppies to the Rescue Windows 11 crash",
+  "102 Dalmatians PC modern Windows fix",
+  "Puppies to the Rescue modern Windows fix",
+  "fix 102 Dalmatians PC",
+  "fix Puppies to the Rescue PC",
+  "102 Dalmatians PC windowed mode",
+  "Puppies to the Rescue windowed mode",
+  "102 Dalmatians DxWnd",
+  "Puppies to the Rescue DxWnd",
+  "102 Dalmatians windower",
+  "Puppies to the Rescue windower",
+  "102 Dalmatians PC controller fix",
+  "Puppies to the Rescue controller fix",
+  "102 Dalmatians PC gamepad fix",
+  "Puppies to the Rescue gamepad fix",
+  "102 Dalmatians PC quality of life fixes",
+  "Puppies to the Rescue quality of life fixes",
+  "102 Dalmatians PC Wine crash",
+  "Puppies to the Rescue Wine crash",
+  "102 Dalmatians PC Linux crash",
+  "Puppies to the Rescue Linux crash",
+  "102 Dalmatians PC Proton crash",
+  "Puppies to the Rescue Proton crash",
+  "102 Dalmatians PC Steam Deck crash",
+  "Puppies to the Rescue Steam Deck crash",
+  "fix 102 Dalmatians PC on Linux",
+  "fix Puppies to the Rescue on Linux",
+]
+"modding-sdk/symbols/pcdogs/" = [
+  "102 Dalmatians PC symbols",
+  "Puppies to the Rescue symbols",
+  "PCDogs symbols",
+  "DttR SDK symbol resolver",
+  "102 Dalmatians modding SDK",
+  "Puppies to the Rescue modding SDK",
+  "102 Dalmatians PC modding",
+  "Puppies to the Rescue modding",
+  "102 Dalmatians PC mod tools",
+  "Puppies to the Rescue mod tools",
+]
 
 [project.markdown_extensions.admonition]
 [project.markdown_extensions.attr_list]

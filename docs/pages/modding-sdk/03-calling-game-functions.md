@@ -1,3 +1,9 @@
+---
+title: "Calling Game Functions"
+description: "Call known game functions from a mod through SDK wrappers and resolved symbols."
+seo_type: "article"
+---
+
 # Calling Game Functions
 
 Symbol wrapper function helpers are the safest way to call known game functions. Use them instead of casting raw addresses.

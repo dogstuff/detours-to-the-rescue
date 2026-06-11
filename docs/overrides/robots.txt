@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /internal/
+Sitemap: https://dttr.102.dog/sitemap.xml

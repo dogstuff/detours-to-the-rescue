@@ -1,3 +1,9 @@
+---
+title: "Initial Setup"
+description: "Set up the launcher with original PC game files from a CD, installed copy, or ISO."
+seo_type: "article"
+---
+
 # Initial Setup
 
 This guide gets DttR running with your original game files.
