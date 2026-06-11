@@ -8,6 +8,7 @@ add_library(common STATIC
     src/imgui_dialog.c
     src/imgui_error_ui.c
     src/path.c
+    src/gamepad_mapping.c
     src/sdl.c
     src/iso/iso.c
     src/config/defaults.c

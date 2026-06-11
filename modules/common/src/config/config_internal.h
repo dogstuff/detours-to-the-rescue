@@ -32,6 +32,11 @@ enum {
 	X("deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                 \
 	X("deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
 
+#define CONFIG_GAMEPAD_SENSITIVITY_FIELDS(X)                                             \
+	X("sensitivity_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                              \
+	X("sensitivity_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                              \
+	X("sensitivity_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+
 static inline bool config_sections_match(const char *lhs, const char *rhs) {
 	return lhs == rhs || (lhs && rhs && strcmp(lhs, rhs) == 0);
 }

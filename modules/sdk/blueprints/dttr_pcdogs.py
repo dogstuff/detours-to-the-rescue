@@ -10925,7 +10925,6 @@ stable.fn(
 stable.fn(
     "Input_ReadGamepad",
     "A0 ?? ?? ?? ?? 83 EC 08 84 C0 0F 84 ??",
-    required=Required.EN,
     ret="void",
     params=[
         param(
@@ -12443,6 +12442,15 @@ stable.fn(
     ret="void*",
     params=[param("uint32_t", "size")],
     doc="Allocates size bytes through the game's CRT malloc path and returns the allocated pointer.",
+    stable=True,
+)
+
+stable.fn(
+    "Mem_FreeCRT",
+    "56 8B 74 24 08 85 F6 74 24 56 E8 ?? ?? ?? ?? 59 85 C0 56 74 0A 50 E8",
+    ret="void",
+    params=[param("void*", "block")],
+    doc="Frees a block from the game's CRT malloc path.",
     stable=True,
 )
 

@@ -69,6 +69,8 @@ typedef struct {
 	char mods_dir[MAX_PATH];
 	char status[256];
 	Uint64 status_expires_at_ms;
+	SDL_Gamepad *preview_gamepad;
+	int preview_gamepad_index;
 	int button_sources[DTTR_GAMEPAD_SOURCE_COUNT];
 	int button_actions[DTTR_GAMEPAD_SOURCE_COUNT];
 	int binding_row;
@@ -113,6 +115,7 @@ const char *game_action_tooltip(int action);
 void load_config(config_ui_state *state);
 void save_config(config_ui_state *state);
 void reset_defaults(config_ui_state *state);
+void close_gamepad_preview(config_ui_state *state);
 void request_reset_defaults(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 config_label_state make_config_label_state(bool unsaved_changed, bool default_changed);
 bool gamepad_button_rows_have_unsaved_changes(const config_ui_state *state);

@@ -35,6 +35,7 @@ static const DTTR_Config default_config = {
 	.mss_sample_gain = 1.0f,
 	.mss_sample_preemphasis = 0.0f,
 	.gamepad_enabled = true,
+	.gamepad_analog_remap = true,
 	.gamepad_index = 0,
 	.gamepad_axes =
 		{
@@ -44,9 +45,15 @@ static const DTTR_Config default_config = {
 		},
 	.gamepad_axis_deadzone =
 		{
-			[DTTR_GAMEPAD_AXIS_IDX_STICK_X] = 700,
-			[DTTR_GAMEPAD_AXIS_IDX_STICK_Y] = 700,
-			[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = 700,
+			[DTTR_GAMEPAD_AXIS_IDX_STICK_X] = 333,
+			[DTTR_GAMEPAD_AXIS_IDX_STICK_Y] = 333,
+			[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = 600,
+		},
+	.gamepad_axis_sensitivity =
+		{
+			[DTTR_GAMEPAD_AXIS_IDX_STICK_X] = 100,
+			[DTTR_GAMEPAD_AXIS_IDX_STICK_Y] = 100,
+			[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = 100,
 		},
 };
 

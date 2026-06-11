@@ -5,6 +5,7 @@
 #include <windows.h>
 
 #include <dttr_config.h>
+#include <dttr_gamepad_mapping.h>
 #include <dttr_log.h>
 
 #include "hooks_private.h"
@@ -24,13 +25,10 @@ typedef struct {
 } di_joy_state;
 
 enum {
-	DTTR_DINPUT_AXIS_SCALE = 32,
 	DTTR_DINPUT_AXIS_FULL_DEFLECTION = 1000,
 };
 
 #define DINPUT_POV_CENTERED 0xFFFFFFFF
-
-#define DINPUT_BUTTON_PRESSED 0x80
 
 static void init_poll_state(di_joy_state *state) {
 	memset(state, 0, sizeof(*state));
@@ -64,32 +62,11 @@ static void apply_direction_state(
 	}
 }
 
-static bool is_source_pressed(int source) {
-	if (!dttr_inputs_gamepad) {
-		return false;
-	}
-
-	if (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT
-		|| source == DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT) {
-		const SDL_GamepadAxis axis = (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT)
-										 ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER
-										 : SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
-		return SDL_GetGamepadAxis(dttr_inputs_gamepad, axis) / DTTR_DINPUT_AXIS_SCALE
-			   > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
-	}
-
-	return SDL_GetGamepadButton(dttr_inputs_gamepad, (SDL_GamepadButton)source);
-}
-
 static LONG read_axis(int axis_idx) {
-	const int sdl_axis = dttr_config.gamepad_axes[axis_idx];
-
-	if (!dttr_inputs_gamepad || sdl_axis == DTTR_GAMEPAD_MAPPING_NONE) {
-		return 0;
-	}
-
-	const LONG value = SDL_GetGamepadAxis(dttr_inputs_gamepad, sdl_axis)
-					   / DTTR_DINPUT_AXIS_SCALE;
+	const LONG value = dttr_inputs_scale_dinput_axis(
+		dttr_inputs_read_raw_axis(axis_idx),
+		dttr_config.gamepad_axis_sensitivity[axis_idx]
+	);
 	const LONG deadzone = dttr_config.gamepad_axis_deadzone[axis_idx];
 
 	return (value > -deadzone && value < deadzone) ? 0 : value;
@@ -129,7 +106,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	for (int src = 0; src < DTTR_GAMEPAD_SOURCE_COUNT; src++) {
 		const int action = dttr_config.gamepad_button_map[src];
 
-		if (action == DTTR_GAMEPAD_MAPPING_NONE || !is_source_pressed(src)) {
+		if (action == DTTR_GAMEPAD_MAPPING_NONE || !dttr_inputs_source_pressed(src)) {
 			continue;
 		}
 
