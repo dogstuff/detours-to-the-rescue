@@ -1,3 +1,5 @@
+#include "context_private.h"
+#include "game_data_private.h"
 #include "hooks_private.h"
 #include "sidecar_private.h"
 #include <dttr_config.h>

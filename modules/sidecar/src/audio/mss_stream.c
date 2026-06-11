@@ -1,5 +1,5 @@
+#include "game_data_private.h"
 #include "mss_private.h"
-#include "sidecar_private.h"
 
 #include <dttr_log.h>
 #include <dttr_path.h>

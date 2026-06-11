@@ -1,3 +1,4 @@
+#include "context_private.h"
 #include "hooks_private.h"
 #include "mss_private.h"
 #include "sidecar_private.h"

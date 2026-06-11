@@ -1,0 +1,141 @@
+// Single source of truth for the sidecar graphics byte-patch hook sites.
+//
+// Included by both the runtime (modules/sidecar/src/graphics/hooks.c, which expands each row
+// into a DTTR_PCDOGS_T_Patch_Spec) and the sidecar pcdogs test (which expands each row into a
+// DTTR_TestTargetExpectation). The includer defines SIDECAR_GFX_BYTE_PATCH before including
+// and undefines it afterwards.
+//
+// Fields:
+//   name           - stable hook name (string literal; runtime ignores it, test reports it)
+//   rt_required     - bool: must this patch install for the runtime hook group to succeed
+//   test_required   - DTTR_TestFixtureMask: which fixtures must contain this signature
+//   aob             - AOB signature string ("83 F8 ?? 7C ...")
+//   offset          - signed byte offset from the match to the patch site
+//   patch_seq       - parenthesized patch bytes written by the runtime
+//   original_seq    - parenthesized expected original bytes at the patch site (test only)
+//   original_mask   - 'x'/'?' mask aligned with original_seq (test only)
+
+#ifndef SIDECAR_GFX_BYTE_PATCH
+#error "define SIDECAR_GFX_BYTE_PATCH before including sidecar_graphics_byte_patches.def"
+#endif
+
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_fast_path",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"83 F8 ?? 7C ?? D9 43 ?? D8 1D ?? ?? ?? ?? DF E0 F6 C4 41 0F ?? ?? ?? ??",
+	19,
+	(0xE9, 0xBA, 0x00, 0x00, 0x00, 0x90),
+	(0x0F, 0x85, 0xB9, 0x00, 0x00, 0x00),
+	"xxxxxx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_batch_limit_a",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1",
+	17,
+	(0x90, 0x90),
+	(0x7D, 0x39),
+	"xx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_batch_limit_b",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"83 C1 14 4E 75 ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1",
+	19,
+	(0x90, 0x90),
+	(0x7D, 0x59),
+	"xx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_ftol_x",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"DB 44 24 30 D9 1F",
+	-15,
+	(0xD9, 0x1F, 0x90, 0x90, 0x90),
+	(0xE8, 0x00, 0x00, 0x00, 0x00),
+	"x????"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_mov_x",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"DB 44 24 30 D9 1F",
+	-10,
+	(0x90, 0x90, 0x90, 0x90),
+	(0x89, 0x44, 0x24, 0x30),
+	"xxxx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_fstp2_x",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"8D AE ?? ?? ?? ?? DB 44 24 30 D9 1F",
+	10,
+	(0x90, 0x90),
+	(0xD9, 0x1F),
+	"xx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_fild_x",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"8D AE ?? ?? ?? ?? DB 44 24 30",
+	6,
+	(0x90, 0x90, 0x90, 0x90),
+	(0xDB, 0x44, 0x24, 0x30),
+	"xxxx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_ftol_y",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"8B 54 24 18 89 44 24 30",
+	-5,
+	(0xD9, 0x5D, 0x00, 0x90, 0x90),
+	(0xE8, 0x00, 0x00, 0x00, 0x00),
+	"x????"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_mov_y",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"8B 54 24 18 89 44 24 30",
+	4,
+	(0x90, 0x90, 0x90, 0x90),
+	(0x89, 0x44, 0x24, 0x30),
+	"xxxx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_fstp2_y",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"83 C0 14 50 55 D9 5D 00",
+	5,
+	(0x90, 0x90, 0x90),
+	(0xD9, 0x5D, 0x00),
+	"xxx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_precision_fild_y",
+	true,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"52 DB 44 24 34",
+	1,
+	(0x90, 0x90, 0x90, 0x90),
+	(0xDB, 0x44, 0x24, 0x34),
+	"xxxx"
+)
+SIDECAR_GFX_BYTE_PATCH(
+	"dttr_hook_render_quad_snap",
+	false,
+	DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	"53 8B 5C 24 14 55 33 C9 56 57 85 DB",
+	0,
+	(0xC3),
+	(0x53),
+	"x"
+)

@@ -1,5 +1,17 @@
 {% extends "base.html" %}
 
+{% block htmltitle %}
+  {% if not page.url %}
+    <title>{{ config.site_name }}</title>
+  {% elif page.meta and page.meta.title %}
+    <title>{{ page.meta.title }} - {{ config.site_name }}</title>
+  {% elif page.title %}
+    <title>{{ page.title | striptags }} - {{ config.site_name }}</title>
+  {% else %}
+    <title>{{ config.site_name }}</title>
+  {% endif %}
+{% endblock %}
+
 {% block extrahead %}
   {% if page.url %}
     {% set seo_key = page.url %}

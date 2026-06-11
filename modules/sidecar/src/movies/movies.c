@@ -1,6 +1,8 @@
 #include <dttr_pcdogs.h>
 
 #include "../graphics/graphics_private.h"
+#include "events_private.h"
+#include "game_data_private.h"
 #include "hooks_private.h"
 #include "movies_private.h"
 #include "sidecar_private.h"

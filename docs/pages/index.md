@@ -1,5 +1,4 @@
 ---
-title: "102 Patches: Detours to the Rescue! (DttR)"
 description: "Run the PC version of 102 Dalmatians: Puppies to the Rescue on modern machines with crash fixes, windowed mode, controller support, and modding tools."
 seo_type: "software"
 ---

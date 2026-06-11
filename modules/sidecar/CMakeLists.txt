@@ -116,8 +116,10 @@ set(DTTR_MSS_SOURCES
 
 add_library(dttr_sidecar SHARED
     src/entrypoint.c
-    src/impl.c
+    src/bootstrap.c
+    src/context.c
     src/crash.c
+    src/events.c
 
     src/inputs/inputs.c
     src/inputs/hook_dinput_poll.c

@@ -8,96 +8,36 @@
 #include "graphics_com_private.h"
 #include "graphics_private.h"
 #include "hooks_private.h"
+#include "sidecar_hook_sigs.h"
 #include "sidecar_private.h"
 #include <dttr_log.h>
 
 static DTTR_Graphics_COM_DirectDraw7 *graphics_hook_ddraw7;
 static HWND graphics_hook_hwnd;
 
+// Expanded from the shared single source so the sidecar pcdogs test can assert these same
+// patch sites without re-specifying the signatures. See sidecar_graphics_byte_patches.def.
+#define SIDECAR_GFX_BYTE_PATCH(                                                           \
+	name,                                                                                \
+	rt_required,                                                                          \
+	test_required,                                                                        \
+	aob,                                                                                  \
+	offset,                                                                               \
+	patch_seq,                                                                            \
+	original_seq,                                                                         \
+	original_mask                                                                         \
+)                                                                                        \
+	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(                                                     \
+		rt_required,                                                                      \
+		aob,                                                                              \
+		offset,                                                                           \
+		DTTR_SIDECAR_UNPAREN patch_seq                                                    \
+	),
+
 static const DTTR_PCDOGS_T_Patch_Spec graphics_byte_patches[] = {
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"83 F8 ?? 7C ?? D9 43 ?? D8 1D ?? ?? ?? ?? DF E0 F6 C4 41 0F ?? ?? ?? ??",
-		19,
-		0xE9,
-		0xBA,
-		0x00,
-		0x00,
-		0x00,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"8B 08 EB ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1",
-		17,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"83 C1 14 4E 75 ?? A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 3B C1",
-		19,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"DB 44 24 30 D9 1F",
-		-15,
-		0xD9,
-		0x1F,
-		0x90,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"DB 44 24 30 D9 1F",
-		-10,
-		0x90,
-		0x90,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"8D AE ?? ?? ?? ?? DB 44 24 30 D9 1F",
-		10,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"8D AE ?? ?? ?? ?? DB 44 24 30",
-		6,
-		0x90,
-		0x90,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"8B 54 24 18 89 44 24 30",
-		-5,
-		0xD9,
-		0x5D,
-		0x00,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-		true,
-		"8B 54 24 18 89 44 24 30",
-		4,
-		0x90,
-		0x90,
-		0x90,
-		0x90
-	),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(true, "83 C0 14 50 55 D9 5D 00", 5, 0x90, 0x90, 0x90),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(true, "52 DB 44 24 34", 1, 0x90, 0x90, 0x90, 0x90),
-	DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(false, "53 8B 5C 24 14 55 33 C9 56 57 85 DB", 0, 0xC3),
+#include "sidecar_graphics_byte_patches.def"
 };
+#undef SIDECAR_GFX_BYTE_PATCH
 
 static DTTR_Core_PatchGroup *graphics_import_thunk_patch_group;
 static DTTR_Core_PatchGroup *graphics_byte_patch_group;

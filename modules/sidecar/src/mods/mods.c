@@ -1,4 +1,5 @@
 #include "../graphics/graphics_private.h"
+#include "context_private.h"
 #include "mods_private.h"
 #include "sidecar_private.h"
 #include <dttr_runtime.h>

@@ -3,6 +3,7 @@
 
 #include "hooks_private.h"
 #include "inputs_private.h"
+#include "sidecar_hook_sigs.h"
 #include "sidecar_private.h"
 
 #include <dttr_config.h>
@@ -110,7 +111,7 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 	inputs_patches[patch_count++] = (DTTR_PCDOGS_T_Patch_Spec)
 		DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
 			true,
-			"56 8B 74 24 ?? 56 8B 06",
+			DTTR_SIDECAR_AOB_DINPUT_POLL,
 			0,
 			dttr_inputs_hook_dinput_poll_callback
 		);

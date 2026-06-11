@@ -1,5 +1,5 @@
+#include "context_private.h"
 #include "hooks_private.h"
-#include "sidecar_private.h"
 #include <dttr_pcdogs.h>
 
 #include <dttr_log.h>

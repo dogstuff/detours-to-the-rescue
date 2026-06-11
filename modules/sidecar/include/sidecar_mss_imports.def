@@ -1,0 +1,139 @@
+// Single source of truth for the mss32.dll (Miles Sound System) imports the sidecar hooks.
+//
+// Included by both the runtime (modules/sidecar/src/audio/mss_sdl.c, which expands each row
+// into an mss_import_hook with its SDL replacement callback) and the sidecar pcdogs test
+// (which expands each row into the expected import name). The includer defines
+// SIDECAR_MSS_IMPORT before including and undefines it afterwards.
+//
+// Fields:
+//   hook_name   - stable hook name (string literal)
+//   import_name - decorated mss32.dll import symbol ("_AIL_close_stream@4")
+//   callback    - SDL replacement function (runtime only; unused by the test expander)
+
+#ifndef SIDECAR_MSS_IMPORT
+#error "define SIDECAR_MSS_IMPORT before including sidecar_mss_imports.def"
+#endif
+
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_allocate_sample_handle",
+	"_AIL_allocate_sample_handle@4",
+	dttr_mss_ail_allocate_sample_handle
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_close_stream",
+	"_AIL_close_stream@4",
+	dttr_mss_ail_close_stream
+)
+SIDECAR_MSS_IMPORT("dttr_hook_mss_ail_end_sample", "_AIL_end_sample@4", dttr_mss_ail_end_sample)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_get_preference",
+	"_AIL_get_preference@4",
+	dttr_mss_ail_get_preference
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_init_sample",
+	"_AIL_init_sample@4",
+	dttr_mss_ail_init_sample
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_open_stream",
+	"_AIL_open_stream@12",
+	dttr_mss_ail_open_stream
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_pause_stream",
+	"_AIL_pause_stream@8",
+	dttr_mss_ail_pause_stream
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_release_sample_handle",
+	"_AIL_release_sample_handle@4",
+	dttr_mss_ail_release_sample_handle
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_sample_playback_rate",
+	"_AIL_sample_playback_rate@4",
+	dttr_mss_ail_sample_playback_rate
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_sample_status",
+	"_AIL_sample_status@4",
+	dttr_mss_ail_sample_status
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_digital_master_volume",
+	"_AIL_set_digital_master_volume@8",
+	dttr_mss_ail_set_digital_master_volume
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_preference",
+	"_AIL_set_preference@8",
+	dttr_mss_ail_set_preference
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_sample_file",
+	"_AIL_set_sample_file@12",
+	dttr_mss_ail_set_sample_file
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_sample_loop_count",
+	"_AIL_set_sample_loop_count@8",
+	dttr_mss_ail_set_sample_loop_count
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_sample_pan",
+	"_AIL_set_sample_pan@8",
+	dttr_mss_ail_set_sample_pan
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_sample_playback_rate",
+	"_AIL_set_sample_playback_rate@8",
+	dttr_mss_ail_set_sample_playback_rate
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_sample_volume",
+	"_AIL_set_sample_volume@8",
+	dttr_mss_ail_set_sample_volume
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_stream_loop_count",
+	"_AIL_set_stream_loop_count@8",
+	dttr_mss_ail_set_stream_loop_count
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_set_stream_volume",
+	"_AIL_set_stream_volume@8",
+	dttr_mss_ail_set_stream_volume
+)
+SIDECAR_MSS_IMPORT("dttr_hook_mss_ail_shutdown", "_AIL_shutdown@0", dttr_mss_ail_shutdown)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_start_sample",
+	"_AIL_start_sample@4",
+	dttr_mss_ail_start_sample
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_start_stream",
+	"_AIL_start_stream@4",
+	dttr_mss_ail_start_stream
+)
+SIDECAR_MSS_IMPORT("dttr_hook_mss_ail_startup", "_AIL_startup@0", dttr_mss_ail_startup)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_stop_sample",
+	"_AIL_stop_sample@4",
+	dttr_mss_ail_stop_sample
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_stream_status",
+	"_AIL_stream_status@4",
+	dttr_mss_ail_stream_status
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_waveOutClose",
+	"_AIL_waveOutClose@4",
+	dttr_mss_ail_waveOutClose
+)
+SIDECAR_MSS_IMPORT(
+	"dttr_hook_mss_ail_waveOutOpen",
+	"_AIL_waveOutOpen@16",
+	dttr_mss_ail_waveOutOpen
+)

@@ -1,3 +1,4 @@
+#include "context_private.h"
 #include "frame_pacing_private.h"
 #include "sidecar_private.h"
 #include "timing_private.h"

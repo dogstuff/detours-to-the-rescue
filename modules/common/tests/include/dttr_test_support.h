@@ -175,8 +175,7 @@ typedef enum {
 typedef struct {
 	const char *name;
 	DTTR_TestTargetKind kind;
-	const uint8_t *sig;
-	const char *mask;
+	const char *aob;
 	DTTR_TestFixtureMask required;
 	int32_t site_offset;
 	const uint8_t *patch_bytes;

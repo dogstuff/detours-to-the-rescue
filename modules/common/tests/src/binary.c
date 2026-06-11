@@ -847,8 +847,15 @@ void dttr_test_assert_target_resolved(
 	assert_non_null(fixture);
 	assert_non_null(target);
 	assert_non_null(image);
+	assert_non_null(target->aob);
 
-	const uintptr_t match = DTTR_TestPE_Sigscan(image, target->sig, target->mask);
+	char sig[256];
+	char mask[256];
+	if (DTTR_Sigscan_ParseAob(target->aob, sig, mask, sizeof(sig)) == 0) {
+		fail_msg("target %s has a malformed AOB pattern: %s", target->name, target->aob);
+	}
+
+	const uintptr_t match = DTTR_TestPE_Sigscan(image, (const uint8_t *)sig, mask);
 
 	if (match == DTTR_TEST_SIG_NOT_FOUND) {
 		fail_msg(
@@ -859,7 +866,7 @@ void dttr_test_assert_target_resolved(
 		);
 	}
 
-	const size_t matches = DTTR_TestPE_SigscanCount(image, target->sig, target->mask);
+	const size_t matches = DTTR_TestPE_SigscanCount(image, (const uint8_t *)sig, mask);
 	if (matches != 1) {
 		fail_msg(
 			"required target %s resolved %zu times in %s (%s); expected exactly one "

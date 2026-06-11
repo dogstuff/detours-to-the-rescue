@@ -8,6 +8,7 @@
 #include <dttr_gamepad_mapping.h>
 #include <dttr_log.h>
 
+#include "context_private.h"
 #include "hooks_private.h"
 #include "inputs_private.h"
 #include "sidecar_private.h"

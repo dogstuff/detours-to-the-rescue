@@ -18,65 +18,15 @@ typedef struct {
 	DTTR_Core_Hook *handle;
 } mss_import_hook;
 
+// Expanded from the shared single source so the sidecar pcdogs test asserts the same set of
+// hooked mss32 imports without re-listing them. See sidecar_mss_imports.def.
+#define SIDECAR_MSS_IMPORT(hook_name, import_name, callback)                              \
+	{hook_name, import_name, callback},
+
 static mss_import_hook mss_import_hooks[] = {
-	{"dttr_hook_mss_ail_allocate_sample_handle",
-	 "_AIL_allocate_sample_handle@4",
-	 dttr_mss_ail_allocate_sample_handle},
-	{"dttr_hook_mss_ail_close_stream", "_AIL_close_stream@4", dttr_mss_ail_close_stream},
-	{"dttr_hook_mss_ail_end_sample", "_AIL_end_sample@4", dttr_mss_ail_end_sample},
-	{"dttr_hook_mss_ail_get_preference",
-	 "_AIL_get_preference@4",
-	 dttr_mss_ail_get_preference},
-	{"dttr_hook_mss_ail_init_sample", "_AIL_init_sample@4", dttr_mss_ail_init_sample},
-	{"dttr_hook_mss_ail_open_stream", "_AIL_open_stream@12", dttr_mss_ail_open_stream},
-	{"dttr_hook_mss_ail_pause_stream", "_AIL_pause_stream@8", dttr_mss_ail_pause_stream},
-	{"dttr_hook_mss_ail_release_sample_handle",
-	 "_AIL_release_sample_handle@4",
-	 dttr_mss_ail_release_sample_handle},
-	{"dttr_hook_mss_ail_sample_playback_rate",
-	 "_AIL_sample_playback_rate@4",
-	 dttr_mss_ail_sample_playback_rate},
-	{"dttr_hook_mss_ail_sample_status",
-	 "_AIL_sample_status@4",
-	 dttr_mss_ail_sample_status},
-	{"dttr_hook_mss_ail_set_digital_master_volume",
-	 "_AIL_set_digital_master_volume@8",
-	 dttr_mss_ail_set_digital_master_volume},
-	{"dttr_hook_mss_ail_set_preference",
-	 "_AIL_set_preference@8",
-	 dttr_mss_ail_set_preference},
-	{"dttr_hook_mss_ail_set_sample_file",
-	 "_AIL_set_sample_file@12",
-	 dttr_mss_ail_set_sample_file},
-	{"dttr_hook_mss_ail_set_sample_loop_count",
-	 "_AIL_set_sample_loop_count@8",
-	 dttr_mss_ail_set_sample_loop_count},
-	{"dttr_hook_mss_ail_set_sample_pan",
-	 "_AIL_set_sample_pan@8",
-	 dttr_mss_ail_set_sample_pan},
-	{"dttr_hook_mss_ail_set_sample_playback_rate",
-	 "_AIL_set_sample_playback_rate@8",
-	 dttr_mss_ail_set_sample_playback_rate},
-	{"dttr_hook_mss_ail_set_sample_volume",
-	 "_AIL_set_sample_volume@8",
-	 dttr_mss_ail_set_sample_volume},
-	{"dttr_hook_mss_ail_set_stream_loop_count",
-	 "_AIL_set_stream_loop_count@8",
-	 dttr_mss_ail_set_stream_loop_count},
-	{"dttr_hook_mss_ail_set_stream_volume",
-	 "_AIL_set_stream_volume@8",
-	 dttr_mss_ail_set_stream_volume},
-	{"dttr_hook_mss_ail_shutdown", "_AIL_shutdown@0", dttr_mss_ail_shutdown},
-	{"dttr_hook_mss_ail_start_sample", "_AIL_start_sample@4", dttr_mss_ail_start_sample},
-	{"dttr_hook_mss_ail_start_stream", "_AIL_start_stream@4", dttr_mss_ail_start_stream},
-	{"dttr_hook_mss_ail_startup", "_AIL_startup@0", dttr_mss_ail_startup},
-	{"dttr_hook_mss_ail_stop_sample", "_AIL_stop_sample@4", dttr_mss_ail_stop_sample},
-	{"dttr_hook_mss_ail_stream_status",
-	 "_AIL_stream_status@4",
-	 dttr_mss_ail_stream_status},
-	{"dttr_hook_mss_ail_waveOutClose", "_AIL_waveOutClose@4", dttr_mss_ail_waveOutClose},
-	{"dttr_hook_mss_ail_waveOutOpen", "_AIL_waveOutOpen@16", dttr_mss_ail_waveOutOpen},
+#include "sidecar_mss_imports.def"
 };
+#undef SIDECAR_MSS_IMPORT
 
 // Converts a Miles WAVEFORMAT block into the SDL mixer spec.
 static bool wave_format_spec(const void *format, SDL_AudioSpec *spec) {

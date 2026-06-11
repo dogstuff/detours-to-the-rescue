@@ -5,7 +5,13 @@
 
 #include <dttr_mods.h>
 #include <dttr_pcdogs.h>
+#include <dttr_runtime.h>
 #include <windows.h>
+
+DTTR_STORAGE_SLOT(
+	DTTR_PCDOGS_F_Title_CleanupScreenResources_proto,
+	dttr_hook_cleanup_title_resources_original
+)
 
 // Replacement file-open callback that supports redirected saves and cached game data.
 DTTR_PCDOGS_T_File_Handle *__cdecl dttr_crt_hook_open_file_callback(

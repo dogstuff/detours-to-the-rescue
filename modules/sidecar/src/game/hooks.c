@@ -1,7 +1,13 @@
 #include "hooks_private.h"
+#include "sidecar_hook_sigs.h"
 #include "sidecar_private.h"
 
 #include <dttr_pcdogs.h>
+
+DTTR_DEFINE_STORAGE(
+	DTTR_PCDOGS_F_Title_CleanupScreenResources_proto,
+	dttr_hook_cleanup_title_resources_original
+)
 
 static DTTR_Core_PatchGroup *game_targets;
 
@@ -17,7 +23,7 @@ bool dttr_game_hooks_init(const DTTR_Mods_Context *ctx) {
 		),
 		DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
 			false,
-			"51 8D 44 24 ?? 57",
+			DTTR_SIDECAR_AOB_RESOLVE_PCDOGS_PATH,
 			0,
 			dttr_hook_resolve_pcdogs_path_callback
 		),
