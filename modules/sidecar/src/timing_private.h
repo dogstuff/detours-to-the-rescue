@@ -6,6 +6,8 @@
 #include <dttr_mods.h>
 
 void dttr_timing_reset();
+bool dttr_timing_fixed_policy_active();
+bool dttr_timing_render_reuses_previous_sim_state();
 void dttr_timing_host_frame_begin();
 bool dttr_timing_should_run_simulation_step();
 bool dttr_timing_has_deferred_simulation_step();

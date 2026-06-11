@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <windows.h>
 
+#include <dttr_log.h>
 #include <dttr_mods.h>
 #include <dttr_pcdogs.h>
 #include <dttr_runtime.h>
@@ -52,6 +53,21 @@ void dttr_sidecar_poll_sdl_events();
 static inline const char *dttr_sidecar_result_detail(DTTR_Result result) {
 	return result.message ? result.message : DTTR_StatusName(result.status);
 }
+
+static inline bool dttr_sidecar_require_pcdogs_call(const char *name, DTTR_Result result) {
+	if (!DTTR_ResultOK(result)) {
+		DTTR_LOG_ERROR(
+			"Required PCDOGS operation failed: %s (%s)",
+			name,
+			dttr_sidecar_result_detail(result)
+		);
+		return false;
+	}
+
+	return true;
+}
+
+#define REQUIRE_PCDOGS_CALL(expr) dttr_sidecar_require_pcdogs_call(#expr, (expr))
 
 // Installs a PCDogs patch group with common sidecar logging and cleanup.
 static inline bool dttr_sidecar_install_pcdogs_patch_group(

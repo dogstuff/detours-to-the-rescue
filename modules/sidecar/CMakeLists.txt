@@ -186,6 +186,7 @@ target_link_libraries(dttr_sidecar PRIVATE
 if(DTTR_MODS_ENABLED)
     target_sources(dttr_sidecar PRIVATE
         src/timing.c
+        src/game/frame_pacing.c
         src/mods/mods.c
         src/graphics/imgui_overlay.c
     )

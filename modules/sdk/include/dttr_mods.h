@@ -195,6 +195,8 @@ typedef struct {
 	uint32_t sim_steps_due;
 	uint32_t sim_steps_ran_this_host_frame;
 	uint32_t sim_steps_deferred_this_host_frame;
+
+	/// True when the host frame ran no simulation step.
 	bool render_reuses_previous_sim_state;
 } DTTR_Mods_TimingFrameState;
 
@@ -262,13 +264,23 @@ typedef void (*DTTR_Mods_InputModeChangedFn)(const DTTR_Mods_InputContext *ctx);
 
 typedef bool (*DTTR_Mods_QueryTimingPolicyFn)(DTTR_Mods_TimingPolicyRequest *out_request);
 typedef void (*DTTR_Mods_TimingHostFrameBeginFn)(const DTTR_Mods_TimingFrameState *ctx);
-typedef bool (*DTTR_Mods_TimingShouldRunSimulationStepFn)(const DTTR_Mods_TimingFrameState *ctx);
-typedef void (*DTTR_Mods_TimingBeforeSimulationStepFn)(const DTTR_Mods_TimingFrameState *ctx);
-typedef void (*DTTR_Mods_TimingAfterSimulationStepFn)(const DTTR_Mods_TimingFrameState *ctx);
-typedef void (*DTTR_Mods_TimingSimulationStepDeferredFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef bool (*DTTR_Mods_TimingShouldRunSimulationStepFn)(
+	const DTTR_Mods_TimingFrameState *ctx
+);
+typedef void (*DTTR_Mods_TimingBeforeSimulationStepFn)(
+	const DTTR_Mods_TimingFrameState *ctx
+);
+typedef void (*DTTR_Mods_TimingAfterSimulationStepFn)(
+	const DTTR_Mods_TimingFrameState *ctx
+);
+typedef void (*DTTR_Mods_TimingSimulationStepDeferredFn)(
+	const DTTR_Mods_TimingFrameState *ctx
+);
 typedef void (*DTTR_Mods_TimingBeforeRenderFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
 typedef void (*DTTR_Mods_TimingAfterRenderFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
-typedef void (*DTTR_Mods_TimingBeforePresentFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
+typedef void (*DTTR_Mods_TimingBeforePresentFrameFn)(
+	const DTTR_Mods_TimingFrameState *ctx
+);
 typedef void (*DTTR_Mods_TimingAfterPresentFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
 typedef void (*DTTR_Mods_TimingHostFrameEndFn)(const DTTR_Mods_TimingFrameState *ctx);
 
@@ -439,11 +451,15 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 
 /// Called immediately before the host renders the frame.
 #define DTTR_MODS_TIMING_BEFORE_RENDER_FRAME                                             \
-	DTTR_EXPORT void DTTR_Mod_TimingBeforeRenderFrame(const DTTR_Mods_TimingFrameState *ctx)
+	DTTR_EXPORT void DTTR_Mod_TimingBeforeRenderFrame(                                   \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
 
 /// Called immediately after the host renders the frame.
 #define DTTR_MODS_TIMING_AFTER_RENDER_FRAME                                              \
-	DTTR_EXPORT void DTTR_Mod_TimingAfterRenderFrame(const DTTR_Mods_TimingFrameState *ctx)
+	DTTR_EXPORT void DTTR_Mod_TimingAfterRenderFrame(                                    \
+		const DTTR_Mods_TimingFrameState *ctx                                            \
+	)
 
 /// Called immediately before the rendered frame is presented.
 #define DTTR_MODS_TIMING_BEFORE_PRESENT_FRAME                                            \

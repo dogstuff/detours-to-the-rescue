@@ -29,6 +29,7 @@
 #include <xxhash.h>
 
 #ifdef DTTR_MODS_ENABLED
+#include "game/frame_pacing_private.h"
 #include "graphics/imgui_overlay_private.h"
 #include "mods/mods_private.h"
 #endif
@@ -298,21 +299,6 @@ static void after_sdl_event(const SDL_Event *event, bool consumed) {
 	} while (0)
 #endif
 
-static bool require_pcdogs_call(const char *name, DTTR_Result result) {
-	if (!DTTR_ResultOK(result)) {
-		DTTR_LOG_ERROR(
-			"Required PCDOGS operation failed: %s (%s)",
-			name,
-			dttr_sidecar_result_detail(result)
-		);
-		return false;
-	}
-
-	return true;
-}
-
-#define REQUIRE_PCDOGS_CALL(expr) require_pcdogs_call(#expr, (expr))
-
 // Routes SDL events through sidecar handlers before game input observes them.
 void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 #ifdef DTTR_MODS_ENABLED
@@ -479,6 +465,7 @@ static bool tick_main_loop() {
 		bool ran_simulation_step = false;
 		while (dttr_timing_should_run_simulation_step()) {
 			dttr_timing_before_simulation_step();
+			dttr_game_neutralize_frame_limiter(dttr_sidecar_runtime_context());
 
 			uint8_t frame_status = 0;
 			const bool rendered = REQUIRE_PCDOGS_CALL(
@@ -502,7 +489,11 @@ static bool tick_main_loop() {
 
 		if (!ran_simulation_step) {
 			dttr_graphics_begin_frame();
+			dttr_graphics_set_render_frame_brackets_suppressed(
+				dttr_game_render_only_scene_replay()
+			);
 			dttr_graphics_end_frame();
+			dttr_graphics_set_render_frame_brackets_suppressed(false);
 		}
 
 		dttr_timing_host_frame_end();

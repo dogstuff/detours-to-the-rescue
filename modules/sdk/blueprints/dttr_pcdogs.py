@@ -16628,6 +16628,13 @@ stable.data(
 stable.data(
     "Graphics_RenderFrame_LastFrameTick",
     xref("Graphics_RenderFrame", 0xA5, 0x2),
+    type="uint32_t",
+    doc=(
+        "Timer_GetElapsedTickCount value captured when Graphics_RenderFrame last passed "
+        "its internal 33 ms frame limiter. Writable so callers pacing the game "
+        "themselves can rewind it and keep the limiter open."
+    ),
+    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
     "Graphics_DrawQuad_InputProcessedFlag", xref("Graphics_DrawQuad", 0x38A, 0x2)
@@ -16824,6 +16831,13 @@ stable.data(
     type="int32_t",
     doc="Data frame counter used by music fade/transition timing and other frame-based game state checks.",
     write_policy=WritePolicy.RAW_MEMORY,
+)
+stable.data(
+    "Game_PauseStateCounter",
+    xref("Game_UpdateAndRenderScene", 0x0, 0x1),
+    type="uint8_t",
+    doc=("Pause frame counter tested at the top of Game_UpdateAndRenderScene."),
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Game_FrameTransitionFlags",

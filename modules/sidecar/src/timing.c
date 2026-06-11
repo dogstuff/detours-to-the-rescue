@@ -15,6 +15,7 @@ typedef struct {
 	bool policy_selected;
 	bool fixed_timing;
 	bool first_host_frame;
+	bool sim_step_in_progress;
 	bool render_reuses_previous_sim_state;
 	bool render_frame_pending_advance;
 	uint64_t last_time_ns;
@@ -136,6 +137,15 @@ void dttr_timing_reset() {
 	timing.first_host_frame = true;
 }
 
+bool dttr_timing_fixed_policy_active() {
+	return timing.fixed_timing;
+}
+
+bool dttr_timing_render_reuses_previous_sim_state() {
+	return timing.fixed_timing && timing.sim_steps_ran_this_host_frame == 0
+		   && !timing.sim_step_in_progress;
+}
+
 void dttr_timing_host_frame_begin() {
 	select_policy_once();
 
@@ -198,12 +208,15 @@ bool dttr_timing_should_run_simulation_step() {
 }
 
 void dttr_timing_before_simulation_step() {
+	timing.sim_step_in_progress = true;
+
 	DTTR_Mods_TimingFrameState frame_state;
 	dttr_timing_frame_state(DTTR_MODS_TIMING_PHASE_BEFORE_SIMULATION_STEP, &frame_state);
 	dttr_mods_timing_before_simulation_step(&frame_state);
 }
 
 void dttr_timing_after_simulation_step() {
+	timing.sim_step_in_progress = false;
 	timing.sim_steps_ran_this_host_frame++;
 	timing.simulation_tick_index++;
 	if (timing.fixed_timing && timing.accumulator_ns >= timing.sim_step_ns) {
@@ -295,11 +308,11 @@ void dttr_timing_frame_state(DTTR_Mods_TimingPhase phase, DTTR_Mods_TimingFrameS
 		.sim_steps_due = timing.sim_steps_due,
 		.sim_steps_ran_this_host_frame = timing.sim_steps_ran_this_host_frame,
 		.sim_steps_deferred_this_host_frame = timing.sim_steps_deferred_this_host_frame,
-		.render_reuses_previous_sim_state = (phase == DTTR_MODS_TIMING_PHASE_BEFORE_RENDER_FRAME
-											 || phase
-													== DTTR_MODS_TIMING_PHASE_AFTER_RENDER_FRAME
-											 || phase == DTTR_MODS_TIMING_PHASE_BEFORE_PRESENT_FRAME
-											 || phase == DTTR_MODS_TIMING_PHASE_AFTER_PRESENT_FRAME)
-											&& timing.render_reuses_previous_sim_state,
+		.render_reuses_previous_sim_state
+		= (phase == DTTR_MODS_TIMING_PHASE_BEFORE_RENDER_FRAME
+		   || phase == DTTR_MODS_TIMING_PHASE_AFTER_RENDER_FRAME
+		   || phase == DTTR_MODS_TIMING_PHASE_BEFORE_PRESENT_FRAME
+		   || phase == DTTR_MODS_TIMING_PHASE_AFTER_PRESENT_FRAME)
+		  && timing.render_reuses_previous_sim_state,
 	};
 }
