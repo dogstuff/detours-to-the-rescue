@@ -13,12 +13,6 @@
 // render path must not be re-entered.
 #define DTTR_GAME_FLAGS_SCENE_REPLAY_BLOCKED (0x4u | 0x8u | 0x1000u | 0x2000u | 0x4000u)
 
-static bool render_only_scene_replay_in_progress = false;
-
-bool dttr_game_render_only_scene_replay_active() {
-	return render_only_scene_replay_in_progress;
-}
-
 // The game's internal frame limiter skips Graphics_RenderFrame while
 // last_frame_tick + 0x21 ms lies in the future.
 #define DTTR_GAME_FRAME_LIMITER_WINDOW_MS 0x21u
@@ -69,13 +63,7 @@ bool dttr_game_render_only_scene_replay() {
 	}
 
 	dttr_timing_before_render_frame(true);
-
-	render_only_scene_replay_in_progress = true;
-
 	REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Scene_RenderFrame->Call(ctx));
-
-	render_only_scene_replay_in_progress = false;
-
 	dttr_timing_after_render_frame(true);
 
 	return true;
