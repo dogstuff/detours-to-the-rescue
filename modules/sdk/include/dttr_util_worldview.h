@@ -97,7 +97,7 @@ static inline bool DTTR_Util_WorldView_Refresh(
 	}
 
 	view->valid = false;
-	if (!target || target->width == 0 || target->height == 0
+	if (!target || target->w == 0 || target->h == 0
 		|| !DTTR_PCDOGS_D_Graphics_AdjustLevelScale_ListState
 		|| !DTTR_PCDOGS_D_Graphics_AdjustLevelScale_ListState->Read) {
 		return false;
@@ -172,11 +172,11 @@ static inline bool DTTR_Util_WorldView_Refresh(
 	const int32_t cam_ref_w = list_state->screen_half.width;
 	const int32_t cam_ref_h = list_state->screen_half.height;
 	if (cam_ref_w >= 64 && cam_ref_w <= 4096) {
-		focal_x = (double)focal * (double)target->width / (double)cam_ref_w;
+		focal_x = (double)focal * (double)target->w / (double)cam_ref_w;
 	}
 
 	if (cam_ref_h >= 64 && cam_ref_h <= 4096) {
-		focal_y = (double)focal * (double)target->height / (double)cam_ref_h;
+		focal_y = (double)focal * (double)target->h / (double)cam_ref_h;
 	}
 
 	*view = (DTTR_Util_WorldView){
@@ -187,8 +187,8 @@ static inline bool DTTR_Util_WorldView_Refresh(
 		.up = up,
 		.near_fp = near_fp,
 		.center = {
-			.x = (float)target->x + (float)target->width * 0.5f,
-			.y = (float)target->y + (float)target->height * 0.5f,
+			.x = (float)target->x + (float)target->w * 0.5f,
+			.y = (float)target->y + (float)target->h * 0.5f,
 		},
 		.focal = {
 			.x = (float)focal_x,
