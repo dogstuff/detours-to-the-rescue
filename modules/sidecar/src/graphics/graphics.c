@@ -290,27 +290,11 @@ void dttr_graphics_mod_frame_begin(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_frame_begin);
 }
 
-// True while the host loop already bracketed this frame's render with the timing
-// callbacks, so the backend end-frame path must not fire them again.
-static bool render_frame_brackets_suppressed = false;
-
-void dttr_graphics_set_render_frame_brackets_suppressed(bool suppressed) {
-	render_frame_brackets_suppressed = suppressed;
-}
-
 void dttr_graphics_mod_before_game_frame(void) {
-	if (render_frame_brackets_suppressed) {
-		return;
-	}
-
 	dttr_timing_before_render_frame(dttr_timing_render_reuses_previous_sim_state());
 }
 
 void dttr_graphics_mod_after_game_frame(void) {
-	if (render_frame_brackets_suppressed) {
-		return;
-	}
-
 	dttr_timing_after_render_frame(dttr_timing_render_reuses_previous_sim_state());
 }
 

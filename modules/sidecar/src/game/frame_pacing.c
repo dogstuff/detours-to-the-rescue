@@ -33,11 +33,11 @@ void dttr_game_neutralize_frame_limiter(const DTTR_Core_Context *ctx) {
 	));
 }
 
-// True when the game is in its steady scene-rendering state and Scene_RenderFrame
-// can be re-entered outside Game_UpdateAndRenderScene.
-static bool game_scene_replay_allowed(const DTTR_Core_Context *ctx) {
+// True when the game is in its steady scene-rendering state and a render-only
+// host frame may re-present the last completed scene without re-entering
+// scene traversal.
+static bool game_scene_represent_allowed(const DTTR_Core_Context *ctx) {
 	if (!dttr_timing_fixed_policy_active()
-		|| !DTTR_PCDOGS_F_Scene_RenderFrame->IsCallable(ctx)
 		|| !DTTR_PCDOGS_D_Game_FrameTransitionFlags->IsResolved()
 		|| !DTTR_PCDOGS_D_Game_PauseStateCounter->IsResolved()) {
 		return false;
@@ -58,13 +58,5 @@ static bool game_scene_replay_allowed(const DTTR_Core_Context *ctx) {
 
 bool dttr_game_render_only_scene_replay() {
 	const DTTR_Core_Context *ctx = dttr_sidecar_runtime_context();
-	if (!game_scene_replay_allowed(ctx)) {
-		return false;
-	}
-
-	dttr_timing_before_render_frame(true);
-	REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Scene_RenderFrame->Call(ctx));
-	dttr_timing_after_render_frame(true);
-
-	return true;
+	return game_scene_represent_allowed(ctx);
 }

@@ -153,13 +153,9 @@ bool dttr_bootstrap_tick_main_loop() {
 			dttr_timing_simulation_step_deferred();
 		}
 
-		if (!ran_simulation_step) {
+		if (!ran_simulation_step && dttr_game_render_only_scene_replay()) {
 			dttr_graphics_begin_frame();
-			dttr_graphics_set_render_frame_brackets_suppressed(
-				dttr_game_render_only_scene_replay()
-			);
 			dttr_graphics_end_frame();
-			dttr_graphics_set_render_frame_brackets_suppressed(false);
 		}
 
 		dttr_timing_host_frame_end();
