@@ -13,6 +13,8 @@ if(NOT DTTR_CMOCKA_FOUND)
 endif()
 
 dttr_add_cmocka_test_suite(dttr_sidecar_pcdogs_tests
+    TIMEOUT
+        300
     SOURCES
         "${DTTR_SIDECAR_TEST_SOURCE_DIR}/pcdogs.c"
     INCLUDE_DIRS
