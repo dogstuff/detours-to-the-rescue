@@ -170,6 +170,8 @@ typedef enum {
 	DTTR_MODS_TIMING_PHASE_SIMULATION_STEP_DEFERRED = 9,
 } DTTR_Mods_TimingPhase;
 
+#define DTTR_MODS_TIMING_FRAME_FLAG_RENDER_FRAME_OPEN 0x1u
+
 /// Per-phase snapshot passed to timing callbacks; values are only valid for the
 /// duration of the callback.
 typedef struct {
@@ -276,6 +278,9 @@ typedef void (*DTTR_Mods_TimingAfterSimulationStepFn)(
 typedef void (*DTTR_Mods_TimingSimulationStepDeferredFn)(
 	const DTTR_Mods_TimingFrameState *ctx
 );
+/// Fired just before the host finalizes the frame. When ctx->flags has
+/// DTTR_MODS_TIMING_FRAME_FLAG_RENDER_FRAME_OPEN, native game draw-recording
+/// calls made here (e.g. Scene_RenderFrame) render into the current host frame.
 typedef void (*DTTR_Mods_TimingBeforeRenderFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
 typedef void (*DTTR_Mods_TimingAfterRenderFrameFn)(const DTTR_Mods_TimingFrameState *ctx);
 typedef void (*DTTR_Mods_TimingBeforePresentFrameFn)(

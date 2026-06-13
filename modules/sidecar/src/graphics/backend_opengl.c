@@ -705,12 +705,10 @@ static void replay_batch_records_gl(DTTR_BackendState *state, opengl_backend_dat
 static void end_frame(DTTR_BackendState *state) {
 	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
-	if (!gl || !state->frame_active) {
+	if (!gl) {
 		return;
 	}
 
-	state->frame_active = false;
-	dttr_graphics_mod_before_game_frame();
 	state->transfer_mapped = NULL;
 
 	if (state->vertex_offset > 0) {

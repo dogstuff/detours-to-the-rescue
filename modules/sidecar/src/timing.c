@@ -245,11 +245,16 @@ void dttr_timing_simulation_step_deferred() {
 	dttr_mods_timing_simulation_step_deferred(&frame_state);
 }
 
-void dttr_timing_before_render_frame(bool reuses_previous_sim_state) {
+void dttr_timing_before_render_frame(bool reuses_previous_sim_state, bool frame_open) {
 	timing.render_reuses_previous_sim_state = reuses_previous_sim_state;
 
 	DTTR_Mods_TimingFrameState frame_state;
 	dttr_timing_frame_state(DTTR_MODS_TIMING_PHASE_BEFORE_RENDER_FRAME, &frame_state);
+
+	if (frame_open) {
+		frame_state.flags |= DTTR_MODS_TIMING_FRAME_FLAG_RENDER_FRAME_OPEN;
+	}
+
 	dttr_mods_timing_before_render_frame(&frame_state);
 }
 

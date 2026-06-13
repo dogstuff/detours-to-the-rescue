@@ -274,6 +274,9 @@ struct DTTR_BackendState {
 
 	bool initialized;
 	bool frame_active;
+
+	/// True while end_frame dispatches the BEFORE_RENDER mod callback.
+	bool in_frame_callback;
 };
 
 extern DTTR_BackendState dttr_backend;

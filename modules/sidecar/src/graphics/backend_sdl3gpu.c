@@ -1002,10 +1002,6 @@ static void begin_frame(DTTR_BackendState *state) {
 
 // Uploads vertices, replays draw records, blits to the swapchain, and submits the frame.
 static void end_frame(DTTR_BackendState *state) {
-	state->frame_active = false;
-
-	dttr_graphics_mod_before_game_frame();
-
 	if (state->transfer_mapped) {
 		SDL_UnmapGPUTransferBuffer(state->device, state->transfer_buffer);
 		state->transfer_mapped = NULL;

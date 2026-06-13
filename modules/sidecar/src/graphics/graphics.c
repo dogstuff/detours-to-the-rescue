@@ -291,7 +291,12 @@ void dttr_graphics_mod_frame_begin(DTTR_BackendState *state) {
 }
 
 void dttr_graphics_mod_before_game_frame(void) {
-	dttr_timing_before_render_frame(dttr_timing_render_reuses_previous_sim_state());
+	// frame_active is still true here
+	// so injected native draws record into the open frame.
+	dttr_timing_before_render_frame(
+		dttr_timing_render_reuses_previous_sim_state(),
+		dttr_backend.frame_active
+	);
 }
 
 void dttr_graphics_mod_after_game_frame(void) {
@@ -494,7 +499,7 @@ void dttr_graphics_handle_window_resize(int width, int height) {
 void dttr_graphics_begin_frame() {
 	DTTR_BackendState *state = &dttr_backend;
 
-	if (state->frame_active) {
+	if (state->frame_active || state->in_frame_callback) {
 		return;
 	}
 
@@ -505,9 +510,19 @@ void dttr_graphics_begin_frame() {
 void dttr_graphics_end_frame() {
 	DTTR_BackendState *state = &dttr_backend;
 
-	if (!state->frame_active) {
+	// in_frame_callback: a mod callback running inside end_frame re-entered the
+	// present path (e.g. injected game code reached Flip); the outer end_frame
+	// finishes this frame, so the re-entrant call must not.
+	if (!state->frame_active || state->in_frame_callback) {
 		return;
 	}
+
+	// Keep the frame open across the BEFORE_RENDER mod callback so native draws
+	// injected by mods.
+	state->in_frame_callback = true;
+	dttr_graphics_mod_before_game_frame();
+	state->in_frame_callback = false;
+	state->frame_active = false;
 
 	state->renderer->end_frame(state);
 }

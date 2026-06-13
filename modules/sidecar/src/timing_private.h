@@ -14,7 +14,7 @@ bool dttr_timing_has_deferred_simulation_step();
 void dttr_timing_before_simulation_step();
 void dttr_timing_after_simulation_step();
 void dttr_timing_simulation_step_deferred();
-void dttr_timing_before_render_frame(bool reuses_previous_sim_state);
+void dttr_timing_before_render_frame(bool reuses_previous_sim_state, bool frame_open);
 void dttr_timing_after_render_frame(bool reuses_previous_sim_state);
 void dttr_timing_before_present_frame();
 void dttr_timing_after_present_frame();

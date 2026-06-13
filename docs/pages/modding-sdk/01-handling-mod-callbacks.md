@@ -83,6 +83,16 @@ Under `DTTR_MODS_TIMING_FIXED_SIM_VARIABLE_RENDER`:
 - State written in `BEFORE_RENDER_FRAME` (blended transforms, camera) is seen by that frame's culling and draw passes.
 - While loading, paused, or mid-transition - or if the scene-render entry is unavailable — the host re-presents the previous image instead.
 
+### Injecting native rendering on render-only frames
+
+`BEFORE_RENDER_FRAME` can set `DTTR_MODS_TIMING_FRAME_FLAG_RENDER_FRAME_OPEN` in `ctx->flags`, 
+which when set signals that the host backend frame is still open. 
+Without it, injected draws would be dropped or corrupt frame pacing.
+
+Native game draw-recording calls made from the callback record into the current
+host frame and present with it.  Do not present from your mod's code since the host finishes and presents 
+the frame itself.
+
 ## Window and Graphics Resources
 
 Use these when your mod owns graphics resources that must follow the window:
