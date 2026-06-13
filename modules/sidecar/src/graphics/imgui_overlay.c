@@ -15,7 +15,7 @@ static SDL_Window *window;
 static DTTR_ImGuiDesktopScaleState imgui_scale;
 static bool initialized;
 
-static const float modding_badge_font_factor = 0.90f;
+static const float modding_badge_font_factor = 0.78f;
 static const float modding_badge_min_font_size = 6.0f;
 static const float modding_badge_default_font_size = 13.0f;
 static const float modding_badge_line_advance_factor = 0.86f;
@@ -128,7 +128,7 @@ static void mod_overlay_label_text(char *out, size_t out_size, size_t mod_index)
 	snprintf(
 		out,
 		out_size,
-		"%s @ v%s",
+		"%s@v%s",
 		name ? name : "",
 		version ? version : "?"
 	);
