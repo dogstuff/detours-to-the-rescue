@@ -22,17 +22,22 @@ static const float modding_badge_line_advance_factor = 0.86f;
 static const float modding_badge_bold_offset = 0.5f;
 static const ImVec4_c modding_badge_header_color = {1.0f, 1.0f, 1.0f, 1.0f};
 static const ImVec4_c modding_badge_seconds_color = {0.35f, 1.0f, 0.35f, 1.0f};
+static const ImVec4_c modding_badge_separator_color = {0.40f, 0.40f, 0.40f, 1.0f};
 static const ImVec4_c modding_badge_hot_reload_on_color = {0.35f, 1.0f, 0.35f, 1.0f};
 static const ImVec4_c modding_badge_hot_reload_off_color = {1.0f, 0.35f, 0.35f, 1.0f};
 static const char modding_badge_hot_reload_label[] = "Hot Reload:";
 
-static float overlay_text_width(const char *text) {
-	if (!text) {
+static float overlay_text_width_range(const char *begin, const char *end) {
+	if (!begin || !end || end <= begin) {
 		return 0.0f;
 	}
 
-	const ImVec2_c size = igCalcTextSize(text, NULL, false, -1.0f);
+	const ImVec2_c size = igCalcTextSize(begin, end, false, -1.0f);
 	return size.x;
+}
+
+static float overlay_text_width(const char *text) {
+	return text ? overlay_text_width_range(text, text + strlen(text)) : 0.0f;
 }
 
 static float overlay_line_height() {
@@ -49,17 +54,47 @@ static float overlay_mod_gap() {
 	return spacing * 0.5f;
 }
 
+static void draw_overlay_text_range_at(
+	ImDrawList *draw_list,
+	ImVec2_c pos,
+	ImU32 color,
+	const char *begin,
+	const char *end
+) {
+	if (!begin || !end || end <= begin) {
+		return;
+	}
+
+	ImDrawList_AddText_Vec2(draw_list, pos, color, begin, end);
+}
+
 static void draw_overlay_text_at(
 	ImDrawList *draw_list,
 	ImVec2_c pos,
 	ImU32 color,
 	const char *text
 ) {
-	if (!text) {
-		return;
+	if (text) {
+		draw_overlay_text_range_at(draw_list, pos, color, text, text + strlen(text));
 	}
+}
 
-	ImDrawList_AddText_Vec2(draw_list, pos, color, text, text + strlen(text));
+// Draws text twice, offset by a pixel, to fake a bold weight.
+static void draw_bold_overlay_text_range(
+	ImDrawList *draw_list,
+	ImVec2_c pos,
+	ImU32 color,
+	const char *begin,
+	const char *end
+) {
+	draw_overlay_text_range_at(draw_list, pos, color, begin, end);
+	draw_overlay_text_range_at(
+		draw_list,
+		(ImVec2_c){pos.x + modding_badge_bold_offset, pos.y},
+		color,
+		begin,
+		end
+	);
 }
 
 static void draw_bold_overlay_text(
@@ -68,13 +103,9 @@ static void draw_bold_overlay_text(
 	ImU32 color,
 	const char *text
 ) {
-	draw_overlay_text_at(draw_list, pos, color, text);
-	draw_overlay_text_at(
-		draw_list,
-		(ImVec2_c){pos.x + modding_badge_bold_offset, pos.y},
-		color,
-		text
-	);
+	if (text) {
+		draw_bold_overlay_text_range(draw_list, pos, color, text, text + strlen(text));
+	}
 }
 
 static float hot_reload_width() {
@@ -125,13 +156,7 @@ static void mod_overlay_label_text(char *out, size_t out_size, size_t mod_index)
 	const char *name = dttr_mods_loaded_name(mod_index);
 	const char *version = dttr_mods_loaded_version(mod_index);
 
-	snprintf(
-		out,
-		out_size,
-		"%s@v%s",
-		name ? name : "",
-		version ? version : "?"
-	);
+	snprintf(out, out_size, "%s@v%s", name ? name : "", version ? version : "?");
 }
 
 static void draw_mod_overlay_row(
@@ -148,10 +173,38 @@ static void draw_mod_overlay_row(
 	const ImVec2_c cursor = igGetCursorScreenPos();
 	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
 	const ImU32 seconds_color = igGetColorU32_Vec4(modding_badge_seconds_color);
+	const ImU32 separator_color = igGetColorU32_Vec4(modding_badge_separator_color);
 	const char *mod_label = label ? label : "";
 	const float label_width = overlay_text_width(mod_label);
 
-	draw_bold_overlay_text(draw_list, cursor, text_color, mod_label);
+	// Render the "@" separator dimmed
+	const char *at = strchr(mod_label, '@');
+	if (at) {
+		const char *end = mod_label + strlen(mod_label);
+		const float name_width = overlay_text_width_range(mod_label, at);
+		const float at_width = overlay_text_width_range(at, at + 1);
+
+		draw_bold_overlay_text_range(draw_list, cursor, text_color, mod_label, at);
+
+		draw_bold_overlay_text_range(
+			draw_list,
+			(ImVec2_c){cursor.x + name_width, cursor.y},
+			separator_color,
+			at,
+			at + 1
+		);
+
+		draw_bold_overlay_text_range(
+			draw_list,
+			(ImVec2_c){cursor.x + name_width + at_width, cursor.y},
+			text_color,
+			at + 1,
+			end
+		);
+	} else {
+		draw_bold_overlay_text(draw_list, cursor, text_color, mod_label);
+	}
+
 	draw_overlay_text_at(
 		draw_list,
 		(ImVec2_c){cursor.x + label_width + gap, cursor.y},
