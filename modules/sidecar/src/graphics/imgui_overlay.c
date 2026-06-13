@@ -22,7 +22,8 @@ static const float modding_badge_line_advance_factor = 0.86f;
 static const float modding_badge_bold_offset = 0.5f;
 static const ImVec4_c modding_badge_header_color = {1.0f, 1.0f, 1.0f, 1.0f};
 static const ImVec4_c modding_badge_seconds_color = {0.35f, 1.0f, 0.35f, 1.0f};
-static const ImVec4_c modding_badge_separator_color = {0.40f, 0.40f, 0.40f, 1.0f};
+static const ImVec4_c modding_badge_separator_color = {0.80f, 0.80f, 0.80f, 0.4f};
+static const float modding_badge_separator_pad = 2.0f;
 static const ImVec4_c modding_badge_hot_reload_on_color = {0.35f, 1.0f, 0.35f, 1.0f};
 static const ImVec4_c modding_badge_hot_reload_off_color = {1.0f, 0.35f, 0.35f, 1.0f};
 static const char modding_badge_hot_reload_label[] = "Hot Reload:";
@@ -149,7 +150,6 @@ static void mod_overlay_elapsed_text(char *out, size_t out_size, size_t mod_inde
 	snprintf(out, out_size, "(%lus)", elapsed_seconds);
 }
 
-// Holds "<name> @ v<version>" — name up to MAX_PATH, plus version and separator.
 #define MOD_OVERLAY_LABEL_MAX (MAX_PATH + 80)
 
 static void mod_overlay_label_text(char *out, size_t out_size, size_t mod_index) {
@@ -159,9 +159,20 @@ static void mod_overlay_label_text(char *out, size_t out_size, size_t mod_index)
 	snprintf(out, out_size, "%s@v%s", name ? name : "", version ? version : "?");
 }
 
-// Draws "<name>@v<version>" with the "@" separator dimmed.
+static float mod_label_width(const char *label) {
+	const float pad = modding_badge_separator_pad;
+	float width = overlay_text_width(label);
+
+	if (strchr(label, '@')) {
+		width += 2.0f * pad;
+	}
+
+	return width;
+}
+
+// Draws "<name> @ v<version>" with the "@" separator dimmed and lightly padded.
 static void draw_mod_label(ImDrawList *draw_list, ImVec2_c pos, const char *label) {
-	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
+	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 0.87f);
 	const char *at = strchr(label, '@');
 	if (!at) {
 		draw_bold_overlay_text(draw_list, pos, text_color, label);
@@ -173,21 +184,20 @@ static void draw_mod_label(ImDrawList *draw_list, ImVec2_c pos, const char *labe
 	const float name_width = overlay_text_width_range(label, at);
 	const float at_width = overlay_text_width_range(at, at + 1);
 
-	draw_bold_overlay_text_range(draw_list, pos, text_color, label, at);
+	const float pad = modding_badge_separator_pad;
+	float x = pos.x;
+
+	draw_bold_overlay_text_range(draw_list, (ImVec2_c){x, pos.y}, text_color, label, at);
+	x += name_width + pad;
 	draw_bold_overlay_text_range(
 		draw_list,
-		(ImVec2_c){pos.x + name_width, pos.y},
+		(ImVec2_c){x, pos.y},
 		separator_color,
 		at,
 		at + 1
 	);
-	draw_bold_overlay_text_range(
-		draw_list,
-		(ImVec2_c){pos.x + name_width + at_width, pos.y},
-		text_color,
-		at + 1,
-		end
-	);
+	x += at_width + pad;
+	draw_bold_overlay_text_range(draw_list, (ImVec2_c){x, pos.y}, text_color, at + 1, end);
 }
 
 static void draw_mod_overlay_row(
@@ -204,7 +214,7 @@ static void draw_mod_overlay_row(
 	const ImVec2_c cursor = igGetCursorScreenPos();
 	const ImU32 seconds_color = igGetColorU32_Vec4(modding_badge_seconds_color);
 	const char *mod_label = label ? label : "";
-	const float label_width = overlay_text_width(mod_label);
+	const float label_width = mod_label_width(mod_label);
 
 	draw_mod_label(draw_list, cursor, mod_label);
 	draw_overlay_text_at(
@@ -477,7 +487,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 
 		char label[MOD_OVERLAY_LABEL_MAX];
 		mod_overlay_label_text(label, sizeof(label), i);
-		const float row_width = overlay_text_width(label) + gap
+		const float row_width = mod_label_width(label) + gap
 								+ overlay_text_width(seconds);
 		rows_width = fmaxf(rows_width, row_width);
 	}
