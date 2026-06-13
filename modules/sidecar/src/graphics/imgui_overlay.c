@@ -159,6 +159,37 @@ static void mod_overlay_label_text(char *out, size_t out_size, size_t mod_index)
 	snprintf(out, out_size, "%s@v%s", name ? name : "", version ? version : "?");
 }
 
+// Draws "<name>@v<version>" with the "@" separator dimmed.
+static void draw_mod_label(ImDrawList *draw_list, ImVec2_c pos, const char *label) {
+	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
+	const char *at = strchr(label, '@');
+	if (!at) {
+		draw_bold_overlay_text(draw_list, pos, text_color, label);
+		return;
+	}
+
+	const ImU32 separator_color = igGetColorU32_Vec4(modding_badge_separator_color);
+	const char *end = label + strlen(label);
+	const float name_width = overlay_text_width_range(label, at);
+	const float at_width = overlay_text_width_range(at, at + 1);
+
+	draw_bold_overlay_text_range(draw_list, pos, text_color, label, at);
+	draw_bold_overlay_text_range(
+		draw_list,
+		(ImVec2_c){pos.x + name_width, pos.y},
+		separator_color,
+		at,
+		at + 1
+	);
+	draw_bold_overlay_text_range(
+		draw_list,
+		(ImVec2_c){pos.x + name_width + at_width, pos.y},
+		text_color,
+		at + 1,
+		end
+	);
+}
+
 static void draw_mod_overlay_row(
 	const char *label,
 	const char *seconds,
@@ -171,40 +202,11 @@ static void draw_mod_overlay_row(
 	}
 
 	const ImVec2_c cursor = igGetCursorScreenPos();
-	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
 	const ImU32 seconds_color = igGetColorU32_Vec4(modding_badge_seconds_color);
-	const ImU32 separator_color = igGetColorU32_Vec4(modding_badge_separator_color);
 	const char *mod_label = label ? label : "";
 	const float label_width = overlay_text_width(mod_label);
 
-	// Render the "@" separator dimmed
-	const char *at = strchr(mod_label, '@');
-	if (at) {
-		const char *end = mod_label + strlen(mod_label);
-		const float name_width = overlay_text_width_range(mod_label, at);
-		const float at_width = overlay_text_width_range(at, at + 1);
-
-		draw_bold_overlay_text_range(draw_list, cursor, text_color, mod_label, at);
-
-		draw_bold_overlay_text_range(
-			draw_list,
-			(ImVec2_c){cursor.x + name_width, cursor.y},
-			separator_color,
-			at,
-			at + 1
-		);
-
-		draw_bold_overlay_text_range(
-			draw_list,
-			(ImVec2_c){cursor.x + name_width + at_width, cursor.y},
-			text_color,
-			at + 1,
-			end
-		);
-	} else {
-		draw_bold_overlay_text(draw_list, cursor, text_color, mod_label);
-	}
-
+	draw_mod_label(draw_list, cursor, mod_label);
 	draw_overlay_text_at(
 		draw_list,
 		(ImVec2_c){cursor.x + label_width + gap, cursor.y},
