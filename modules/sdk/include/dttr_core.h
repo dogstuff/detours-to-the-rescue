@@ -69,6 +69,21 @@ DTTR_Result DTTR_Core_AOBFind(
 	uintptr_t *out_addr
 );
 
+/// Resolve every textual AOB pattern match through the context runtime scanner.
+/// @param ctx Runtime context that supplies the runtime scanner and target module.
+/// @param aob Space-separated byte pattern. Wildcards follow the runtime scanner.
+/// @param out_addrs Optional caller buffer receiving up to `addrs_cap` matches.
+/// @param addrs_cap Number of entries available in `out_addrs`.
+/// @param out_count Receives the total number of matches found.
+/// @return `DTTR_OK` when at least one pattern match is found, otherwise an error status.
+DTTR_Result DTTR_Core_AOBFindAll(
+	const DTTR_Core_Context *ctx,
+	const char *aob,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+);
+
 /// Resolve a raw signature and mask through the context runtime scanner.
 /// @param ctx Runtime context that supplies the runtime scanner and target module.
 /// @param sig Raw byte signature buffer.
@@ -88,6 +103,21 @@ DTTR_Result DTTR_Core_SignatureFind(
 /// @param out_addr Receives the resolved address on success.
 /// @return `DTTR_OK` when the pattern is found, otherwise an error status.
 DTTR_Result DTTR_Core_AOBFindInModule(HMODULE mod, const char *aob, uintptr_t *out_addr);
+
+/// Resolve every textual AOB pattern match in an explicit module without an SDK context.
+/// @param mod Module to scan.
+/// @param aob Space-separated byte pattern.
+/// @param out_addrs Optional caller buffer receiving up to `addrs_cap` matches.
+/// @param addrs_cap Number of entries available in `out_addrs`.
+/// @param out_count Receives the total number of matches found.
+/// @return `DTTR_OK` when at least one pattern match is found, otherwise an error status.
+DTTR_Result DTTR_Core_AOBFindAllInModule(
+	HMODULE mod,
+	const char *aob,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+);
 
 /// Patch bytes and return a handle that can restore the original memory.
 /// @param ctx Runtime context used to patch memory.

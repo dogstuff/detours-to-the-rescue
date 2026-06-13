@@ -8,9 +8,11 @@
 #include <dttr_core.h>
 #include <dttr_pcdogs.h>
 #include <dttr_runtime.h>
+#include <dttr_sigscan.h>
 #include <dttr_test_support.h>
 
 static uint8_t sig_target[] = {0x55, 0x8B, 0xEC, 0x90, 0x90, 0xC3, 0x33, 0xC0};
+static uint8_t sig_all_target[] = {0x90, 0x90, 0x90, 0xCC, 0x90};
 static uint8_t patch_target[4];
 static uint8_t group_patch_target[2];
 
@@ -46,12 +48,42 @@ static uintptr_t sigscan(HMODULE mod, const char *sig, const char *mask) {
 	return sigscan_bytes(sig_target, sizeof(sig_target), sig, mask);
 }
 
+static DTTR_Result sigscan_all(
+	HMODULE mod,
+	const char *sig,
+	const char *mask,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+) {
+	if (!mod || !sig || !mask || !out_count || (!out_addrs && addrs_cap)) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, "invalid test sigscan-all"};
+	}
+
+	*out_count = DTTR_Sigscan_BytesAll(
+		sig_all_target,
+		sizeof(sig_all_target),
+		sig,
+		mask,
+		out_addrs,
+		addrs_cap
+	);
+	if (!*out_count) {
+		return (DTTR_Result){DTTR_ERR_NOT_FOUND, "test signature not found"};
+	}
+
+	return (DTTR_Result){DTTR_OK, "ok"};
+}
+
 static const DTTR_Core_API RUNTIME = {
 	.sigscan = sigscan,
+	.sigscan_all = sigscan_all,
 	.hook_function = DTTR_Core_HookAttachFunction,
 	.hook_pointer = DTTR_Core_HookAttachPointer,
 	.patch_bytes = DTTR_Core_HookPatchBytes,
 	.unhook = DTTR_Core_HookDetach,
+	.struct_size = sizeof(DTTR_Core_API),
+	.abi_version = DTTR_SDK_ABI_VERSION,
 	.hook_is_active = DTTR_Core_HookIsActive,
 	.unhook_checked = DTTR_Core_HookDetachChecked,
 };
@@ -78,6 +110,25 @@ static void test_signature_helpers_resolve_aob_patterns(void **state) {
 
 	result = DTTR_Core_AOBFind(&ctx, "55 8", &addr);
 	assert_int_equal(result.status, DTTR_ERR_INVALID_ARGUMENT);
+}
+
+static void test_aob_find_all_returns_every_match(void **state) {
+	DTTR_Core_Context ctx = runtime_context();
+	uintptr_t matches[2] = {0};
+	size_t count = 0;
+
+	DTTR_Result result = DTTR_Core_AOBFindAll(
+		&ctx,
+		"90 90",
+		matches,
+		DTTR_ARRAY_COUNT(matches),
+		&count
+	);
+
+	assert_true(DTTR_ResultOK(result));
+	assert_int_equal(count, 2);
+	assert_ptr_equal((void *)matches[0], &sig_all_target[0]);
+	assert_ptr_equal((void *)matches[1], &sig_all_target[1]);
 }
 
 static void test_patch_group_target_failure_rolls_back_only_new_entries(void **state) {
@@ -258,6 +309,7 @@ static void test_pcdogs_generated_title_resource_patch_specs_use_current_names(
 
 static const DTTR_TestCase TEST_CASES[] = {
 	{"core-sdk-signatures", test_signature_helpers_resolve_aob_patterns},
+	{"core-sdk-aob-find-all", test_aob_find_all_returns_every_match},
 	{"core-sdk-patch-group-rollback",
 	 test_patch_group_target_failure_rolls_back_only_new_entries},
 	{"pcdogs-generated-function-patch-specs",

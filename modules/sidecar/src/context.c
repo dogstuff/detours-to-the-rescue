@@ -24,6 +24,7 @@ static const DTTR_Mods_API MOD_API = {
 
 static const DTTR_Core_API RUNTIME_API = {
 	.sigscan = DTTR_Core_HookCachedSigscan,
+	.sigscan_all = DTTR_Core_HookSigscanAll,
 	.hook_function = DTTR_Core_HookAttachFunction,
 	.hook_pointer = DTTR_Core_HookAttachPointer,
 	.patch_bytes = DTTR_Core_HookPatchBytes,

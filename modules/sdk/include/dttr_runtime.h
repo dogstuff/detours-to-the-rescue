@@ -11,6 +11,7 @@
 
 #include <windows.h>
 
+#include <dttr_result.h>
 #include <dttr_versions.h>
 
 #ifdef __cplusplus
@@ -18,6 +19,14 @@ extern "C" {
 #endif
 
 typedef uintptr_t (*DTTR_Core_SigscanFn)(HMODULE mod, const char *sig, const char *mask);
+typedef DTTR_Result (*DTTR_Core_SigscanAllFn)(
+	HMODULE mod,
+	const char *sig,
+	const char *mask,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+);
 
 typedef struct DTTR_Core_Hook DTTR_Core_Hook;
 typedef struct DTTR_Core_API DTTR_Core_API;
@@ -61,6 +70,7 @@ struct DTTR_Core_API {
 	const void *reserved[4];
 	DTTR_Core_HookIsActiveFn hook_is_active;
 	DTTR_Core_UnhookCheckedFn unhook_checked;
+	DTTR_Core_SigscanAllFn sigscan_all;
 };
 
 // Purpose-agnostic declaration/definition helpers for private consumer storage.
@@ -160,6 +170,23 @@ bool DTTR_Core_HookCleanupAllChecked();
 /// @param mask Mask string where implementation-defined wildcard characters skip bytes.
 /// @return Matching address, or `0` when not found.
 uintptr_t DTTR_Core_HookSigscan(HMODULE mod, const char *sig, const char *mask);
+
+/// Scan a module for every matching signature.
+/// @param mod Module to scan.
+/// @param sig Raw byte signature buffer.
+/// @param mask Mask string where implementation-defined wildcard characters skip bytes.
+/// @param out_addrs Optional caller buffer receiving up to `addrs_cap` matches.
+/// @param addrs_cap Number of entries available in `out_addrs`.
+/// @param out_count Receives the total number of matches found.
+/// @return `DTTR_OK` when at least one match is found, otherwise an error status.
+DTTR_Result DTTR_Core_HookSigscanAll(
+	HMODULE mod,
+	const char *sig,
+	const char *mask,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+);
 
 /// Scan a module with the runtime signature cache.
 /// @param mod Module to scan.

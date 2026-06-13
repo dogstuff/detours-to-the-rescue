@@ -451,64 +451,6 @@ static void dttr_test_pe_free_image(DTTR_TestPEImage *image) {
 	memset(image, 0, sizeof(*image));
 }
 
-static size_t masked_sigscan_count(
-	const uint8_t *bytes,
-	size_t size,
-	const uint8_t *sig,
-	const char *mask
-) {
-	if (!bytes || !sig || !mask) {
-		return 0;
-	}
-
-	const size_t mask_len = strlen(mask);
-	if (!mask_len || mask_len > size) {
-		return 0;
-	}
-
-	size_t anchor = 0;
-	while (anchor < mask_len && mask[anchor] != 'x') {
-		anchor++;
-	}
-
-	if (anchor == mask_len) {
-		return size - mask_len + 1u;
-	}
-
-	const uint8_t anchor_byte = sig[anchor];
-	const uint8_t *cursor = bytes + anchor;
-	const uint8_t *end = cursor + (size - mask_len + 1u);
-	size_t matches = 0;
-
-	while (cursor < end) {
-		const size_t remaining = (size_t)(end - cursor);
-		const uint8_t *candidate = memchr(cursor, anchor_byte, remaining);
-		if (!candidate) {
-			break;
-		}
-
-		const size_t offset = (size_t)(candidate - bytes) - anchor;
-		size_t i = 0;
-		for (; i < mask_len; i++) {
-			if (mask[i] != 'x') {
-				continue;
-			}
-
-			if (bytes[offset + i] != sig[i]) {
-				break;
-			}
-		}
-
-		if (i == mask_len) {
-			matches++;
-		}
-
-		cursor = candidate + 1;
-	}
-
-	return matches;
-}
-
 size_t DTTR_TestPE_SigscanCount(
 	const DTTR_TestPEImage *image,
 	const uint8_t *sig,
@@ -518,7 +460,7 @@ size_t DTTR_TestPE_SigscanCount(
 		return 0;
 	}
 
-	return masked_sigscan_count(image->image, image->image_size, sig, mask);
+	return DTTR_Sigscan_BytesAll(image->image, image->image_size, sig, mask, NULL, 0);
 }
 
 uintptr_t DTTR_TestPE_Sigscan(

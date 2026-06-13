@@ -45,11 +45,11 @@ struct hook_chain {
 	DTTR_Core_Hook *tail;
 };
 
-uintptr_t DTTR_Core_HookSigscan(HMODULE mod, const char *sig, const char *mask) {
+static bool module_scan_range(HMODULE mod, const uint8_t **out_base, size_t *out_size) {
 	MODULEINFO module_info;
 
-	if (!mod) {
-		return 0;
+	if (!mod || !out_base || !out_size) {
+		return false;
 	}
 
 	if (!GetModuleInformation(
@@ -58,12 +58,55 @@ uintptr_t DTTR_Core_HookSigscan(HMODULE mod, const char *sig, const char *mask) 
 			&module_info,
 			sizeof(module_info)
 		)) {
+		return false;
+	}
+
+	*out_base = (const uint8_t *)module_info.lpBaseOfDll;
+	*out_size = module_info.SizeOfImage;
+	return true;
+}
+
+uintptr_t DTTR_Core_HookSigscan(HMODULE mod, const char *sig, const char *mask) {
+	const uint8_t *base = NULL;
+	size_t size = 0;
+
+	if (!module_scan_range(mod, &base, &size)) {
 		return 0;
 	}
 
-	const uint8_t *base = (const uint8_t *)module_info.lpBaseOfDll;
-	const size_t size = module_info.SizeOfImage;
 	return (uintptr_t)DTTR_Sigscan_Bytes(base, size, sig, mask);
+}
+
+DTTR_Result DTTR_Core_HookSigscanAll(
+	HMODULE mod,
+	const char *sig,
+	const char *mask,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+) {
+	if (!out_count || (!out_addrs && addrs_cap)) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, "invalid sigscan-all output"};
+	}
+
+	*out_count = 0;
+
+	if (!sig || !mask) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, "invalid sigscan-all pattern"};
+	}
+
+	const uint8_t *base = NULL;
+	size_t size = 0;
+	if (!module_scan_range(mod, &base, &size)) {
+		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, "invalid sigscan-all module"};
+	}
+
+	*out_count = DTTR_Sigscan_BytesAll(base, size, sig, mask, out_addrs, addrs_cap);
+	if (!*out_count) {
+		return (DTTR_Result){DTTR_ERR_NOT_FOUND, "signature not found"};
+	}
+
+	return (DTTR_Result){DTTR_OK, "ok"};
 }
 
 #define DTTR_HOOK_PATCH_SIZE 5u

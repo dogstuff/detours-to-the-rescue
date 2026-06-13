@@ -1,9 +1,39 @@
 #ifndef DTTR_SIGSCAN_H
 #define DTTR_SIGSCAN_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+static inline bool DTTR_Sigscan_MatchesAt(
+	const uint8_t *base,
+	const uint8_t *sig,
+	const char *mask,
+	size_t mask_len
+) {
+	for (size_t i = 0; i < mask_len; i++) {
+		if (mask[i] != 'x') {
+			continue;
+		}
+
+		if (base[i] != sig[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static inline size_t DTTR_Sigscan_Anchor(const char *mask, size_t mask_len) {
+	for (size_t i = 0; i < mask_len; i++) {
+		if (mask[i] == 'x') {
+			return i;
+		}
+	}
+
+	return mask_len;
+}
 
 // Scans bytes with 'x' mask entries as exact matches and all other entries as wildcards.
 static inline const uint8_t *DTTR_Sigscan_Bytes(
@@ -23,23 +53,76 @@ static inline const uint8_t *DTTR_Sigscan_Bytes(
 	}
 
 	for (size_t i = 0; i <= size - mask_len; i++) {
-		size_t j = 0;
-		for (; j < mask_len; j++) {
-			if (mask[j] != 'x') {
-				continue;
-			}
-
-			if (base[i + j] != sig_bytes[j]) {
-				break;
-			}
-		}
-
-		if (j == mask_len) {
+		if (DTTR_Sigscan_MatchesAt(base + i, sig_bytes, mask, mask_len)) {
 			return base + i;
 		}
 	}
 
 	return NULL;
+}
+
+// Scans bytes for every masked signature match. Returns the total match count and
+// writes up to `out_cap` matching addresses when `out_addrs` is not null.
+static inline size_t DTTR_Sigscan_BytesAll(
+	const uint8_t *base,
+	size_t size,
+	const void *sig,
+	const char *mask,
+	uintptr_t *out_addrs,
+	size_t out_cap
+) {
+	if (!base || !sig || !mask) {
+		return 0;
+	}
+
+	if (!out_addrs) {
+		out_cap = 0;
+	}
+
+	const uint8_t *sig_bytes = sig;
+	const size_t mask_len = strlen(mask);
+	if (mask_len == 0 || mask_len > size) {
+		return 0;
+	}
+
+	const size_t anchor = DTTR_Sigscan_Anchor(mask, mask_len);
+	if (anchor == mask_len) {
+		const size_t total = size - mask_len + 1u;
+		const size_t copy_count = total < out_cap ? total : out_cap;
+
+		for (size_t i = 0; i < copy_count; i++) {
+			out_addrs[i] = (uintptr_t)(base + i);
+		}
+
+		return total;
+	}
+
+	const uint8_t anchor_byte = sig_bytes[anchor];
+	const uint8_t *cursor = base + anchor;
+	const uint8_t *end = cursor + (size - mask_len + 1u);
+	size_t count = 0;
+
+	while (cursor < end) {
+		const uint8_t *candidate = memchr(cursor, anchor_byte, (size_t)(end - cursor));
+		if (!candidate) {
+			break;
+		}
+
+		const size_t offset = (size_t)(candidate - base) - anchor;
+		if (!DTTR_Sigscan_MatchesAt(base + offset, sig_bytes, mask, mask_len)) {
+			cursor = candidate + 1;
+			continue;
+		}
+
+		if (count < out_cap) {
+			out_addrs[count] = (uintptr_t)(base + offset);
+		}
+
+		count++;
+		cursor = candidate + 1;
+	}
+
+	return count;
 }
 
 // Returns the value of a single hex digit, or -1 when the character is not hex.

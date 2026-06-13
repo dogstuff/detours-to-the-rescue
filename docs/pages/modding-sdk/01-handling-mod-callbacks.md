@@ -81,7 +81,7 @@ Under `DTTR_MODS_TIMING_FIXED_SIM_VARIABLE_RENDER`:
 
 - Every host frame re-renders the scene, even with no ready sim step. Such frames set `render_reuses_previous_sim_state` and get a fresh `interpolation_alpha`.
 - State written in `BEFORE_RENDER_FRAME` (blended transforms, camera) is seen by that frame's culling and draw passes.
-- While loading, paused, or mid-transition - or if the scene-render entry is unavailable — the host re-presents the previous image instead.
+- While loading/paused/mid-transition or if the scene-render entry is unavailable, the host re-presents the previous frame instead.
 
 ### Injecting native rendering on render-only frames
 

@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <limits.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -235,6 +236,41 @@ static DTTR_Result aob_scan_with(
 	return dttr_core_result(DTTR_OK, "ok");
 }
 
+static bool runtime_has_sigscan_all(const DTTR_Core_API *runtime) {
+	return runtime
+		   && runtime->struct_size
+				  >= offsetof(DTTR_Core_API, sigscan_all) + sizeof(runtime->sigscan_all)
+		   && runtime->sigscan_all;
+}
+
+static DTTR_Result aob_scan_all_with(
+	HMODULE mod,
+	DTTR_Core_SigscanAllFn sigscan_all,
+	const char *aob,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+) {
+	if (!out_count || (!out_addrs && addrs_cap)) {
+		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, "invalid AOB find-all output");
+	}
+
+	*out_count = 0;
+
+	char *sig = NULL;
+	char *mask = NULL;
+	DTTR_Result parsed = parse_aob(aob, &sig, &mask);
+
+	if (!DTTR_ResultOK(parsed)) {
+		return parsed;
+	}
+
+	DTTR_Result result = sigscan_all(mod, sig, mask, out_addrs, addrs_cap, out_count);
+	free(sig);
+	free(mask);
+	return result;
+}
+
 DTTR_Result DTTR_Core_AOBFindInModule(HMODULE mod, const char *aob, uintptr_t *out_addr) {
 	if (!out_addr) {
 		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, "out_addr is NULL");
@@ -242,6 +278,23 @@ DTTR_Result DTTR_Core_AOBFindInModule(HMODULE mod, const char *aob, uintptr_t *o
 
 	*out_addr = 0;
 	return aob_scan_with(mod, DTTR_Core_HookSigscan, aob, out_addr);
+}
+
+DTTR_Result DTTR_Core_AOBFindAllInModule(
+	HMODULE mod,
+	const char *aob,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+) {
+	return aob_scan_all_with(
+		mod,
+		DTTR_Core_HookSigscanAll,
+		aob,
+		out_addrs,
+		addrs_cap,
+		out_count
+	);
 }
 
 DTTR_Result DTTR_Core_AOBFind(
@@ -264,6 +317,44 @@ DTTR_Result DTTR_Core_AOBFind(
 	}
 
 	return aob_scan_with(ctx->game_module, runtime->sigscan, aob, out_addr);
+}
+
+DTTR_Result DTTR_Core_AOBFindAll(
+	const DTTR_Core_Context *ctx,
+	const char *aob,
+	uintptr_t *out_addrs,
+	size_t addrs_cap,
+	size_t *out_count
+) {
+	if (!runtime_context_valid(ctx)) {
+		if (out_count) {
+			*out_count = 0;
+		}
+
+		return dttr_core_result(DTTR_ERR_INVALID_ARGUMENT, "invalid AOB find-all context");
+	}
+
+	const DTTR_Core_API *runtime = ctx->api;
+
+	if (!runtime_has_sigscan_all(runtime)) {
+		if (out_count) {
+			*out_count = 0;
+		}
+
+		return dttr_core_result(
+			DTTR_ERR_RUNTIME_UNAVAILABLE,
+			"runtime sigscan-all is unavailable"
+		);
+	}
+
+	return aob_scan_all_with(
+		ctx->game_module,
+		runtime->sigscan_all,
+		aob,
+		out_addrs,
+		addrs_cap,
+		out_count
+	);
 }
 
 DTTR_Result DTTR_Core_SignatureFind(
