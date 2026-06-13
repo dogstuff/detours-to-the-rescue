@@ -44,6 +44,7 @@ void dttr_mods_render(const DTTR_Mods_RenderContext *ctx);
 bool dttr_mods_handle_event(const SDL_Event *event);
 size_t dttr_mods_loaded_count();
 const char *dttr_mods_loaded_name(size_t index);
+const char *dttr_mods_loaded_version(size_t index);
 DWORD dttr_mods_loaded_elapsed_ms(size_t index);
 bool dttr_mods_hot_reload_enabled();
 void dttr_mods_cleanup();
@@ -64,6 +65,7 @@ typedef struct {
 	char source_path[MAX_PATH];
 	char shadow_path[MAX_PATH];
 	char display_name[MAX_PATH];
+	char display_version[64];
 	mod_file_id source_file;
 	mod_file_id pending_file;
 	DTTR_Mods_InitFn init;

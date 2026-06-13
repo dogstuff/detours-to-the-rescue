@@ -78,6 +78,12 @@ static void set_mod_display_name(loaded_mod *mod, const DTTR_Mods_Info *info) {
 	DTTR_Path_CopyString(mod->display_name, sizeof(mod->display_name), name);
 }
 
+static void set_mod_display_version(loaded_mod *mod, const DTTR_Mods_Info *info) {
+	const char *v = info && info->version && info->version[0] ? info->version : "?";
+
+	DTTR_Path_CopyString(mod->display_version, sizeof(mod->display_version), v);
+}
+
 static void log_mod_info(const char *filename, const DTTR_Mods_Info *info) {
 	if (!info) {
 		return;
@@ -383,6 +389,7 @@ static bool prepare_mod(
 static bool init_mod(loaded_mod *mod) {
 	const DTTR_Mods_Info *info = get_mod_info(mod->info);
 	set_mod_display_name(mod, info);
+	set_mod_display_version(mod, info);
 	log_mod_info(mod->filename, info);
 
 	const DTTR_Mods_Context *base_ctx = dttr_sidecar_context();
@@ -961,6 +968,14 @@ const char *dttr_mods_loaded_name(size_t index) {
 
 	loaded_mod *mod = &kv_A(loaded_mods, index);
 	return mod->display_name[0] ? mod->display_name : mod->filename;
+}
+
+const char *dttr_mods_loaded_version(size_t index) {
+	if (index >= kv_size(loaded_mods)) {
+		return NULL;
+	}
+
+	return kv_A(loaded_mods, index).display_version;
 }
 
 DWORD dttr_mods_loaded_elapsed_ms(size_t index) {

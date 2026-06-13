@@ -118,8 +118,24 @@ static void mod_overlay_elapsed_text(char *out, size_t out_size, size_t mod_inde
 	snprintf(out, out_size, "(%lus)", elapsed_seconds);
 }
 
+// Holds "<name> @ v<version>" — name up to MAX_PATH, plus version and separator.
+#define MOD_OVERLAY_LABEL_MAX (MAX_PATH + 80)
+
+static void mod_overlay_label_text(char *out, size_t out_size, size_t mod_index) {
+	const char *name = dttr_mods_loaded_name(mod_index);
+	const char *version = dttr_mods_loaded_version(mod_index);
+
+	snprintf(
+		out,
+		out_size,
+		"%s @ v%s",
+		name ? name : "",
+		version ? version : "?"
+	);
+}
+
 static void draw_mod_overlay_row(
-	const char *name,
+	const char *label,
 	const char *seconds,
 	float gap,
 	float total_width
@@ -132,13 +148,13 @@ static void draw_mod_overlay_row(
 	const ImVec2_c cursor = igGetCursorScreenPos();
 	const ImU32 text_color = igGetColorU32_Col(ImGuiCol_Text, 1.0f);
 	const ImU32 seconds_color = igGetColorU32_Vec4(modding_badge_seconds_color);
-	const char *mod_name = name ? name : "";
-	const float name_width = overlay_text_width(mod_name);
+	const char *mod_label = label ? label : "";
+	const float label_width = overlay_text_width(mod_label);
 
-	draw_bold_overlay_text(draw_list, cursor, text_color, mod_name);
+	draw_bold_overlay_text(draw_list, cursor, text_color, mod_label);
 	draw_overlay_text_at(
 		draw_list,
-		(ImVec2_c){cursor.x + name_width + gap, cursor.y},
+		(ImVec2_c){cursor.x + label_width + gap, cursor.y},
 		seconds_color,
 		seconds
 	);
@@ -404,8 +420,9 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 		char seconds[32];
 		mod_overlay_elapsed_text(seconds, sizeof(seconds), i);
 
-		const char *name = dttr_mods_loaded_name(i);
-		const float row_width = overlay_text_width(name ? name : "") + gap
+		char label[MOD_OVERLAY_LABEL_MAX];
+		mod_overlay_label_text(label, sizeof(label), i);
+		const float row_width = overlay_text_width(label) + gap
 								+ overlay_text_width(seconds);
 		rows_width = fmaxf(rows_width, row_width);
 	}
@@ -421,8 +438,9 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 			char seconds[32];
 			mod_overlay_elapsed_text(seconds, sizeof(seconds), i);
 
-			const char *name = dttr_mods_loaded_name(i);
-			draw_mod_overlay_row(name, seconds, gap, text_width);
+			char label[MOD_OVERLAY_LABEL_MAX];
+			mod_overlay_label_text(label, sizeof(label), i);
+			draw_mod_overlay_row(label, seconds, gap, text_width);
 		}
 
 		igDummy((ImVec2_c){text_width, overlay_line_height() - overlay_line_advance()});
