@@ -199,6 +199,26 @@ static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 	pop_config_theme();
 }
 
+// Capture owns keyboard/mouse events; gamepad stays forwarded because ImGui ignores it.
+static bool consume_input_binding_capture(config_ui_state *state, const SDL_Event *event) {
+	if (!state->input_binding_capturing) {
+		return false;
+	}
+
+	if (event_cancels_binding(event)) {
+		cancel_binding(state);
+		cancel_input_binding_capture(state);
+		return true;
+	}
+
+	if (capture_input_binding_event(state, event)) {
+		return true;
+	}
+
+	return event->type == SDL_EVENT_KEY_DOWN
+		   || event->type == SDL_EVENT_MOUSE_BUTTON_DOWN;
+}
+
 static void process_events(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state,
@@ -206,6 +226,10 @@ static void process_events(
 ) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
+		if (consume_input_binding_capture(state, &event)) {
+			continue;
+		}
+
 		DTTR_ImGuiDialog_ProcessEvent(ctx, &event, running);
 		if (!*running) {
 			if (confirm_discard_changes(ctx, state, "close the configuration tool")) {
@@ -218,6 +242,11 @@ static void process_events(
 
 		if (event_cancels_binding(&event)) {
 			cancel_binding(state);
+			cancel_input_binding_capture(state);
+			continue;
+		}
+
+		if (capture_input_binding_event(state, &event)) {
 			continue;
 		}
 

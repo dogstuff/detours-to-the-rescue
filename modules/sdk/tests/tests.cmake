@@ -7,8 +7,7 @@ set(DTTR_SDK_TEST_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/include"
 )
 
-add_custom_target(dttr_sdk_tests)
-add_dependencies(dttr_tests dttr_sdk_tests)
+dttr_add_test_group(dttr_sdk_tests)
 
 add_test(
     NAME dttr_pcdogs_generated_headers
@@ -18,12 +17,10 @@ set_tests_properties(dttr_pcdogs_generated_headers PROPERTIES
     LABELS "sdk;pcdogs;generated"
 )
 
-if(NOT DTTR_CMOCKA_FOUND)
-    if(DTTR_REQUIRE_TEST_DEPS)
-        message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
-    endif()
-
-    message(WARNING "cmocka was not found; skipping DttR cmocka tests")
+dttr_check_cmocka_tests(sdk dttr_has_cmocka
+    MESSAGE "cmocka was not found; skipping DttR cmocka tests"
+)
+if(NOT dttr_has_cmocka)
     return()
 endif()
 
@@ -41,6 +38,8 @@ add_dependencies(dttr_pcdogs_test_fixtures
 )
 
 dttr_add_cmocka_test_suite(dttr_core_sdk_tests
+    GROUP
+        dttr_sdk_tests
     SOURCES
         "${DTTR_SDK_TEST_SOURCE_DIR}/core.c"
     INCLUDE_DIRS
@@ -53,6 +52,8 @@ dttr_add_cmocka_test_suite(dttr_core_sdk_tests
 )
 
 dttr_add_cmocka_test_suite(dttr_hook_registry_tests
+    GROUP
+        dttr_sdk_tests
     SOURCES
         "${DTTR_SDK_TEST_SOURCE_DIR}/hook_registry.c"
     INCLUDE_DIRS
@@ -62,10 +63,6 @@ dttr_add_cmocka_test_suite(dttr_hook_registry_tests
     LABELS
         sdk
         hooks
-)
-add_dependencies(dttr_sdk_tests
-    dttr_core_sdk_tests
-    dttr_hook_registry_tests
 )
 
 set(DTTR_PCDOGS_BLUEPRINT_TEST_ROWS "${DTTR_SDK_TEST_BINARY_DIR}/pcdogs_blueprint_test_rows.h")
@@ -91,6 +88,8 @@ add_custom_target(dttr_pcdogs_blueprint_test_rows
 )
 
 dttr_add_cmocka_test_suite(dttr_pcdogs_sig_tests
+    GROUP
+        dttr_sdk_tests
     SOURCES
         "${DTTR_SDK_TEST_SOURCE_DIR}/pcdogs.c"
         "${DTTR_PCDOGS_BLUEPRINT_TEST_ROWS}"
@@ -105,8 +104,7 @@ dttr_add_cmocka_test_suite(dttr_pcdogs_sig_tests
         sdk
         pcdogs
         fixtures
+    DEPENDS
+        dttr_pcdogs_blueprint_test_rows
     TIMEOUT 300
 )
-
-add_dependencies(dttr_pcdogs_sig_tests dttr_pcdogs_blueprint_test_rows)
-add_dependencies(dttr_sdk_tests dttr_pcdogs_sig_tests)

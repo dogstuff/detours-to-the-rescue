@@ -283,7 +283,7 @@ CONFIG_PARSE_CHOICE_FN(
 	DTTR_CONFIG_CHOICES_PRESENT_FILTER
 )
 
-bool config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value) {
+bool config_parse_graphics_api(const char *value, DTTR_GraphicsAPI *out_value) {
 	if (!out_value) {
 		return false;
 	}
@@ -298,7 +298,7 @@ bool config_parse_graphics_api(const char *value, DTTR_GraphicsApi *out_value) {
 		return false;
 	}
 
-	*out_value = (DTTR_GraphicsApi)parsed;
+	*out_value = (DTTR_GraphicsAPI)parsed;
 	return true;
 }
 
@@ -432,7 +432,7 @@ CONFIG_FORMAT_FN(
 )
 CONFIG_FORMAT_FN(
 	config_format_graphics_api,
-	DTTR_GraphicsApi,
+	DTTR_GraphicsAPI,
 	api,
 	CONFIG_GRAPHICS_API_FORMAT_TOKENS,
 	DTTR_DRIVER_AUTO

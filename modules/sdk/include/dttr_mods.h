@@ -42,6 +42,124 @@ typedef bool (*DTTR_Mods_WriteExceptionReportFn)(
 	DTTR_Mods_ExceptionReport *report
 );
 
+typedef enum {
+	DTTR_MODS_CONFIG_FIELD_BOOL = 0,
+	DTTR_MODS_CONFIG_FIELD_INT = 1,
+	DTTR_MODS_CONFIG_FIELD_FLOAT = 2,
+	DTTR_MODS_CONFIG_FIELD_STRING = 3,
+	DTTR_MODS_CONFIG_FIELD_ENUM = 4,
+	DTTR_MODS_CONFIG_FIELD_INPUT_BINDING = 5,
+} DTTR_Mods_ConfigFieldType;
+
+/// Input device a binding refers to.
+typedef enum {
+	DTTR_MODS_BINDING_NONE = 0,		/// field is unbound
+	DTTR_MODS_BINDING_KEYBOARD = 1, /// code is an SDL_Scancode.
+	DTTR_MODS_BINDING_MOUSE = 2,	/// code is an SDL mouse button.
+	DTTR_MODS_BINDING_GAMEPAD = 3,	/// code is an SDL_GamepadButton.
+} DTTR_Mods_BindingDevice;
+
+/// A resolved input binding.
+typedef struct {
+	uint32_t struct_size;
+	DTTR_Mods_BindingDevice device;
+	int code;
+} DTTR_Mods_ConfigInputBinding;
+
+typedef union {
+	bool bool_value;
+	int int_value;
+	float float_value;
+	const char *string_value;
+} DTTR_Mods_ConfigDefaultValue;
+
+typedef struct {
+	const char *value;
+	const char *label;
+	const char *tooltip;
+} DTTR_Mods_ConfigChoice;
+
+typedef struct {
+	uint32_t struct_size;
+	const char *id;
+	const char *label;
+	const char *tooltip;
+	DTTR_Mods_ConfigFieldType type;
+	DTTR_Mods_ConfigDefaultValue default_value;
+	int int_min;
+	int int_max;
+	float float_min;
+	float float_max;
+	const DTTR_Mods_ConfigChoice *choices;
+	size_t choice_count;
+	const void *reserved[4];
+} DTTR_Mods_ConfigField;
+
+typedef struct {
+	uint32_t struct_size;
+	uint32_t schema_version;
+	const char *mod_id;
+	const char *label;
+	const DTTR_Mods_ConfigField *fields;
+	size_t field_count;
+	const void *reserved[4];
+} DTTR_Mods_ConfigSpec;
+
+typedef const DTTR_Mods_ConfigSpec *(*DTTR_Mods_ConfigFn)();
+
+// Each validator checks the caller's struct is large enough to hold the fields it reads
+// (forward-ABI guard) and that required identifiers are set.
+
+static inline bool DTTR_Mods_ConfigField_Valid(const DTTR_Mods_ConfigField *field) {
+	return field
+		   && field->struct_size >= offsetof(DTTR_Mods_ConfigField, choice_count)
+										+ sizeof(field->choice_count)
+		   && field->id && field->id[0];
+}
+
+/// Lighter check: only the fields needed for scalar/string defaults.
+static inline bool DTTR_Mods_ConfigField_ValidScalar(const DTTR_Mods_ConfigField *field) {
+	return field
+		   && field->struct_size >= offsetof(DTTR_Mods_ConfigField, default_value)
+										+ sizeof(field->default_value)
+		   && field->id && field->id[0];
+}
+
+/// Spec needs field_count and a non-empty field array.
+static inline bool DTTR_Mods_ConfigSpec_Valid(const DTTR_Mods_ConfigSpec *spec) {
+	return spec
+		   && spec->struct_size >= offsetof(DTTR_Mods_ConfigSpec, field_count)
+									   + sizeof(spec->field_count)
+		   && spec->mod_id && spec->mod_id[0] && spec->fields && spec->field_count > 0;
+}
+
+typedef DTTR_Result (*DTTR_Mods_ConfigGetBoolFn)(
+	const char *mod_id,
+	const char *field_id,
+	bool *out_value
+);
+typedef DTTR_Result (*DTTR_Mods_ConfigGetIntFn)(
+	const char *mod_id,
+	const char *field_id,
+	int *out_value
+);
+typedef DTTR_Result (*DTTR_Mods_ConfigGetFloatFn)(
+	const char *mod_id,
+	const char *field_id,
+	float *out_value
+);
+typedef DTTR_Result (*DTTR_Mods_ConfigGetStringFn)(
+	const char *mod_id,
+	const char *field_id,
+	char *out_value,
+	size_t out_size
+);
+typedef DTTR_Result (*DTTR_Mods_ConfigGetInputBindingFn)(
+	const char *mod_id,
+	const char *field_id,
+	DTTR_Mods_ConfigInputBinding *out_value
+);
+
 typedef void (*DTTR_Mods_LogFn)(
 	int level,
 	const char *file,
@@ -58,19 +176,60 @@ typedef struct {
 	uint32_t abi_version;
 	uint32_t flags;
 	DTTR_Mods_WriteExceptionReportFn write_exception_report;
+	DTTR_Mods_ConfigGetBoolFn config_get_bool;
+	DTTR_Mods_ConfigGetIntFn config_get_int;
+	DTTR_Mods_ConfigGetFloatFn config_get_float;
+	DTTR_Mods_ConfigGetStringFn config_get_string;
+	DTTR_Mods_ConfigGetInputBindingFn config_get_input_binding;
 } DTTR_Mods_API;
 
-static inline DTTR_Mods_WriteExceptionReportFn DTTR_Mods_GetWriteExceptionReportFn(
-	const DTTR_Mods_API *api
-) {
-	if (!api || api->abi_version < DTTR_SDK_ABI_VERSION
-		|| api->struct_size < offsetof(DTTR_Mods_API, write_exception_report)
-								  + sizeof(api->write_exception_report)) {
-		return NULL;
+static inline bool DTTR_Mods_APIHasField(const DTTR_Mods_API *api, size_t end_offset) {
+	return api && api->abi_version >= DTTR_SDK_ABI_VERSION
+		   && api->struct_size >= end_offset;
+}
+
+#define DTTR_MODS_API_FIELD_END(field)                                                   \
+	(offsetof(DTTR_Mods_API, field) + sizeof(((DTTR_Mods_API *)0)->field))
+
+// Each accessor returns the API function pointer, or NULL when the host's API
+// struct predates the field.
+#define DTTR_MODS_API_ACCESSOR(ReturnType, FnName, field)                                \
+	static inline ReturnType FnName(const DTTR_Mods_API *api) {                          \
+		if (!DTTR_Mods_APIHasField(api, DTTR_MODS_API_FIELD_END(field))) {               \
+			return NULL;                                                                 \
+		}                                                                                \
+		return api->field;                                                               \
 	}
 
-	return api->write_exception_report;
-}
+DTTR_MODS_API_ACCESSOR(
+	DTTR_Mods_WriteExceptionReportFn,
+	DTTR_Mods_GetWriteExceptionReportFn,
+	write_exception_report
+)
+DTTR_MODS_API_ACCESSOR(
+	DTTR_Mods_ConfigGetBoolFn,
+	DTTR_Mods_GetConfigBoolFn,
+	config_get_bool
+)
+DTTR_MODS_API_ACCESSOR(DTTR_Mods_ConfigGetIntFn, DTTR_Mods_GetConfigIntFn, config_get_int)
+DTTR_MODS_API_ACCESSOR(
+	DTTR_Mods_ConfigGetFloatFn,
+	DTTR_Mods_GetConfigFloatFn,
+	config_get_float
+)
+DTTR_MODS_API_ACCESSOR(
+	DTTR_Mods_ConfigGetStringFn,
+	DTTR_Mods_GetConfigStringFn,
+	config_get_string
+)
+DTTR_MODS_API_ACCESSOR(
+	DTTR_Mods_ConfigGetInputBindingFn,
+	DTTR_Mods_GetConfigInputBindingFn,
+	config_get_input_binding
+)
+
+#undef DTTR_MODS_API_ACCESSOR
+#undef DTTR_MODS_API_FIELD_END
 
 /// Host context passed to DTTR_Mod_Init. The pointer is valid until DTTR_Mod_Cleanup
 /// returns, so mods may retain it for logging and runtime cleanup. Contained
@@ -336,6 +495,8 @@ typedef void (*DTTR_Mods_GameFrameAdvancedFn)();
 	DTTR_EXPORT const DTTR_Mods_Info *DTTR_Mod_Info() {                                  \
 		return &dttr_mod_info;                                                           \
 	}
+
+#define DTTR_MODS_CONFIG DTTR_EXPORT const DTTR_Mods_ConfigSpec *DTTR_Mod_Config()
 
 static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 	return ctx && ctx->abi_version >= DTTR_SDK_ABI_VERSION

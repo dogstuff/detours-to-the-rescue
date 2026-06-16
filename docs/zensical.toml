@@ -31,6 +31,7 @@ nav = [
       { "Hooking Game Functions" = "modding-sdk/05-hooking-game-functions.md" },
       { "Drawing a GUI" = "modding-sdk/06-drawing-a-gui.md" },
       { "Manually Resolving Symbols" = "modding-sdk/07-resolving-symbols.md" },
+      { "Defining Custom Settings" = "modding-sdk/08-mod-config.md" },
     ] },
     { "PCDogs Symbols" = [
       { "PCDogs Symbols" = "modding-sdk/symbols/pcdogs/index.md" },

@@ -172,7 +172,7 @@ static bool try_create_device_for_driver(
 }
 
 // Maps a configured graphics API to the SDL GPU driver name requested at device creation.
-static const char *graphics_api_driver_name(DTTR_GraphicsApi api) {
+static const char *graphics_api_driver_name(DTTR_GraphicsAPI api) {
 	switch (api) {
 	case DTTR_GRAPHICS_API_VULKAN:
 		return DTTR_DRIVER_VULKAN;

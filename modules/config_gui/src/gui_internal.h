@@ -3,6 +3,8 @@
 
 #include <dttr_config.h>
 #include <dttr_imgui.h>
+#include <dttr_input_binding.h>
+#include <dttr_mods.h>
 #include <dttr_path.h>
 #include <dttr_sdl.h>
 
@@ -19,6 +21,7 @@
 #define DTTR_CONFIG_UI_PATH_BUTTON_W 70.0f
 #define DTTR_CONFIG_UI_GAMEPAD_SOURCE_W 135.0f
 #define DTTR_CONFIG_UI_GAMEPAD_BUTTON_W 58.0f
+#define DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W 46.0f
 #define DTTR_CONFIG_UI_PANEL_PADDING_X 7.5f
 #define DTTR_CONFIG_UI_PANEL_PADDING_Y 14.0f
 #define DTTR_CONFIG_UI_ITEM_SPACING_X 8.0f
@@ -45,6 +48,10 @@
 #define DTTR_CONFIG_UI_HEADER_TOP_SPACING 0.0f
 #define DTTR_CONFIG_UI_TOOLTIP_PADDING_Y 4.0f
 #define DTTR_CONFIG_UI_TOOLTIP_WRAP_W 360.0f
+#define DTTR_CONFIG_UI_MOD_CONFIG_LABEL_MAX 96
+#define DTTR_CONFIG_UI_MOD_CONFIG_TOOLTIP_MAX 256
+#define DTTR_CONFIG_UI_MOD_CONFIG_FIELDS_MAX DTTR_CONFIG_MOD_VALUES_MAX
+#define DTTR_CONFIG_UI_MOD_CONFIG_CHOICES_MAX DTTR_CONFIG_MOD_VALUES_MAX
 
 #define CONFIG_TABLE_FLAGS                                                               \
 	(ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH                       \
@@ -55,6 +62,8 @@
 #define DTTR_VERSION "unknown"
 #endif
 
+typedef bool (*mod_dll_visitor)(const char *dll_name, void *user_data);
+
 typedef enum {
 	CONFIG_LABEL_DEFAULT,
 	CONFIG_LABEL_SAVED_CHANGED,
@@ -62,11 +71,48 @@ typedef enum {
 } config_label_state;
 
 typedef struct {
+	char value[DTTR_CONFIG_MOD_STRING_MAX];
+	char label[DTTR_CONFIG_UI_MOD_CONFIG_LABEL_MAX];
+	char tooltip[DTTR_CONFIG_UI_MOD_CONFIG_TOOLTIP_MAX];
+} config_mod_choice_ui;
+
+typedef struct {
+	int mod_index;
+	char id[DTTR_CONFIG_MOD_FIELD_ID_MAX];
+	char label[DTTR_CONFIG_UI_MOD_CONFIG_LABEL_MAX];
+	char tooltip[DTTR_CONFIG_UI_MOD_CONFIG_TOOLTIP_MAX];
+	DTTR_Mods_ConfigFieldType type;
+	DTTR_Mods_ConfigDefaultValue default_value;
+	char default_string[DTTR_CONFIG_MOD_STRING_MAX];
+	int int_min;
+	int int_max;
+	float float_min;
+	float float_max;
+	int first_choice;
+	int choice_count;
+} config_mod_field_ui;
+
+typedef struct {
+	char dll_name[MAX_PATH];
+	char mod_id[DTTR_CONFIG_MOD_ID_MAX];
+	char label[DTTR_CONFIG_UI_MOD_CONFIG_LABEL_MAX];
+	uint32_t schema_version;
+	int first_field;
+	int field_count;
+} config_mod_ui;
+
+typedef struct {
 	DTTR_Config config;
 	DTTR_Config defaults;
 	DTTR_Config saved_config;
 	char path[MAX_PATH];
 	char mods_dir[MAX_PATH];
+	int mod_config_count;
+	config_mod_ui mod_configs[DTTR_CONFIG_MOD_CONFIGS_MAX];
+	int mod_config_field_count;
+	config_mod_field_ui mod_config_fields[DTTR_CONFIG_UI_MOD_CONFIG_FIELDS_MAX];
+	int mod_config_choice_count;
+	config_mod_choice_ui mod_config_choices[DTTR_CONFIG_UI_MOD_CONFIG_CHOICES_MAX];
 	char status[256];
 	Uint64 status_expires_at_ms;
 	SDL_Gamepad *preview_gamepad;
@@ -74,6 +120,9 @@ typedef struct {
 	int button_sources[DTTR_GAMEPAD_SOURCE_COUNT];
 	int button_actions[DTTR_GAMEPAD_SOURCE_COUNT];
 	int binding_row;
+	bool input_binding_capturing;
+	char input_binding_mod_id[DTTR_CONFIG_MOD_ID_MAX];
+	char input_binding_field_id[DTTR_CONFIG_MOD_FIELD_ID_MAX];
 	bool show_shortcut_debug;
 } config_ui_state;
 
@@ -98,6 +147,8 @@ typedef struct {
 		PATH_FIELD_DEFAULT_CHANGED(state, field)                                         \
 	)
 
+void for_each_mod_dll(const char *mods_dir, mod_dll_visitor visit, void *user_data);
+
 float config_standard_input_width();
 int config_window_width();
 void same_path_button_row(const DTTR_ImGuiDialogContext *ctx);
@@ -115,6 +166,7 @@ const char *game_action_tooltip(int action);
 void load_config(config_ui_state *state);
 void save_config(config_ui_state *state);
 void reset_defaults(config_ui_state *state);
+void reload_mod_config_specs(config_ui_state *state);
 void close_gamepad_preview(config_ui_state *state);
 void request_reset_defaults(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 config_label_state make_config_label_state(bool unsaved_changed, bool default_changed);
@@ -253,6 +305,18 @@ int source_from_event(const SDL_Event *event);
 bool event_cancels_binding(const SDL_Event *event);
 void cancel_binding(config_ui_state *state);
 void capture_source(config_ui_state *state, int new_source);
+void begin_input_binding_capture(
+	config_ui_state *state,
+	const char *mod_id,
+	const char *field_id
+);
+void cancel_input_binding_capture(config_ui_state *state);
+bool capture_input_binding_event(config_ui_state *state, const SDL_Event *event);
+bool input_binding_field_capturing(
+	const config_ui_state *state,
+	const char *mod_id,
+	const char *field_id
+);
 bool begin_tab_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,

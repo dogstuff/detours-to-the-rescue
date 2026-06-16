@@ -50,7 +50,8 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
   },
   "modding": {
     "hot_reload": false,
-    "disabled_mods": []
+    "disabled_mods": [],
+    "mod_configs": {}
   },
   "gamepad": {
     "enabled": true,
@@ -69,13 +70,29 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
 }
 ```
 
+## Mod Configs (`modding.mod_configs`)
+
+Mod settings are stored by stable SDK `mod_id`. Each entry has a `schema_version` and a `values` object. Values may be booleans, integers, floats, or strings; enums are stored as strings. The settings come from mods that export `DTTR_Mod_Config`.
+
+```json
+{
+  "modding": {
+    "mod_configs": {
+      "example.author.my_mod": {
+        "schema_version": 1,
+        "values": {
+          "enabled": true,
+          "mode": "fast"
+        }
+      }
+    }
+  }
+}
+```
+
 ## Gamepad Analog Remap
 
-`gamepad.analog_remap` is enabled by default. It routes left-stick X/Y through PS1-style analog scaling controlled by `deadzone_stick_x`, `deadzone_stick_y`, `sensitivity_stick_x`, and `sensitivity_stick_y`.
-
-## Controller Vibration
-
-Vibration follows the game's own vibration option and the global `gamepad.enabled` switch.
+`gamepad.analog_remap` routes left-stick X/Y through PS1-style analog scaling and is enabled by default.
 
 ## Gamepad Buttons (`gamepad.buttons`)
 
