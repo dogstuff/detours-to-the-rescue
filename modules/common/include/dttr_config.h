@@ -8,6 +8,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <dttr_result.h>
+
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
@@ -38,7 +40,7 @@ typedef enum {
 	DTTR_GRAPHICS_API_VULKAN = 1,
 	DTTR_GRAPHICS_API_DIRECT3D12 = 2,
 	DTTR_GRAPHICS_API_OPENGL = 3,
-} DTTR_GraphicsApi;
+} DTTR_GraphicsAPI;
 
 typedef enum {
 	DTTR_VERTEX_PRECISION_NATIVE = 0,
@@ -54,6 +56,11 @@ typedef enum {
 
 #define DTTR_CONFIG_SCHEMA_MAJOR_VERSION 1
 #define DTTR_CONFIG_DISABLED_MODS_MAX 32
+#define DTTR_CONFIG_MOD_CONFIGS_MAX 32
+#define DTTR_CONFIG_MOD_VALUES_MAX 256
+#define DTTR_CONFIG_MOD_ID_MAX 64
+#define DTTR_CONFIG_MOD_FIELD_ID_MAX 64
+#define DTTR_CONFIG_MOD_STRING_MAX 256
 #define DTTR_MODS_SHADOW_PREFIX "_dttr_hot_"
 
 #define DTTR_GAMEPAD_AXIS_MAPPING_COUNT 3
@@ -81,6 +88,49 @@ typedef enum {
 #define PCDOGS_GAMEPAD_IDX_BTN_11 17
 #define PCDOGS_GAMEPAD_IDX_BTN_12 18
 
+typedef enum {
+	DTTR_CONFIG_MOD_VALUE_BOOL = 0,
+	DTTR_CONFIG_MOD_VALUE_INT = 1,
+	DTTR_CONFIG_MOD_VALUE_FLOAT = 2,
+	DTTR_CONFIG_MOD_VALUE_STRING = 3,
+} DTTR_ConfigModValueType;
+
+typedef struct {
+	char mod_id[DTTR_CONFIG_MOD_ID_MAX];
+	uint32_t schema_version;
+} DTTR_ConfigModConfig;
+
+typedef struct {
+	int mod_index;
+	char field_id[DTTR_CONFIG_MOD_FIELD_ID_MAX];
+	DTTR_ConfigModValueType value_type;
+	union {
+		bool bool_value;
+		int int_value;
+		float float_value;
+		char string_value[DTTR_CONFIG_MOD_STRING_MAX];
+	};
+} DTTR_ConfigModValue;
+
+typedef struct {
+	DTTR_ConfigModValueType value_type;
+	bool bool_value;
+	int int_value;
+	float float_value;
+	const char *string_value;
+} DTTR_ConfigModDefault;
+
+/// Copies value into out, succeeding only when it fits with its terminator. Returns
+/// false on a null buffer/source or on truncation; callers treat truncation as a hard
+/// failure rather than silently storing a clipped string.
+static inline bool DTTR_Config_StrCopyChecked(
+	char *out,
+	size_t out_size,
+	const char *value
+) {
+	return out && value && SDL_strlcpy(out, value, out_size) < out_size;
+}
+
 typedef struct {
 	int schema_major_version;
 	int log_level;
@@ -92,7 +142,7 @@ typedef struct {
 	bool skip_intro_movies;
 	DTTR_ScalingMode scaling_fit;
 	DTTR_ScalingMethod scaling_method;
-	DTTR_GraphicsApi graphics_api;
+	DTTR_GraphicsAPI graphics_api;
 	DTTR_VertexPrecision vertex_precision;
 	bool sprite_smooth;
 	SDL_GPUFilter present_filter;
@@ -105,6 +155,10 @@ typedef struct {
 	bool hot_reload;
 	int disabled_mod_count;
 	char disabled_mods[DTTR_CONFIG_DISABLED_MODS_MAX][MAX_PATH];
+	int mod_config_count;
+	DTTR_ConfigModConfig mod_configs[DTTR_CONFIG_MOD_CONFIGS_MAX];
+	int mod_value_count;
+	DTTR_ConfigModValue mod_values[DTTR_CONFIG_MOD_VALUES_MAX];
 	float mss_sample_gain;
 	float mss_sample_preemphasis;
 	bool gamepad_enabled;
@@ -159,7 +213,7 @@ typedef enum {
 } DTTR_ConfigChoiceList;
 
 /// Returns the config token for a graphics API selection.
-const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsApi api);
+const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsAPI api);
 
 int DTTR_Config_SchemaCount();
 const DTTR_ConfigFieldSpec *DTTR_Config_SchemaGet(int index);
@@ -177,12 +231,99 @@ const DTTR_ConfigChoice *DTTR_Config_Choices(DTTR_ConfigChoiceList list, int *co
 void DTTR_Config_ClearGamepadButtonMap(int *map);
 
 bool DTTR_Config_IsModDisabled(const DTTR_Config *config, const char *mod_filename);
-bool DTTR_Config_SetModEnabled(
+
+DTTR_Result DTTR_Config_SetModEnabled(
 	DTTR_Config *config,
 	const char *mod_filename,
 	bool enabled
 );
 bool DTTR_Config_DisabledModsChanged(const DTTR_Config *current, const DTTR_Config *base);
+
+DTTR_Result DTTR_Config_GetModSchemaVersion(
+	const DTTR_Config *config,
+	const char *mod_id,
+	uint32_t *out_version
+);
+
+DTTR_Result DTTR_Config_SetModSchemaVersion(
+	DTTR_Config *config,
+	const char *mod_id,
+	uint32_t schema_version
+);
+
+DTTR_Result DTTR_Config_GetModBool(
+	const DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	bool *out_value
+);
+
+DTTR_Result DTTR_Config_SetModBool(
+	DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	bool value
+);
+
+DTTR_Result DTTR_Config_GetModInt(
+	const DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	int *out_value
+);
+
+DTTR_Result DTTR_Config_SetModInt(
+	DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	int value
+);
+
+DTTR_Result DTTR_Config_GetModFloat(
+	const DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	float *out_value
+);
+
+DTTR_Result DTTR_Config_SetModFloat(
+	DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	float value
+);
+
+DTTR_Result DTTR_Config_GetModString(
+	const DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	char *out_value,
+	size_t out_size
+);
+
+DTTR_Result DTTR_Config_SetModString(
+	DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	const char *value
+);
+
+DTTR_Result DTTR_Config_ApplyModFieldDefault(
+	DTTR_Config *config,
+	const char *mod_id,
+	const char *field_id,
+	const DTTR_ConfigModDefault *def,
+	bool overwrite
+);
+
+bool DTTR_Config_ModConfigsChanged(const DTTR_Config *current, const DTTR_Config *base);
+
+bool DTTR_Config_ModFieldChanged(
+	const DTTR_Config *current,
+	const DTTR_Config *base,
+	const char *mod_id,
+	const char *field_id
+);
 
 /// Resets a config object to built-in defaults.
 void DTTR_Config_SetDefaults(DTTR_Config *config);

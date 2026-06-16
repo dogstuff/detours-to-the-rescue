@@ -128,13 +128,16 @@ static void remove_disabled_mod(DTTR_Config *config, int index) {
 	config->disabled_mods[last_index][0] = '\0';
 }
 
-static bool add_disabled_mod(DTTR_Config *config, const char *mod_filename) {
+static DTTR_Result add_disabled_mod(DTTR_Config *config, const char *mod_filename) {
 	if (!config || !mod_filename || !mod_filename[0]) {
-		return false;
+		return config_result(
+			DTTR_ERR_INVALID_ARGUMENT,
+			"Config and mod filename are required."
+		);
 	}
 
 	if (config->disabled_mod_count >= DTTR_CONFIG_DISABLED_MODS_MAX) {
-		return false;
+		return config_result(DTTR_ERR_OUT_OF_MEMORY, "Disabled mod list is full.");
 	}
 
 	if (!DTTR_Path_CopyString(
@@ -142,20 +145,23 @@ static bool add_disabled_mod(DTTR_Config *config, const char *mod_filename) {
 			sizeof(config->disabled_mods[config->disabled_mod_count]),
 			mod_filename
 		)) {
-		return false;
+		return config_result(DTTR_ERR_INVALID_ARGUMENT, "Mod filename is too long.");
 	}
 
 	config->disabled_mod_count++;
-	return true;
+	return config_ok();
 }
 
-bool DTTR_Config_SetModEnabled(
+DTTR_Result DTTR_Config_SetModEnabled(
 	DTTR_Config *config,
 	const char *mod_filename,
 	bool enabled
 ) {
 	if (!config || !mod_filename || !mod_filename[0]) {
-		return false;
+		return config_result(
+			DTTR_ERR_INVALID_ARGUMENT,
+			"Config and mod filename are required."
+		);
 	}
 
 	const int index = find_disabled_mod(config, mod_filename);
@@ -164,7 +170,7 @@ bool DTTR_Config_SetModEnabled(
 	}
 
 	if (enabled || index >= 0) {
-		return true;
+		return config_ok();
 	}
 
 	return add_disabled_mod(config, mod_filename);
@@ -196,7 +202,7 @@ static void set_default_button_map(int *map) {
 	}
 }
 
-const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsApi api) {
+const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsAPI api) {
 	return config_format_graphics_api(api);
 }
 

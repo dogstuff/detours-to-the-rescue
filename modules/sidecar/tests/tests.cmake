@@ -1,18 +1,14 @@
 set(DTTR_SIDECAR_TEST_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
-add_custom_target(dttr_sidecar_tests)
-add_dependencies(dttr_tests dttr_sidecar_tests)
-
-if(NOT DTTR_CMOCKA_FOUND)
-    if(DTTR_REQUIRE_TEST_DEPS)
-        message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
-    endif()
-
-    message(WARNING "cmocka was not found; skipping DttR sidecar cmocka tests")
+dttr_add_test_group(dttr_sidecar_tests)
+dttr_check_cmocka_tests(sidecar dttr_has_cmocka)
+if(NOT dttr_has_cmocka)
     return()
 endif()
 
 dttr_add_cmocka_test_suite(dttr_sidecar_pcdogs_tests
+    GROUP
+        dttr_sidecar_tests
     TIMEOUT
         300
     SOURCES
@@ -29,8 +25,4 @@ dttr_add_cmocka_test_suite(dttr_sidecar_pcdogs_tests
         sidecar
         pcdogs
         fixtures
-)
-
-add_dependencies(dttr_sidecar_tests
-    dttr_sidecar_pcdogs_tests
 )

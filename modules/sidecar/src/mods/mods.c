@@ -1,19 +1,20 @@
+#include <dttr_config.h>
+
 #include "../graphics/graphics_private.h"
 #include "context_private.h"
 #include "mods_private.h"
 #include "sidecar_private.h"
 #include <dttr_runtime.h>
 
-#include <dttr_config.h>
 #include <dttr_errors.h>
 #include <dttr_log.h>
+#include <dttr_mod_config.h>
 #include <dttr_path.h>
 
 #include <kvec.h>
 #include <sds.h>
 
 #include <stdlib.h>
-#include <string.h>
 
 #define MOD_MAX_SHADOW_ATTEMPTS 32
 #define MOD_RELOAD_STABLE_MS 500u
@@ -65,7 +66,11 @@ static void log_mod_deleted(const loaded_mod *mod) {
 
 // Recognizes temporary shadow-copy DLLs so hot reload never treats them as source mods.
 static bool is_shadow_mod(const char *filename) {
-	return strncmp(filename, DTTR_MODS_SHADOW_PREFIX, strlen(DTTR_MODS_SHADOW_PREFIX))
+	return SDL_strncmp(
+			   filename,
+			   DTTR_MODS_SHADOW_PREFIX,
+			   SDL_strlen(DTTR_MODS_SHADOW_PREFIX)
+		   )
 		   == 0;
 }
 
@@ -208,7 +213,8 @@ static bool refresh_mod_context(loaded_mod *mod, const DTTR_Mods_Context *base_c
 	X(timing_host_frame_end,                                                             \
 	  DTTR_Mods_TimingHostFrameEndFn,                                                    \
 	  "DTTR_Mod_TimingHostFrameEnd")                                                     \
-	X(game_frame_advanced, DTTR_Mods_GameFrameAdvancedFn, "DTTR_Mod_GameFrameAdvanced")
+	X(game_frame_advanced, DTTR_Mods_GameFrameAdvancedFn, "DTTR_Mod_GameFrameAdvanced")  \
+	X(config, DTTR_Mods_ConfigFn, "DTTR_Mod_Config")
 
 static void delete_shadow_copy(loaded_mod *mod) {
 	if (!mod->shadow_path[0]) {
@@ -221,7 +227,7 @@ static void delete_shadow_copy(loaded_mod *mod) {
 
 static int find_mod(const char *filename) {
 	for (size_t i = 0; i < kv_size(loaded_mods); i++) {
-		if (strcmp(kv_A(loaded_mods, i).filename, filename) == 0) {
+		if (SDL_strcmp(kv_A(loaded_mods, i).filename, filename) == 0) {
 			return (int)i;
 		}
 	}
@@ -341,7 +347,7 @@ static bool prepare_mod(
 	const mod_file_id *source_file,
 	loaded_mod *out
 ) {
-	memset(out, 0, sizeof(*out));
+	SDL_memset(out, 0, sizeof(*out));
 	out->hook_owner = (void *)(++hook_owner_counter);
 	DTTR_Path_CopyString(out->filename, sizeof(out->filename), filename);
 	DTTR_Path_CopyString(out->source_path, sizeof(out->source_path), source_path);
@@ -385,6 +391,111 @@ static bool prepare_mod(
 	return true;
 }
 
+#define DTTR_MOD_FIELD_HAS(field, member)                                                \
+	((field)->struct_size                                                                \
+	 >= offsetof(DTTR_Mods_ConfigField, member) + sizeof((field)->member))
+
+static void clamp_seeded_field_range(
+	const char *mod_id,
+	const DTTR_Mods_ConfigField *field
+) {
+	if (field->type == DTTR_MODS_CONFIG_FIELD_INT && DTTR_MOD_FIELD_HAS(field, int_max)
+		&& field->int_min < field->int_max) {
+		int value;
+		if (DTTR_Config_GetModInt(&dttr_config, mod_id, field->id, &value).status
+			== DTTR_OK) {
+			if (value < field->int_min) {
+				DTTR_Config_SetModInt(&dttr_config, mod_id, field->id, field->int_min);
+			} else if (value > field->int_max) {
+				DTTR_Config_SetModInt(&dttr_config, mod_id, field->id, field->int_max);
+			}
+		}
+	} else if (
+		field->type == DTTR_MODS_CONFIG_FIELD_FLOAT
+		&& DTTR_MOD_FIELD_HAS(field, float_max) && field->float_min < field->float_max
+	) {
+		float value;
+		if (DTTR_Config_GetModFloat(&dttr_config, mod_id, field->id, &value).status
+			== DTTR_OK) {
+			if (value < field->float_min) {
+				DTTR_Config_SetModFloat(&dttr_config, mod_id, field->id, field->float_min);
+			} else if (value > field->float_max) {
+				DTTR_Config_SetModFloat(&dttr_config, mod_id, field->id, field->float_max);
+			}
+		}
+	}
+}
+
+#undef DTTR_MOD_FIELD_HAS
+
+static void seed_mod_config_field(const char *mod_id, const DTTR_Mods_ConfigField *field) {
+	if (!DTTR_Mods_ConfigField_ValidScalar(field)
+		|| (field->type == DTTR_MODS_CONFIG_FIELD_ENUM
+			&& !DTTR_Mods_ConfigField_Valid(field))) {
+		return;
+	}
+
+	DTTR_ConfigModDefault def;
+	if (DTTR_ModConfig_ResolveFieldDefault(
+			field,
+			DTTR_ModConfig_StringDefault(field),
+			&def
+		)
+			.status
+		!= DTTR_OK) {
+		return;
+	}
+
+	DTTR_Result result = DTTR_Config_ApplyModFieldDefault(
+		&dttr_config,
+		mod_id,
+		field->id,
+		&def,
+		false
+	);
+	if (!DTTR_ResultOK(result)) {
+		DTTR_LOG_WARN(
+			"Mod %s field %s: default not applied (%s: %s)",
+			mod_id,
+			field->id,
+			DTTR_StatusName(result.status),
+			dttr_sidecar_result_detail(result)
+		);
+		return;
+	}
+
+	clamp_seeded_field_range(mod_id, field);
+}
+
+// Seeds a mod's declared field defaults where a value is absent, so runtime reads
+// return spec defaults even before DttR Config is opened.
+static void seed_mod_config_defaults(const loaded_mod *mod) {
+	if (!mod || !mod->config) {
+		return;
+	}
+
+	const DTTR_Mods_ConfigSpec *spec = mod->config();
+	if (!DTTR_Mods_ConfigSpec_Valid(spec)) {
+		return;
+	}
+
+	if (spec->schema_version > 0) {
+		uint32_t existing;
+		if (DTTR_Config_GetModSchemaVersion(&dttr_config, spec->mod_id, &existing).status
+			!= DTTR_OK) {
+			DTTR_Config_SetModSchemaVersion(
+				&dttr_config,
+				spec->mod_id,
+				spec->schema_version
+			);
+		}
+	}
+
+	for (size_t i = 0; i < spec->field_count; i++) {
+		seed_mod_config_field(spec->mod_id, &spec->fields[i]);
+	}
+}
+
 // Calls mod initialization and records ownership for hooks installed by that DLL.
 static bool init_mod(loaded_mod *mod) {
 	const DTTR_Mods_Info *info = get_mod_info(mod->info);
@@ -397,6 +508,8 @@ static bool init_mod(loaded_mod *mod) {
 		unload_mod(mod);
 		return false;
 	}
+
+	seed_mod_config_defaults(mod);
 
 	void *previous_owner = DTTR_Core_HookSetOwner(mod->hook_owner);
 	const bool initialized = mod->init(mod->context);

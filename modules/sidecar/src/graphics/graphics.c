@@ -366,7 +366,7 @@ static void destroy_window(DTTR_BackendState *state) {
 
 // Limits backend probing to the user-selected API while preserving the fallback order
 // for automatic graphics selection.
-static backend_range select_backend_range(DTTR_GraphicsApi api) {
+static backend_range select_backend_range(DTTR_GraphicsAPI api) {
 	switch (api) {
 	case DTTR_GRAPHICS_API_OPENGL:
 		return (backend_range){IDX_OPENGL, IDX_OPENGL};

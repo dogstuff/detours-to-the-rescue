@@ -341,7 +341,10 @@ BOOL APIENTRY DllMain(HMODULE module, const DWORD reason_for_call, LPVOID reserv
 	if (reason_for_call == DLL_PROCESS_ATTACH) {
 		dttr_sidecar_module = module;
 
-		pc_dogs_module = DTTR_UNWRAP_WINAPI_EXISTS(GetModuleHandleA("pcdogs.exe"));
+		pc_dogs_module = GetModuleHandleA("pcdogs.exe");
+		if (!pc_dogs_module) {
+			return TRUE;
+		}
 
 		install_win_main_hook();
 	}

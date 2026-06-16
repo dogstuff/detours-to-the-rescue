@@ -208,7 +208,7 @@ const DTTR_ConfigFieldSpec *config_schema_find(const char *section, const char *
 	  config_parse_scaling_method,                                                       \
 	  config_assign_scaling_method)                                                      \
 	X(CONFIG_GRAPHICS_API,                                                               \
-	  DTTR_GraphicsApi,                                                                  \
+	  DTTR_GraphicsAPI,                                                                  \
 	  DTTR_GRAPHICS_API_AUTO,                                                            \
 	  config_parse_graphics_api,                                                         \
 	  config_assign_graphics_api)                                                        \

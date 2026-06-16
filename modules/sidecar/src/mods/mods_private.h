@@ -104,6 +104,7 @@ typedef struct {
 	DTTR_Mods_TimingAfterPresentFrameFn timing_after_present_frame;
 	DTTR_Mods_TimingHostFrameEndFn timing_host_frame_end;
 	DTTR_Mods_GameFrameAdvancedFn game_frame_advanced;
+	DTTR_Mods_ConfigFn config;
 	DWORD pending_since_ms;
 	DWORD loaded_at_ms;
 	bool reload_pending;

@@ -9,16 +9,22 @@ add_library(common STATIC
     src/imgui_error_ui.c
     src/path.c
     src/gamepad_mapping.c
+    src/input_binding.c
     src/sdl.c
     src/iso/iso.c
     src/config/defaults.c
     src/config/io.c
+    src/config/mods.c
     src/config/parse.c
     src/config/schema.c
 )
 target_include_directories(common PUBLIC
     include
+    "${CMAKE_SOURCE_DIR}/modules/sdk/include"
     ${SDL3_INCLUDE_DIRS}
+)
+target_include_directories(common PRIVATE
+    "${CMAKE_BINARY_DIR}/modules/sdk/generated/include"
 )
 target_compile_options(common PUBLIC
     ${SDL3_CFLAGS_OTHER}
@@ -43,46 +49,6 @@ target_compile_definitions(common PRIVATE
     DTTR_VERSION="${DTTR_VERSION}"
 )
 
-# Builds binary-fixture support used by module test executables.
 if(BUILD_TESTING)
-    add_custom_target(dttr_common_tests)
-    add_dependencies(dttr_tests dttr_common_tests)
-
-    if(NOT DTTR_CMOCKA_FOUND AND DTTR_REQUIRE_TEST_DEPS)
-        message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
-    endif()
-
-    if(DTTR_CMOCKA_FOUND)
-        dttr_add_cmocka_test_suite(dttr_common_core_tests
-            SOURCES
-                tests/src/core.c
-            LINK_LIBRARIES
-                common
-            LABELS
-                common
-        )
-        dttr_copy_runtime_files(
-            dttr_common_core_tests
-            "$<TARGET_FILE_DIR:dttr_common_core_tests>"
-            FILES
-                ${DTTR_SDL3_RUNTIME_DLL}
-        )
-        add_dependencies(dttr_common_tests dttr_common_core_tests)
-
-        add_library(dttr_test_support STATIC
-            tests/src/binary.c
-        )
-        target_include_directories(dttr_test_support PUBLIC
-            include
-            tests/include
-        )
-        target_link_libraries(dttr_test_support PUBLIC
-            ${DTTR_CMOCKA_TARGET}
-            common
-            physfs-static
-            sds
-            xxhash
-            Zydis
-        )
-    endif()
+    include("${CMAKE_CURRENT_LIST_DIR}/tests/tests.cmake")
 endif()

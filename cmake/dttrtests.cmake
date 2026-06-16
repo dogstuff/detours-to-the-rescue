@@ -61,13 +61,44 @@ function(dttr_cmocka_test_environment out_var)
     set(${out_var} ${dttr_environment} PARENT_SCOPE)
 endfunction()
 
+function(dttr_add_test_group target)
+    if(NOT TARGET "${target}")
+        add_custom_target("${target}")
+    endif()
+
+    add_dependencies(dttr_tests "${target}")
+endfunction()
+
+function(dttr_check_cmocka_tests label out_var)
+    cmake_parse_arguments(DTTR_CHECK "QUIET" "MESSAGE" "" ${ARGN})
+
+    if(NOT DTTR_CMOCKA_FOUND)
+        if(DTTR_REQUIRE_TEST_DEPS)
+            message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
+        endif()
+
+        if(NOT DTTR_CHECK_QUIET)
+            if(DTTR_CHECK_MESSAGE)
+                message(WARNING "${DTTR_CHECK_MESSAGE}")
+            else()
+                message(WARNING "cmocka was not found; skipping DttR ${label} cmocka tests")
+            endif()
+        endif()
+
+        set(${out_var} FALSE PARENT_SCOPE)
+        return()
+    endif()
+
+    set(${out_var} TRUE PARENT_SCOPE)
+endfunction()
+
 # Registers a cmocka target with the repo's standard CTest settings.
 function(dttr_add_cmocka_test_suite target)
     cmake_parse_arguments(
         DTTR_SUITE
         ""
-        "TIMEOUT"
-        "SOURCES;INCLUDE_DIRS;LINK_LIBRARIES;LABELS"
+        "GROUP;TIMEOUT"
+        "SOURCES;INCLUDE_DIRS;LINK_LIBRARIES;LABELS;DEPENDS;RUNTIME_FILES"
         ${ARGN}
     )
 
@@ -99,5 +130,20 @@ function(dttr_add_cmocka_test_suite target)
 
     if(DTTR_SUITE_LABELS)
         set_property(TEST "${target}" PROPERTY LABELS ${DTTR_SUITE_LABELS})
+    endif()
+
+    if(DTTR_SUITE_DEPENDS)
+        add_dependencies("${target}" ${DTTR_SUITE_DEPENDS})
+    endif()
+
+    if(DTTR_SUITE_RUNTIME_FILES)
+        dttr_copy_runtime_files("${target}" "$<TARGET_FILE_DIR:${target}>"
+            FILES
+                ${DTTR_SUITE_RUNTIME_FILES}
+        )
+    endif()
+
+    if(DTTR_SUITE_GROUP)
+        add_dependencies("${DTTR_SUITE_GROUP}" "${target}")
     endif()
 endfunction()
