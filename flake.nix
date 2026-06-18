@@ -128,6 +128,8 @@
                 python3Packages.black
                 python3Packages.mako
                 python3Packages.pefile
+                python3Packages.pydantic
+                nodejs
                 xxd
                 llvmPackages_22.clang-tools
                 doxygen

@@ -1,0 +1,16 @@
+{
+  "name": "@dttr/symbol-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/pcdogs-symbol-viewer.tsx --bundle --format=esm --platform=browser --target=es2020 --jsx=automatic --jsx-import-source=preact --minify --log-level=info"
+  },
+  "dependencies": {
+    "preact": "^10.27.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "typescript": "^5.9.3"
+  }
+}

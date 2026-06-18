@@ -253,8 +253,6 @@ static DTTR_Mods_GraphicsBackend graphics_backend(const DTTR_BackendState *state
 	}
 }
 
-// Packages the active window, backend, and render target into the mod graphics
-// context.
 static DTTR_Mods_GraphicsContext graphics_context(const DTTR_BackendState *state) {
 	return (DTTR_Mods_GraphicsContext){
 		.window = state ? state->window : NULL,
@@ -291,8 +289,7 @@ void dttr_graphics_mod_frame_begin(DTTR_BackendState *state) {
 }
 
 void dttr_graphics_mod_before_game_frame(void) {
-	// frame_active is still true here
-	// so injected native draws record into the open frame.
+	// frame_active remains true so native mod draws join the open frame.
 	dttr_timing_before_render_frame(
 		dttr_timing_render_reuses_previous_sim_state(),
 		dttr_backend.frame_active
@@ -352,8 +349,7 @@ void dttr_graphics_mod_present_rect_after(void) {
 	dttr_graphics_mod_after_present();
 }
 
-// Tears down the SDL window after notifying mods so no lifecycle callback sees a
-// dangling window handle.
+// Notify mods before the SDL handle is invalid.
 static void destroy_window(DTTR_BackendState *state) {
 	if (!state->window) {
 		return;
@@ -364,8 +360,7 @@ static void destroy_window(DTTR_BackendState *state) {
 	state->window = NULL;
 }
 
-// Limits backend probing to the user-selected API while preserving the fallback order
-// for automatic graphics selection.
+// AUTO keeps fallback order; explicit APIs probe one backend.
 static backend_range select_backend_range(DTTR_GraphicsAPI api) {
 	switch (api) {
 	case DTTR_GRAPHICS_API_OPENGL:
@@ -377,8 +372,6 @@ static backend_range select_backend_range(DTTR_GraphicsAPI api) {
 	}
 }
 
-// Probes the configured graphics backends, creates the game window, and publishes the
-// chosen device to mods.
 HWND dttr_graphics_init() {
 	DTTR_BackendState *state = &dttr_backend;
 

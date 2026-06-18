@@ -160,9 +160,23 @@ build-docs: setup-build
 
 # Build documentation from an existing build (for CI).
 build-docs-from-build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     rm -rf "{{ docs-build-dir }}" "{{ docs-source-dir }}"
 
     python3 scripts/prepare-docs-source.py --config "{{ docs-config }}" --output-dir "{{ docs-source-dir }}"
+    npm --prefix docs/symbol-viewer ci
+
+    docs_js_out="{{ docs-source-dir }}/pages/assets/js/pcdogs-symbol-viewer.mjs"
+
+    if [ "${docs_js_out#/}" = "$docs_js_out" ]; then
+      docs_js_out="$(pwd)/$docs_js_out"
+    fi
+
+    mkdir -p "$(dirname "$docs_js_out")"
+    npm --prefix docs/symbol-viewer run build -- --outfile="$docs_js_out"
+
     zensical build --clean --config-file "{{ docs-source-dir }}/zensical.toml"
     cp -R "{{ docs-source-dir }}/build" "{{ docs-build-dir }}"
 
