@@ -169,6 +169,7 @@ class FunctionRow:
     pattern: str
     hook: HookRow
     unstable: bool
+    abi_status: object
     doc: str | None
     typed: TypedFunction | None = None
     symbol_id: str = ""
@@ -611,6 +612,7 @@ def function_entry(
         pattern=row.pattern,
         hook=hook,
         unstable=row.unstable,
+        abi_status=row.abi_status,
         doc=row.doc,
     )
     if row.typed is not None:
@@ -1123,12 +1125,12 @@ def c_type_with_pcdogs_prefix(value: object, names: dict[str, str]) -> str:
     """Normalize a C type and prefix generated PCDOGS type identifiers."""
 
     text = c_type(value)
-    for name, public_name in sorted(
+    for name, prefixed_name in sorted(
         names.items(), key=lambda item: len(item[0]), reverse=True
     ):
         text = re.sub(
             rf"(?<!DTTR_PCDOGS_[EPSTP]_)\b{re.escape(name)}\b",
-            public_name,
+            prefixed_name,
             text,
         )
     return text

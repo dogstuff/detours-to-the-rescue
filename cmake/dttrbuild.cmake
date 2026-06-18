@@ -103,11 +103,15 @@ function(dttr_copy_runtime_files target output_dir)
 endfunction()
 
 function(dttr_copy_modding_sdk_distribution target output_dir)
-	add_dependencies("${target}" dttr_sdk_bundle_header)
+	add_dependencies("${target}" dttr_sdk_bundle_header dttr_pcdogs_generated_headers)
 
 	get_property(DTTR_GENERATED_SDK_BUNDLE_HEADER GLOBAL PROPERTY DTTR_SDK_BUNDLE_HEADER)
 	if(NOT DTTR_GENERATED_SDK_BUNDLE_HEADER)
 		set(DTTR_GENERATED_SDK_BUNDLE_HEADER "${DTTR_SDK_BUNDLE_HEADER}")
+	endif()
+
+	if(NOT DTTR_SDK_SYMBOL_MANIFEST OR NOT DTTR_SDK_SYMBOL_SCHEMA)
+		message(FATAL_ERROR "DttR SDK metadata paths are not configured")
 	endif()
 
 	set(DTTR_SELECTED_SDL3_INCLUDE_ROOT)
@@ -152,11 +156,16 @@ function(dttr_copy_modding_sdk_distribution target output_dir)
 			"${output_dir}/mods"
 			"${output_dir}/sdk/include"
 			"${output_dir}/sdk/lib"
+			"${output_dir}/sdk/metadata"
 			"${output_dir}/sdk/third_party/cimgui/imgui/backends"
 			"${output_dir}/sdk/third_party/SDL3/include"
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"${DTTR_GENERATED_SDK_BUNDLE_HEADER}"
 			"${output_dir}/sdk/include"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"${DTTR_SDK_SYMBOL_MANIFEST}"
+			"${DTTR_SDK_SYMBOL_SCHEMA}"
+			"${output_dir}/sdk/metadata"
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			$<TARGET_LINKER_FILE:dttr_sidecar>
 			"${output_dir}/sdk/lib"

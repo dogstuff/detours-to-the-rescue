@@ -2,10 +2,20 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field as dc_field
 from enum import StrEnum
-from typing import TypeAlias
+from typing import Any, TypeAlias
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    StrictStr,
+    field_serializer,
+    field_validator,
+)
+from pydantic.aliases import AliasChoices
 
 __all__ = [
     "AbiStatus",
@@ -79,107 +89,139 @@ class WritePolicy(StrEnum):
     PATCH_ONLY = "patch_only"
 
 
-@dataclass(frozen=True)
-class Param:
-    type: str
-    name: str
-    doc: str | None = None
+class BlueprintModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
 
-UNKNOWN_PARAMS: list[Param] = [Param("uintptr_t", f"a{i}") for i in range(8)]
+class FrozenBlueprintModel(BlueprintModel):
+    model_config = ConfigDict(frozen=True)
 
 
-@dataclass(frozen=True)
-class Signature:
-    pattern: str
-    name: str | None = None
+class Param(FrozenBlueprintModel):
+    type: StrictStr
+    name: StrictStr
+    doc: StrictStr | None = None
+
+
+UNKNOWN_PARAMS: list[Param] = [Param(type="uintptr_t", name=f"a{i}") for i in range(8)]
+
+
+class Signature(FrozenBlueprintModel):
+    pattern: StrictStr
+    name: StrictStr | None = None
     required: Required = Required.ALL
-    unstable: bool = False
-    doc: str | None = None
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class TypeAlias:
-    source_type: str
-    name: str
-    unstable: bool = False
-    doc: str | None = None
+class TypeAlias(FrozenBlueprintModel):
+    source_type: StrictStr
+    name: StrictStr
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class FunctionTypeAlias:
-    ret: str
-    name: str
+class FunctionTypeAlias(FrozenBlueprintModel):
+    ret: StrictStr
+    name: StrictStr
     params: list[Param]
     calling: CallingConvention = CallingConvention.CALLBACK
-    unstable: bool = False
-    doc: str | None = None
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class StructMember:
-    type: str
-    name: str
-    offset: int | None = None
-    doc: str | None = None
+class StructMember(FrozenBlueprintModel):
+    type: StrictStr
+    name: StrictStr
+    offset: StrictInt | None = None
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class Struct:
-    name: str
+class Struct(FrozenBlueprintModel):
+    name: StrictStr
     members: list[StructMember]
-    size: int | None = None
-    incomplete: bool = True
-    unstable: bool = False
-    doc: str | None = None
+    size: StrictInt | None = None
+    incomplete: StrictBool = True
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class EnumValue:
-    name: str
-    value: int
-    doc: str | None = None
+class EnumValue(FrozenBlueprintModel):
+    name: StrictStr
+    value: StrictInt
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class Enum:
-    name: str
+class Enum(FrozenBlueprintModel):
+    name: StrictStr
     values: list[EnumValue]
-    alias: str | None = None
-    unstable: bool = False
-    doc: str | None = None
+    alias: StrictStr | None = None
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class Hook:
-    patch_size: int
+class Hook(FrozenBlueprintModel):
+    patch_size: StrictInt
     kind: HookKind = HookKind.REL32
-    entry_patch_size: int | None = None
+    entry_patch_size: StrictInt | None = None
 
 
-@dataclass(frozen=True)
-class TypedFunction:
-    ret: str
+class TypedFunction(FrozenBlueprintModel):
+    ret: StrictStr
     params: list[Param]
     abi: CallingConvention | None = None
-    args: list[str] | None = None
+    args: list[StrictStr] | None = None
     try_params: list[Param] | None = None
-    try_args: list[str] | None = None
-    signature: str | None = None
-    delta: int | None = None
+    try_args: list[StrictStr] | None = None
+    signature: StrictStr | None = None
+    delta: StrictInt | None = None
     hook_kind: HookKind | None = None
-    hook_prologue_size: int | None = None
-    callable: bool | None = None
+    hook_prologue_size: StrictInt | None = None
+    callable: StrictBool | None = None
 
 
-@dataclass(frozen=True)
-class XRef:
-    function: object
-    instr_off: int
-    addr_off: int
-    indirections: int = 0
+FunctionRef: TypeAlias = "Function | str"
+HookLike: TypeAlias = Hook | int
+
+
+def _ref_name(ref: object) -> str:
+    if isinstance(ref, str):
+        return ref
+
+    name = getattr(ref, "name", None)
+    if isinstance(name, str) and name:
+        return name
+
+    raise ValueError(f"symbol reference must be a name or named Function: {ref!r}")
+
+
+def _merged_optional(current: object, update: object, label: str, name: str) -> object:
+    if current and update and current != update:
+        raise ValueError(f"conflicting {label} for {name}")
+
+    return current or update
+
+
+class XRef(FrozenBlueprintModel):
+    function: Any
+    instr_off: StrictInt
+    addr_off: StrictInt
+    indirections: StrictInt = 0
     required: Required = Required.ALL
-    access: str = "R/W"
+    access: StrictStr = "R/W"
+
+    @field_validator("access")
+    @classmethod
+    def validate_access(cls, value: str) -> str:
+        access_label = XREF_ACCESS_LABELS.get(value.strip().lower())
+        if access_label is None:
+            raise ValueError("xref access must be Read, Write, or R/W")
+
+        return access_label
+
+    @field_serializer("function")
+    def serialize_function(self, value: object) -> str:
+        return _ref_name(value)
 
 
 XREF_ACCESS_LABELS = {
@@ -190,57 +232,57 @@ XREF_ACCESS_LABELS = {
 }
 
 
-@dataclass(frozen=True)
-class FunctionXRef:
-    ref_function: object
-    instr_off: int
-    addr_off: int
-    indirections: int = 0
+class FunctionXRef(FrozenBlueprintModel):
+    ref_function: Any
+    instr_off: StrictInt
+    addr_off: StrictInt
+    indirections: StrictInt = 0
     required: Required = Required.ALL
 
+    @field_serializer("ref_function")
+    def serialize_ref_function(self, value: object) -> str:
+        return _ref_name(value)
 
-@dataclass(frozen=True)
-class Function:
-    pattern: str
-    name: str | None = None
-    match_offset: int = 0
+
+class Function(FrozenBlueprintModel):
+    pattern: StrictStr
+    name: StrictStr | None = None
+    match_offset: StrictInt = 0
     cc: CallingConvention = CallingConvention.CDECL
-    callable: bool = True
-    public: bool = True
-    hook: Hook = dc_field(default_factory=lambda: Hook(5))
+    callable: StrictBool = True
+    public: StrictBool = True
+    hook: Hook = Field(default_factory=lambda: Hook(patch_size=5))
     required: Required = Required.ALL
     typed: TypedFunction | None = None
-    xrefs: list[FunctionXRef] = dc_field(default_factory=list)
-    unstable: bool = False
-    doc: str | None = None
+    xrefs: list[FunctionXRef] = Field(default_factory=list)
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
     abi_status: AbiStatus = AbiStatus.VERIFIED
-    stable_reason: str | None = None
+    stable_reason: StrictStr | None = None
 
 
-@dataclass(frozen=True)
-class TypedData:
-    type: str
-    ref_function: object
-    instr_off: int
-    addr_off: int
+class TypedData(FrozenBlueprintModel):
+    type: StrictStr
+    ref_function: Any
+    instr_off: StrictInt
+    addr_off: StrictInt
     resolver: Resolver = Resolver.XREF_U32
-    indirections: int = 0
+    indirections: StrictInt = 0
     required: Required = Required.ALL
 
+    @field_serializer("ref_function")
+    def serialize_ref_function(self, value: object) -> str:
+        return _ref_name(value)
 
-@dataclass(frozen=True)
-class Data:
-    name: str | None = None
+
+class Data(FrozenBlueprintModel):
+    name: StrictStr | None = None
     typed: TypedData | None = None
-    xrefs: list[XRef] = dc_field(default_factory=list)
-    unstable: bool = False
-    doc: str | None = None
-    stable_reason: str | None = None
+    xrefs: list[XRef] = Field(default_factory=list)
+    unstable: StrictBool = False
+    doc: StrictStr | None = None
+    stable_reason: StrictStr | None = None
     write_policy: WritePolicy | None = None
-
-
-FunctionRef: TypeAlias = Function | str
-HookLike: TypeAlias = Hook | int
 
 
 def hook(
@@ -248,19 +290,15 @@ def hook(
     kind: HookKind = HookKind.REL32,
     entry_patch_size: int | None = None,
 ) -> Hook:
-    """Describe how much code a generated hook may patch at a resolved game function."""
-
-    return Hook(patch_size, kind, entry_patch_size)
+    return Hook(patch_size=patch_size, kind=kind, entry_patch_size=entry_patch_size)
 
 
 def typed(
     ret: str, params: list[Param] | None = None, **overrides: object
 ) -> TypedFunction:
-    """Describe a callable game function signature, preserving placeholders for unknown rows."""
-
     return TypedFunction(
-        ret,
-        UNKNOWN_PARAMS if params is None else params,
+        ret=ret,
+        params=UNKNOWN_PARAMS if params is None else params,
         **overrides,
     )
 
@@ -274,13 +312,14 @@ def xref(
     required: Required = Required.ALL,
     access: str = "R/W",
 ) -> XRef:
-    """Record where a generated global resolver should read an address from function code."""
-
-    access_label = XREF_ACCESS_LABELS.get(str(access).strip().lower())
-    if access_label is None:
-        raise ValueError("xref access must be Read, Write, or R/W")
-
-    return XRef(function, instr_off, addr_off, indirections, required, access_label)
+    return XRef(
+        function=function,
+        instr_off=instr_off,
+        addr_off=addr_off,
+        indirections=indirections,
+        required=required,
+        access=access,
+    )
 
 
 def fx(
@@ -291,53 +330,47 @@ def fx(
     *,
     required: Required = Required.ALL,
 ) -> FunctionXRef:
-    """Record a function xref used when one generated symbol is discovered through another."""
-
-    return FunctionXRef(ref_function, instr_off, addr_off, indirections, required)
+    return FunctionXRef(
+        ref_function=ref_function,
+        instr_off=instr_off,
+        addr_off=addr_off,
+        indirections=indirections,
+        required=required,
+    )
 
 
 def member(
     type: str, name: str, offset: int | None = None, *, doc: str | None = None
 ) -> StructMember:
-    """Define one reverse-engineered structure member with any fixed offset."""
-
-    return StructMember(type, name, offset, doc)
+    return StructMember(type=type, name=name, offset=offset, doc=doc)
 
 
 def param(type: str, name: str, *, doc: str | None = None) -> Param:
-    """Define one typed C parameter for generated callbacks and try-call wrappers."""
-
-    return Param(type, name, doc)
+    return Param(type=type, name=name, doc=doc)
 
 
 def enum_value(name: str, value: int, *, doc: str | None = None) -> EnumValue:
-    """Define one named C enum constant from game values."""
-
-    return EnumValue(name, value, doc)
+    return EnumValue(name=name, value=value, doc=doc)
 
 
-@dataclass(init=False)
-class Blueprint:
-    name: str
-    stable: bool = False
-    signatures: list[Signature] = dc_field(default_factory=list)
-    functions: list[Function] = dc_field(default_factory=list)
-    globals: list[Data] = dc_field(default_factory=list)
-    types: list[object] = dc_field(default_factory=list)
+class Blueprint(BlueprintModel):
+    name: StrictStr
+    stable: StrictBool = False
+    signatures: list[Signature] = Field(default_factory=list)
+    functions: list[Function] = Field(default_factory=list)
+    globals: list[Data] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("globals", "data"),
+        serialization_alias="data",
+    )
+    types: list[TypeAlias | FunctionTypeAlias | Struct | Enum] = Field(
+        default_factory=list
+    )
 
-    def __init__(self, name: str, stable: bool = False) -> None:
-        """Start a symbol blueprint."""
-
-        self.name = name
-        self.stable = stable
-        self.signatures = []
-        self.functions = []
-        self.globals = []
-        self.types = []
+    def __init__(self, name: str, stable: bool = False, **data: object) -> None:
+        super().__init__(name=name, stable=stable, **data)
 
     def row_unstable(self, unstable: bool | None, stable: bool) -> bool:
-        """Return whether a row is unstable."""
-
         if stable and unstable is not None:
             raise ValueError("use stable=True or unstable=..., not both")
 
@@ -356,10 +389,12 @@ class Blueprint:
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Signature:
-        """Add a raw pattern signature that can later back generated symbol lookup."""
-
         row = Signature(
-            pattern, name, required, self.row_unstable(unstable, stable), doc
+            pattern=pattern,
+            name=name,
+            required=required,
+            unstable=self.row_unstable(unstable, stable),
+            doc=doc,
         )
         self.signatures.append(row)
         return row
@@ -386,29 +421,28 @@ class Blueprint:
         doc: str | None = None,
         **typed_overrides: object,
     ) -> Function:
-        """Add a generated function symbol with its scan pattern, ABI, and hook metadata."""
-
-        hook_row = Hook(hook) if isinstance(hook, int) else hook
+        hook_row = Hook(patch_size=hook) if isinstance(hook, int) else hook
         typed_row = typed or TypedFunction(
-            ret,
-            UNKNOWN_PARAMS if params is None else params,
+            ret=ret,
+            params=UNKNOWN_PARAMS if params is None else params,
             **typed_overrides,
         )
+
         row = Function(
-            pattern,
-            name,
-            match,
-            cc,
-            callable,
-            public,
-            hook_row,
-            required,
-            typed_row,
-            xrefs or [],
-            self.row_unstable(unstable, stable),
-            doc,
-            abi_status,
-            stable_reason,
+            pattern=pattern,
+            name=name,
+            match_offset=match,
+            cc=cc,
+            callable=callable,
+            public=public,
+            hook=hook_row,
+            required=required,
+            typed=typed_row,
+            xrefs=xrefs or [],
+            unstable=self.row_unstable(unstable, stable),
+            doc=doc,
+            abi_status=abi_status,
+            stable_reason=stable_reason,
         )
         self.functions.append(row)
         return row
@@ -427,9 +461,8 @@ class Blueprint:
         doc: str | None = None,
         write_policy: WritePolicy | None = None,
     ) -> Data:
-        """Add global symbol metadata and merge refs from reverse-engineered sites."""
-
         typed = None
+
         if type is not None:
             ref = ref or (refs[0] if refs else None)
             if ref is None:
@@ -442,16 +475,17 @@ class Blueprint:
                 )
 
             typed = TypedData(
-                type,
-                ref.function,
-                ref.instr_off,
-                ref.addr_off,
-                resolver,
-                indirections,
-                ref.required,
+                type=type,
+                ref_function=ref.function,
+                instr_off=ref.instr_off,
+                addr_off=ref.addr_off,
+                resolver=resolver,
+                indirections=indirections,
+                required=ref.required,
             )
 
         row_unstable = self.row_unstable(unstable, stable)
+
         for i, existing in enumerate(self.globals):
             if existing.name != name:
                 continue
@@ -468,40 +502,38 @@ class Blueprint:
             if typed is not None and typed != merged_typed:
                 raise ValueError(f"conflicting typed global metadata for {name}")
 
-            merged_doc = existing.doc or doc
-            if existing.doc and doc and existing.doc != doc:
-                raise ValueError(f"conflicting global documentation for {name}")
+            merged_doc = _merged_optional(
+                existing.doc, doc, "global documentation", name
+            )
 
-            merged_stable_reason = existing.stable_reason or stable_reason
-            if (
-                existing.stable_reason
-                and stable_reason
-                and existing.stable_reason != stable_reason
-            ):
-                raise ValueError(f"conflicting stable reason for {name}")
+            merged_stable_reason = _merged_optional(
+                existing.stable_reason, stable_reason, "stable reason", name
+            )
 
-            merged_write_policy = existing.write_policy or write_policy
-            if (
-                existing.write_policy
-                and write_policy
-                and existing.write_policy != write_policy
-            ):
-                raise ValueError(f"conflicting write policy for {name}")
+            merged_write_policy = _merged_optional(
+                existing.write_policy, write_policy, "write policy", name
+            )
 
             row = Data(
-                name,
-                merged_typed,
-                merged_refs,
-                existing.unstable,
-                merged_doc,
-                merged_stable_reason,
-                merged_write_policy,
+                name=name,
+                typed=merged_typed,
+                xrefs=merged_refs,
+                unstable=existing.unstable,
+                doc=merged_doc,
+                stable_reason=merged_stable_reason,
+                write_policy=merged_write_policy,
             )
             self.globals[i] = row
             return row
 
         row = Data(
-            name, typed, list(refs), row_unstable, doc, stable_reason, write_policy
+            name=name,
+            typed=typed,
+            xrefs=list(refs),
+            unstable=row_unstable,
+            doc=doc,
+            stable_reason=stable_reason,
+            write_policy=write_policy,
         )
         self.globals.append(row)
         return row
@@ -515,9 +547,12 @@ class Blueprint:
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> TypeAlias:
-        """Add a generated C alias for game-facing types."""
-
-        row = TypeAlias(source_type, name, self.row_unstable(unstable, stable), doc)
+        row = TypeAlias(
+            source_type=source_type,
+            name=name,
+            unstable=self.row_unstable(unstable, stable),
+            doc=doc,
+        )
         self.types.append(row)
         return row
 
@@ -532,10 +567,13 @@ class Blueprint:
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> FunctionTypeAlias:
-        """Add a generated callback typedef used by hook helpers and detours."""
-
         row = FunctionTypeAlias(
-            ret, name, params, calling, self.row_unstable(unstable, stable), doc
+            ret=ret,
+            name=name,
+            params=params,
+            calling=calling,
+            unstable=self.row_unstable(unstable, stable),
+            doc=doc,
         )
         self.types.append(row)
         return row
@@ -550,15 +588,13 @@ class Blueprint:
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Struct:
-        """Add structure layout metadata for generated public type declarations."""
-
         row = Struct(
-            name,
-            list(members),
-            size,
-            incomplete,
-            self.row_unstable(unstable, stable),
-            doc,
+            name=name,
+            members=list(members),
+            size=size,
+            incomplete=incomplete,
+            unstable=self.row_unstable(unstable, stable),
+            doc=doc,
         )
         self.types.append(row)
         return row
@@ -572,8 +608,12 @@ class Blueprint:
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Enum:
-        """Add enum metadata and the public alias exposed in generated headers."""
-
-        row = Enum(name, list(values), alias, self.row_unstable(unstable, stable), doc)
+        row = Enum(
+            name=name,
+            values=list(values),
+            alias=alias,
+            unstable=self.row_unstable(unstable, stable),
+            doc=doc,
+        )
         self.types.append(row)
         return row

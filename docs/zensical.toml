@@ -11,7 +11,7 @@ site_dir = "build"
 repo_name = "dogstuff/detours-to-the-rescue"
 repo_url = "https://gitlab.com/dogstuff/detours-to-the-rescue"
 extra_css = ["assets/stylesheets/site.css"]
-extra_javascript = [{ path = "assets/javascripts/pcdogs-symbol-viewer.mjs", type = "module" }]
+extra_javascript = [{ path = "assets/js/pcdogs-symbol-viewer.mjs", type = "module" }]
 extra_templates = ["robots.txt"]
 nav = [
   { "Home" = "index.md" },
@@ -36,6 +36,8 @@ nav = [
     { "PCDogs Symbols" = [
       { "PCDogs Symbols" = "modding-sdk/symbols/pcdogs/index.md" },
     ] },
+    { "Symbols Manifest" = "modding-sdk/symbols/pcdogs/pcdogs.symbols.v1.json" },
+    { "Symbols Manifest (Schema)" = "modding-sdk/symbols/pcdogs/pcdogs.symbols.schema.json" },
   ] },
   { "Technical Details" = [
     { "Configuration" = "technical-reference/00-configuration.md" },

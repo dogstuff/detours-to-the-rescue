@@ -9,12 +9,29 @@ set(DTTR_SDK_TEST_INCLUDE_DIRS
 
 dttr_add_test_group(dttr_sdk_tests)
 
+add_dependencies(dttr_sdk_tests dttr_sdk_bundle_header)
+
 add_test(
     NAME dttr_pcdogs_generated_headers
     COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND} --check
 )
-set_tests_properties(dttr_pcdogs_generated_headers PROPERTIES
-    LABELS "sdk;pcdogs;generated"
+add_test(
+    NAME dttr_pcdogs_symbol_metadata
+    COMMAND ${DTTR_PCDOGS_METADATA_GENERATOR_COMMAND} --check
+)
+add_test(
+    NAME dttr_pcdogs_symbol_manifest
+    COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
+        "${DTTR_SDK_TEST_SOURCE_DIR}/check_symbol_manifest.py"
+        --manifest "${DTTR_SDK_SYMBOL_MANIFEST}"
+        --schema "${DTTR_SDK_SYMBOL_SCHEMA}"
+        --header "${DTTR_SDK_BUNDLE_HEADER}"
+)
+set_tests_properties(
+    dttr_pcdogs_generated_headers
+    dttr_pcdogs_symbol_metadata
+    dttr_pcdogs_symbol_manifest
+    PROPERTIES LABELS "sdk;pcdogs;generated"
 )
 
 dttr_check_cmocka_tests(sdk dttr_has_cmocka

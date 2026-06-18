@@ -1,20 +1,42 @@
+# Locate the code generator scripts and the input files that should trigger regeneration.
 set(DTTR_PCDOGS_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_headers.py")
+set(DTTR_PCDOGS_METADATA_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_symbol_metadata.py")
 set(DTTR_PCDOGS_GENERATOR_INPUTS
     "${CMAKE_SOURCE_DIR}/.clang-format"
     "${DTTR_PCDOGS_GENERATOR}"
+    "${DTTR_PCDOGS_METADATA_GENERATOR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/symbol_manifest.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/header_template.h.mako"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_versions.h.in"
     "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
 )
+
 set(DTTR_SDK_GENERATED_SRC_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/src")
 set(DTTR_SDK_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include"
     CACHE INTERNAL "Generated DttR SDK include directory"
 )
+set(DTTR_SDK_GENERATED_METADATA_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/metadata"
+    CACHE INTERNAL "Generated DttR SDK metadata directory"
+)
 file(MAKE_DIRECTORY "${DTTR_SDK_GENERATED_INCLUDE_DIR}")
+file(MAKE_DIRECTORY "${DTTR_SDK_GENERATED_METADATA_DIR}")
+
 set(DTTR_PCDOGS_GENERATED_PUBLIC_OUTPUTS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_pcdogs.h"
 )
+set(DTTR_SDK_SYMBOL_MANIFEST "${DTTR_SDK_GENERATED_METADATA_DIR}/pcdogs.symbols.v1.json"
+    CACHE INTERNAL "Generated DttR SDK symbol manifest"
+)
+set(DTTR_SDK_SYMBOL_SCHEMA "${DTTR_SDK_GENERATED_METADATA_DIR}/pcdogs.symbols.schema.json"
+    CACHE INTERNAL "Generated DttR SDK symbol manifest schema"
+)
+set(DTTR_PCDOGS_GENERATED_METADATA_OUTPUTS
+    "${DTTR_SDK_SYMBOL_MANIFEST}"
+    "${DTTR_SDK_SYMBOL_SCHEMA}"
+)
+
 set(DTTR_SDK_STABLE_HEADERS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_versions.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_result.h"
@@ -31,11 +53,25 @@ set(DTTR_SDK_UNSTABLE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_worldview.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_util_gamedraw.h"
 )
+
+# Generate the versions header and read the SDK ABI version out of its template.
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_versions.h.in"
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_versions.h"
     @ONLY
 )
+file(STRINGS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_versions.h.in"
+    DTTR_SDK_ABI_VERSION_DEFINE
+    REGEX "^#define DTTR_SDK_ABI_VERSION "
+)
+string(REGEX REPLACE
+    "^#define DTTR_SDK_ABI_VERSION ([0-9]+)u?.*$"
+    "\\1"
+    DTTR_SDK_ABI_VERSION
+    "${DTTR_SDK_ABI_VERSION_DEFINE}"
+)
+
 set(DTTR_PCDOGS_GENERATED_PRIVATE_OUTPUTS
     "${DTTR_SDK_GENERATED_SRC_DIR}/pcdogs.c"
     "${DTTR_SDK_GENERATED_SRC_DIR}/generated/dttr_pcdogs_full.h"
@@ -43,7 +79,9 @@ set(DTTR_PCDOGS_GENERATED_PRIVATE_OUTPUTS
 set(DTTR_PCDOGS_GENERATED_OUTPUTS
     ${DTTR_PCDOGS_GENERATED_PUBLIC_OUTPUTS}
     ${DTTR_PCDOGS_GENERATED_PRIVATE_OUTPUTS}
+    ${DTTR_PCDOGS_GENERATED_METADATA_OUTPUTS}
 )
+
 set(DTTR_SDK_BUNDLE_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/scripts/join_headers.py")
 set(DTTR_SDK_BUNDLE_HEADER "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_sdk.h"
     CACHE INTERNAL "Generated DttR SDK bundle header"
@@ -52,7 +90,8 @@ set_property(GLOBAL PROPERTY DTTR_SDK_BUNDLE_HEADER "${DTTR_SDK_BUNDLE_HEADER}")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 execute_process(
-    COMMAND "${Python3_EXECUTABLE}" -c "import mako, pefile"
+    COMMAND "${Python3_EXECUTABLE}" -c
+            "import mako, pefile, pydantic; assert int(pydantic.__version__.split('.')[0]) >= 2"
     RESULT_VARIABLE DTTR_PCDOGS_PYTHON_MODULE_STATUS
     ERROR_VARIABLE DTTR_PCDOGS_PYTHON_MODULE_ERROR
     OUTPUT_QUIET
@@ -60,7 +99,7 @@ execute_process(
 if(NOT DTTR_PCDOGS_PYTHON_MODULE_STATUS EQUAL 0)
     message(FATAL_ERROR
         "PCDOGS SDK scripts require Python modules from requirements.txt "
-        "(mako, pefile). Install them for ${Python3_EXECUTABLE} or use nix develop. "
+        "(mako, pefile, pydantic>=2). Install them for ${Python3_EXECUTABLE} or use nix develop. "
         "Import error: ${DTTR_PCDOGS_PYTHON_MODULE_ERROR}"
     )
 endif()
@@ -76,13 +115,22 @@ set(DTTR_PCDOGS_GENERATOR_COMMAND
     --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
     --src-dir "${DTTR_SDK_GENERATED_SRC_DIR}"
 )
+set(DTTR_PCDOGS_METADATA_GENERATOR_COMMAND
+    ${DTTR_PCDOGS_SCRIPT_RUNNER}
+    "${DTTR_PCDOGS_METADATA_GENERATOR}"
+    --metadata-dir "${DTTR_SDK_GENERATED_METADATA_DIR}"
+    --sdk-version "${DTTR_VERSION}"
+    --sdk-abi-version "${DTTR_SDK_ABI_VERSION}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"
+)
 
 add_custom_command(
     OUTPUT ${DTTR_PCDOGS_GENERATED_OUTPUTS}
     COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND}
+    COMMAND ${DTTR_PCDOGS_METADATA_GENERATOR_COMMAND}
     DEPENDS ${DTTR_PCDOGS_GENERATOR_INPUTS}
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "Regenerating PCDOGS SDK headers and implementation stubs"
+    COMMENT "Regenerating PCDOGS SDK headers, implementation stubs, and metadata"
     VERBATIM
 )
 add_custom_target(dttr_pcdogs_generated_headers
@@ -120,7 +168,6 @@ add_library(dttr_sdk_runtime STATIC
     src/hook_registry.c
 )
 set_source_files_properties(
-    "${DTTR_SDK_GENERATED_SRC_DIR}/pcdogs.c"
     ${DTTR_PCDOGS_GENERATED_PRIVATE_OUTPUTS}
     PROPERTIES GENERATED TRUE
 )

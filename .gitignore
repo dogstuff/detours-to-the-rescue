@@ -16,5 +16,7 @@
 /modules/sidecar/shaders/cache/
 __pycache__/
 *.py[cod]
+node_modules/
 
 !/scripts/*
+/docs/pages/assets/js/*.mjs

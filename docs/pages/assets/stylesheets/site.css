@@ -53,7 +53,8 @@
 
 .md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis::before,
 .md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"]::before,
-.md-nav__link[href$="internal/"] .md-ellipsis::before {
+.md-nav__link[href$="internal/"] .md-ellipsis::before,
+.md-nav__link[href*="symbols/pcdogs/"][href$=".json"] .md-ellipsis::before {
     background-color: currentcolor;
     content: "";
     display: inline-block;
@@ -85,12 +86,14 @@
     opacity: 0.8;
 }
 
-.md-nav__link[href$="internal/"] .md-ellipsis {
+.md-nav__link[href$="internal/"] .md-ellipsis,
+.md-nav__link[href*="symbols/pcdogs/"][href$=".json"] .md-ellipsis {
     color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
 }
 
-.md-nav__link[href$="internal/"] .md-ellipsis::before {
+.md-nav__link[href$="internal/"] .md-ellipsis::before,
+.md-nav__link[href*="symbols/pcdogs/"][href$=".json"] .md-ellipsis::before {
     mask-image: var(--pcdogs-icon-link);
     -webkit-mask-image: var(--pcdogs-icon-link);
 }

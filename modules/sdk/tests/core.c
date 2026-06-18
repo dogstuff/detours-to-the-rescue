@@ -16,36 +16,8 @@ static uint8_t sig_all_target[] = {0x90, 0x90, 0x90, 0xCC, 0x90};
 static uint8_t patch_target[4];
 static uint8_t group_patch_target[2];
 
-static uintptr_t sigscan_bytes(
-	const uint8_t *bytes,
-	size_t size,
-	const char *sig,
-	const char *mask
-) {
-	const size_t len = strlen(mask);
-	if (!len || len > size) {
-		return 0;
-	}
-
-	for (size_t offset = 0; offset + len <= size; offset++) {
-		bool matched = true;
-		for (size_t i = 0; i < len; i++) {
-			if (mask[i] == 'x' && (uint8_t)sig[i] != bytes[offset + i]) {
-				matched = false;
-				break;
-			}
-		}
-
-		if (matched) {
-			return (uintptr_t)&bytes[offset];
-		}
-	}
-
-	return 0;
-}
-
 static uintptr_t sigscan(HMODULE mod, const char *sig, const char *mask) {
-	return sigscan_bytes(sig_target, sizeof(sig_target), sig, mask);
+	return (uintptr_t)DTTR_Sigscan_Bytes(sig_target, sizeof(sig_target), sig, mask);
 }
 
 static DTTR_Result sigscan_all(
@@ -88,7 +60,7 @@ static const DTTR_Core_API RUNTIME = {
 	.unhook_checked = DTTR_Core_HookDetachChecked,
 };
 
-static DTTR_Core_Context runtime_context() {
+static DTTR_Core_Context runtime_context(void) {
 	return (DTTR_Core_Context){
 		.game_module = (HMODULE)1,
 		.api = &RUNTIME,
@@ -195,7 +167,7 @@ static DTTR_PCDOGS_T_File_Handle *__cdecl pcdogs_file_open_detour(
 	return NULL;
 }
 
-static BOOL __cdecl pcdogs_cleanup_title_resources_detour() {
+static BOOL __cdecl pcdogs_cleanup_title_resources_detour(void) {
 	return TRUE;
 }
 

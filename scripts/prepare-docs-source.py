@@ -9,18 +9,19 @@ import os
 import shutil
 import subprocess
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SDK_SCRIPT_DIR = REPO_ROOT / "modules/sdk/scripts"
 PCDOGS_BLUEPRINT = REPO_ROOT / "modules/sdk/blueprints/dttr_pcdogs.py"
+
+sys.path.insert(0, str(SDK_SCRIPT_DIR))
+from symbol_manifest import MANIFEST_FILENAME, SCHEMA_FILENAME  # noqa: E402
+
 SYMBOL_REFERENCE_TITLE = "PCDogs Symbols"
 SYMBOL_REFERENCE_BASE_PATH = "modding-sdk/symbols/pcdogs"
 SYMBOL_REFERENCE_OVERVIEW_PATH = f"{SYMBOL_REFERENCE_BASE_PATH}/index.md"
-EXPECTED_SYMBOL_NAV_ENTRY = f"""    {{ "{SYMBOL_REFERENCE_TITLE}" = [
-      {{ "{SYMBOL_REFERENCE_TITLE}" = "{SYMBOL_REFERENCE_OVERVIEW_PATH}" }},
-    ] }},"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,32 +51,6 @@ class XRefMetadataJob:
 class XRefMetadataOutput:
     arg_name: str
     path: Path
-
-
-@dataclass(frozen=True, slots=True)
-class SymbolOverviewManifest:
-    title: str
-    path: str
-
-
-@dataclass(frozen=True, slots=True)
-class SymbolWrapperManifest:
-    base_path: str
-    overview: SymbolOverviewManifest
-
-
-@dataclass(frozen=True, slots=True)
-class SymbolReferenceManifest:
-    symbol_wrappers: SymbolWrapperManifest
-
-
-@dataclass(frozen=True, slots=True)
-class DocsManifest:
-    schema_version: int
-    source_dir: str
-    config_path: str
-    symbols: SymbolReferenceManifest
-    metadata: list[str]
 
 
 GAMEFILE_BUILDS = (
@@ -114,17 +89,15 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def require_gamefiles(gamefile_dir: Path) -> None:
-    missing = [
-        gamefile.path_in(gamefile_dir)
-        for gamefile in GAMEFILE_BUILDS
-        if not gamefile.path_in(gamefile_dir).is_file()
-    ]
-    if missing:
-        raise FileNotFoundError(
-            "missing required PCDOGS gamefiles for function-call xrefs: "
-            + ", ".join(str(path) for path in missing)
-        )
+def missing_gamefiles(gamefile_dir: Path) -> list[Path]:
+    missing: list[Path] = []
+    for gamefile in GAMEFILE_BUILDS:
+        path = gamefile.path_in(gamefile_dir)
+
+        if not path.is_file():
+            missing.append(path)
+
+    return missing
 
 
 def resolved_path(path: Path) -> Path:
@@ -133,12 +106,6 @@ def resolved_path(path: Path) -> Path:
 
 def paths_overlap(left: Path, right: Path) -> bool:
     return left == right or left in right.parents or right in left.parents
-
-
-def validate_symbol_nav_entry(config_path: Path) -> None:
-    config_text = config_path.read_text()
-    if EXPECTED_SYMBOL_NAV_ENTRY not in config_text:
-        raise ValueError(f"could not find the PCDogs symbol nav entry in {config_path}")
 
 
 def validate_output_dir(
@@ -190,32 +157,48 @@ def run_checked(command: list[str], *, label: str) -> None:
 
 def prepare_symbol_reference_docs(
     symbols_root_dir: Path, *, metadata_dir: Path, gamefile_dir: Path
-) -> list[XRefMetadataOutput]:
+) -> list[Path]:
     # This directory also contains copied hand-authored wrapper pages.
     symbols_root_dir.mkdir(parents=True, exist_ok=True)
 
-    metadata = generate_xref_metadata(metadata_dir, gamefile_dir=gamefile_dir)
+    xref_metadata = generate_xref_metadata(metadata_dir, gamefile_dir=gamefile_dir)
     metadata_args = [
-        value for item in metadata for value in (item.arg_name, str(item.path))
+        value for item in xref_metadata for value in (item.arg_name, str(item.path))
     ]
+
+    manifest_dir = symbols_root_dir / "pcdogs"
+
     run_checked(
         [
             sys.executable,
-            str(SDK_SCRIPT_DIR / "generate_symbol_docs.py"),
-            "--output-dir",
-            str(symbols_root_dir),
+            str(SDK_SCRIPT_DIR / "generate_symbol_metadata.py"),
+            "--metadata-dir",
+            str(manifest_dir),
+            str(PCDOGS_BLUEPRINT),
             *metadata_args,
         ],
-        label="symbol docs generation",
+        label="symbol manifest generation",
     )
-    return metadata
+    return [
+        *(item.path for item in xref_metadata),
+        manifest_dir / MANIFEST_FILENAME,
+        manifest_dir / SCHEMA_FILENAME,
+    ]
 
 
 def generate_xref_metadata(
     metadata_dir: Path, *, gamefile_dir: Path
 ) -> list[XRefMetadataOutput]:
     metadata: list[XRefMetadataOutput] = []
-    require_gamefiles(gamefile_dir)
+    missing = missing_gamefiles(gamefile_dir)
+    if missing:
+        print(
+            "missing PCDOGS gamefiles; generating docs SymbolManifest without "
+            "analysis: " + ", ".join(str(path) for path in missing),
+            file=sys.stderr,
+        )
+        return metadata
+
     metadata_dir.mkdir(parents=True, exist_ok=True)
 
     for gamefile in GAMEFILE_BUILDS:
@@ -250,10 +233,6 @@ def relative_to_output(path: Path, output_dir: Path) -> str:
         return path.as_posix()
 
 
-def copy_docs_config(config_path: Path, output_path: Path) -> None:
-    output_path.write_text(config_path.read_text())
-
-
 def write_docs_manifest(
     *,
     output_dir: Path,
@@ -261,23 +240,23 @@ def write_docs_manifest(
     config_path: Path,
     metadata_paths: list[Path],
 ) -> Path:
-    manifest = DocsManifest(
-        schema_version=1,
-        source_dir=source_dir.as_posix(),
-        config_path=config_path.as_posix(),
-        symbols=SymbolReferenceManifest(
-            symbol_wrappers=SymbolWrapperManifest(
-                base_path=SYMBOL_REFERENCE_BASE_PATH,
-                overview=SymbolOverviewManifest(
-                    title=SYMBOL_REFERENCE_TITLE,
-                    path=SYMBOL_REFERENCE_OVERVIEW_PATH,
-                ),
-            )
-        ),
-        metadata=[relative_to_output(path, output_dir) for path in metadata_paths],
-    )
+    manifest = {
+        "schema_version": 1,
+        "source_dir": source_dir.as_posix(),
+        "config_path": config_path.as_posix(),
+        "symbols": {
+            "symbol_wrappers": {
+                "base_path": SYMBOL_REFERENCE_BASE_PATH,
+                "overview": {
+                    "title": SYMBOL_REFERENCE_TITLE,
+                    "path": SYMBOL_REFERENCE_OVERVIEW_PATH,
+                },
+            }
+        },
+        "metadata": [relative_to_output(path, output_dir) for path in metadata_paths],
+    }
     manifest_path = output_dir / "docs-manifest.json"
-    manifest_path.write_text(json.dumps(asdict(manifest), indent=2) + "\n")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     return manifest_path
 
 
@@ -287,7 +266,6 @@ def main() -> int:
     config_path = resolved_path(args.config)
 
     try:
-        validate_symbol_nav_entry(config_path)
         validate_source_tree(source_dir)
         output_dir = validate_output_dir(
             args.output_dir,
@@ -307,13 +285,14 @@ def main() -> int:
 
     pages_out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, pages_out)
+
     if overrides_dir.exists():
         validate_source_tree(overrides_dir)
         shutil.copytree(overrides_dir, overrides_out)
 
     symbols_root_dir = pages_out / "modding-sdk" / "symbols"
     try:
-        metadata = prepare_symbol_reference_docs(
+        metadata_paths = prepare_symbol_reference_docs(
             symbols_root_dir,
             metadata_dir=metadata_dir,
             gamefile_dir=args.gamefile_dir,
@@ -322,15 +301,13 @@ def main() -> int:
         print(exc, file=sys.stderr)
         return 1
 
-    copy_docs_config(
-        config_path,
-        output_dir / "zensical.toml",
-    )
+    (output_dir / "zensical.toml").write_text(config_path.read_text())
+
     write_docs_manifest(
         output_dir=output_dir,
         source_dir=source_dir,
         config_path=config_path,
-        metadata_paths=[item.path for item in metadata],
+        metadata_paths=metadata_paths,
     )
     return 0
 
