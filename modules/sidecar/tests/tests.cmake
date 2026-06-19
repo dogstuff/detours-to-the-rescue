@@ -26,3 +26,25 @@ dttr_add_cmocka_test_suite(dttr_sidecar_pcdogs_tests
         pcdogs
         fixtures
 )
+
+dttr_add_cmocka_test_suite(dttr_sidecar_key_state_tests
+    GROUP
+        dttr_sidecar_tests
+    SOURCES
+        "${DTTR_SIDECAR_TEST_SOURCE_DIR}/src/key_state.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/inputs/controls_menu.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/inputs/hook_getasynckeystate.c"
+    INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
+        "${CMAKE_SOURCE_DIR}/modules/sdk/include"
+        "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+    LINK_LIBRARIES
+        dttr_sdk_runtime
+        PkgConfig::SDL3
+    LABELS
+        sidecar
+        inputs
+    RUNTIME_FILES
+        ${DTTR_SDL3_RUNTIME_DLL}
+)
+target_compile_definitions(dttr_sidecar_key_state_tests PRIVATE DTTR_SDK_ENABLE_UNSTABLE)

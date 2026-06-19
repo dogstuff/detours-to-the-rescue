@@ -715,7 +715,8 @@ bool dttr_movies_handle_event(const SDL_Event *event) {
 			return true;
 		}
 
-		if (event->key.scancode == SDL_SCANCODE_RETURN) {
+		if (event->key.scancode == SDL_SCANCODE_RETURN
+			|| event->key.scancode == SDL_SCANCODE_KP_ENTER) {
 			movie.result = DTTR_MOVIE_ENDED;
 			return true;
 		}

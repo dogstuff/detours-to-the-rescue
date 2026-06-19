@@ -95,18 +95,46 @@ static const SDL_Scancode vk_to_scancode[256] = {
 	[VK_DIVIDE] = SDL_SCANCODE_KP_DIVIDE,
 };
 
+static bool keyboard_state_scancode_pressed(
+	const bool *keyboard_state,
+	int keyboard_state_count,
+	SDL_Scancode scancode
+) {
+	return scancode < keyboard_state_count && keyboard_state[scancode];
+}
+
 SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey) {
-	if (vkey < 0 || vkey >= (int)SDL_arraysize(vk_to_scancode)) {
-		return 0;
+	int keyboard_state_count = 0;
+	const bool *keyboard_state = SDL_GetKeyboardState(&keyboard_state_count);
+
+	return dttr_inputs_vkey_pressed(vkey, keyboard_state, keyboard_state_count)
+			   ? (SHORT)GETASYNCKEYSTATE_KEY_PRESSED
+			   : 0;
+}
+
+bool dttr_inputs_vkey_pressed(
+	int vkey,
+	const bool *keyboard_state,
+	int keyboard_state_count
+) {
+	if (!keyboard_state || vkey < 0 || vkey >= (int)SDL_arraysize(vk_to_scancode)) {
+		return false;
 	}
 
 	const SDL_Scancode scancode = vk_to_scancode[vkey];
 
 	if (scancode == SDL_SCANCODE_UNKNOWN) {
-		return 0;
+		return false;
 	}
 
-	const bool *keyboard_state = SDL_GetKeyboardState(NULL);
+	if (keyboard_state_scancode_pressed(keyboard_state, keyboard_state_count, scancode)) {
+		return true;
+	}
 
-	return keyboard_state[scancode] ? (SHORT)GETASYNCKEYSTATE_KEY_PRESSED : 0;
+	return vkey == VK_RETURN
+		   && keyboard_state_scancode_pressed(
+			   keyboard_state,
+			   keyboard_state_count,
+			   SDL_SCANCODE_KP_ENTER
+		   );
 }

@@ -316,10 +316,10 @@ void dttr_graphics_fill_mesh_seams(
 
 #ifdef DTTR_MODS_ENABLED
 void dttr_graphics_mod_frame_begin(DTTR_BackendState *state);
-void dttr_graphics_mod_before_game_frame(void);
-void dttr_graphics_mod_after_game_frame(void);
-void dttr_graphics_mod_before_present(void);
-void dttr_graphics_mod_after_present(void);
+void dttr_graphics_mod_before_game_frame();
+void dttr_graphics_mod_after_game_frame();
+void dttr_graphics_mod_before_present();
+void dttr_graphics_mod_after_present();
 void dttr_graphics_mod_frame_end(DTTR_BackendState *state);
 void dttr_graphics_mod_window_created(DTTR_BackendState *state);
 void dttr_graphics_mod_window_resized(DTTR_BackendState *state);

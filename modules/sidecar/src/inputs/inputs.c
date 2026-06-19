@@ -8,6 +8,9 @@
 
 #include <dttr_config.h>
 #include <dttr_log.h>
+#include <kvec.h>
+
+typedef kvec_t(DTTR_PCDOGS_T_Patch_Spec) DTTR_InputPatchVector;
 
 SDL_Gamepad *dttr_inputs_gamepad;
 
@@ -105,40 +108,80 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		return false;
 	}
 
-	DTTR_PCDOGS_T_Patch_Spec inputs_patches[4];
-	size_t patch_count = 0;
+	DTTR_InputPatchVector inputs_patches;
+	kv_init(inputs_patches);
 
-	inputs_patches[patch_count++] = (DTTR_PCDOGS_T_Patch_Spec)
-		DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		(DTTR_PCDOGS_T_Patch_Spec)DTTR_PCDOGS_PATCH_SPEC_AOB_REL32_JMP(
 			true,
 			DTTR_SIDECAR_AOB_DINPUT_POLL,
 			0,
 			dttr_inputs_hook_dinput_poll_callback
-		);
-	inputs_patches[patch_count++] = DTTR_PCDOGS_D_Video_PlayMovieLoop_GetAsyncKeyStateThunk
-										->PatchSpec(
-											true,
-											dttr_inputs_hook_get_async_key_state_callback,
-											NULL
-										);
+		)
+	);
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_D_Video_PlayMovieLoop_GetAsyncKeyStateThunk
+			->PatchSpec(true, dttr_inputs_hook_get_async_key_state_callback, NULL)
+	);
+
+	if (!dttr_inputs_hook_get_pressed_button_prepare(ctx)) {
+		DTTR_LOG_ERROR("Controls-menu Enter remap hook unavailable");
+		kv_destroy(inputs_patches);
+		return false;
+	}
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_F_Input_GetPressedButton->PatchSpec(
+			true,
+			dttr_inputs_hook_get_pressed_button_callback,
+			&dttr_inputs_hook_get_pressed_button_original
+		)
+	);
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		(DTTR_PCDOGS_T_Patch_Spec)DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
+			true,
+			DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH,
+			19,
+			0x90,
+			0x90,
+			0x90,
+			0x90,
+			0x90,
+			0x90
+		)
+	);
 
 	if (dttr_inputs_hook_rumble_prepare(ctx)) {
-		inputs_patches[patch_count++] = DTTR_PCDOGS_F_Input_TriggerRumbleIfAllowed
-											->PatchSpec(
-												false,
-												dttr_inputs_hook_rumble_callback,
-												&dttr_inputs_hook_rumble_original
-											);
+		kv_push(
+			DTTR_PCDOGS_T_Patch_Spec,
+			inputs_patches,
+			DTTR_PCDOGS_F_Input_TriggerRumbleIfAllowed->PatchSpec(
+				false,
+				dttr_inputs_hook_rumble_callback,
+				&dttr_inputs_hook_rumble_original
+			)
+		);
 	} else {
 		DTTR_LOG_INFO("SDL rumble hook unavailable; deferring to original vibration");
 	}
 
 	if (dttr_config.gamepad_analog_remap) {
 		if (dttr_inputs_hook_read_gamepad_prepare(ctx)) {
-			inputs_patches[patch_count++] = DTTR_PCDOGS_F_Input_ReadGamepad->PatchSpec(
-				true,
-				dttr_inputs_hook_read_gamepad_callback,
-				NULL
+			kv_push(
+				DTTR_PCDOGS_T_Patch_Spec,
+				inputs_patches,
+				DTTR_PCDOGS_F_Input_ReadGamepad
+					->PatchSpec(true, dttr_inputs_hook_read_gamepad_callback, NULL)
 			);
 		} else {
 			DTTR_LOG_WARN(
@@ -148,13 +191,15 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		}
 	}
 
-	return dttr_sidecar_install_pcdogs_patch_group(
+	const bool installed = dttr_sidecar_install_pcdogs_patch_group(
 		ctx,
 		"sidecar/inputs",
-		inputs_patches,
-		patch_count,
+		inputs_patches.a,
+		inputs_patches.n,
 		&inputs_targets
 	);
+	kv_destroy(inputs_patches);
+	return installed;
 }
 
 // Tracks SDL gamepad hotplug events and updates the game joystick-available flag.
@@ -216,6 +261,7 @@ bool dttr_inputs_late_init() {
 
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_PatchGroupRelease(&inputs_targets);
+	dttr_inputs_hook_get_pressed_button_reset();
 	dttr_inputs_hook_read_gamepad_reset();
 	dttr_inputs_hook_rumble_reset();
 }

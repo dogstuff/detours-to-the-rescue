@@ -288,7 +288,7 @@ void dttr_graphics_mod_frame_begin(DTTR_BackendState *state) {
 	call_frame_mod(state, dttr_mods_frame_begin);
 }
 
-void dttr_graphics_mod_before_game_frame(void) {
+void dttr_graphics_mod_before_game_frame() {
 	// frame_active remains true so native mod draws join the open frame.
 	dttr_timing_before_render_frame(
 		dttr_timing_render_reuses_previous_sim_state(),
@@ -296,15 +296,15 @@ void dttr_graphics_mod_before_game_frame(void) {
 	);
 }
 
-void dttr_graphics_mod_after_game_frame(void) {
+void dttr_graphics_mod_after_game_frame() {
 	dttr_timing_after_render_frame(dttr_timing_render_reuses_previous_sim_state());
 }
 
-void dttr_graphics_mod_before_present(void) {
+void dttr_graphics_mod_before_present() {
 	dttr_timing_before_present_frame();
 }
 
-void dttr_graphics_mod_after_present(void) {
+void dttr_graphics_mod_after_present() {
 	dttr_timing_after_present_frame();
 }
 
@@ -341,11 +341,11 @@ void dttr_graphics_mod_device_destroying(DTTR_BackendState *state) {
 }
 #endif
 
-void dttr_graphics_mod_present_rect_before(void) {
+void dttr_graphics_mod_present_rect_before() {
 	dttr_graphics_mod_before_present();
 }
 
-void dttr_graphics_mod_present_rect_after(void) {
+void dttr_graphics_mod_present_rect_after() {
 	dttr_graphics_mod_after_present();
 }
 
