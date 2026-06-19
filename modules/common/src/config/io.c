@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "dttr_errors.h"
+#include <dttr_errors.h>
 
 static const char *const CONFIG_SECTION_NAMES[] = {
 	"graphics",
@@ -27,35 +27,77 @@ enum {
 	CONFIG_SECTION_COUNT,
 };
 
-static sds errors;
+typedef struct {
+	sds text;
+} config_error_buffer;
 
-static void errors_clear() {
-	if (errors) {
-		sdsclear(errors);
+static config_error_buffer errors;
+
+static void error_buffer_clear(config_error_buffer *buffer) {
+	if (buffer->text) {
+		sdsclear(buffer->text);
 	} else {
-		errors = sdsempty();
+		buffer->text = sdsempty();
 	}
 }
 
-static void errors_addf(const char *fmt, ...) {
-	if (!errors) {
+static void error_buffer_addv(config_error_buffer *buffer, const char *fmt, va_list args) {
+	if (!buffer->text) {
 		return;
 	}
 
-	va_list args;
-	va_start(args, fmt);
-	errors = sdscatvprintf(errors, fmt, args);
-	va_end(args);
-	errors = sdscat(errors, "\n");
+	buffer->text = sdscatvprintf(buffer->text, fmt, args);
+	buffer->text = sdscat(buffer->text, "\n");
 }
 
-static bool errors_show() {
-	if (!errors || sdslen(errors) < 1) {
+static bool error_buffer_show(const config_error_buffer *buffer) {
+	if (!buffer->text || sdslen(buffer->text) < 1) {
 		return false;
 	}
 
-	DTTR_LOG_ERROR("Configuration Error: %s", errors);
+	DTTR_LOG_ERROR("Configuration Error: %s", buffer->text);
 	return true;
+}
+
+static void errors_clear() {
+	error_buffer_clear(&errors);
+}
+
+static void errors_addf(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	error_buffer_addv(&errors, fmt, args);
+	va_end(args);
+}
+
+static bool errors_show() {
+	return error_buffer_show(&errors);
+}
+
+typedef struct {
+	yyjson_doc *value;
+} config_json_doc;
+
+typedef struct {
+	yyjson_mut_doc *value;
+} config_mut_json_doc;
+
+static void config_json_doc_free(config_json_doc *doc) {
+	if (!doc || !doc->value) {
+		return;
+	}
+
+	yyjson_doc_free(doc->value);
+	doc->value = NULL;
+}
+
+static void config_mut_json_doc_free(config_mut_json_doc *doc) {
+	if (!doc || !doc->value) {
+		return;
+	}
+
+	yyjson_mut_doc_free(doc->value);
+	doc->value = NULL;
 }
 
 static bool config_result_failed(DTTR_Result result) {
@@ -84,7 +126,7 @@ static const char *config_result_message(DTTR_Result result) {
 }
 
 const char *DTTR_Config_LastError() {
-	return errors && sdslen(errors) > 0 ? errors : NULL;
+	return errors.text && sdslen(errors.text) > 0 ? errors.text : NULL;
 }
 
 static void errors_add_invalid_value(
@@ -465,9 +507,9 @@ bool DTTR_Config_Load(const char *filename) {
 	DTTR_Config_SetDefaults(&dttr_config);
 
 	yyjson_read_err err;
-	yyjson_doc *doc = yyjson_read_file(filename, 0, NULL, &err);
+	config_json_doc doc = {.value = yyjson_read_file(filename, 0, NULL, &err)};
 
-	if (!doc) {
+	if (!doc.value) {
 		if (err.code == YYJSON_READ_ERROR_FILE_OPEN) {
 			DTTR_LOG_WARN("File '%s' not found. Creating it from defaults.", filename);
 			if (!DTTR_Config_Save(filename, &dttr_config)) {
@@ -492,10 +534,10 @@ bool DTTR_Config_Load(const char *filename) {
 		return false;
 	}
 
-	yyjson_val *root = yyjson_doc_get_root(doc);
+	bool ok = false;
+	yyjson_val *root = yyjson_doc_get_root(doc.value);
 	if (!validate_schema_major_version(root, filename)) {
-		yyjson_doc_free(doc);
-		return false;
+		goto done;
 	}
 
 	apply_section(root, NULL);
@@ -513,8 +555,11 @@ bool DTTR_Config_Load(const char *filename) {
 	yyjson_val *gamepad = yyjson_obj_get(root, "gamepad");
 	config_apply_buttons(&dttr_config, yyjson_obj_get(gamepad, "buttons"));
 
-	yyjson_doc_free(doc);
-	return !errors_show();
+	ok = !errors_show();
+
+done:
+	config_json_doc_free(&doc);
+	return ok;
 }
 
 static bool obj_add_strcpy(
@@ -729,21 +774,25 @@ bool DTTR_Config_Save(const char *filename, const DTTR_Config *config) {
 	}
 
 	bool ok = false;
-	yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
-	if (!doc) {
+	config_mut_json_doc doc = {.value = yyjson_mut_doc_new(NULL)};
+	if (!doc.value) {
 		return false;
 	}
 
-	yyjson_mut_val *root = yyjson_mut_obj(doc);
+	yyjson_mut_val *root = yyjson_mut_obj(doc.value);
 	if (!root) {
 		goto done;
 	}
 
-	yyjson_mut_doc_set_root(doc, root);
+	yyjson_mut_doc_set_root(doc.value, root);
 
 	config_json_objects objects = {.root = root};
 	for (size_t i = 0; i < CONFIG_SECTION_COUNT; i++) {
-		objects.sections[i] = yyjson_mut_obj_add_obj(doc, root, CONFIG_SECTION_NAMES[i]);
+		objects.sections[i] = yyjson_mut_obj_add_obj(
+			doc.value,
+			root,
+			CONFIG_SECTION_NAMES[i]
+		);
 		if (!objects.sections[i]) {
 			goto done;
 		}
@@ -751,21 +800,21 @@ bool DTTR_Config_Save(const char *filename, const DTTR_Config *config) {
 
 	yyjson_mut_val *modding = objects.sections[CONFIG_SECTION_MODDING];
 	yyjson_mut_val *gamepad = objects.sections[CONFIG_SECTION_GAMEPAD];
-	yyjson_mut_val *buttons = yyjson_mut_obj_add_obj(doc, gamepad, "buttons");
+	yyjson_mut_val *buttons = yyjson_mut_obj_add_obj(doc.value, gamepad, "buttons");
 	if (!buttons) {
 		goto done;
 	}
 
-	ok = config_add_schema_fields(doc, &objects, config)
-		 && config_add_disabled_mods(doc, modding, config)
-		 && config_add_mod_configs(doc, modding, config)
-		 && config_add_gamepad_buttons(doc, buttons, config);
+	ok = config_add_schema_fields(doc.value, &objects, config)
+		 && config_add_disabled_mods(doc.value, modding, config)
+		 && config_add_mod_configs(doc.value, modding, config)
+		 && config_add_gamepad_buttons(doc.value, buttons, config);
 
 	if (ok) {
 		yyjson_write_err err;
 		ok = yyjson_mut_write_file(
 			filename,
-			doc,
+			doc.value,
 			YYJSON_WRITE_PRETTY | YYJSON_WRITE_NEWLINE_AT_END,
 			NULL,
 			&err
@@ -776,6 +825,6 @@ bool DTTR_Config_Save(const char *filename, const DTTR_Config *config) {
 	}
 
 done:
-	yyjson_mut_doc_free(doc);
+	config_mut_json_doc_free(&doc);
 	return ok;
 }

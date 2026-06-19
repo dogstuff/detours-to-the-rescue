@@ -36,6 +36,7 @@ target_link_libraries(common
         PkgConfig::SDL3
         sds
     PRIVATE
+        cwalk
         dbghelp
         glad
         klib

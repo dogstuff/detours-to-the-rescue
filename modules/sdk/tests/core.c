@@ -60,7 +60,7 @@ static const DTTR_Core_API RUNTIME = {
 	.unhook_checked = DTTR_Core_HookDetachChecked,
 };
 
-static DTTR_Core_Context runtime_context(void) {
+static DTTR_Core_Context runtime_context() {
 	return (DTTR_Core_Context){
 		.game_module = (HMODULE)1,
 		.api = &RUNTIME,
@@ -167,7 +167,7 @@ static DTTR_PCDOGS_T_File_Handle *__cdecl pcdogs_file_open_detour(
 	return NULL;
 }
 
-static BOOL __cdecl pcdogs_cleanup_title_resources_detour(void) {
+static BOOL __cdecl pcdogs_cleanup_title_resources_detour() {
 	return TRUE;
 }
 

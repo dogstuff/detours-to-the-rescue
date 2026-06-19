@@ -331,13 +331,13 @@ void dttr_graphics_mod_device_destroying(DTTR_BackendState *state);
 #else
 static inline void dttr_graphics_mod_frame_begin(DTTR_BackendState *) {}
 
-static inline void dttr_graphics_mod_before_game_frame(void) {}
+static inline void dttr_graphics_mod_before_game_frame() {}
 
-static inline void dttr_graphics_mod_after_game_frame(void) {}
+static inline void dttr_graphics_mod_after_game_frame() {}
 
-static inline void dttr_graphics_mod_before_present(void) {}
+static inline void dttr_graphics_mod_before_present() {}
 
-static inline void dttr_graphics_mod_after_present(void) {}
+static inline void dttr_graphics_mod_after_present() {}
 
 static inline void dttr_graphics_mod_frame_end(DTTR_BackendState *) {}
 
@@ -366,8 +366,8 @@ DTTR_PresentRect dttr_graphics_compute_present_rect(
 	float fallback_scale
 );
 
-void dttr_graphics_mod_present_rect_before(void);
-void dttr_graphics_mod_present_rect_after(void);
+void dttr_graphics_mod_present_rect_before();
+void dttr_graphics_mod_present_rect_after();
 
 bool dttr_graphics_ensure_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st);
 

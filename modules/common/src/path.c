@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include <cwalk.h>
 #include <windows.h>
 
 static bool copy_path_value(
@@ -18,33 +19,6 @@ static bool copy_path_value(
 	memcpy(out, value, value_len);
 	out[value_len] = '\0';
 	return true;
-}
-
-static const char *skip_dot_separators(const char *path) {
-	while (path[0] == '.' && DTTR_Path_IsSeparator(path[1])) {
-		path += 2;
-	}
-
-	return path;
-}
-
-static void trim_trailing_separators(sds path) {
-	const size_t path_len = sdslen(path);
-	size_t len = path_len;
-	while (len > 0 && DTTR_Path_IsSeparator(path[len - 1])) {
-		len--;
-	}
-
-	if (len == path_len) {
-		return;
-	}
-
-	if (len == 0) {
-		sdsclear(path);
-		return;
-	}
-
-	sdsrange(path, 0, (int)len - 1);
 }
 
 char DTTR_Path_AsciiLower(char ch) {
@@ -104,6 +78,39 @@ static bool path_has_windows_drive_prefix(const char *path) {
 	return path && path[0] && path[1] == ':';
 }
 
+static sds cwalk_absolute_sds(const char *base, const char *path) {
+	const size_t len = cwk_path_get_absolute(base, path, NULL, 0);
+	sds resolved = sdsnewlen(NULL, len);
+	if (!resolved) {
+		return NULL;
+	}
+
+	cwk_path_get_absolute(base, path, resolved, len + 1);
+	return resolved;
+}
+
+static sds cwalk_join_sds(const char *path, const char *segment) {
+	const size_t len = cwk_path_join(path, segment, NULL, 0);
+	sds joined = sdsnewlen(NULL, len);
+	if (!joined) {
+		return NULL;
+	}
+
+	cwk_path_join(path, segment, joined, len + 1);
+	return joined;
+}
+
+static sds cwalk_normalize_native_sds(const char *path) {
+	const size_t len = cwk_path_normalize(path, NULL, 0);
+	sds normalized = sdsnewlen(NULL, len);
+	if (!normalized) {
+		return NULL;
+	}
+
+	cwk_path_normalize(path, normalized, len + 1);
+	return normalized;
+}
+
 bool DTTR_Path_IsSafeRelative(const char *path) {
 	if (!path || DTTR_Path_IsAnyAbsolute(path) || path_has_windows_drive_prefix(path)) {
 		return false;
@@ -131,34 +138,11 @@ static sds normalize_path_for_compare(const char *path) {
 		return sdsempty();
 	}
 
-	path = skip_dot_separators(path);
-
-	sds normalized = sdsempty();
-	if (!normalized) {
-		return NULL;
+	sds normalized = cwalk_normalize_native_sds(path);
+	if (normalized) {
+		sdsmapchars(normalized, "\\", "/", 1);
 	}
 
-	bool previous_separator = false;
-	for (const char *p = path; *p; p++) {
-		const bool is_separator = DTTR_Path_IsSeparator(*p);
-		const char ch = is_separator ? '/' : *p;
-		if (is_separator) {
-			if (previous_separator) {
-				continue;
-			}
-
-			previous_separator = true;
-		} else {
-			previous_separator = false;
-		}
-
-		if (!DTTR_Path_AppendChar(&normalized, ch)) {
-			sdsfree(normalized);
-			return NULL;
-		}
-	}
-
-	trim_trailing_separators(normalized);
 	return normalized;
 }
 
@@ -181,7 +165,7 @@ bool DTTR_Path_IsAnyAbsolute(const char *path) {
 		return false;
 	}
 
-	return DTTR_Path_IsWindowsAbsolute(path) || DTTR_Path_IsSeparator(path[0]);
+	return cwk_path_is_absolute(path);
 }
 
 bool DTTR_Path_ExactExists(const char *path) {
@@ -231,28 +215,26 @@ sds DTTR_Path_ResolveRelativeTo(const char *base_dir, const char *path) {
 	}
 
 	if (DTTR_Path_IsAnyAbsolute(path)) {
-		return sdsnew(path);
+		return cwalk_normalize_native_sds(path);
 	}
 
-	sds resolved = sdsnew(base_dir ? base_dir : "");
-	if (!resolved
-		|| !DTTR_Path_AppendSegment(&resolved, path, DTTR_PATH_NATIVE_SEPARATOR)) {
-		sdsfree(resolved);
-		return NULL;
+	if (!base_dir || !*base_dir) {
+		return cwalk_normalize_native_sds(path);
 	}
 
-	return resolved;
+	return cwalk_absolute_sds(base_dir, path);
 }
 
 sds DTTR_Path_NativeRoot(const char *path, const char **rest) {
-	if (DTTR_Path_IsWindowsAbsolute(path)) {
-		*rest = path + 3;
-		return sdscatprintf(sdsempty(), "%c:%c", path[0], DTTR_PATH_NATIVE_SEPARATOR);
+	if (!path || !rest) {
+		return NULL;
 	}
 
-	if (DTTR_Path_IsSeparator(path[0])) {
-		*rest = DTTR_Path_SkipSeparators(path);
-		return sdsnewlen(&(char){DTTR_PATH_NATIVE_SEPARATOR}, 1);
+	size_t root_len = 0;
+	cwk_path_get_root(path, &root_len);
+	if (root_len > 0 && cwk_path_is_absolute(path)) {
+		*rest = DTTR_Path_SkipSeparators(path + root_len);
+		return sdsnewlen(path, root_len);
 	}
 
 	*rest = path;
@@ -274,18 +256,12 @@ bool DTTR_Path_AppendSeparator(sds *path, char separator) {
 }
 
 bool DTTR_Path_AppendSegment(sds *path, const char *segment, char separator) {
-	const size_t len = sdslen(*path);
-	if (len > 0 && !DTTR_Path_IsSeparator((*path)[len - 1])) {
-		if (!DTTR_Path_AppendChar(path, separator)) {
-			return false;
-		}
-	}
-
-	sds next = sdscat(*path, segment);
-	if (!next) {
+	sds joined = cwalk_join_sds(*path, segment);
+	if (!joined) {
 		return false;
 	}
 
-	*path = next;
+	sdsfree(*path);
+	*path = joined;
 	return true;
 }

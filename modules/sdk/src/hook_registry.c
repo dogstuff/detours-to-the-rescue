@@ -1,5 +1,6 @@
 #include "core_internal.h"
 
+#include <dttr_cleanup.h>
 #include <dttr_log.h>
 #include <dttr_sigscan.h>
 
@@ -493,7 +494,7 @@ static bool trampoline_relocate(
 
 KHASH_MAP_INIT_INT64(sigscan_cache, uintptr_t)
 
-static khash_t(sigscan_cache) *cache = NULL;
+static khash_t(sigscan_cache) *sigscan_cache_entries = NULL;
 
 // Build a cache key from the module base and signature bytes.
 static uint64_t sigscan_key(HMODULE mod, const char *sig, const char *mask) {
@@ -506,36 +507,51 @@ static uint64_t sigscan_key(HMODULE mod, const char *sig, const char *mask) {
 	return XXH3_64bits_digest(&state);
 }
 
+static bool sigscan_cache_ready() {
+	if (sigscan_cache_entries) {
+		return true;
+	}
+
+	sigscan_cache_entries = kh_init(sigscan_cache);
+	return sigscan_cache_entries != NULL;
+}
+
+static bool sigscan_cache_lookup(uint64_t key, uintptr_t *out_result) {
+	khiter_t it = kh_get(sigscan_cache, sigscan_cache_entries, key);
+	if (it == kh_end(sigscan_cache_entries)) {
+		return false;
+	}
+
+	*out_result = kh_val(sigscan_cache_entries, it);
+	return true;
+}
+
+static void sigscan_cache_store(uint64_t key, uintptr_t result) {
+	int ret;
+	khiter_t it = kh_put(sigscan_cache, sigscan_cache_entries, key, &ret);
+	if (ret >= 0) {
+		kh_val(sigscan_cache_entries, it) = result;
+	}
+}
+
 // Reuse module signature scan results so generated symbol resolution stays cheap.
 uintptr_t DTTR_Core_HookCachedSigscan(HMODULE mod, const char *sig, const char *mask) {
 	if (!mod || !sig || !mask) {
 		return 0;
 	}
 
-	if (!cache) {
-		cache = kh_init(sigscan_cache);
-		if (!cache) {
-			return DTTR_Core_HookSigscan(mod, sig, mask);
-		}
+	if (!sigscan_cache_ready()) {
+		return DTTR_Core_HookSigscan(mod, sig, mask);
 	}
 
 	const uint64_t key = sigscan_key(mod, sig, mask);
-	khiter_t it = kh_get(sigscan_cache, cache, key);
-
-	if (it != kh_end(cache)) {
-		return kh_val(cache, it);
+	uintptr_t cached_result = 0;
+	if (sigscan_cache_lookup(key, &cached_result)) {
+		return cached_result;
 	}
 
 	const uintptr_t result = DTTR_Core_HookSigscan(mod, sig, mask);
-
-	int ret;
-	it = kh_put(sigscan_cache, cache, key, &ret);
-	if (ret < 0) {
-		return result;
-	}
-
-	kh_val(cache, it) = result;
-
+	sigscan_cache_store(key, result);
 	return result;
 }
 
@@ -544,24 +560,69 @@ typedef kvec_t(DTTR_Core_Hook *) hook_vec;
 static hook_vec hooks;
 static void *hook_owner = NULL;
 
+static size_t hook_registry_count() {
+	return hooks.n;
+}
+
+static DTTR_Core_Hook *hook_registry_get(size_t index) {
+	return hooks.a[index];
+}
+
+static bool hook_registry_push(DTTR_Core_Hook *hook) {
+	if (hooks.n == hooks.m) {
+		const size_t next_cap = hooks.m ? hooks.m * 2u : 2u;
+		DTTR_Core_Hook **next = (DTTR_Core_Hook **)
+			realloc(hooks.a, next_cap * sizeof(*hooks.a));
+		if (!next) {
+			DTTR_LOG_ERROR("hook registry: hook table allocation failed");
+			return false;
+		}
+
+		hooks.a = next;
+		hooks.m = next_cap;
+	}
+
+	hooks.a[hooks.n++] = hook;
+	return true;
+}
+
+static void hook_registry_remove(size_t index) {
+	hooks.a[index] = hooks.a[hooks.n - 1];
+	hooks.n--;
+}
+
+static void hook_registry_reset() {
+	kv_destroy(hooks);
+	kv_init(hooks);
+}
+
+static void hook_free_virtual(uint8_t **memory) {
+	void *owned = memory ? *memory : NULL;
+	DTTR_Cleanup_VirtualAlloc(&owned);
+	if (memory) {
+		*memory = NULL;
+	}
+}
+
+static void hook_init_patch(DTTR_Core_Hook *hook, uintptr_t addr, size_t size) {
+	hook->kind = DTTR_HOOK_RECORD_PATCH;
+	hook->addr = addr;
+	hook->size = size;
+	hook->owner = hook_owner;
+}
+
 static void hook_destroy(DTTR_Core_Hook *hook) {
 	if (!hook) {
 		return;
 	}
 
 	if (hook->kind == DTTR_HOOK_RECORD_FUNCTION) {
-		if (hook->next_thunk) {
-			VirtualFree(hook->next_thunk, 0, MEM_RELEASE);
-		}
-
+		hook_free_virtual(&hook->next_thunk);
 		free(hook);
 		return;
 	}
 
-	if (hook->trampoline) {
-		VirtualFree(hook->trampoline, 0, MEM_RELEASE);
-	}
-
+	hook_free_virtual(&hook->trampoline);
 	free(hook->original);
 	free(hook);
 }
@@ -571,10 +632,7 @@ static void hook_chain_destroy(hook_chain *chain) {
 		return;
 	}
 
-	if (chain->trampoline) {
-		VirtualFree(chain->trampoline, 0, MEM_RELEASE);
-	}
-
+	hook_free_virtual(&chain->trampoline);
 	free(chain->original);
 	free(chain);
 }
@@ -583,8 +641,8 @@ static void hook_chain_destroy(hook_chain *chain) {
 static bool check_overlap(uintptr_t addr, size_t size) {
 	const uintptr_t end = addr + size;
 
-	for (size_t i = 0; i < kv_size(hooks); i++) {
-		DTTR_Core_Hook *h = kv_A(hooks, i);
+	for (size_t i = 0; i < hook_registry_count(); i++) {
+		DTTR_Core_Hook *h = hook_registry_get(i);
 		const uintptr_t h_end = h->addr + h->size;
 
 		if (addr < h_end && h->addr < end) {
@@ -610,9 +668,7 @@ static DTTR_Core_Hook *hook_create(const char *op, uintptr_t addr, size_t size) 
 		return NULL;
 	}
 
-	hook->addr = addr;
-	hook->size = size;
-	hook->owner = hook_owner;
+	hook_init_patch(hook, addr, size);
 	hook->original = (uint8_t *)malloc(size);
 	if (!hook->original) {
 		DTTR_LOG_ERROR("%s: original-bytes alloc failed for 0x%08X", op, (unsigned)addr);
@@ -625,18 +681,18 @@ static DTTR_Core_Hook *hook_create(const char *op, uintptr_t addr, size_t size) 
 
 // Find a registered hook handle before detach or overlap checks mutate state.
 static size_t hook_find_index(DTTR_Core_Hook *hook) {
-	for (size_t i = 0; i < kv_size(hooks); i++) {
-		if (kv_A(hooks, i) == hook) {
+	for (size_t i = 0; i < hook_registry_count(); i++) {
+		if (hook_registry_get(i) == hook) {
 			return i;
 		}
 	}
 
-	return kv_size(hooks);
+	return hook_registry_count();
 }
 
 static hook_chain *hook_find_function_chain(uintptr_t addr) {
-	for (size_t i = 0; i < kv_size(hooks); i++) {
-		DTTR_Core_Hook *hook = kv_A(hooks, i);
+	for (size_t i = 0; i < hook_registry_count(); i++) {
+		DTTR_Core_Hook *hook = hook_registry_get(i);
 		if (hook->kind == DTTR_HOOK_RECORD_FUNCTION && hook->chain
 			&& hook->chain->addr == addr) {
 			return hook->chain;
@@ -719,6 +775,8 @@ static void *function_link_next_target(const DTTR_Core_Hook *hook) {
 
 	return hook->chain ? hook->chain->trampoline : NULL;
 }
+
+static bool function_link_detach(DTTR_Core_Hook *hook);
 
 static DTTR_Core_Hook *function_link_create(
 	hook_chain *chain,
@@ -811,7 +869,12 @@ static DTTR_Core_Hook *function_chain_append(
 		return NULL;
 	}
 
-	kv_push(DTTR_Core_Hook *, hooks, hook);
+	if (!hook_registry_push(hook)) {
+		function_link_detach(hook);
+		hook_destroy(hook);
+		return NULL;
+	}
+
 	return hook;
 }
 
@@ -874,14 +937,13 @@ static bool function_link_detach(DTTR_Core_Hook *hook) {
 
 // Detach one registered hook by index while keeping the registry dense.
 static bool hook_detach_index(size_t index) {
-	DTTR_Core_Hook *hook = kv_A(hooks, index);
+	DTTR_Core_Hook *hook = hook_registry_get(index);
 	if (hook->kind == DTTR_HOOK_RECORD_FUNCTION) {
 		if (!function_link_detach(hook)) {
 			return false;
 		}
 
-		kv_A(hooks, index) = kv_A(hooks, kv_size(hooks) - 1);
-		kv_pop(hooks);
+		hook_registry_remove(index);
 		hook_destroy(hook);
 		return true;
 	}
@@ -894,8 +956,7 @@ static bool hook_detach_index(size_t index) {
 		return false;
 	}
 
-	kv_A(hooks, index) = kv_A(hooks, kv_size(hooks) - 1);
-	kv_pop(hooks);
+	hook_registry_remove(index);
 	hook_destroy(hook);
 	return true;
 }
@@ -1045,7 +1106,12 @@ DTTR_Core_Hook *DTTR_Core_HookAttachFunction(
 		return NULL;
 	}
 
-	kv_push(DTTR_Core_Hook *, hooks, hook);
+	if (!hook_registry_push(hook)) {
+		function_link_detach(hook);
+		hook_destroy(hook);
+		return NULL;
+	}
+
 	return hook;
 }
 
@@ -1099,7 +1165,12 @@ DTTR_Core_Hook *DTTR_Core_HookPatchBytes(
 		return NULL;
 	}
 
-	kv_push(DTTR_Core_Hook *, hooks, hook);
+	if (!hook_registry_push(hook)) {
+		write_bytes("hook_patch_bytes", addr, hook->original, hook->size);
+		hook_destroy(hook);
+		return NULL;
+	}
+
 	return hook;
 }
 
@@ -1109,7 +1180,7 @@ bool DTTR_Core_HookDetachChecked(DTTR_Core_Hook *hook) {
 	}
 
 	const size_t index = hook_find_index(hook);
-	if (index == kv_size(hooks)) {
+	if (index == hook_registry_count()) {
 		DTTR_LOG_DEBUG("hook_detach: ignoring stale or already detached hook handle");
 		return true;
 	}
@@ -1123,7 +1194,7 @@ void DTTR_Core_HookDetach(DTTR_Core_Hook *hook) {
 }
 
 bool DTTR_Core_HookIsActive(DTTR_Core_Hook *hook) {
-	return hook && hook_find_index(hook) != kv_size(hooks);
+	return hook && hook_find_index(hook) != hook_registry_count();
 }
 
 bool DTTR_Core_HookDetachOwnerChecked(void *owner) {
@@ -1132,8 +1203,8 @@ bool DTTR_Core_HookDetachOwnerChecked(void *owner) {
 	}
 
 	bool ok = true;
-	for (size_t i = kv_size(hooks); i > 0; i--) {
-		if (kv_A(hooks, i - 1)->owner != owner) {
+	for (size_t i = hook_registry_count(); i > 0; i--) {
+		if (hook_registry_get(i - 1)->owner != owner) {
 			continue;
 		}
 
@@ -1156,25 +1227,24 @@ void DTTR_Core_HookDetachOwner(void *owner) {
 }
 
 static void cleanup_sigscan_cache() {
-	if (cache) {
-		kh_destroy(sigscan_cache, cache);
-		cache = NULL;
+	if (sigscan_cache_entries) {
+		kh_destroy(sigscan_cache, sigscan_cache_entries);
+		sigscan_cache_entries = NULL;
 	}
 }
 
 bool DTTR_Core_HookCleanupAllChecked() {
 	bool ok = true;
-	while (kv_size(hooks) > 0) {
-		const size_t previous_count = kv_size(hooks);
+	while (hook_registry_count() > 0) {
+		const size_t previous_count = hook_registry_count();
 		if (!hook_detach_index(previous_count - 1)) {
 			ok = false;
 			break;
 		}
 	}
 
-	if (kv_size(hooks) == 0) {
-		kv_destroy(hooks);
-		kv_init(hooks);
+	if (hook_registry_count() == 0) {
+		hook_registry_reset();
 		hook_owner = NULL;
 	}
 

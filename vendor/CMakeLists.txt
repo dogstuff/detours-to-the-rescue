@@ -11,6 +11,9 @@ target_compile_definitions(xxhash INTERFACE XXH_STATIC_LINKING_ONLY)
 add_library(sds STATIC sds/sds.c)
 target_include_directories(sds PUBLIC sds)
 
+add_library(cwalk STATIC cwalk/src/cwalk.c)
+target_include_directories(cwalk PUBLIC cwalk/include)
+
 add_library(yyjson STATIC yyjson/yyjson.c)
 target_include_directories(yyjson PUBLIC yyjson)
 
