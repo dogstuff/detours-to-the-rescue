@@ -14,6 +14,12 @@
 // DirectInput poll entry wrapped to feed SDL gamepad state into the game.
 #define DTTR_SIDECAR_AOB_DINPUT_POLL "56 8B 74 24 ?? 56 8B 06"
 
+// The native game treats Enter as "stop remapping" before it can
+// be assigned as a key. The sidecar byte-patch removes this behavior.
+#define DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH                                      \
+	"E8 ?? ?? ?? ?? 8B F0 83 FE FF 0F 84 ?? ?? ?? ?? 83 FE 0D 0F 84 ?? ?? ?? ?? 83 FE "  \
+	"1B"
+
 // PCDOGS save-path resolver hooked to redirect persisted data (EU/SC builds only).
 #define DTTR_SIDECAR_AOB_RESOLVE_PCDOGS_PATH "51 8D 44 24 ?? 57"
 

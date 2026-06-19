@@ -60,6 +60,15 @@ const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {
 	 0,
 	 NULL,
 	 NULL},
+	{"dttr_inputs_controls_enter_bind_branch",
+	 TARGET_BYTE_PATCH,
+	 DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH,
+	 DTTR_TEST_PCDOGS_REQUIRED_ALL,
+	 19,
+	 (const uint8_t[]){0x90, 0x90, 0x90, 0x90, 0x90, 0x90},
+	 6,
+	 (const uint8_t[]){0x0F, 0x84, 0x00, 0x00, 0x00, 0x00},
+	 "xx????"},
 #include <sidecar_graphics_byte_patches.def>
 };
 

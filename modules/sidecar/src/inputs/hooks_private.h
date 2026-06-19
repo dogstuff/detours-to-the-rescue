@@ -11,7 +11,22 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx);
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx);
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device);
+bool dttr_inputs_vkey_pressed(
+	int vkey,
+	const bool *keyboard_state,
+	int keyboard_state_count
+);
 SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey);
+int32_t dttr_inputs_controls_menu_pressed_button(
+	int32_t pressed_button,
+	int32_t remapping_active,
+	int32_t menu_state
+);
+extern DTTR_PCDOGS_F_Input_GetPressedButton_proto
+	dttr_inputs_hook_get_pressed_button_original;
+bool dttr_inputs_hook_get_pressed_button_prepare(const DTTR_Mods_Context *ctx);
+int32_t __cdecl dttr_inputs_hook_get_pressed_button_callback();
+void dttr_inputs_hook_get_pressed_button_reset();
 bool dttr_inputs_hook_read_gamepad_prepare(const DTTR_Mods_Context *ctx);
 void dttr_inputs_hook_read_gamepad_reset();
 void __cdecl dttr_inputs_hook_read_gamepad_callback(DTTR_PCDOGS_T_Input_State *state);
