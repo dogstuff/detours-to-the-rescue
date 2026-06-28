@@ -5,46 +5,91 @@
 
 #include "inputs/hooks_private.h"
 
-static void assert_vkey_pressed_by_scancode(int vkey, SDL_Scancode scancode) {
+static int32_t menu_button(int32_t pressed, int32_t remapping, const bool *keyboard_state) {
+	return dttr_inputs_controls_menu_pressed_keyboard_button(
+		pressed,
+		remapping,
+		keyboard_state,
+		SDL_SCANCODE_COUNT
+	);
+}
+
+static void return_keys_bind_when_pressed_after_remap_opens(void **) {
 	bool keyboard_state[SDL_SCANCODE_COUNT] = {0};
-	keyboard_state[scancode] = true;
-	assert_true(dttr_inputs_vkey_pressed(vkey, keyboard_state, SDL_SCANCODE_COUNT));
+
+	dttr_inputs_controls_menu_reset();
+	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+	keyboard_state[SDL_SCANCODE_RETURN] = true;
+	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), VK_RETURN);
+
+	dttr_inputs_controls_menu_reset();
+	keyboard_state[SDL_SCANCODE_RETURN] = false;
+	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+	keyboard_state[SDL_SCANCODE_KP_ENTER] = true;
+	assert_int_equal(
+		menu_button(VK_RETURN, 1, keyboard_state),
+		DTTR_INPUTS_KEY_KEYPAD_ENTER
+	);
 }
 
-static void return_virtual_key_accepts_main_and_keypad_enter(void **) {
-	assert_vkey_pressed_by_scancode(VK_RETURN, SDL_SCANCODE_RETURN);
-	assert_vkey_pressed_by_scancode(VK_RETURN, SDL_SCANCODE_KP_ENTER);
-}
-
-static void return_virtual_key_ignores_unpressed_enter_keys(void **) {
+static void held_return_keys_wait_for_release_before_binding(void **) {
 	bool keyboard_state[SDL_SCANCODE_COUNT] = {0};
-	keyboard_state[SDL_SCANCODE_SPACE] = true;
-	assert_false(dttr_inputs_vkey_pressed(VK_RETURN, keyboard_state, SDL_SCANCODE_COUNT));
-}
 
-static void held_enter_that_opened_remap_is_debounced(void **) {
-	assert_int_equal(dttr_inputs_controls_menu_pressed_button(VK_RETURN, 1, 1), -1);
-}
+	dttr_inputs_controls_menu_reset();
 
-static void released_then_pressed_enter_stays_bindable(void **) {
-	assert_int_equal(dttr_inputs_controls_menu_pressed_button(VK_RETURN, 1, 0), VK_RETURN);
-}
+	keyboard_state[SDL_SCANCODE_RETURN] = true;
 
-static void controls_menu_filter_leaves_escape_cancel_available(void **) {
-	assert_int_equal(dttr_inputs_controls_menu_pressed_button(VK_ESCAPE, 1, 1), VK_ESCAPE);
+	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), -1);
+
+	keyboard_state[SDL_SCANCODE_RETURN] = false;
+
+	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+
+	keyboard_state[SDL_SCANCODE_RETURN] = true;
+
+	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), VK_RETURN);
+
+	dttr_inputs_controls_menu_reset();
+
+	assert_int_equal(menu_button(VK_RETURN, 0, keyboard_state), VK_RETURN);
+	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), -1);
+
+	keyboard_state[SDL_SCANCODE_RETURN] = false;
+
+	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+
+	keyboard_state[SDL_SCANCODE_RETURN] = true;
+
+	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), VK_RETURN);
+
+	dttr_inputs_controls_menu_reset();
+
+	keyboard_state[SDL_SCANCODE_RETURN] = false;
+	keyboard_state[SDL_SCANCODE_KP_ENTER] = true;
+
+	assert_int_equal(
+		menu_button(VK_RETURN, 0, keyboard_state),
+		DTTR_INPUTS_KEY_KEYPAD_ENTER
+	);
+	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), -1);
+
+	keyboard_state[SDL_SCANCODE_KP_ENTER] = false;
+
+	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+
+	keyboard_state[SDL_SCANCODE_KP_ENTER] = true;
+
+	assert_int_equal(
+		menu_button(VK_RETURN, 1, keyboard_state),
+		DTTR_INPUTS_KEY_KEYPAD_ENTER
+	);
 }
 
 static const DTTR_TestCase TEST_CASES[] = {
-	{"return-vkey-accepts-main-and-keypad-enter",
-	 return_virtual_key_accepts_main_and_keypad_enter},
-	{"return-vkey-ignores-unpressed-enter-keys",
-	 return_virtual_key_ignores_unpressed_enter_keys},
-	{"held-enter-that-opened-remap-is-debounced",
-	 held_enter_that_opened_remap_is_debounced},
-	{"released-then-pressed-enter-stays-bindable",
-	 released_then_pressed_enter_stays_bindable},
-	{"controls-menu-filter-leaves-escape-cancel-available",
-	 controls_menu_filter_leaves_escape_cancel_available},
+	{"return-keys-bind-when-pressed-after-remap-opens",
+	 return_keys_bind_when_pressed_after_remap_opens},
+	{"held-return-keys-wait-for-release-before-binding",
+	 held_return_keys_wait_for_release_before_binding},
 };
 
 DTTR_TEST_MAIN(TEST_CASES)

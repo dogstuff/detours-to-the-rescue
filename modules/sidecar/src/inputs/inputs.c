@@ -129,6 +129,32 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 			->PatchSpec(true, dttr_inputs_hook_get_async_key_state_callback, NULL)
 	);
 
+	if (!dttr_inputs_hook_key_state_prepare(ctx)) {
+		DTTR_LOG_ERROR("Input key-state hook unavailable");
+		kv_destroy(inputs_patches);
+		return false;
+	}
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_F_Input_IsKeyPressedAsync->PatchSpec(
+			true,
+			dttr_inputs_hook_is_key_pressed_async_callback,
+			&dttr_inputs_hook_is_key_pressed_async_original
+		)
+	);
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_F_Input_GetButtonString->PatchSpec(
+			false,
+			dttr_inputs_hook_get_button_string_callback,
+			&dttr_inputs_hook_get_button_string_original
+		)
+	);
+
 	if (!dttr_inputs_hook_get_pressed_button_prepare(ctx)) {
 		DTTR_LOG_ERROR("Controls-menu Enter remap hook unavailable");
 		kv_destroy(inputs_patches);
@@ -262,6 +288,7 @@ bool dttr_inputs_late_init() {
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_PatchGroupRelease(&inputs_targets);
 	dttr_inputs_hook_get_pressed_button_reset();
+	dttr_inputs_hook_key_state_reset();
 	dttr_inputs_hook_read_gamepad_reset();
 	dttr_inputs_hook_rumble_reset();
 }

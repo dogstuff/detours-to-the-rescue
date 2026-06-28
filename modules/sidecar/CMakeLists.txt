@@ -125,6 +125,7 @@ add_library(dttr_sidecar SHARED
     src/inputs/controls_menu.c
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
+    src/inputs/hook_key_state.c
     src/inputs/hook_get_pressed_button.c
     src/inputs/hook_read_gamepad.c
     src/inputs/hook_rumble.c
