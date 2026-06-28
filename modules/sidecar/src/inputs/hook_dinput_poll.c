@@ -1,7 +1,6 @@
 #include <SDL3/SDL.h>
 #include <dttr_pcdogs.h>
 #include <stdint.h>
-#include <string.h>
 #include <windows.h>
 
 #include <dttr_config.h>
@@ -32,7 +31,7 @@ enum {
 #define DINPUT_POV_CENTERED 0xFFFFFFFF
 
 static void init_poll_state(di_joy_state *state) {
-	memset(state, 0, sizeof(*state));
+	SDL_zerop(state);
 
 	for (int i = 0; i < 4; i++) {
 		state->pov[i] = DINPUT_POV_CENTERED;

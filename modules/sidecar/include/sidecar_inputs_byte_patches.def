@@ -1,0 +1,46 @@
+// Input byte patch rows share runtime patch bytes with pcdogs expectations.
+
+#ifndef SIDECAR_INPUTS_BYTE_PATCH
+#error "define SIDECAR_INPUTS_BYTE_PATCH before including sidecar_inputs_byte_patches.def"
+#endif
+
+SIDECAR_INPUTS_BYTE_PATCH(
+	"dttr_inputs_controls_enter_bind_branch",
+	DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH,
+	19,
+	(0x90, 0x90, 0x90, 0x90, 0x90, 0x90),
+	(0x0F, 0x84, 0x00, 0x00, 0x00, 0x00),
+	"xx????"
+)
+SIDECAR_INPUTS_BYTE_PATCH(
+	"dttr_inputs_controls_keyboard_bind_limit",
+	DTTR_SIDECAR_AOB_CONTROLS_KEYBOARD_BIND_LIMIT,
+	4,
+	(0x81, 0xFE, 0xE8, 0x03, 0x00, 0x00),
+	(0x81, 0xFE, 0x00, 0x01, 0x00, 0x00),
+	"xxxxxx"
+)
+SIDECAR_INPUTS_BYTE_PATCH(
+	"dttr_inputs_controls_gamepad_bind_limit",
+	DTTR_SIDECAR_AOB_CONTROLS_GAMEPAD_BIND_LIMIT,
+	5,
+	(0x81, 0xFE, 0xE7, 0x03, 0x00, 0x00),
+	(0x81, 0xFE, 0x00, 0x01, 0x00, 0x00),
+	"xxxxxx"
+)
+SIDECAR_INPUTS_BYTE_PATCH(
+	"dttr_inputs_controls_keyboard_remap_done_limit",
+	DTTR_SIDECAR_AOB_CONTROLS_REMAP_DONE_LIMITS,
+	4,
+	(0x81, 0xFE, 0xE8, 0x03, 0x00, 0x00),
+	(0x81, 0xFE, 0x00, 0x01, 0x00, 0x00),
+	"xxxxxx"
+)
+SIDECAR_INPUTS_BYTE_PATCH(
+	"dttr_inputs_controls_gamepad_remap_done_limit",
+	DTTR_SIDECAR_AOB_CONTROLS_REMAP_DONE_LIMITS,
+	25,
+	(0x81, 0xFE, 0xE8, 0x03, 0x00, 0x00),
+	(0x81, 0xFE, 0x00, 0x01, 0x00, 0x00),
+	"xxxxxx"
+)

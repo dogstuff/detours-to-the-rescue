@@ -4,10 +4,7 @@
 
 #include <sidecar_hook_sigs.h>
 
-// Expands one shared byte-patch row into a test expectation. The signature, offset, and
-// patch bytes come from the same sidecar_graphics_byte_patches.def the runtime installs;
-// only the fixture-required mask and expected-original bytes are test-specific.
-#define SIDECAR_GFX_BYTE_PATCH(                                                          \
+#define SIDECAR_BYTE_PATCH_EXPECTATION(                                                  \
 	name,                                                                                \
 	rt_required,                                                                         \
 	test_required,                                                                       \
@@ -27,11 +24,20 @@
 	 (const uint8_t[]){DTTR_SIDECAR_UNPAREN original_seq},                               \
 	 original_mask},
 
-// JMP-hook targets the sidecar installs from inline AOB signatures, sourced from the same
-// shared macros the runtime uses (sidecar_hook_sigs.h). The Input_ReadGamepad hook is an
-// SDK blueprint symbol (DTTR_PCDOGS_F_Input_ReadGamepad); its signature is owned and
-// asserted by the SDK blueprint-function suite, so it is intentionally not duplicated
-// here. Byte-patch targets follow, expanded from sidecar_graphics_byte_patches.def.
+#define SIDECAR_GFX_BYTE_PATCH SIDECAR_BYTE_PATCH_EXPECTATION
+#define SIDECAR_INPUTS_BYTE_PATCH(name, aob, offset, patch_seq, original_seq, original_mask) \
+	SIDECAR_BYTE_PATCH_EXPECTATION(                                                          \
+		name,                                                                                \
+		true,                                                                                \
+		DTTR_TEST_PCDOGS_REQUIRED_ALL,                                                       \
+		aob,                                                                                 \
+		offset,                                                                              \
+		patch_seq,                                                                           \
+		original_seq,                                                                        \
+		original_mask                                                                        \
+	)
+
+// Inline AOB hooks stay listed here, and byte patch targets expand from shared rows.
 const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {
 	{"dttr_hook_win_main",
 	 TARGET_JMP_HOOK,
@@ -60,19 +66,13 @@ const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {
 	 0,
 	 NULL,
 	 NULL},
-	{"dttr_inputs_controls_enter_bind_branch",
-	 TARGET_BYTE_PATCH,
-	 DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH,
-	 DTTR_TEST_PCDOGS_REQUIRED_ALL,
-	 19,
-	 (const uint8_t[]){0x90, 0x90, 0x90, 0x90, 0x90, 0x90},
-	 6,
-	 (const uint8_t[]){0x0F, 0x84, 0x00, 0x00, 0x00, 0x00},
-	 "xx????"},
 #include <sidecar_graphics_byte_patches.def>
+#include <sidecar_inputs_byte_patches.def>
 };
 
+#undef SIDECAR_INPUTS_BYTE_PATCH
 #undef SIDECAR_GFX_BYTE_PATCH
+#undef SIDECAR_BYTE_PATCH_EXPECTATION
 
 const size_t DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT = sizeof(
 														 DTTR_TEST_PCDOGS_SIDECAR_TARGETS

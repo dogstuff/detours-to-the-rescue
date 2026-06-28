@@ -155,8 +155,22 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		)
 	);
 
+	if (dttr_inputs_hook_format_button_name_prepare(ctx)) {
+		kv_push(
+			DTTR_PCDOGS_T_Patch_Spec,
+			inputs_patches,
+			DTTR_PCDOGS_F_Input_FormatButtonName->PatchSpec(
+				true,
+				dttr_inputs_hook_format_button_name_callback,
+				&dttr_inputs_hook_format_button_name_original
+			)
+		);
+	} else {
+		DTTR_LOG_INFO("Button display name override hook unavailable; using original control names");
+	}
+
 	if (!dttr_inputs_hook_get_pressed_button_prepare(ctx)) {
-		DTTR_LOG_ERROR("Controls-menu Enter remap hook unavailable");
+		DTTR_LOG_ERROR("Controls menu return key remap hook unavailable");
 		kv_destroy(inputs_patches);
 		return false;
 	}
@@ -171,21 +185,27 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		)
 	);
 
-	kv_push(
-		DTTR_PCDOGS_T_Patch_Spec,
-		inputs_patches,
-		(DTTR_PCDOGS_T_Patch_Spec)DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(
-			true,
-			DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH,
-			19,
-			0x90,
-			0x90,
-			0x90,
-			0x90,
-			0x90,
-			0x90
-		)
+	// Input byte patches share rows with pcdogs tests.
+#define SIDECAR_INPUTS_BYTE_PATCH(                                                       \
+	name,                                                                                \
+	aob,                                                                                 \
+	offset,                                                                              \
+	patch_seq,                                                                           \
+	original_seq,                                                                        \
+	original_mask                                                                        \
+)                                                                                        \
+	kv_push(                                                                             \
+		DTTR_PCDOGS_T_Patch_Spec,                                                        \
+		inputs_patches,                                                                  \
+		(DTTR_PCDOGS_T_Patch_Spec)DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(                      \
+			true,                                                                        \
+			aob,                                                                         \
+			offset,                                                                      \
+			DTTR_SIDECAR_UNPAREN patch_seq                                               \
+		)                                                                                \
 	);
+#include <sidecar_inputs_byte_patches.def>
+#undef SIDECAR_INPUTS_BYTE_PATCH
 
 	if (dttr_inputs_hook_rumble_prepare(ctx)) {
 		kv_push(

@@ -1,6 +1,7 @@
 #ifndef DTTR_SIDECAR_HOOK_SIGS_H
 #define DTTR_SIDECAR_HOOK_SIGS_H
 
+
 // Single source of truth for the sidecar-owned PCDOGS hook signatures that are NOT SDK
 // blueprint symbols. The runtime (entrypoint/inputs/game hooks) and the sidecar pcdogs
 // test both reference these AOB strings, so a signature only ever needs editing here.
@@ -14,17 +15,25 @@
 // DirectInput poll entry wrapped to feed SDL gamepad state into the game.
 #define DTTR_SIDECAR_AOB_DINPUT_POLL "56 8B 74 24 ?? 56 8B 06"
 
-// The native game treats Enter as "stop remapping" before it can
-// be assigned as a key. The sidecar byte-patch removes this behavior.
+// The native game treats Enter as "stop remapping" before it can be bound.
+// We remove this behavior in DttR.
 #define DTTR_SIDECAR_AOB_CONTROLS_ENTER_BIND_BRANCH                                      \
 	"E8 ?? ?? ?? ?? 8B F0 83 FE FF 0F 84 ?? ?? ?? ?? 83 FE 0D 0F 84 ?? ?? ?? ?? 83 FE "  \
 	"1B"
 
+// Raise the native keyboard/gamepad split so sidecar scancode keys fit below 0x3e8.
+#define DTTR_SIDECAR_AOB_CONTROLS_KEYBOARD_BIND_LIMIT                                    \
+	"3B C7 75 17 81 FE 00 01 00 00 7D 29 8B ?? ?? ?? ?? ?? 89 34"
+#define DTTR_SIDECAR_AOB_CONTROLS_GAMEPAD_BIND_LIMIT                                     \
+	"83 F8 01 75 15 81 FE 00 01 00 00 7E 0D 8B ?? ?? ?? ?? ?? 89 34"
+#define DTTR_SIDECAR_AOB_CONTROLS_REMAP_DONE_LIMITS                                      \
+	"3B C7 75 10 81 FE 00 01 00 00 7D 15 89 3D ?? ?? ?? ?? EB 3A 83 F8 01 75 F3 81 "     \
+	"FE 00 01 00 00 7D EB"
+
 // PCDOGS save-path resolver hooked to redirect persisted data (EU/SC builds only).
 #define DTTR_SIDECAR_AOB_RESOLVE_PCDOGS_PATH "51 8D 44 24 ?? 57"
 
-// Expands a parenthesized byte list `(0xAA, 0xBB)` into its bare comma-separated form so
-// it can feed variadic patch-spec/compound-literal macros from a single `.def` field.
+// Expands parenthesized byte lists for runtime patch specs and test literals.
 #define DTTR_SIDECAR_UNPAREN(...) __VA_ARGS__
 
 #endif // DTTR_SIDECAR_HOOK_SIGS_H
