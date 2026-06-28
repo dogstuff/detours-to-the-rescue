@@ -13,19 +13,23 @@ dttr_add_cmocka_test_suite(dttr_sidecar_pcdogs_tests
         300
     SOURCES
         "${DTTR_SIDECAR_TEST_SOURCE_DIR}/pcdogs.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/inputs/byte_patches.c"
     INCLUDE_DIRS
         "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
         "${CMAKE_SOURCE_DIR}/modules/sdk/include"
         "${CMAKE_SOURCE_DIR}/modules/sdk/tests/include"
         "${CMAKE_SOURCE_DIR}/modules/sidecar/include"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
     LINK_LIBRARIES
         dttr_pcdogs_test_fixtures
+        dttr_sdk_runtime
         dttr_test_support
     LABELS
         sidecar
         pcdogs
         fixtures
 )
+target_compile_definitions(dttr_sidecar_pcdogs_tests PRIVATE DTTR_SDK_ENABLE_UNSTABLE)
 
 dttr_add_cmocka_test_suite(dttr_sidecar_key_state_tests
     GROUP

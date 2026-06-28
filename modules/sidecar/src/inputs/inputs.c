@@ -166,7 +166,9 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 			)
 		);
 	} else {
-		DTTR_LOG_INFO("Button display name override hook unavailable; using original control names");
+		DTTR_LOG_INFO(
+			"Button display name override hook unavailable; using original control names"
+		);
 	}
 
 	if (!dttr_inputs_hook_get_pressed_button_prepare(ctx)) {
@@ -185,27 +187,13 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		)
 	);
 
-	// Input byte patches share rows with pcdogs tests.
-#define SIDECAR_INPUTS_BYTE_PATCH(                                                       \
-	name,                                                                                \
-	aob,                                                                                 \
-	offset,                                                                              \
-	patch_seq,                                                                           \
-	original_seq,                                                                        \
-	original_mask                                                                        \
-)                                                                                        \
-	kv_push(                                                                             \
-		DTTR_PCDOGS_T_Patch_Spec,                                                        \
-		inputs_patches,                                                                  \
-		(DTTR_PCDOGS_T_Patch_Spec)DTTR_PCDOGS_PATCH_SPEC_AOB_BYTES(                      \
-			true,                                                                        \
-			aob,                                                                         \
-			offset,                                                                      \
-			DTTR_SIDECAR_UNPAREN patch_seq                                               \
-		)                                                                                \
-	);
-#include <sidecar_inputs_byte_patches.def>
-#undef SIDECAR_INPUTS_BYTE_PATCH
+	for (size_t i = 0; i < dttr_sidecar_input_byte_patch_spec_count; i++) {
+		kv_push(
+			DTTR_PCDOGS_T_Patch_Spec,
+			inputs_patches,
+			dttr_sidecar_input_byte_patch_specs[i]
+		);
+	}
 
 	if (dttr_inputs_hook_rumble_prepare(ctx)) {
 		kv_push(

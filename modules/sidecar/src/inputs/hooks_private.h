@@ -1,6 +1,8 @@
 #ifndef DTTR_INPUTS_HOOKS_PRIVATE_H
 #define DTTR_INPUTS_HOOKS_PRIVATE_H
 
+#include <stddef.h>
+
 #include <dttr_mods.h>
 #include <dttr_pcdogs.h>
 #include <windows.h>
@@ -20,6 +22,9 @@ typedef enum {
 	DTTR_INPUTS_KEY_CODE_SCANCODE,
 	DTTR_INPUTS_KEY_CODE_GAMEPAD,
 } DTTR_Input_KeyCodeKind;
+
+extern const DTTR_PCDOGS_T_Patch_Spec dttr_sidecar_input_byte_patch_specs[];
+extern const size_t dttr_sidecar_input_byte_patch_spec_count;
 
 bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx);
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx);

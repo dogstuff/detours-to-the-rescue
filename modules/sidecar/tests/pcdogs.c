@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include <inputs/hooks_private.h>
 #include <sidecar_hook_sigs.h>
 
 #define SIDECAR_BYTE_PATCH_EXPECTATION(                                                  \
@@ -25,16 +26,15 @@
 	 original_mask},
 
 #define SIDECAR_GFX_BYTE_PATCH SIDECAR_BYTE_PATCH_EXPECTATION
-#define SIDECAR_INPUTS_BYTE_PATCH(name, aob, offset, patch_seq, original_seq, original_mask) \
-	SIDECAR_BYTE_PATCH_EXPECTATION(                                                          \
-		name,                                                                                \
-		true,                                                                                \
-		DTTR_TEST_PCDOGS_REQUIRED_ALL,                                                       \
-		aob,                                                                                 \
-		offset,                                                                              \
-		patch_seq,                                                                           \
-		original_seq,                                                                        \
-		original_mask                                                                        \
+#define SIDECAR_INPUTS_BYTE_PATCH(name, aob, offset, patch_seq, ...)                     \
+	SIDECAR_BYTE_PATCH_EXPECTATION(                                                      \
+		name,                                                                            \
+		true,                                                                            \
+		DTTR_TEST_PCDOGS_REQUIRED_ALL,                                                   \
+		aob,                                                                             \
+		offset,                                                                          \
+		patch_seq,                                                                       \
+		__VA_ARGS__                                                                      \
 	)
 
 // Inline AOB hooks stay listed here, and byte patch targets expand from shared rows.
@@ -142,6 +142,48 @@ static void test_expected_pcdogs_byte_patch_targets_resolve(void **state) {
 	test_targets_matching(TARGET_BYTE_PATCH);
 }
 
+static void clobber_stack_for_patch_payloads() {
+	volatile uint8_t scratch[512];
+
+	for (size_t i = 0; i < DTTR_ARRAY_COUNT(scratch); i++) {
+		scratch[i] = (uint8_t)(0x80u + i);
+	}
+}
+
+static size_t first_input_byte_patch_target_index() {
+	for (size_t i = 0; i < DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT; i++) {
+		const pcdogs_target_expectation *target = &DTTR_TEST_PCDOGS_SIDECAR_TARGETS[i];
+
+		if (strcmp(target->name, "dttr_inputs_controls_enter_bind_branch") == 0) {
+			return i;
+		}
+	}
+
+	fail_msg("missing first input byte-patch target");
+	return 0;
+}
+
+static void test_input_byte_patch_payloads_keep_static_storage(void **state) {
+	const size_t first_target = first_input_byte_patch_target_index();
+	const size_t spec_count = dttr_sidecar_input_byte_patch_spec_count;
+	assert_true(first_target + spec_count <= DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT);
+
+	clobber_stack_for_patch_payloads();
+
+	for (size_t i = 0; i < spec_count; i++) {
+		const DTTR_PCDOGS_T_Patch_Spec *spec = &dttr_sidecar_input_byte_patch_specs[i];
+		const pcdogs_target_expectation
+			*target = &DTTR_TEST_PCDOGS_SIDECAR_TARGETS[first_target + i];
+
+		assert_int_equal(target->kind, TARGET_BYTE_PATCH);
+		assert_int_equal(spec->kind, DTTR_PCDOGS_PATCH_AOB_BYTES);
+		assert_string_equal(spec->aob, target->aob);
+		assert_int_equal(spec->offset, target->site_offset);
+		assert_int_equal(spec->patch_size, target->patch_size);
+		assert_memory_equal(spec->patch_bytes, target->patch_bytes, target->patch_size);
+	}
+}
+
 // Checks whether an mss32.dll import is expected to be hooked.
 static bool import_hook_expected(const char *name) {
 	for (size_t i = 0; i < DTTR_TEST_PCDOGS_SIDECAR_MSS_IMPORT_HOOK_COUNT; i++) {
@@ -204,6 +246,7 @@ static void test_expected_mss32_imports_are_hooked(void **state) {
 static const DTTR_TestCase TEST_CASES[] = {
 	{"jmp-hooks", test_expected_pcdogs_jmp_hook_targets_resolve},
 	{"byte-patches", test_expected_pcdogs_byte_patch_targets_resolve},
+	{"input-byte-patch-payloads", test_input_byte_patch_payloads_keep_static_storage},
 	{"mss32-imports", test_expected_mss32_imports_are_hooked},
 };
 
