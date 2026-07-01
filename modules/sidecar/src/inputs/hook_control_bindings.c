@@ -84,8 +84,7 @@ int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 
 void dttr_inputs_register_switch_puppies_controller_binding(int32_t control_code) {
 	const DTTR_Input_KeyCodeKind kind = dttr_inputs_key_code_kind(control_code);
-	if (kind != DTTR_INPUTS_KEY_CODE_GAMEPAD
-		&& kind != DTTR_INPUTS_KEY_CODE_SDL_GAMEPAD) {
+	if (kind == DTTR_INPUTS_KEY_CODE_NONE) {
 		return;
 	}
 

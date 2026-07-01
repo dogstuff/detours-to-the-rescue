@@ -322,8 +322,11 @@ static void switch_puppies_controller_binding_uses_special_mask(void **) {
 	assert_int_equal(register_original_code, native_button);
 	assert_int_equal(register_original_mask, 0x4000);
 
-	dttr_inputs_register_switch_puppies_controller_binding(key_code(SDL_SCANCODE_A));
-	assert_int_equal(register_original_calls, 1);
+	const int32_t keyboard_code = key_code(SDL_SCANCODE_A);
+	dttr_inputs_register_switch_puppies_controller_binding(keyboard_code);
+	assert_int_equal(register_original_calls, 2);
+	assert_int_equal(register_original_code, keyboard_code);
+	assert_int_equal(register_original_mask, 0x4000);
 
 	dttr_inputs_hook_mapping_reset();
 }

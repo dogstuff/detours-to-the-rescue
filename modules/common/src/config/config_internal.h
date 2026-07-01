@@ -56,7 +56,7 @@ enum {
 	X("menu_cancel", "Menu Cancel", -1, 0)
 
 #define CONFIG_CONTROL_ACTION_COUNT_ROW(...) +1
-#define CONFIG_CONTROL_ACTION_IN_GAME_COUNT_ROW(key, label, native_config_index, mask) \
+#define CONFIG_CONTROL_ACTION_IN_GAME_COUNT_ROW(key, label, native_config_index, mask)   \
 	+((native_config_index) >= 0)
 static_assert(
 	(0 CONFIG_CONTROL_ACTIONS(CONFIG_CONTROL_ACTION_COUNT_ROW))
