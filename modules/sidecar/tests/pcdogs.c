@@ -1,7 +1,9 @@
 #include <dttr_test.h>
 
+#include <stdlib.h>
 #include <string.h>
 
+#include <dttr_sigscan.h>
 #include <inputs/hooks_private.h>
 #include <sidecar_hook_sigs.h>
 
@@ -175,6 +177,102 @@ static void test_input_byte_patch_payloads_keep_static_storage(void **state) {
 	}
 }
 
+static void assert_masked_bytes_equal(
+	const DTTR_TestBinaryFixture *fixture,
+	const pcdogs_target_expectation *target,
+	const uint8_t *actual
+) {
+	const char *mask = target->expected_original_mask;
+	const uint8_t *expected = target->expected_original;
+
+	for (size_t i = 0; i < target->patch_size; i++) {
+		if (mask[i] == 'x' && actual[i] != expected[i]) {
+			fail_msg(
+				"%s byte patch %s original mismatch at byte %zu: got 0x%02X",
+				fixture->id,
+				target->name,
+				i,
+				actual[i]
+			);
+		}
+	}
+}
+
+static bool assert_input_byte_patch_sequence_for_fixture(
+	size_t fixture_index,
+	const DTTR_TestBinaryFixture *fixture,
+	const char *path,
+	const DTTR_TestPEImage *image,
+	void *userdata
+) {
+	(void)path;
+	(void)userdata;
+
+	const size_t first_target = first_input_byte_patch_target_index();
+	const size_t spec_count = dttr_sidecar_input_byte_patch_spec_count;
+	uint8_t *patched_image = malloc(image->image_size);
+	assert_non_null(patched_image);
+	memcpy(patched_image, image->image, image->image_size);
+
+	for (size_t i = 0; i < spec_count; i++) {
+		const DTTR_PCDOGS_T_Patch_Spec *spec = &dttr_sidecar_input_byte_patch_specs[i];
+		const pcdogs_target_expectation
+			*target = &DTTR_TEST_PCDOGS_SIDECAR_TARGETS[first_target + i];
+
+		if (!dttr_test_fixture_required(target->required, fixture_index)) {
+			continue;
+		}
+
+		char sig[256] = {0};
+		char mask[256] = {0};
+		const size_t sig_size = DTTR_Sigscan_ParseAob(spec->aob, sig, mask, sizeof(sig));
+		if (sig_size == 0) {
+			fail_msg("%s byte patch %s has invalid AOB", fixture->id, target->name);
+		}
+
+		uintptr_t matches[2] = {0};
+		const size_t match_count = DTTR_Sigscan_BytesAll(
+			patched_image,
+			image->image_size,
+			sig,
+			mask,
+			matches,
+			DTTR_ARRAY_COUNT(matches)
+		);
+		if (match_count != 1) {
+			free(patched_image);
+			fail_msg(
+				"%s byte patch %s resolved %zu times after earlier patches; expected "
+				"exactly one match",
+				fixture->id,
+				target->name,
+				match_count
+			);
+		}
+
+		const uintptr_t match = matches[0] - (uintptr_t)patched_image;
+		assert_true(dttr_test_signed_range_valid(
+			match,
+			spec->offset,
+			spec->patch_size,
+			image->image_size
+		));
+		const uintptr_t site = dttr_test_offset_site(match, spec->offset);
+		assert_masked_bytes_equal(fixture, target, patched_image + site);
+		memcpy(patched_image + site, spec->patch_bytes, spec->patch_size);
+	}
+
+	free(patched_image);
+	return true;
+}
+
+static void test_input_byte_patches_resolve_in_runtime_order(void **state) {
+	dttr_test_require_available(pcdogs_fixtures_available());
+	assert_true(
+		pcdogs_for_each_fixture(assert_input_byte_patch_sequence_for_fixture, NULL)
+	);
+}
+
 // Checks whether an mss32.dll import is expected to be hooked.
 static bool import_hook_expected(const char *name) {
 	for (size_t i = 0; i < DTTR_TEST_PCDOGS_SIDECAR_MSS_IMPORT_HOOK_COUNT; i++) {
@@ -238,6 +336,8 @@ static const DTTR_TestCase TEST_CASES[] = {
 	{"jmp-hooks", test_expected_pcdogs_jmp_hook_targets_resolve},
 	{"byte-patches", test_expected_pcdogs_byte_patch_targets_resolve},
 	{"input-byte-patch-payloads", test_input_byte_patch_payloads_keep_static_storage},
+	{"input-byte-patches-runtime-order",
+	 test_input_byte_patches_resolve_in_runtime_order},
 	{"mss32-imports", test_expected_mss32_imports_are_hooked},
 };
 
