@@ -28,8 +28,7 @@ git ls-files -z -- "$template_dir" | while IFS= read -r -d '' path; do
   cp -p "$path" "$stage_dir/$rel"
 done
 
-printf '%s
-' "$version" > "$stage_dir/dttr-version.txt"
+printf '%s\n' "$version" > "$stage_dir/dttr-version.txt"
 archive_path=$archive
 if [[ $archive != /* ]]; then
   archive_path=$PWD/$archive

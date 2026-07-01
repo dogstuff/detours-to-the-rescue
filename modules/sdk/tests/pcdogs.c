@@ -25,14 +25,8 @@ typedef struct {
 
 #include "pcdogs_blueprint_test_rows.h"
 
-#define STABLE_SIGNATURE_COUNT                                                           \
-	(sizeof(DTTR_PCDOGS_SIGNATURES) / sizeof(*DTTR_PCDOGS_SIGNATURES))
-#define STABLE_FUNCTION_COUNT                                                            \
-	(sizeof(DTTR_PCDOGS_FUNCTIONS) / sizeof(*DTTR_PCDOGS_FUNCTIONS))
-#define UNSTABLE_SIGNATURE_COUNT                                                         \
-	(sizeof(DTTR_PCDOGS_UNSTABLE_SIGNATURES) / sizeof(*DTTR_PCDOGS_UNSTABLE_SIGNATURES))
-#define UNSTABLE_FUNCTION_COUNT                                                          \
-	(sizeof(DTTR_PCDOGS_UNSTABLE_FUNCTIONS) / sizeof(*DTTR_PCDOGS_UNSTABLE_FUNCTIONS))
+#define SIGNATURE_COUNT (sizeof(DTTR_PCDOGS_SIGNATURES) / sizeof(*DTTR_PCDOGS_SIGNATURES))
+#define FUNCTION_COUNT (sizeof(DTTR_PCDOGS_FUNCTIONS) / sizeof(*DTTR_PCDOGS_FUNCTIONS))
 
 // Skip binary-backed signature tests when fixture files are unavailable.
 static uintptr_t require_sigscan(
@@ -119,17 +113,8 @@ static bool assert_signatures_for_fixture(
 	const DTTR_TestPEImage *image,
 	void *userdata
 ) {
-	for (size_t sig_index = 0; sig_index < STABLE_SIGNATURE_COUNT; sig_index++) {
+	for (size_t sig_index = 0; sig_index < SIGNATURE_COUNT; sig_index++) {
 		const blueprint_signature *sig = &DTTR_PCDOGS_SIGNATURES[sig_index];
-		if (!dttr_test_fixture_required(sig->required, fixture_index)) {
-			continue;
-		}
-
-		assert_signature_resolved(fixture, sig, image);
-	}
-
-	for (size_t sig_index = 0; sig_index < UNSTABLE_SIGNATURE_COUNT; sig_index++) {
-		const blueprint_signature *sig = &DTTR_PCDOGS_UNSTABLE_SIGNATURES[sig_index];
 		if (!dttr_test_fixture_required(sig->required, fixture_index)) {
 			continue;
 		}
@@ -329,15 +314,8 @@ static bool assert_blueprint_functions_for_fixture(
 	const DTTR_TestPEImage *image,
 	void *userdata
 ) {
-	for (size_t fn_index = 0; fn_index < STABLE_FUNCTION_COUNT; fn_index++) {
+	for (size_t fn_index = 0; fn_index < FUNCTION_COUNT; fn_index++) {
 		const blueprint_function *fn = &DTTR_PCDOGS_FUNCTIONS[fn_index];
-		if (dttr_test_fixture_required(fn->required, fixture_index)) {
-			assert_blueprint_function_resolved(fixture, fn, image);
-		}
-	}
-
-	for (size_t fn_index = 0; fn_index < UNSTABLE_FUNCTION_COUNT; fn_index++) {
-		const blueprint_function *fn = &DTTR_PCDOGS_UNSTABLE_FUNCTIONS[fn_index];
 		if (dttr_test_fixture_required(fn->required, fixture_index)) {
 			assert_blueprint_function_resolved(fixture, fn, image);
 		}

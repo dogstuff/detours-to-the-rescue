@@ -1,13 +1,16 @@
 build-dir := env_var_or_default("BUILD_DIR", "build")
 build-config-debug := env_var_or_default("BUILD_CONFIG_DEBUG", "debug")
-test-max-parallel := env_var_or_default("TEST_JOBS", "8")
+test-jobs := env_var_or_default("TEST_JOBS", "8")
 
+# Rebuilds generated PCDOGS SDK headers and the bundled SDK header.
 blueprints:
-    cd "{{invocation_directory()}}" && cmake --build "{{build-dir}}" --config "{{build-config-debug}}" --target dttr_pcdogs_generated_headers dttr_sdk_bundle_header
+    cd "{{ invocation_directory() }}" && cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --target dttr_pcdogs_generated_headers dttr_sdk_bundle_header
 
+# Checks generated PCDOGS SDK metadata and manifest tests.
 blueprints-check:
-    cd "{{invocation_directory()}}" && ctest --test-dir "{{build-dir}}" -C "{{build-config-debug}}" --output-on-failure -R "^dttr_pcdogs_(generated_headers|symbol_metadata|symbol_manifest)$" --no-tests=error
+    cd "{{ invocation_directory() }}" && ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" --output-on-failure -R "^dttr_pcdogs_(generated_headers|symbol_metadata|symbol_manifest)$" --no-tests=error
 
+# Builds and runs SDK-focused tests.
 test:
-    cd "{{invocation_directory()}}" && cmake --build "{{build-dir}}" --config "{{build-config-debug}}" --parallel "{{test-max-parallel}}" --target dttr_sdk_tests
-    cd "{{invocation_directory()}}" && ctest --test-dir "{{build-dir}}" -C "{{build-config-debug}}" --output-on-failure --parallel "{{test-max-parallel}}" -R "^(dttr_sdk_|dttr_pcdogs_)"
+    cd "{{ invocation_directory() }}" && cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-jobs }}" --target dttr_sdk_tests
+    cd "{{ invocation_directory() }}" && ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" --output-on-failure --parallel "{{ test-jobs }}" -R "^(dttr_sdk_|dttr_pcdogs_)"

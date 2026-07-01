@@ -42,7 +42,7 @@ static inline void dttr_test_require_available(bool available) {
 		return;
 	}
 
-	const char *required = getenv("DTTR_REQUIRE_PCDOGS_FIXTURES");
+	const char *required = getenv("PCDOGS_FIXTURES_REQUIRED");
 	if (required && required[0] && strcmp(required, "0") != 0) {
 		fail_msg("required PCDOGS fixtures are unavailable");
 	}

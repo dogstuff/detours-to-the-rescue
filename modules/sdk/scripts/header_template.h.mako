@@ -50,32 +50,6 @@ typedef enum ${enum_name(row.name)} {
 } ${enum_name(row.alias or row.name)};
 	% endif
 		</%def>
-		% if unstable and external_type_rows:
-		% for name in external_forward_names:
-		typedef struct ${struct_name(name)} ${struct_name(name)};
-		% endfor
-		<% in_external_pack = False %>
-		% for row in external_type_rows:
-		<% is_external_struct = type_row_kind(row) == TYPE_ROW.STRUCT %>
-		% if is_external_struct and not in_external_pack:
-		#pragma pack(push, 1)
-		<% in_external_pack = True %>
-		% elif in_external_pack and not is_external_struct:
-		#pragma pack(pop)
-		<% in_external_pack = False %>
-		% endif
-		% if is_external_struct:
-		${render_type_row(row).strip()}
-		% else:
-		#ifdef DTTR_PCDOGS_IMPLEMENTATION
-		${render_type_row(row).strip()}
-		#endif
-		% endif
-		% endfor
-		% if in_external_pack:
-		#pragma pack(pop)
-		% endif
-		% endif
 % for name in forward_names:
 % if name in unstable_type_names:
 #if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
@@ -520,7 +494,7 @@ enum {
 #define DTTR_PCDOGS_DATA_ROWS(TYPED_DATA, UNTYPED_DATA, CTX) \
 % for row in globals:
 % if row.typed:
-	TYPED_DATA(CTX, ${row.symbol_id.lower()}, ${c_public_token(row.name)}, ${c_type(row.typed.type)}, ${'DTTR_PCDOGS_SYMBOL_DATA_ID_' if unstable else 'DTTR_PCDOGS_DATA_'}${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
+		TYPED_DATA(CTX, ${row.symbol_id.lower()}, ${c_public_token(row.name)}, ${c_type(row.typed.type)}, DTTR_PCDOGS_DATA_${row.symbol_id}, ${DATA_RESOLVER[str(row.typed.resolver)]}, ${row.typed.ref_function.lower()}, ${c_uint(row.typed.instr_off)}, ${c_uint(row.typed.addr_off)}, ${c_uint(row.typed.indirections)})${' \\' if loop.index != len(globals) - 1 else ''}
 % else:
 	UNTYPED_DATA(CTX, ${row.symbol_id.lower()})${' \\' if loop.index != len(globals) - 1 else ''}
 % endif
@@ -617,7 +591,6 @@ static DTTR_PCDOGS_T_Symbol_Data dttr_pcdogs_symbol_globals[DTTR_PCDOGS_SYMBOL_D
 % endfor
 };
 
-% if not unstable:
 static const DTTR_PCDOGS_T_Symbol_Function_ID dttr_pcdogs_public_function_symbol_ids[DTTR_PCDOGS_FUNCTION_COUNT_VALUE] = {
 % for row in public_functions:
 	[DTTR_PCDOGS_FUNCTION_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_FUNCTION_ID_${row.symbol_id},
@@ -629,8 +602,6 @@ static const DTTR_PCDOGS_T_Symbol_Data_ID dttr_pcdogs_public_data_symbol_ids[DTT
 	[DTTR_PCDOGS_DATA_${row.symbol_id}] = DTTR_PCDOGS_SYMBOL_DATA_ID_${row.symbol_id},
 % endfor
 };
-
-% endif
 
 static const DTTR_PCDOGS_T_Symbol_Function_XRef dttr_pcdogs_symbol_function_xrefs
 	[DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_STORAGE_COUNT] = {
@@ -651,10 +622,6 @@ static const DTTR_PCDOGS_T_Symbol_XRef dttr_pcdogs_symbol_xrefs[DTTR_PCDOGS_SYMB
 };
 
 #endif  // DTTR_PCDOGS_IMPLEMENTATION
-
-% if unstable:
-#endif  // !DTTR_PCDOGS_H
-% endif
 
 #ifndef DTTR_PCDOGS_CORE_HOOK_HELPERS_DEFINED
 #define DTTR_PCDOGS_CORE_HOOK_HELPERS_DEFINED
@@ -796,9 +763,6 @@ DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* con
 % endif
 % endfor
 
-% if unstable:
-#ifndef DTTR_PCDOGS_H
-% endif
 DTTR_PCDOGS_API uint32_t DTTR_PCDOGS_FunctionCount();
 DTTR_PCDOGS_API uint32_t DTTR_PCDOGS_DataCount();
 DTTR_PCDOGS_API bool DTTR_PCDOGS_ResolveAll(const DTTR_Core_Context* ctx);
@@ -1026,7 +990,6 @@ static uintptr_t dttr_pcdogs_resolve_global_address(
 	}
 }
 
-% if not unstable:
 bool DTTR_PCDOGS_FunctionSymbolID(
 	DTTR_PCDOGS_T_Function_ID id,
 	DTTR_PCDOGS_T_Symbol_Function_ID* out_symbol_id
@@ -1048,8 +1011,6 @@ bool DTTR_PCDOGS_DataSymbolID(
 	*out_symbol_id = dttr_pcdogs_public_data_symbol_ids[(uint32_t)id];
 	return true;
 }
-
-% endif
 uint32_t DTTR_PCDOGS_SymbolFunctionCount() {
 	return DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT;
 }
@@ -1431,9 +1392,7 @@ static const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type dttr_pcdogs_$
 	.Read = dttr_pcdogs_${row.symbol_id.lower()}_Read,
 	.Write = dttr_pcdogs_${row.symbol_id.lower()}_Write,
 	.UnsafeWrite = dttr_pcdogs_${row.symbol_id.lower()}_UnsafeWrite,
-% if not unstable:
 	.PatchSpec = dttr_pcdogs_${row.symbol_id.lower()}_PatchSpec,
-% endif
 };
 
 const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* const DTTR_PCDOGS_D_${c_public_token(row.name)} =
@@ -1508,16 +1467,11 @@ DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_CLEAR_DATA)
 	indirections                                                                         \
 )                                                                                        \
 	do {                                                                                 \
-% if unstable:
-		const DTTR_PCDOGS_T_Symbol_Data* symbol_data_ =                                  \
-			DTTR_PCDOGS_SymbolDataAt((uint32_t)data_id);                                 \
-% else:
 		DTTR_PCDOGS_T_Symbol_Data_ID symbol_id_;                                       \
 		const DTTR_PCDOGS_T_Symbol_Data* symbol_data_ =                                  \
 			DTTR_PCDOGS_DataSymbolID((DTTR_PCDOGS_T_Data_ID)data_id, &symbol_id_)         \
 				? DTTR_PCDOGS_SymbolDataAt((uint32_t)symbol_id_)                           \
 				: NULL;                                                                     \
-% endif
 		dttr_pcdogs_##name##_addr = symbol_data_ ? symbol_data_->address : 0;            \
 		if (!dttr_pcdogs_##name##_addr) {                                                \
 			all_ok = false;                                                              \

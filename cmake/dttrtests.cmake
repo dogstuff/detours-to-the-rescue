@@ -49,13 +49,13 @@ function(dttr_find_cmocka)
 endfunction()
 
 function(dttr_cmocka_test_environment out_var)
-    set(dttr_environment "DTTR_PCDOGS_FIXTURE_DIR=${DTTR_PCDOGS_FIXTURE_DIR}")
+    set(dttr_environment "PCDOGS_FIXTURES_DIR=${PCDOGS_FIXTURES_DIR}")
     if(DTTR_CMOCKA_RUNTIME_DIR)
         list(APPEND dttr_environment "WINEPATH=${DTTR_CMOCKA_RUNTIME_DIR}")
     endif()
 
-    if(DTTR_REQUIRE_PCDOGS_FIXTURES)
-        list(APPEND dttr_environment "DTTR_REQUIRE_PCDOGS_FIXTURES=1")
+    if(PCDOGS_FIXTURES_REQUIRED)
+        list(APPEND dttr_environment "PCDOGS_FIXTURES_REQUIRED=1")
     endif()
 
     set(${out_var} ${dttr_environment} PARENT_SCOPE)
@@ -73,8 +73,8 @@ function(dttr_check_cmocka_tests label out_var)
     cmake_parse_arguments(DTTR_CHECK "QUIET" "MESSAGE" "" ${ARGN})
 
     if(NOT DTTR_CMOCKA_FOUND)
-        if(DTTR_REQUIRE_TEST_DEPS)
-            message(FATAL_ERROR "cmocka is required when DTTR_REQUIRE_TEST_DEPS=ON")
+        if(TEST_DEPS_REQUIRED)
+            message(FATAL_ERROR "cmocka is required when TEST_DEPS_REQUIRED=ON")
         endif()
 
         if(NOT DTTR_CHECK_QUIET)

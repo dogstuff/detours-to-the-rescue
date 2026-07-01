@@ -10,7 +10,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 from codegen import c_mask, c_sig, write_or_check
-from generate_headers import load_blueprint, split_row_unstable_rows
+from generate_headers import load_blueprint
 
 try:
     from mako.template import Template
@@ -107,13 +107,15 @@ def render(template: Template, **kwargs: object) -> str:
     return text if text.endswith("\n") else f"{text}\n"
 
 
-def load_blueprint_surfaces(path: Path) -> list[tuple[str, object]]:
+def stable_first(rows: list[object]) -> list[object]:
+    return sorted(rows, key=lambda row: getattr(row, "unstable", False))
 
-    stable, unstable = split_row_unstable_rows(load_blueprint(path))
-    return [
-        ("DTTR_PCDOGS", stable),
-        ("DTTR_PCDOGS_UNSTABLE", unstable),
-    ]
+
+def load_blueprint_surfaces(path: Path) -> list[tuple[str, object]]:
+    blueprint = load_blueprint(path)
+    blueprint.signatures = stable_first(blueprint.signatures)
+    blueprint.functions = stable_first(blueprint.functions)
+    return [("DTTR_PCDOGS", blueprint)]
 
 
 def main() -> int:

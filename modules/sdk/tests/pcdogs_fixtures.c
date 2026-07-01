@@ -25,7 +25,7 @@ const DTTR_TestPCDOGSFixture DTTR_TEST_PCDOGS_FIXTURES[] = {
 
 // Return the build-configured PCDOGS fixture directory for signature tests.
 const char *pcdogs_fixture_dir() {
-	const char *dir = getenv("DTTR_PCDOGS_FIXTURE_DIR");
+	const char *dir = getenv("PCDOGS_FIXTURES_DIR");
 	return (dir && dir[0]) ? dir : "fixture";
 }
 

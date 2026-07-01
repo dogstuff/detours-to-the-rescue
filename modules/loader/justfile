@@ -2,12 +2,12 @@ loader-generated-include-dir := env_var_or_default("LOADER_GENERATED_INCLUDE_DIR
 
 # Rebuilds the loader assembly header from NASM snippets.
 asm:
-    bash "{{justfile_directory()}}/scripts/generate-asm-header.sh" \
-      "{{justfile_directory()}}/asm" \
-      "{{invocation_directory()}}/{{loader-generated-include-dir}}/gen/asm.h"
+    bash "{{ justfile_directory() }}/scripts/generate-asm-header.sh" \
+      "{{ justfile_directory() }}/asm" \
+      "{{ invocation_directory() }}/{{ loader-generated-include-dir }}/gen/asm.h"
 
 # Rebuilds the packed compatibility database header.
 compat:
-    bash "{{justfile_directory()}}/scripts/generate-packed-sdb-header.sh" \
-      "{{justfile_directory()}}/compat/packed_sdb.bin" \
-      "{{invocation_directory()}}/{{loader-generated-include-dir}}/gen/packed_sdb.h"
+    bash "{{ justfile_directory() }}/scripts/generate-packed-sdb-header.sh" \
+      "{{ justfile_directory() }}/compat/packed_sdb.bin" \
+      "{{ invocation_directory() }}/{{ loader-generated-include-dir }}/gen/packed_sdb.h"

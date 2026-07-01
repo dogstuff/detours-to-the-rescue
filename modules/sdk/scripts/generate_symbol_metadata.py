@@ -875,7 +875,6 @@ def normalized_combined_blueprint(path: Path) -> object:
         functions=stable_first(blueprint.functions),
         globals=stable_first(blueprint.globals),
         structs=stable_first(blueprint.structs),
-        external_structs=[],
     )
 
     attach_symbol_metadata(combined)

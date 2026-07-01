@@ -6,10 +6,10 @@ variables:
   CI_IMAGE: "$CI_REGISTRY_IMAGE:main"
   CI_NIX_SHELL: ".#devShells.x86_64-linux.default"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_TAG}"
-  DTTR_REQUIRE_TEST_DEPS: "ON"
-  DTTR_REQUIRE_PCDOGS_FIXTURES: "ON"
-  DTTR_PCDOGS_FIXTURE_DIR: "gamefiles"
-  DTTR_GAMEFILES_SECURE_FILE: "gamefiles.tar.gz"
+  TEST_DEPS_REQUIRED: "ON"
+  PCDOGS_FIXTURES_REQUIRED: "ON"
+  PCDOGS_FIXTURES_DIR: "gamefiles"
+  PCDOGS_FIXTURES_ARCHIVE: "gamefiles.tar.gz"
   DTTR_USE_CACHED_SDL3GPU_SHADERS: "ON"
 
 .ci-rules:
@@ -93,7 +93,7 @@ stages:
   variables:
     CI_NIX_SHELL: ".#devShells.x86_64-linux.shader"
   script:
-    - nix develop "$CI_NIX_SHELL" --command just ci-shader-build
+    - nix develop "$CI_NIX_SHELL" --command just ci-build-shaders
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
@@ -104,10 +104,10 @@ stages:
       - modules/sidecar/shaders/cache/sdl3gpu/
     expire_in: 1 day
 
-"build:ctest":
+"build:tests":
   extends: .build-job
   script:
-    - nix develop "$CI_NIX_SHELL" --command just ci-build-ctest
+    - nix develop "$CI_NIX_SHELL" --command just ci-build-tests
   artifacts:
     paths:
       - build/
@@ -154,10 +154,10 @@ stages:
     - .ci-rules
   stage: test
   needs:
-    - job: "build:ctest"
+    - job: "build:tests"
       artifacts: true
   script:
-    - nix develop "$CI_NIX_SHELL" --command bash -lc 'scripts/fetch-ci-gamefiles.sh && just ci-test'
+    - nix develop "$CI_NIX_SHELL" --command bash -lc 'scripts/fetch-pcdogs-fixtures.sh && just ci-test'
   artifacts:
     when: always
     paths:
@@ -169,10 +169,10 @@ stages:
     - .ci-image-job
   stage: test
   needs:
-    - job: "build:ctest"
+    - job: "build:tests"
       artifacts: true
   script:
-    - nix develop "$CI_NIX_SHELL" --command bash -lc 'scripts/fetch-ci-gamefiles.sh && just build-docs-from-build'
+    - nix develop "$CI_NIX_SHELL" --command bash -lc 'scripts/fetch-pcdogs-fixtures.sh && just ci-build-docs'
   artifacts:
     paths:
       - docs/build

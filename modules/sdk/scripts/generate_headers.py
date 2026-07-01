@@ -105,8 +105,6 @@ TYPED_FIELDS = tuple(TypedField)
 class HeaderTypes:
     type_prefix_rows: list[object]
     packed_type_rows: list[object]
-    external_type_rows: list[object]
-    external_forward_names: list[str]
     forward_names: list[str]
     generated_type_names: dict[str, str]
     unstable_type_names: set[str]
@@ -286,7 +284,6 @@ class BlueprintRows:
     globals: list[GlobalRow] = field(default_factory=list)
     xrefs: list[XRefRow] = field(default_factory=list)
     structs: list[object] = field(default_factory=list)
-    external_structs: list[object] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -330,8 +327,6 @@ class HeaderContext:
     hook_macro_name: str
     type_prefix_rows: list[object]
     packed_type_rows: list[object]
-    external_type_rows: list[object]
-    external_forward_names: list[str]
     forward_names: list[str]
     unstable_type_names: set[str]
     signatures: list[SignatureRow]
@@ -353,7 +348,6 @@ class HeaderContext:
     is_c_array_type: Callable[[object], bool]
     c_array_type_count: Callable[[object], str]
     c_params: Callable[[object], str]
-    unstable: bool
 
 
 def parse_args() -> argparse.Namespace:
@@ -841,9 +835,6 @@ def validate_blueprint(blueprint: BlueprintRows) -> None:
     for row in blueprint.function_xrefs:
         if row.function not in functions:
             raise ValueError(f"function XRef has unknown target: {row.function}")
-
-        # The reference may point at the stable header when generating an
-        # unstable extension header.
 
 
 def clang_format_header(path: Path, text: str) -> str:
@@ -1637,38 +1628,21 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
     return names
 
 
-def header_type_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderTypes:
+def header_type_context(blueprint: BlueprintRows) -> HeaderTypes:
     """Prepare type rows and public generated names for header rendering."""
 
-    external_type_rows = sort_struct_rows_by_value_dependencies(
-        list(blueprint.external_structs)
-    )
     type_prefix_rows, packed_type_rows = split_type_rows(blueprint.structs)
     packed_type_rows = sort_struct_rows_by_value_dependencies(packed_type_rows)
-    external_type_names = pcdogs_type_names(external_type_rows)
-    external_forward_names: list[str] = []
-    if unstable and external_type_rows:
-        external_forward_names = derived_forward_names(
-            BlueprintRows(structs=external_type_rows),
-            external_type_rows,
-        )
-
     forward_names = [
-        name
-        for name in derived_forward_names(blueprint, blueprint.structs)
-        if name not in external_type_names
+        name for name in derived_forward_names(blueprint, blueprint.structs)
     ]
     generated_type_names = {
         **pcdogs_type_names(blueprint.structs),
-        **external_type_names,
         **{name: pcdogs_type_name(name) for name in forward_names},
-        **{name: pcdogs_type_name(name) for name in external_forward_names},
     }
     return HeaderTypes(
         type_prefix_rows=type_prefix_rows,
         packed_type_rows=packed_type_rows,
-        external_type_rows=external_type_rows,
-        external_forward_names=external_forward_names,
         forward_names=forward_names,
         generated_type_names=generated_type_names,
         unstable_type_names={row.name for row in blueprint.structs if row.unstable},
@@ -1711,11 +1685,11 @@ STATIC_TEMPLATE_CONTEXT = {
 }
 
 
-def header_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderContext:
-    """Build the stable or unstable template context used for generated PCDOGS headers."""
+def header_context(blueprint: BlueprintRows) -> HeaderContext:
+    """Build the template context used for generated PCDOGS headers."""
 
     guard = "DTTR_PCDOGS_H"
-    header_types = header_type_context(blueprint, unstable=unstable)
+    header_types = header_type_context(blueprint)
 
     def local_c_type(value: object) -> str:
         return c_type_with_pcdogs_prefix(value, header_types.generated_type_names)
@@ -1743,8 +1717,6 @@ def header_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderContext
         hook_macro_name="DTTR_PCDOGS_HOOK",
         type_prefix_rows=header_types.type_prefix_rows,
         packed_type_rows=header_types.packed_type_rows,
-        external_type_rows=header_types.external_type_rows,
-        external_forward_names=header_types.external_forward_names,
         forward_names=header_types.forward_names,
         unstable_type_names=header_types.unstable_type_names,
         signatures=blueprint.signatures,
@@ -1781,7 +1753,6 @@ def header_context(blueprint: BlueprintRows, *, unstable: bool) -> HeaderContext
         is_c_array_type=lambda value: is_c_array_type(local_c_type(value)),
         c_array_type_count=lambda value: c_array_type_count(local_c_type(value)),
         c_params=local_c_params,
-        unstable=unstable,
     )
 
 
@@ -1794,7 +1765,7 @@ def template_context(context: HeaderContext) -> dict[str, object]:
     }
 
 
-def header_h(blueprint: BlueprintRows, *, unstable: bool) -> str:
+def header_h(blueprint: BlueprintRows) -> str:
     """Render a full generated PCDOGS header before stripping private sections."""
 
     template_path = Path(__file__).resolve().with_name("header_template.h.mako")
@@ -1805,7 +1776,7 @@ def header_h(blueprint: BlueprintRows, *, unstable: bool) -> str:
         template_text,
         filename=str(template_path),
         strict_undefined=True,
-    ).render_unicode(**template_context(header_context(blueprint, unstable=unstable)))
+    ).render_unicode(**template_context(header_context(blueprint)))
     text = text.replace(literal_backslash, "\\")
     return "\n".join(line.rstrip() for line in text.splitlines()) + (
         "\n" if text.endswith("\n") else ""
@@ -1865,41 +1836,16 @@ def output_dirs(args: argparse.Namespace, repo_root: Path) -> tuple[Path, Path]:
     return include_dir, src_dir
 
 
-def header_blueprint(
-    blueprint: BlueprintRows,
-    *,
-    is_unstable: bool,
-    stable_type_rows: list[object],
-) -> BlueprintRows:
-    """Add stable type rows when rendering the unstable extension header."""
-
-    if not is_unstable or not stable_type_rows:
-        return blueprint
-
-    # Unstable is an extension surface. Do not re-emit stable type rows;
-    # only make their names visible while rendering unstable-only rows.
-    return replace(blueprint, external_structs=stable_type_rows)
-
-
 def write_blueprint_outputs(
     blueprint: BlueprintRows,
     *,
-    is_unstable: bool,
-    stable_type_rows: list[object],
     include_dir: Path,
     src_dir: Path,
     check: bool,
 ) -> bool:
-    """Render and write the generated outputs for one blueprint."""
+    """Render and write the generated SDK outputs."""
 
-    full_header = header_h(
-        header_blueprint(
-            blueprint,
-            is_unstable=is_unstable,
-            stable_type_rows=stable_type_rows,
-        ),
-        unstable=is_unstable,
-    )
+    full_header = header_h(blueprint)
 
     public_header_path = include_dir / "dttr_pcdogs.h"
     private_header_path = src_dir / "generated" / "dttr_pcdogs_full.h"
@@ -1911,132 +1857,11 @@ def write_blueprint_outputs(
     ok = write_or_check(public_header_path, public_header, check)
     ok = write_or_check(private_header_path, private_header, check) and ok
 
-    if is_unstable:
-        return ok
-
     return write_or_check(src_dir / "pcdogs.c", implementation_source_c(), check) and ok
 
 
-def _row_names(rows: list[object]) -> set[str]:
-    return {row.name for row in rows}
-
-
-def _split_stability(rows: list[object]) -> tuple[list[object], list[object]]:
-    return (
-        [row for row in rows if not row.unstable],
-        [row for row in rows if row.unstable],
-    )
-
-
-def _xrefs_for_surface(
-    rows: list[object], global_names: set[str], function_names: set[str]
-) -> list[object]:
-    return [
-        row
-        for row in rows
-        if row.global_name in global_names and row.function in function_names
-    ]
-
-
-def _function_xrefs_for_surface(
-    rows: list[object], function_names: set[str]
-) -> list[object]:
-    return [
-        row
-        for row in rows
-        if row.function in function_names and row.ref_function in function_names
-    ]
-
-
-def split_row_unstable_rows(
-    blueprint: BlueprintRows,
-) -> tuple[BlueprintRows, BlueprintRows]:
-    stable_signatures, unstable_signatures = _split_stability(blueprint.signatures)
-    stable_functions, unstable_functions = _split_stability(blueprint.functions)
-    stable_globals, unstable_globals = _split_stability(blueprint.globals)
-    stable_structs, unstable_structs = _split_stability(blueprint.structs)
-
-    unstable_function_names = _row_names(unstable_functions)
-    unstable_global_names = _row_names(unstable_globals)
-    stable_function_names = _row_names(stable_functions)
-    stable_global_names = _row_names(stable_globals)
-    stable = replace(
-        blueprint,
-        signatures=stable_signatures,
-        functions=stable_functions,
-        function_xrefs=_function_xrefs_for_surface(
-            blueprint.function_xrefs, stable_function_names
-        ),
-        globals=stable_globals,
-        xrefs=_xrefs_for_surface(
-            blueprint.xrefs, stable_global_names, stable_function_names
-        ),
-        structs=stable_structs,
-    )
-
-    unstable_symbol_function_names = unstable_function_names | {
-        row.function
-        for row in blueprint.xrefs
-        if row.global_name in unstable_global_names
-    }
-
-    xref_support_functions = [
-        replace(row, public=False, unstable=True)
-        for row in stable_functions
-        if row.name in unstable_symbol_function_names
-        and row.name not in unstable_function_names
-    ]
-
-    promoted = replace(
-        blueprint,
-        signatures=unstable_signatures,
-        functions=[*unstable_functions, *xref_support_functions],
-        function_xrefs=_function_xrefs_for_surface(
-            blueprint.function_xrefs, unstable_symbol_function_names
-        ),
-        globals=unstable_globals,
-        xrefs=_xrefs_for_surface(
-            blueprint.xrefs, unstable_global_names, unstable_symbol_function_names
-        ),
-        structs=unstable_structs,
-        external_structs=[],
-    )
-
-    attach_symbol_metadata(stable)
-    attach_symbol_metadata(promoted)
-    validate_blueprint(stable)
-    validate_blueprint(promoted)
-    validate_split_blueprints(stable, promoted)
-
-    return stable, promoted
-
-
-def validate_split_blueprints(stable: BlueprintRows, unstable: BlueprintRows) -> None:
-    stable_public_functions = {row.name for row in stable.functions if row.public}
-    unstable_public_functions = {row.name for row in unstable.functions if row.public}
-
-    overlap = stable_public_functions & unstable_public_functions
-    if overlap:
-        raise ValueError(
-            "public function exported by both stable and unstable surfaces: "
-            + ", ".join(sorted(overlap))
-        )
-
-    unstable_function_names = {row.name for row in unstable.functions}
-    unstable_data_xrefs = {row.global_name for row in unstable.xrefs}
-
-    for row in unstable.globals:
-        if row.typed and row.name not in unstable_data_xrefs:
-            raise ValueError(f"unstable typed global has no data xref: {row.name}")
-
-        if row.typed and row.typed.ref_function not in unstable_function_names:
-            raise ValueError(
-                f"unstable typed global xref function missing from output: {row.name}"
-            )
-
-
 def main() -> int:
-    """Regenerate stable and unstable SDK outputs from the canonical blueprint."""
+    """Regenerate SDK outputs from the canonical blueprint."""
 
     args = parse_args()
     sdk_root = Path(__file__).resolve().parent.parent
@@ -2047,8 +1872,7 @@ def main() -> int:
     blueprint = load_blueprint(blueprint_path)
 
     def stable_first(rows: list[object]) -> list[object]:
-        stable_rows, unstable_rows = _split_stability(rows)
-        return [*stable_rows, *unstable_rows]
+        return sorted(rows, key=lambda row: getattr(row, "unstable", False))
 
     combined_blueprint = replace(
         blueprint,
@@ -2056,32 +1880,16 @@ def main() -> int:
         functions=stable_first(blueprint.functions),
         globals=stable_first(blueprint.globals),
         structs=stable_first(blueprint.structs),
-        external_structs=[],
     )
     attach_symbol_metadata(combined_blueprint)
     validate_blueprint(combined_blueprint)
 
     ok = write_blueprint_outputs(
         combined_blueprint,
-        is_unstable=False,
-        stable_type_rows=[],
         include_dir=include_dir,
         src_dir=src_dir,
         check=args.check,
     )
-
-    obsolete_outputs = [
-        include_dir / "dttr_pcdogs_unstable.h",
-        src_dir / "generated" / "dttr_pcdogs_unstable_full.h",
-    ]
-    if args.check:
-        for path in obsolete_outputs:
-            if path.exists():
-                print(f"obsolete generated output remains: {path}", file=sys.stderr)
-                ok = False
-    else:
-        for path in obsolete_outputs:
-            path.unlink(missing_ok=True)
 
     if not ok:
         print(

@@ -25,7 +25,7 @@ SYMBOL_REFERENCE_OVERVIEW_PATH = f"{SYMBOL_REFERENCE_BASE_PATH}/index.md"
 
 
 @dataclass(frozen=True, slots=True)
-class GamefileBuild:
+class PCDOGSFixture:
     build: str
     filename: str
 
@@ -43,8 +43,8 @@ class XRefMetadataJob:
     def script_path(self) -> Path:
         return SDK_SCRIPT_DIR / self.script_name
 
-    def output_path(self, metadata_dir: Path, build: GamefileBuild) -> Path:
-        return metadata_dir / f"{self.output_stem}-{build.build.lower()}.json"
+    def output_path(self, metadata_dir: Path, fixture: PCDOGSFixture) -> Path:
+        return metadata_dir / f"{self.output_stem}-{fixture.build.lower()}.json"
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,10 +53,10 @@ class XRefMetadataOutput:
     path: Path
 
 
-GAMEFILE_BUILDS = (
-    GamefileBuild("EN", "pcdogs_en.exe"),
-    GamefileBuild("EU", "pcdogs_eu.exe"),
-    GamefileBuild("SC", "pcdogs_sc.exe"),
+PCDOGS_FIXTURES = (
+    PCDOGSFixture("EN", "pcdogs_en.exe"),
+    PCDOGSFixture("EU", "pcdogs_eu.exe"),
+    PCDOGSFixture("SC", "pcdogs_sc.exe"),
 )
 
 XREF_METADATA_JOBS = (
@@ -81,18 +81,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=Path, default=Path("docs/zensical.toml"))
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
-        "--gamefile-dir",
+        "--pcdogs-fixtures-dir",
         type=Path,
-        default=Path(os.environ.get("DTTR_PCDOGS_FIXTURE_DIR", "gamefiles")),
+        default=Path(os.environ.get("PCDOGS_FIXTURES_DIR", "gamefiles")),
         help="Directory containing required pcdogs_*.exe files for symbol metadata.",
     )
     return parser.parse_args()
 
 
-def missing_gamefiles(gamefile_dir: Path) -> list[Path]:
+def missing_pcdogs_fixtures(pcdogs_fixtures_dir: Path) -> list[Path]:
     missing: list[Path] = []
-    for gamefile in GAMEFILE_BUILDS:
-        path = gamefile.path_in(gamefile_dir)
+    for fixture in PCDOGS_FIXTURES:
+        path = fixture.path_in(pcdogs_fixtures_dir)
 
         if not path.is_file():
             missing.append(path)
@@ -156,12 +156,15 @@ def run_checked(command: list[str], *, label: str) -> None:
 
 
 def prepare_symbol_reference_docs(
-    symbols_root_dir: Path, *, metadata_dir: Path, gamefile_dir: Path
+    symbols_root_dir: Path, *, metadata_dir: Path, pcdogs_fixtures_dir: Path
 ) -> list[Path]:
     # This directory also contains copied hand-authored wrapper pages.
     symbols_root_dir.mkdir(parents=True, exist_ok=True)
 
-    xref_metadata = generate_xref_metadata(metadata_dir, gamefile_dir=gamefile_dir)
+    xref_metadata = generate_xref_metadata(
+        metadata_dir,
+        pcdogs_fixtures_dir=pcdogs_fixtures_dir,
+    )
     metadata_args = [
         value for item in xref_metadata for value in (item.arg_name, str(item.path))
     ]
@@ -187,13 +190,13 @@ def prepare_symbol_reference_docs(
 
 
 def generate_xref_metadata(
-    metadata_dir: Path, *, gamefile_dir: Path
+    metadata_dir: Path, *, pcdogs_fixtures_dir: Path
 ) -> list[XRefMetadataOutput]:
     metadata: list[XRefMetadataOutput] = []
-    missing = missing_gamefiles(gamefile_dir)
+    missing = missing_pcdogs_fixtures(pcdogs_fixtures_dir)
     if missing:
         print(
-            "missing PCDOGS gamefiles; generating docs SymbolManifest without "
+            "missing PCDOGS fixtures; generating docs SymbolManifest without "
             "analysis: " + ", ".join(str(path) for path in missing),
             file=sys.stderr,
         )
@@ -201,11 +204,11 @@ def generate_xref_metadata(
 
     metadata_dir.mkdir(parents=True, exist_ok=True)
 
-    for gamefile in GAMEFILE_BUILDS:
-        gamefile_path = gamefile.path_in(gamefile_dir)
+    for fixture in PCDOGS_FIXTURES:
+        pcdogs_fixture_path = fixture.path_in(pcdogs_fixtures_dir)
 
         for job in XREF_METADATA_JOBS:
-            output_path = job.output_path(metadata_dir, gamefile)
+            output_path = job.output_path(metadata_dir, fixture)
             run_checked(
                 [
                     sys.executable,
@@ -213,13 +216,13 @@ def generate_xref_metadata(
                     "--blueprint",
                     str(PCDOGS_BLUEPRINT),
                     "--gamefile",
-                    str(gamefile_path),
+                    str(pcdogs_fixture_path),
                     "--build",
-                    gamefile.build,
+                    fixture.build,
                     "--output",
                     str(output_path),
                 ],
-                label=f"{job.output_stem} metadata generation for {gamefile.build}",
+                label=f"{job.output_stem} metadata generation for {fixture.build}",
             )
             metadata.append(XRefMetadataOutput(job.arg_name, output_path))
 
@@ -295,7 +298,7 @@ def main() -> int:
         metadata_paths = prepare_symbol_reference_docs(
             symbols_root_dir,
             metadata_dir=metadata_dir,
-            gamefile_dir=args.gamefile_dir,
+            pcdogs_fixtures_dir=args.pcdogs_fixtures_dir,
         )
     except (FileNotFoundError, RuntimeError) as exc:
         print(exc, file=sys.stderr)
