@@ -229,6 +229,7 @@ struct DTTR_BackendState {
 	bool blend_enabled;
 	DTTR_TextureAddress addr_u;
 	DTTR_TextureAddress addr_v;
+	DTTR_BlendFactor blend_src;
 	DTTR_BlendFactor blend_dst;
 	DWORD stage_color_op;
 	DWORD stage_color_arg1;

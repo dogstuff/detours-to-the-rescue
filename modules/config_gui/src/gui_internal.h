@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#define DTTR_CONFIG_UI_MIN_WINDOW_W 620
 #define DTTR_CONFIG_UI_WINDOW_H 550
 #define DTTR_CONFIG_UI_LABEL_W 170.0f
 #define DTTR_CONFIG_UI_INPUT_W 285.0f

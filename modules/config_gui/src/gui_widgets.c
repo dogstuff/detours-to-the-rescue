@@ -43,7 +43,9 @@ static float config_standard_content_width() {
 
 int config_window_width() {
 	const float content_width = config_standard_content_width();
-	return (int)(DTTR_CONFIG_UI_PANEL_PADDING_X * 2.0f + content_width);
+	const int content_window_width = (int)(DTTR_CONFIG_UI_PANEL_PADDING_X * 2.0f
+										   + content_width);
+	return SDL_max(content_window_width, DTTR_CONFIG_UI_MIN_WINDOW_W);
 }
 
 static int choice_index(const DTTR_ConfigChoice *choices, int choice_count, int value) {

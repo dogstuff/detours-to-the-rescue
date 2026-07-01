@@ -40,7 +40,7 @@ static bool get_os_cache_base_dir(char *buf, size_t buf_size) {
 }
 
 // Tests one known PCDOGS executable subpath.
-static bool try_path(WCHAR *out, const WCHAR *dir, const WCHAR *subpath) {
+static bool try_path(WCHAR *out, size_t out_count, const WCHAR *dir, const WCHAR *subpath) {
 	WCHAR candidate[MAX_PATH];
 	_snwprintf(candidate, MAX_PATH, L"%s\\%s", dir, subpath);
 	candidate[MAX_PATH - 1] = L'\0';
@@ -49,16 +49,20 @@ static bool try_path(WCHAR *out, const WCHAR *dir, const WCHAR *subpath) {
 		return false;
 	}
 
+	if (out_count == 0 || wcslen(candidate) >= out_count) {
+		return false;
+	}
+
 	wcscpy(out, candidate);
 	return true;
 }
 
 // Finds a supported PCDOGS executable layout.
-static bool try_dir(WCHAR *out, const WCHAR *dir) {
+static bool try_dir(WCHAR *out, size_t out_count, const WCHAR *dir) {
 	const size_t subpath_count = DTTR_Loader_GameSubpathCount();
 
 	for (size_t i = 0; i < subpath_count; i++) {
-		if (try_path(out, dir, DTTR_Loader_GameSubpathAt(i))) {
+		if (try_path(out, out_count, dir, DTTR_Loader_GameSubpathAt(i))) {
 			return true;
 		}
 	}
@@ -243,7 +247,7 @@ static bool try_configured_path(
 		return resolve_iso(out, configured_path, iso_context);
 	}
 
-	if (try_dir(out, wide_path)) {
+	if (try_dir(out, MAX_PATH, wide_path)) {
 		DTTR_LOG_INFO("Using configured PCDOGS path: %s", configured_path);
 		return true;
 	}
@@ -318,7 +322,7 @@ static void scan_disc_candidates(
 
 		WCHAR game_path[MAX_PATH];
 
-		if (!try_dir(game_path, root_w)) {
+		if (!try_dir(game_path, MAX_PATH, root_w)) {
 			continue;
 		}
 
@@ -335,7 +339,8 @@ static void scan_disc_candidates(
 // Revalidates a disc before saving it.
 static bool try_disc_candidate(WCHAR *out, const DTTR_LoaderUIDiscCandidate *candidate) {
 	WCHAR wide_path[MAX_PATH];
-	if (!utf8_to_wide_path(wide_path, candidate->path) || !try_dir(out, wide_path)) {
+	if (!utf8_to_wide_path(wide_path, candidate->path)
+		|| !try_dir(out, MAX_PATH, wide_path)) {
 		DTTR_LoaderUI_ShowError(
 			"DttR: Disc Not Found",
 			"The selected disc no longer contains pcdogs.exe."
@@ -406,7 +411,7 @@ static bool try_browsed_path(
 		return resolve_iso(out, browse_result, iso_context);
 	}
 
-	if (try_dir(out, wide_path)) {
+	if (try_dir(out, MAX_PATH, wide_path)) {
 		return true;
 	}
 

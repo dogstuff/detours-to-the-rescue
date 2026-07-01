@@ -149,11 +149,11 @@ serve-docs port="3000": build-docs
 ci-build-tests: setup-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-jobs }}" --target dttr_tests
 
-# Run common, SDK, and sidecar tests from an existing build tree.
+# Run common, SDK, sidecar, and config GUI tests from an existing build tree.
 ci-test:
     ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" \
       --output-on-failure --parallel "{{ test-jobs }}" --no-tests=error \
-      -L "common|sdk|sidecar"
+      -L "common|sdk|sidecar|config_gui"
 
 # Build and check the SDL3 GPU shader cache for CI artifacts.
 ci-build-shaders: update-cached-sdl3gpu-shaders

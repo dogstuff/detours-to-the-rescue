@@ -40,6 +40,11 @@ void dttr_mss_track_play(MIX_Track *track, int sdl_loops) {
 		return;
 	}
 
+	if (sdl_loops == 0) {
+		MIX_PlayTrack(track, 0);
+		return;
+	}
+
 	SDL_PropertiesID props = SDL_CreateProperties();
 	if (!props) {
 		MIX_PlayTrack(track, 0);

@@ -155,6 +155,7 @@ static void init_common_state(DTTR_BackendState *state) {
 	state->blend_enabled = false;
 	state->addr_u = DTTR_TEXADDR_WRAP;
 	state->addr_v = DTTR_TEXADDR_WRAP;
+	state->blend_src = DTTR_BLEND_ONE;
 	state->blend_dst = DTTR_BLEND_ZERO;
 	state->stage_color_op = DTTR_D3DTOP_MODULATE;
 	state->stage_color_arg1 = DTTR_D3DTA_TEXTURE;

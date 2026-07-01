@@ -415,10 +415,38 @@ static void d3d_device7_texture_bind(DTTR_Texture tex) {
 	SDL_UnlockMutex(state->texture_mutex);
 }
 
-/// Sets source and destination blend factors.
-static void d3d_device7_set_blend_func(DTTR_BlendFactor src, DTTR_BlendFactor dst) {
-	if (dst)
-		dttr_backend.blend_dst = dst;
+/// Warns once per combo change when the backend's OFF/ALPHA/ADDITIVE mapping
+/// cannot represent the requested blend factors.
+static void d3d_device7_check_blend_combo(void) {
+	static DTTR_BlendFactor warned_src;
+	static DTTR_BlendFactor warned_dst;
+	const DTTR_BlendFactor src = dttr_backend.blend_src;
+	const DTTR_BlendFactor dst = dttr_backend.blend_dst;
+
+	const bool supported = (src == DTTR_BLEND_ONE && dst == DTTR_BLEND_ZERO)
+						   || (src == DTTR_BLEND_SRCALPHA && dst == DTTR_BLEND_INVSRCALPHA)
+						   || (dst == DTTR_BLEND_ONE
+							   && (src == DTTR_BLEND_SRCALPHA || src == DTTR_BLEND_ONE));
+
+	if (supported || (src == warned_src && dst == warned_dst)) {
+		return;
+	}
+
+	warned_src = src;
+	warned_dst = dst;
+	DTTR_LOG_WARN("Unsupported blend combo src=%d dst=%d; approximating", src, dst);
+}
+
+/// Sets the source blend factor.
+static void d3d_device7_set_blend_src(DTTR_BlendFactor src) {
+	dttr_backend.blend_src = src;
+	d3d_device7_check_blend_combo();
+}
+
+/// Sets the destination blend factor.
+static void d3d_device7_set_blend_dst(DTTR_BlendFactor dst) {
+	dttr_backend.blend_dst = dst;
+	d3d_device7_check_blend_combo();
 }
 
 /// Sets texture addressing mode for U coordinates.
@@ -681,10 +709,10 @@ static HRESULT __stdcall d3ddevice7_setrenderstate(
 		dttr_backend.blend_enabled = value != 0;
 		break;
 	case D3DRENDERSTATE_SRCBLEND:
-		d3d_device7_set_blend_func((DTTR_BlendFactor)value, (DTTR_BlendFactor)0);
+		d3d_device7_set_blend_src((DTTR_BlendFactor)value);
 		break;
 	case D3DRENDERSTATE_DESTBLEND:
-		d3d_device7_set_blend_func((DTTR_BlendFactor)0, (DTTR_BlendFactor)value);
+		d3d_device7_set_blend_dst((DTTR_BlendFactor)value);
 		break;
 	case D3DRENDERSTATE_CULLMODE:
 		break;
