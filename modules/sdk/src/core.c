@@ -20,66 +20,6 @@ struct DTTR_Core_PatchGroup {
 	install_entry_vec entries;
 };
 
-// Return stable status tokens for logs and tests that compare SDK failures by name.
-const char *DTTR_StatusName(DTTR_Status status) {
-	switch (status) {
-	case DTTR_OK:
-		return "DTTR_OK";
-	case DTTR_ERR_INVALID_ARGUMENT:
-		return "DTTR_ERR_INVALID_ARGUMENT";
-	case DTTR_ERR_NOT_FOUND:
-		return "DTTR_ERR_NOT_FOUND";
-	case DTTR_ERR_UNSUPPORTED:
-		return "DTTR_ERR_UNSUPPORTED";
-	case DTTR_ERR_ALREADY_INSTALLED:
-		return "DTTR_ERR_ALREADY_INSTALLED";
-	case DTTR_ERR_NOT_INSTALLED:
-		return "DTTR_ERR_NOT_INSTALLED";
-	case DTTR_ERR_MEMORY_PROTECTION:
-		return "DTTR_ERR_MEMORY_PROTECTION";
-	case DTTR_ERR_RUNTIME_UNAVAILABLE:
-		return "DTTR_ERR_RUNTIME_UNAVAILABLE";
-	case DTTR_ERR_ABI_MISMATCH:
-		return "DTTR_ERR_ABI_MISMATCH";
-	case DTTR_ERR_OUT_OF_MEMORY:
-		return "DTTR_ERR_OUT_OF_MEMORY";
-	case DTTR_ERR_HOOK_CHAIN_UNSUPPORTED:
-		return "DTTR_ERR_HOOK_CHAIN_UNSUPPORTED";
-	case DTTR_ERR_MISSING_SYMBOL:
-		return "DTTR_ERR_MISSING_SYMBOL";
-	case DTTR_ERR_UNRESOLVED:
-		return "DTTR_ERR_UNRESOLVED";
-	case DTTR_ERR_NOT_CALLABLE:
-		return "DTTR_ERR_NOT_CALLABLE";
-	case DTTR_ERR_READ_FAILED:
-		return "DTTR_ERR_READ_FAILED";
-	case DTTR_ERR_WRITE_FAILED:
-		return "DTTR_ERR_WRITE_FAILED";
-	case DTTR_ERR_POLICY_MISMATCH:
-		return "DTTR_ERR_POLICY_MISMATCH";
-	case DTTR_ERR_UNSUPPORTED_LAYOUT:
-		return "DTTR_ERR_UNSUPPORTED_LAYOUT";
-	case DTTR_ERR_UNSUPPORTED_CONTRACT:
-		return "DTTR_ERR_UNSUPPORTED_CONTRACT";
-	case DTTR_ERR_PROVENANCE_UNSAFE:
-		return "DTTR_ERR_PROVENANCE_UNSAFE";
-	default:
-		return "DTTR_ERR_UNKNOWN";
-	}
-}
-
-bool DTTR_StatusOK(DTTR_Status status) {
-	return status == DTTR_OK;
-}
-
-bool DTTR_StatusFailed(DTTR_Status status) {
-	return !DTTR_StatusOK(status);
-}
-
-bool DTTR_ResultOK(DTTR_Result result) {
-	return DTTR_StatusOK(result.status);
-}
-
 static bool runtime_context_valid(const DTTR_Core_Context *ctx) {
 	return ctx && ctx->game_module && ctx->api;
 }

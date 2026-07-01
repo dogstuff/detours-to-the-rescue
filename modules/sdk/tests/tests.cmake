@@ -3,6 +3,7 @@ set(DTTR_SDK_TEST_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
 set(DTTR_SDK_TEST_INCLUDE_DIRS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
     "${DTTR_SDK_GENERATED_SRC_DIR}/generated"
+    "${CMAKE_SOURCE_DIR}/modules/common/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/include"
 )

@@ -19,6 +19,7 @@
 
 static const DTTR_RendererVtbl renderer;
 static void cleanup(DTTR_BackendState *state);
+static void release_deferred_texture_destroys(DTTR_BackendState *state);
 
 static SDL_GPUSampleCount msaa_sample_count_from_config(int value) {
 	switch (value) {
@@ -46,7 +47,6 @@ static int msaa_sample_count_to_int(SDL_GPUSampleCount value) {
 	}
 }
 
-// Uses the requested MSAA count only when both swapchain and depth formats support it.
 static SDL_GPUSampleCount select_msaa_sample_count(DTTR_BackendState *state) {
 	const SDL_GPUSampleCount requested = msaa_sample_count_from_config(
 		dttr_config.msaa_samples
@@ -100,7 +100,6 @@ static void release_window_device(DTTR_BackendState *state) {
 	destroy_device(state);
 }
 
-// Attempts one SDL GPU driver and only keeps it after the game window can be claimed.
 static bool try_create_device_for_driver(
 	DTTR_BackendState *state,
 	const SDL_GPUShaderFormat requested_formats,
@@ -171,7 +170,6 @@ static bool try_create_device_for_driver(
 	return false;
 }
 
-// Maps a configured graphics API to the SDL GPU driver name requested at device creation.
 static const char *graphics_api_driver_name(DTTR_GraphicsAPI api) {
 	switch (api) {
 	case DTTR_GRAPHICS_API_VULKAN:
@@ -183,7 +181,6 @@ static const char *graphics_api_driver_name(DTTR_GraphicsAPI api) {
 	}
 }
 
-// Creates an SDL GPU device using the configured driver or the supported fallback order.
 static bool create_device(DTTR_BackendState *state) {
 	const SDL_GPUShaderFormat requested_formats = dttr_graphics_requested_shader_formats();
 	const char *requested_driver = graphics_api_driver_name(dttr_config.graphics_api);
@@ -218,7 +215,6 @@ static bool create_device(DTTR_BackendState *state) {
 	return false;
 }
 
-// Initializes SDL GPU backend state after device creation succeeds.
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	if (!create_device(state)) {
 		return false;
@@ -258,11 +254,12 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	return true;
 }
 
-// Releases all SDL GPU resources owned by the backend before the window/device go away.
 static void cleanup(DTTR_BackendState *state) {
 	if (!state->device) {
 		return;
 	}
+
+	release_deferred_texture_destroys(state);
 
 	for (int i = 0; i < DTTR_SAMPLER_COUNT; i++) {
 		if (state->samplers[i]) {
@@ -313,12 +310,19 @@ static void cleanup(DTTR_BackendState *state) {
 	}
 
 	release_window_device(state);
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (bd) {
+		free(bd->deferred_destroys);
+	}
 	free(state->backend_data);
 	state->backend_data = NULL;
 }
 
 typedef struct {
 	SDL_GPUTexture *tex;
+	SDL_GPUTransferBuffer *transfer_buffer;
+	int pool_slot;
+	int texture_index;
 	uint32_t bytes;
 	bool generate_mips;
 	bool uploaded;
@@ -362,7 +366,6 @@ static void release_upload_pool_slot(DTTR_BackendState *state, int pool_slot) {
 	state->upload_pool[pool_slot].in_use = false;
 }
 
-// Reuses or grows a transfer-buffer slot large enough for the pending texture upload.
 static int acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) {
 	if (!state || !state->device || bytes == 0) {
 		return -1;
@@ -459,22 +462,58 @@ static void release_deferred_texture_destroys(DTTR_BackendState *state) {
 	SDL_UnlockMutex(state->texture_mutex);
 }
 
+static bool queue_deferred_texture_destroy(
+	sdl3_gpu_backend_data *bd,
+	SDL_GPUTexture *texture
+) {
+	if (!bd || !texture) {
+		return true;
+	}
+
+	if (bd->deferred_destroy_count >= bd->deferred_destroy_capacity) {
+		int new_capacity = bd->deferred_destroy_capacity > 0
+							   ? bd->deferred_destroy_capacity * 2
+							   : 64;
+		if (new_capacity <= bd->deferred_destroy_capacity) {
+			return false;
+		}
+
+		SDL_GPUTexture **new_destroys = realloc(
+			bd->deferred_destroys,
+			(size_t)new_capacity * sizeof(*new_destroys)
+		);
+		if (!new_destroys) {
+			return false;
+		}
+
+		bd->deferred_destroys = new_destroys;
+		bd->deferred_destroy_capacity = new_capacity;
+	}
+
+	bd->deferred_destroys[bd->deferred_destroy_count++] = texture;
+	return true;
+}
+
 // Queues a staged texture for GPU-thread destruction instead of freeing it from callers.
-static void defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
+static bool defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
 	if (!bd || texture_index < 0 || texture_index >= DTTR_MAX_STAGED_TEXTURES) {
-		return;
+		return false;
 	}
 
 	DTTR_StagedTexture *st = &state->staged_textures[texture_index];
-	if (st->gpu_tex && state->device
-		&& bd->deferred_destroy_count < DTTR_MAX_STAGED_TEXTURES) {
-		bd->deferred_destroys[bd->deferred_destroy_count++] = st->gpu_tex;
+	if (!st->gpu_tex || !state->device) {
+		return true;
 	}
+
+	if (!queue_deferred_texture_destroy(bd, st->gpu_tex)) {
+		DTTR_LOG_WARN("Failed to queue SDL GPU texture destroy");
+		return false;
+	}
+
+	return true;
 }
 
-// Copies one detached pixel buffer into a GPU texture using either the upload pool or a
-// temporary transfer buffer.
 static bool upload_texture_data(
 	DTTR_BackendState *state,
 	SDL_GPUCopyPass *copy,
@@ -482,11 +521,19 @@ static bool upload_texture_data(
 	void *pixels,
 	int width,
 	int height,
-	uint32_t bytes
+	uint32_t bytes,
+	SDL_GPUTransferBuffer **out_transfer_buffer,
+	int *out_pool_slot
 ) {
 	if (!copy || !tex || !pixels || bytes == 0) {
-		free(pixels);
 		return false;
+	}
+
+	if (out_transfer_buffer) {
+		*out_transfer_buffer = NULL;
+	}
+	if (out_pool_slot) {
+		*out_pool_slot = -1;
 	}
 
 	SDL_GPUTransferBuffer *tbuf = NULL;
@@ -504,7 +551,6 @@ static bool upload_texture_data(
 		tbuf = create_upload_buffer(state, bytes);
 
 		if (!tbuf) {
-			free(pixels);
 			return false;
 		}
 	}
@@ -518,7 +564,6 @@ static bool upload_texture_data(
 			SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
 		}
 
-		free(pixels);
 		return false;
 	}
 
@@ -539,14 +584,74 @@ static bool upload_texture_data(
 
 	SDL_UploadToGPUTexture(copy, &src, &dst, false);
 
-	if (from_pool) {
-		release_upload_pool_slot(state, pool_slot);
-	} else {
-		SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
+	if (out_transfer_buffer) {
+		*out_transfer_buffer = from_pool ? NULL : tbuf;
+	}
+	if (out_pool_slot) {
+		*out_pool_slot = from_pool ? pool_slot : -1;
 	}
 
-	free(pixels);
 	return true;
+}
+
+static void finish_pending_uploads(
+	DTTR_BackendState *state,
+	graphics_pending_upload *pending,
+	int pending_count
+) {
+	for (int i = 0; i < pending_count; i++) {
+		if (!pending[i].uploaded) {
+			continue;
+		}
+
+		if (pending[i].pool_slot >= 0) {
+			release_upload_pool_slot(state, pending[i].pool_slot);
+			pending[i].pool_slot = -1;
+		}
+
+		if (pending[i].transfer_buffer) {
+			SDL_ReleaseGPUTransferBuffer(state->device, pending[i].transfer_buffer);
+			pending[i].transfer_buffer = NULL;
+		}
+	}
+}
+
+static bool requeue_detached_upload(
+	DTTR_BackendState *state,
+	int texture_index,
+	void **pixels
+) {
+	if (!state->texture_mutex || !pixels || !*pixels) {
+		return false;
+	}
+
+	bool requeued = false;
+	SDL_LockMutex(state->texture_mutex);
+
+	if (texture_index >= 0 && texture_index < state->staged_texture_count) {
+		DTTR_StagedTexture *st = &state->staged_textures[texture_index];
+		if (st->refcount > 0 && !st->pixels) {
+			st->pixels = *pixels;
+			if (!st->pending_upload) {
+				st->pending_upload = true;
+				kv_push(int, state->pending_upload_indices, texture_index);
+			}
+			*pixels = NULL;
+			requeued = true;
+		}
+	}
+
+	SDL_UnlockMutex(state->texture_mutex);
+	return requeued;
+}
+
+static void discard_detached_pixels(void **pixels) {
+	if (!pixels || !*pixels) {
+		return;
+	}
+
+	free(*pixels);
+	*pixels = NULL;
 }
 
 // Detaches queued texture uploads under the mutex, uploads them, and keeps failed
@@ -572,6 +677,7 @@ static int collect_and_upload_pending(
 		int width;
 		int height;
 		uint32_t bytes;
+		int texture_index;
 		bool generate_mips;
 	} detached_upload;
 
@@ -624,6 +730,7 @@ static int collect_and_upload_pending(
 			.width = st->width,
 			.height = st->height,
 			.bytes = bytes,
+			.texture_index = idx,
 			.generate_mips = dttr_config.generate_texture_mipmaps,
 		};
 
@@ -642,14 +749,28 @@ static int collect_and_upload_pending(
 			detached[i].pixels,
 			detached[i].width,
 			detached[i].height,
-			detached[i].bytes
+			detached[i].bytes,
+			&pending_uploads[i].transfer_buffer,
+			&pending_uploads[i].pool_slot
 		);
 		pending_uploads[i] = (graphics_pending_upload){
 			.tex = detached[i].tex,
+			.transfer_buffer = ok ? pending_uploads[i].transfer_buffer : NULL,
+			.pool_slot = ok ? pending_uploads[i].pool_slot : -1,
+			.texture_index = detached[i].texture_index,
 			.bytes = detached[i].bytes,
 			.generate_mips = detached[i].generate_mips,
 			.uploaded = ok,
 		};
+		if (ok) {
+			discard_detached_pixels(&detached[i].pixels);
+		} else if (!requeue_detached_upload(
+					   state,
+					   detached[i].texture_index,
+					   &detached[i].pixels
+				   )) {
+			discard_detached_pixels(&detached[i].pixels);
+		}
 	}
 
 	return pending_count;
@@ -700,6 +821,8 @@ static void upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBuff
 	if (copy) {
 		SDL_EndGPUCopyPass(copy);
 	}
+
+	finish_pending_uploads(state, pending, pending_count);
 
 	if (pending_count == 0) {
 		return;

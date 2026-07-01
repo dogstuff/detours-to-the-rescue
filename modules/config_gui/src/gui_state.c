@@ -1,96 +1,5 @@
 #include "gui_internal.h"
 
-static const char *const GAME_ACTION_TOOLTIPS[] = {
-	"Disables this gamepad action.",
-	"Moves up.",
-	"Moves down.",
-	"Moves left.",
-	"Moves right.",
-	"Activates POV up.",
-	"Activates POV down.",
-	"Acts as joy_1. In menus, joy_1 is the confirm button.",
-	"Acts as joy_2. In menus, joy_2 is the back button.",
-	"Acts as joy_3.",
-	"Acts as joy_4.",
-	"Acts as joy_5.",
-	"Acts as joy_6.",
-	"Acts as joy_7.",
-	"Acts as joy_8.",
-	"Acts as joy_9. joy_9 is the start/pause button.",
-	"Acts as joy_10.",
-	"Acts as joy_11.",
-	"Acts as joy_12.",
-	"Acts as joy_13.",
-};
-
-const char *game_action_tooltip(int action) {
-	const int index = action - DTTR_GAMEPAD_MAPPING_NONE;
-
-	if (index >= 0 && index < (int)SDL_arraysize(GAME_ACTION_TOOLTIPS)) {
-		return GAME_ACTION_TOOLTIPS[index];
-	}
-
-	return "Bind each PCDOGS game action to the controller input you want to press.";
-}
-
-static bool button_source_in_range(int source) {
-	return source >= 0 && source < DTTR_GAMEPAD_SOURCE_COUNT;
-}
-
-static void refresh_button_rows(config_ui_state *state) {
-	sync_rows_from_config(state);
-	state->binding_row = -1;
-}
-
-static bool button_action_in_range(int action) {
-	return action >= PCDOGS_GAMEPAD_IDX_UP && action <= PCDOGS_GAMEPAD_IDX_BTN_12;
-}
-
-static int source_for_action(const int *map, int action) {
-	if (!map || !button_action_in_range(action)) {
-		return DTTR_GAMEPAD_MAPPING_NONE;
-	}
-
-	for (int source = 0; source < DTTR_GAMEPAD_SOURCE_COUNT; source++) {
-		if (map[source] == action) {
-			return source;
-		}
-	}
-
-	return DTTR_GAMEPAD_MAPPING_NONE;
-}
-
-int gamepad_button_row_count() {
-	const int choice_count = DTTR_Config_ChoiceCount(DTTR_CONFIG_CHOICES_GAME_ACTION);
-	return choice_count > 0 ? choice_count - 1 : 0;
-}
-
-static const DTTR_ConfigChoice *gamepad_button_row_choice(int row) {
-	if (row < 0 || row >= gamepad_button_row_count()) {
-		return NULL;
-	}
-
-	return DTTR_Config_ChoiceGet(DTTR_CONFIG_CHOICES_GAME_ACTION, row + 1);
-}
-
-int gamepad_button_row_action(int row) {
-	const DTTR_ConfigChoice *choice = gamepad_button_row_choice(row);
-	return choice ? choice->value : DTTR_GAMEPAD_MAPPING_NONE;
-}
-
-const char *gamepad_button_row_label(int row) {
-	const DTTR_ConfigChoice *choice = gamepad_button_row_choice(row);
-	return choice ? choice->label : "unknown";
-}
-
-int gamepad_default_source_for_action(const config_ui_state *state, int action) {
-	if (!state) {
-		return DTTR_GAMEPAD_MAPPING_NONE;
-	}
-
-	return source_for_action(state->defaults.gamepad_button_map, action);
-}
-
 void set_status(config_ui_state *state, const char *status) {
 	snprintf(state->status, sizeof(state->status), "%s", status ? status : "");
 	state->status_expires_at_ms = SDL_GetTicks() + DTTR_CONFIG_UI_STATUS_TIMEOUT_MS;
@@ -112,59 +21,9 @@ void set_mods_dir_from_config_path(config_ui_state *state) {
 	sdsfree(mods_dir);
 }
 
-void sync_rows_from_config(config_ui_state *state) {
-	const int row_count = gamepad_button_row_count();
-
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
-		state->button_actions[i] = DTTR_GAMEPAD_MAPPING_NONE;
-		state->button_sources[i] = DTTR_GAMEPAD_MAPPING_NONE;
-	}
-
-	for (int row = 0; row < row_count; row++) {
-		const int action = gamepad_button_row_action(row);
-		state->button_actions[row] = action;
-		state->button_sources[row] = source_for_action(
-			state->config.gamepad_button_map,
-			action
-		);
-	}
-}
-
 bool event_cancels_binding(const SDL_Event *event) {
 	return event && event->type == SDL_EVENT_KEY_DOWN
 		   && event->key.scancode == SDL_SCANCODE_ESCAPE;
-}
-
-void cancel_binding(config_ui_state *state) {
-	if (state->binding_row < 0) {
-		return;
-	}
-
-	state->binding_row = -1;
-	set_status(state, "Cancelled controller input capture.");
-}
-
-void capture_source(config_ui_state *state, int new_source) {
-	const int binding_row = state->binding_row;
-	const int row_count = gamepad_button_row_count();
-
-	if (binding_row < 0 || binding_row >= row_count
-		|| !button_source_in_range(new_source)) {
-		return;
-	}
-
-	const int old_source = state->button_sources[binding_row];
-
-	for (int row = 0; row < row_count; row++) {
-		if (row != binding_row && state->button_sources[row] == new_source) {
-			state->button_sources[row] = old_source;
-			break;
-		}
-	}
-
-	state->button_sources[binding_row] = new_source;
-	state->binding_row = -1;
-	set_status(state, "Captured controller input.");
 }
 
 void begin_input_binding_capture(
@@ -176,8 +35,8 @@ void begin_input_binding_capture(
 		return;
 	}
 
-	state->binding_row = -1;
 	state->input_binding_capturing = true;
+	state->control_binding_action = -1;
 	snprintf(
 		state->input_binding_mod_id,
 		sizeof(state->input_binding_mod_id),
@@ -200,6 +59,19 @@ static void clear_input_binding_capture_state(config_ui_state *state) {
 	state->input_binding_capturing = false;
 	state->input_binding_mod_id[0] = '\0';
 	state->input_binding_field_id[0] = '\0';
+	state->control_binding_action = -1;
+}
+
+void begin_control_binding_capture(config_ui_state *state, int action) {
+	if (!state || action < 0 || action >= DTTR_CONFIG_CONTROL_ACTION_COUNT) {
+		return;
+	}
+
+	state->input_binding_capturing = true;
+	state->input_binding_mod_id[0] = '\0';
+	state->input_binding_field_id[0] = '\0';
+	state->control_binding_action = action;
+	set_status(state, "Press a key or gamepad button. Press Esc to cancel.");
 }
 
 void cancel_input_binding_capture(config_ui_state *state) {
@@ -216,9 +88,14 @@ bool input_binding_field_capturing(
 	const char *mod_id,
 	const char *field_id
 ) {
-	return state && state->input_binding_capturing && mod_id && field_id
-		   && SDL_strcmp(state->input_binding_mod_id, mod_id) == 0
+	return state && state->input_binding_capturing && state->control_binding_action < 0
+		   && mod_id && field_id && SDL_strcmp(state->input_binding_mod_id, mod_id) == 0
 		   && SDL_strcmp(state->input_binding_field_id, field_id) == 0;
+}
+
+bool control_binding_field_capturing(const config_ui_state *state, int action) {
+	return state && state->input_binding_capturing
+		   && state->control_binding_action == action;
 }
 
 static bool input_binding_from_event(
@@ -250,8 +127,60 @@ static bool input_binding_from_event(
 	}
 }
 
+static int control_binding_button_code(int button) {
+	return button >= 0 && button < DTTR_CONFIG_CONTROL_CODE_SDL_GAMEPAD_BUTTON_COUNT
+			   ? DTTR_CONFIG_CONTROL_CODE_SDL_GAMEPAD_BUTTON_BASE + button
+			   : DTTR_CONFIG_CONTROL_BINDING_NONE;
+}
+
+static int control_binding_code_from_event(const SDL_Event *event) {
+	if (!event) {
+		return DTTR_CONFIG_CONTROL_BINDING_NONE;
+	}
+
+	switch (event->type) {
+	case SDL_EVENT_KEY_DOWN:
+		if (event->key.repeat || event->key.scancode <= SDL_SCANCODE_UNKNOWN
+			|| event->key.scancode >= SDL_SCANCODE_COUNT) {
+			return DTTR_CONFIG_CONTROL_BINDING_NONE;
+		}
+
+		return DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE + (int)event->key.scancode;
+	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+		return control_binding_button_code(event->gbutton.button);
+	case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+		return control_binding_button_code(event->jbutton.button);
+	default:
+		return DTTR_CONFIG_CONTROL_BINDING_NONE;
+	}
+}
+
+static bool capture_control_binding_event(config_ui_state *state, const SDL_Event *event) {
+	if (!state || state->control_binding_action < 0) {
+		return false;
+	}
+
+	const int code = control_binding_code_from_event(event);
+	if (code == DTTR_CONFIG_CONTROL_BINDING_NONE) {
+		return false;
+	}
+
+	state->config.control_bindings[state->control_binding_action] = code;
+	clear_input_binding_capture_state(state);
+	set_status(state, "Captured control binding.");
+	return true;
+}
+
 bool capture_input_binding_event(config_ui_state *state, const SDL_Event *event) {
 	if (!state || !state->input_binding_capturing || !event) {
+		return false;
+	}
+
+	if (capture_control_binding_event(state, event)) {
+		return true;
+	}
+
+	if (state->control_binding_action >= 0) {
 		return false;
 	}
 
@@ -281,19 +210,6 @@ bool capture_input_binding_event(config_ui_state *state, const SDL_Event *event)
 	return true;
 }
 
-void sync_config_from_rows(config_ui_state *state) {
-	DTTR_Config_ClearGamepadButtonMap(state->config.gamepad_button_map);
-	const int row_count = gamepad_button_row_count();
-
-	for (int row = 0; row < row_count; row++) {
-		const int source = state->button_sources[row];
-
-		if (button_source_in_range(source)) {
-			state->config.gamepad_button_map[source] = state->button_actions[row];
-		}
-	}
-}
-
 void load_config(config_ui_state *state) {
 	if (!DTTR_Config_Load(state->path)) {
 		const char *details = DTTR_Config_LastError();
@@ -311,13 +227,10 @@ void load_config(config_ui_state *state) {
 	state->config = dttr_config;
 	state->saved_config = state->config;
 	reload_mod_config_specs(state);
-	refresh_button_rows(state);
 	set_status(state, "Loaded config.");
 }
 
 void save_config(config_ui_state *state) {
-	sync_config_from_rows(state);
-
 	if (!DTTR_Config_Save(state->path, &state->config)) {
 		set_status(state, "Failed to save config.");
 		return;
@@ -329,7 +242,6 @@ void save_config(config_ui_state *state) {
 
 void reset_defaults(config_ui_state *state) {
 	state->config = state->defaults;
-	refresh_button_rows(state);
 	set_status(state, "Reset to built-in defaults. Save to write changes.");
 }
 
@@ -364,41 +276,9 @@ config_label_state make_config_label_state(bool unsaved_changed, bool default_ch
 	return default_changed ? CONFIG_LABEL_SAVED_CHANGED : CONFIG_LABEL_DEFAULT;
 }
 
-bool gamepad_button_rows_have_unsaved_changes(const config_ui_state *state) {
-	const int row_count = gamepad_button_row_count();
-
-	for (int row = 0; row < row_count; row++) {
-		const int action = state->button_actions[row];
-
-		if (state->button_sources[row]
-			!= source_for_action(state->saved_config.gamepad_button_map, action)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-config_label_state gamepad_button_label_state(
-	const config_ui_state *state,
-	int source,
-	int action
-) {
-	const int saved_source = source_for_action(
-		state->saved_config.gamepad_button_map,
-		action
-	);
-	const int default_source = source_for_action(
-		state->defaults.gamepad_button_map,
-		action
-	);
-
-	return make_config_label_state(source != saved_source, source != default_source);
-}
-
 bool config_has_unsaved_changes(const config_ui_state *state) {
 	return DTTR_Config_SchemaChanged(&state->config, &state->saved_config)
+		   || DTTR_Config_ControlBindingsChanged(&state->config, &state->saved_config)
 		   || DTTR_Config_DisabledModsChanged(&state->config, &state->saved_config)
-		   || DTTR_Config_ModConfigsChanged(&state->config, &state->saved_config)
-		   || gamepad_button_rows_have_unsaved_changes(state);
+		   || DTTR_Config_ModConfigsChanged(&state->config, &state->saved_config);
 }

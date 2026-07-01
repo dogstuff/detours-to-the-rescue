@@ -144,7 +144,7 @@ typedef struct {
 	bool (*resize)(DTTR_BackendState *state, int width, int height);
 	void (*cleanup)(DTTR_BackendState *state);
 	const char *(*get_driver_name)(const DTTR_BackendState *state);
-	void (*defer_texture_destroy)(DTTR_BackendState *state, int texture_index);
+	bool (*defer_texture_destroy)(DTTR_BackendState *state, int texture_index);
 } DTTR_RendererVtbl;
 
 typedef enum { DTTR_BATCH_DRAW, DTTR_BATCH_CLEAR } DTTR_BatchRecordType;

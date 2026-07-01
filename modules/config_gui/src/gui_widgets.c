@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-void same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
+static void same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
 	igSameLine(
 		0.0f,
 		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
@@ -41,17 +41,8 @@ static float config_standard_content_width() {
 	return DTTR_CONFIG_UI_LABEL_W + config_standard_input_width();
 }
 
-static float config_gamepad_content_width() {
-	return DTTR_CONFIG_UI_GAMEPAD_SOURCE_W + config_standard_input_width()
-		   + (DTTR_CONFIG_UI_GAMEPAD_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
-				 * 3.0f;
-}
-
 int config_window_width() {
-	const float content_width = fmaxf(
-		config_standard_content_width(),
-		config_gamepad_content_width()
-	);
+	const float content_width = config_standard_content_width();
 	return (int)(DTTR_CONFIG_UI_PANEL_PADDING_X * 2.0f + content_width);
 }
 
@@ -268,7 +259,9 @@ void push_config_theme() {
 	}
 }
 
-void pop_config_theme() { igPopStyleColor((int)SDL_arraysize(CONFIG_THEME_COLORS)); }
+void pop_config_theme() {
+	igPopStyleColor((int)SDL_arraysize(CONFIG_THEME_COLORS));
+}
 
 static bool format_status_text(
 	const config_ui_state *state,
@@ -315,7 +308,7 @@ static float status_text_height(const char *status_text) {
 		   + (float)(line_count - 1) * igGetTextLineHeightWithSpacing();
 }
 
-float config_footer_height(
+static float config_footer_height(
 	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state
 ) {
@@ -345,7 +338,9 @@ bool begin_config_content_region(
 	);
 }
 
-void end_config_content_region() { igEndChild(); }
+void end_config_content_region() {
+	igEndChild();
+}
 
 void draw_footer_text(const DTTR_ImGuiDialogContext *ctx, const config_ui_state *state) {
 	char status_text[sizeof(state->status) + sizeof("Unsaved changes.\n")];
@@ -521,58 +516,9 @@ void end_settings_table() {
 	igPopStyleVar(2);
 }
 
-bool begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx) {
-	if (!begin_config_table(
-			ctx,
-			"##gamepad_button_table",
-			5,
-			DTTR_CONFIG_UI_TABLE_CELL_PADDING_X,
-			0.0f
-		)) {
-		return false;
-	}
-
-	setup_scaled_table_column(
-		ctx,
-		"In-Game Action",
-		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_IndentDisable
-			| ImGuiTableColumnFlags_NoHeaderLabel,
-		DTTR_CONFIG_UI_GAMEPAD_SOURCE_W
-	);
-	setup_scaled_table_column(
-		ctx,
-		"Gamepad Input",
-		ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderLabel,
-		config_standard_input_width()
-	);
-	setup_scaled_table_column(
-		ctx,
-		"Bind",
-		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel
-			| ImGuiTableColumnFlags_NoHeaderWidth,
-		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
-	);
-	setup_scaled_table_column(
-		ctx,
-		"Clear",
-		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel
-			| ImGuiTableColumnFlags_NoHeaderWidth,
-		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
-	);
-	setup_scaled_table_column(
-		ctx,
-		"Reset",
-		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderLabel
-			| ImGuiTableColumnFlags_NoHeaderWidth,
-		DTTR_CONFIG_UI_GAMEPAD_BUTTON_W
-	);
-	begin_table_header_row();
-	append_table_header_text(ctx, 0, "In-Game Action");
-	append_table_header_text(ctx, 1, "Gamepad Input");
-	return true;
+void begin_config_table_row() {
+	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
 }
-
-void begin_config_table_row() { igTableNextRow(ImGuiTableRowFlags_None, 0.0f); }
 
 void begin_setting_row() {
 	begin_config_table_row();
@@ -636,6 +582,125 @@ static void begin_labeled_control(
 	igSetNextItemWidth(table_input_width(ctx, input_width));
 }
 
+static bool binding_row_button(
+	const DTTR_ImGuiDialogContext *ctx,
+	const char *id,
+	const char *label,
+	const char *tooltip
+) {
+	same_path_button_row(ctx);
+	const bool
+		clicked = themed_row_button(ctx, id, label, DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W);
+	show_tooltip(tooltip);
+	return clicked;
+}
+
+static float binding_value_field_width(
+	const DTTR_ImGuiDialogContext *ctx,
+	int button_count
+) {
+	const float width = table_input_width(ctx, DTTR_CONFIG_UI_BINDING_VALUE_W);
+	const float trailing_width = DTTR_ImGuiDialog_ScaledFloat(
+		ctx,
+		(float)button_count
+			* (DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
+	);
+
+	const float field_width = width > trailing_width + 1.0f ? width - trailing_width
+															: width;
+	return field_width > 1.0f ? field_width : 1.0f;
+}
+
+static bool binding_value_field(
+	const DTTR_ImGuiDialogContext *ctx,
+	const char *text,
+	float field_width,
+	bool capturing,
+	const char *tooltip
+) {
+	const ImVec2_c size = {
+		field_width,
+		igGetFrameHeight(),
+	};
+
+	const ImVec4_c bg = capturing ? DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED
+								  : DTTR_IMGUI_COLOR_STACK_FRAME_BG;
+	const ImVec4_c text_color = capturing ? DTTR_CONFIG_UI_CHANGED_LABEL_TEXT_COLOR
+										  : DTTR_IMGUI_COLOR_BUTTON_TEXT;
+	const ImVec4_c border = capturing ? DTTR_IMGUI_COLOR_LINK
+									  : DTTR_CONFIG_UI_TABLE_BORDER_COLOR;
+
+	igPushID_Str("##bindvalue");
+	igPushStyleColor_Vec4(ImGuiCol_Text, text_color);
+	igPushStyleColor_Vec4(ImGuiCol_Button, bg);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
+	igPushStyleColor_Vec4(ImGuiCol_Border, border);
+	igPushStyleVar_Float(
+		ImGuiStyleVar_FrameRounding,
+		DTTR_ImGuiDialog_ScaledFloat(ctx, 2.0f)
+	);
+	igPushStyleVar_Float(ImGuiStyleVar_FrameBorderSize, 1.0f);
+	igPushStyleVar_Vec2(ImGuiStyleVar_ButtonTextAlign, (ImVec2_c){0.0f, 0.5f});
+
+	const bool clicked = igButton(text, size);
+
+	igPopStyleVar(3);
+	igPopStyleColor(5);
+	igPopID();
+	show_tooltip(tooltip);
+	return clicked;
+}
+
+config_binding_row_result draw_config_binding_row(
+	const DTTR_ImGuiDialogContext *ctx,
+	const config_binding_row_spec *spec
+) {
+	config_binding_row_result result = {0};
+	if (!spec) {
+		return result;
+	}
+
+	begin_setting_row();
+	igAlignTextToFramePadding();
+	draw_config_label(spec->label, spec->tooltip, spec->label_state);
+	igTableNextColumn();
+
+	const int trailing_buttons = (spec->show_clear_button ? 1 : 0)
+								 + (spec->show_reset_button ? 1 : 0);
+
+	result.bind_clicked = binding_value_field(
+		ctx,
+		spec->capturing
+			? (spec->capture_display ? spec->capture_display : "Press any input...")
+			: (spec->display ? spec->display : "Unbound"),
+		binding_value_field_width(ctx, trailing_buttons),
+		spec->capturing,
+		spec->bind_tooltip ? spec->bind_tooltip
+						   : "Click, then press a key, mouse button, or gamepad button."
+	);
+
+	if (spec->show_clear_button) {
+		result.clear_clicked = binding_row_button(
+			ctx,
+			"##clear",
+			"Clear",
+			spec->clear_tooltip ? spec->clear_tooltip : "Leave this binding unbound."
+		);
+	}
+
+	if (spec->show_reset_button) {
+		result.reset_clicked = binding_row_button(
+			ctx,
+			"##reset",
+			"Reset",
+			spec->reset_tooltip ? spec->reset_tooltip : "Reset to the default binding."
+		);
+	}
+
+	return result;
+}
+
 static void draw_path_picker_button(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state,
@@ -690,14 +755,8 @@ static bool labeled_path_picker_with_dialog(
 	begin_setting_row();
 	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_PATH_INPUT_W, tooltip, label_state);
 	igSetNextItemWidth(path_text_input_width(ctx, button_count));
-	const bool edited = igInputText(
-		id,
-		buf,
-		buf_size,
-		ImGuiInputTextFlags_None,
-		NULL,
-		NULL
-	);
+	const bool
+		edited = igInputText(id, buf, buf_size, ImGuiInputTextFlags_None, NULL, NULL);
 	show_tooltip(tooltip);
 	draw_path_picker_buttons(ctx, state, buttons, button_count);
 	return edited;
@@ -714,14 +773,8 @@ bool labeled_input_text(
 ) {
 	begin_setting_row();
 	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	const bool edited = igInputText(
-		id,
-		buf,
-		buf_size,
-		ImGuiInputTextFlags_None,
-		NULL,
-		NULL
-	);
+	const bool
+		edited = igInputText(id, buf, buf_size, ImGuiInputTextFlags_None, NULL, NULL);
 	show_tooltip(tooltip);
 	return edited;
 }
@@ -825,14 +878,8 @@ bool labeled_input_float(
 ) {
 	begin_setting_row();
 	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
-	const bool edited = igInputFloat(
-		id,
-		value,
-		0.05f,
-		0.25f,
-		"%.3f",
-		ImGuiInputTextFlags_None
-	);
+	const bool
+		edited = igInputFloat(id, value, 0.05f, 0.25f, "%.3f", ImGuiInputTextFlags_None);
 	show_tooltip(tooltip);
 	return edited;
 }

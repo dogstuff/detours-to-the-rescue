@@ -542,6 +542,11 @@ static void surface_texture_release(DTTR_Texture tex) {
 		return;
 	}
 
+	if (!state->renderer->defer_texture_destroy(state, idx)) {
+		SDL_UnlockMutex(state->texture_mutex);
+		return;
+	}
+
 	st->refcount = 0;
 	if (st->cache_key_valid) {
 		surface_texture_cache_remove_locked(st->cache_key, tex);
@@ -554,7 +559,6 @@ static void surface_texture_release(DTTR_Texture tex) {
 		state->bound_texture_handle = DTTR_INVALID_TEXTURE;
 	}
 
-	state->renderer->defer_texture_destroy(state, idx);
 	st->gpu_tex = NULL;
 	free(st->pixels);
 	st->pixels = NULL;
@@ -587,7 +591,6 @@ static bool surface_texture_update_unique(
 		return false;
 	}
 
-	bool updated = false;
 	SDL_LockMutex(state->texture_mutex);
 	DTTR_StagedTexture *st = &state->staged_textures[idx];
 	if (st->refcount != 1) {
@@ -597,18 +600,22 @@ static bool surface_texture_update_unique(
 
 	const bool had_cache_key = st->cache_key_valid;
 	const uint64_t old_cache_key = st->cache_key;
-	if (had_cache_key) {
-		surface_texture_cache_remove_locked(old_cache_key, tex);
-	}
-
-	void *resized = realloc(st->pixels, size);
-	if (!resized) {
-		if (had_cache_key) {
-			surface_texture_cache_insert_locked(old_cache_key, tex);
-		}
-
+	const bool dimensions_changed = st->width != width || st->height != height;
+	void *new_pixels = malloc(size);
+	if (!new_pixels) {
 		SDL_UnlockMutex(state->texture_mutex);
 		return false;
+	}
+	memcpy(new_pixels, pixels, size);
+
+	if (dimensions_changed && !state->renderer->defer_texture_destroy(state, idx)) {
+		free(new_pixels);
+		SDL_UnlockMutex(state->texture_mutex);
+		return false;
+	}
+
+	if (had_cache_key) {
+		surface_texture_cache_remove_locked(old_cache_key, tex);
 	}
 
 	const uint64_t current_frame = state->frame_index;
@@ -620,10 +627,9 @@ static bool surface_texture_update_unique(
 
 	st->last_update_frame = current_frame;
 
-	st->pixels = resized;
-	memcpy(st->pixels, pixels, size);
-	if (st->width != width || st->height != height) {
-		state->renderer->defer_texture_destroy(state, idx);
+	free(st->pixels);
+	st->pixels = new_pixels;
+	if (dimensions_changed) {
 		st->gpu_tex = NULL;
 	}
 
@@ -636,10 +642,9 @@ static bool surface_texture_update_unique(
 	}
 
 	surface_queue_pending_upload_locked(state, idx);
-	updated = true;
 
 	SDL_UnlockMutex(state->texture_mutex);
-	return updated;
+	return true;
 }
 
 /// Ends and presents the current frame when a frame is active.

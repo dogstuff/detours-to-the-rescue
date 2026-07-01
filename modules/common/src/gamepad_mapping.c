@@ -81,30 +81,3 @@ void dttr_inputs_apply_ps1_stick_axes(
 	out_axes->axis_x = (int16_t)ps1_axis_from_dinput(dinput_x, deadzone_x, sensitivity_x);
 	out_axes->axis_y = (int16_t)ps1_axis_from_dinput(dinput_y, deadzone_y, sensitivity_y);
 }
-
-void dttr_inputs_apply_dpad_action(
-	uint32_t *button_bits,
-	const DTTR_DirectionMasks *masks,
-	int action
-) {
-	if (!button_bits || !masks) {
-		return;
-	}
-
-	switch (action) {
-	case PCDOGS_GAMEPAD_IDX_UP:
-		*button_bits |= masks->up;
-		break;
-	case PCDOGS_GAMEPAD_IDX_DOWN:
-		*button_bits |= masks->down;
-		break;
-	case PCDOGS_GAMEPAD_IDX_LEFT:
-		*button_bits |= masks->left;
-		break;
-	case PCDOGS_GAMEPAD_IDX_RIGHT:
-		*button_bits |= masks->right;
-		break;
-	default:
-		break;
-	}
-}

@@ -1,6 +1,9 @@
 #include <dttr_input_binding.h>
+#include <dttr_input_names.h>
 
 #include <SDL3/SDL.h>
+
+#include <stdbool.h>
 
 /// Compacts SDL's display names into a single token.
 static bool dttr_input_binding_normalize(const char *name, char *out, size_t out_size) {
@@ -297,12 +300,14 @@ DTTR_Result DTTR_InputBinding_DisplayName(
 		return dttr_input_binding_copy_out(out, out_size, mouse ? mouse->label : "Mouse");
 	}
 	case DTTR_MODS_BINDING_GAMEPAD: {
-		const char *name = SDL_GetGamepadStringForButton((SDL_GamepadButton)binding->code);
+		char display[32];
 
 		return dttr_input_binding_copy_out(
 			out,
 			out_size,
-			(name && name[0]) ? name : "Unknown button"
+			DTTR_InputNames_GamepadButton(binding->code, display, sizeof(display))
+				? display
+				: "Unknown button"
 		);
 	}
 	default:

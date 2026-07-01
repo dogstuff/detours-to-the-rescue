@@ -159,6 +159,7 @@ __declspec(dllexport) int dttr_launcher_main(int argc, char *argv[]) {
 	char exe_dir[MAX_PATH];
 	PROCESS_INFORMATION child_info = {0};
 	DWORD child_exit_code = 1;
+	bool launch_failed = false;
 
 	if (!resolve_loader_dir(exe_dir, sizeof(exe_dir))) {
 		DTTR_FATAL("Could not resolve loader directory");
@@ -207,12 +208,16 @@ __declspec(dllexport) int dttr_launcher_main(int argc, char *argv[]) {
 	}
 
 	// Override compatibility shims before the sidecar starts.
-	DTTR_Compat_CreateProcess(
-		exe_path,
-		(const char *)packed_sdb,
-		packed_sdb_len,
-		&child_info
-	);
+	if (!DTTR_Compat_CreateProcess(
+			exe_path,
+			(const char *)packed_sdb,
+			packed_sdb_len,
+			&child_info
+		)) {
+		DTTR_ERROR("Could not create game process." DTTR_REPORT_SUFFIX);
+		launch_failed = true;
+		goto cleanup;
+	}
 
 	DTTR_Loader_WatchdogAttach(&child_info);
 	if (!DTTR_Loader_InjectSidecar(&child_info)) {
@@ -239,5 +244,5 @@ cleanup:
 		fclose(log_file);
 	}
 
-	return child_info.hProcess ? (int)child_exit_code : 0;
+	return launch_failed ? 1 : child_info.hProcess ? (int)child_exit_code : 0;
 }

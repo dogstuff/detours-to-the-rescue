@@ -5,8 +5,9 @@
 
 /// SDL3GPU backend-private deferred texture destroy queue.
 typedef struct {
-	SDL_GPUTexture *deferred_destroys[DTTR_MAX_STAGED_TEXTURES];
+	SDL_GPUTexture **deferred_destroys;
 	int deferred_destroy_count;
+	int deferred_destroy_capacity;
 } sdl3_gpu_backend_data;
 
 /// Builds all graphics pipelines used by the SDL3 GPU backend.

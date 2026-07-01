@@ -1,7 +1,6 @@
 #ifndef DTTR_SIDECAR_HOOK_SIGS_H
 #define DTTR_SIDECAR_HOOK_SIGS_H
 
-
 // Single source of truth for the sidecar-owned PCDOGS hook signatures that are NOT SDK
 // blueprint symbols. The runtime (entrypoint/inputs/game hooks) and the sidecar pcdogs
 // test both reference these AOB strings, so a signature only ever needs editing here.
@@ -21,14 +20,19 @@
 	"E8 ?? ?? ?? ?? 8B F0 83 FE FF 0F 84 ?? ?? ?? ?? 83 FE 0D 0F 84 ?? ?? ?? ?? 83 FE "  \
 	"1B"
 
-// Raise the native keyboard/gamepad split so sidecar scancode keys fit below 0x3e8.
+// The native game accepts keyboard bindings below 0x100. DttR scancode bindings are
+// 0x100..0x3E7, so the keyboard-column guards need to stop at the native gamepad
+// range instead.
 #define DTTR_SIDECAR_AOB_CONTROLS_KEYBOARD_BIND_LIMIT                                    \
 	"3B C7 75 17 81 FE 00 01 00 00 7D 29 8B ?? ?? ?? ?? ?? 89 34"
-#define DTTR_SIDECAR_AOB_CONTROLS_GAMEPAD_BIND_LIMIT                                     \
-	"83 F8 01 75 15 81 FE 00 01 00 00 7E 0D 8B ?? ?? ?? ?? ?? 89 34"
-#define DTTR_SIDECAR_AOB_CONTROLS_REMAP_DONE_LIMITS                                      \
+
+#define DTTR_SIDECAR_AOB_CONTROLS_REMAP_DONE_LIMIT                                       \
 	"3B C7 75 10 81 FE 00 01 00 00 7D 15 89 3D ?? ?? ?? ?? EB 3A 83 F8 01 75 F3 81 "     \
 	"FE 00 01 00 00 7D EB"
+
+// Keep the native in-game controls menu's gamepad column guards intact.
+// Sidecar SDL button codes are intercepted in Input_RegisterButtonMapping instead:
+// native direct-gamepad registration for code 0x400 aliases the pcdogs.ini gamma byte.
 
 // PCDOGS save-path resolver hooked to redirect persisted data (EU/SC builds only).
 #define DTTR_SIDECAR_AOB_RESOLVE_PCDOGS_PATH "51 8D 44 24 ?? 57"

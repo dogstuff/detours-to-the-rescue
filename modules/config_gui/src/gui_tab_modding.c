@@ -241,13 +241,6 @@ static void get_mod_string_value(
 	}
 }
 
-static void mod_binding_button_spacing(const DTTR_ImGuiDialogContext *ctx) {
-	igSameLine(
-		0.0f,
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
-	);
-}
-
 static void draw_mod_input_binding_field(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state,
@@ -269,31 +262,32 @@ static void draw_mod_input_binding_field(
 
 	const bool capturing = input_binding_field_capturing(state, mod->mod_id, field->id);
 
-	begin_setting_row();
-	igAlignTextToFramePadding();
-	draw_config_label(field->label, field->tooltip, label_state);
-	igTableNextColumn();
+	const config_binding_row_result row = draw_config_binding_row(
+		ctx,
+		&(config_binding_row_spec){
+			.label = field->label,
+			.tooltip = field->tooltip,
+			.label_state = label_state,
+			.display = display,
+			.capture_display = "Press any input...",
+			.capturing = capturing,
+			.show_clear_button = true,
+			.show_reset_button = true,
+			.bind_tooltip = "Click, then press a key, mouse button, or gamepad button.",
+			.clear_tooltip = "Leave this binding unbound.",
+			.reset_tooltip = "Reset to the mod's default binding.",
+		}
+	);
 
-	igAlignTextToFramePadding();
-	igTextUnformatted(capturing ? "Press any input..." : display, NULL);
-	show_tooltip(field->tooltip);
-
-	mod_binding_button_spacing(ctx);
-	if (themed_row_button(ctx, "##bind", "Bind", DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W)) {
+	if (row.bind_clicked) {
 		begin_input_binding_capture(state, mod->mod_id, field->id);
 	}
 
-	show_tooltip("Click, then press a key, mouse button, or gamepad button.");
-
-	mod_binding_button_spacing(ctx);
-	if (themed_row_button(ctx, "##clear", "Clear", DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W)) {
+	if (row.clear_clicked) {
 		DTTR_Config_SetModString(&state->config, mod->mod_id, field->id, "");
 	}
 
-	show_tooltip("Leave this binding unbound.");
-
-	mod_binding_button_spacing(ctx);
-	if (themed_row_button(ctx, "##reset", "Reset", DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W)) {
+	if (row.reset_clicked) {
 		DTTR_Config_SetModString(
 			&state->config,
 			mod->mod_id,
@@ -301,8 +295,6 @@ static void draw_mod_input_binding_field(
 			field->default_string
 		);
 	}
-
-	show_tooltip("Reset to the mod's default binding.");
 }
 
 static void draw_mod_config_field(

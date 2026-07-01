@@ -18,8 +18,7 @@ dttr_prepare_container_workspace "$root" "dttr-shaders" \
   --exclude='./.git' \
   --exclude='./build' \
   --exclude='./build-container' \
-  --exclude='./.toolchain' \
-  --exclude='./.omx'
+  --exclude='./.toolchain'
 
 "$podman" run --rm \
   -e "SHADER_OUTPUT_DIR=$shader_output_dir" \

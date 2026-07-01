@@ -266,23 +266,53 @@ static void release_deferred_gl_destroys(
 	SDL_UnlockMutex(state->texture_mutex);
 }
 
-static void defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
+static bool queue_deferred_gl_destroy(opengl_backend_data *gl, GLuint texture) {
+	if (!gl || !texture) {
+		return true;
+	}
+
+	if (gl->deferred_gl_destroy_count >= gl->deferred_gl_destroy_capacity) {
+		int new_capacity = gl->deferred_gl_destroy_capacity > 0
+							   ? gl->deferred_gl_destroy_capacity * 2
+							   : 64;
+		if (new_capacity <= gl->deferred_gl_destroy_capacity) {
+			return false;
+		}
+
+		GLuint *new_destroys = realloc(
+			gl->deferred_gl_destroys,
+			(size_t)new_capacity * sizeof(*new_destroys)
+		);
+		if (!new_destroys) {
+			return false;
+		}
+
+		gl->deferred_gl_destroys = new_destroys;
+		gl->deferred_gl_destroy_capacity = new_capacity;
+	}
+
+	gl->deferred_gl_destroys[gl->deferred_gl_destroy_count++] = texture;
+	return true;
+}
+
+static bool defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 	opengl_backend_data *gl = (opengl_backend_data *)state->backend_data;
 
 	if (!gl || texture_index < 0 || texture_index >= DTTR_MAX_STAGED_TEXTURES) {
-		return;
+		return false;
 	}
 
 	if (!gl->gl_textures[texture_index]) {
-		return;
+		return true;
 	}
 
-	if (gl->deferred_gl_destroy_count < DTTR_MAX_STAGED_TEXTURES) {
-		gl->deferred_gl_destroys[gl->deferred_gl_destroy_count++] = gl->gl_textures
-																		[texture_index];
+	if (!queue_deferred_gl_destroy(gl, gl->gl_textures[texture_index])) {
+		DTTR_LOG_WARN("Failed to queue OpenGL texture destroy");
+		return false;
 	}
 
 	gl->gl_textures[texture_index] = 0;
+	return true;
 }
 
 bool dttr_graphics_opengl_init(DTTR_BackendState *state) {
@@ -940,6 +970,7 @@ static void cleanup(DTTR_BackendState *state) {
 	}
 
 	free(gl->vertex_staging);
+	free(gl->deferred_gl_destroys);
 
 	SDL_GL_DestroyContext(gl->gl_context);
 	free(gl);

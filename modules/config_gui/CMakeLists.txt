@@ -40,6 +40,7 @@ target_link_libraries(dttr_config PRIVATE
     opengl32
     glad
     common
+    dttr_mod_host
 )
 
 target_link_libraries(dttr_config_exe PRIVATE

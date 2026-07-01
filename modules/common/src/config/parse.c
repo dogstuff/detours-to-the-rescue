@@ -27,64 +27,6 @@
 	X("nearest", SDL_GPU_FILTER_NEAREST)                                                 \
 	X("linear", SDL_GPU_FILTER_LINEAR)
 
-#define CONFIG_GAMEPAD_MISC_SOURCE_TOKENS(X)                                             \
-	X("misc1", SDL_GAMEPAD_BUTTON_MISC1)                                                 \
-	X("misc2", SDL_GAMEPAD_BUTTON_MISC2)                                                 \
-	X("misc3", SDL_GAMEPAD_BUTTON_MISC3)                                                 \
-	X("misc4", SDL_GAMEPAD_BUTTON_MISC4)                                                 \
-	X("misc5", SDL_GAMEPAD_BUTTON_MISC5)                                                 \
-	X("misc6", SDL_GAMEPAD_BUTTON_MISC6)
-
-#define CONFIG_GAMEPAD_PADDLE_SOURCE_TOKENS(X)                                           \
-	X("right_paddle1", SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1)                                 \
-	X("left_paddle1", SDL_GAMEPAD_BUTTON_LEFT_PADDLE1)                                   \
-	X("right_paddle2", SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2)                                 \
-	X("left_paddle2", SDL_GAMEPAD_BUTTON_LEFT_PADDLE2)
-
-#define CONFIG_GAMEPAD_SOURCE_TOKENS(X)                                                  \
-	X("south", SDL_GAMEPAD_BUTTON_SOUTH)                                                 \
-	X("east", SDL_GAMEPAD_BUTTON_EAST)                                                   \
-	X("west", SDL_GAMEPAD_BUTTON_WEST)                                                   \
-	X("north", SDL_GAMEPAD_BUTTON_NORTH)                                                 \
-	X("back", SDL_GAMEPAD_BUTTON_BACK)                                                   \
-	X("guide", SDL_GAMEPAD_BUTTON_GUIDE)                                                 \
-	X("start", SDL_GAMEPAD_BUTTON_START)                                                 \
-	X("left_stick_click", SDL_GAMEPAD_BUTTON_LEFT_STICK)                                 \
-	X("right_stick_click", SDL_GAMEPAD_BUTTON_RIGHT_STICK)                               \
-	X("left_shoulder", SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)                                 \
-	X("right_shoulder", SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)                               \
-	X("dpad_up", SDL_GAMEPAD_BUTTON_DPAD_UP)                                             \
-	X("dpad_down", SDL_GAMEPAD_BUTTON_DPAD_DOWN)                                         \
-	X("dpad_left", SDL_GAMEPAD_BUTTON_DPAD_LEFT)                                         \
-	X("dpad_right", SDL_GAMEPAD_BUTTON_DPAD_RIGHT)                                       \
-	CONFIG_GAMEPAD_MISC_SOURCE_TOKENS(X)                                                 \
-	CONFIG_GAMEPAD_PADDLE_SOURCE_TOKENS(X)                                               \
-	X("touchpad", SDL_GAMEPAD_BUTTON_TOUCHPAD)                                           \
-	X("left_trigger", DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT)                                  \
-	X("right_trigger", DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT)
-
-#define CONFIG_GAME_ACTION_TOKENS(X)                                                     \
-	X("none", DTTR_GAMEPAD_MAPPING_NONE)                                                 \
-	X("up", PCDOGS_GAMEPAD_IDX_UP)                                                       \
-	X("down", PCDOGS_GAMEPAD_IDX_DOWN)                                                   \
-	X("left", PCDOGS_GAMEPAD_IDX_LEFT)                                                   \
-	X("right", PCDOGS_GAMEPAD_IDX_RIGHT)                                                 \
-	X("pov_up", PCDOGS_GAMEPAD_IDX_POV_UP)                                               \
-	X("pov_down", PCDOGS_GAMEPAD_IDX_POV_DOWN)                                           \
-	X("joy_1", PCDOGS_GAMEPAD_IDX_BTN_0)                                                 \
-	X("joy_2", PCDOGS_GAMEPAD_IDX_BTN_1)                                                 \
-	X("joy_3", PCDOGS_GAMEPAD_IDX_BTN_2)                                                 \
-	X("joy_4", PCDOGS_GAMEPAD_IDX_BTN_3)                                                 \
-	X("joy_5", PCDOGS_GAMEPAD_IDX_BTN_4)                                                 \
-	X("joy_6", PCDOGS_GAMEPAD_IDX_BTN_5)                                                 \
-	X("joy_7", PCDOGS_GAMEPAD_IDX_BTN_6)                                                 \
-	X("joy_8", PCDOGS_GAMEPAD_IDX_BTN_7)                                                 \
-	X("joy_9", PCDOGS_GAMEPAD_IDX_BTN_8)                                                 \
-	X("joy_10", PCDOGS_GAMEPAD_IDX_BTN_9)                                                \
-	X("joy_11", PCDOGS_GAMEPAD_IDX_BTN_10)                                               \
-	X("joy_12", PCDOGS_GAMEPAD_IDX_BTN_11)                                               \
-	X("joy_13", PCDOGS_GAMEPAD_IDX_BTN_12)
-
 #define CONFIG_GAMEPAD_AXIS_TOKENS(X)                                                    \
 	X("none", DTTR_GAMEPAD_MAPPING_NONE)                                                 \
 	X("axis_left_x", SDL_GAMEPAD_AXIS_LEFTX)                                             \
@@ -126,10 +68,6 @@ static const DTTR_ConfigChoice CONFIG_GRAPHICS_API_CHOICES[] = {
 
 static const DTTR_ConfigChoice CONFIG_PRESENT_FILTER_CHOICES[] = {
 	CONFIG_PRESENT_FILTER_TOKENS(CONFIG_CHOICE)
-};
-
-static const DTTR_ConfigChoice CONFIG_GAME_ACTION_CHOICES[] = {
-	CONFIG_GAME_ACTION_TOKENS(CONFIG_CHOICE)
 };
 
 static const DTTR_ConfigChoice CONFIG_GAMEPAD_AXIS_CHOICES[] = {
@@ -179,9 +117,6 @@ static const config_choice_list_data CONFIG_CHOICE_LISTS[] = {
 	),
 	[DTTR_CONFIG_CHOICES_GAMEPAD_AXIS] = CONFIG_CHOICE_LIST_DATA(
 		CONFIG_GAMEPAD_AXIS_CHOICES
-	),
-	[DTTR_CONFIG_CHOICES_GAME_ACTION] = CONFIG_CHOICE_LIST_DATA(
-		CONFIG_GAME_ACTION_CHOICES
 	),
 };
 
@@ -302,27 +237,6 @@ bool config_parse_graphics_api(const char *value, DTTR_GraphicsAPI *out_value) {
 	return true;
 }
 
-#define CONFIG_PARSE_TOKEN(token, enum_value)                                            \
-	if (strcmp(value, token) == 0) {                                                     \
-		*out_value = enum_value;                                                         \
-		return true;                                                                     \
-	}
-
-bool config_parse_gamepad_source(const char *value, int *out_value) {
-	if (!value || !out_value) {
-		return false;
-	}
-
-	CONFIG_GAMEPAD_SOURCE_TOKENS(CONFIG_PARSE_TOKEN)
-	return false;
-}
-
-#undef CONFIG_PARSE_TOKEN
-
-bool config_parse_game_action(const char *value, int *out_value) {
-	return config_parse_choice(DTTR_CONFIG_CHOICES_GAME_ACTION, value, out_value);
-}
-
 bool config_parse_gamepad_axis(const char *value, int *out_value) {
 	return config_parse_choice(DTTR_CONFIG_CHOICES_GAMEPAD_AXIS, value, out_value);
 }
@@ -354,7 +268,7 @@ bool config_parse_int(const char *value, int *out_value) {
 
 	const long parsed = strtol(value, &end, 10);
 
-	if (errno != 0 || !end || *end != '\0') {
+	if (errno != 0 || !end || end == value || *end != '\0') {
 		return false;
 	}
 
@@ -375,7 +289,7 @@ bool config_parse_float(const char *value, float *out_value) {
 	errno = 0;
 
 	const float parsed = strtof(value, &end);
-	if (errno != 0 || !end || *end != '\0' || !isfinite(parsed)) {
+	if (errno != 0 || !end || end == value || *end != '\0' || !isfinite(parsed)) {
 		return false;
 	}
 
@@ -400,14 +314,6 @@ bool config_parse_string(const char *value, char *out_value, size_t out_size) {
 #define CONFIG_FORMAT_TOKEN(token, enum_value)                                           \
 	case (enum_value):                                                                   \
 		return (token);
-
-void config_format_int(int value, char *buf, size_t buf_size) {
-	snprintf(buf, buf_size, "%d", value);
-}
-
-void config_format_float(float value, char *buf, size_t buf_size) {
-	snprintf(buf, buf_size, "%.9g", value);
-}
 
 #define CONFIG_FORMAT_FN(fn_name, type, arg_name, token_list, default_token)             \
 	const char *fn_name(type arg_name) {                                                 \
@@ -452,14 +358,6 @@ CONFIG_FORMAT_FN(
 	CONFIG_MINIDUMP_TYPE_TOKENS,
 	"normal"
 )
-CONFIG_FORMAT_FN(
-	config_format_gamepad_source,
-	int,
-	source,
-	CONFIG_GAMEPAD_SOURCE_TOKENS,
-	NULL
-)
-CONFIG_FORMAT_FN(config_format_game_action, int, action, CONFIG_GAME_ACTION_TOKENS, "none")
 CONFIG_FORMAT_FN(config_format_gamepad_axis, int, axis, CONFIG_GAMEPAD_AXIS_TOKENS, "none")
 CONFIG_FORMAT_FN(
 	config_format_vertex_precision,

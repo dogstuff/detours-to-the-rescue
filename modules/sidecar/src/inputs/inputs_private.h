@@ -9,11 +9,12 @@
 
 extern SDL_Gamepad *dttr_inputs_gamepad;
 
-bool dttr_inputs_source_pressed(int source);
+SDL_Joystick *dttr_inputs_raw_joystick();
 int32_t dttr_inputs_read_raw_axis(int axis_idx);
 
 void dttr_inputs_init();
 void dttr_inputs_handle_device_event(const SDL_Event *event);
+void dttr_inputs_controls_menu_handle_event(const SDL_Event *event);
 bool dttr_inputs_late_init();
 void dttr_inputs_cleanup();
 

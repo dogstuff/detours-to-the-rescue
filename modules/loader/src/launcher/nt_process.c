@@ -127,45 +127,86 @@ static void resolve_nt_path_and_cwd(
 	last_sep[1] = L'\0';
 }
 
-static void write_remote_shim_data(
+static void cleanup_failed_child(PROCESS_INFORMATION *child_info) {
+	if (!child_info) {
+		return;
+	}
+
+	if (child_info->hProcess) {
+		TerminateProcess(child_info->hProcess, 1);
+		WaitForSingleObject(child_info->hProcess, 10000);
+	}
+
+	if (child_info->hThread) {
+		CloseHandle(child_info->hThread);
+	}
+
+	if (child_info->hProcess) {
+		CloseHandle(child_info->hProcess);
+	}
+
+	memset(child_info, 0, sizeof(*child_info));
+}
+
+static bool write_remote_shim_data(
 	HANDLE process,
 	uintptr_t peb_addr,
 	const char *shim_data,
 	size_t shim_data_len
 ) {
-	LPVOID remote_shim = DTTR_UNWRAP_WINAPI_EXISTS(VirtualAllocEx(
+	LPVOID remote_shim = VirtualAllocEx(
 		process,
 		NULL,
 		shim_data_len,
 		MEM_COMMIT | MEM_RESERVE,
 		PAGE_READWRITE
-	));
-
-	DTTR_UNWRAP_WINAPI_NONZERO(
-		WriteProcessMemory(process, remote_shim, shim_data, shim_data_len, NULL)
 	);
+	if (!remote_shim) {
+		DTTR_LOG_ERROR("VirtualAllocEx for shim data failed: %lu", GetLastError());
+		return false;
+	}
 
-	DTTR_UNWRAP_WINAPI_NONZERO(WriteProcessMemory(
-		process,
-		(LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET),
-		&remote_shim,
-		sizeof(PVOID),
-		NULL
-	));
+	if (!WriteProcessMemory(process, remote_shim, shim_data, shim_data_len, NULL)) {
+		DTTR_LOG_ERROR("WriteProcessMemory for shim data failed: %lu", GetLastError());
+		VirtualFreeEx(process, remote_shim, 0, MEM_RELEASE);
+		return false;
+	}
+
+	if (!WriteProcessMemory(
+			process,
+			(LPVOID)(peb_addr + PEB_SHIM_DATA_OFFSET),
+			&remote_shim,
+			sizeof(PVOID),
+			NULL
+		)) {
+		DTTR_LOG_ERROR(
+			"WriteProcessMemory for PEB shim pointer failed: %lu",
+			GetLastError()
+		);
+		VirtualFreeEx(process, remote_shim, 0, MEM_RELEASE);
+		return false;
+	}
 
 	DTTR_LOG_DEBUG(
 		"Shim data (%u bytes) written to PEB->pShimData at 0x%08X",
 		(unsigned)shim_data_len,
 		(unsigned)(uintptr_t)remote_shim
 	);
+	return true;
 }
 
-void DTTR_Compat_CreateProcess(
+bool DTTR_Compat_CreateProcess(
 	const WCHAR *image_name,
 	const char *shim_data,
 	size_t shim_data_len,
 	PROCESS_INFORMATION *child_info
 ) {
+	if (!child_info) {
+		return false;
+	}
+
+	memset(child_info, 0, sizeof(*child_info));
+
 	DTTR_LOG_DEBUG(
 		"Spawning game process: NtCreateUserProcess (%u bytes shim data)",
 		(unsigned)shim_data_len
@@ -230,7 +271,11 @@ void DTTR_Compat_CreateProcess(
 		RTL_USER_PROC_PARAMS_NORMALIZED
 	);
 	if (!NT_SUCCESS(status)) {
-		DTTR_FATAL("RtlCreateProcessParametersEx failed: 0x%08lX", (unsigned long)status);
+		DTTR_LOG_ERROR(
+			"RtlCreateProcessParametersEx failed: 0x%08lX",
+			(unsigned long)status
+		);
+		return false;
 	}
 
 	client_id client_id = {0};
@@ -269,7 +314,8 @@ void DTTR_Compat_CreateProcess(
 	);
 	rtl_destroy_process_parameters(params);
 	if (!NT_SUCCESS(status)) {
-		DTTR_FATAL("NtCreateUserProcess failed: 0x%08lX", (unsigned long)status);
+		DTTR_LOG_ERROR("NtCreateUserProcess failed: 0x%08lX", (unsigned long)status);
+		return false;
 	}
 
 	child_info->hProcess = process;
@@ -283,8 +329,20 @@ void DTTR_Compat_CreateProcess(
 	);
 
 	CONTEXT thread_context = {.ContextFlags = CONTEXT_INTEGER};
-	DTTR_UNWRAP_WINAPI_NONZERO(GetThreadContext(thread, &thread_context));
+	if (!GetThreadContext(thread, &thread_context)) {
+		DTTR_LOG_ERROR(
+			"GetThreadContext failed after process creation: %lu",
+			GetLastError()
+		);
+		cleanup_failed_child(child_info);
+		return false;
+	}
 
 	const uintptr_t peb_addr = (uintptr_t)thread_context.Ebx;
-	write_remote_shim_data(process, peb_addr, shim_data, shim_data_len);
+	if (!write_remote_shim_data(process, peb_addr, shim_data, shim_data_len)) {
+		cleanup_failed_child(child_info);
+		return false;
+	}
+
+	return true;
 }

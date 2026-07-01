@@ -39,7 +39,7 @@ set(DTTR_PCDOGS_GENERATED_METADATA_OUTPUTS
 
 set(DTTR_SDK_STABLE_HEADERS
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}/dttr_versions.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_result.h"
+    "${CMAKE_SOURCE_DIR}/modules/common/include/dttr_result.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_runtime.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_core.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/dttr_mods.h"
@@ -148,6 +148,7 @@ add_custom_command(
     COMMAND ${DTTR_PCDOGS_SCRIPT_RUNNER}
             "${DTTR_SDK_BUNDLE_GENERATOR}"
             --include-dir "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+            --include-dir "${CMAKE_SOURCE_DIR}/modules/common/include"
             --include-dir "${CMAKE_CURRENT_SOURCE_DIR}/include"
             ${_DTTR_SDK_UNSTABLE_HEADER_ARGS}
             --output "${DTTR_SDK_BUNDLE_HEADER}"

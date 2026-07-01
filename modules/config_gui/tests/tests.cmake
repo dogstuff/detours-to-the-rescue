@@ -16,6 +16,7 @@ dttr_add_cmocka_test_suite(dttr_config_gui_mod_path_tests
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
     LINK_LIBRARIES
         common
+        dttr_mod_host
     LABELS
         config_gui
     RUNTIME_FILES

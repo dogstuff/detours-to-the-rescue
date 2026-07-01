@@ -1,14 +1,11 @@
 #include <SDL3/SDL.h>
+#include <dttr_input_names.h>
 #include <windows.h>
 
 #include "hooks_private.h"
+#include "inputs_private.h"
 
 #define GETASYNCKEYSTATE_KEY_PRESSED 0x8000
-
-enum {
-	DTTR_INPUTS_SCANCODE_NAME_BUFFERS = 4,
-	DTTR_INPUTS_SCANCODE_NAME_BUFFER_SIZE = 32,
-};
 
 static const SDL_Scancode vk_to_scancode[256] = {
 	['A'] = SDL_SCANCODE_A,
@@ -170,7 +167,27 @@ bool dttr_inputs_keyboard_scancode_pressed(
 }
 
 int32_t dttr_inputs_key_code_from_scancode(int scancode) {
+	if (scancode <= SDL_SCANCODE_UNKNOWN || scancode >= SDL_SCANCODE_COUNT) {
+		return -1;
+	}
+
 	return DTTR_INPUTS_KEY_SCANCODE_BASE + scancode;
+}
+
+int32_t dttr_inputs_key_code_from_sdl_button(int button) {
+	if (button < 0 || button >= DTTR_INPUTS_SDL_BUTTON_COUNT) {
+		return -1;
+	}
+
+	return DTTR_INPUTS_SDL_GAMEPAD_BUTTON_BASE + button;
+}
+
+int32_t dttr_inputs_key_code_from_gamepad_button(SDL_GamepadButton button) {
+	if (button < SDL_GAMEPAD_BUTTON_SOUTH || button >= SDL_GAMEPAD_BUTTON_COUNT) {
+		return -1;
+	}
+
+	return dttr_inputs_key_code_from_sdl_button((int)button);
 }
 
 int dttr_inputs_key_code_scancode(int32_t key_code) {
@@ -190,13 +207,40 @@ int dttr_inputs_key_code_scancode(int32_t key_code) {
 	return scancode;
 }
 
+int dttr_inputs_key_code_sdl_button(int32_t key_code) {
+	if (key_code < DTTR_INPUTS_SDL_GAMEPAD_BUTTON_BASE
+		|| key_code
+			   >= DTTR_INPUTS_SDL_GAMEPAD_BUTTON_BASE + DTTR_INPUTS_SDL_BUTTON_COUNT) {
+		return -1;
+	}
+
+	const int button = key_code - DTTR_INPUTS_SDL_GAMEPAD_BUTTON_BASE;
+	return button >= 0 && button < DTTR_INPUTS_SDL_BUTTON_COUNT ? button : -1;
+}
+
+SDL_GamepadButton dttr_inputs_key_code_gamepad_button(int32_t key_code) {
+	const int button = dttr_inputs_key_code_sdl_button(key_code);
+	return button >= SDL_GAMEPAD_BUTTON_SOUTH && button < SDL_GAMEPAD_BUTTON_COUNT
+			   ? (SDL_GamepadButton)button
+			   : SDL_GAMEPAD_BUTTON_INVALID;
+}
+
 DTTR_Input_KeyCodeKind dttr_inputs_key_code_kind(int32_t key_code) {
 	if (key_code < 0) {
 		return DTTR_INPUTS_KEY_CODE_NONE;
 	}
 
+	if (key_code >= DTTR_INPUTS_SDL_GAMEPAD_BUTTON_BASE) {
+		return dttr_inputs_key_code_sdl_button(key_code) >= 0
+				   ? DTTR_INPUTS_KEY_CODE_SDL_GAMEPAD
+				   : DTTR_INPUTS_KEY_CODE_NONE;
+	}
+
 	if (key_code >= DTTR_INPUTS_GAMEPAD_BUTTON_BASE) {
-		return DTTR_INPUTS_KEY_CODE_GAMEPAD;
+		return key_code < DTTR_INPUTS_GAMEPAD_BUTTON_BASE
+							  + DTTR_INPUTS_GAMEPAD_BUTTON_COUNT
+				   ? DTTR_INPUTS_KEY_CODE_GAMEPAD
+				   : DTTR_INPUTS_KEY_CODE_NONE;
 	}
 
 	if (key_code >= DTTR_INPUTS_KEY_SCANCODE_BASE
@@ -209,6 +253,12 @@ DTTR_Input_KeyCodeKind dttr_inputs_key_code_kind(int32_t key_code) {
 	return DTTR_INPUTS_KEY_CODE_VKEY;
 }
 
+bool dttr_inputs_key_state_uses_live_state(int32_t key_code) {
+	const DTTR_Input_KeyCodeKind kind = dttr_inputs_key_code_kind(key_code);
+	return key_code == VK_RETURN || kind == DTTR_INPUTS_KEY_CODE_SCANCODE
+		   || kind == DTTR_INPUTS_KEY_CODE_SDL_GAMEPAD;
+}
+
 int dttr_inputs_vkey_scancode(int vkey) {
 	if (vkey < 0 || vkey >= (int)SDL_arraysize(vk_to_scancode)) {
 		return SDL_SCANCODE_UNKNOWN;
@@ -217,74 +267,43 @@ int dttr_inputs_vkey_scancode(int vkey) {
 	return vk_to_scancode[vkey];
 }
 
-static const char *symbol_scancode_name(int scancode) {
-	static const struct {
-		int scancode;
-		const char *name;
-	} names[] = {
-		{SDL_SCANCODE_LEFTBRACKET, "Left Bracket"},
-		{SDL_SCANCODE_RIGHTBRACKET, "Right Bracket"},
-		{SDL_SCANCODE_BACKSLASH, "Backslash"},
-		{SDL_SCANCODE_SEMICOLON, "Semicolon"},
-		{SDL_SCANCODE_APOSTROPHE, "Apostrophe"},
-		{SDL_SCANCODE_COMMA, "Comma"},
-		{SDL_SCANCODE_PERIOD, "Period"},
-		{SDL_SCANCODE_MINUS, "Minus"},
-		{SDL_SCANCODE_EQUALS, "Equals"},
-		{SDL_SCANCODE_SLASH, "Slash"},
-		{SDL_SCANCODE_GRAVE, "Grave"},
-		{SDL_SCANCODE_NONUSBACKSLASH, "Non-US Backslash"},
-		{SDL_SCANCODE_KP_DIVIDE, "Keypad Divide"},
-		{SDL_SCANCODE_KP_MULTIPLY, "Keypad Multiply"},
-		{SDL_SCANCODE_KP_MINUS, "Keypad Minus"},
-		{SDL_SCANCODE_KP_PLUS, "Keypad Plus"},
-		{SDL_SCANCODE_KP_PERIOD, "Keypad Period"},
-		{SDL_SCANCODE_KP_EQUALS, "Keypad Equals"},
+const char *dttr_inputs_key_code_name(int32_t key_code) {
+	enum {
+		BUFFER_COUNT = 4,
+		BUFFER_SIZE = 32,
 	};
+	static char buffers[BUFFER_COUNT][BUFFER_SIZE];
+	static int buffer_index;
 
-	for (size_t i = 0; i < SDL_arraysize(names); i++) {
-		if (names[i].scancode == scancode) {
-			return names[i].name;
-		}
-	}
-
-	return NULL;
+	char *buffer = buffers[buffer_index];
+	buffer_index = (buffer_index + 1) % BUFFER_COUNT;
+	return DTTR_InputNames_ControlCode(key_code, buffer, BUFFER_SIZE) ? buffer : NULL;
 }
 
-const char *dttr_inputs_key_code_name(int32_t key_code) {
-	if (key_code == DTTR_INPUTS_KEY_KEYPAD_ENTER) {
-		return "Keypad Enter";
+bool dttr_inputs_controller_button_pressed(int button) {
+	if (button < 0 || button >= DTTR_INPUTS_SDL_BUTTON_COUNT) {
+		return false;
 	}
 
-	const int scancode = dttr_inputs_key_code_scancode(key_code);
-	if (scancode == SDL_SCANCODE_UNKNOWN) {
-		return NULL;
+	if (dttr_inputs_gamepad && button < SDL_GAMEPAD_BUTTON_COUNT
+		&& SDL_GetGamepadButton(dttr_inputs_gamepad, (SDL_GamepadButton)button)) {
+		return true;
 	}
 
-	const char *symbol_name = symbol_scancode_name(scancode);
-	if (symbol_name) {
-		return symbol_name;
+	SDL_Joystick *joystick = dttr_inputs_raw_joystick();
+	if (!joystick) {
+		return false;
 	}
 
-	const char *name = SDL_GetScancodeName((SDL_Scancode)scancode);
-	if (name && name[0] != '\0') {
-		return name;
-	}
-
-	static char fallback_names[DTTR_INPUTS_SCANCODE_NAME_BUFFERS]
-							  [DTTR_INPUTS_SCANCODE_NAME_BUFFER_SIZE];
-	static int fallback_index;
-	char *fallback = fallback_names[fallback_index];
-	fallback_index = (fallback_index + 1) % DTTR_INPUTS_SCANCODE_NAME_BUFFERS;
-	SDL_snprintf(fallback, DTTR_INPUTS_SCANCODE_NAME_BUFFER_SIZE, "Scancode %d", scancode);
-	return fallback;
+	const int button_count = SDL_GetNumJoystickButtons(joystick);
+	return button < button_count && SDL_GetJoystickButton(joystick, button);
 }
 
 SHORT __stdcall dttr_inputs_hook_get_async_key_state_callback(int vkey) {
 	int keyboard_state_count = 0;
 	const bool *keyboard_state = SDL_GetKeyboardState(&keyboard_state_count);
 
-	return dttr_inputs_key_code_pressed(vkey, keyboard_state, keyboard_state_count)
+	return dttr_inputs_global_vkey_pressed(vkey, keyboard_state, keyboard_state_count)
 			   ? (SHORT)GETASYNCKEYSTATE_KEY_PRESSED
 			   : 0;
 }
@@ -350,6 +369,33 @@ bool dttr_inputs_key_code_pressed(
 		);
 	}
 
+	if (kind == DTTR_INPUTS_KEY_CODE_SDL_GAMEPAD) {
+		const int button = dttr_inputs_key_code_sdl_button(key_code);
+		return dttr_inputs_controller_button_pressed(button);
+	}
+
 	return kind == DTTR_INPUTS_KEY_CODE_VKEY
 		   && dttr_inputs_vkey_pressed(key_code, keyboard_state, keyboard_state_count);
+}
+
+bool dttr_inputs_control_action_pressed(
+	int action,
+	const bool *keyboard_state,
+	int keyboard_state_count
+) {
+	if (action < 0 || action >= DTTR_CONFIG_CONTROL_ACTION_COUNT) {
+		return false;
+	}
+
+	const int key_code = dttr_config.control_bindings[action];
+	return key_code != DTTR_CONFIG_CONTROL_BINDING_NONE
+		   && dttr_inputs_key_code_pressed(key_code, keyboard_state, keyboard_state_count);
+}
+
+bool dttr_inputs_global_vkey_pressed(
+	int vkey,
+	const bool *keyboard_state,
+	int keyboard_state_count
+) {
+	return dttr_inputs_key_code_pressed(vkey, keyboard_state, keyboard_state_count);
 }

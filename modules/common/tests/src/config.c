@@ -32,7 +32,56 @@ static bool temp_config_path(char *out, size_t out_size) {
 	return true;
 }
 
-static void mod_configs_round_trip_typed_values(void **state) {
+static void control_bindings_round_trip(void **) {
+	const int confirm = DTTR_Config_ControlActionIndex("confirm");
+	const int start_pause = DTTR_Config_ControlActionIndex("start_pause");
+	const int menu_confirm = DTTR_Config_ControlActionIndex("menu_confirm");
+	const int menu_cancel = DTTR_Config_ControlActionIndex("menu_cancel");
+	assert_true(confirm >= 0);
+	assert_true(start_pause >= 0);
+	assert_true(menu_confirm >= 0);
+	assert_true(menu_cancel >= 0);
+
+	DTTR_Config cfg;
+	DTTR_Config_SetDefaults(&cfg);
+
+	cfg.control_bindings[confirm] = DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE + 44;
+	cfg.control_bindings[start_pause] = DTTR_CONFIG_CONTROL_CODE_SDL_GAMEPAD_BUTTON_BASE
+										+ 6;
+	cfg.control_bindings[menu_confirm] = DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE
+										 + SDL_SCANCODE_BACKSPACE;
+	cfg.control_bindings[menu_cancel] = DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE
+										+ SDL_SCANCODE_TAB;
+
+	DTTR_Config defaults;
+	DTTR_Config_SetDefaults(&defaults);
+	assert_true(DTTR_Config_ControlBindingsChanged(&cfg, &defaults));
+
+	char path[MAX_PATH];
+	assert_true(temp_config_path(path, sizeof(path)));
+	assert_true(DTTR_Config_Save(path, &cfg));
+	assert_true(DTTR_Config_Load(path));
+	DeleteFileA(path);
+
+	assert_int_equal(
+		dttr_config.control_bindings[confirm],
+		DTTR_CONFIG_CONTROL_BINDING_NONE
+	);
+	assert_int_equal(
+		dttr_config.control_bindings[start_pause],
+		DTTR_CONFIG_CONTROL_CODE_SDL_GAMEPAD_BUTTON_BASE + 6
+	);
+	assert_int_equal(
+		dttr_config.control_bindings[menu_confirm],
+		DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE + SDL_SCANCODE_BACKSPACE
+	);
+	assert_int_equal(
+		dttr_config.control_bindings[menu_cancel],
+		DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE + SDL_SCANCODE_TAB
+	);
+}
+
+static void mod_configs_round_trip_typed_values(void **) {
 	DTTR_Config cfg;
 	DTTR_Config_SetDefaults(&cfg);
 
@@ -65,7 +114,7 @@ static void mod_configs_round_trip_typed_values(void **state) {
 	assert_string_equal(label, tricky);
 }
 
-static void mod_configs_validation(void **state) {
+static void mod_configs_validation(void **) {
 	DTTR_Config cfg;
 	DTTR_Config_SetDefaults(&cfg);
 
@@ -116,7 +165,7 @@ static void mod_configs_validation(void **state) {
 	assert_true(bool_value);
 }
 
-static void mod_configs_apply_default(void **state) {
+static void mod_configs_apply_default(void **) {
 	DTTR_Config cfg;
 	DTTR_Config_SetDefaults(&cfg);
 	assert_ok(DTTR_Config_SetModInt(&cfg, "example.mod", "count", 7));
@@ -165,6 +214,7 @@ static void mod_configs_apply_default(void **state) {
 }
 
 static const DTTR_TestCase TEST_CASES[] = {
+	{"control-bindings-round-trip", control_bindings_round_trip},
 	{"mod-round-trip", mod_configs_round_trip_typed_values},
 	{"mod-validation", mod_configs_validation},
 	{"mod-apply-default", mod_configs_apply_default},

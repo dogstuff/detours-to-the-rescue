@@ -17,6 +17,7 @@ static const char *const CONFIG_SECTION_NAMES[] = {
 	"audio",
 	"modding",
 	"gamepad",
+	"controls",
 };
 
 enum {
@@ -24,6 +25,7 @@ enum {
 	CONFIG_SECTION_AUDIO,
 	CONFIG_SECTION_MODDING,
 	CONFIG_SECTION_GAMEPAD,
+	CONFIG_SECTION_CONTROLS,
 	CONFIG_SECTION_COUNT,
 };
 
@@ -100,27 +102,6 @@ static void config_mut_json_doc_free(config_mut_json_doc *doc) {
 	doc->value = NULL;
 }
 
-static bool config_result_failed(DTTR_Result result) {
-	return result.status != DTTR_OK;
-}
-
-static const char *config_status_name(DTTR_Status status) {
-	switch (status) {
-	case DTTR_OK:
-		return "DTTR_OK";
-	case DTTR_ERR_INVALID_ARGUMENT:
-		return "DTTR_ERR_INVALID_ARGUMENT";
-	case DTTR_ERR_NOT_FOUND:
-		return "DTTR_ERR_NOT_FOUND";
-	case DTTR_ERR_OUT_OF_MEMORY:
-		return "DTTR_ERR_OUT_OF_MEMORY";
-	case DTTR_ERR_UNSUPPORTED_CONTRACT:
-		return "DTTR_ERR_UNSUPPORTED_CONTRACT";
-	default:
-		return "DTTR_ERR_UNKNOWN";
-	}
-}
-
 static const char *config_result_message(DTTR_Result result) {
 	return result.message ? result.message : "no details";
 }
@@ -142,39 +123,74 @@ static void errors_add_invalid_value(
 	errors_addf("%s: invalid value \"%s\"", key, value);
 }
 
-static void config_apply_buttons(DTTR_Config *config, yyjson_val *buttons) {
-	if (!yyjson_is_obj(buttons)) {
+static bool config_apply_control_binding_value(
+	DTTR_Config *config,
+	int action,
+	yyjson_val *val
+) {
+	if (!config || action < 0 || action >= DTTR_CONFIG_CONTROL_ACTION_COUNT) {
+		return false;
+	}
+
+	if (!yyjson_is_int(val)) {
+		return false;
+	}
+
+	const int64_t parsed = yyjson_get_sint(val);
+	if (parsed < INT_MIN || parsed > INT_MAX) {
+		return false;
+	}
+
+	config->control_bindings[action] = (int)parsed;
+	return true;
+}
+
+static void config_apply_control_bindings(DTTR_Config *config, yyjson_val *controls) {
+	if (!controls) {
 		return;
 	}
 
-	config_clear_button_map(config->gamepad_button_map);
+	if (!yyjson_is_obj(controls)) {
+		errors_addf("controls: expected object value");
+		return;
+	}
+
+	const char *binding_key = "special_bindings";
+	yyjson_val *bindings = yyjson_obj_get(controls, binding_key);
+	if (!bindings) {
+		return;
+	}
+
+	if (!yyjson_is_obj(bindings)) {
+		errors_addf("controls.%s: expected object value", binding_key);
+		return;
+	}
+
 	yyjson_val *key;
 	yyjson_val *val;
 	size_t idx;
 	size_t max;
 
-	yyjson_obj_foreach(buttons, idx, max, key, val) {
-		const char *key_str = yyjson_get_str(key);
-
-		int source = -1;
-		if (!config_parse_gamepad_source(key_str, &source)) {
-			errors_addf("gamepad.buttons.%s: unknown SDL input", key_str);
+	yyjson_obj_foreach(bindings, idx, max, key, val) {
+		const char *action_key = yyjson_get_str(key);
+		const int action = DTTR_Config_ControlActionIndex(action_key);
+		if (action < 0) {
+			errors_addf("controls.%s.%s: unknown control action", binding_key, action_key);
 			continue;
 		}
 
-		const char *value = yyjson_get_str(val);
-		if (!value) {
-			errors_addf("gamepad.buttons.%s: expected string value", key_str);
+		if (DTTR_Config_ControlActionInGameBindable(action)) {
 			continue;
 		}
 
-		int action = DTTR_GAMEPAD_MAPPING_NONE;
-		if (!config_parse_game_action(value, &action)) {
-			errors_addf("gamepad.buttons.%s: invalid action \"%s\"", key_str, value);
-			continue;
+		if (!config_apply_control_binding_value(config, action, val)) {
+			errors_addf(
+				"controls.%s.%s: invalid value \"%s\"",
+				binding_key,
+				action_key,
+				yyjson_get_type_desc(val)
+			);
 		}
-
-		config->gamepad_button_map[source] = action;
 	}
 }
 
@@ -196,12 +212,12 @@ static void config_apply_disabled_mods(DTTR_Config *config, yyjson_val *disabled
 		}
 
 		DTTR_Result result = DTTR_Config_SetModEnabled(config, mod_filename, false);
-		if (config_result_failed(result)) {
+		if (!DTTR_ResultOK(result)) {
 			errors_addf(
 				"modding.disabled_mods[%zu]: could not store \"%s\" (%s: %s)",
 				idx,
 				mod_filename,
-				config_status_name(result.status),
+				DTTR_StatusName(result.status),
 				config_result_message(result)
 			);
 		}
@@ -293,13 +309,13 @@ static void config_apply_mod_config_values(
 		}
 
 		DTTR_Result result = config_apply_mod_value(config, mod_id, field_id, val);
-		if (config_result_failed(result)) {
+		if (!DTTR_ResultOK(result)) {
 			DTTR_LOG_WARN(
 				"modding.mod_configs.%s.values.%s: skipped %s value (%s: %s)",
 				mod_id,
 				field_id,
 				yyjson_get_type_desc(val),
-				config_status_name(result.status),
+				DTTR_StatusName(result.status),
 				config_result_message(result)
 			);
 		}
@@ -346,12 +362,12 @@ static void config_apply_mod_configs(DTTR_Config *config, yyjson_val *mod_config
 				result = DTTR_Config_SetModSchemaVersion(config, mod_id, (uint32_t)parsed);
 			}
 
-			if (config_result_failed(result)) {
+			if (!DTTR_ResultOK(result)) {
 				DTTR_LOG_WARN(
 					"modding.mod_configs.%s.schema_version: invalid value, ignoring "
 					"(%s: %s)",
 					mod_id,
-					config_status_name(result.status),
+					DTTR_StatusName(result.status),
 					config_result_message(result)
 				);
 			}
@@ -551,9 +567,7 @@ bool DTTR_Config_Load(const char *filename) {
 	yyjson_val *modding = yyjson_obj_get(root, "modding");
 	config_apply_disabled_mods(&dttr_config, yyjson_obj_get(modding, "disabled_mods"));
 	config_apply_mod_configs(&dttr_config, yyjson_obj_get(modding, "mod_configs"));
-
-	yyjson_val *gamepad = yyjson_obj_get(root, "gamepad");
-	config_apply_buttons(&dttr_config, yyjson_obj_get(gamepad, "buttons"));
+	config_apply_control_bindings(&dttr_config, yyjson_obj_get(root, "controls"));
 
 	ok = !errors_show();
 
@@ -744,22 +758,33 @@ static bool config_add_mod_configs(
 	return true;
 }
 
-static bool config_add_gamepad_buttons(
+static bool config_add_control_bindings(
 	yyjson_mut_doc *doc,
-	yyjson_mut_val *buttons,
+	yyjson_mut_val *controls,
 	const DTTR_Config *config
 ) {
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
-		const char *source_name = config_format_gamepad_source(i);
-		if (!source_name) {
+	yyjson_mut_val *bindings = NULL;
+
+	for (int action = 0; action < DTTR_CONFIG_CONTROL_ACTION_COUNT; action++) {
+		if (DTTR_Config_ControlActionInGameBindable(action)
+			|| config->control_bindings[action] == DTTR_CONFIG_CONTROL_BINDING_NONE) {
 			continue;
 		}
 
-		if (!obj_add_strcpy(
+		if (!bindings) {
+			bindings = yyjson_mut_obj_add_obj(doc, controls, "special_bindings");
+			if (!bindings) {
+				return false;
+			}
+		}
+
+		const char *action_key = DTTR_Config_ControlActionKey(action);
+		if (!action_key
+			|| !yyjson_mut_obj_add_int(
 				doc,
-				buttons,
-				source_name,
-				config_format_game_action(config->gamepad_button_map[i])
+				bindings,
+				action_key,
+				config->control_bindings[action]
 			)) {
 			return false;
 		}
@@ -799,16 +824,15 @@ bool DTTR_Config_Save(const char *filename, const DTTR_Config *config) {
 	}
 
 	yyjson_mut_val *modding = objects.sections[CONFIG_SECTION_MODDING];
-	yyjson_mut_val *gamepad = objects.sections[CONFIG_SECTION_GAMEPAD];
-	yyjson_mut_val *buttons = yyjson_mut_obj_add_obj(doc.value, gamepad, "buttons");
-	if (!buttons) {
-		goto done;
-	}
 
 	ok = config_add_schema_fields(doc.value, &objects, config)
 		 && config_add_disabled_mods(doc.value, modding, config)
 		 && config_add_mod_configs(doc.value, modding, config)
-		 && config_add_gamepad_buttons(doc.value, buttons, config);
+		 && config_add_control_bindings(
+			 doc.value,
+			 objects.sections[CONFIG_SECTION_CONTROLS],
+			 config
+		 );
 
 	if (ok) {
 		yyjson_write_err err;

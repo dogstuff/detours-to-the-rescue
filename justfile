@@ -6,7 +6,7 @@ toolchain-dir := ".toolchain"
 toolchain-file := ".toolchain/toolchain.cmake"
 shader-output-dir := env_var_or_default("SHADER_OUTPUT_DIR", build-dir + "/modules/sidecar/generated/include/gen")
 cached-sdl3gpu-shader-dir := "modules/sidecar/shaders/cache/sdl3gpu"
-format-dirs := "./modules/loader ./modules/sidecar ./modules/common ./modules/sdk"
+format-dirs := "./modules/loader ./modules/sidecar ./modules/common ./modules/mod_host ./modules/sdk"
 docs-build-dir := "docs/build"
 docs-config := "docs/zensical.toml"
 docs-source-dir := build-dir + "/docs-source"
@@ -14,9 +14,9 @@ doxyfile := "docs/doxyfile.ini"
 git-short-sha := `git rev-parse --short HEAD`
 dttr-version := env_var_or_default("DTTR_VERSION", git-short-sha)
 dttr-modding := env_var_or_default("DTTR_MODS_ENABLED", "OFF")
-require-test-deps := env_var_or_default("DTTR_REQUIRE_TEST_DEPS", "OFF")
-require-pcdogs-fixtures := env_var_or_default("DTTR_REQUIRE_PCDOGS_FIXTURES", "OFF")
-pcdogs-fixture-dir := env_var_or_default("DTTR_PCDOGS_FIXTURE_DIR", "fixture")
+require-test-deps := env_var_or_default("DTTR_REQUIRE_TEST_DEPS", "ON")
+require-pcdogs-fixtures := env_var_or_default("DTTR_REQUIRE_PCDOGS_FIXTURES", "ON")
+pcdogs-fixture-dir := env_var_or_default("DTTR_PCDOGS_FIXTURE_DIR", "gamefiles")
 host-cached-sdl3gpu-default := `test "$(uname -s)" = Darwin && printf ON || printf OFF`
 use-cached-sdl3gpu-shaders := env_var_or_default("DTTR_USE_CACHED_SDL3GPU_SHADERS", host-cached-sdl3gpu-default)
 docker := "podman"
@@ -52,7 +52,8 @@ ci-build-ctest: ci-compile-tests
 # Run common, SDK, and sidecar tests from an existing build tree.
 ci-test:
     ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" \
-      --output-on-failure --parallel "{{ test-max-parallel }}" -L "common|sdk|sidecar"
+      --output-on-failure --parallel "{{ test-max-parallel }}" --no-tests=error \
+      -L "common|sdk|sidecar"
 
 # Full test pass for common, SDK, and sidecar.
 test-all: ci-compile-tests ci-test
@@ -60,12 +61,12 @@ test-all: ci-compile-tests ci-test
 # Build and run SDK-only tests.
 test-sdk: setup-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-max-parallel }}" --target dttr_sdk_tests
-    ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" --output-on-failure --parallel "{{ test-max-parallel }}" -L "sdk"
+    ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" --output-on-failure --parallel "{{ test-max-parallel }}" --no-tests=error -L "sdk"
 
 # Build and run sidecar tests for runtime integration code.
 test-sidecar: setup-build
     cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --parallel "{{ test-max-parallel }}" --target dttr_sidecar_tests
-    ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" --output-on-failure --parallel "{{ test-max-parallel }}" -L "sidecar"
+    ctest --test-dir "{{ build-dir }}" -C "{{ build-config-debug }}" --output-on-failure --parallel "{{ test-max-parallel }}" --no-tests=error -L "sidecar"
 
 # Configure the cross-compiled Ninja build.
 setup-build:

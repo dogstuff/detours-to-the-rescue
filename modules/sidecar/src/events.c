@@ -61,6 +61,8 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 		return;
 	}
 
+	dttr_inputs_controls_menu_handle_event(event);
+
 	switch (event->type) {
 	case SDL_EVENT_QUIT:
 		REQUIRE_PCDOGS_CALL(
@@ -71,6 +73,8 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 
 	case SDL_EVENT_GAMEPAD_ADDED:
 	case SDL_EVENT_GAMEPAD_REMOVED:
+	case SDL_EVENT_JOYSTICK_ADDED:
+	case SDL_EVENT_JOYSTICK_REMOVED:
 		dttr_inputs_handle_device_event(event);
 		after_sdl_event(event, true);
 		return;

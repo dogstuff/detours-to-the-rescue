@@ -37,6 +37,7 @@ static BOOL __cdecl movie_play_file_detour(
 #define AUDIO_CHANNELS 2
 #define AUDIO_FORMAT AV_SAMPLE_FMT_S16
 #define AUDIO_QUEUE_LIMIT_MS 500
+#define AUDIO_QUEUE_STALL_LIMIT_MS 750
 #define AUDIO_DRAIN_LIMIT_MS 750
 
 typedef struct {
@@ -442,7 +443,18 @@ static bool queue_audio_frame(const AVFrame *frame) {
 							 * av_get_bytes_per_sample(AUDIO_FORMAT)
 							 * AUDIO_QUEUE_LIMIT_MS)
 							/ 1000;
+	const uint64_t drain_deadline = SDL_GetTicks() + AUDIO_QUEUE_STALL_LIMIT_MS;
 	while (SDL_GetAudioStreamQueued(movie.audio_device) > queue_limit) {
+		if (SDL_GetTicks() >= drain_deadline) {
+			const int queued = SDL_GetAudioStreamQueued(movie.audio_device);
+			DTTR_LOG_WARN(
+				"Movie audio queue stalled with %d bytes queued; dropping queued audio",
+				queued
+			);
+			SDL_ClearAudioStream(movie.audio_device);
+			break;
+		}
+
 		SDL_Delay(1);
 	}
 

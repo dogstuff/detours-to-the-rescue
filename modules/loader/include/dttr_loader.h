@@ -12,7 +12,7 @@ typedef struct {
 
 extern const char *dttr_config_path;
 
-void DTTR_Compat_CreateProcess(
+bool DTTR_Compat_CreateProcess(
 	const WCHAR *image_name,
 	const char *shim_data,
 	size_t shim_data_len,

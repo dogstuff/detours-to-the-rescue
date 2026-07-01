@@ -18,10 +18,18 @@ modding=$9
 
 source "$(dirname "$0")/container-workspace.sh"
 
-dttr_prepare_container_workspace "$root" "dttr-container" \
-  --exclude='./.git' \
-  --exclude='./build*' \
+stage_excludes=(
+  --exclude='./.cache'
+  --exclude='./.direnv'
+  --exclude='./.git'
+  --exclude='./.worktrees'
+  --exclude='./build*'
+  --exclude='./docs/build'
+  --exclude='./gamefiles'
   --exclude='./.toolchain'
+)
+
+dttr_prepare_container_workspace "$root" "dttr-container" "${stage_excludes[@]}"
 
 "$docker" run --rm \
   --platform "$platform" \

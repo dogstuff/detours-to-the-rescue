@@ -18,8 +18,9 @@ typedef struct {
 	int fbo_width;
 	int fbo_height;
 	GLuint gl_textures[DTTR_MAX_STAGED_TEXTURES];
-	GLuint deferred_gl_destroys[DTTR_MAX_STAGED_TEXTURES];
+	GLuint *deferred_gl_destroys;
 	int deferred_gl_destroy_count;
+	int deferred_gl_destroy_capacity;
 	GLuint gl_samplers[DTTR_SAMPLER_COUNT];
 	GLuint dummy_texture;
 	GLuint video_texture;

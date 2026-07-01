@@ -19,9 +19,8 @@
 #define DTTR_CONFIG_UI_INPUT_W 285.0f
 #define DTTR_CONFIG_UI_PATH_INPUT_W 160.0f
 #define DTTR_CONFIG_UI_PATH_BUTTON_W 70.0f
-#define DTTR_CONFIG_UI_GAMEPAD_SOURCE_W 135.0f
-#define DTTR_CONFIG_UI_GAMEPAD_BUTTON_W 58.0f
 #define DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W 46.0f
+#define DTTR_CONFIG_UI_BINDING_VALUE_W 180.0f
 #define DTTR_CONFIG_UI_PANEL_PADDING_X 7.5f
 #define DTTR_CONFIG_UI_PANEL_PADDING_Y 14.0f
 #define DTTR_CONFIG_UI_ITEM_SPACING_X 8.0f
@@ -71,6 +70,26 @@ typedef enum {
 } config_label_state;
 
 typedef struct {
+	const char *label;
+	const char *tooltip;
+	config_label_state label_state;
+	const char *display;
+	const char *capture_display;
+	bool capturing;
+	bool show_clear_button;
+	bool show_reset_button;
+	const char *bind_tooltip;
+	const char *clear_tooltip;
+	const char *reset_tooltip;
+} config_binding_row_spec;
+
+typedef struct {
+	bool bind_clicked;
+	bool clear_clicked;
+	bool reset_clicked;
+} config_binding_row_result;
+
+typedef struct {
 	char value[DTTR_CONFIG_MOD_STRING_MAX];
 	char label[DTTR_CONFIG_UI_MOD_CONFIG_LABEL_MAX];
 	char tooltip[DTTR_CONFIG_UI_MOD_CONFIG_TOOLTIP_MAX];
@@ -117,12 +136,10 @@ typedef struct {
 	Uint64 status_expires_at_ms;
 	SDL_Gamepad *preview_gamepad;
 	int preview_gamepad_index;
-	int button_sources[DTTR_GAMEPAD_SOURCE_COUNT];
-	int button_actions[DTTR_GAMEPAD_SOURCE_COUNT];
-	int binding_row;
 	bool input_binding_capturing;
 	char input_binding_mod_id[DTTR_CONFIG_MOD_ID_MAX];
 	char input_binding_field_id[DTTR_CONFIG_MOD_FIELD_ID_MAX];
+	int control_binding_action;
 	bool show_shortcut_debug;
 } config_ui_state;
 
@@ -151,18 +168,10 @@ void for_each_mod_dll(const char *mods_dir, mod_dll_visitor visit, void *user_da
 
 float config_standard_input_width();
 int config_window_width();
-void same_path_button_row(const DTTR_ImGuiDialogContext *ctx);
 void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height);
 
 void set_status(config_ui_state *state, const char *status);
 void set_mods_dir_from_config_path(config_ui_state *state);
-void sync_rows_from_config(config_ui_state *state);
-void sync_config_from_rows(config_ui_state *state);
-int gamepad_button_row_count();
-int gamepad_button_row_action(int row);
-const char *gamepad_button_row_label(int row);
-int gamepad_default_source_for_action(const config_ui_state *state, int action);
-const char *game_action_tooltip(int action);
 void load_config(config_ui_state *state);
 void save_config(config_ui_state *state);
 void reset_defaults(config_ui_state *state);
@@ -170,12 +179,6 @@ void reload_mod_config_specs(config_ui_state *state);
 void close_gamepad_preview(config_ui_state *state);
 void request_reset_defaults(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 config_label_state make_config_label_state(bool unsaved_changed, bool default_changed);
-bool gamepad_button_rows_have_unsaved_changes(const config_ui_state *state);
-config_label_state gamepad_button_label_state(
-	const config_ui_state *state,
-	int source,
-	int action
-);
 bool config_has_unsaved_changes(const config_ui_state *state);
 
 bool choice_combo(
@@ -193,10 +196,6 @@ bool themed_row_button(
 );
 void push_config_theme();
 void pop_config_theme();
-float config_footer_height(
-	const DTTR_ImGuiDialogContext *ctx,
-	const config_ui_state *state
-);
 bool begin_config_content_region(
 	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state
@@ -219,7 +218,6 @@ bool begin_settings_table(
 	float input_width
 );
 void end_settings_table();
-bool begin_gamepad_button_table(const DTTR_ImGuiDialogContext *ctx);
 void begin_config_table_row();
 void begin_setting_row();
 float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width);
@@ -228,6 +226,10 @@ void draw_config_label(
 	const char *label,
 	const char *tooltip,
 	config_label_state label_state
+);
+config_binding_row_result draw_config_binding_row(
+	const DTTR_ImGuiDialogContext *ctx,
+	const config_binding_row_spec *spec
 );
 bool labeled_input_text(
 	const DTTR_ImGuiDialogContext *ctx,
@@ -299,12 +301,7 @@ void open_pcdogs_dir_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state 
 void open_pcdogs_iso_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 void open_log_file_dialog(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 
-const char *source_label(int source);
-const char *source_tooltip(int source);
-int source_from_event(const SDL_Event *event);
 bool event_cancels_binding(const SDL_Event *event);
-void cancel_binding(config_ui_state *state);
-void capture_source(config_ui_state *state, int new_source);
 void begin_input_binding_capture(
 	config_ui_state *state,
 	const char *mod_id,
@@ -312,11 +309,13 @@ void begin_input_binding_capture(
 );
 void cancel_input_binding_capture(config_ui_state *state);
 bool capture_input_binding_event(config_ui_state *state, const SDL_Event *event);
+void begin_control_binding_capture(config_ui_state *state, int action);
 bool input_binding_field_capturing(
 	const config_ui_state *state,
 	const char *mod_id,
 	const char *field_id
 );
+bool control_binding_field_capturing(const config_ui_state *state, int action);
 bool begin_tab_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,

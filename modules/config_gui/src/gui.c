@@ -168,7 +168,6 @@ static bool init_state_from_args(config_ui_state *state, int argc, char **argv) 
 	DTTR_Config_SetDefaults(&state->defaults);
 	state->config = state->defaults;
 	state->saved_config = state->config;
-	sync_rows_from_config(state);
 	load_config(state);
 	return true;
 }
@@ -206,7 +205,6 @@ static bool consume_input_binding_capture(config_ui_state *state, const SDL_Even
 	}
 
 	if (event_cancels_binding(event)) {
-		cancel_binding(state);
 		cancel_input_binding_capture(state);
 		return true;
 	}
@@ -240,27 +238,14 @@ static void process_events(
 			continue;
 		}
 
-		if (event_cancels_binding(&event)) {
-			cancel_binding(state);
-			cancel_input_binding_capture(state);
-			continue;
-		}
-
 		if (capture_input_binding_event(state, &event)) {
 			continue;
-		}
-
-		const int source = source_from_event(&event);
-		if (source >= 0) {
-			capture_source(state, source);
 		}
 	}
 }
 
 __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
-	config_ui_state state = {
-		.binding_row = -1,
-	};
+	config_ui_state state = {0};
 
 	if (!init_state_from_args(&state, argc, argv)) {
 		return 1;
@@ -276,7 +261,7 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 		return 1;
 	}
 
-	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)) {
 		char status[sizeof(state.status)];
 		snprintf(
 			status,
@@ -286,6 +271,8 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 		);
 		set_status(&state, status);
 	}
+	SDL_SetGamepadEventsEnabled(true);
+	SDL_SetJoystickEventsEnabled(true);
 
 	bool running = true;
 	while (running) {
@@ -307,7 +294,7 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 	}
 
 	close_gamepad_preview(&state);
-	SDL_QuitSubSystem(SDL_INIT_GAMEPAD);
+	SDL_QuitSubSystem(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK);
 	DTTR_ImGuiDialog_End(&ctx);
 	DTTR_ImGuiDialog_Shutdown();
 	return 0;

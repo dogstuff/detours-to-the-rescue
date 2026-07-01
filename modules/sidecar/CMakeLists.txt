@@ -124,6 +124,7 @@ add_library(dttr_sidecar SHARED
     src/inputs/inputs.c
     src/inputs/byte_patches.c
     src/inputs/controls_menu.c
+    src/inputs/hook_control_bindings.c
     src/inputs/hook_dinput_poll.c
     src/inputs/hook_getasynckeystate.c
     src/inputs/hook_key_state.c
@@ -187,6 +188,7 @@ target_link_libraries(dttr_sidecar PRIVATE
     xxhash
     dr_wav
     common
+    dttr_mod_host
 )
 
 if(DTTR_MODS_ENABLED)

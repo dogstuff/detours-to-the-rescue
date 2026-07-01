@@ -32,17 +32,18 @@ void dttr_inputs_hook_key_state_reset() {
 	dttr_inputs_hook_format_button_name_original = NULL;
 }
 
-static bool current_key_state_pressed(int key_code) {
+BOOL __cdecl dttr_inputs_hook_is_key_pressed_async_callback(int32_t virtual_key) {
 	int keyboard_state_count = 0;
 	const bool *keyboard_state = SDL_GetKeyboardState(&keyboard_state_count);
 
-	return dttr_inputs_key_code_pressed(key_code, keyboard_state, keyboard_state_count);
-}
-
-BOOL __cdecl dttr_inputs_hook_is_key_pressed_async_callback(int32_t virtual_key) {
-	const DTTR_Input_KeyCodeKind kind = dttr_inputs_key_code_kind(virtual_key);
-	if (virtual_key == VK_RETURN || kind == DTTR_INPUTS_KEY_CODE_SCANCODE) {
-		return current_key_state_pressed(virtual_key) ? TRUE : FALSE;
+	if (dttr_inputs_key_state_uses_live_state(virtual_key)) {
+		return dttr_inputs_global_vkey_pressed(
+				   virtual_key,
+				   keyboard_state,
+				   keyboard_state_count
+			   )
+				   ? TRUE
+				   : FALSE;
 	}
 
 	return dttr_inputs_hook_is_key_pressed_async_original

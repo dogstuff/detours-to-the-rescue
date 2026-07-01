@@ -5,11 +5,6 @@
 
 #include <string.h>
 
-typedef struct {
-	int source;
-	int action;
-} default_gamepad_binding;
-
 static const DTTR_Config default_config = {
 	.schema_major_version = DTTR_CONFIG_SCHEMA_MAJOR_VERSION,
 	.log_level = DTTR_DEFAULT_LOG_LEVEL,
@@ -59,29 +54,81 @@ static const DTTR_Config default_config = {
 
 DTTR_Config dttr_config;
 
-static const default_gamepad_binding default_button_map[] = {
-	{SDL_GAMEPAD_BUTTON_SOUTH, PCDOGS_GAMEPAD_IDX_BTN_0},
-	{SDL_GAMEPAD_BUTTON_EAST, PCDOGS_GAMEPAD_IDX_BTN_1},
-	{SDL_GAMEPAD_BUTTON_WEST, PCDOGS_GAMEPAD_IDX_BTN_2},
-	{SDL_GAMEPAD_BUTTON_NORTH, PCDOGS_GAMEPAD_IDX_BTN_3},
-	{SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, PCDOGS_GAMEPAD_IDX_BTN_4},
-	{SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, PCDOGS_GAMEPAD_IDX_BTN_5},
-	{SDL_GAMEPAD_BUTTON_BACK, PCDOGS_GAMEPAD_IDX_BTN_6},
-	{SDL_GAMEPAD_BUTTON_START, PCDOGS_GAMEPAD_IDX_BTN_8},
-	{SDL_GAMEPAD_BUTTON_DPAD_UP, PCDOGS_GAMEPAD_IDX_UP},
-	{SDL_GAMEPAD_BUTTON_DPAD_DOWN, PCDOGS_GAMEPAD_IDX_DOWN},
-	{SDL_GAMEPAD_BUTTON_DPAD_LEFT, PCDOGS_GAMEPAD_IDX_LEFT},
-	{SDL_GAMEPAD_BUTTON_DPAD_RIGHT, PCDOGS_GAMEPAD_IDX_RIGHT},
-	{DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT, PCDOGS_GAMEPAD_IDX_BTN_4},
-	{DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT, PCDOGS_GAMEPAD_IDX_BTN_5},
-};
+typedef struct {
+	const char *key;
+	const char *label;
+	int native_config_index;
+	uint32_t button_mask;
+} config_control_action;
 
-void DTTR_Config_ClearGamepadButtonMap(int *map) {
-	if (!map) {
-		return;
+#define CONTROL_ACTION_ROW(key, label, native_config_index, button_mask)                 \
+	{key, label, native_config_index, button_mask},
+static const config_control_action CONTROL_ACTIONS[] = {
+	CONFIG_CONTROL_ACTIONS(CONTROL_ACTION_ROW)
+};
+#undef CONTROL_ACTION_ROW
+
+const char *DTTR_Config_ControlActionKey(int index) {
+	if (index < 0 || index >= (int)SDL_arraysize(CONTROL_ACTIONS)) {
+		return NULL;
 	}
 
-	config_clear_button_map(map);
+	return CONTROL_ACTIONS[index].key;
+}
+
+int DTTR_Config_ControlActionIndex(const char *key) {
+	if (!key || !key[0]) {
+		return -1;
+	}
+
+	for (int i = 0; i < (int)SDL_arraysize(CONTROL_ACTIONS); i++) {
+		if (strcmp(CONTROL_ACTIONS[i].key, key) == 0) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+const char *DTTR_Config_ControlActionLabel(int index) {
+	if (index < 0 || index >= (int)SDL_arraysize(CONTROL_ACTIONS)) {
+		return NULL;
+	}
+
+	return CONTROL_ACTIONS[index].label;
+}
+
+int DTTR_Config_ControlActionNativeConfigIndex(int index) {
+	if (index < 0 || index >= (int)SDL_arraysize(CONTROL_ACTIONS)) {
+		return -1;
+	}
+
+	return CONTROL_ACTIONS[index].native_config_index;
+}
+
+bool DTTR_Config_ControlActionInGameBindable(int index) {
+	const int native_index = DTTR_Config_ControlActionNativeConfigIndex(index);
+	return native_index >= 0 && native_index < CONFIG_IN_GAME_CONTROL_ACTION_COUNT;
+}
+
+uint32_t DTTR_Config_ControlActionButtonMask(int index) {
+	if (index < 0 || index >= (int)SDL_arraysize(CONTROL_ACTIONS)) {
+		return 0;
+	}
+
+	return CONTROL_ACTIONS[index].button_mask;
+}
+
+bool DTTR_Config_ControlBindingsChanged(
+	const DTTR_Config *current,
+	const DTTR_Config *base
+) {
+	return current && base
+		   && memcmp(
+				  current->control_bindings,
+				  base->control_bindings,
+				  sizeof(current->control_bindings)
+			  ) != 0;
 }
 
 static int find_disabled_mod(const DTTR_Config *config, const char *mod_filename) {
@@ -194,14 +241,6 @@ bool DTTR_Config_DisabledModsChanged(const DTTR_Config *current, const DTTR_Conf
 	return false;
 }
 
-static void set_default_button_map(int *map) {
-	DTTR_Config_ClearGamepadButtonMap(map);
-
-	for (size_t i = 0; i < SDL_arraysize(default_button_map); i++) {
-		map[default_button_map[i].source] = default_button_map[i].action;
-	}
-}
-
 const char *DTTR_Config_GraphicsAPIName(DTTR_GraphicsAPI api) {
 	return config_format_graphics_api(api);
 }
@@ -212,5 +251,7 @@ void DTTR_Config_SetDefaults(DTTR_Config *config) {
 	}
 
 	*config = default_config;
-	set_default_button_map(config->gamepad_button_map);
+	for (int action = 0; action < DTTR_CONFIG_CONTROL_ACTION_COUNT; action++) {
+		config->control_bindings[action] = DTTR_CONFIG_CONTROL_BINDING_NONE;
+	}
 }

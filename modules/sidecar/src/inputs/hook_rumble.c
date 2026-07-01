@@ -9,6 +9,8 @@
 #include "sidecar_private.h"
 
 DTTR_PCDOGS_F_Input_TriggerRumbleIfAllowed_proto dttr_inputs_hook_rumble_original;
+DTTR_PCDOGS_F_Settings_SetRumbleSuppressFlag_proto
+	dttr_inputs_hook_set_rumble_suppress_flag_original;
 
 static const DTTR_Mods_Context *rumble_ctx;
 static bool sdl_rumble_warning_logged;
@@ -113,6 +115,12 @@ static int32_t safe_call_original_rumble(
 	);
 }
 
+static void stop_sdl_rumble() {
+	if (dttr_inputs_gamepad) {
+		SDL_RumbleGamepad(dttr_inputs_gamepad, 0, 0, 0);
+	}
+}
+
 bool dttr_inputs_hook_rumble_prepare(const DTTR_Mods_Context *ctx) {
 	if (!ctx) {
 		return false;
@@ -127,10 +135,29 @@ bool dttr_inputs_hook_rumble_prepare(const DTTR_Mods_Context *ctx) {
 	return true;
 }
 
+bool dttr_inputs_hook_set_rumble_suppress_flag_prepare(const DTTR_Mods_Context *ctx) {
+	return ctx && DTTR_PCDOGS_F_Settings_SetRumbleSuppressFlag->IsCallable(&ctx->runtime);
+}
+
 void dttr_inputs_hook_rumble_reset() {
 	rumble_ctx = NULL;
 	dttr_inputs_hook_rumble_original = NULL;
+	dttr_inputs_hook_set_rumble_suppress_flag_original = NULL;
 	sdl_rumble_warning_logged = false;
+}
+
+int32_t __cdecl dttr_inputs_hook_set_rumble_suppress_flag_callback(char suppress_rumble) {
+	const int32_t result = dttr_inputs_hook_set_rumble_suppress_flag_original
+							   ? dttr_inputs_hook_set_rumble_suppress_flag_original(
+									 suppress_rumble
+								 )
+							   : suppress_rumble;
+
+	if (suppress_rumble != 0) {
+		stop_sdl_rumble();
+	}
+
+	return result;
 }
 
 int32_t __cdecl dttr_inputs_hook_rumble_callback(
@@ -140,6 +167,7 @@ int32_t __cdecl dttr_inputs_hook_rumble_callback(
 	int32_t duration_units
 ) {
 	if (!dttr_config.gamepad_enabled) {
+		stop_sdl_rumble();
 		return 0;
 	}
 
@@ -156,6 +184,7 @@ int32_t __cdecl dttr_inputs_hook_rumble_callback(
 	}
 
 	if (suppress_rumble != 0) {
+		stop_sdl_rumble();
 		return 0;
 	}
 

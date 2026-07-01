@@ -13,24 +13,20 @@
 typedef kvec_t(DTTR_PCDOGS_T_Patch_Spec) DTTR_InputPatchVector;
 
 SDL_Gamepad *dttr_inputs_gamepad;
+static SDL_Joystick *dttr_inputs_joystick;
 
 static DTTR_Core_PatchGroup *inputs_targets;
 
-bool dttr_inputs_source_pressed(int source) {
-	if (!dttr_inputs_gamepad) {
-		return false;
+SDL_Joystick *dttr_inputs_raw_joystick() {
+	if (dttr_inputs_gamepad) {
+		return SDL_GetGamepadJoystick(dttr_inputs_gamepad);
 	}
 
-	if (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT
-		|| source == DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT) {
-		const SDL_GamepadAxis axis = (source == DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT)
-										 ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER
-										 : SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
-		return SDL_GetGamepadAxis(dttr_inputs_gamepad, axis) / DTTR_DINPUT_AXIS_SCALE
-			   > DTTR_GAMEPAD_TRIGGER_THRESHOLD;
-	}
+	return dttr_inputs_joystick;
+}
 
-	return SDL_GetGamepadButton(dttr_inputs_gamepad, (SDL_GamepadButton)source);
+static bool controller_open() {
+	return dttr_inputs_gamepad || dttr_inputs_joystick;
 }
 
 int32_t dttr_inputs_read_raw_axis(int axis_idx) {
@@ -76,9 +72,37 @@ static bool try_open_configured_gamepad() {
 	return dttr_inputs_gamepad != NULL;
 }
 
-static void close_gamepad() {
-	set_joystick_available(0);
+static bool try_open_configured_joystick() {
+	int count = 0;
+	SDL_JoystickID *joysticks = SDL_GetJoysticks(&count);
+	const int index = dttr_config.gamepad_index;
 
+	if (!joysticks || index < 0 || index >= count) {
+		if (count > 0) {
+			DTTR_LOG_WARN("Joystick index %d out of range (%d connected)", index, count);
+		}
+
+		SDL_free(joysticks);
+		return false;
+	}
+
+	dttr_inputs_joystick = SDL_OpenJoystick(joysticks[index]);
+
+	if (dttr_inputs_joystick) {
+		DTTR_LOG_INFO("Joystick connected: %s", SDL_GetJoystickName(dttr_inputs_joystick));
+	} else {
+		DTTR_LOG_ERROR("Failed to open joystick: %s", SDL_GetError());
+	}
+
+	SDL_free(joysticks);
+	return dttr_inputs_joystick != NULL;
+}
+
+static bool try_open_configured_controller() {
+	return try_open_configured_gamepad() || try_open_configured_joystick();
+}
+
+static void close_gamepad() {
 	if (!dttr_inputs_gamepad) {
 		return;
 	}
@@ -88,13 +112,31 @@ static void close_gamepad() {
 	dttr_inputs_gamepad = NULL;
 }
 
-void dttr_inputs_init() {
-	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
-		DTTR_LOG_ERROR("SDL_InitSubSystem(GAMEPAD) failed: %s", SDL_GetError());
+static void close_joystick() {
+	if (!dttr_inputs_joystick) {
+		return;
 	}
 
+	SDL_CloseJoystick(dttr_inputs_joystick);
+	dttr_inputs_joystick = NULL;
+}
+
+static void close_controller() {
+	set_joystick_available(0);
+	close_gamepad();
+	close_joystick();
+}
+
+void dttr_inputs_init() {
+	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)) {
+		DTTR_LOG_ERROR("SDL_InitSubSystem(GAMEPAD|JOYSTICK) failed: %s", SDL_GetError());
+	}
+
+	SDL_SetGamepadEventsEnabled(true);
+	SDL_SetJoystickEventsEnabled(true);
+
 	if (dttr_config.gamepad_enabled) {
-		try_open_configured_gamepad();
+		try_open_configured_controller();
 	}
 }
 
@@ -142,6 +184,32 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 			true,
 			dttr_inputs_hook_is_key_pressed_async_callback,
 			&dttr_inputs_hook_is_key_pressed_async_original
+		)
+	);
+
+	if (!dttr_inputs_hook_mapping_prepare(ctx)) {
+		DTTR_LOG_ERROR("Input mapping hook unavailable");
+		kv_destroy(inputs_patches);
+		return false;
+	}
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_F_Input_RegisterButtonMapping->PatchSpec(
+			true,
+			dttr_inputs_hook_register_button_mapping_callback,
+			&dttr_inputs_hook_register_button_mapping_original
+		)
+	);
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_F_Config_ApplySettings->PatchSpec(
+			true,
+			dttr_inputs_hook_config_apply_settings_callback,
+			&dttr_inputs_hook_config_apply_settings_original
 		)
 	);
 
@@ -209,20 +277,33 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		DTTR_LOG_INFO("SDL rumble hook unavailable; deferring to original vibration");
 	}
 
-	if (dttr_config.gamepad_analog_remap) {
-		if (dttr_inputs_hook_read_gamepad_prepare(ctx)) {
-			kv_push(
-				DTTR_PCDOGS_T_Patch_Spec,
-				inputs_patches,
-				DTTR_PCDOGS_F_Input_ReadGamepad
-					->PatchSpec(true, dttr_inputs_hook_read_gamepad_callback, NULL)
-			);
-		} else {
-			DTTR_LOG_WARN(
-				"Analog remap is unavailable for this PCDOGS build; using current "
-				"gamepad mapping"
-			);
-		}
+	if (dttr_inputs_hook_set_rumble_suppress_flag_prepare(ctx)) {
+		kv_push(
+			DTTR_PCDOGS_T_Patch_Spec,
+			inputs_patches,
+			DTTR_PCDOGS_F_Settings_SetRumbleSuppressFlag->PatchSpec(
+				false,
+				dttr_inputs_hook_set_rumble_suppress_flag_callback,
+				&dttr_inputs_hook_set_rumble_suppress_flag_original
+			)
+		);
+	}
+
+	if (dttr_inputs_hook_read_gamepad_prepare(ctx)) {
+		kv_push(
+			DTTR_PCDOGS_T_Patch_Spec,
+			inputs_patches,
+			DTTR_PCDOGS_F_Input_ReadGamepad->PatchSpec(
+				true,
+				dttr_inputs_hook_read_gamepad_callback,
+				&dttr_inputs_hook_read_gamepad_original
+			)
+		);
+	} else if (dttr_config.gamepad_analog_remap) {
+		DTTR_LOG_WARN(
+			"Analog remap is unavailable for this PCDOGS build; using current "
+			"gamepad mapping"
+		);
 	}
 
 	const bool installed = dttr_sidecar_install_pcdogs_patch_group(
@@ -240,7 +321,8 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 void dttr_inputs_handle_device_event(const SDL_Event *event) {
 	switch (event->type) {
 	case SDL_EVENT_GAMEPAD_ADDED:
-		if (dttr_inputs_gamepad) {
+	case SDL_EVENT_JOYSTICK_ADDED:
+		if (controller_open()) {
 			return;
 		}
 
@@ -248,7 +330,7 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 			return;
 		}
 
-		if (!try_open_configured_gamepad()) {
+		if (!try_open_configured_controller()) {
 			return;
 		}
 
@@ -256,12 +338,12 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 		if (!REQUIRE_PCDOGS_CALL(
 				DTTR_PCDOGS_D_Window_ProcessGameProc_Initialized->Read(&game_initialized)
 			)) {
-			close_gamepad();
+			close_controller();
 			return;
 		}
 
 		if (game_initialized == 1 && !set_joystick_available(1)) {
-			close_gamepad();
+			close_controller();
 		}
 
 		return;
@@ -272,7 +354,19 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 		}
 
 		DTTR_LOG_INFO("Gamepad disconnected: %s", SDL_GetGamepadName(dttr_inputs_gamepad));
-		close_gamepad();
+		close_controller();
+		return;
+	case SDL_EVENT_JOYSTICK_REMOVED:
+		if (!dttr_inputs_joystick
+			|| SDL_GetJoystickID(dttr_inputs_joystick) != event->jdevice.which) {
+			return;
+		}
+
+		DTTR_LOG_INFO(
+			"Joystick disconnected: %s",
+			SDL_GetJoystickName(dttr_inputs_joystick)
+		);
+		close_controller();
 		return;
 	default:
 		return;
@@ -281,7 +375,7 @@ void dttr_inputs_handle_device_event(const SDL_Event *event) {
 
 // Publishes joystick availability after the game has initialized its input globals.
 bool dttr_inputs_late_init() {
-	if (!dttr_config.gamepad_enabled || !dttr_inputs_gamepad) {
+	if (!dttr_config.gamepad_enabled || !controller_open()) {
 		return set_joystick_available(0);
 	}
 
@@ -295,6 +389,7 @@ bool dttr_inputs_late_init() {
 
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_PatchGroupRelease(&inputs_targets);
+	dttr_inputs_hook_mapping_reset();
 	dttr_inputs_hook_get_pressed_button_reset();
 	dttr_inputs_hook_key_state_reset();
 	dttr_inputs_hook_read_gamepad_reset();
@@ -302,5 +397,5 @@ void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx) {
 }
 
 void dttr_inputs_cleanup() {
-	close_gamepad();
+	close_controller();
 }

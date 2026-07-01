@@ -48,11 +48,6 @@ typedef enum {
 } DTTR_VertexPrecision;
 
 #define DTTR_GAMEPAD_MAPPING_NONE (-1)
-#define DTTR_GAMEPAD_TRIGGER_THRESHOLD 300
-
-#define DTTR_GAMEPAD_SOURCE_TRIGGER_LEFT (SDL_GAMEPAD_BUTTON_COUNT)
-#define DTTR_GAMEPAD_SOURCE_TRIGGER_RIGHT (SDL_GAMEPAD_BUTTON_COUNT + 1)
-#define DTTR_GAMEPAD_SOURCE_COUNT (SDL_GAMEPAD_BUTTON_COUNT + 2)
 
 #define DTTR_CONFIG_SCHEMA_MAJOR_VERSION 1
 #define DTTR_CONFIG_DISABLED_MODS_MAX 32
@@ -68,25 +63,14 @@ typedef enum {
 #define DTTR_GAMEPAD_AXIS_IDX_STICK_Y 1
 #define DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ 2
 
-#define PCDOGS_GAMEPAD_IDX_UP 0
-#define PCDOGS_GAMEPAD_IDX_DOWN 1
-#define PCDOGS_GAMEPAD_IDX_LEFT 2
-#define PCDOGS_GAMEPAD_IDX_RIGHT 3
-#define PCDOGS_GAMEPAD_IDX_POV_UP 4
-#define PCDOGS_GAMEPAD_IDX_POV_DOWN 5
-#define PCDOGS_GAMEPAD_IDX_BTN_0 6
-#define PCDOGS_GAMEPAD_IDX_BTN_1 7
-#define PCDOGS_GAMEPAD_IDX_BTN_2 8
-#define PCDOGS_GAMEPAD_IDX_BTN_3 9
-#define PCDOGS_GAMEPAD_IDX_BTN_4 10
-#define PCDOGS_GAMEPAD_IDX_BTN_5 11
-#define PCDOGS_GAMEPAD_IDX_BTN_6 12
-#define PCDOGS_GAMEPAD_IDX_BTN_7 13
-#define PCDOGS_GAMEPAD_IDX_BTN_8 14
-#define PCDOGS_GAMEPAD_IDX_BTN_9 15
-#define PCDOGS_GAMEPAD_IDX_BTN_10 16
-#define PCDOGS_GAMEPAD_IDX_BTN_11 17
-#define PCDOGS_GAMEPAD_IDX_BTN_12 18
+#define DTTR_CONFIG_CONTROL_BINDING_NONE (-1)
+#define DTTR_CONFIG_CONTROL_ACTION_COUNT 13
+#define DTTR_CONFIG_CONTROL_CODE_KEYPAD_ENTER 0xE8
+#define DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE 0x100
+#define DTTR_CONFIG_CONTROL_CODE_NATIVE_GAMEPAD_BASE 0x3E8
+#define DTTR_CONFIG_CONTROL_CODE_NATIVE_GAMEPAD_COUNT 0x13
+#define DTTR_CONFIG_CONTROL_CODE_SDL_GAMEPAD_BUTTON_BASE 0x400
+#define DTTR_CONFIG_CONTROL_CODE_SDL_GAMEPAD_BUTTON_COUNT 0x100
 
 typedef enum {
 	DTTR_CONFIG_MOD_VALUE_BOOL = 0,
@@ -164,10 +148,10 @@ typedef struct {
 	bool gamepad_enabled;
 	bool gamepad_analog_remap;
 	int gamepad_index;
-	int gamepad_button_map[DTTR_GAMEPAD_SOURCE_COUNT];
 	int gamepad_axes[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 	int gamepad_axis_deadzone[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 	int gamepad_axis_sensitivity[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
+	int control_bindings[DTTR_CONFIG_CONTROL_ACTION_COUNT];
 } DTTR_Config;
 
 extern DTTR_Config dttr_config;
@@ -209,7 +193,6 @@ typedef enum {
 	DTTR_CONFIG_CHOICES_PRESENT_FILTER,
 	DTTR_CONFIG_CHOICES_VERTEX_PRECISION,
 	DTTR_CONFIG_CHOICES_GAMEPAD_AXIS,
-	DTTR_CONFIG_CHOICES_GAME_ACTION,
 } DTTR_ConfigChoiceList;
 
 /// Returns the config token for a graphics API selection.
@@ -228,7 +211,16 @@ int DTTR_Config_ChoiceCount(DTTR_ConfigChoiceList list);
 const DTTR_ConfigChoice *DTTR_Config_ChoiceGet(DTTR_ConfigChoiceList list, int index);
 const DTTR_ConfigChoice *DTTR_Config_Choices(DTTR_ConfigChoiceList list, int *count);
 
-void DTTR_Config_ClearGamepadButtonMap(int *map);
+const char *DTTR_Config_ControlActionKey(int index);
+int DTTR_Config_ControlActionIndex(const char *key);
+const char *DTTR_Config_ControlActionLabel(int index);
+int DTTR_Config_ControlActionNativeConfigIndex(int index);
+bool DTTR_Config_ControlActionInGameBindable(int index);
+uint32_t DTTR_Config_ControlActionButtonMask(int index);
+bool DTTR_Config_ControlBindingsChanged(
+	const DTTR_Config *current,
+	const DTTR_Config *base
+);
 
 bool DTTR_Config_IsModDisabled(const DTTR_Config *config, const char *mod_filename);
 

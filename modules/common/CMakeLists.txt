@@ -3,13 +3,14 @@ dttr_find_sdl3()
 
 add_library(common STATIC
     src/log.c
+    src/result.c
     src/errors.c
     src/crashdump.c
     src/imgui_dialog.c
     src/imgui_error_ui.c
+    src/input_names.c
     src/path.c
     src/gamepad_mapping.c
-    src/input_binding.c
     src/sdl.c
     src/iso/iso.c
     src/config/defaults.c
@@ -20,11 +21,7 @@ add_library(common STATIC
 )
 target_include_directories(common PUBLIC
     include
-    "${CMAKE_SOURCE_DIR}/modules/sdk/include"
     ${SDL3_INCLUDE_DIRS}
-)
-target_include_directories(common PRIVATE
-    "${CMAKE_BINARY_DIR}/modules/sdk/generated/include"
 )
 target_compile_options(common PUBLIC
     ${SDL3_CFLAGS_OTHER}

@@ -94,20 +94,26 @@ Mod settings are stored by stable SDK `mod_id`. Each entry has a `schema_version
 
 `gamepad.analog_remap` routes left-stick X/Y through PS1-style analog scaling and is enabled by default.
 
-## Gamepad Buttons (`gamepad.buttons`)
+## Control Bindings (`controls.special_bindings`)
 
-`gamepad.buttons` is a JSON object. Each key is the physical input you press, and each value is the game action DttR sends. When the object is present, omitted inputs are unbound, so include every binding you want to keep.
+`controls.special_bindings` stores extra bindings for inputs that the in-game controls menu does not expose.
 
-This example binds three inputs and leaves the rest unbound:
+Supported entries:
+
+| Key | Native/default source | Notes |
+| --- | --- | --- |
+| `start_pause` | Escape/gamepad start paths; mask `0x8000` | Extra pause/start mask. |
+| `menu_confirm` | Controls-menu Enter path | Controls-menu prompt only; does not spoof global Enter. |
+| `menu_cancel` | Controls-menu Escape path | Controls-menu remap abort only; does not spoof global Escape. |
+
+Movement/confirm/back stay in the in-game Controls menu. `special_bindings` only covers controls that menu cannot edit. Missing keys keep the game default and are omitted when saving.
 
 ```json
 {
   "schema_major_version": 1,
-  "gamepad": {
-    "buttons": {
-      "south": "joy_1",
-      "east": "joy_2",
-      "start": "joy_9"
+  "controls": {
+    "special_bindings": {
+      "menu_confirm": 298
     }
   }
 }

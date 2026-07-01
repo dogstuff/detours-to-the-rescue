@@ -26,16 +26,7 @@
 	 original_mask},
 
 #define SIDECAR_GFX_BYTE_PATCH SIDECAR_BYTE_PATCH_EXPECTATION
-#define SIDECAR_INPUTS_BYTE_PATCH(name, aob, offset, patch_seq, ...)                     \
-	SIDECAR_BYTE_PATCH_EXPECTATION(                                                      \
-		name,                                                                            \
-		true,                                                                            \
-		DTTR_TEST_PCDOGS_REQUIRED_ALL,                                                   \
-		aob,                                                                             \
-		offset,                                                                          \
-		patch_seq,                                                                       \
-		__VA_ARGS__                                                                      \
-	)
+#define SIDECAR_INPUTS_BYTE_PATCH SIDECAR_BYTE_PATCH_EXPECTATION
 
 // Inline AOB hooks stay listed here, and byte patch targets expand from shared rows.
 const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[] = {

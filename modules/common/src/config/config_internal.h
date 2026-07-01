@@ -38,6 +38,39 @@ enum {
 	X("sensitivity_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                              \
 	X("sensitivity_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
 
+#define CONFIG_IN_GAME_CONTROL_ACTION_COUNT 10
+
+#define CONFIG_CONTROL_ACTIONS(X)                                                        \
+	X("move_up", "Move Up", 0, 0x0004)                                                   \
+	X("move_down", "Move Down", 1, 0x0008)                                               \
+	X("move_left", "Move Left", 2, 0x0001)                                               \
+	X("move_right", "Move Right", 3, 0x0002)                                             \
+	X("camera_up", "Camera Up", 4, 0x0800)                                               \
+	X("camera_down", "Camera Down", 5, 0x0400)                                           \
+	X("confirm", "Confirm", 6, 0x0080)                                                   \
+	X("back", "Back", 7, 0x0010)                                                         \
+	X("action_3", "Action 3", 8, 0x0040)                                                 \
+	X("action_4", "Action 4", 9, 0x0020)                                                 \
+	X("start_pause", "Start/Pause", -1, 0x8000)                                          \
+	X("menu_confirm", "Menu Confirm", -1, 0)                                             \
+	X("menu_cancel", "Menu Cancel", -1, 0)
+
+#define CONFIG_CONTROL_ACTION_COUNT_ROW(...) +1
+#define CONFIG_CONTROL_ACTION_IN_GAME_COUNT_ROW(key, label, native_config_index, mask) \
+	+((native_config_index) >= 0)
+static_assert(
+	(0 CONFIG_CONTROL_ACTIONS(CONFIG_CONTROL_ACTION_COUNT_ROW))
+		== DTTR_CONFIG_CONTROL_ACTION_COUNT,
+	"DTTR_CONFIG_CONTROL_ACTION_COUNT must match CONFIG_CONTROL_ACTIONS"
+);
+static_assert(
+	(0 CONFIG_CONTROL_ACTIONS(CONFIG_CONTROL_ACTION_IN_GAME_COUNT_ROW))
+		== CONFIG_IN_GAME_CONTROL_ACTION_COUNT,
+	"CONFIG_IN_GAME_CONTROL_ACTION_COUNT must match CONFIG_CONTROL_ACTIONS"
+);
+#undef CONFIG_CONTROL_ACTION_IN_GAME_COUNT_ROW
+#undef CONFIG_CONTROL_ACTION_COUNT_ROW
+
 #define DTTR_CONFIG_MOD_VALUE_EQ_SCALAR(a, b) ((a) == (b))
 #define DTTR_CONFIG_MOD_VALUE_EQ_STRING(a, b) (strcmp((a), (b)) == 0)
 
@@ -62,12 +95,6 @@ static inline bool config_sections_match(const char *lhs, const char *rhs) {
 	return lhs == rhs || (lhs && rhs && strcmp(lhs, rhs) == 0);
 }
 
-static inline void config_clear_button_map(int *map) {
-	for (int i = 0; i < DTTR_GAMEPAD_SOURCE_COUNT; i++) {
-		map[i] = DTTR_GAMEPAD_MAPPING_NONE;
-	}
-}
-
 static inline DTTR_Result config_result(DTTR_Status status, const char *message) {
 	return (DTTR_Result){
 		.status = status,
@@ -88,24 +115,18 @@ bool config_parse_graphics_api(const char *value, DTTR_GraphicsAPI *out_value);
 bool config_parse_int(const char *value, int *out_value);
 bool config_parse_float(const char *value, float *out_value);
 bool config_parse_present_filter(const char *value, SDL_GPUFilter *out_value);
-bool config_parse_gamepad_source(const char *value, int *out_value);
-bool config_parse_game_action(const char *value, int *out_value);
 bool config_parse_gamepad_axis(const char *value, int *out_value);
 bool config_parse_log_level(const char *value, int *out_value);
 bool config_parse_minidump_type(const char *value, DTTR_MinidumpType *out_value);
 bool config_parse_string(const char *value, char *out_value, size_t out_size);
 bool config_parse_vertex_precision(const char *value, DTTR_VertexPrecision *out_value);
 
-void config_format_int(int value, char *buf, size_t buf_size);
-void config_format_float(float value, char *buf, size_t buf_size);
 const char *config_format_scaling_fit(DTTR_ScalingMode mode);
 const char *config_format_scaling_method(DTTR_ScalingMethod method);
 const char *config_format_graphics_api(DTTR_GraphicsAPI api);
 const char *config_format_present_filter(SDL_GPUFilter filter);
 const char *config_format_log_level(int level);
 const char *config_format_minidump_type(DTTR_MinidumpType type);
-const char *config_format_gamepad_source(int source);
-const char *config_format_game_action(int action);
 const char *config_format_gamepad_axis(int axis);
 const char *config_format_vertex_precision(DTTR_VertexPrecision precision);
 

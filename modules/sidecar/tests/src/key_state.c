@@ -5,12 +5,69 @@
 
 #include "inputs/hooks_private.h"
 
-static int32_t menu_button(int32_t pressed, int32_t remapping, const bool *keyboard_state) {
-	return dttr_inputs_controls_menu_pressed_keyboard_button(
+SDL_Gamepad *dttr_inputs_gamepad;
+
+SDL_Joystick *dttr_inputs_raw_joystick() {
+	return NULL;
+}
+
+static int register_original_calls;
+static int32_t register_original_code;
+static uint32_t register_original_mask;
+static int set_rumble_suppress_original_calls;
+static int32_t set_rumble_suppress_original_value;
+static int sdl_rumble_calls;
+static SDL_Gamepad *sdl_rumble_gamepad;
+static uint16_t sdl_rumble_low_frequency;
+static uint16_t sdl_rumble_high_frequency;
+static uint32_t sdl_rumble_duration_ms;
+
+static int32_t __cdecl register_button_mapping_original_stub(
+	int32_t control_code,
+	uint32_t button_mask
+) {
+	register_original_calls++;
+	register_original_code = control_code;
+	register_original_mask = button_mask;
+	return 123;
+}
+
+static int32_t __cdecl set_rumble_suppress_original_stub(char suppress_rumble) {
+	set_rumble_suppress_original_calls++;
+	set_rumble_suppress_original_value = suppress_rumble;
+	return suppress_rumble;
+}
+
+bool SDLCALL __wrap_SDL_RumbleGamepad(
+	SDL_Gamepad *gamepad,
+	uint16_t low_frequency_rumble,
+	uint16_t high_frequency_rumble,
+	uint32_t duration_ms
+) {
+	sdl_rumble_calls++;
+	sdl_rumble_gamepad = gamepad;
+	sdl_rumble_low_frequency = low_frequency_rumble;
+	sdl_rumble_high_frequency = high_frequency_rumble;
+	sdl_rumble_duration_ms = duration_ms;
+	return true;
+}
+
+typedef struct {
+	bool keyboard[SDL_SCANCODE_COUNT];
+	bool gamepad[SDL_GAMEPAD_BUTTON_COUNT];
+	bool joystick[DTTR_INPUTS_SDL_BUTTON_COUNT];
+} menu_state;
+
+static int32_t menu_press(menu_state *state, int32_t pressed, int32_t remapping) {
+	return dttr_inputs_controls_menu_pressed_keyboard_controller_button(
 		pressed,
 		remapping,
-		keyboard_state,
-		SDL_SCANCODE_COUNT
+		state->keyboard,
+		SDL_SCANCODE_COUNT,
+		state->gamepad,
+		SDL_GAMEPAD_BUTTON_COUNT,
+		state->joystick,
+		DTTR_INPUTS_SDL_BUTTON_COUNT
 	);
 }
 
@@ -18,36 +75,50 @@ static int32_t key_code(SDL_Scancode scancode) {
 	return dttr_inputs_key_code_from_scancode(scancode);
 }
 
-static void open_remap_menu(bool *keyboard_state) {
+static int32_t gamepad_button_code(SDL_GamepadButton button) {
+	return dttr_inputs_key_code_from_gamepad_button(button);
+}
+
+static int32_t sdl_button_code(int button) {
+	return dttr_inputs_key_code_from_sdl_button(button);
+}
+
+static void bind_control_action(const char *key, int code) {
+	const int action = DTTR_Config_ControlActionIndex(key);
+	assert_true(action >= 0);
+	dttr_config.control_bindings[action] = code;
+}
+
+static void open_remap_menu(menu_state *state) {
 	dttr_inputs_controls_menu_reset();
-	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+	assert_int_equal(menu_press(state, -1, 1), -1);
 }
 
 static void assert_new_key_binds(int32_t pressed_button, SDL_Scancode scancode) {
-	bool keyboard_state[SDL_SCANCODE_COUNT] = {0};
+	menu_state state = {0};
 
-	open_remap_menu(keyboard_state);
-	keyboard_state[scancode] = true;
+	open_remap_menu(&state);
+	state.keyboard[scancode] = true;
 
-	assert_int_equal(menu_button(pressed_button, 1, keyboard_state), key_code(scancode));
+	assert_int_equal(menu_press(&state, pressed_button, 1), key_code(scancode));
 }
 
 static void assert_held_key_waits_for_release(
 	int32_t pressed_button,
 	SDL_Scancode scancode
 ) {
-	bool keyboard_state[SDL_SCANCODE_COUNT] = {0};
+	menu_state state = {0};
 
 	dttr_inputs_controls_menu_reset();
-	keyboard_state[scancode] = true;
-	assert_int_equal(menu_button(pressed_button, 1, keyboard_state), -1);
-	assert_int_equal(menu_button(pressed_button, 1, keyboard_state), -1);
+	state.keyboard[scancode] = true;
+	assert_int_equal(menu_press(&state, pressed_button, 1), -1);
+	assert_int_equal(menu_press(&state, pressed_button, 1), -1);
 
-	keyboard_state[scancode] = false;
-	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+	state.keyboard[scancode] = false;
+	assert_int_equal(menu_press(&state, -1, 1), -1);
 
-	keyboard_state[scancode] = true;
-	assert_int_equal(menu_button(pressed_button, 1, keyboard_state), key_code(scancode));
+	state.keyboard[scancode] = true;
+	assert_int_equal(menu_press(&state, pressed_button, 1), key_code(scancode));
 }
 
 static void key_codes_read_keyboard_state(void **) {
@@ -79,28 +150,137 @@ static void controls_menu_binds_new_keyboard_keys(void **) {
 	assert_new_key_binds(VK_RETURN, SDL_SCANCODE_KP_ENTER);
 }
 
+static void controls_menu_binds_controller_buttons(void **) {
+	menu_state state = {0};
+
+	open_remap_menu(&state);
+	state.gamepad[SDL_GAMEPAD_BUTTON_MISC2] = true;
+
+	assert_int_equal(
+		menu_press(&state, -1, 1),
+		gamepad_button_code(SDL_GAMEPAD_BUTTON_MISC2)
+	);
+
+	state = (menu_state){0};
+
+	dttr_inputs_controls_menu_reset();
+	assert_int_equal(menu_press(&state, -1, 1), -1);
+
+	state.joystick[SDL_GAMEPAD_BUTTON_EAST] = true;
+
+	assert_int_equal(
+		menu_press(&state, -1, 1),
+		gamepad_button_code(SDL_GAMEPAD_BUTTON_EAST)
+	);
+
+	state.joystick[SDL_GAMEPAD_BUTTON_EAST] = false;
+	const int raw_button = SDL_GAMEPAD_BUTTON_COUNT + 7;
+	state.joystick[raw_button] = true;
+
+	assert_int_equal(menu_press(&state, -1, 1), sdl_button_code(raw_button));
+
+	state = (menu_state){0};
+	SDL_Event event = {0};
+
+	dttr_inputs_controls_menu_reset();
+	assert_int_equal(menu_press(&state, -1, 1), -1);
+
+	event.type = SDL_EVENT_GAMEPAD_BUTTON_DOWN;
+	event.gbutton.button = SDL_GAMEPAD_BUTTON_NORTH;
+	dttr_inputs_controls_menu_handle_event(&event);
+
+	assert_int_equal(
+		menu_press(&state, -1, 1),
+		gamepad_button_code(SDL_GAMEPAD_BUTTON_NORTH)
+	);
+
+	state = (menu_state){0};
+	event = (SDL_Event){0};
+	const int queued_raw_button = SDL_GAMEPAD_BUTTON_COUNT + 9;
+
+	dttr_inputs_controls_menu_reset();
+	assert_int_equal(menu_press(&state, -1, 1), -1);
+
+	event.type = SDL_EVENT_JOYSTICK_BUTTON_DOWN;
+	event.jbutton.button = queued_raw_button;
+	dttr_inputs_controls_menu_handle_event(&event);
+
+	assert_int_equal(menu_press(&state, -1, 1), sdl_button_code(queued_raw_button));
+}
+
 static void controls_menu_waits_for_held_keys_to_release(void **) {
-	bool keyboard_state[SDL_SCANCODE_COUNT] = {0};
+	menu_state state = {0};
 
 	assert_held_key_waits_for_release('A', SDL_SCANCODE_A);
 	assert_held_key_waits_for_release(-1, SDL_SCANCODE_GRAVE);
 
 	dttr_inputs_controls_menu_reset();
-	keyboard_state[SDL_SCANCODE_KP_ENTER] = true;
-	assert_int_equal(
-		menu_button(VK_RETURN, 0, keyboard_state),
-		DTTR_INPUTS_KEY_KEYPAD_ENTER
-	);
-	assert_int_equal(menu_button(VK_RETURN, 1, keyboard_state), -1);
+	state.keyboard[SDL_SCANCODE_KP_ENTER] = true;
+	assert_int_equal(menu_press(&state, VK_RETURN, 0), DTTR_INPUTS_KEY_KEYPAD_ENTER);
+	assert_int_equal(menu_press(&state, VK_RETURN, 1), -1);
 
-	keyboard_state[SDL_SCANCODE_KP_ENTER] = false;
-	assert_int_equal(menu_button(-1, 1, keyboard_state), -1);
+	state.keyboard[SDL_SCANCODE_KP_ENTER] = false;
+	assert_int_equal(menu_press(&state, -1, 1), -1);
 
-	keyboard_state[SDL_SCANCODE_KP_ENTER] = true;
-	assert_int_equal(
-		menu_button(VK_RETURN, 1, keyboard_state),
-		key_code(SDL_SCANCODE_KP_ENTER)
+	state.keyboard[SDL_SCANCODE_KP_ENTER] = true;
+	assert_int_equal(menu_press(&state, VK_RETURN, 1), key_code(SDL_SCANCODE_KP_ENTER));
+}
+
+static void controls_menu_escape_aborts_remap(void **) {
+	menu_state state = {0};
+
+	dttr_inputs_controls_menu_reset();
+	assert_int_equal(menu_press(&state, VK_ESCAPE, 1), VK_ESCAPE);
+
+	state = (menu_state){0};
+	open_remap_menu(&state);
+	state.keyboard[SDL_SCANCODE_ESCAPE] = true;
+
+	assert_int_equal(menu_press(&state, -1, 1), VK_ESCAPE);
+}
+
+static void controls_menu_uses_configured_menu_confirm_binding(void **) {
+	menu_state state = {0};
+
+	DTTR_Config_SetDefaults(&dttr_config);
+	bind_control_action("menu_confirm", key_code(SDL_SCANCODE_BACKSPACE));
+	state.keyboard[SDL_SCANCODE_BACKSPACE] = true;
+
+	assert_int_equal(menu_press(&state, -1, 0), VK_RETURN);
+
+	DTTR_Config_SetDefaults(&dttr_config);
+}
+
+static void menu_bindings_do_not_spoof_global_virtual_keys(void **) {
+	menu_state state = {0};
+
+	DTTR_Config_SetDefaults(&dttr_config);
+	bind_control_action("menu_confirm", key_code(SDL_SCANCODE_BACKSPACE));
+	bind_control_action("menu_cancel", key_code(SDL_SCANCODE_TAB));
+	state.keyboard[SDL_SCANCODE_BACKSPACE] = true;
+	state.keyboard[SDL_SCANCODE_TAB] = true;
+
+	assert_false(
+		dttr_inputs_global_vkey_pressed(VK_RETURN, state.keyboard, SDL_SCANCODE_COUNT)
 	);
+	assert_false(
+		dttr_inputs_global_vkey_pressed(VK_ESCAPE, state.keyboard, SDL_SCANCODE_COUNT)
+	);
+
+	DTTR_Config_SetDefaults(&dttr_config);
+}
+
+static void controls_menu_uses_configured_menu_cancel_to_abort_remap(void **) {
+	menu_state state = {0};
+
+	DTTR_Config_SetDefaults(&dttr_config);
+	bind_control_action("menu_cancel", key_code(SDL_SCANCODE_TAB));
+	open_remap_menu(&state);
+	state.keyboard[SDL_SCANCODE_TAB] = true;
+
+	assert_int_equal(menu_press(&state, -1, 1), VK_ESCAPE);
+
+	DTTR_Config_SetDefaults(&dttr_config);
 }
 
 static void key_code_names_use_game_labels(void **) {
@@ -121,12 +301,116 @@ static void key_code_names_use_game_labels(void **) {
 	);
 }
 
+static void switch_puppies_controller_binding_uses_special_mask(void **) {
+	register_original_calls = 0;
+	register_original_code = 0;
+	register_original_mask = 0;
+	dttr_inputs_hook_register_button_mapping_original = register_button_mapping_original_stub;
+	dttr_inputs_custom_button_mappings_clear();
+
+	const int32_t sdl_button = gamepad_button_code(SDL_GAMEPAD_BUTTON_WEST);
+	dttr_inputs_register_switch_puppies_controller_binding(sdl_button);
+	assert_int_equal(
+		dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_WEST),
+		0x4000
+	);
+	assert_int_equal(register_original_calls, 0);
+
+	const int32_t native_button = DTTR_INPUTS_GAMEPAD_BUTTON_BASE + 2;
+	dttr_inputs_register_switch_puppies_controller_binding(native_button);
+	assert_int_equal(register_original_calls, 1);
+	assert_int_equal(register_original_code, native_button);
+	assert_int_equal(register_original_mask, 0x4000);
+
+	dttr_inputs_register_switch_puppies_controller_binding(key_code(SDL_SCANCODE_A));
+	assert_int_equal(register_original_calls, 1);
+
+	dttr_inputs_hook_mapping_reset();
+}
+
+static void custom_sdl_button_mapping_ors_repeated_sdl_masks(void **) {
+	register_original_calls = 0;
+	register_original_code = 0;
+	register_original_mask = 0;
+	dttr_inputs_hook_register_button_mapping_original = register_button_mapping_original_stub;
+	dttr_inputs_custom_button_mappings_clear();
+
+	const int32_t sdl_button = sdl_button_code(SDL_GAMEPAD_BUTTON_SOUTH);
+	assert_int_equal(
+		dttr_inputs_hook_register_button_mapping_callback(sdl_button, 0x80),
+		0
+	);
+	assert_int_equal(
+		dttr_inputs_hook_register_button_mapping_callback(sdl_button, 0x400),
+		0
+	);
+	assert_int_equal(register_original_calls, 0);
+	assert_int_equal(
+		dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_SOUTH),
+		0x480
+	);
+
+	dttr_inputs_custom_button_mappings_clear();
+	assert_int_equal(dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_SOUTH), 0);
+
+	assert_int_equal(dttr_inputs_hook_register_button_mapping_callback('A', 0x10), 123);
+	assert_int_equal(register_original_calls, 1);
+	assert_int_equal(register_original_code, 'A');
+	assert_int_equal(register_original_mask, 0x10);
+
+	dttr_inputs_hook_mapping_reset();
+}
+
+static void setting_rumble_suppression_stops_active_sdl_rumble(void **) {
+	set_rumble_suppress_original_calls = 0;
+	set_rumble_suppress_original_value = 0;
+	sdl_rumble_calls = 0;
+	sdl_rumble_gamepad = NULL;
+	sdl_rumble_low_frequency = 1;
+	sdl_rumble_high_frequency = 1;
+	sdl_rumble_duration_ms = 1;
+	dttr_inputs_gamepad = (SDL_Gamepad *)0x1234;
+	dttr_inputs_hook_set_rumble_suppress_flag_original = set_rumble_suppress_original_stub;
+
+	assert_int_equal(dttr_inputs_hook_set_rumble_suppress_flag_callback(1), 1);
+	assert_int_equal(set_rumble_suppress_original_calls, 1);
+	assert_int_equal(set_rumble_suppress_original_value, 1);
+	assert_int_equal(sdl_rumble_calls, 1);
+	assert_ptr_equal(sdl_rumble_gamepad, dttr_inputs_gamepad);
+	assert_int_equal(sdl_rumble_low_frequency, 0);
+	assert_int_equal(sdl_rumble_high_frequency, 0);
+	assert_int_equal(sdl_rumble_duration_ms, 0);
+
+	sdl_rumble_calls = 0;
+	assert_int_equal(dttr_inputs_hook_set_rumble_suppress_flag_callback(0), 0);
+	assert_int_equal(set_rumble_suppress_original_calls, 2);
+	assert_int_equal(set_rumble_suppress_original_value, 0);
+	assert_int_equal(sdl_rumble_calls, 0);
+
+	dttr_inputs_hook_rumble_reset();
+	dttr_inputs_gamepad = NULL;
+}
+
 static const DTTR_TestCase TEST_CASES[] = {
 	{"key-codes-read-keyboard-state", key_codes_read_keyboard_state},
 	{"controls-menu-binds-new-keyboard-keys", controls_menu_binds_new_keyboard_keys},
+	{"controls-menu-binds-controller-buttons", controls_menu_binds_controller_buttons},
 	{"controls-menu-waits-for-held-keys-to-release",
 	 controls_menu_waits_for_held_keys_to_release},
+	{"controls-menu-escape-aborts-remap", controls_menu_escape_aborts_remap},
+	{"controls-menu-uses-configured-menu-confirm-binding",
+	 controls_menu_uses_configured_menu_confirm_binding},
+	{"menu-bindings-do-not-spoof-global-virtual-keys",
+	 menu_bindings_do_not_spoof_global_virtual_keys},
+	{"controls-menu-uses-configured-menu-cancel-to-abort-remap",
+	 controls_menu_uses_configured_menu_cancel_to_abort_remap},
 	{"key-code-names-use-game-labels", key_code_names_use_game_labels},
+	{"switch-puppies-controller-binding-uses-special-mask",
+	 switch_puppies_controller_binding_uses_special_mask},
+	{"custom-sdl-button-mapping-ors-repeated-sdl-masks",
+	 custom_sdl_button_mapping_ors_repeated_sdl_masks},
+	{"setting-rumble-suppression-stops-active-sdl-rumble",
+	 setting_rumble_suppression_stops_active_sdl_rumble},
 };
 
 DTTR_TEST_MAIN(TEST_CASES)

@@ -24,10 +24,6 @@ typedef struct {
 	BYTE buttons[32];
 } di_joy_state;
 
-enum {
-	DTTR_DINPUT_AXIS_FULL_DEFLECTION = 1000,
-};
-
 #define DINPUT_POV_CENTERED 0xFFFFFFFF
 
 static void init_poll_state(di_joy_state *state) {
@@ -35,30 +31,6 @@ static void init_poll_state(di_joy_state *state) {
 
 	for (int i = 0; i < 4; i++) {
 		state->pov[i] = DINPUT_POV_CENTERED;
-	}
-}
-
-static void apply_direction_state(
-	di_joy_state *state,
-	bool dir_up,
-	bool dir_down,
-	bool dir_left,
-	bool dir_right
-) {
-	if (dir_up) {
-		state->y = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
-
-	if (dir_down) {
-		state->y = DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
-
-	if (dir_left) {
-		state->x = -DTTR_DINPUT_AXIS_FULL_DEFLECTION;
-	}
-
-	if (dir_right) {
-		state->x = DTTR_DINPUT_AXIS_FULL_DEFLECTION;
 	}
 }
 
@@ -93,43 +65,6 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	state->x = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_X);
 	state->y = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_Y);
 	state->rz = read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ);
-
-	bool dir_up = false;
-	bool dir_down = false;
-	bool dir_left = false;
-	bool dir_right = false;
-
-	for (int src = 0; src < DTTR_GAMEPAD_SOURCE_COUNT; src++) {
-		const int action = dttr_config.gamepad_button_map[src];
-
-		if (action == DTTR_GAMEPAD_MAPPING_NONE || !dttr_inputs_source_pressed(src)) {
-			continue;
-		}
-
-		if (action >= PCDOGS_GAMEPAD_IDX_BTN_0 && action <= PCDOGS_GAMEPAD_IDX_BTN_12) {
-			state->buttons[action - PCDOGS_GAMEPAD_IDX_BTN_0] = DINPUT_BUTTON_PRESSED;
-			continue;
-		}
-
-		switch (action) {
-		case PCDOGS_GAMEPAD_IDX_UP:
-			dir_up = true;
-			break;
-		case PCDOGS_GAMEPAD_IDX_DOWN:
-			dir_down = true;
-			break;
-		case PCDOGS_GAMEPAD_IDX_LEFT:
-			dir_left = true;
-			break;
-		case PCDOGS_GAMEPAD_IDX_RIGHT:
-			dir_right = true;
-			break;
-		default:
-			break;
-		}
-	}
-
-	apply_direction_state(state, dir_up, dir_down, dir_left, dir_right);
 
 	return state;
 }
