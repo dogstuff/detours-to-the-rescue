@@ -92,7 +92,7 @@ bool dttr_bootstrap_initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND
 			   DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->Call(ctx, &ret)
 		   )
 		   && REQUIRE_PCDOGS_CALL(
-			   DTTR_PCDOGS_F_D3D_InitializeGraphicsSubsystem->Call(ctx, hwnd, NULL, &ret)
+			   DTTR_PCDOGS_F_Input_InitializeInputSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )
 		   && call_pkg_initialize_system(ctx, &ret);
 }
