@@ -1,4 +1,5 @@
 #include <dttr_imgui.h>
+#include <dttr_window_icon.h>
 
 #include <glad/gl.h>
 
@@ -7,6 +8,8 @@ static const ImGuiWindowFlags ROOT_WINDOW_FLAGS = ImGuiWindowFlags_NoDecoration
 												  | ImGuiWindowFlags_NoSavedSettings;
 
 static bool sdl_video_ready;
+static const unsigned char *window_icon_png = DTTR_WINDOW_ICON_PNG;
+static size_t window_icon_png_size = sizeof(DTTR_WINDOW_ICON_PNG);
 
 static void use_dialog_imgui_context(const DTTR_ImGuiDialogContext *ctx) {
 	if (ctx && ctx->imgui_context) {
@@ -93,6 +96,36 @@ static bool init_sdl_video() {
 	return true;
 }
 
+static void set_dialog_window_icon(SDL_Window *window) {
+	if (!window_icon_png || window_icon_png_size == 0) {
+		return;
+	}
+
+	SDL_IOStream *stream = SDL_IOFromConstMem(window_icon_png, window_icon_png_size);
+	if (!stream) {
+		return;
+	}
+
+	SDL_Surface *icon = SDL_LoadPNG_IO(stream, true);
+	if (!icon) {
+		return;
+	}
+
+	SDL_SetWindowIcon(window, icon);
+	SDL_DestroySurface(icon);
+}
+
+void DTTR_ImGuiDialog_SetWindowIconPNG(const unsigned char *png, size_t png_size) {
+	if (!png || png_size == 0) {
+		window_icon_png = DTTR_WINDOW_ICON_PNG;
+		window_icon_png_size = sizeof(DTTR_WINDOW_ICON_PNG);
+		return;
+	}
+
+	window_icon_png = png;
+	window_icon_png_size = png_size;
+}
+
 static bool init_dialog_imgui(DTTR_ImGuiDialogContext *ctx) {
 	ctx->previous_imgui_context = igGetCurrentContext();
 	ctx->imgui_context = igCreateContext(NULL);
@@ -148,6 +181,7 @@ bool DTTR_ImGuiDialog_Begin(
 	if (!ctx->window) {
 		goto fail;
 	}
+	set_dialog_window_icon(ctx->window);
 
 	ctx->gl_context = SDL_GL_CreateContext(ctx->window);
 	if (!ctx->gl_context || !SDL_GL_MakeCurrent(ctx->window, ctx->gl_context)) {

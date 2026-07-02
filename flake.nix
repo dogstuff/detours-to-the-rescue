@@ -134,6 +134,7 @@
                 llvmPackages_22.clang-tools
                 doxygen
                 zensical
+                imagemagick
                 curl
                 glab
                 zip

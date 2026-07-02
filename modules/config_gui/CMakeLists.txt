@@ -4,8 +4,13 @@ set(DTTR_CONFIG_WIN32_LIBS
 )
 
 add_executable(dttr_config_exe
+    "${DTTR_CONFIG_ICON_RESOURCE}"
     src/main.c
 )
+set_source_files_properties("${DTTR_CONFIG_ICON_RESOURCE}" PROPERTIES
+    OBJECT_DEPENDS "${DTTR_CONFIG_ICON_ICO}"
+)
+add_dependencies(dttr_config_exe dttr_icon_assets)
 
 dttr_use_windows_static_runtime(dttr_config_exe WIN32_RELEASE)
 
@@ -23,6 +28,7 @@ add_library(dttr_config SHARED
     src/gui_tabs.c
     src/gui_widgets.c
 )
+add_dependencies(dttr_config dttr_icon_assets)
 
 dttr_use_windows_static_runtime(dttr_config)
 
@@ -31,6 +37,7 @@ target_compile_definitions(dttr_config PRIVATE
     $<$<BOOL:${DTTR_MODS_ENABLED}>:DTTR_MODS_ENABLED>
 )
 target_include_directories(dttr_config PRIVATE
+    "${DTTR_ICON_GENERATED_DIR}"
     "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
     "${CMAKE_SOURCE_DIR}/modules/sdk/include"
 )

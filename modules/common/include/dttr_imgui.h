@@ -6,6 +6,7 @@
 #include <cimgui_impl.h>
 #include <cimgui_impl_sdlgpu3.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define DTTR_IMGUI_COLOR_LINK ((ImVec4_c){0.33f, 0.63f, 1.0f, 1.0f})
 #define DTTR_IMGUI_COLOR_STACK_FRAME_BG ((ImVec4_c){0.10f, 0.11f, 0.12f, 1.0f})
@@ -101,6 +102,7 @@ bool DTTR_ImGuiDialog_Begin(
 	int width,
 	int height
 );
+void DTTR_ImGuiDialog_SetWindowIconPNG(const unsigned char *png, size_t png_size);
 void DTTR_ImGuiDialog_End(DTTR_ImGuiDialogContext *ctx);
 void DTTR_ImGuiDialog_Shutdown();
 

@@ -15,6 +15,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SDK_SCRIPT_DIR = REPO_ROOT / "modules/sdk/scripts"
 PCDOGS_BLUEPRINT = REPO_ROOT / "modules/sdk/blueprints/dttr_pcdogs.py"
+ICON_SOURCE = REPO_ROOT / "assets/icons/dttr.svg"
 
 sys.path.insert(0, str(SDK_SCRIPT_DIR))
 from symbol_manifest import MANIFEST_FILENAME, SCHEMA_FILENAME  # noqa: E402
@@ -229,6 +230,24 @@ def generate_xref_metadata(
     return metadata
 
 
+def prepare_docs_favicon(pages_out: Path) -> Path:
+    favicon_path = pages_out / "assets/images/favicon.png"
+    favicon_path.parent.mkdir(parents=True, exist_ok=True)
+    run_checked(
+        [
+            "magick",
+            str(ICON_SOURCE),
+            "-background",
+            "none",
+            "-resize",
+            "48x48",
+            f"PNG32:{favicon_path}",
+        ],
+        label="docs favicon generation",
+    )
+    return favicon_path
+
+
 def relative_to_output(path: Path, output_dir: Path) -> str:
     try:
         return path.relative_to(output_dir).as_posix()
@@ -293,6 +312,12 @@ def main() -> int:
         validate_source_tree(overrides_dir)
         shutil.copytree(overrides_dir, overrides_out)
 
+    try:
+        favicon_path = prepare_docs_favicon(pages_out)
+    except (FileNotFoundError, RuntimeError) as exc:
+        print(exc, file=sys.stderr)
+        return 1
+
     symbols_root_dir = pages_out / "modding-sdk" / "symbols"
     try:
         metadata_paths = prepare_symbol_reference_docs(
@@ -310,7 +335,7 @@ def main() -> int:
         output_dir=output_dir,
         source_dir=source_dir,
         config_path=config_path,
-        metadata_paths=metadata_paths,
+        metadata_paths=[favicon_path, *metadata_paths],
     )
     return 0
 

@@ -42,8 +42,12 @@ if(NOT WIN32)
   message(FATAL_ERROR "Windows only. Enter the Nix dev shell and use .toolchain/toolchain.cmake")
 endif()
 
+enable_language(RC)
+
 dttr_configure_runtime_dependencies()
 dttr_configure_ffmpeg()
+
+dttr_configure_icon_assets()
 
 add_subdirectory(vendor)
 add_subdirectory(modules/common)
@@ -52,6 +56,8 @@ add_subdirectory(modules/mod_host)
 add_subdirectory(modules/sidecar)
 add_subdirectory(modules/loader)
 add_subdirectory(modules/config_gui)
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(DTTR_SUPPORT_STUB_GENERATED_DIR "${CMAKE_BINARY_DIR}/generated/stubs")
 set(DTTR_SUPPORT_STUB_ASM "${DTTR_SUPPORT_STUB_GENERATED_DIR}/dttr_support_stub_entry.s")
@@ -74,8 +80,6 @@ list(TRANSFORM DTTR_SUPPORT_STUB_TARGETS PREPEND "dttr_stub_")
 set(DTTR_SUPPORT_STUB_RUNTIME_DLLS ${DTTR_SUPPORT_STUB_TARGETS})
 list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS PREPEND "$<TARGET_FILE:")
 list(TRANSFORM DTTR_SUPPORT_STUB_RUNTIME_DLLS APPEND ">")
-
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(DTTR_SUPPORT_STUB_SCRIPT_RUNNER
     "${CMAKE_COMMAND}" -E env

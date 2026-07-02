@@ -19,9 +19,13 @@ add_library(common STATIC
     src/config/parse.c
     src/config/schema.c
 )
+add_dependencies(common dttr_icon_assets)
 target_include_directories(common PUBLIC
     include
     ${SDL3_INCLUDE_DIRS}
+)
+target_include_directories(common PRIVATE
+    "${DTTR_ICON_GENERATED_DIR}"
 )
 target_compile_options(common PUBLIC
     ${SDL3_CFLAGS_OTHER}

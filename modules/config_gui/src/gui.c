@@ -1,5 +1,7 @@
 #include "gui_internal.h"
 
+#include <dttr_config_window_icon.h>
+
 #include <stdlib.h>
 
 static const char *const CONFIG_WINDOW_TITLE = "DttR Configuration";
@@ -250,6 +252,11 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 	if (!init_state_from_args(&state, argc, argv)) {
 		return 1;
 	}
+
+	DTTR_ImGuiDialog_SetWindowIconPNG(
+		DTTR_CONFIG_WINDOW_ICON_PNG,
+		sizeof(DTTR_CONFIG_WINDOW_ICON_PNG)
+	);
 
 	DTTR_ImGuiDialogContext ctx;
 	if (!DTTR_ImGuiDialog_Begin(

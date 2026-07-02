@@ -55,6 +55,7 @@ plugins = [
 
 [project.theme]
 custom_dir = "overrides"
+favicon = "assets/images/favicon.png"
 language = "en"
 features = [
   "announce.dismiss",

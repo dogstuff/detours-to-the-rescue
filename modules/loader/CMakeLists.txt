@@ -38,8 +38,13 @@ add_custom_target(dttr_loader_generated_headers
 )
 
 add_executable(dttr
+    "${DTTR_ICON_RESOURCE}"
     src/main.c
 )
+set_source_files_properties("${DTTR_ICON_RESOURCE}" PROPERTIES
+    OBJECT_DEPENDS "${DTTR_ICON_ICO}"
+)
+add_dependencies(dttr dttr_icon_assets)
 
 dttr_use_windows_static_runtime(dttr WIN32_RELEASE)
 
