@@ -1,7 +1,6 @@
 # Environment overrides
 # - BUILD_DIR: Sets the directory for the CMake build output.
 # - TEST_JOBS: Sets the parallel job count for build and test recipes.
-# - SHADER_OUTPUT_DIR: Sets the directory for generated shader headers.
 # - DTTR_VERSION: Sets the version string for package and build artifacts.
 # - DTTR_MODS_ENABLED: Sets whether CMake configures modding support.
 # - TEST_DEPS_REQUIRED: Sets whether missing test dependencies fail configuration.
@@ -19,7 +18,6 @@ test-jobs := env_var_or_default("TEST_JOBS", "8")
 toolchain-dir := ".toolchain"
 toolchain-file := ".toolchain/toolchain.cmake"
 
-shader-output-dir := env_var_or_default("SHADER_OUTPUT_DIR", build-dir + "/modules/sidecar/generated/include/gen")
 cached-sdl3gpu-shaders-dir := "modules/sidecar/shaders/cache/sdl3gpu"
 
 docs-build-dir := "docs/build"
@@ -89,9 +87,9 @@ setup-build:
 clean:
     rm -rf "{{ build-dir }}" "{{ toolchain-dir }}"
 
-# Compile sidecar shader assets into build-tree generated headers.
-build-shaders:
-    SHADER_OUTPUT_DIR="{{ shader-output-dir }}" just --justfile modules/sidecar/justfile build-shaders
+# Compile sidecar shader assets through the CMake build graph.
+build-shaders: setup-build
+    cmake --build "{{ build-dir }}" --config "{{ build-config-debug }}" --target dttr_sidecar_generated_shaders
 
 # Regenerate SDK blueprint artifacts.
 build-sdk-blueprints: setup-build
@@ -101,10 +99,6 @@ build-sdk-blueprints: setup-build
 update-cached-sdl3gpu-shaders:
     rm -rf "{{ cached-sdl3gpu-shaders-dir }}"
     bash ./modules/sidecar/scripts/build-shaders.sh "{{ cached-sdl3gpu-shaders-dir }}"
-
-# Compile sidecar shaders inside the container.
-build-shaders-container:
-    SHADER_OUTPUT_DIR="{{ shader-output-dir }}" just --justfile modules/sidecar/justfile build-shaders-container
 
 # Build the project in a container for stable artifacts.
 build-container:

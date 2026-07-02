@@ -2,7 +2,12 @@
 
 set -euo pipefail
 
-out_dir="${1:-${SHADER_OUTPUT_DIR:-${SHADER_BUILD_DIR:-build/modules/sidecar/generated/include/gen}}}"
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 <out-dir>" >&2
+  exit 2
+fi
+
+out_dir="$1"
 src_dir="modules/sidecar/shaders/opengl"
 header_path="${out_dir}/opengl_shaders.h"
 
