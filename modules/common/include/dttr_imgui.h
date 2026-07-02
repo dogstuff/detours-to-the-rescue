@@ -91,6 +91,10 @@ typedef struct DTTR_ImGuiDialogContext {
 	float desktop_scale;
 	int logical_window_width;
 	int logical_window_height;
+	int logical_min_window_width;
+	int logical_min_window_height;
+	bool resizable;
+	bool scaled_initial_size_applied;
 	bool imgui_context_ready;
 	bool imgui_sdl_ready;
 	bool imgui_gl_ready;
@@ -101,6 +105,14 @@ bool DTTR_ImGuiDialog_Begin(
 	const char *title,
 	int width,
 	int height
+);
+bool DTTR_ImGuiDialog_BeginResizable(
+	DTTR_ImGuiDialogContext *ctx,
+	const char *title,
+	int width,
+	int height,
+	int min_width,
+	int min_height
 );
 void DTTR_ImGuiDialog_SetWindowIconPNG(const unsigned char *png, size_t png_size);
 void DTTR_ImGuiDialog_End(DTTR_ImGuiDialogContext *ctx);

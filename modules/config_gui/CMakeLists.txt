@@ -65,7 +65,3 @@ dttr_copy_runtime_files(dttr_config_exe "${DTTR_CONFIG_MODULES_DIR}"
         $<TARGET_FILE:dttr_config>
         ${DTTR_SDL3_RUNTIME_DLL}
 )
-
-if(BUILD_TESTING)
-    include("${CMAKE_CURRENT_LIST_DIR}/tests/tests.cmake")
-endif()

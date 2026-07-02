@@ -2,6 +2,7 @@
 
 #include <dttr_gamepad_mapping.h>
 #include <dttr_input_names.h>
+#include <float.h>
 #include <math.h>
 
 static const char *const GAMEPAD_AXIS_TOOLTIPS[] = {
@@ -32,23 +33,19 @@ static const char
 									  "Stick X/Y axes with the deadzone circled in red.";
 static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_POSITION
 	= "Live position from the configured Camera RZ / Pan axis with its deadzone circled "
-	  "in red. Camera controls are still bound in the game Controls menu.";
+	  "in red. Camera controls must still be bound manually using this axis in the game controls menu.";
 static const char *TOOLTIP_CONTROL_BINDINGS
 	= "Click a binding, then press a keyboard key or gamepad button. "
-	  "These controls are not in the in-game Controls menu.";
+	  "This behavior cannot be bound from the in-game controls menu.";
 static const char *TOOLTIP_CONTROL_BINDING_DEFAULT = "Uses the game's pcdogs.ini/default "
 													 "binding. Click to override.";
 #define GAMEPAD_AXIS_PREVIEW_SIZE 72.0f
 #define GAMEPAD_AXIS_PREVIEW_DOT_RADIUS 4.0f
 #define GAMEPAD_AXIS_PREVIEW_SEGMENTS 48
-#define GAMEPAD_AXIS_PREVIEW_READOUT_SPACING 8.0f
 #define GAMEPAD_DINPUT_AXIS_SCALE 32.0f
 #define GAMEPAD_SDL_AXIS_MAX 32767.0f
 #define GAMEPAD_AXIS_COMPACT_COMBO_W 116.0f
 #define GAMEPAD_AXIS_COMPACT_INT_W 48.0f
-#define GAMEPAD_AXIS_COMPACT_LABEL_SPACING 4.0f
-#define GAMEPAD_AXIS_COMPACT_GROUP_SPACING 14.0f
-#define GAMEPAD_AXIS_PREVIEW_GROUP_SPACING 18.0f
 
 typedef struct {
 	const char *label;
@@ -182,57 +179,76 @@ static ImU32 axis_position_dot_color(float x, float y, float deadzone_radius) {
 	return igGetColorU32_Vec4(color);
 }
 
+static bool gamepad_axis_mapping_changed(
+	const DTTR_Config *left,
+	const DTTR_Config *right,
+	int axis_index
+) {
+	return left->gamepad_axes[axis_index] != right->gamepad_axes[axis_index]
+		   || left->gamepad_axis_deadzone[axis_index]
+				  != right->gamepad_axis_deadzone[axis_index]
+		   || left->gamepad_axis_sensitivity[axis_index]
+				  != right->gamepad_axis_sensitivity[axis_index];
+}
+
 static config_label_state gamepad_axis_mapping_label_state(
 	const config_ui_state *state,
 	int axis_index
 ) {
-	const bool axis_unsaved = state->config.gamepad_axes[axis_index]
-							  != state->saved_config.gamepad_axes[axis_index];
-	const bool deadzone_unsaved = state->config.gamepad_axis_deadzone[axis_index]
-								  != state->saved_config.gamepad_axis_deadzone[axis_index];
-	const bool sensitivity_unsaved = state->config.gamepad_axis_sensitivity[axis_index]
-									 != state->saved_config
-											.gamepad_axis_sensitivity[axis_index];
-	const bool axis_default_changed = state->config.gamepad_axes[axis_index]
-									  != state->defaults.gamepad_axes[axis_index];
-	const bool deadzone_default_changed = state->config.gamepad_axis_deadzone[axis_index]
-										  != state->defaults
-												 .gamepad_axis_deadzone[axis_index];
-	const bool sensitivity_default_changed = state->config
-												 .gamepad_axis_sensitivity[axis_index]
-											 != state->defaults
-													.gamepad_axis_sensitivity[axis_index];
-
 	return make_config_label_state(
-		axis_unsaved || deadzone_unsaved || sensitivity_unsaved,
-		axis_default_changed || deadzone_default_changed || sensitivity_default_changed
+		gamepad_axis_mapping_changed(&state->config, &state->saved_config, axis_index),
+		gamepad_axis_mapping_changed(&state->config, &state->defaults, axis_index)
 	);
 }
 
-static void same_compact_axis_field(const DTTR_ImGuiDialogContext *ctx, const char *label) {
-	igSameLine(
-		0.0f,
-		DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_GROUP_SPACING)
-	);
+static void draw_axis_field_label(const char *label, const char *tooltip) {
 	igAlignTextToFramePadding();
 	igTextUnformatted(label, NULL);
-	igSameLine(
-		0.0f,
-		DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_LABEL_SPACING)
-	);
+	show_tooltip(tooltip);
 }
 
-static void draw_compact_axis_int(
-	const DTTR_ImGuiDialogContext *ctx,
-	int *value,
-	const char *label,
-	const char *id,
-	const char *tooltip
-) {
-	same_compact_axis_field(ctx, label);
-	igSetNextItemWidth(DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_INT_W));
+static void draw_compact_axis_int(int *value, const char *id, const char *tooltip) {
+	igSetNextItemWidth(-FLT_MIN);
 	igInputInt(id, value, 0, 0, ImGuiInputTextFlags_None);
 	show_tooltip(tooltip);
+}
+
+static bool begin_axis_mapping_fields(const DTTR_ImGuiDialogContext *ctx) {
+	const ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit
+								  | ImGuiTableFlags_NoSavedSettings
+								  | ImGuiTableFlags_NoPadOuterX;
+	if (!igBeginTable("##axis_mapping_fields", 5, flags, (ImVec2_c){0.0f, 0.0f}, 0.0f)) {
+		return false;
+	}
+
+	igTableSetupColumn(
+		"Axis",
+		ImGuiTableColumnFlags_WidthFixed,
+		DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_COMBO_W),
+		0
+	);
+
+	igTableSetupColumn("Deadzone Label", ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
+
+	igTableSetupColumn(
+		"Deadzone",
+		ImGuiTableColumnFlags_WidthFixed,
+		DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_INT_W),
+		0
+	);
+
+	igTableSetupColumn("Sensitivity Label", ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
+
+	igTableSetupColumn(
+		"Sensitivity",
+		ImGuiTableColumnFlags_WidthFixed,
+		DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_INT_W),
+		0
+	);
+
+	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
+
+	return true;
 }
 
 static void draw_gamepad_axis_mapping_row(
@@ -249,7 +265,12 @@ static void draw_gamepad_axis_mapping_row(
 	);
 
 	igTableNextColumn();
-	igSetNextItemWidth(DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_COMPACT_COMBO_W));
+	if (!begin_axis_mapping_fields(ctx)) {
+		return;
+	}
+
+	igTableNextColumn();
+	igSetNextItemWidth(-FLT_MIN);
 	choice_combo(
 		axis->id,
 		&state->config.gamepad_axes[axis->axis_index],
@@ -258,21 +279,26 @@ static void draw_gamepad_axis_mapping_row(
 	);
 	show_tooltip(TOOLTIP_GAMEPAD_AXIS);
 
+	igTableNextColumn();
+	draw_axis_field_label("Deadzone", TOOLTIP_GAMEPAD_DEADZONE);
+
+	igTableNextColumn();
 	draw_compact_axis_int(
-		ctx,
 		&state->config.gamepad_axis_deadzone[axis->axis_index],
-		"Deadzone",
 		"##deadzone",
 		TOOLTIP_GAMEPAD_DEADZONE
 	);
 
+	igTableNextColumn();
+	draw_axis_field_label("Sensitivity", TOOLTIP_GAMEPAD_SENSITIVITY);
+
+	igTableNextColumn();
 	draw_compact_axis_int(
-		ctx,
 		&state->config.gamepad_axis_sensitivity[axis->axis_index],
-		"Sensitivity",
 		"##sensitivity",
 		TOOLTIP_GAMEPAD_SENSITIVITY
 	);
+	igEndTable();
 }
 
 static void draw_axis_position_preview(
@@ -343,25 +369,6 @@ static void draw_axis_position_preview(
 	show_tooltip(tooltip);
 }
 
-static void draw_centered_preview_label(
-	const DTTR_ImGuiDialogContext *ctx,
-	const char *label,
-	const char *tooltip
-) {
-	const float preview_size = DTTR_ImGuiDialog_ScaledFloat(
-		ctx,
-		GAMEPAD_AXIS_PREVIEW_SIZE
-	);
-	const float label_width = igCalcTextSize(label, NULL, false, 0.0f).x;
-
-	if (preview_size > label_width) {
-		igSetCursorPosX(igGetCursorPosX() + (preview_size - label_width) * 0.5f);
-	}
-
-	igTextUnformatted(label, NULL);
-	show_tooltip(tooltip);
-}
-
 typedef struct {
 	float raw_x;
 	float raw_y;
@@ -394,25 +401,50 @@ static void draw_axis_position_group(
 	float deadzone_radius,
 	bool has_gamepad
 ) {
+	igPushID_Str(id);
 	igBeginGroup();
-	draw_centered_preview_label(ctx, label, tooltip);
-	draw_axis_position_preview(
-		ctx,
-		values->preview_x,
-		values->preview_y,
-		id,
-		tooltip,
-		deadzone_radius,
-		has_gamepad
-	);
-	igSameLine(
-		0.0f,
-		DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_PREVIEW_READOUT_SPACING)
-	);
-	igBeginGroup();
-	draw_axis_position_readout(values);
+	igTextUnformatted(label, NULL);
+	show_tooltip(tooltip);
+
+	if (igBeginTable(
+			"##axis_position",
+			2,
+			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings
+				| ImGuiTableFlags_NoPadOuterX,
+			(ImVec2_c){0.0f, 0.0f},
+			0.0f
+		)) {
+		igTableSetupColumn(
+			"Preview",
+			ImGuiTableColumnFlags_WidthFixed,
+			DTTR_ImGuiDialog_ScaledFloat(ctx, GAMEPAD_AXIS_PREVIEW_SIZE),
+			0
+		);
+
+		igTableSetupColumn("Readout", ImGuiTableColumnFlags_WidthStretch, 1.0f, 0);
+
+		igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
+
+		igTableNextColumn();
+
+		draw_axis_position_preview(
+			ctx,
+			values->preview_x,
+			values->preview_y,
+			"##preview",
+			tooltip,
+			deadzone_radius,
+			has_gamepad
+		);
+
+		igTableNextColumn();
+
+		draw_axis_position_readout(values);
+
+		igEndTable();
+	}
 	igEndGroup();
-	igEndGroup();
+	igPopID();
 }
 
 static void draw_axis_positions(
@@ -465,10 +497,6 @@ static void draw_axis_positions(
 		state,
 		DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ
 	);
-	const float preview_spacing = DTTR_ImGuiDialog_ScaledFloat(
-		ctx,
-		GAMEPAD_AXIS_PREVIEW_GROUP_SPACING
-	);
 
 	if (state->config.gamepad_analog_remap) {
 		DTTR_StickAxes ps1_axes = {0};
@@ -496,6 +524,22 @@ static void draw_axis_positions(
 		));
 	}
 
+	if (!igBeginTable(
+			"##axis_position_groups",
+			2,
+			ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoSavedSettings
+				| ImGuiTableFlags_NoPadOuterX,
+			(ImVec2_c){0.0f, 0.0f},
+			0.0f
+		)) {
+		return;
+	}
+
+	igTableSetupColumn("Stick", ImGuiTableColumnFlags_WidthStretch, 1.0f, 0);
+	igTableSetupColumn("Camera", ImGuiTableColumnFlags_WidthStretch, 1.0f, 0);
+	igTableNextRow(ImGuiTableRowFlags_None, 0.0f);
+
+	igTableNextColumn();
 	draw_axis_position_group(
 		ctx,
 		"Stick",
@@ -505,7 +549,7 @@ static void draw_axis_positions(
 		stick_deadzone,
 		has_gamepad
 	);
-	igSameLine(0.0f, preview_spacing);
+	igTableNextColumn();
 	draw_axis_position_group(
 		ctx,
 		"Camera",
@@ -515,23 +559,44 @@ static void draw_axis_positions(
 		camera_rz_deadzone,
 		has_gamepad
 	);
+	igEndTable();
 }
 
-static void draw_gamepad_stick_mappings(
+static void draw_gamepad_section(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
 ) {
-	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_SECTION_SPACING);
-	igSeparatorText("Stick Mappings");
+	igSpacing();
+	igSeparatorText("Gamepad");
 
 	if (!begin_settings_table(
 			ctx,
-			"##gamepad_stick_mappings_table",
+			"##gamepad_settings_table",
 			DTTR_CONFIG_UI_LABEL_W,
 			DTTR_CONFIG_UI_INPUT_W
 		)) {
 		return;
 	}
+
+	labeled_checkbox(
+		ctx,
+		"Enable Gamepad",
+		"##gamepad_enabled",
+		&state->config.gamepad_enabled,
+		TOOLTIP_GAMEPAD_ENABLED,
+		FIELD_LABEL_STATE(state, gamepad_enabled)
+	);
+
+	labeled_input_int(
+		ctx,
+		"Gamepad Index",
+		"##gamepad_index",
+		&state->config.gamepad_index,
+		1,
+		1,
+		TOOLTIP_GAMEPAD_INDEX,
+		FIELD_LABEL_STATE(state, gamepad_index)
+	);
 
 	labeled_checkbox(
 		ctx,
@@ -549,7 +614,7 @@ static void draw_gamepad_stick_mappings(
 	}
 
 	end_settings_table();
-	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_ITEM_SPACING_Y);
+	igSpacing();
 	draw_axis_positions(ctx, state);
 }
 
@@ -622,37 +687,18 @@ static void draw_control_binding_row(
 	igPopID();
 }
 
-static void draw_gamepad_settings(
+static void draw_control_bindings(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
 ) {
 	if (!begin_settings_table(
 			ctx,
-			"##gamepad_settings_table",
+			"##control_bindings_table",
 			DTTR_CONFIG_UI_LABEL_W,
 			config_standard_input_width()
 		)) {
 		return;
 	}
-
-	labeled_checkbox(
-		ctx,
-		"Enable Gamepad",
-		"##gamepad_enabled",
-		&state->config.gamepad_enabled,
-		TOOLTIP_GAMEPAD_ENABLED,
-		FIELD_LABEL_STATE(state, gamepad_enabled)
-	);
-	labeled_input_int(
-		ctx,
-		"Gamepad Index",
-		"##gamepad_index",
-		&state->config.gamepad_index,
-		1,
-		1,
-		TOOLTIP_GAMEPAD_INDEX,
-		FIELD_LABEL_STATE(state, gamepad_index)
-	);
 
 	for (int action = 0; action < DTTR_CONFIG_CONTROL_ACTION_COUNT; action++) {
 		if (!DTTR_Config_ControlActionInGameBindable(action)) {
@@ -663,7 +709,7 @@ static void draw_gamepad_settings(
 	end_settings_table();
 }
 
-void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
+void draw_controls_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!igBeginChild_Str(
 			"##gamepad_scroll",
 			(ImVec2_c){0.0f, 0.0f},
@@ -674,7 +720,7 @@ void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		return;
 	}
 
-	draw_gamepad_settings(ctx, state);
-	draw_gamepad_stick_mappings(ctx, state);
+	draw_control_bindings(ctx, state);
+	draw_gamepad_section(ctx, state);
 	igEndChild();
 }

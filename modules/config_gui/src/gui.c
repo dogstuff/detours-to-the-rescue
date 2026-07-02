@@ -4,7 +4,12 @@
 
 #include <stdlib.h>
 
-static const char *const CONFIG_WINDOW_TITLE = "DttR Configuration";
+#ifndef DTTR_VERSION
+#define DTTR_VERSION "unknown"
+#endif
+
+#define CONFIG_WINDOW_TITLE "DttR Configuration - " DTTR_VERSION
+
 static const char *const CONFIG_DEBUG_SHORTCUTS_ENV = "DTTR_CONFIG_DEBUG_SHORTCUTS";
 
 static sds config_path_from_args(int argc, char **argv) {
@@ -51,25 +56,73 @@ static bool confirm_discard_changes(
 	return DTTR_SDL_ShowMessageBox(&message_box, &button_id) && button_id == 1;
 }
 
+static bool toolbar_button(const char *label) {
+	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_SELECTED_TAB_TEXT_COLOR);
+	igPushStyleColor_Vec4(ImGuiCol_Button, DTTR_CONFIG_UI_TAB_BG);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_CONFIG_UI_TAB_HOVERED_BG);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_CONFIG_UI_SELECTED_TAB_BG);
+
+	const bool clicked = igButton(label, (ImVec2_c){0.0f, 0.0f});
+	igPopStyleColor(4);
+
+	return clicked;
+}
+
 static void draw_toolbar(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
-	if (!igBeginMenuBar()) {
-		return;
+	const ImVec2_c padding = {
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TOOLBAR_PADDING_X),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TOOLBAR_PADDING_Y),
+	};
+
+	const ImVec2_c item_spacing = {
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TOOLBAR_BUTTON_SPACING_X),
+		0.0f,
+	};
+
+	const ImVec2_c button_padding = {
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TOOLBAR_BUTTON_PADDING_X),
+		igGetStyle()->FramePadding.y,
+	};
+
+	const ImGuiWindowFlags toolbar_flags = ImGuiWindowFlags_NoScrollbar
+										   | ImGuiWindowFlags_NoScrollWithMouse;
+
+
+	igPushStyleColor_Vec4(ImGuiCol_ChildBg, DTTR_CONFIG_UI_TOP_BAR_BG);
+	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, padding);
+	igPushStyleVar_Vec2(ImGuiStyleVar_ItemSpacing, item_spacing);
+	igPushStyleVar_Vec2(ImGuiStyleVar_FramePadding, button_padding);
+	igPushStyleVar_Float(
+		ImGuiStyleVar_FrameRounding,
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TOOLBAR_BUTTON_ROUNDING)
+	);
+
+	if (igBeginChild_Str(
+			"##config_toolbar",
+			(ImVec2_c){0.0f, 0.0f},
+			ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY,
+			toolbar_flags
+		)) {
+		if (toolbar_button("Save")) {
+			save_config(state);
+		}
+
+		igSameLine(0.0f, -1.0f);
+		if (toolbar_button("Load")) {
+			if (confirm_discard_changes(ctx, state, "reload the file from disk")) {
+				load_config(state);
+			}
+		}
+
+		igSameLine(0.0f, -1.0f);
+		if (toolbar_button("Reset to Defaults")) {
+			request_reset_defaults(ctx, state);
+		}
 	}
 
-	if (igMenuItem_Bool("Save", "Ctrl+S", false, true)) {
-		save_config(state);
-	}
-
-	if (igMenuItem_Bool("Load", "Ctrl+O", false, true)
-		&& confirm_discard_changes(ctx, state, "reload the file from disk")) {
-		load_config(state);
-	}
-
-	if (igMenuItem_Bool("Reset to Defaults", NULL, false, true)) {
-		request_reset_defaults(ctx, state);
-	}
-
-	igEndMenuBar();
+	igEndChild();
+	igPopStyleVar(4);
+	igPopStyleColor(1);
 }
 
 static void handle_shortcuts(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
@@ -177,11 +230,6 @@ static bool init_state_from_args(config_ui_state *state, int argc, char **argv) 
 static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	push_config_theme();
 	handle_shortcuts(ctx, state);
-	draw_toolbar(ctx, state);
-	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_HEADER_TOP_SPACING);
-
-	DTTR_ImGuiDialog_DrawHeader(ctx, CONFIG_WINDOW_TITLE, DTTR_VERSION);
-	igSeparator();
 
 	const bool panel_open = begin_padded_panel(ctx);
 	if (panel_open) {
@@ -191,7 +239,8 @@ static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 		}
 
 		end_config_content_region();
-		draw_footer_text(ctx, state);
+		draw_footer_text(state);
+		draw_toolbar(ctx, state);
 	}
 
 	end_padded_panel();
@@ -259,11 +308,14 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 	);
 
 	DTTR_ImGuiDialogContext ctx;
-	if (!DTTR_ImGuiDialog_Begin(
+	const int window_width = config_window_width();
+	if (!DTTR_ImGuiDialog_BeginResizable(
 			&ctx,
 			CONFIG_WINDOW_TITLE,
-			config_window_width(),
-			DTTR_CONFIG_UI_WINDOW_H
+			window_width,
+			DTTR_CONFIG_UI_WINDOW_H,
+			DTTR_CONFIG_UI_MIN_RESIZABLE_WINDOW_W,
+			DTTR_CONFIG_UI_MIN_RESIZABLE_WINDOW_H
 		)) {
 		return 1;
 	}
@@ -289,9 +341,8 @@ __declspec(dllexport) int dttr_config_main(int argc, char **argv) {
 
 		if (DTTR_ImGuiDialog_BeginRoot(
 				&ctx,
-				CONFIG_WINDOW_TITLE,
-				ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar
-					| ImGuiWindowFlags_NoScrollWithMouse
+				"DttR Configuration",
+				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
 			)) {
 			draw_ui(&ctx, &state);
 		}

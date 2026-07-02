@@ -1,17 +1,7 @@
 #include "gui_internal.h"
 
+#include <float.h>
 #include <math.h>
-
-static void same_path_button_row(const DTTR_ImGuiDialogContext *ctx) {
-	igSameLine(
-		0.0f,
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
-	);
-}
-
-void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height) {
-	igDummy((ImVec2_c){0.0f, DTTR_ImGuiDialog_ScaledFloat(ctx, height)});
-}
 
 typedef void (*config_path_dialog_fn)(
 	const DTTR_ImGuiDialogContext *ctx,
@@ -28,9 +18,7 @@ typedef struct {
 static const char *const FOOTER_HINT_TEXT = "Ctrl+S to save your changes.";
 
 static float config_path_control_width() {
-	return DTTR_CONFIG_UI_PATH_INPUT_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING
-		   + DTTR_CONFIG_UI_PATH_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING
-		   + DTTR_CONFIG_UI_PATH_BUTTON_W;
+	return DTTR_CONFIG_UI_PATH_INPUT_W + (DTTR_CONFIG_UI_PATH_BUTTON_W * 2.0f);
 }
 
 float config_standard_input_width() {
@@ -68,14 +56,7 @@ bool choice_combo(
 	const DTTR_ConfigChoice *choice_list = DTTR_Config_Choices(choices, &choice_count);
 	const int current = choice_index(choice_list, choice_count, *value);
 	const char *preview = choice_count > 0 ? choice_list[current].label : "Unknown";
-	const ImVec2_c combo_popup_padding = {
-		igGetStyle()->WindowPadding.x,
-		DTTR_CONFIG_UI_COMBO_POPUP_PADDING_Y,
-	};
-
-	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, combo_popup_padding);
 	const bool open = igBeginCombo(label, preview, ImGuiComboFlags_None);
-	igPopStyleVar(1);
 
 	if (!open) {
 		return false;
@@ -97,6 +78,9 @@ bool choice_combo(
 		}
 
 		show_tooltip(tooltips ? tooltips[i] : NULL);
+		if (selected) {
+			igSetItemDefaultFocus();
+		}
 	}
 
 	igEndCombo();
@@ -219,10 +203,23 @@ bool themed_row_button(
 ) {
 	const ImVec2_c size = {
 		DTTR_ImGuiDialog_ScaledFloat(ctx, width),
-		igGetFrameHeight(),
+		0.0f,
 	};
 
-	return DTTR_ImGuiDialog_Button(ctx, id, label, size);
+	igPushID_Str(id);
+	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_IMGUI_COLOR_BUTTON_TEXT);
+	igPushStyleColor_Vec4(ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG);
+	igPushStyleVar_Float(
+		ImGuiStyleVar_FrameRounding,
+		DTTR_ImGuiDialog_ScaledFloat(ctx, 2.0f)
+	);
+	const bool clicked = igButton(label, size);
+	igPopStyleVar(1);
+	igPopStyleColor(4);
+	igPopID();
+	return clicked;
 }
 
 typedef struct {
@@ -233,24 +230,25 @@ typedef struct {
 static const config_theme_color CONFIG_THEME_COLORS[] = {
 	{ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
 	{ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
-	{ImGuiCol_FrameBgActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
+	{ImGuiCol_FrameBgActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG},
 	{ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG},
-	{ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
-	{ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
+	{ImGuiCol_ButtonHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG},
+	{ImGuiCol_ButtonActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG},
 	{ImGuiCol_Header, DTTR_IMGUI_COLOR_BUTTON_BG},
-	{ImGuiCol_HeaderHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
-	{ImGuiCol_HeaderActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
-	{ImGuiCol_Tab, DTTR_IMGUI_COLOR_BUTTON_BG},
-	{ImGuiCol_TabHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
+	{ImGuiCol_HeaderHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG},
+	{ImGuiCol_HeaderActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG},
+	{ImGuiCol_Tab, DTTR_CONFIG_UI_TAB_BG},
+	{ImGuiCol_TabHovered, DTTR_CONFIG_UI_TAB_HOVERED_BG},
 	{ImGuiCol_TabSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG},
-	{ImGuiCol_TabDimmed, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_TabDimmed, DTTR_CONFIG_UI_TAB_BG},
 	{ImGuiCol_TabDimmedSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG},
-	{ImGuiCol_MenuBarBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_MenuBarBg, DTTR_CONFIG_UI_TOP_BAR_BG},
 	{ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
 	{ImGuiCol_Border, DTTR_CONFIG_UI_BORDER_COLOR},
 	{ImGuiCol_Separator, DTTR_CONFIG_UI_SEPARATOR_COLOR},
 	{ImGuiCol_SeparatorHovered, DTTR_CONFIG_UI_SEPARATOR_COLOR},
 	{ImGuiCol_SeparatorActive, DTTR_CONFIG_UI_SEPARATOR_COLOR},
+	{ImGuiCol_TableHeaderBg, DTTR_CONFIG_UI_TABLE_HEADER_BG},
 	{ImGuiCol_TableBorderStrong, DTTR_CONFIG_UI_TABLE_BORDER_COLOR},
 	{ImGuiCol_TableBorderLight, DTTR_CONFIG_UI_BORDER_COLOR},
 };
@@ -265,61 +263,42 @@ void pop_config_theme() {
 	igPopStyleColor((int)SDL_arraysize(CONFIG_THEME_COLORS));
 }
 
-static bool format_status_text(
-	const config_ui_state *state,
-	char *buffer,
-	size_t buffer_size
-) {
-	const bool changed = config_has_unsaved_changes(state);
-	const bool status_visible = state->status[0]
-								&& SDL_GetTicks() < state->status_expires_at_ms;
-
-	if (!changed && !status_visible) {
-		if (buffer_size > 0) {
-			buffer[0] = '\0';
-		}
-
-		return false;
-	}
-
-	if (changed && status_visible) {
-		snprintf(buffer, buffer_size, "Unsaved changes.\n%s", state->status);
-	} else if (changed) {
-		snprintf(buffer, buffer_size, "Unsaved changes.");
-	} else {
-		snprintf(buffer, buffer_size, "%s", state->status);
-	}
-
-	return true;
+static bool status_visible(const config_ui_state *state) {
+	return state->status[0] && SDL_GetTicks() < state->status_expires_at_ms;
 }
 
-static float status_text_height(const char *status_text) {
+static float status_text_height(const char *status_text, float wrap_width) {
 	if (!status_text || !status_text[0]) {
 		return 0.0f;
 	}
 
-	int line_count = 1;
+	const ImVec2_c size = igCalcTextSize(status_text, NULL, false, wrap_width);
+	return size.y > 0.0f ? size.y : igGetTextLineHeight();
+}
 
-	for (const char *p = status_text; *p; p++) {
-		if (*p == '\n') {
-			line_count++;
-		}
-	}
-
-	return igGetTextLineHeight()
-		   + (float)(line_count - 1) * igGetTextLineHeightWithSpacing();
+static float footer_action_height(const DTTR_ImGuiDialogContext *ctx) {
+	const ImGuiStyle *style = igGetStyle();
+	const float spacing_y = style ? style->ItemSpacing.y : 0.0f;
+	return spacing_y
+		   + DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TOOLBAR_PADDING_Y * 2.0f)
+		   + igGetFrameHeight();
 }
 
 static float config_footer_height(
 	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state
 ) {
-	char status_text[sizeof(state->status) + sizeof("Unsaved changes.\n")];
-	const bool has_status = format_status_text(state, status_text, sizeof(status_text));
-	float height = igGetTextLineHeight();
+	float height = igGetTextLineHeight() + footer_action_height(ctx);
+	const float wrap_width = igGetContentRegionAvail().x;
 
-	if (has_status) {
-		height += igGetStyle()->ItemSpacing.y + status_text_height(status_text);
+	if (status_visible(state)) {
+		height += igGetStyle()->ItemSpacing.y
+				  + status_text_height(state->status, wrap_width);
+	}
+
+	if (config_has_unsaved_changes(state)) {
+		height += igGetStyle()->ItemSpacing.y
+				  + status_text_height("Unsaved changes.", wrap_width);
 	}
 
 	return height;
@@ -330,13 +309,11 @@ bool begin_config_content_region(
 	const config_ui_state *state
 ) {
 	const float footer_height = config_footer_height(ctx, state);
-	const ImGuiWindowFlags content_flags = ImGuiWindowFlags_NoScrollbar
-										   | ImGuiWindowFlags_NoScrollWithMouse;
 	return igBeginChild_Str(
 		"##config_content",
 		(ImVec2_c){0.0f, -footer_height},
 		ImGuiChildFlags_None,
-		content_flags
+		ImGuiWindowFlags_None
 	);
 }
 
@@ -344,12 +321,19 @@ void end_config_content_region() {
 	igEndChild();
 }
 
-void draw_footer_text(const DTTR_ImGuiDialogContext *ctx, const config_ui_state *state) {
-	char status_text[sizeof(state->status) + sizeof("Unsaved changes.\n")];
-	if (format_status_text(state, status_text, sizeof(status_text))) {
-		igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_STATUS_TEXT_COLOR);
-		igTextWrapped("%s", status_text);
-		igPopStyleColor(1);
+static void draw_status_text(const char *text) {
+	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_STATUS_TEXT_COLOR);
+	igTextWrapped("%s", text);
+	igPopStyleColor(1);
+}
+
+void draw_footer_text(const config_ui_state *state) {
+	if (status_visible(state)) {
+		draw_status_text(state->status);
+	}
+
+	if (config_has_unsaved_changes(state)) {
+		draw_status_text("Unsaved changes.");
 	}
 
 	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_HINT_TEXT_COLOR);
@@ -385,10 +369,11 @@ void end_padded_panel() {
 	igPopStyleVar(2);
 }
 
-static ImVec2_c table_cell_padding(const DTTR_ImGuiDialogContext *ctx, float padding_x) {
+static ImVec2_c table_cell_padding(const DTTR_ImGuiDialogContext *ctx) {
+	const ImGuiStyle *style = igGetStyle();
 	return (ImVec2_c){
-		DTTR_ImGuiDialog_ScaledFloat(ctx, padding_x),
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TABLE_CELL_PADDING_Y),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_TABLE_CELL_PADDING_X),
+		style ? style->CellPadding.y : 0.0f,
 	};
 }
 
@@ -396,17 +381,9 @@ static bool begin_config_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	int column_count,
-	float cell_padding_x,
 	float table_width
 ) {
-	igPushStyleVar_Vec2(
-		ImGuiStyleVar_CellPadding,
-		table_cell_padding(ctx, cell_padding_x)
-	);
-	igPushStyleVar_Vec2(
-		ImGuiStyleVar_ItemSpacing,
-		(ImVec2_c){igGetStyle()->ItemSpacing.x, 0.0f}
-	);
+	igPushStyleVar_Vec2(ImGuiStyleVar_CellPadding, table_cell_padding(ctx));
 
 	if (igBeginTable(
 			id,
@@ -418,7 +395,7 @@ static bool begin_config_table(
 		return true;
 	}
 
-	igPopStyleVar(2);
+	igPopStyleVar(1);
 	return false;
 }
 
@@ -431,91 +408,35 @@ static void setup_scaled_table_column(
 	igTableSetupColumn(id, flags, DTTR_ImGuiDialog_ScaledFloat(ctx, width), 0);
 }
 
-static void append_table_header_text(
-	const DTTR_ImGuiDialogContext *ctx,
-	int column,
-	const char *text
-) {
-	if (!igTableSetColumnIndex(column)) {
-		return;
-	}
-
-	igSetCursorPosX(
-		igGetCursorPosX()
-		+ DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_HEADER_TEXT_INSET_X)
-	);
-	igTextUnformatted(text, NULL);
-}
-
-static void begin_table_header_row() {
-	igTableNextRow(ImGuiTableRowFlags_Headers, 0.0f);
-	igTableSetBgColor(
-		ImGuiTableBgTarget_RowBg0,
-		igGetColorU32_Col(ImGuiCol_TableHeaderBg, 1.0f),
-		-1
-	);
-}
-
-static bool begin_settings_table_with_cell_padding(
-	const DTTR_ImGuiDialogContext *ctx,
-	const char *id,
-	float label_width,
-	float input_width,
-	float table_width,
-	float cell_padding_x
-) {
-	if (!begin_config_table(ctx, id, 2, cell_padding_x, table_width)) {
-		return false;
-	}
-
-	setup_scaled_table_column(
-		ctx,
-		"Setting",
-		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_IndentDisable
-			| ImGuiTableColumnFlags_NoHeaderLabel,
-		label_width
-	);
-	setup_scaled_table_column(
-		ctx,
-		"Value",
-		ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderLabel,
-		input_width
-	);
-	begin_table_header_row();
-	append_table_header_text(ctx, 0, "Setting");
-	append_table_header_text(ctx, 1, "Value");
-	return true;
-}
-
-bool begin_settings_table_with_width(
-	const DTTR_ImGuiDialogContext *ctx,
-	const char *id,
-	float label_width,
-	float input_width,
-	float table_width
-) {
-	return begin_settings_table_with_cell_padding(
-		ctx,
-		id,
-		label_width,
-		input_width,
-		table_width,
-		DTTR_CONFIG_UI_TABLE_CELL_PADDING_X
-	);
-}
-
 bool begin_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
 	float label_width,
 	float input_width
 ) {
-	return begin_settings_table_with_width(ctx, id, label_width, input_width, 0.0f);
+	if (!begin_config_table(ctx, id, 2, 0.0f)) {
+		return false;
+	}
+
+	setup_scaled_table_column(
+		ctx,
+		"Setting",
+		ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_IndentDisable,
+		label_width
+	);
+	setup_scaled_table_column(
+		ctx,
+		"Value",
+		ImGuiTableColumnFlags_WidthStretch,
+		input_width
+	);
+	igTableHeadersRow();
+	return true;
 }
 
 void end_settings_table() {
 	igEndTable();
-	igPopStyleVar(2);
+	igPopStyleVar(1);
 }
 
 void begin_config_table_row() {
@@ -525,24 +446,6 @@ void begin_config_table_row() {
 void begin_setting_row() {
 	begin_config_table_row();
 	igTableNextColumn();
-}
-
-float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width) {
-	const float available = igGetContentRegionAvail().x;
-	return available > 1.0f ? available : DTTR_ImGuiDialog_ScaledFloat(ctx, input_width);
-}
-
-float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count) {
-	float width = table_input_width(ctx, DTTR_CONFIG_UI_PATH_INPUT_W);
-	const float trailing_width = DTTR_ImGuiDialog_ScaledFloat(
-		ctx,
-		(float)button_count * DTTR_CONFIG_UI_PATH_BUTTON_W
-			+ (float)button_count * DTTR_CONFIG_UI_PATH_BUTTON_SPACING
-	);
-
-	const float text_width = width > trailing_width + 1.0f ? width - trailing_width
-														   : width;
-	return text_width > 1.0f ? text_width : 1.0f;
 }
 
 static ImVec4_c config_label_text_color(config_label_state label_state) {
@@ -571,17 +474,38 @@ void draw_config_label(
 	show_tooltip(tooltip);
 }
 
-static void begin_labeled_control(
-	const DTTR_ImGuiDialogContext *ctx,
+static void draw_labeled_control_label(
 	const char *label,
-	float input_width,
 	const char *tooltip,
 	config_label_state label_state
 ) {
 	igAlignTextToFramePadding();
 	draw_config_label(label, tooltip, label_state);
 	igTableNextColumn();
-	igSetNextItemWidth(table_input_width(ctx, input_width));
+}
+
+static void begin_labeled_control(
+	const char *label,
+	const char *tooltip,
+	config_label_state label_state
+) {
+	draw_labeled_control_label(label, tooltip, label_state);
+	igSetNextItemWidth(-FLT_MIN);
+}
+
+static float trailing_button_reserve(
+	const DTTR_ImGuiDialogContext *ctx,
+	int button_count,
+	float button_width
+) {
+	if (button_count <= 0) {
+		return FLT_MIN;
+	}
+
+	const ImGuiStyle *style = igGetStyle();
+	const float spacing = style ? style->ItemSpacing.x : 0.0f;
+	return (float)button_count * DTTR_ImGuiDialog_ScaledFloat(ctx, button_width)
+		   + (float)button_count * spacing;
 }
 
 static bool binding_row_button(
@@ -590,27 +514,11 @@ static bool binding_row_button(
 	const char *label,
 	const char *tooltip
 ) {
-	same_path_button_row(ctx);
+	igSameLine(0.0f, -1.0f);
 	const bool
 		clicked = themed_row_button(ctx, id, label, DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W);
 	show_tooltip(tooltip);
 	return clicked;
-}
-
-static float binding_value_field_width(
-	const DTTR_ImGuiDialogContext *ctx,
-	int button_count
-) {
-	const float width = table_input_width(ctx, DTTR_CONFIG_UI_BINDING_VALUE_W);
-	const float trailing_width = DTTR_ImGuiDialog_ScaledFloat(
-		ctx,
-		(float)button_count
-			* (DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W + DTTR_CONFIG_UI_PATH_BUTTON_SPACING)
-	);
-
-	const float field_width = width > trailing_width + 1.0f ? width - trailing_width
-															: width;
-	return field_width > 1.0f ? field_width : 1.0f;
 }
 
 static bool binding_value_field(
@@ -622,10 +530,10 @@ static bool binding_value_field(
 ) {
 	const ImVec2_c size = {
 		field_width,
-		igGetFrameHeight(),
+		0.0f,
 	};
 
-	const ImVec4_c bg = capturing ? DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED
+	const ImVec4_c bg = capturing ? DTTR_CONFIG_UI_BUTTON_HOVERED_BG
 								  : DTTR_IMGUI_COLOR_STACK_FRAME_BG;
 	const ImVec4_c text_color = capturing ? DTTR_CONFIG_UI_CHANGED_LABEL_TEXT_COLOR
 										  : DTTR_IMGUI_COLOR_BUTTON_TEXT;
@@ -635,8 +543,8 @@ static bool binding_value_field(
 	igPushID_Str("##bindvalue");
 	igPushStyleColor_Vec4(ImGuiCol_Text, text_color);
 	igPushStyleColor_Vec4(ImGuiCol_Button, bg);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG);
 	igPushStyleColor_Vec4(ImGuiCol_Border, border);
 	igPushStyleVar_Float(
 		ImGuiStyleVar_FrameRounding,
@@ -670,13 +578,18 @@ config_binding_row_result draw_config_binding_row(
 
 	const int trailing_buttons = (spec->show_clear_button ? 1 : 0)
 								 + (spec->show_reset_button ? 1 : 0);
+	const float reserve = trailing_button_reserve(
+		ctx,
+		trailing_buttons,
+		DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W
+	);
 
 	result.bind_clicked = binding_value_field(
 		ctx,
 		spec->capturing
 			? (spec->capture_display ? spec->capture_display : "Press any input...")
 			: (spec->display ? spec->display : "Unbound"),
-		binding_value_field_width(ctx, trailing_buttons),
+		-reserve,
 		spec->capturing,
 		spec->bind_tooltip ? spec->bind_tooltip
 						   : "Click, then press a key, mouse button, or gamepad button."
@@ -711,7 +624,7 @@ static void draw_path_picker_button(
 	const char *tooltip,
 	config_path_dialog_fn open_dialog
 ) {
-	same_path_button_row(ctx);
+	igSameLine(0.0f, -1.0f);
 
 	if (themed_row_button(ctx, id, label, DTTR_CONFIG_UI_PATH_BUTTON_W)) {
 		open_dialog(ctx, state);
@@ -755,12 +668,28 @@ static bool labeled_path_picker_with_dialog(
 	int button_count
 ) {
 	begin_setting_row();
-	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_PATH_INPUT_W, tooltip, label_state);
-	igSetNextItemWidth(path_text_input_width(ctx, button_count));
-	const bool
-		edited = igInputText(id, buf, buf_size, ImGuiInputTextFlags_None, NULL, NULL);
+
+	draw_labeled_control_label(label, tooltip, label_state);
+	igPushID_Str(id);
+
+	const float reserve = trailing_button_reserve(
+		ctx,
+		button_count,
+		DTTR_CONFIG_UI_PATH_BUTTON_W
+	);
+
+	igSetNextItemWidth(-reserve);
+	const bool edited = igInputText(
+		"##value",
+		buf,
+		buf_size,
+		ImGuiInputTextFlags_None,
+		NULL,
+		NULL
+	);
 	show_tooltip(tooltip);
 	draw_path_picker_buttons(ctx, state, buttons, button_count);
+	igPopID();
 	return edited;
 }
 
@@ -774,7 +703,7 @@ bool labeled_input_text(
 	config_label_state label_state
 ) {
 	begin_setting_row();
-	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_labeled_control(label, tooltip, label_state);
 	const bool
 		edited = igInputText(id, buf, buf_size, ImGuiInputTextFlags_None, NULL, NULL);
 	show_tooltip(tooltip);
@@ -864,7 +793,7 @@ bool labeled_input_int(
 	config_label_state label_state
 ) {
 	begin_setting_row();
-	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_labeled_control(label, tooltip, label_state);
 	const bool edited = igInputInt(id, value, step, step_fast, ImGuiInputTextFlags_None);
 	show_tooltip(tooltip);
 	return edited;
@@ -879,7 +808,7 @@ bool labeled_input_float(
 	config_label_state label_state
 ) {
 	begin_setting_row();
-	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_labeled_control(label, tooltip, label_state);
 	const bool
 		edited = igInputFloat(id, value, 0.05f, 0.25f, "%.3f", ImGuiInputTextFlags_None);
 	show_tooltip(tooltip);
@@ -895,7 +824,7 @@ bool labeled_checkbox(
 	config_label_state label_state
 ) {
 	begin_setting_row();
-	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_labeled_control(label, tooltip, label_state);
 	const bool edited = igCheckbox(id, value);
 	show_tooltip(tooltip);
 	return edited;
@@ -912,7 +841,7 @@ bool labeled_choice_combo(
 	config_label_state label_state
 ) {
 	begin_setting_row();
-	begin_labeled_control(ctx, label, DTTR_CONFIG_UI_INPUT_W, tooltip, label_state);
+	begin_labeled_control(label, tooltip, label_state);
 	const bool edited = choice_combo(id, value, choices, tooltips);
 	show_tooltip(tooltip);
 	return edited;

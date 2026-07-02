@@ -1,5 +1,7 @@
 #include "gui_internal.h"
 
+#include <float.h>
+
 static const char *TOOLTIP_HOT_RELOAD = "Hot-reload mod DLLs while the game runs. "
 										"Default: false.";
 static const char *TOOLTIP_MOD_ENABLE = "Load this mod DLL on the next game launch. "
@@ -8,17 +10,10 @@ static const char *MODDING_WARNING_TEXT = "The DttR modding API is currently "
 										  "experimental and may change "
 										  "without warning.";
 
-#define DTTR_CONFIG_UI_MOD_ENABLE_W 4.0f
-
 typedef struct {
 	int count;
 	char names[DTTR_CONFIG_DISABLED_MODS_MAX][MAX_PATH];
 } config_mod_dll_list;
-
-static float mod_enable_column_width(const DTTR_ImGuiDialogContext *ctx) {
-	return igGetFrameHeight()
-		   + DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_MOD_ENABLE_W);
-}
 
 static bool collect_mod_dll(const char *dll_name, void *user_data) {
 	config_mod_dll_list *out = user_data;
@@ -42,19 +37,14 @@ static void scan_mod_dlls(const config_ui_state *state, config_mod_dll_list *out
 	for_each_mod_dll(state ? state->mods_dir : NULL, collect_mod_dll, out);
 }
 
-static bool begin_mod_table(const DTTR_ImGuiDialogContext *ctx) {
+static bool begin_mod_table(void) {
 	const ImGuiTableFlags flags = (CONFIG_TABLE_FLAGS & ~ImGuiTableFlags_PadOuterX)
 								  | ImGuiTableFlags_NoPadOuterX;
 	if (!igBeginTable("##modding_mod_table", 2, flags, (ImVec2_c){0.0f, 0.0f}, 0.0f)) {
 		return false;
 	}
 
-	igTableSetupColumn(
-		"On",
-		ImGuiTableColumnFlags_WidthFixed,
-		mod_enable_column_width(ctx),
-		0
-	);
+	igTableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
 	igTableSetupColumn("DLL", ImGuiTableColumnFlags_WidthStretch, 0.0f, 0);
 	igTableHeadersRow();
 	return true;
@@ -176,7 +166,6 @@ static config_label_state mod_field_label_state(
 }
 
 static bool labeled_enum_combo(
-	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state,
 	const config_mod_field_ui *field,
 	char *value,
@@ -191,7 +180,7 @@ static bool labeled_enum_combo(
 	igAlignTextToFramePadding();
 	draw_config_label(field->label, field->tooltip, label_state);
 	igTableNextColumn();
-	igSetNextItemWidth(table_input_width(ctx, DTTR_CONFIG_UI_INPUT_W));
+	igSetNextItemWidth(-FLT_MIN);
 
 	if (igBeginCombo("##value", preview, ImGuiComboFlags_None)) {
 		for (int i = 0; i < field->choice_count; i++) {
@@ -399,7 +388,7 @@ static void draw_mod_config_field(
 			}
 		}
 
-		if (labeled_enum_combo(ctx, state, field, value, sizeof(value), label_state)) {
+		if (labeled_enum_combo(state, field, value, sizeof(value), label_state)) {
 			DTTR_Config_SetModString(&state->config, mod->mod_id, field->id, value);
 		}
 
@@ -457,7 +446,7 @@ static void draw_mod_config_sections(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
 ) {
-	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_SECTION_SPACING);
+	igSpacing();
 	igSeparatorText("Mod Configs");
 
 	if (state->mod_config_count == 0) {
@@ -479,8 +468,8 @@ static void draw_mod_config_sections(
 	igEndTabBar();
 }
 
-static void draw_mod_section_header(const DTTR_ImGuiDialogContext *ctx) {
-	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_SECTION_SPACING);
+static void draw_mod_section_header(void) {
+	igSpacing();
 	igSeparatorText("Mods");
 	show_tooltip(TOOLTIP_MOD_ENABLE);
 }
@@ -489,7 +478,7 @@ void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_WARNING_TEXT_COLOR);
 	igTextWrapped("%s", MODDING_WARNING_TEXT);
 	igPopStyleColor(1);
-	add_scaled_vertical_spacing(ctx, 4.0f);
+	igSpacing();
 
 	if (!begin_tab_settings_table(
 			ctx,
@@ -512,7 +501,7 @@ void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	config_mod_dll_list mods;
 	scan_mod_dlls(state, &mods);
 
-	draw_mod_section_header(ctx);
+	draw_mod_section_header();
 
 	if (mods.count == 0) {
 		igTextWrapped(
@@ -523,7 +512,7 @@ void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		return;
 	}
 
-	if (!begin_mod_table(ctx)) {
+	if (!begin_mod_table()) {
 		return;
 	}
 

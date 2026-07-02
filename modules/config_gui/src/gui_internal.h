@@ -14,38 +14,47 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DTTR_CONFIG_UI_MIN_WINDOW_W 620
-#define DTTR_CONFIG_UI_WINDOW_H 550
+#define DTTR_CONFIG_UI_MIN_WINDOW_W 600
+#define DTTR_CONFIG_UI_WINDOW_H 480
+#define DTTR_CONFIG_UI_MIN_RESIZABLE_WINDOW_W 300
+#define DTTR_CONFIG_UI_MIN_RESIZABLE_WINDOW_H 90
 #define DTTR_CONFIG_UI_LABEL_W 170.0f
 #define DTTR_CONFIG_UI_INPUT_W 285.0f
 #define DTTR_CONFIG_UI_PATH_INPUT_W 160.0f
 #define DTTR_CONFIG_UI_PATH_BUTTON_W 70.0f
 #define DTTR_CONFIG_UI_MOD_BINDING_BUTTON_W 46.0f
-#define DTTR_CONFIG_UI_BINDING_VALUE_W 180.0f
 #define DTTR_CONFIG_UI_PANEL_PADDING_X 7.5f
-#define DTTR_CONFIG_UI_PANEL_PADDING_Y 14.0f
+#define DTTR_CONFIG_UI_PANEL_PADDING_Y DTTR_CONFIG_UI_PANEL_PADDING_X
 #define DTTR_CONFIG_UI_ITEM_SPACING_X 8.0f
 #define DTTR_CONFIG_UI_ITEM_SPACING_Y 6.0f
 #define DTTR_CONFIG_UI_TABLE_CELL_PADDING_X 8.0f
-#define DTTR_CONFIG_UI_TABLE_CELL_PADDING_Y 4.0f
-#define DTTR_CONFIG_UI_HEADER_TEXT_INSET_X 2.0f
-#define DTTR_CONFIG_UI_COMBO_POPUP_PADDING_Y 0.0f
-#define DTTR_CONFIG_UI_SECTION_SPACING 10.0f
-#define DTTR_CONFIG_UI_LABEL_TEXT_COLOR ((ImVec4_c){0.72f, 0.50f, 0.95f, 1.0f})
+#define DTTR_CONFIG_UI_LABEL_TEXT_COLOR ((ImVec4_c){0.84f, 0.84f, 0.82f, 1.0f})
 #define DTTR_CONFIG_UI_CHANGED_LABEL_TEXT_COLOR ((ImVec4_c){1.0f, 0.82f, 0.25f, 1.0f})
 #define DTTR_CONFIG_UI_SAVED_CHANGED_LABEL_TEXT_COLOR                                    \
-	((ImVec4_c){0.48f, 0.78f, 1.0f, 1.0f})
+	((ImVec4_c){0.604f, 0.573f, 0.827f, 1.0f})
 #define DTTR_CONFIG_UI_TOOLTIP_DEFAULT_TEXT_COLOR ((ImVec4_c){0.48f, 0.90f, 0.48f, 1.0f})
-#define DTTR_CONFIG_UI_SELECTED_TAB_BG ((ImVec4_c){0.115f, 0.130f, 0.150f, 1.0f})
+#define DTTR_CONFIG_UI_TAB_ACCENT_COLOR ((ImVec4_c){0.400f, 0.345f, 0.760f, 1.0f})
+#define DTTR_CONFIG_UI_TAB_BG ((ImVec4_c){0.075f, 0.075f, 0.078f, 1.0f})
+#define DTTR_CONFIG_UI_SELECTED_TAB_BG ((ImVec4_c){0.105f, 0.105f, 0.112f, 1.0f})
+#define DTTR_CONFIG_UI_SELECTED_TAB_TEXT_COLOR ((ImVec4_c){0.96f, 0.96f, 0.94f, 1.0f})
+#define DTTR_CONFIG_UI_TAB_HOVERED_BG ((ImVec4_c){0.145f, 0.145f, 0.152f, 1.0f})
+#define DTTR_CONFIG_UI_TOP_BAR_BG ((ImVec4_c){0.0f, 0.0f, 0.0f, 1.0f})
+#define DTTR_CONFIG_UI_TOOLBAR_PADDING_X 8.0f
+#define DTTR_CONFIG_UI_TOOLBAR_PADDING_Y 4.0f
+#define DTTR_CONFIG_UI_TOOLBAR_BUTTON_PADDING_X 12.0f
+#define DTTR_CONFIG_UI_TOOLBAR_BUTTON_SPACING_X 8.0f
+#define DTTR_CONFIG_UI_TOOLBAR_BUTTON_ROUNDING 4.0f
+#define DTTR_CONFIG_UI_TAB_ACCENT_H 2.0f
+#define DTTR_CONFIG_UI_BUTTON_HOVERED_BG ((ImVec4_c){0.239f, 0.208f, 0.478f, 1.0f})
+#define DTTR_CONFIG_UI_BUTTON_ACTIVE_BG ((ImVec4_c){0.176f, 0.157f, 0.357f, 1.0f})
 #define DTTR_CONFIG_UI_BORDER_COLOR ((ImVec4_c){0.105f, 0.115f, 0.125f, 1.0f})
 #define DTTR_CONFIG_UI_TABLE_BORDER_COLOR ((ImVec4_c){0.135f, 0.145f, 0.155f, 1.0f})
+#define DTTR_CONFIG_UI_TABLE_HEADER_BG ((ImVec4_c){0.080f, 0.085f, 0.092f, 1.0f})
 #define DTTR_CONFIG_UI_SEPARATOR_COLOR ((ImVec4_c){0.120f, 0.130f, 0.140f, 1.0f})
-#define DTTR_CONFIG_UI_PATH_BUTTON_SPACING 4.0f
 #define DTTR_CONFIG_UI_STATUS_TEXT_COLOR ((ImVec4_c){1.0f, 0.82f, 0.25f, 1.0f})
 #define DTTR_CONFIG_UI_HINT_TEXT_COLOR ((ImVec4_c){0.72f, 0.74f, 0.78f, 1.0f})
 #define DTTR_CONFIG_UI_WARNING_TEXT_COLOR ((ImVec4_c){1.0f, 0.55f, 0.18f, 1.0f})
 #define DTTR_CONFIG_UI_STATUS_TIMEOUT_MS 5000
-#define DTTR_CONFIG_UI_HEADER_TOP_SPACING 0.0f
 #define DTTR_CONFIG_UI_TOOLTIP_PADDING_Y 4.0f
 #define DTTR_CONFIG_UI_TOOLTIP_WRAP_W 360.0f
 #define DTTR_CONFIG_UI_MOD_CONFIG_LABEL_MAX 96
@@ -57,10 +66,6 @@
 	(ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH                       \
 	 | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoSavedSettings               \
 	 | ImGuiTableFlags_PadOuterX)
-
-#ifndef DTTR_VERSION
-#define DTTR_VERSION "unknown"
-#endif
 
 typedef bool (*mod_dll_visitor)(const char *dll_name, void *user_data);
 
@@ -169,7 +174,6 @@ void for_each_mod_dll(const char *mods_dir, mod_dll_visitor visit, void *user_da
 
 float config_standard_input_width();
 int config_window_width();
-void add_scaled_vertical_spacing(const DTTR_ImGuiDialogContext *ctx, float height);
 
 void set_status(config_ui_state *state, const char *status);
 void set_mods_dir_from_config_path(config_ui_state *state);
@@ -202,16 +206,9 @@ bool begin_config_content_region(
 	const config_ui_state *state
 );
 void end_config_content_region();
-void draw_footer_text(const DTTR_ImGuiDialogContext *ctx, const config_ui_state *state);
+void draw_footer_text(const config_ui_state *state);
 bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx);
 void end_padded_panel();
-bool begin_settings_table_with_width(
-	const DTTR_ImGuiDialogContext *ctx,
-	const char *id,
-	float label_width,
-	float input_width,
-	float table_width
-);
 bool begin_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
@@ -221,8 +218,6 @@ bool begin_settings_table(
 void end_settings_table();
 void begin_config_table_row();
 void begin_setting_row();
-float table_input_width(const DTTR_ImGuiDialogContext *ctx, float input_width);
-float path_text_input_width(const DTTR_ImGuiDialogContext *ctx, int button_count);
 void draw_config_label(
 	const char *label,
 	const char *tooltip,
@@ -325,7 +320,7 @@ bool begin_tab_settings_table(
 void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
-void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
+void draw_controls_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 void draw_tabs(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state);
 

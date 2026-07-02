@@ -42,6 +42,19 @@ static int scaled_int(const DTTR_ImGuiDialogContext *ctx, float value) {
 	return scaled > 0 ? scaled : 1;
 }
 
+static void apply_dialog_window_minimum_size_for_scale(DTTR_ImGuiDialogContext *ctx) {
+	if (!ctx || !ctx->window || ctx->logical_min_window_width <= 0
+		|| ctx->logical_min_window_height <= 0) {
+		return;
+	}
+
+	SDL_SetWindowMinimumSize(
+		ctx->window,
+		scaled_int(ctx, (float)ctx->logical_min_window_width),
+		scaled_int(ctx, (float)ctx->logical_min_window_height)
+	);
+}
+
 static void resize_dialog_window_for_scale(DTTR_ImGuiDialogContext *ctx) {
 	if (!ctx || !ctx->window || ctx->logical_window_width <= 0
 		|| ctx->logical_window_height <= 0) {
@@ -69,7 +82,11 @@ bool DTTR_ImGuiDialog_RefreshScale(DTTR_ImGuiDialogContext *ctx) {
 	const bool scale_changed = style_changed
 							   || DTTR_ImGui_ScaleChanged(old_scale, ctx->desktop_scale);
 	if (scale_changed) {
-		resize_dialog_window_for_scale(ctx);
+		apply_dialog_window_minimum_size_for_scale(ctx);
+		if (!ctx->resizable || !ctx->scaled_initial_size_applied) {
+			resize_dialog_window_for_scale(ctx);
+			ctx->scaled_initial_size_applied = true;
+		}
 	}
 
 	return scale_changed;
@@ -158,6 +175,17 @@ bool DTTR_ImGuiDialog_Begin(
 	int width,
 	int height
 ) {
+	return DTTR_ImGuiDialog_BeginResizable(ctx, title, width, height, 0, 0);
+}
+
+bool DTTR_ImGuiDialog_BeginResizable(
+	DTTR_ImGuiDialogContext *ctx,
+	const char *title,
+	int width,
+	int height,
+	int min_width,
+	int min_height
+) {
 	if (!ctx) {
 		return false;
 	}
@@ -169,6 +197,9 @@ bool DTTR_ImGuiDialog_Begin(
 
 	ctx->logical_window_width = width;
 	ctx->logical_window_height = height;
+	ctx->logical_min_window_width = min_width;
+	ctx->logical_min_window_height = min_height;
+	ctx->resizable = min_width > 0 && min_height > 0;
 
 	set_gl_attributes();
 
@@ -177,6 +208,7 @@ bool DTTR_ImGuiDialog_Begin(
 		width,
 		height,
 		SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN
+			| (ctx->resizable ? SDL_WINDOW_RESIZABLE : 0)
 	);
 	if (!ctx->window) {
 		goto fail;
