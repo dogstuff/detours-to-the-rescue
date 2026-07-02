@@ -230,22 +230,40 @@ def generate_xref_metadata(
     return metadata
 
 
-def prepare_docs_favicon(pages_out: Path) -> Path:
-    favicon_path = pages_out / "assets/images/favicon.png"
-    favicon_path.parent.mkdir(parents=True, exist_ok=True)
+def render_icon_png(output_path: Path, size: int, *, label: str) -> Path:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     run_checked(
         [
-            "magick",
+            "rsvg-convert",
+            "-w",
+            str(size),
+            "-h",
+            str(size),
+            "-f",
+            "png",
+            "-o",
+            str(output_path),
             str(ICON_SOURCE),
-            "-background",
-            "none",
-            "-resize",
-            "48x48",
-            f"PNG32:{favicon_path}",
         ],
-        label="docs favicon generation",
+        label=label,
     )
-    return favicon_path
+    return output_path
+
+
+def prepare_docs_brand_assets(pages_out: Path) -> list[Path]:
+    images_dir = pages_out / "assets/images"
+    return [
+        render_icon_png(
+            images_dir / "favicon.png",
+            48,
+            label="docs favicon generation",
+        ),
+        render_icon_png(
+            images_dir / "logo.png",
+            64,
+            label="docs logo generation",
+        ),
+    ]
 
 
 def relative_to_output(path: Path, output_dir: Path) -> str:
@@ -313,7 +331,7 @@ def main() -> int:
         shutil.copytree(overrides_dir, overrides_out)
 
     try:
-        favicon_path = prepare_docs_favicon(pages_out)
+        brand_asset_paths = prepare_docs_brand_assets(pages_out)
     except (FileNotFoundError, RuntimeError) as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -335,7 +353,7 @@ def main() -> int:
         output_dir=output_dir,
         source_dir=source_dir,
         config_path=config_path,
-        metadata_paths=[favicon_path, *metadata_paths],
+        metadata_paths=[*brand_asset_paths, *metadata_paths],
     )
     return 0
 

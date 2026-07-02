@@ -135,6 +135,7 @@
                 doxygen
                 zensical
                 imagemagick
+                librsvg
                 curl
                 glab
                 zip

@@ -91,15 +91,24 @@ endfunction()
 
 function(dttr_configure_icon_assets)
 	find_program(DTTR_MAGICK magick REQUIRED)
+	find_program(DTTR_RSVG_CONVERT rsvg-convert REQUIRED)
 	find_program(DTTR_XXD xxd REQUIRED)
 
 	set(DTTR_ICON_SOURCE "${CMAKE_SOURCE_DIR}/assets/icons/dttr.svg")
 	set(DTTR_CONFIG_ICON_SOURCE "${CMAKE_SOURCE_DIR}/assets/icons/dttr_config.svg")
 	set(DTTR_ICON_GENERATED_DIR "${CMAKE_BINARY_DIR}/generated/icons")
+	set(DTTR_ICON_16_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_16.png")
+	set(DTTR_ICON_32_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_32.png")
+	set(DTTR_ICON_48_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_48.png")
+	set(DTTR_ICON_256_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_256.png")
 	set(DTTR_ICON_ICO "${DTTR_ICON_GENERATED_DIR}/dttr.ico")
 	set(DTTR_ICON_RESOURCE "${DTTR_ICON_GENERATED_DIR}/dttr_icon.rc")
 	set(DTTR_WINDOW_ICON_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_window_icon.png")
 	set(DTTR_WINDOW_ICON_HEADER "${DTTR_ICON_GENERATED_DIR}/dttr_window_icon.h")
+	set(DTTR_CONFIG_ICON_16_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_config_16.png")
+	set(DTTR_CONFIG_ICON_32_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_config_32.png")
+	set(DTTR_CONFIG_ICON_48_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_config_48.png")
+	set(DTTR_CONFIG_ICON_256_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_config_256.png")
 	set(DTTR_CONFIG_ICON_ICO "${DTTR_ICON_GENERATED_DIR}/dttr_config.ico")
 	set(DTTR_CONFIG_ICON_RESOURCE "${DTTR_ICON_GENERATED_DIR}/dttr_config_icon.rc")
 	set(DTTR_CONFIG_WINDOW_ICON_PNG "${DTTR_ICON_GENERATED_DIR}/dttr_config_window_icon.png")
@@ -111,19 +120,34 @@ function(dttr_configure_icon_assets)
 	add_custom_command(
 		OUTPUT
 			"${DTTR_ICON_ICO}"
+			"${DTTR_ICON_16_PNG}"
+			"${DTTR_ICON_32_PNG}"
+			"${DTTR_ICON_48_PNG}"
+			"${DTTR_ICON_256_PNG}"
 			"${DTTR_WINDOW_ICON_PNG}"
 			"${DTTR_WINDOW_ICON_HEADER}"
-		COMMAND "${DTTR_MAGICK}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 256 -h 256 -f png
+			-o "${DTTR_ICON_256_PNG}"
 			"${DTTR_ICON_SOURCE}"
-			-background none
-			-define icon:auto-resize=256,48,32,16
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 48 -h 48 -f png
+			-o "${DTTR_ICON_48_PNG}"
+			"${DTTR_ICON_SOURCE}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 32 -h 32 -f png
+			-o "${DTTR_ICON_32_PNG}"
+			"${DTTR_ICON_SOURCE}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 16 -h 16 -f png
+			-o "${DTTR_ICON_16_PNG}"
+			"${DTTR_ICON_SOURCE}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 64 -h 64 -f png
+			-o "${DTTR_WINDOW_ICON_PNG}"
+			"${DTTR_ICON_SOURCE}"
+		COMMAND "${DTTR_MAGICK}"
+			"${DTTR_ICON_256_PNG}"
+			"${DTTR_ICON_48_PNG}"
+			"${DTTR_ICON_32_PNG}"
+			"${DTTR_ICON_16_PNG}"
 			-define icon:png-compression-size=1
 			"${DTTR_ICON_ICO}"
-		COMMAND "${DTTR_MAGICK}"
-			"${DTTR_ICON_SOURCE}"
-			-background none
-			-resize 64x64
-			"PNG32:${DTTR_WINDOW_ICON_PNG}"
 		COMMAND "${DTTR_XXD}" -i -n DTTR_WINDOW_ICON_PNG
 			"${DTTR_WINDOW_ICON_PNG}"
 			"${DTTR_WINDOW_ICON_HEADER}"
@@ -136,19 +160,34 @@ function(dttr_configure_icon_assets)
 	add_custom_command(
 		OUTPUT
 			"${DTTR_CONFIG_ICON_ICO}"
+			"${DTTR_CONFIG_ICON_16_PNG}"
+			"${DTTR_CONFIG_ICON_32_PNG}"
+			"${DTTR_CONFIG_ICON_48_PNG}"
+			"${DTTR_CONFIG_ICON_256_PNG}"
 			"${DTTR_CONFIG_WINDOW_ICON_PNG}"
 			"${DTTR_CONFIG_WINDOW_ICON_HEADER}"
-		COMMAND "${DTTR_MAGICK}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 256 -h 256 -f png
+			-o "${DTTR_CONFIG_ICON_256_PNG}"
 			"${DTTR_CONFIG_ICON_SOURCE}"
-			-background none
-			-define icon:auto-resize=256,48,32,16
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 48 -h 48 -f png
+			-o "${DTTR_CONFIG_ICON_48_PNG}"
+			"${DTTR_CONFIG_ICON_SOURCE}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 32 -h 32 -f png
+			-o "${DTTR_CONFIG_ICON_32_PNG}"
+			"${DTTR_CONFIG_ICON_SOURCE}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 16 -h 16 -f png
+			-o "${DTTR_CONFIG_ICON_16_PNG}"
+			"${DTTR_CONFIG_ICON_SOURCE}"
+		COMMAND "${DTTR_RSVG_CONVERT}" -w 64 -h 64 -f png
+			-o "${DTTR_CONFIG_WINDOW_ICON_PNG}"
+			"${DTTR_CONFIG_ICON_SOURCE}"
+		COMMAND "${DTTR_MAGICK}"
+			"${DTTR_CONFIG_ICON_256_PNG}"
+			"${DTTR_CONFIG_ICON_48_PNG}"
+			"${DTTR_CONFIG_ICON_32_PNG}"
+			"${DTTR_CONFIG_ICON_16_PNG}"
 			-define icon:png-compression-size=1
 			"${DTTR_CONFIG_ICON_ICO}"
-		COMMAND "${DTTR_MAGICK}"
-			"${DTTR_CONFIG_ICON_SOURCE}"
-			-background none
-			-resize 64x64
-			"PNG32:${DTTR_CONFIG_WINDOW_ICON_PNG}"
 		COMMAND "${DTTR_XXD}" -i -n DTTR_CONFIG_WINDOW_ICON_PNG
 			"${DTTR_CONFIG_WINDOW_ICON_PNG}"
 			"${DTTR_CONFIG_WINDOW_ICON_HEADER}"
@@ -161,10 +200,18 @@ function(dttr_configure_icon_assets)
 	add_custom_target(dttr_icon_assets
 		DEPENDS
 			"${DTTR_ICON_ICO}"
+			"${DTTR_ICON_16_PNG}"
+			"${DTTR_ICON_32_PNG}"
+			"${DTTR_ICON_48_PNG}"
+			"${DTTR_ICON_256_PNG}"
 			"${DTTR_ICON_RESOURCE}"
 			"${DTTR_WINDOW_ICON_PNG}"
 			"${DTTR_WINDOW_ICON_HEADER}"
 			"${DTTR_CONFIG_ICON_ICO}"
+			"${DTTR_CONFIG_ICON_16_PNG}"
+			"${DTTR_CONFIG_ICON_32_PNG}"
+			"${DTTR_CONFIG_ICON_48_PNG}"
+			"${DTTR_CONFIG_ICON_256_PNG}"
 			"${DTTR_CONFIG_ICON_RESOURCE}"
 			"${DTTR_CONFIG_WINDOW_ICON_PNG}"
 			"${DTTR_CONFIG_WINDOW_ICON_HEADER}"
