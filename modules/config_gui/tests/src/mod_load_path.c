@@ -5,17 +5,13 @@
 static void mod_dependency_dir_valid(void **state) {
 	char path[64] = {0};
 
-	assert_true(
-		config_ui_build_mod_dependency_dir("C:\\Game\\mods", path, sizeof(path))
-	);
+	assert_true(config_ui_build_mod_dependency_dir("C:\\Game\\mods", path, sizeof(path)));
 	assert_string_equal(path, "C:\\Game\\modules");
 
 	char trailing[64] = {0};
-	assert_true(config_ui_build_mod_dependency_dir(
-		"C:\\Game\\mods\\",
-		trailing,
-		sizeof(trailing)
-	));
+	assert_true(
+		config_ui_build_mod_dependency_dir("C:\\Game\\mods\\", trailing, sizeof(trailing))
+	);
 
 	char small[8] = "stale";
 	assert_false(

@@ -26,6 +26,12 @@ typedef struct {
 
 #define DINPUT_POV_CENTERED 0xFFFFFFFF
 
+static bool neutralize_left_stick;
+
+void dttr_inputs_hook_dinput_neutralize_left_stick(bool neutralize) {
+	neutralize_left_stick = neutralize;
+}
+
 static void init_poll_state(di_joy_state *state) {
 	SDL_zerop(state);
 
@@ -62,8 +68,11 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 		return state;
 	}
 
-	state->x = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_X);
-	state->y = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_Y);
+	if (!neutralize_left_stick) {
+		state->x = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_X);
+		state->y = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_Y);
+	}
+
 	state->rz = read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ);
 
 	return state;

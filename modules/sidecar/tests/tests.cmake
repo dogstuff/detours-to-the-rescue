@@ -56,4 +56,7 @@ dttr_add_cmocka_test_suite(dttr_sidecar_key_state_tests
         ${DTTR_SDL3_RUNTIME_DLL}
 )
 target_compile_definitions(dttr_sidecar_key_state_tests PRIVATE DTTR_SDK_ENABLE_UNSTABLE)
-target_link_options(dttr_sidecar_key_state_tests PRIVATE -Wl,--wrap=SDL_RumbleGamepad)
+target_link_options(dttr_sidecar_key_state_tests PRIVATE
+    -Wl,--wrap=SDL_RumbleGamepad
+    -Wl,--wrap=SDL_GetGamepadButton
+)

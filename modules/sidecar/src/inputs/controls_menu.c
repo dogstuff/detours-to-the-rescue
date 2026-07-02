@@ -44,32 +44,18 @@ void dttr_inputs_controls_menu_handle_event(const SDL_Event *event) {
 	}
 }
 
-static bool configured_control_pressed(
-	const char *action_key,
-	const bool *keyboard_state,
-	int keyboard_state_count
-) {
-	const int action = DTTR_Config_ControlActionIndex(action_key);
-	return action >= 0
-		   && dttr_inputs_control_action_pressed(
-			   action,
-			   keyboard_state,
-			   keyboard_state_count
-		   );
-}
-
 static int32_t remap_return_key(
 	int32_t pressed_button,
 	const bool *keyboard_state,
 	int keyboard_state_count
 ) {
-	const bool return_requested = pressed_button == VK_RETURN
-								  || configured_control_pressed(
-									  "menu_confirm",
-									  keyboard_state,
-									  keyboard_state_count
-								  );
-	if (!return_requested) {
+	const int action = DTTR_Config_ControlActionIndex("menu_confirm");
+	if (pressed_button != VK_RETURN
+		&& !dttr_inputs_control_action_pressed(
+			action,
+			keyboard_state,
+			keyboard_state_count
+		)) {
 		return pressed_button;
 	}
 
@@ -182,11 +168,6 @@ static bool escape_requested(
 	int keyboard_state_count
 ) {
 	return pressed_button == VK_ESCAPE
-		   || configured_control_pressed(
-			   "menu_cancel",
-			   keyboard_state,
-			   keyboard_state_count
-		   )
 		   || dttr_inputs_keyboard_scancode_pressed(
 			   keyboard_state,
 			   keyboard_state_count,

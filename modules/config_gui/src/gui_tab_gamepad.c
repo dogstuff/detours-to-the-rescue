@@ -35,7 +35,7 @@ static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_POSITION
 	  "in red. Camera controls are still bound in the game Controls menu.";
 static const char *TOOLTIP_CONTROL_BINDINGS
 	= "Click a binding, then press a keyboard key or gamepad button. "
-	  "Only controls missing from the in-game Controls menu are shown here.";
+	  "These controls are not in the in-game Controls menu.";
 static const char *TOOLTIP_CONTROL_BINDING_DEFAULT = "Uses the game's pcdogs.ini/default "
 													 "binding. Click to override.";
 #define GAMEPAD_AXIS_PREVIEW_SIZE 72.0f
@@ -517,38 +517,6 @@ static void draw_axis_positions(
 	);
 }
 
-static void draw_gamepad_axes(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
-	if (!begin_settings_table(
-			ctx,
-			"##gamepad_axes_table",
-			DTTR_CONFIG_UI_LABEL_W,
-			DTTR_CONFIG_UI_INPUT_W
-		)) {
-		return;
-	}
-
-	labeled_checkbox(
-		ctx,
-		"Enable Gamepad",
-		"##gamepad_enabled",
-		&state->config.gamepad_enabled,
-		TOOLTIP_GAMEPAD_ENABLED,
-		FIELD_LABEL_STATE(state, gamepad_enabled)
-	);
-	labeled_input_int(
-		ctx,
-		"Gamepad Index",
-		"##gamepad_index",
-		&state->config.gamepad_index,
-		1,
-		1,
-		TOOLTIP_GAMEPAD_INDEX,
-		FIELD_LABEL_STATE(state, gamepad_index)
-	);
-
-	end_settings_table();
-}
-
 static void draw_gamepad_stick_mappings(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
@@ -654,29 +622,42 @@ static void draw_control_binding_row(
 	igPopID();
 }
 
-static void draw_control_bindings(
+static void draw_gamepad_settings(
 	const DTTR_ImGuiDialogContext *ctx,
 	config_ui_state *state
 ) {
-	add_scaled_vertical_spacing(ctx, DTTR_CONFIG_UI_SECTION_SPACING);
-	igSeparatorText("Control Bindings");
-	show_tooltip(TOOLTIP_CONTROL_BINDINGS);
-
 	if (!begin_settings_table(
 			ctx,
-			"##control_bindings_table",
+			"##gamepad_settings_table",
 			DTTR_CONFIG_UI_LABEL_W,
 			config_standard_input_width()
 		)) {
 		return;
 	}
 
-	for (int action = 0; action < DTTR_CONFIG_CONTROL_ACTION_COUNT; action++) {
-		if (DTTR_Config_ControlActionInGameBindable(action)) {
-			continue;
-		}
+	labeled_checkbox(
+		ctx,
+		"Enable Gamepad",
+		"##gamepad_enabled",
+		&state->config.gamepad_enabled,
+		TOOLTIP_GAMEPAD_ENABLED,
+		FIELD_LABEL_STATE(state, gamepad_enabled)
+	);
+	labeled_input_int(
+		ctx,
+		"Gamepad Index",
+		"##gamepad_index",
+		&state->config.gamepad_index,
+		1,
+		1,
+		TOOLTIP_GAMEPAD_INDEX,
+		FIELD_LABEL_STATE(state, gamepad_index)
+	);
 
-		draw_control_binding_row(ctx, state, action);
+	for (int action = 0; action < DTTR_CONFIG_CONTROL_ACTION_COUNT; action++) {
+		if (!DTTR_Config_ControlActionInGameBindable(action)) {
+			draw_control_binding_row(ctx, state, action);
+		}
 	}
 
 	end_settings_table();
@@ -693,8 +674,7 @@ void draw_gamepad_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		return;
 	}
 
-	draw_gamepad_axes(ctx, state);
+	draw_gamepad_settings(ctx, state);
 	draw_gamepad_stick_mappings(ctx, state);
-	draw_control_bindings(ctx, state);
 	igEndChild();
 }

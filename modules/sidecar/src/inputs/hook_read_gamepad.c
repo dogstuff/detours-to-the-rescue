@@ -50,6 +50,7 @@ void dttr_inputs_hook_read_gamepad_reset() {
 	read_gamepad_ctx = NULL;
 	rz_negative_mask = NULL;
 	rz_positive_mask = NULL;
+	dttr_inputs_hook_dinput_neutralize_left_stick(false);
 	dttr_inputs_hook_read_gamepad_original = NULL;
 }
 
@@ -85,7 +86,10 @@ void __cdecl dttr_inputs_hook_read_gamepad_callback(DTTR_PCDOGS_T_Input_State *s
 	}
 
 	if (dttr_inputs_hook_read_gamepad_original) {
+		const bool neutralize = dttr_config.gamepad_analog_remap;
+		dttr_inputs_hook_dinput_neutralize_left_stick(neutralize);
 		dttr_inputs_hook_read_gamepad_original(state);
+		dttr_inputs_hook_dinput_neutralize_left_stick(false);
 	}
 
 	uint8_t available = 0;

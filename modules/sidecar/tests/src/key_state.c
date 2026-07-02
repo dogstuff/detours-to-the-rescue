@@ -21,6 +21,7 @@ static SDL_Gamepad *sdl_rumble_gamepad;
 static uint16_t sdl_rumble_low_frequency;
 static uint16_t sdl_rumble_high_frequency;
 static uint32_t sdl_rumble_duration_ms;
+static bool pressed_gamepad_buttons[SDL_GAMEPAD_BUTTON_COUNT];
 
 static int32_t __cdecl register_button_mapping_original_stub(
 	int32_t control_code,
@@ -38,6 +39,15 @@ static int32_t __cdecl set_rumble_suppress_original_stub(char suppress_rumble) {
 	return suppress_rumble;
 }
 
+static void __cdecl read_devices_original_stub(
+	int32_t player_index,
+	DTTR_PCDOGS_T_Input_State *state
+) {
+	if (state) {
+		state->button_bits = 0x40;
+	}
+}
+
 bool SDLCALL __wrap_SDL_RumbleGamepad(
 	SDL_Gamepad *gamepad,
 	uint16_t low_frequency_rumble,
@@ -50,6 +60,11 @@ bool SDLCALL __wrap_SDL_RumbleGamepad(
 	sdl_rumble_high_frequency = high_frequency_rumble;
 	sdl_rumble_duration_ms = duration_ms;
 	return true;
+}
+
+bool SDLCALL __wrap_SDL_GetGamepadButton(SDL_Gamepad *gamepad, SDL_GamepadButton button) {
+	return gamepad && button >= 0 && button < SDL_GAMEPAD_BUTTON_COUNT
+		   && pressed_gamepad_buttons[button];
 }
 
 typedef struct {
@@ -226,9 +241,15 @@ static void controls_menu_waits_for_held_keys_to_release(void **) {
 	assert_int_equal(menu_press(&state, VK_RETURN, 1), key_code(SDL_SCANCODE_KP_ENTER));
 }
 
-static void controls_menu_escape_aborts_remap(void **) {
+static void controls_menu_special_keys(void **) {
 	menu_state state = {0};
 
+	DTTR_Config_SetDefaults(&dttr_config);
+	bind_control_action("menu_confirm", key_code(SDL_SCANCODE_BACKSPACE));
+	state.keyboard[SDL_SCANCODE_BACKSPACE] = true;
+	assert_int_equal(menu_press(&state, -1, 0), VK_RETURN);
+
+	state = (menu_state){0};
 	dttr_inputs_controls_menu_reset();
 	assert_int_equal(menu_press(&state, VK_ESCAPE, 1), VK_ESCAPE);
 
@@ -237,49 +258,6 @@ static void controls_menu_escape_aborts_remap(void **) {
 	state.keyboard[SDL_SCANCODE_ESCAPE] = true;
 
 	assert_int_equal(menu_press(&state, -1, 1), VK_ESCAPE);
-}
-
-static void controls_menu_uses_configured_menu_confirm_binding(void **) {
-	menu_state state = {0};
-
-	DTTR_Config_SetDefaults(&dttr_config);
-	bind_control_action("menu_confirm", key_code(SDL_SCANCODE_BACKSPACE));
-	state.keyboard[SDL_SCANCODE_BACKSPACE] = true;
-
-	assert_int_equal(menu_press(&state, -1, 0), VK_RETURN);
-
-	DTTR_Config_SetDefaults(&dttr_config);
-}
-
-static void menu_bindings_do_not_spoof_global_virtual_keys(void **) {
-	menu_state state = {0};
-
-	DTTR_Config_SetDefaults(&dttr_config);
-	bind_control_action("menu_confirm", key_code(SDL_SCANCODE_BACKSPACE));
-	bind_control_action("menu_cancel", key_code(SDL_SCANCODE_TAB));
-	state.keyboard[SDL_SCANCODE_BACKSPACE] = true;
-	state.keyboard[SDL_SCANCODE_TAB] = true;
-
-	assert_false(
-		dttr_inputs_global_vkey_pressed(VK_RETURN, state.keyboard, SDL_SCANCODE_COUNT)
-	);
-	assert_false(
-		dttr_inputs_global_vkey_pressed(VK_ESCAPE, state.keyboard, SDL_SCANCODE_COUNT)
-	);
-
-	DTTR_Config_SetDefaults(&dttr_config);
-}
-
-static void controls_menu_uses_configured_menu_cancel_to_abort_remap(void **) {
-	menu_state state = {0};
-
-	DTTR_Config_SetDefaults(&dttr_config);
-	bind_control_action("menu_cancel", key_code(SDL_SCANCODE_TAB));
-	open_remap_menu(&state);
-	state.keyboard[SDL_SCANCODE_TAB] = true;
-
-	assert_int_equal(menu_press(&state, -1, 1), VK_ESCAPE);
-
 	DTTR_Config_SetDefaults(&dttr_config);
 }
 
@@ -331,7 +309,7 @@ static void switch_puppies_controller_binding_uses_special_mask(void **) {
 	dttr_inputs_hook_mapping_reset();
 }
 
-static void custom_sdl_button_mapping_ors_repeated_sdl_masks(void **) {
+static void custom_sdl_button_mappings_apply_direct_masks(void **) {
 	register_original_calls = 0;
 	register_original_code = 0;
 	register_original_mask = 0;
@@ -353,8 +331,24 @@ static void custom_sdl_button_mapping_ors_repeated_sdl_masks(void **) {
 		0x480
 	);
 
+	dttr_inputs_gamepad = (SDL_Gamepad *)0x1234;
+	dttr_inputs_hook_read_devices_original = read_devices_original_stub;
+	pressed_gamepad_buttons[SDL_GAMEPAD_BUTTON_SOUTH] = true;
+	DTTR_PCDOGS_T_Input_State state = {0};
+	dttr_inputs_hook_read_devices_callback(0, &state);
+	assert_int_equal(state.button_bits, 0x4c0);
+
+	dttr_inputs_gamepad = NULL;
+	SDL_zeroa(pressed_gamepad_buttons);
 	dttr_inputs_custom_button_mappings_clear();
-	assert_int_equal(dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_SOUTH), 0);
+
+	DTTR_Config_SetDefaults(&dttr_config);
+	bind_control_action("start_pause", sdl_button_code(SDL_GAMEPAD_BUTTON_START));
+	dttr_inputs_hook_config_apply_settings_callback();
+	assert_int_equal(
+		dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_START),
+		0x8000
+	);
 
 	assert_int_equal(dttr_inputs_hook_register_button_mapping_callback('A', 0x10), 123);
 	assert_int_equal(register_original_calls, 1);
@@ -362,6 +356,7 @@ static void custom_sdl_button_mapping_ors_repeated_sdl_masks(void **) {
 	assert_int_equal(register_original_mask, 0x10);
 
 	dttr_inputs_hook_mapping_reset();
+	DTTR_Config_SetDefaults(&dttr_config);
 }
 
 static void setting_rumble_suppression_stops_active_sdl_rumble(void **) {
@@ -400,18 +395,12 @@ static const DTTR_TestCase TEST_CASES[] = {
 	{"controls-menu-binds-controller-buttons", controls_menu_binds_controller_buttons},
 	{"controls-menu-waits-for-held-keys-to-release",
 	 controls_menu_waits_for_held_keys_to_release},
-	{"controls-menu-escape-aborts-remap", controls_menu_escape_aborts_remap},
-	{"controls-menu-uses-configured-menu-confirm-binding",
-	 controls_menu_uses_configured_menu_confirm_binding},
-	{"menu-bindings-do-not-spoof-global-virtual-keys",
-	 menu_bindings_do_not_spoof_global_virtual_keys},
-	{"controls-menu-uses-configured-menu-cancel-to-abort-remap",
-	 controls_menu_uses_configured_menu_cancel_to_abort_remap},
+	{"controls-menu-special-keys", controls_menu_special_keys},
 	{"key-code-names-use-game-labels", key_code_names_use_game_labels},
 	{"switch-puppies-controller-binding-uses-special-mask",
 	 switch_puppies_controller_binding_uses_special_mask},
-	{"custom-sdl-button-mapping-ors-repeated-sdl-masks",
-	 custom_sdl_button_mapping_ors_repeated_sdl_masks},
+	{"custom-sdl-button-mappings-apply-direct-masks",
+	 custom_sdl_button_mappings_apply_direct_masks},
 	{"setting-rumble-suppression-stops-active-sdl-rumble",
 	 setting_rumble_suppression_stops_active_sdl_rumble},
 };

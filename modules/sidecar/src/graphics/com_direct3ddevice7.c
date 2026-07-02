@@ -424,7 +424,8 @@ static void d3d_device7_check_blend_combo(void) {
 	const DTTR_BlendFactor dst = dttr_backend.blend_dst;
 
 	const bool supported = (src == DTTR_BLEND_ONE && dst == DTTR_BLEND_ZERO)
-						   || (src == DTTR_BLEND_SRCALPHA && dst == DTTR_BLEND_INVSRCALPHA)
+						   || (src == DTTR_BLEND_SRCALPHA
+							   && dst == DTTR_BLEND_INVSRCALPHA)
 						   || (dst == DTTR_BLEND_ONE
 							   && (src == DTTR_BLEND_SRCALPHA || src == DTTR_BLEND_ONE));
 

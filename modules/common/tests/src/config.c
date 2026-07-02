@@ -36,11 +36,10 @@ static void control_bindings_round_trip(void **) {
 	const int confirm = DTTR_Config_ControlActionIndex("confirm");
 	const int start_pause = DTTR_Config_ControlActionIndex("start_pause");
 	const int menu_confirm = DTTR_Config_ControlActionIndex("menu_confirm");
-	const int menu_cancel = DTTR_Config_ControlActionIndex("menu_cancel");
 	assert_true(confirm >= 0);
 	assert_true(start_pause >= 0);
 	assert_true(menu_confirm >= 0);
-	assert_true(menu_cancel >= 0);
+	assert_int_equal(DTTR_Config_ControlActionIndex("menu_cancel"), -1);
 
 	DTTR_Config cfg;
 	DTTR_Config_SetDefaults(&cfg);
@@ -50,8 +49,6 @@ static void control_bindings_round_trip(void **) {
 										+ 6;
 	cfg.control_bindings[menu_confirm] = DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE
 										 + SDL_SCANCODE_BACKSPACE;
-	cfg.control_bindings[menu_cancel] = DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE
-										+ SDL_SCANCODE_TAB;
 
 	DTTR_Config defaults;
 	DTTR_Config_SetDefaults(&defaults);
@@ -74,10 +71,6 @@ static void control_bindings_round_trip(void **) {
 	assert_int_equal(
 		dttr_config.control_bindings[menu_confirm],
 		DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE + SDL_SCANCODE_BACKSPACE
-	);
-	assert_int_equal(
-		dttr_config.control_bindings[menu_cancel],
-		DTTR_CONFIG_CONTROL_CODE_SCANCODE_BASE + SDL_SCANCODE_TAB
 	);
 }
 

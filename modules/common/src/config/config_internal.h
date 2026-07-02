@@ -52,8 +52,7 @@ enum {
 	X("action_3", "Action 3", 8, 0x0040)                                                 \
 	X("action_4", "Action 4", 9, 0x0020)                                                 \
 	X("start_pause", "Start/Pause", -1, 0x8000)                                          \
-	X("menu_confirm", "Menu Confirm", -1, 0)                                             \
-	X("menu_cancel", "Menu Cancel", -1, 0)
+	X("menu_confirm", "Menu Confirm", -1, 0)
 
 #define CONFIG_CONTROL_ACTION_COUNT_ROW(...) +1
 #define CONFIG_CONTROL_ACTION_IN_GAME_COUNT_ROW(key, label, native_config_index, mask)   \

@@ -306,6 +306,18 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		);
 	}
 
+	if (dttr_inputs_hook_read_devices_prepare(ctx)) {
+		kv_push(
+			DTTR_PCDOGS_T_Patch_Spec,
+			inputs_patches,
+			DTTR_PCDOGS_F_Input_ReadDevices->PatchSpec(
+				false,
+				dttr_inputs_hook_read_devices_callback,
+				&dttr_inputs_hook_read_devices_original
+			)
+		);
+	}
+
 	const bool installed = dttr_sidecar_install_pcdogs_patch_group(
 		ctx,
 		"sidecar/inputs",

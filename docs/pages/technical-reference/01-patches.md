@@ -71,14 +71,15 @@ rows, and sidecar-local byte patches expanded from `sidecar_inputs_byte_patches.
 
 | Site | Signature | Target | Effect |
 | --- | --- | --- | --- |
-| `dttr_inputs_hook_dinput_poll` | Signature `56 8B 74 24 ?? 56 8B 06`, jump hook at match | Game DirectInput joystick poll function | Maps SDL gamepad state into the game's joystick layout. |
+| `dttr_inputs_hook_dinput_poll` | Signature `56 8B 74 24 ?? 56 8B 06`, jump hook at match | Game DirectInput joystick poll function | Maps SDL gamepad state into the game's joystick layout, with left-stick axes neutralized during analog remap. |
 | `dttr_inputs_hook_get_async_key_state` | `Video_PlayMovieLoop_GetAsyncKeyStateThunk->PatchSpec()` in the `sidecar/inputs` patch group | IAT-style slot loaded by `mov ebx, [GetAsyncKeyStateSlot]` | Routes movie-loop keyboard polling through SDL scancode-backed key state. |
 | `dttr_inputs_hook_is_key_pressed_async` | `Input_IsKeyPressedAsync->PatchSpec()` in the `sidecar/inputs` patch group | Game asynchronous key-state helper | Reads SDL keyboard state for Return and DttR scancode key codes, then falls back to the original helper for legacy virtual keys. |
 | `dttr_inputs_hook_get_button_string` | `Input_GetButtonString->PatchSpec()` in the `sidecar/inputs` patch group | Game control-name lookup helper | Returns display names for DttR scancode key codes before falling back to the original button-name table. |
 | `dttr_inputs_hook_format_button_name` | Optional `Input_FormatButtonName->PatchSpec()` in the `sidecar/inputs` patch group | Game formatted control-name helper | Writes custom DttR control names into the menu's formatted-name buffers when those buffers are available. |
 | `dttr_inputs_hook_get_pressed_button` | `Input_GetPressedButton->PatchSpec()` in the `sidecar/inputs` patch group | Game pressed-button probe used by the controls menu | Lets the controls menu capture DttR scancode/remapped button codes while preserving the original pressed-button probe. |
 | `dttr_inputs_hook_rumble` | `Input_TriggerRumbleIfAllowed->PatchSpec()` in the `sidecar/inputs` patch group; available on supported English builds | Game vibration wrapper | Forwards force-feedback to `SDL_RumbleGamepad` when an SDL gamepad is open; falls back to DirectInput otherwise. Respects the game's vibration option. |
-| `dttr_inputs_hook_read_gamepad` | `Input_ReadGamepad->PatchSpec()` in the `sidecar/inputs` patch group; installed when `gamepad.analog_remap` is enabled on supported English builds | Game gamepad-to-input-state routine | Applies configured left-stick analog axes, mapped D-pad actions, RZ, and button bitmasks from the SDL-backed poll state. |
+| `dttr_inputs_hook_read_gamepad` | `Input_ReadGamepad->PatchSpec()` in the `sidecar/inputs` patch group; available on supported English builds | Game gamepad-to-input-state routine | Applies DttR left-stick analog axes and RZ/buttons while keeping the game's left-stick threshold buttons neutral during analog remap. |
+| `dttr_inputs_hook_read_devices` | Optional `Input_ReadDevices->PatchSpec()` in the `sidecar/inputs` patch group | Game combined keyboard/gamepad input routine | Re-applies SDL-backed button bitmasks after the game's device read so direct overrides still work when native gamepad rows are unset. |
 
 ### Controls Menu Byte Patches
 

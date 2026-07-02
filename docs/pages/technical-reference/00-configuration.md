@@ -66,6 +66,12 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
     "sensitivity_stick_x": 100,
     "sensitivity_stick_y": 100,
     "sensitivity_camera_rz": 100
+  },
+  "controls": {
+    "special_bindings": {
+      "start_pause": 1030,
+      "menu_confirm": 1040
+    }
   }
 }
 ```
@@ -103,17 +109,18 @@ Supported entries:
 | Key | Native/default source | Notes |
 | --- | --- | --- |
 | `start_pause` | Escape/gamepad start paths; mask `0x8000` | Extra pause/start mask. |
-| `menu_confirm` | Controls-menu Enter path | Controls-menu prompt only; does not spoof global Enter. |
-| `menu_cancel` | Controls-menu Escape path | Controls-menu remap abort only; does not spoof global Escape. |
+| `menu_confirm` | Controls-menu Enter path | Confirms menu choices outside control remapping. |
 
-Movement/confirm/back stay in the in-game Controls menu. `special_bindings` only covers controls that menu cannot edit. Missing keys keep the game default and are omitted when saving.
+Movement, camera, in-game confirm, and back stay in the in-game Controls menu.
+Missing keys keep the game default and are omitted when saving.
 
 ```json
 {
   "schema_major_version": 1,
   "controls": {
     "special_bindings": {
-      "menu_confirm": 298
+      "start_pause": 1030,
+      "menu_confirm": 1040
     }
   }
 }

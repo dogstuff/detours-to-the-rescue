@@ -43,6 +43,7 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx);
 void dttr_inputs_hooks_cleanup(const DTTR_Mods_Context *ctx);
 
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device);
+void dttr_inputs_hook_dinput_neutralize_left_stick(bool neutralize);
 bool dttr_inputs_vkey_pressed(
 	int vkey,
 	const bool *keyboard_state,
@@ -99,7 +100,9 @@ extern DTTR_PCDOGS_F_Input_RegisterButtonMapping_proto
 	dttr_inputs_hook_register_button_mapping_original;
 extern DTTR_PCDOGS_F_Config_ApplySettings_proto
 	dttr_inputs_hook_config_apply_settings_original;
+extern DTTR_PCDOGS_F_Input_ReadDevices_proto dttr_inputs_hook_read_devices_original;
 bool dttr_inputs_hook_mapping_prepare(const DTTR_Mods_Context *ctx);
+bool dttr_inputs_hook_read_devices_prepare(const DTTR_Mods_Context *ctx);
 void dttr_inputs_hook_mapping_reset();
 void dttr_inputs_custom_button_mappings_clear();
 uint32_t dttr_inputs_custom_button_mapping_mask(int button);
@@ -110,6 +113,10 @@ int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 	uint32_t button_mask
 );
 void __cdecl dttr_inputs_hook_config_apply_settings_callback();
+void __cdecl dttr_inputs_hook_read_devices_callback(
+	int32_t player_index,
+	DTTR_PCDOGS_T_Input_State *state
+);
 void dttr_inputs_controls_menu_reset();
 void dttr_inputs_controls_menu_handle_event(const SDL_Event *event);
 int32_t dttr_inputs_controls_menu_pressed_button(

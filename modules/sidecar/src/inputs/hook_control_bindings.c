@@ -9,6 +9,7 @@
 DTTR_PCDOGS_F_Input_RegisterButtonMapping_proto
 	dttr_inputs_hook_register_button_mapping_original;
 DTTR_PCDOGS_F_Config_ApplySettings_proto dttr_inputs_hook_config_apply_settings_original;
+DTTR_PCDOGS_F_Input_ReadDevices_proto dttr_inputs_hook_read_devices_original;
 
 static uint32_t custom_sdl_button_masks[DTTR_INPUTS_SDL_BUTTON_COUNT];
 
@@ -20,6 +21,10 @@ enum {
 bool dttr_inputs_hook_mapping_prepare(const DTTR_Mods_Context *ctx) {
 	return ctx && DTTR_PCDOGS_F_Input_RegisterButtonMapping->IsCallable(&ctx->runtime)
 		   && DTTR_PCDOGS_F_Config_ApplySettings->IsCallable(&ctx->runtime);
+}
+
+bool dttr_inputs_hook_read_devices_prepare(const DTTR_Mods_Context *ctx) {
+	return ctx && DTTR_PCDOGS_F_Input_ReadDevices->IsCallable(&ctx->runtime);
 }
 
 void dttr_inputs_custom_button_mappings_clear() {
@@ -37,6 +42,7 @@ uint32_t dttr_inputs_custom_button_mapping_mask(int button) {
 void dttr_inputs_hook_mapping_reset() {
 	dttr_inputs_hook_register_button_mapping_original = NULL;
 	dttr_inputs_hook_config_apply_settings_original = NULL;
+	dttr_inputs_hook_read_devices_original = NULL;
 	dttr_inputs_custom_button_mappings_clear();
 }
 
@@ -110,22 +116,21 @@ static void register_switch_puppies_controller_override() {
 	);
 }
 
-static void register_direct_control_overrides() {
-	for (int action = 0; action < DTTR_CONFIG_CONTROL_ACTION_COUNT; action++) {
-		if (DTTR_Config_ControlActionInGameBindable(action)) {
-			continue;
-		}
-
-		const uint32_t button_mask = DTTR_Config_ControlActionButtonMask(action);
-		if (!button_mask) {
-			continue;
-		}
-
-		const int code = dttr_config.control_bindings[action];
-		if (code != DTTR_CONFIG_CONTROL_BINDING_NONE) {
-			dttr_inputs_hook_register_button_mapping_callback(code, button_mask);
-		}
+static void register_start_pause_override() {
+	const int action = DTTR_Config_ControlActionIndex("start_pause");
+	if (action < 0) {
+		return;
 	}
+
+	const int code = dttr_config.control_bindings[action];
+	if (code == DTTR_CONFIG_CONTROL_BINDING_NONE) {
+		return;
+	}
+
+	dttr_inputs_hook_register_button_mapping_callback(
+		code,
+		DTTR_Config_ControlActionButtonMask(action)
+	);
 }
 
 void __cdecl dttr_inputs_hook_config_apply_settings_callback() {
@@ -136,5 +141,16 @@ void __cdecl dttr_inputs_hook_config_apply_settings_callback() {
 	}
 
 	register_switch_puppies_controller_override();
-	register_direct_control_overrides();
+	register_start_pause_override();
+}
+
+void __cdecl dttr_inputs_hook_read_devices_callback(
+	int32_t player_index,
+	DTTR_PCDOGS_T_Input_State *state
+) {
+	if (dttr_inputs_hook_read_devices_original) {
+		dttr_inputs_hook_read_devices_original(player_index, state);
+	}
+
+	dttr_inputs_apply_custom_button_mappings(state);
 }

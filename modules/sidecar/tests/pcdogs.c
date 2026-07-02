@@ -205,9 +205,6 @@ static bool assert_input_byte_patch_sequence_for_fixture(
 	const DTTR_TestPEImage *image,
 	void *userdata
 ) {
-	(void)path;
-	(void)userdata;
-
 	const size_t first_target = first_input_byte_patch_target_index();
 	const size_t spec_count = dttr_sidecar_input_byte_patch_spec_count;
 	uint8_t *patched_image = malloc(image->image_size);
