@@ -261,6 +261,9 @@ bool DTTR_Path_AppendSegment(sds *path, const char *segment, char separator) {
 		return false;
 	}
 
+	char separators[] = {separator, separator, '\0'};
+	sdsmapchars(joined, "\\/", separators, 2);
+
 	sdsfree(*path);
 	*path = joined;
 	return true;

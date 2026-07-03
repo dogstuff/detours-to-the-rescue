@@ -7,17 +7,18 @@
 #include <stdio.h>
 #include <string.h>
 
-static const wchar_t *const GAME_SUBPATHS[] = {
-	L"pcdogs.exe",
-	L"Setup\\102Dalms\\pcdogs.exe",
+typedef struct {
+	const char *root;
+	const wchar_t *exe_subpath;
+} GameLayout;
+
+static const GameLayout GAME_LAYOUTS[] = {
+	{".", L"pcdogs.exe"},
+	{"Setup/102Dalms", L"Setup\\102Dalms\\pcdogs.exe"},
 };
 
 static const wchar_t ISO_SUFFIX[] = L".iso";
 static const char *const ISO_CACHE_PATH = "DetoursToTheRescue\\cache\\iso";
-static const char *const ISO_GAME_ROOT = "Setup/102Dalms";
-static const char *const ISO_GAME_EXE_PATH = "Setup/102Dalms/pcdogs.exe";
-static const char *const ISO_GAME_PKG_PATH = "Setup/102Dalms/pcdogs.pkg";
-static const char *const ISO_GAME_DATA_PATH = "Setup/102Dalms/data";
 
 static wchar_t ascii_lower_w(wchar_t ch) {
 	if (ch >= L'A' && ch <= L'Z') {
@@ -49,27 +50,16 @@ bool DTTR_LoaderPath_IsISOW(const wchar_t *path) {
 }
 
 size_t DTTR_Loader_GameSubpathCount() {
-	return sizeof(GAME_SUBPATHS) / sizeof(GAME_SUBPATHS[0]);
+	return sizeof(GAME_LAYOUTS) / sizeof(GAME_LAYOUTS[0]);
 }
 
 const wchar_t *DTTR_Loader_GameSubpathAt(size_t index) {
-	return index < DTTR_Loader_GameSubpathCount() ? GAME_SUBPATHS[index] : NULL;
+	return index < DTTR_Loader_GameSubpathCount() ? GAME_LAYOUTS[index].exe_subpath
+												  : NULL;
 }
 
-const char *DTTR_LoaderISO_GameRoot() {
-	return ISO_GAME_ROOT;
-}
-
-const char *DTTR_LoaderISO_GameEXEPath() {
-	return ISO_GAME_EXE_PATH;
-}
-
-const char *DTTR_LoaderISO_GamePkgPath() {
-	return ISO_GAME_PKG_PATH;
-}
-
-const char *DTTR_LoaderISO_GameDataPath() {
-	return ISO_GAME_DATA_PATH;
+const char *DTTR_Loader_GameRootAt(size_t index) {
+	return index < DTTR_Loader_GameSubpathCount() ? GAME_LAYOUTS[index].root : NULL;
 }
 
 static uint64_t hash_path(const char *path) {

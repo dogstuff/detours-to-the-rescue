@@ -18,9 +18,12 @@ enum { ISO_SECTOR_SIZE = 2048 };
 
 static int physfs_refcount;
 static char last_error[256];
+static bool last_error_was_not_found;
 
 // Records the latest ISO-layer failure for launcher errors.
 static void set_error(const char *message) {
+	last_error_was_not_found = false;
+
 	if (!message) {
 		message = "unknown error";
 	}
@@ -29,8 +32,14 @@ static void set_error(const char *message) {
 	last_error[sizeof(last_error) - 1] = '\0';
 }
 
+static void set_not_found_error(const char *message) {
+	set_error(message);
+	last_error_was_not_found = true;
+}
+
 // Preserves the PhysicsFS failure text with the operation that triggered it.
 static void set_physfs_error(const char *context) {
+	last_error_was_not_found = false;
 	const char *err = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
 
 	if (!err) {
@@ -43,6 +52,10 @@ static void set_physfs_error(const char *context) {
 // Returns the current ISO error or a stable default before the first failure.
 const char *DTTR_ISO_LastError() {
 	return last_error[0] ? last_error : "no error";
+}
+
+bool DTTR_ISO_LastErrorWasNotFound() {
+	return last_error_was_not_found;
 }
 
 static bool is_iso_version_suffix(const char *suffix) {
@@ -433,7 +446,7 @@ bool DTTR_ISO_ExtractFile(
 	char physfs_path[DTTR_ISO_MAX_PATH];
 
 	if (!resolve_iso_path_case(iso_relative_path, physfs_path, sizeof(physfs_path))) {
-		set_error("file not found in ISO");
+		set_not_found_error("file not found in ISO");
 		return false;
 	}
 
@@ -570,7 +583,7 @@ bool DTTR_ISO_ExtractTree(
 	char physfs_path[DTTR_ISO_MAX_PATH];
 
 	if (!resolve_iso_path_case(iso_relative_path, physfs_path, sizeof(physfs_path))) {
-		set_error("directory not found in ISO");
+		set_not_found_error("directory not found in ISO");
 		return false;
 	}
 

@@ -8,6 +8,7 @@
 #include <dttr_sdl.h>
 
 #include <SDL3/SDL.h>
+#include <stdio.h>
 #include <string.h>
 #include <windows.h>
 
@@ -81,16 +82,37 @@ static void copy_path(char *out, size_t out_size, const char *path) {
 	}
 }
 
-// Extracts one required ISO member into cache.
+static bool iso_layout_path(
+	char *out,
+	size_t out_size,
+	const char *game_root,
+	const char *name
+) {
+	if (strcmp(game_root, ".") == 0) {
+		return DTTR_Path_CopyString(out, out_size, name);
+	}
+
+	const int written = snprintf(out, out_size, "%s/%s", game_root, name);
+	return written > 0 && (size_t)written < out_size;
+}
+
 static bool extract_iso_file(
 	DTTR_IsoImage *iso,
 	const char *cache_root,
 	const char *iso_path,
 	char *out_path,
-	size_t out_path_size
+	size_t out_path_size,
+	bool *not_found
 ) {
+	*not_found = false;
+
 	if (DTTR_ISO_ExtractFile(iso, iso_path, cache_root, out_path, out_path_size)) {
 		return true;
+	}
+
+	*not_found = DTTR_ISO_LastErrorWasNotFound();
+	if (*not_found) {
+		return false;
 	}
 
 	DTTR_LOG_ERROR("Could not extract %s (%s)", iso_path, DTTR_ISO_LastError());
@@ -102,37 +124,90 @@ static bool extract_iso_game_cache(
 	DTTR_IsoImage *iso,
 	const char *cache_root,
 	char *exe_path,
-	size_t exe_path_size
+	size_t exe_path_size,
+	char *game_root,
+	size_t game_root_size
 ) {
-	if (!extract_iso_file(
-			iso,
-			cache_root,
-			DTTR_LoaderISO_GameEXEPath(),
-			exe_path,
-			exe_path_size
-		)) {
-		return false;
-	}
+	const size_t layout_count = DTTR_Loader_GameSubpathCount();
 
-	char pkg_path[MAX_PATH];
+	for (size_t i = 0; i < layout_count; i++) {
+		const char *root = DTTR_Loader_GameRootAt(i);
+		char iso_path[MAX_PATH];
 
-	if (!extract_iso_file(
-			iso,
-			cache_root,
-			DTTR_LoaderISO_GamePkgPath(),
-			pkg_path,
-			sizeof(pkg_path)
-		)) {
-		return false;
-	}
+		if (!iso_layout_path(iso_path, sizeof(iso_path), root, "pcdogs.exe")) {
+			DTTR_LOG_ERROR("Could not build ISO layout paths for %s", root);
+			return false;
+		}
 
-	const char *data_path = DTTR_LoaderISO_GameDataPath();
+		bool not_found;
 
-	if (DTTR_ISO_ExtractTree(iso, data_path, cache_root)) {
+		if (!extract_iso_file(
+				iso,
+				cache_root,
+				iso_path,
+				exe_path,
+				exe_path_size,
+				&not_found
+			)) {
+			if (not_found) {
+				continue;
+			}
+
+			return false;
+		}
+
+		char pkg_path[MAX_PATH];
+
+		if (!iso_layout_path(iso_path, sizeof(iso_path), root, "pcdogs.pkg")) {
+			DTTR_LOG_ERROR("Could not build ISO layout paths for %s", root);
+			return false;
+		}
+
+		if (!extract_iso_file(
+				iso,
+				cache_root,
+				iso_path,
+				pkg_path,
+				sizeof(pkg_path),
+				&not_found
+			)) {
+			if (not_found) {
+				continue;
+			}
+
+			return false;
+		}
+
+		if (!iso_layout_path(iso_path, sizeof(iso_path), root, "data")) {
+			DTTR_LOG_ERROR("Could not build ISO layout paths for %s", root);
+			return false;
+		}
+
+		if (!DTTR_ISO_ExtractTree(iso, iso_path, cache_root)) {
+			if (DTTR_ISO_LastErrorWasNotFound()) {
+				continue;
+			}
+
+			DTTR_LOG_ERROR(
+				"Could not extract %s (%s)",
+				iso_path,
+				DTTR_ISO_LastError()
+			);
+			return false;
+		}
+
+		if (!DTTR_Path_CopyString(game_root, game_root_size, root)) {
+			DTTR_LOG_ERROR("Could not copy ISO game root: %s", root);
+			return false;
+		}
+
 		return true;
 	}
 
-	DTTR_LOG_ERROR("Could not extract %s (%s)", data_path, DTTR_ISO_LastError());
+	DTTR_LOG_ERROR(
+		"Could not extract a supported ISO game executable (%s)",
+		DTTR_ISO_LastError()
+	);
 	return false;
 }
 
@@ -180,7 +255,9 @@ static bool resolve_iso_direct(
 			&iso,
 			iso_context->cache_root,
 			exe_path,
-			sizeof(exe_path)
+			sizeof(exe_path),
+			iso_context->game_root,
+			sizeof(iso_context->game_root)
 		)) {
 		DTTR_LOG_ERROR("ISO source: %s", full_iso_path);
 		goto done;
@@ -192,11 +269,6 @@ static bool resolve_iso_direct(
 	}
 
 	iso_context->is_iso = true;
-	copy_path(
-		iso_context->game_root,
-		sizeof(iso_context->game_root),
-		DTTR_LoaderISO_GameRoot()
-	);
 	DTTR_LOG_INFO("Cached ISO game files under %s", iso_context->cache_root);
 	ok = true;
 

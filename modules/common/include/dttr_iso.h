@@ -31,6 +31,7 @@ bool DTTR_ISO_ExtractTree(
 	const char *cache_root
 );
 const char *DTTR_ISO_LastError();
+bool DTTR_ISO_LastErrorWasNotFound();
 void DTTR_ISO_Close(DTTR_IsoImage *iso);
 
 #endif // DTTR_ISO_H

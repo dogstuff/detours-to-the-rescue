@@ -170,7 +170,8 @@ static bool append_game_path(const char *relative, char *out, size_t out_size) {
 	}
 
 	relative = DTTR_Path_SkipSeparators(relative);
-	sds path = sdsnew(source.game_root);
+	const char *game_root = strcmp(source.game_root, ".") == 0 ? "" : source.game_root;
+	sds path = sdsnew(game_root);
 	if (!path || !DTTR_Path_AppendSegment(&path, relative, '/')) {
 		sdsfree(path);
 		return false;
