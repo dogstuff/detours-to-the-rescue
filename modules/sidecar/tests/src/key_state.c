@@ -279,36 +279,6 @@ static void key_code_names_use_game_labels(void **) {
 	);
 }
 
-static void switch_puppies_controller_binding_uses_special_mask(void **) {
-	register_original_calls = 0;
-	register_original_code = 0;
-	register_original_mask = 0;
-	dttr_inputs_hook_register_button_mapping_original = register_button_mapping_original_stub;
-	dttr_inputs_custom_button_mappings_clear();
-
-	const int32_t sdl_button = gamepad_button_code(SDL_GAMEPAD_BUTTON_WEST);
-	dttr_inputs_register_switch_puppies_controller_binding(sdl_button);
-	assert_int_equal(
-		dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_WEST),
-		0x4000
-	);
-	assert_int_equal(register_original_calls, 0);
-
-	const int32_t native_button = DTTR_INPUTS_GAMEPAD_BUTTON_BASE + 2;
-	dttr_inputs_register_switch_puppies_controller_binding(native_button);
-	assert_int_equal(register_original_calls, 1);
-	assert_int_equal(register_original_code, native_button);
-	assert_int_equal(register_original_mask, 0x4000);
-
-	const int32_t keyboard_code = key_code(SDL_SCANCODE_A);
-	dttr_inputs_register_switch_puppies_controller_binding(keyboard_code);
-	assert_int_equal(register_original_calls, 2);
-	assert_int_equal(register_original_code, keyboard_code);
-	assert_int_equal(register_original_mask, 0x4000);
-
-	dttr_inputs_hook_mapping_reset();
-}
-
 static void custom_sdl_button_mappings_apply_direct_masks(void **) {
 	register_original_calls = 0;
 	register_original_code = 0;
@@ -397,8 +367,6 @@ static const DTTR_TestCase TEST_CASES[] = {
 	 controls_menu_waits_for_held_keys_to_release},
 	{"controls-menu-special-keys", controls_menu_special_keys},
 	{"key-code-names-use-game-labels", key_code_names_use_game_labels},
-	{"switch-puppies-controller-binding-uses-special-mask",
-	 switch_puppies_controller_binding_uses_special_mask},
 	{"custom-sdl-button-mappings-apply-direct-masks",
 	 custom_sdl_button_mappings_apply_direct_masks},
 	{"setting-rumble-suppression-stops-active-sdl-rumble",

@@ -30,10 +30,6 @@
 	"3B C7 75 10 81 FE 00 01 00 00 7D 15 89 3D ?? ?? ?? ?? EB 3A 83 F8 01 75 F3 81 "     \
 	"FE 00 01 00 00 7D EB"
 
-// Keep the native in-game controls menu's gamepad column guards intact.
-// Sidecar SDL button codes are intercepted in Input_RegisterButtonMapping instead:
-// native direct-gamepad registration for code 0x400 aliases the pcdogs.ini gamma byte.
-
 // PCDOGS save-path resolver hooked to redirect persisted data (EU/SC builds only).
 #define DTTR_SIDECAR_AOB_RESOLVE_PCDOGS_PATH "51 8D 44 24 ?? 57"
 

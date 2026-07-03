@@ -107,7 +107,6 @@ void dttr_inputs_hook_mapping_reset();
 void dttr_inputs_custom_button_mappings_clear();
 uint32_t dttr_inputs_custom_button_mapping_mask(int button);
 void dttr_inputs_apply_custom_button_mappings(DTTR_PCDOGS_T_Input_State *state);
-void dttr_inputs_register_switch_puppies_controller_binding(int32_t control_code);
 int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 	int32_t control_code,
 	uint32_t button_mask

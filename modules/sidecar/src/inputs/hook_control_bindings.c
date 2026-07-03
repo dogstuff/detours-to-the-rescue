@@ -13,11 +13,6 @@ DTTR_PCDOGS_F_Input_ReadDevices_proto dttr_inputs_hook_read_devices_original;
 
 static uint32_t custom_sdl_button_masks[DTTR_INPUTS_SDL_BUTTON_COUNT];
 
-enum {
-	DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX = 10,
-	DTTR_INPUTS_SWITCH_PUPPIES_BUTTON_MASK = 0x4000,
-};
-
 bool dttr_inputs_hook_mapping_prepare(const DTTR_Mods_Context *ctx) {
 	return ctx && DTTR_PCDOGS_F_Input_RegisterButtonMapping->IsCallable(&ctx->runtime)
 		   && DTTR_PCDOGS_F_Config_ApplySettings->IsCallable(&ctx->runtime);
@@ -88,34 +83,6 @@ int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 			   : 0;
 }
 
-void dttr_inputs_register_switch_puppies_controller_binding(int32_t control_code) {
-	const DTTR_Input_KeyCodeKind kind = dttr_inputs_key_code_kind(control_code);
-	if (kind == DTTR_INPUTS_KEY_CODE_NONE) {
-		return;
-	}
-
-	dttr_inputs_hook_register_button_mapping_callback(
-		control_code,
-		DTTR_INPUTS_SWITCH_PUPPIES_BUTTON_MASK
-	);
-}
-
-static void register_switch_puppies_controller_override() {
-	if (!DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->IsResolved()) {
-		return;
-	}
-
-	const int32_t *
-		player2_controls = DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->Ptr();
-	if (!player2_controls) {
-		return;
-	}
-
-	dttr_inputs_register_switch_puppies_controller_binding(
-		player2_controls[DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX]
-	);
-}
-
 static void register_start_pause_override() {
 	const int action = DTTR_Config_ControlActionIndex("start_pause");
 	if (action < 0) {
@@ -140,7 +107,6 @@ void __cdecl dttr_inputs_hook_config_apply_settings_callback() {
 		dttr_inputs_hook_config_apply_settings_original();
 	}
 
-	register_switch_puppies_controller_override();
 	register_start_pause_override();
 }
 

@@ -83,23 +83,16 @@ rows, and sidecar-local byte patches expanded from `sidecar_inputs_byte_patches.
 
 ### Controls Menu Byte Patches
 
-These byte patches let the controls menu bind DttR scancodes and expose Switch Puppies in both control columns. Switch Puppies stays as byte patches because it only changes small compare/jump/copy constants.
+These byte patches support DttR's controls-menu remap flow where keyboard keys or
+controller buttons can be bound to either input column. The byte patches keep
+keyboard scancode values valid in the menu; the controls-menu hooks capture and
+name both keyboard and controller inputs.
 
 | Site | Signature | Bytes | Effect |
 | --- | --- | --- | --- |
 | `dttr_inputs_controls_enter_bind_branch` | Signature `E8 ?? ?? ?? ?? 8B F0 83 FE FF 0F 84 ?? ?? ?? ?? 83 FE 0D 0F 84 ?? ?? ?? ?? 83 FE 1B`, offset `+19` | `90 90 90 90 90 90` (`nop` x6) | Removes the native Enter-as-finish branch so Return can be bound like other keys. |
 | `dttr_inputs_controls_keyboard_bind_limit` | Signature `3B C7 75 17 81 FE 00 01 00 00 7D 29 8B ?? ?? ?? ?? ?? 89 34`, offset `+4` | `81 FE E8 03 00 00` (`cmp esi, 0x3E8`) | Raises the keyboard binding limit so DttR scancode key codes fit below the gamepad range. |
 | `dttr_inputs_controls_keyboard_remap_done_limit` | Signature `3B C7 75 10 81 FE 00 01 00 00 7D 15 89 3D ?? ?? ?? ?? EB 3A 83 F8 01 75 F3 81 FE 00 01 00 00 7D EB`, offset `+4` | `81 FE E8 03 00 00` (`cmp esi, 0x3E8`) | Applies the raised keyboard limit to the remap-completion path. |
-| `dttr_inputs_controls_switch_puppies_down_column` | Signature `83 F8 0A 75 08 89 3D ?? ?? ?? ?? EB 12 83 F8 0B`, offset `+0` | `83 F8 0D` (`cmp eax, 0x0D`) | Lets the Switch Puppies row move through the controller column on Down. |
-| `dttr_inputs_controls_switch_puppies_up_column` | Signature `83 F8 0A 75 0A 33 C9 89 0D ?? ?? ?? ?? EB 06 8B 0D`, offset `+0` | `83 F8 0D` (`cmp eax, 0x0D`) | Lets the Switch Puppies row move through the controller column on Up. |
-| `dttr_inputs_controls_switch_puppies_up_wrap_column` | Signature `B8 0A 00 00 00 33 C9 A3 ?? ?? ?? ?? 89 0D ?? ?? ?? ?? EB 15 83 F8 0A`, offset `+12` | `90 90 90 90 90 90 EB 0F` (`nop` x6, shorter jump) | Preserves the active column when Up wraps from the first controls row to Switch Puppies. |
-| `dttr_inputs_controls_switch_puppies_left_column` | Signature `83 F8 0A 75 08 33 C9 89 0D ?? ?? ?? ??`, offset `+0` | `83 F8 0D` (`cmp eax, 0x0D`) | Lets the Switch Puppies row move from controller to keyboard column. |
-| `dttr_inputs_controls_switch_puppies_right_column` | Signature `83 F8 0A C6 05 ?? ?? ?? ?? 00 89 0D ?? ?? ?? ?? 74`, offset `+0` | `83 F8 0D` (`cmp eax, 0x0D`) | Lets the Switch Puppies row move from keyboard to controller column. |
-| `dttr_inputs_controls_switch_puppies_conflict_inner_count` | Signature `83 F8 0A 7C E7 42 83 C7 04 83 FA 0A 7C D6`, offset `+0` | `83 F8 0B` (`cmp eax, 0x0B`) | Includes the Switch Puppies controller row in duplicate-binding checks. |
-| `dttr_inputs_controls_switch_puppies_conflict_outer_count` | Same signature, offset `+9` | `83 FA 0B` (`cmp edx, 0x0B`) | Applies the same duplicate-binding row count to the outer loop. |
-| `dttr_inputs_controls_switch_puppies_copy_gamepad_count` | Signature `B9 0A 00 00 00 BE ?? ?? ?? ?? BF ?? ?? ?? ?? 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? F3 A5 E8`, offset `+0` | `B9 0B 00 00 00` (`mov ecx, 0x0B`) | Copies the Switch Puppies controller binding from active settings into the controls-menu edit buffer. |
-| `dttr_inputs_controls_switch_puppies_render_keyboard_column` | Signature `83 FF 0A 8B C6 75 0F 8B 44 24 10 2B C6 99 2B C2 D1 F8 8D 44 30 D8`, offset `+0`; optional English-build patch | `83 FF 0B` (`cmp edi, 0x0B`) | Keeps the Switch Puppies keyboard binding aligned under `Config1` instead of centered between columns. |
-| `dttr_inputs_controls_switch_puppies_render_gamepad_column` | Signature `83 FF 0A 7D 79 8B 14 BD ?? ?? ?? ?? 52 E8`, offset `+0`; optional English-build patch | `83 FF 0B` (`cmp edi, 0x0B`) | Draws the Switch Puppies controller binding under `Config2`. |
 
 ## Audio
 
