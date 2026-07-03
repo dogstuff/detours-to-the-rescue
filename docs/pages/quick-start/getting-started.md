@@ -1,24 +1,23 @@
 ---
-title: "Initial Setup"
-description: "Set up the launcher with original PC game files from a CD, installed copy, or ISO."
+title: "Getting Started"
+description: "Download DttR and get it running with your game disc, installed copy, or ISO."
 seo_type: "article"
 ---
 
-# Initial Setup
+# Getting Started
 
-This guide gets DttR running with your original game files.
+This guide walks you through getting DttR running with 102 Dalmatians: Puppies to the Rescue.
 
-## Download DttR
+## Downloading DttR
 
-1. Download the build of DttR you want to use:
+Download the build of DttR that matches your needs:
 
-    - [Vanilla](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip) - Does not load third-party mods. Use this build for speedruns.
-    - [Modding](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip) - Includes the DttR modding runtime and SDK.
+- [Vanilla](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip) is the normal build and does not allow the installation of game modifications. **This is the only build allowed in speedruns.**
+- [Modding](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip) is the build that's required to load and run third-party modifications.
 
-2. Extract the archive to a writable directory.
-3. Run `dttr.exe`.
+Extract the archive wherever you'd like and then run `dttr.exe`.
 
-## Load Original Game Files
+## Loading the Game Files
 
 DttR should open a prompt asking for the original game files:
 
@@ -52,8 +51,7 @@ Choose the method that matches your setup.
 
 ## You're done!
 
-Once DttR has the game files, setup is complete.
+If everything worked, the game should pop up in a window.
+If the game crashes or doesn't pop up, take a look at the [troubleshooting page](troubleshooting.md).
 
 ![102 Dalmatians title screen running through DttR](../assets/done.png)
-
-For controller mappings, graphics settings, and other options, see [Configuration](01-configuration.md).

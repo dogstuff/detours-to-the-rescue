@@ -15,11 +15,13 @@ extra_javascript = [{ path = "assets/js/pcdogs-symbol-viewer.mjs", type = "modul
 extra_templates = ["robots.txt"]
 nav = [
   { "Home" = "index.md" },
-  { "Quick Start" = [
-    { "Initial Setup" = "quick-start/00-initial-setup.md" },
-    { "Configuration" = "quick-start/01-configuration.md" },
-    { "Installing Mods" = "quick-start/02-installing-mods.md" },
-    { "Troubleshooting" = "quick-start/03-troubleshooting.md" },
+  { "User Guide" = [
+    { "Getting Started" = "quick-start/getting-started.md" },
+    { "Controls Setup" = "quick-start/controls-setup.md" },
+    { "Controller Setup" = "quick-start/using-a-controller.md" },
+    { "Changing Settings" = "quick-start/changing-settings.md" },
+    { "Installing Mods" = "quick-start/installing-mods.md" },
+    { "Troubleshooting" = "quick-start/troubleshooting.md" },
   ] },
   { "Modding SDK" = [
     { "Creating Mods in C" = [
@@ -115,10 +117,6 @@ scheme = "slate"
   "102 Dalmatians PC windowed mode",
   "Puppies to the Rescue windowed mode",
   "102 Dalmatians windower",
-  "102 Dalmatians PC controller",
-  "Puppies to the Rescue controller",
-  "102 Dalmatians PC gamepad",
-  "Puppies to the Rescue gamepad",
   "102 Dalmatians PC modding",
   "Puppies to the Rescue mods",
   "102 Dalmatians PC quality of life",
@@ -134,7 +132,7 @@ scheme = "slate"
   "102 Dalmatians PC Steam Deck",
   "Puppies to the Rescue Steam Deck",
 ]
-"quick-start/00-initial-setup/" = [
+"quick-start/getting-started/" = [
   "how to run 102 Dalmatians PC",
   "how to run Puppies to the Rescue PC",
   "install 102 Dalmatians PC",
@@ -158,7 +156,20 @@ scheme = "slate"
   "102 Dalmatians PC Wine setup",
   "Puppies to the Rescue Wine setup",
 ]
-"quick-start/01-configuration/" = [
+"quick-start/using-a-controller/" = [
+  "102 Dalmatians PC controller",
+  "Puppies to the Rescue controller",
+  "102 Dalmatians PC gamepad",
+  "Puppies to the Rescue gamepad",
+  "102 Dalmatians controller support",
+  "102 Dalmatians PC controller setup",
+  "Puppies to the Rescue controller setup",
+  "102 Dalmatians PC gamepad setup",
+  "Puppies to the Rescue gamepad setup",
+  "102 Dalmatians PC Steam Deck controls",
+  "Puppies to the Rescue Steam Deck controls",
+]
+"quick-start/changing-settings/" = [
   "102 Dalmatians PC settings",
   "Puppies to the Rescue settings",
   "102 Dalmatians PC options",
@@ -173,11 +184,6 @@ scheme = "slate"
   "Puppies to the Rescue fullscreen",
   "102 Dalmatians PC graphics settings",
   "Puppies to the Rescue graphics settings",
-  "102 Dalmatians PC controller",
-  "Puppies to the Rescue controller",
-  "102 Dalmatians PC gamepad",
-  "Puppies to the Rescue gamepad",
-  "102 Dalmatians controller support",
   "102 Dalmatians PC quality of life",
   "Puppies to the Rescue quality of life",
   "DttR config",
@@ -185,10 +191,8 @@ scheme = "slate"
   "Puppies to the Rescue Wine settings",
   "102 Dalmatians PC Linux settings",
   "Puppies to the Rescue Linux settings",
-  "102 Dalmatians PC Steam Deck controls",
-  "Puppies to the Rescue Steam Deck controls",
 ]
-"quick-start/03-troubleshooting/" = [
+"quick-start/troubleshooting/" = [
   "102 Dalmatians PC crash",
   "Puppies to the Rescue crash",
   "102 Dalmatians PC crashes",

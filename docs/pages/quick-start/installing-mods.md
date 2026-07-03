@@ -10,7 +10,7 @@ DttR mods require the "Modding" build. The "Vanilla" build is intended for speed
 
 [Download Modding (latest)](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip)
 
-## Install a Mod
+## Installing a Mod
 
 1. Download and extract the "Modding" build of DttR.
 2. Create a `mods` folder next to `dttr.exe` if it does not already exist.
@@ -25,7 +25,7 @@ mods/
   some-mod.dll
 ```
 
-## Disable a Mod
+## Disabling a Mod
 
 To disable a mod without deleting it, open `dttr-config.exe`, go to the `Modding` tab, uncheck the mod, then save.
 
