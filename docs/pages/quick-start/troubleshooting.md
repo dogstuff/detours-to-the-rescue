@@ -51,7 +51,7 @@ After each config change, save and restart the game.
 
 Open `dttr-config.exe`, turn on `Enable Gamepad`, save, then restart DttR with the controller already connected.
 
-If DttR listens to the wrong controller, try changing `Gamepad Index`. If a stick drifts or feels unresponsive, adjust the matching deadzone field in small steps. For the full setup flow, see [Controller Setup](using-a-controller.md).
+If DttR listens to the wrong controller, try changing `Gamepad Index`. If a stick drifts or feels unresponsive, adjust the matching deadzone field in small steps. For the full setup flow, see [Using a Controller/Gamepad](using-a-controller-gamepad.md).
 
 ## Audio Issues
 

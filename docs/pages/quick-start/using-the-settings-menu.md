@@ -1,10 +1,10 @@
 ---
-title: "Changing Settings"
+title: "Using the Settings Menu"
 description: "Use the DttR configuration GUI, read tooltips, save changes, and switch game files."
 seo_type: "article"
 ---
 
-# Changing Settings
+# Using the Settings Menu
 
 DttR can be configured with the configuration GUI. Open it by running `dttr-config.exe` next to `dttr.exe`.
 
@@ -26,4 +26,4 @@ For a physical or mounted disc, insert or mount it before opening DttR; detected
 
 There are a whole bunch more settings covering graphics, audio, logging, crash reports, controls, and mods.
 
-For keyboard and controller bindings, see [Controls Setup](controls-setup.md). For direct JSON editing and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).
+For keyboard and controller bindings, see [Setting Up Your Controls](setting-up-your-controls.md). For direct JSON editing and the full key reference, see [Configuration (Technical)](../technical-reference/00-configuration.md).

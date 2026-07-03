@@ -1,10 +1,10 @@
 ---
-title: "Controller Setup"
+title: "Using a Controller/Gamepad"
 description: "A quick guide on setting up controllers/gamepads with DttR."
 seo_type: "article"
 ---
 
-# Controller Setup
+# Using a Controller/Gamepad
 
 DttR supports modern controllers natively but you may need to tweak a few settings to .
 

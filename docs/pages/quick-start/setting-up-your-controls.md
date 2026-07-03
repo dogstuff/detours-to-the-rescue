@@ -1,10 +1,10 @@
 ---
-title: "Controls Setup"
+title: "Setting Up Your Controls"
 description: "Set up DttR controls and learn where to change normal in-game actions."
 seo_type: "article"
 ---
 
-# Controls Setup
+# Setting Up Your Controls
 
 !!! note "Controller Menu Navigation Before Binding"
 
@@ -26,4 +26,4 @@ To bind a button to a gameplay action, highlight the action you want to rebind a
 
 DttR adds the ability to bind keyboard keys and controller buttons to any slot, regardless of which column it's under.  
 
-For more details for setting up controllers, see [Controller Setup](using-a-controller.md).
+For more details for setting up controllers, see [Using a Controller/Gamepad](using-a-controller-gamepad.md).
