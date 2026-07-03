@@ -14,6 +14,24 @@
 #define DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED ((ImVec4_c){0.235f, 0.267f, 0.298f, 1.0f})
 #define DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE ((ImVec4_c){0.145f, 0.165f, 0.188f, 1.0f})
 #define DTTR_IMGUI_COLOR_BUTTON_TEXT ((ImVec4_c){0.91f, 0.90f, 0.87f, 1.0f})
+#define DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_HOVERED                                        \
+	((ImVec4_c){0.239f, 0.208f, 0.478f, 1.0f})
+#define DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_ACTIVE                                         \
+	((ImVec4_c){0.176f, 0.157f, 0.357f, 1.0f})
+#define DTTR_IMGUI_COLOR_TAB_ACCENT ((ImVec4_c){0.400f, 0.345f, 0.760f, 1.0f})
+#define DTTR_IMGUI_COLOR_TAB_BG ((ImVec4_c){0.075f, 0.075f, 0.078f, 1.0f})
+#define DTTR_IMGUI_COLOR_TAB_SELECTED_BG ((ImVec4_c){0.105f, 0.105f, 0.112f, 1.0f})
+#define DTTR_IMGUI_COLOR_TAB_HOVERED_BG ((ImVec4_c){0.145f, 0.145f, 0.152f, 1.0f})
+#define DTTR_IMGUI_COLOR_TOP_BAR_BG ((ImVec4_c){0.0f, 0.0f, 0.0f, 1.0f})
+#define DTTR_IMGUI_COLOR_BORDER ((ImVec4_c){0.105f, 0.115f, 0.125f, 1.0f})
+#define DTTR_IMGUI_COLOR_TABLE_BORDER ((ImVec4_c){0.135f, 0.145f, 0.155f, 1.0f})
+#define DTTR_IMGUI_COLOR_TABLE_HEADER_BG ((ImVec4_c){0.080f, 0.085f, 0.092f, 1.0f})
+#define DTTR_IMGUI_COLOR_SEPARATOR ((ImVec4_c){0.120f, 0.130f, 0.140f, 1.0f})
+#define DTTR_IMGUI_COLOR_HINT_TEXT ((ImVec4_c){0.72f, 0.74f, 0.78f, 1.0f})
+#define DTTR_IMGUI_PANEL_PADDING_X 7.5f
+#define DTTR_IMGUI_PANEL_PADDING_Y DTTR_IMGUI_PANEL_PADDING_X
+#define DTTR_IMGUI_ITEM_SPACING_X 8.0f
+#define DTTR_IMGUI_ITEM_SPACING_Y 6.0f
 #define DTTR_IMGUI_SCALE_EPSILON 0.001f
 
 #ifdef __cplusplus
@@ -137,6 +155,16 @@ bool DTTR_ImGuiDialog_BeginRoot(
 	ImGuiWindowFlags flags
 );
 void DTTR_ImGuiDialog_EndRoot();
+
+void DTTR_ImGuiDialog_PushTheme();
+void DTTR_ImGuiDialog_PopTheme();
+bool DTTR_ImGuiDialog_BeginPaddedPanel(
+	const DTTR_ImGuiDialogContext *ctx,
+	const char *id,
+	ImGuiChildFlags child_flags,
+	ImGuiWindowFlags window_flags
+);
+void DTTR_ImGuiDialog_EndPaddedPanel();
 
 bool DTTR_ImGuiDialog_Button(
 	const DTTR_ImGuiDialogContext *ctx,

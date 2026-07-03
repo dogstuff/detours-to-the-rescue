@@ -53,6 +53,15 @@ static void set_text_padding_x(const DTTR_ImGuiDialogContext *ctx) {
 	igSetCursorPosX(text_padding_x(ctx));
 }
 
+static bool begin_error_panel(const DTTR_ImGuiDialogContext *ctx) {
+	return DTTR_ImGuiDialog_BeginPaddedPanel(
+		ctx,
+		"##error_panel",
+		ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY,
+		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+	);
+}
+
 static error_message parse_error_message(const char *message) {
 	const char *stack = strstr(message, STACK_TRACE_MARKER);
 	if (!stack) {
@@ -240,37 +249,44 @@ bool DTTR_ImGui_ErrorShow(const char *title, const char *message) {
 		DTTR_ImGuiDialog_RefreshScale(&ctx);
 		DTTR_ImGuiDialog_NewFrame(&ctx);
 
+		DTTR_ImGuiDialog_PushTheme();
 		if (DTTR_ImGuiDialog_BeginRoot(&ctx, window_title, ImGuiWindowFlags_None)) {
-			const ImVec2_c ok_button_size = {
-				DTTR_ImGuiDialog_ScaledFloat(&ctx, 100.0f),
-				DTTR_ImGuiDialog_ScaledFloat(&ctx, DTTR_ERROR_UI_BUTTON_H),
-			};
+			if (begin_error_panel(&ctx)) {
+				const ImVec2_c ok_button_size = {
+					DTTR_ImGuiDialog_ScaledFloat(&ctx, 100.0f),
+					DTTR_ImGuiDialog_ScaledFloat(&ctx, DTTR_ERROR_UI_BUTTON_H),
+				};
 
-			DTTR_ImGuiDialog_DrawHeader(&ctx, HEADER_TITLE, DTTR_VERSION);
-			if (parsed_message.stack_trace) {
-				draw_copyable_stack_trace(&ctx, safe_message, &parsed_message);
-			} else {
-				DTTR_ImGuiDialog_DrawPaddedText(
-					&ctx,
-					safe_message,
-					DTTR_ERROR_UI_TEXT_PADDING_X,
-					DTTR_ERROR_UI_TEXT_PADDING_Y
-				);
+				DTTR_ImGuiDialog_DrawHeader(&ctx, HEADER_TITLE, DTTR_VERSION);
+				igSeparator();
+				if (parsed_message.stack_trace) {
+					draw_copyable_stack_trace(&ctx, safe_message, &parsed_message);
+				} else {
+					DTTR_ImGuiDialog_DrawPaddedText(
+						&ctx,
+						safe_message,
+						DTTR_ERROR_UI_TEXT_PADDING_X,
+						DTTR_ERROR_UI_TEXT_PADDING_Y
+					);
+				}
+
+				DTTR_ImGuiDialog_CenterNextItem(ok_button_size.x);
+				if (DTTR_ImGuiDialog_Button(&ctx, "##ok", "OK", ok_button_size)) {
+					running = false;
+				}
+
+				igDummy((ImVec2_c){
+					0.0f,
+					DTTR_ImGuiDialog_ScaledFloat(&ctx, DTTR_ERROR_UI_TEXT_PADDING_Y),
+				});
 			}
 
-			DTTR_ImGuiDialog_CenterNextItem(ok_button_size.x);
-			if (DTTR_ImGuiDialog_Button(&ctx, "##ok", "OK", ok_button_size)) {
-				running = false;
-			}
-
-			igDummy((ImVec2_c){
-				0.0f,
-				DTTR_ImGuiDialog_ScaledFloat(&ctx, DTTR_ERROR_UI_TEXT_PADDING_Y),
-			});
+			DTTR_ImGuiDialog_EndPaddedPanel();
 			DTTR_ImGuiDialog_FitWindowToContent(&ctx, DTTR_ERROR_UI_WINDOW_W, 0.0f);
 		}
 
 		DTTR_ImGuiDialog_EndRoot();
+		DTTR_ImGuiDialog_PopTheme();
 		DTTR_ImGuiDialog_Render(&ctx);
 	}
 

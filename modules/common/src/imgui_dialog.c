@@ -11,6 +11,37 @@ static bool sdl_video_ready;
 static const unsigned char *window_icon_png = DTTR_WINDOW_ICON_PNG;
 static size_t window_icon_png_size = sizeof(DTTR_WINDOW_ICON_PNG);
 
+typedef struct {
+	ImGuiCol target;
+	ImVec4_c color;
+} dialog_theme_color;
+
+static const dialog_theme_color DIALOG_THEME_COLORS[] = {
+	{ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
+	{ImGuiCol_FrameBgActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE},
+	{ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG},
+	{ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_HOVERED},
+	{ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_ACTIVE},
+	{ImGuiCol_Header, DTTR_IMGUI_COLOR_BUTTON_BG},
+	{ImGuiCol_HeaderHovered, DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_HOVERED},
+	{ImGuiCol_HeaderActive, DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_ACTIVE},
+	{ImGuiCol_Tab, DTTR_IMGUI_COLOR_TAB_BG},
+	{ImGuiCol_TabHovered, DTTR_IMGUI_COLOR_TAB_HOVERED_BG},
+	{ImGuiCol_TabSelected, DTTR_IMGUI_COLOR_TAB_SELECTED_BG},
+	{ImGuiCol_TabDimmed, DTTR_IMGUI_COLOR_TAB_BG},
+	{ImGuiCol_TabDimmedSelected, DTTR_IMGUI_COLOR_TAB_SELECTED_BG},
+	{ImGuiCol_MenuBarBg, DTTR_IMGUI_COLOR_TOP_BAR_BG},
+	{ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
+	{ImGuiCol_Border, DTTR_IMGUI_COLOR_BORDER},
+	{ImGuiCol_Separator, DTTR_IMGUI_COLOR_SEPARATOR},
+	{ImGuiCol_SeparatorHovered, DTTR_IMGUI_COLOR_SEPARATOR},
+	{ImGuiCol_SeparatorActive, DTTR_IMGUI_COLOR_SEPARATOR},
+	{ImGuiCol_TableHeaderBg, DTTR_IMGUI_COLOR_TABLE_HEADER_BG},
+	{ImGuiCol_TableBorderStrong, DTTR_IMGUI_COLOR_TABLE_BORDER},
+	{ImGuiCol_TableBorderLight, DTTR_IMGUI_COLOR_BORDER},
+};
+
 static void use_dialog_imgui_context(const DTTR_ImGuiDialogContext *ctx) {
 	if (ctx && ctx->imgui_context) {
 		igSetCurrentContext(ctx->imgui_context);
@@ -352,6 +383,42 @@ void DTTR_ImGuiDialog_EndRoot() {
 	igPopStyleVar(1);
 }
 
+void DTTR_ImGuiDialog_PushTheme() {
+	for (size_t i = 0; i < SDL_arraysize(DIALOG_THEME_COLORS); i++) {
+		igPushStyleColor_Vec4(DIALOG_THEME_COLORS[i].target, DIALOG_THEME_COLORS[i].color);
+	}
+}
+
+void DTTR_ImGuiDialog_PopTheme() {
+	igPopStyleColor((int)SDL_arraysize(DIALOG_THEME_COLORS));
+}
+
+bool DTTR_ImGuiDialog_BeginPaddedPanel(
+	const DTTR_ImGuiDialogContext *ctx,
+	const char *id,
+	ImGuiChildFlags child_flags,
+	ImGuiWindowFlags window_flags
+) {
+	const ImVec2_c padding = {
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_IMGUI_PANEL_PADDING_X),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_IMGUI_PANEL_PADDING_Y),
+	};
+
+	const ImVec2_c item_spacing = {
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_IMGUI_ITEM_SPACING_X),
+		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_IMGUI_ITEM_SPACING_Y),
+	};
+
+	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, padding);
+	igPushStyleVar_Vec2(ImGuiStyleVar_ItemSpacing, item_spacing);
+	return igBeginChild_Str(id, (ImVec2_c){0.0f, 0.0f}, child_flags, window_flags);
+}
+
+void DTTR_ImGuiDialog_EndPaddedPanel() {
+	igEndChild();
+	igPopStyleVar(2);
+}
+
 bool DTTR_ImGuiDialog_Button(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
@@ -361,8 +428,11 @@ bool DTTR_ImGuiDialog_Button(
 	igPushID_Str(id);
 	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_IMGUI_COLOR_BUTTON_TEXT);
 	igPushStyleColor_Vec4(ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_BUTTON_BG_ACTIVE);
+	igPushStyleColor_Vec4(
+		ImGuiCol_ButtonHovered,
+		DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_HOVERED
+	);
+	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_IMGUI_COLOR_ACCENT_BUTTON_BG_ACTIVE);
 	igPushStyleVar_Float(
 		ImGuiStyleVar_FrameRounding,
 		DTTR_ImGuiDialog_ScaledFloat(ctx, 2.0f)

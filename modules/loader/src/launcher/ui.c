@@ -70,6 +70,15 @@ static ImVec2_c button_size(const DTTR_ImGuiDialogContext *ctx) {
 	};
 }
 
+static bool begin_loader_panel(const DTTR_ImGuiDialogContext *ctx) {
+	return DTTR_ImGuiDialog_BeginPaddedPanel(
+		ctx,
+		"##loader_game_source_panel",
+		ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY,
+		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+	);
+}
+
 static bool draw_source_button(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,
@@ -205,26 +214,32 @@ DTTR_LoaderUIChoice DTTR_LoaderUI_ChooseGameSource(
 		DTTR_ImGuiDialog_RefreshScale(&ctx);
 		DTTR_ImGuiDialog_NewFrame(&ctx);
 
+		DTTR_ImGuiDialog_PushTheme();
 		if (DTTR_ImGuiDialog_BeginRoot(&ctx, WINDOW_TITLE, ImGuiWindowFlags_None)) {
-			DTTR_ImGuiDialog_DrawHeader(&ctx, HEADER_TITLE, DTTR_VERSION);
-			igSeparator();
-			DTTR_ImGuiDialog_DrawPaddedText(
-				&ctx,
-				GAME_SOURCE_MESSAGE,
-				DTTR_LOADER_UI_TEXT_PADDING_X,
-				DTTR_LOADER_UI_TEXT_PADDING_Y
-			);
-			draw_source_buttons(
-				&ctx,
-				disc_candidates,
-				disc_candidate_count,
-				&result,
-				&running
-			);
+			if (begin_loader_panel(&ctx)) {
+				DTTR_ImGuiDialog_DrawHeader(&ctx, HEADER_TITLE, DTTR_VERSION);
+				igSeparator();
+				DTTR_ImGuiDialog_DrawPaddedText(
+					&ctx,
+					GAME_SOURCE_MESSAGE,
+					DTTR_LOADER_UI_TEXT_PADDING_X,
+					DTTR_LOADER_UI_TEXT_PADDING_Y
+				);
+				draw_source_buttons(
+					&ctx,
+					disc_candidates,
+					disc_candidate_count,
+					&result,
+					&running
+				);
+			}
+
+			DTTR_ImGuiDialog_EndPaddedPanel();
 			DTTR_ImGuiDialog_FitWindowToContent(&ctx, DTTR_LOADER_UI_WINDOW_W, 18.0f);
 		}
 
 		DTTR_ImGuiDialog_EndRoot();
+		DTTR_ImGuiDialog_PopTheme();
 
 		DTTR_ImGuiDialog_Render(&ctx);
 	}

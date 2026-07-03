@@ -201,66 +201,20 @@ bool themed_row_button(
 	const char *label,
 	float width
 ) {
-	const ImVec2_c size = {
-		DTTR_ImGuiDialog_ScaledFloat(ctx, width),
-		0.0f,
-	};
-
-	igPushID_Str(id);
-	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_IMGUI_COLOR_BUTTON_TEXT);
-	igPushStyleColor_Vec4(ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG);
-	igPushStyleColor_Vec4(ImGuiCol_ButtonActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG);
-	igPushStyleVar_Float(
-		ImGuiStyleVar_FrameRounding,
-		DTTR_ImGuiDialog_ScaledFloat(ctx, 2.0f)
+	return DTTR_ImGuiDialog_Button(
+		ctx,
+		id,
+		label,
+		(ImVec2_c){DTTR_ImGuiDialog_ScaledFloat(ctx, width), 0.0f}
 	);
-	const bool clicked = igButton(label, size);
-	igPopStyleVar(1);
-	igPopStyleColor(4);
-	igPopID();
-	return clicked;
 }
 
-typedef struct {
-	ImGuiCol target;
-	ImVec4_c color;
-} config_theme_color;
-
-static const config_theme_color CONFIG_THEME_COLORS[] = {
-	{ImGuiCol_FrameBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
-	{ImGuiCol_FrameBgHovered, DTTR_IMGUI_COLOR_BUTTON_BG_HOVERED},
-	{ImGuiCol_FrameBgActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG},
-	{ImGuiCol_Button, DTTR_IMGUI_COLOR_BUTTON_BG},
-	{ImGuiCol_ButtonHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG},
-	{ImGuiCol_ButtonActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG},
-	{ImGuiCol_Header, DTTR_IMGUI_COLOR_BUTTON_BG},
-	{ImGuiCol_HeaderHovered, DTTR_CONFIG_UI_BUTTON_HOVERED_BG},
-	{ImGuiCol_HeaderActive, DTTR_CONFIG_UI_BUTTON_ACTIVE_BG},
-	{ImGuiCol_Tab, DTTR_CONFIG_UI_TAB_BG},
-	{ImGuiCol_TabHovered, DTTR_CONFIG_UI_TAB_HOVERED_BG},
-	{ImGuiCol_TabSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG},
-	{ImGuiCol_TabDimmed, DTTR_CONFIG_UI_TAB_BG},
-	{ImGuiCol_TabDimmedSelected, DTTR_CONFIG_UI_SELECTED_TAB_BG},
-	{ImGuiCol_MenuBarBg, DTTR_CONFIG_UI_TOP_BAR_BG},
-	{ImGuiCol_PopupBg, DTTR_IMGUI_COLOR_STACK_FRAME_BG},
-	{ImGuiCol_Border, DTTR_CONFIG_UI_BORDER_COLOR},
-	{ImGuiCol_Separator, DTTR_CONFIG_UI_SEPARATOR_COLOR},
-	{ImGuiCol_SeparatorHovered, DTTR_CONFIG_UI_SEPARATOR_COLOR},
-	{ImGuiCol_SeparatorActive, DTTR_CONFIG_UI_SEPARATOR_COLOR},
-	{ImGuiCol_TableHeaderBg, DTTR_CONFIG_UI_TABLE_HEADER_BG},
-	{ImGuiCol_TableBorderStrong, DTTR_CONFIG_UI_TABLE_BORDER_COLOR},
-	{ImGuiCol_TableBorderLight, DTTR_CONFIG_UI_BORDER_COLOR},
-};
-
 void push_config_theme() {
-	for (size_t i = 0; i < SDL_arraysize(CONFIG_THEME_COLORS); i++) {
-		igPushStyleColor_Vec4(CONFIG_THEME_COLORS[i].target, CONFIG_THEME_COLORS[i].color);
-	}
+	DTTR_ImGuiDialog_PushTheme();
 }
 
 void pop_config_theme() {
-	igPopStyleColor((int)SDL_arraysize(CONFIG_THEME_COLORS));
+	DTTR_ImGuiDialog_PopTheme();
 }
 
 static bool status_visible(const config_ui_state *state) {
@@ -342,31 +296,18 @@ void draw_footer_text(const config_ui_state *state) {
 }
 
 bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx) {
-	const ImVec2_c padding = {
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_X),
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_PANEL_PADDING_Y),
-	};
-
-	const ImVec2_c item_spacing = {
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_ITEM_SPACING_X),
-		DTTR_ImGuiDialog_ScaledFloat(ctx, DTTR_CONFIG_UI_ITEM_SPACING_Y),
-	};
-
-	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, padding);
-	igPushStyleVar_Vec2(ImGuiStyleVar_ItemSpacing, item_spacing);
 	const ImGuiWindowFlags panel_flags = ImGuiWindowFlags_NoScrollbar
 										 | ImGuiWindowFlags_NoScrollWithMouse;
-	return igBeginChild_Str(
+	return DTTR_ImGuiDialog_BeginPaddedPanel(
+		ctx,
 		"##config_panel",
-		(ImVec2_c){0.0f, 0.0f},
 		ImGuiChildFlags_AlwaysUseWindowPadding,
 		panel_flags
 	);
 }
 
 void end_padded_panel() {
-	igEndChild();
-	igPopStyleVar(2);
+	DTTR_ImGuiDialog_EndPaddedPanel();
 }
 
 static ImVec2_c table_cell_padding(const DTTR_ImGuiDialogContext *ctx) {
