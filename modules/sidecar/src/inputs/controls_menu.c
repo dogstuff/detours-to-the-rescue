@@ -33,6 +33,10 @@ void dttr_inputs_controls_menu_handle_event(const SDL_Event *event) {
 		button = event->gbutton.button;
 		break;
 	case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+		if (dttr_inputs_gamepad) {
+			return;
+		}
+
 		button = event->jbutton.button;
 		break;
 	default:
@@ -269,7 +273,7 @@ static void read_gamepad_buttons(bool *out_buttons, int out_count) {
 }
 
 static void read_joystick_buttons(bool *out_buttons, int out_count) {
-	if (!out_buttons || out_count <= 0) {
+	if (!out_buttons || out_count <= 0 || dttr_inputs_gamepad) {
 		return;
 	}
 

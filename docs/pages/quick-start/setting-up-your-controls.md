@@ -10,7 +10,7 @@ seo_type: "article"
 
     Before controller buttons are bound, the controller cannot be used to navigate the game menus. Use the keyboard **Arrow keys**, **Esc**, and **Enter** until your controller buttons are assigned.
 
-Most gameplay controls are still configurable from the game's own control menu.
+Most gameplay controls are still expected to be configured from the game's own control menu.
 
 DttR fixes a bunch of the issues with the original game's control bindings, including bug fixes and improved support for modern keyboards and controllers.
 
@@ -18,7 +18,7 @@ DttR fixes a bunch of the issues with the original game's control bindings, incl
 
 The game's controls menu can be accessed from the title screen by pressing **Enter**, opening **Options**, and finally opening **Control**.
 
-![The in-game Controls menu](../assets/ingame-controls.png){ width="560" }
+![The in-game controls menu with the default bindings](../assets/ingame-controls.webp){ width="560" }
 
 ## Binding a Key or Button
 
@@ -26,4 +26,6 @@ To bind a button to a gameplay action, highlight the action you want to rebind a
 
 DttR adds the ability to bind keyboard keys and controller buttons to any slot, regardless of which column it's under.  
 
-For more details for setting up controllers, see [Using a Controller/Gamepad](using-a-controller-gamepad.md).
+![The in-game controls menu bound for a sample keyboard preference and controller layout](../assets/ingame-controls-bound.webp)
+
+If you're planning on using a controller, see [Using a Controller/Gamepad](using-a-controller-gamepad.md).

@@ -8,7 +8,7 @@ seo_type: "article"
 
 DttR can be configured with the configuration GUI. Open it by running `dttr-config.exe` next to `dttr.exe`.
 
-![DttR Configuration GUI](../assets/config-gui.png){ width="560" }
+![DttR Configuration GUI](../assets/config-gui.webp){ width="560" }
 
 Settings are grouped by tab. Hover over a setting to see what it does and what its default value is.
 

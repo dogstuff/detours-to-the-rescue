@@ -12,7 +12,7 @@ To tweak your controller settings, connect your controller before opening the co
 
 If you have multiple controllers plugged in on your machine at the same time, you may need to set the value of the `Gamepad Index` field to the number/index used by your controller. In most cases this value can be left at `0`, but if your controller inputs aren't registering, you can figure out the index fairly easily by repeatedly incrementing the value by one and attempting to bind your button until it works.
 
-![DttR Configuration Controls tab](../assets/config-gui-controls.png){ width="560" }
+![DttR Configuration Controls tab](../assets/config-gui-controls.webp){ width="560" }
 
 ## Analog Stick Input
 

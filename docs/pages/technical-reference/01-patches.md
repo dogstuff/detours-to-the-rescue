@@ -91,8 +91,8 @@ name both keyboard and controller inputs.
 | Site | Signature | Bytes | Effect |
 | --- | --- | --- | --- |
 | `dttr_inputs_controls_enter_bind_branch` | Signature `E8 ?? ?? ?? ?? 8B F0 83 FE FF 0F 84 ?? ?? ?? ?? 83 FE 0D 0F 84 ?? ?? ?? ?? 83 FE 1B`, offset `+19` | `90 90 90 90 90 90` (`nop` x6) | Removes the native Enter-as-finish branch so Return can be bound like other keys. |
-| `dttr_inputs_controls_keyboard_bind_limit` | Signature `3B C7 75 17 81 FE 00 01 00 00 7D 29 8B ?? ?? ?? ?? ?? 89 34`, offset `+4` | `81 FE E8 03 00 00` (`cmp esi, 0x3E8`) | Raises the keyboard binding limit so DttR scancode key codes fit below the gamepad range. |
-| `dttr_inputs_controls_keyboard_remap_done_limit` | Signature `3B C7 75 10 81 FE 00 01 00 00 7D 15 89 3D ?? ?? ?? ?? EB 3A 83 F8 01 75 F3 81 FE 00 01 00 00 7D EB`, offset `+4` | `81 FE E8 03 00 00` (`cmp esi, 0x3E8`) | Applies the raised keyboard limit to the remap-completion path. |
+| `dttr_inputs_controls_keyboard_bind_limit` | Signature `3B C7 75 17 81 FE 00 01 00 00 7D 29 8B ?? ?? ?? ?? ?? 89 34`, offset `+4` | `81 FE 00 05 00 00` (`cmp esi, 0x500`) | Raises the keyboard binding limit so DttR keyboard and SDL controller codes fit. |
+| `dttr_inputs_controls_keyboard_remap_done_limit` | Signature `3B C7 75 10 81 FE 00 01 00 00 7D 15 89 3D ?? ?? ?? ?? EB 3A 83 F8 01 75 F3 81 FE 00 01 00 00 7D EB`, offset `+4` | `81 FE 00 05 00 00` (`cmp esi, 0x500`) | Applies the raised keyboard limit to the remap-completion path. |
 
 ## Audio
 

@@ -12,6 +12,13 @@ DTTR_PCDOGS_F_Config_ApplySettings_proto dttr_inputs_hook_config_apply_settings_
 DTTR_PCDOGS_F_Input_ReadDevices_proto dttr_inputs_hook_read_devices_original;
 
 static uint32_t custom_sdl_button_masks[DTTR_INPUTS_SDL_BUTTON_COUNT];
+static bool applying_control_settings;
+
+enum {
+	DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX = 10,
+	DTTR_INPUTS_SWITCH_PUPPIES_NATIVE_MASK = 0x0400,
+	DTTR_INPUTS_SWITCH_PUPPIES_BUTTON_MASK = 0x4000,
+};
 
 bool dttr_inputs_hook_mapping_prepare(const DTTR_Mods_Context *ctx) {
 	return ctx && DTTR_PCDOGS_F_Input_RegisterButtonMapping->IsCallable(&ctx->runtime)
@@ -38,7 +45,33 @@ void dttr_inputs_hook_mapping_reset() {
 	dttr_inputs_hook_register_button_mapping_original = NULL;
 	dttr_inputs_hook_config_apply_settings_original = NULL;
 	dttr_inputs_hook_read_devices_original = NULL;
+	applying_control_settings = false;
 	dttr_inputs_custom_button_mappings_clear();
+}
+
+static int32_t switch_puppies_config2_binding() {
+	if (!DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->IsResolved()) {
+		return DTTR_CONFIG_CONTROL_BINDING_NONE;
+	}
+
+	const int32_t *
+		player2_controls = DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->Ptr();
+	return player2_controls ? player2_controls[DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX]
+							: DTTR_CONFIG_CONTROL_BINDING_NONE;
+}
+
+static bool switch_puppies_binding_can_register(int32_t control_code) {
+	return dttr_inputs_key_code_kind(control_code) != DTTR_INPUTS_KEY_CODE_NONE;
+}
+
+static bool is_switch_puppies_native_mask_collision(
+	int32_t control_code,
+	uint32_t button_mask
+) {
+	return applying_control_settings
+		   && button_mask == DTTR_INPUTS_SWITCH_PUPPIES_NATIVE_MASK
+		   && control_code == switch_puppies_config2_binding()
+		   && switch_puppies_binding_can_register(control_code);
 }
 
 void dttr_inputs_apply_custom_button_mappings(DTTR_PCDOGS_T_Input_State *state) {
@@ -58,6 +91,10 @@ int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 	int32_t control_code,
 	uint32_t button_mask
 ) {
+	if (is_switch_puppies_native_mask_collision(control_code, button_mask)) {
+		return 0;
+	}
+
 	const DTTR_Input_KeyCodeKind kind = dttr_inputs_key_code_kind(control_code);
 	if (kind == DTTR_INPUTS_KEY_CODE_SDL_GAMEPAD) {
 		const int button = dttr_inputs_key_code_sdl_button(control_code);
@@ -83,6 +120,18 @@ int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 			   : 0;
 }
 
+static void register_switch_puppies_controller_override() {
+	const int32_t code = switch_puppies_config2_binding();
+	if (!switch_puppies_binding_can_register(code)) {
+		return;
+	}
+
+	dttr_inputs_hook_register_button_mapping_callback(
+		code,
+		DTTR_INPUTS_SWITCH_PUPPIES_BUTTON_MASK
+	);
+}
+
 static void register_start_pause_override() {
 	const int action = DTTR_Config_ControlActionIndex("start_pause");
 	if (action < 0) {
@@ -104,9 +153,12 @@ void __cdecl dttr_inputs_hook_config_apply_settings_callback() {
 	dttr_inputs_custom_button_mappings_clear();
 
 	if (dttr_inputs_hook_config_apply_settings_original) {
+		applying_control_settings = true;
 		dttr_inputs_hook_config_apply_settings_original();
+		applying_control_settings = false;
 	}
 
+	register_switch_puppies_controller_override();
 	register_start_pause_override();
 }
 

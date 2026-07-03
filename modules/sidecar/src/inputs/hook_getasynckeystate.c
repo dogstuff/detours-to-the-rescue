@@ -290,6 +290,10 @@ bool dttr_inputs_controller_button_pressed(int button) {
 		return true;
 	}
 
+	if (dttr_inputs_gamepad) {
+		return false;
+	}
+
 	SDL_Joystick *joystick = dttr_inputs_raw_joystick();
 	if (!joystick) {
 		return false;

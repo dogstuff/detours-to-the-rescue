@@ -20,9 +20,9 @@
 	"E8 ?? ?? ?? ?? 8B F0 83 FE FF 0F 84 ?? ?? ?? ?? 83 FE 0D 0F 84 ?? ?? ?? ?? 83 FE "  \
 	"1B"
 
-// The native game accepts keyboard bindings below 0x100. DttR scancode bindings are
-// 0x100..0x3E7, so the keyboard-column guards need to stop at the native gamepad
-// range instead.
+// The native game accepts keyboard bindings below 0x100. DttR scancode and SDL
+// controller button bindings live above that range, so the keyboard-column guards
+// need to stop above the sidecar button range instead.
 #define DTTR_SIDECAR_AOB_CONTROLS_KEYBOARD_BIND_LIMIT                                    \
 	"3B C7 75 17 81 FE 00 01 00 00 7D 29 8B ?? ?? ?? ?? ?? 89 34"
 
