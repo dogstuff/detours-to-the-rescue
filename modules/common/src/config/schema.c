@@ -44,7 +44,6 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 	FIELD("graphics", "window_width", window_width, CONFIG_INT),
 	FIELD("graphics", "window_height", window_height, CONFIG_INT),
 	FIELD("graphics", "msaa_samples", msaa_samples, CONFIG_INT),
-	FIELD("graphics", "texture_upload_sync", texture_upload_sync, CONFIG_BOOL),
 	FIELD("graphics", "generate_texture_mipmaps", generate_texture_mipmaps, CONFIG_BOOL),
 	FIELD("graphics", "vertex_precision", vertex_precision, CONFIG_VERTEX_PRECISION),
 	FIELD("graphics", "sprite_smooth", sprite_smooth, CONFIG_BOOL),

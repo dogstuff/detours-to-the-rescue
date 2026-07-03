@@ -47,8 +47,6 @@ static const char *TOOLTIP_SPRITE_SMOOTH = "Smooth 2D Sprites; disable for "
 										   "nearest-neighbor. Default: true.";
 static const char *TOOLTIP_MSAA_SAMPLES = "Multisample anti-aliasing samples. Set to 1 "
 										  "to disable. Default: 2.";
-static const char *TOOLTIP_TEXTURE_UPLOAD_SYNC = "Wait for each texture upload before "
-												 "continuing. Default: false.";
 static const char *TOOLTIP_GENERATE_TEXTURE_MIPMAPS
 	= "Generate mipmaps for textures to reduce aliasing at smaller sizes. Default: true.";
 static const char *TOOLTIP_FULLSCREEN = "Start in fullscreen. F11 toggles at runtime. "
@@ -150,14 +148,6 @@ void draw_graphics_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *stat
 		4,
 		TOOLTIP_MSAA_SAMPLES,
 		FIELD_LABEL_STATE(state, msaa_samples)
-	);
-	labeled_checkbox(
-		ctx,
-		"Texture Upload Sync",
-		"##texture_upload_sync",
-		&state->config.texture_upload_sync,
-		TOOLTIP_TEXTURE_UPLOAD_SYNC,
-		FIELD_LABEL_STATE(state, texture_upload_sync)
 	);
 	labeled_checkbox(
 		ctx,

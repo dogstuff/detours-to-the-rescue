@@ -92,15 +92,7 @@ typedef struct {
 	uint64_t cache_key;
 } DTTR_StagedTexture;
 
-/// One reusable upload slot holding a transfer buffer for texture uploads.
-typedef struct {
-	SDL_GPUTransferBuffer *transfer_buffer;
-	uint32_t capacity;
-	bool in_use;
-} DTTR_UploadPoolSlot;
-
 #define DTTR_MAX_STAGED_TEXTURES 4096
-#define DTTR_UPLOAD_POOL_SIZE 256
 
 typedef struct {
 	float mvp[16];
@@ -255,7 +247,6 @@ struct DTTR_BackendState {
 	int staged_texture_count;
 	DTTR_IntVector pending_upload_indices;
 	SDL_Mutex *texture_mutex;
-	DTTR_UploadPoolSlot upload_pool[DTTR_UPLOAD_POOL_SIZE];
 
 	uint64_t perf_frame_start_ns;
 	uint64_t perf_cpu_ns_accum;

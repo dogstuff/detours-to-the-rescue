@@ -23,7 +23,6 @@ static const DTTR_Config default_config = {
 	.window_width = WINDOW_WIDTH,
 	.window_height = WINDOW_HEIGHT,
 	.msaa_samples = 2,
-	.texture_upload_sync = false,
 	.generate_texture_mipmaps = true,
 	.fullscreen = false,
 	.hot_reload = false,

@@ -38,7 +38,6 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
     "window_width": 640,
     "window_height": 480,
     "msaa_samples": 2,
-    "texture_upload_sync": false,
     "generate_texture_mipmaps": true,
     "vertex_precision": "native",
     "sprite_smooth": true,

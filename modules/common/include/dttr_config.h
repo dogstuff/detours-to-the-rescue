@@ -133,7 +133,6 @@ typedef struct {
 	int window_width;
 	int window_height;
 	int msaa_samples;
-	bool texture_upload_sync;
 	bool generate_texture_mipmaps;
 	bool fullscreen;
 	bool hot_reload;

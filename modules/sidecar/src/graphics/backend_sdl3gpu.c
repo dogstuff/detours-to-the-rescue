@@ -291,18 +291,6 @@ static void cleanup(DTTR_BackendState *state) {
 		SDL_ReleaseGPUBuffer(state->device, state->vertex_buffer);
 	}
 
-	for (int i = 0; i < DTTR_UPLOAD_POOL_SIZE; i++) {
-		DTTR_UploadPoolSlot *slot = &state->upload_pool[i];
-
-		if (slot->transfer_buffer) {
-			SDL_ReleaseGPUTransferBuffer(state->device, slot->transfer_buffer);
-			slot->transfer_buffer = NULL;
-		}
-
-		slot->capacity = 0;
-		slot->in_use = false;
-	}
-
 	for (int i = 0; i < DTTR_PIPELINE_COUNT; i++) {
 		if (state->pipelines[i]) {
 			SDL_ReleaseGPUGraphicsPipeline(state->device, state->pipelines[i]);
@@ -321,7 +309,6 @@ static void cleanup(DTTR_BackendState *state) {
 typedef struct {
 	SDL_GPUTexture *tex;
 	SDL_GPUTransferBuffer *transfer_buffer;
-	int pool_slot;
 	int texture_index;
 	uint32_t bytes;
 	bool generate_mips;
@@ -356,69 +343,6 @@ static SDL_GPUTransferBuffer *create_upload_buffer(
 	};
 
 	return SDL_CreateGPUTransferBuffer(state->device, &info);
-}
-
-static void release_upload_pool_slot(DTTR_BackendState *state, int pool_slot) {
-	if (!state || pool_slot < 0 || pool_slot >= DTTR_UPLOAD_POOL_SIZE) {
-		return;
-	}
-
-	state->upload_pool[pool_slot].in_use = false;
-}
-
-static int acquire_upload_pool_slot(DTTR_BackendState *state, uint32_t bytes) {
-	if (!state || !state->device || bytes == 0) {
-		return -1;
-	}
-
-	int free_slot = -1;
-	int grow_slot = -1;
-
-	for (int i = 0; i < DTTR_UPLOAD_POOL_SIZE; i++) {
-		DTTR_UploadPoolSlot *slot = &state->upload_pool[i];
-
-		if (slot->in_use) {
-			continue;
-		}
-
-		if (slot->transfer_buffer && slot->capacity >= bytes) {
-			slot->in_use = true;
-			return i;
-		}
-
-		if (free_slot < 0) {
-			free_slot = i;
-		}
-
-		if (slot->transfer_buffer) {
-			grow_slot = i;
-		}
-	}
-
-	const int slot_index = (grow_slot >= 0) ? grow_slot : free_slot;
-
-	if (slot_index < 0) {
-		return -1;
-	}
-
-	DTTR_UploadPoolSlot *slot = &state->upload_pool[slot_index];
-
-	if (slot->transfer_buffer) {
-		SDL_ReleaseGPUTransferBuffer(state->device, slot->transfer_buffer);
-		slot->transfer_buffer = NULL;
-	}
-
-	slot->transfer_buffer = create_upload_buffer(state, bytes);
-
-	if (!slot->transfer_buffer) {
-		slot->capacity = 0;
-		slot->in_use = false;
-		return -1;
-	}
-
-	slot->capacity = bytes;
-	slot->in_use = true;
-	return slot_index;
 }
 
 static void bind_frame_vertex_buffer(
@@ -522,8 +446,7 @@ static bool upload_texture_data(
 	int width,
 	int height,
 	uint32_t bytes,
-	SDL_GPUTransferBuffer **out_transfer_buffer,
-	int *out_pool_slot
+	SDL_GPUTransferBuffer **out_transfer_buffer
 ) {
 	if (!copy || !tex || !pixels || bytes == 0) {
 		return false;
@@ -532,38 +455,16 @@ static bool upload_texture_data(
 	if (out_transfer_buffer) {
 		*out_transfer_buffer = NULL;
 	}
-	if (out_pool_slot) {
-		*out_pool_slot = -1;
-	}
 
-	SDL_GPUTransferBuffer *tbuf = NULL;
-	bool from_pool = false;
-	int pool_slot = -1;
-
-	if (dttr_config.texture_upload_sync) {
-		pool_slot = acquire_upload_pool_slot(state, bytes);
-	}
-
-	if (pool_slot >= 0) {
-		tbuf = state->upload_pool[pool_slot].transfer_buffer;
-		from_pool = true;
-	} else {
-		tbuf = create_upload_buffer(state, bytes);
-
-		if (!tbuf) {
-			return false;
-		}
+	SDL_GPUTransferBuffer *tbuf = create_upload_buffer(state, bytes);
+	if (!tbuf) {
+		return false;
 	}
 
 	void *mapped = SDL_MapGPUTransferBuffer(state->device, tbuf, false);
 
 	if (!mapped) {
-		if (from_pool) {
-			release_upload_pool_slot(state, pool_slot);
-		} else {
-			SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
-		}
-
+		SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
 		return false;
 	}
 
@@ -585,10 +486,7 @@ static bool upload_texture_data(
 	SDL_UploadToGPUTexture(copy, &src, &dst, false);
 
 	if (out_transfer_buffer) {
-		*out_transfer_buffer = from_pool ? NULL : tbuf;
-	}
-	if (out_pool_slot) {
-		*out_pool_slot = from_pool ? pool_slot : -1;
+		*out_transfer_buffer = tbuf;
 	}
 
 	return true;
@@ -602,11 +500,6 @@ static void finish_pending_uploads(
 	for (int i = 0; i < pending_count; i++) {
 		if (!pending[i].uploaded) {
 			continue;
-		}
-
-		if (pending[i].pool_slot >= 0) {
-			release_upload_pool_slot(state, pending[i].pool_slot);
-			pending[i].pool_slot = -1;
 		}
 
 		if (pending[i].transfer_buffer) {
@@ -750,13 +643,11 @@ static int collect_and_upload_pending(
 			detached[i].width,
 			detached[i].height,
 			detached[i].bytes,
-			&pending_uploads[i].transfer_buffer,
-			&pending_uploads[i].pool_slot
+			&pending_uploads[i].transfer_buffer
 		);
 		pending_uploads[i] = (graphics_pending_upload){
 			.tex = detached[i].tex,
 			.transfer_buffer = ok ? pending_uploads[i].transfer_buffer : NULL,
-			.pool_slot = ok ? pending_uploads[i].pool_slot : -1,
 			.texture_index = detached[i].texture_index,
 			.bytes = detached[i].bytes,
 			.generate_mips = detached[i].generate_mips,
@@ -1231,10 +1122,6 @@ static void end_frame(DTTR_BackendState *state) {
 	}
 
 	SDL_SubmitGPUCommandBuffer(state->cmd);
-
-	if (dttr_config.texture_upload_sync) {
-		SDL_WaitForGPUIdle(state->device);
-	}
 
 	dttr_graphics_mod_present_rect_after();
 	dttr_graphics_mod_frame_end(state);
