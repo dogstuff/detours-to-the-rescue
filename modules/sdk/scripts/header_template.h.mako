@@ -907,6 +907,26 @@ static bool dttr_pcdogs_region_has(uintptr_t addr, size_t size, bool write, bool
 	return true;
 }
 
+static bool dttr_pcdogs_module_region_has(
+	const DTTR_Core_Context* ctx,
+	uintptr_t addr,
+	size_t size,
+	bool write,
+	bool exec
+) {
+	if (!ctx || !ctx->game_module
+		|| !dttr_pcdogs_region_has(addr, size, write, exec)) {
+		return false;
+	}
+
+	MEMORY_BASIC_INFORMATION mbi;
+	if (!VirtualQuery((const void*)addr, &mbi, sizeof(mbi))) {
+		return false;
+	}
+
+	return mbi.AllocationBase == (void*)ctx->game_module;
+}
+
 static bool dttr_pcdogs_context_valid(const DTTR_Core_Context* ctx) {
 	return ctx && ctx->game_module && ctx->api && ctx->api->sigscan;
 }
@@ -1124,7 +1144,7 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 			xref->addr_off,
 			0u
 		);
-		if (value) {
+		if (value && dttr_pcdogs_module_region_has(ctx, value, 1u, false, false)) {
 			DTTR_PCDOGS_T_Symbol_Data* global = &dttr_pcdogs_symbol_globals
 												  [xref->data_index];
 			global->address = value;

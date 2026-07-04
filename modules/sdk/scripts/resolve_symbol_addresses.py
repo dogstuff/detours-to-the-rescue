@@ -127,6 +127,25 @@ class Image:
 
         return None
 
+    def contains_va(self, va: int, size: int = 1) -> bool:
+        if size <= 0:
+            return False
+
+        rva = va - self.image_base
+        if rva < 0:
+            return False
+
+        for section in self.sections:
+            start = section.va
+            span = max(section.virtual_size, section.raw_size)
+            if start <= rva and rva + size <= start + span:
+                return True
+
+        if self.image_base == 0 and 0 <= va and va + size <= len(self.data):
+            return True
+
+        return False
+
     def read_u32_va(self, va: int) -> int | None:
         offset = self.va_to_offset(va)
         if offset is None or offset + 4 > len(self.data):
@@ -403,6 +422,10 @@ def resolve_data(
         )
         if value is None:
             unresolved.setdefault(ref.name, f"xref-read-failed:{ref.ref_function}")
+            continue
+
+        if not image.contains_va(value):
+            unresolved.setdefault(ref.name, f"invalid-xref-target:{ref.ref_function}")
             continue
 
         resolved[ref.name] = value

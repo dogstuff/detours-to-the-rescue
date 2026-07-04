@@ -33,7 +33,8 @@ static const char
 									  "Stick X/Y axes with the deadzone circled in red.";
 static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_POSITION
 	= "Live position from the configured Camera RZ / Pan axis with its deadzone circled "
-	  "in red. Camera controls must still be bound manually using this axis in the game controls menu.";
+	  "in red. Camera controls must still be bound manually using this axis in the game "
+	  "controls menu.";
 static const char *TOOLTIP_CONTROL_BINDINGS
 	= "Click a binding, then press a keyboard key or gamepad button. "
 	  "This behavior cannot be bound from the in-game controls menu.";

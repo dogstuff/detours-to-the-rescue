@@ -87,7 +87,6 @@ static void draw_toolbar(const DTTR_ImGuiDialogContext *ctx, config_ui_state *st
 	const ImGuiWindowFlags toolbar_flags = ImGuiWindowFlags_NoScrollbar
 										   | ImGuiWindowFlags_NoScrollWithMouse;
 
-
 	igPushStyleColor_Vec4(ImGuiCol_ChildBg, DTTR_CONFIG_UI_TOP_BAR_BG);
 	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, padding);
 	igPushStyleVar_Vec2(ImGuiStyleVar_ItemSpacing, item_spacing);

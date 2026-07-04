@@ -1710,7 +1710,7 @@ def header_context(blueprint: BlueprintRows) -> HeaderContext:
     runtime_function_xrefs = [
         row for row in blueprint.function_xrefs if str(row.required) == "all"
     ]
-    runtime_xrefs = [row for row in blueprint.xrefs if str(row.required) == "all"]
+    runtime_xrefs = list(blueprint.xrefs)
 
     return HeaderContext(
         header_guard=guard,

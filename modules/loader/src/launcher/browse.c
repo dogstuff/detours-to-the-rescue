@@ -188,11 +188,7 @@ static bool extract_iso_game_cache(
 				continue;
 			}
 
-			DTTR_LOG_ERROR(
-				"Could not extract %s (%s)",
-				iso_path,
-				DTTR_ISO_LastError()
-			);
+			DTTR_LOG_ERROR("Could not extract %s (%s)", iso_path, DTTR_ISO_LastError());
 			return false;
 		}
 

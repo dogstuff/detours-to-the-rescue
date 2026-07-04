@@ -16217,6 +16217,7 @@ stable.data(
 stable.data(
     "Menu_HandleOptionsLogic_InputMenuButtonRemappingActive",
     xref("Menu_HandleOptionsLogic", 0x203, 0x1),
+    xref("Menu_HandleOptionsLogic", 0x202, 0x1, required=Required.EU_SC),
     type="int32_t",
     doc="Control-remapping active/latch dword in the options submenu state cluster.",
     write_policy=WritePolicy.RAW_MEMORY,
@@ -17416,6 +17417,7 @@ stable.data(
 stable.data(
     "Config_ApplySettings_InputPlayer1Controls",
     xref("Config_ApplySettings", 0x77, 0x2),
+    xref("Config_ApplySettings", 0x86, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc=(
         "First dword/base of the player-1 pcdogs.ini binding block; Config_ApplySettings applies the first 10 normal mappings."
@@ -17436,6 +17438,7 @@ stable.data(
 stable.data(
     "Config_ApplySettings_InputSpecialButton",
     xref("Config_ApplySettings", 0x8F, 0x2),
+    xref("Config_ApplySettings", 0x9E, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc="Additional pcdogs.ini button binding assigned to Input_State mask 0x4000; defaults to "
     "VK_SPACE (0x20) when unset.",
@@ -17444,6 +17447,7 @@ stable.data(
 stable.data(
     "Config_ApplySettings_InputPlayer2Controls",
     xref("Config_ApplySettings", 0x57, 0x2),
+    xref("Config_ApplySettings", 0x66, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc=(
         "First dword/base of the player-2/gamepad pcdogs.ini binding block; Config_ApplySettings applies the first 10 normal mappings."
