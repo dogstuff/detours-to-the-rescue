@@ -3,9 +3,10 @@ description: "Run the PC version of 102 Dalmatians: Puppies to the Rescue on mod
 seo_type: "software"
 ---
 
-!!! example "Getting Started"
+!!! example "First Time Using DttR?"
 
-    If this is your first time using DttR, the fastest way to get it running is by following the [Getting Started](quick-start/getting-started.md).
+    If this is your first time setting up DttR, head over to [Getting Started](../user-guide/getting-started.md) for some quick information on setting up DttR.
+
 
 # 102 Patches: Detours to the Rescue! (DttR)
 

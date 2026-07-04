@@ -44,15 +44,19 @@
     }
 }
 
-.md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis,
-.md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"],
-.md-typeset a[href*="/releases/permalink/latest/downloads/dttr-"] {
+.md-nav__link[href$="downloads/"] .md-ellipsis,
+.md-nav__link[href*="/downloads/dttr-"] .md-ellipsis,
+.md-tabs__link[href$="downloads/"],
+.md-tabs__link[href*="/downloads/dttr-"],
+.md-typeset a[href*="/downloads/dttr-"] {
     color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
 }
 
-.md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis::before,
-.md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"]::before,
+.md-nav__link[href$="downloads/"] .md-ellipsis::before,
+.md-nav__link[href*="/downloads/dttr-"] .md-ellipsis::before,
+.md-tabs__link[href$="downloads/"]::before,
+.md-tabs__link[href*="/downloads/dttr-"]::before,
 .md-nav__link[href$="internal/"] .md-ellipsis::before,
 .md-nav__link[href*="symbols/pcdogs/"][href$=".json"] .md-ellipsis::before {
     background-color: currentcolor;
@@ -71,8 +75,10 @@
     -webkit-mask-size: contain;
 }
 
-.md-nav__link[href*="/releases/permalink/latest/downloads/dttr-"] .md-ellipsis::before,
-.md-tabs__link[href*="/releases/permalink/latest/downloads/dttr-"]::before {
+.md-nav__link[href$="downloads/"] .md-ellipsis::before,
+.md-nav__link[href*="/downloads/dttr-"] .md-ellipsis::before,
+.md-tabs__link[href$="downloads/"]::before,
+.md-tabs__link[href*="/downloads/dttr-"]::before {
     height: 1.05em;
     mask-image: var(--pcdogs-icon-download);
     vertical-align: -0.22em;
@@ -80,7 +86,7 @@
     -webkit-mask-image: var(--pcdogs-icon-download);
 }
 
-.md-typeset a[href*="/releases/permalink/latest/downloads/dttr-"]::before {
+.md-typeset a[href*="/downloads/dttr-"]::before {
     content: "↓";
     margin-right: 0.35em;
     opacity: 0.8;

@@ -26,6 +26,6 @@ To bind a button to a gameplay action, highlight the action you want to rebind a
 
 DttR adds the ability to bind keyboard keys and controller buttons to any slot, regardless of which column it's under.  
 
-![The in-game controls menu bound for a sample keyboard preference and controller layout](../assets/ingame-controls-bound.webp)
+![The in-game controls menu bound for a sample keyboard preference and controller layout](../assets/ingame-controls-bound.webp){ width="560" }
 
 If you're planning on using a controller, see [Using a Controller/Gamepad](using-a-controller-gamepad.md).

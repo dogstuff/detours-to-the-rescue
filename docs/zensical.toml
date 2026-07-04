@@ -11,17 +11,19 @@ site_dir = "build"
 repo_name = "dogstuff/detours-to-the-rescue"
 repo_url = "https://gitlab.com/dogstuff/detours-to-the-rescue"
 extra_css = ["assets/stylesheets/site.css"]
-extra_javascript = [{ path = "assets/js/pcdogs-symbol-viewer.mjs", type = "module" }]
+extra_javascript = [
+  { path = "assets/js/pcdogs-symbol-viewer.mjs", type = "module" },
+]
 extra_templates = ["robots.txt"]
 nav = [
   { "Home" = "index.md" },
   { "User Guide" = [
-    { "Getting Started" = "quick-start/getting-started.md" },
-    { "Setting Up Your Controls" = "quick-start/setting-up-your-controls.md" },
-    { "Using a Controller/Gamepad" = "quick-start/using-a-controller-gamepad.md" },
-    { "Using the Settings Menu" = "quick-start/using-the-settings-menu.md" },
-    { "Installing Mods" = "quick-start/installing-mods.md" },
-    { "Troubleshooting" = "quick-start/troubleshooting.md" },
+    { "Getting Started" = "user-guide/getting-started.md" },
+    { "Setting Up Your Controls" = "user-guide/setting-up-your-controls.md" },
+    { "Using a Controller/Gamepad" = "user-guide/using-a-controller-gamepad.md" },
+    { "Using the Settings Menu" = "user-guide/using-the-settings-menu.md" },
+    { "Installing Mods" = "user-guide/installing-mods.md" },
+    { "Troubleshooting" = "user-guide/troubleshooting.md" },
   ] },
   { "Modding SDK" = [
     { "Creating Mods in C" = [
@@ -39,7 +41,6 @@ nav = [
       { "PCDogs Symbols" = "modding-sdk/symbols/pcdogs/index.md" },
     ] },
     { "Symbols Manifest" = "modding-sdk/symbols/pcdogs/pcdogs.symbols.v1.json" },
-    { "Symbols Manifest (Schema)" = "modding-sdk/symbols/pcdogs/pcdogs.symbols.schema.json" },
   ] },
   { "Technical Reference" = [
     { "Configuration" = "technical-reference/00-configuration.md" },
@@ -47,8 +48,9 @@ nav = [
     { "Compilation" = "technical-reference/02-compilation.md" },
     { "Internal Documentation" = "internal/" },
   ] },
-  { "Vanilla (latest)" = "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-release.zip" },
-  { "Modding (latest)" = "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip" },
+  { "Downloads" = [
+    "downloads/index.md",
+  ] },
 ]
 
 plugins = [
@@ -73,7 +75,6 @@ features = [
   "navigation.tabs",
   "navigation.instant",
   "navigation.instant.prefetch",
-  "navigation.prune",
   "navigation.top",
   "navigation.tracking",
   "search.highlight",
@@ -132,7 +133,18 @@ scheme = "slate"
   "102 Dalmatians PC Steam Deck",
   "Puppies to the Rescue Steam Deck",
 ]
-"quick-start/getting-started/" = [
+"downloads/" = [
+  "102 Dalmatians PC download",
+  "Puppies to the Rescue download",
+  "DttR download",
+  "102 Dalmatians modern PC download",
+  "Puppies to the Rescue modern PC download",
+  "102 Dalmatians PC patch download",
+  "Puppies to the Rescue patch download",
+  "102 Dalmatians PC modding download",
+  "Puppies to the Rescue modding download",
+]
+"user-guide/getting-started/" = [
   "how to run 102 Dalmatians PC",
   "how to run Puppies to the Rescue PC",
   "install 102 Dalmatians PC",
@@ -156,7 +168,7 @@ scheme = "slate"
   "102 Dalmatians PC Wine setup",
   "Puppies to the Rescue Wine setup",
 ]
-"quick-start/using-a-controller-gamepad/" = [
+"user-guide/using-a-controller-gamepad/" = [
   "102 Dalmatians PC controller",
   "Puppies to the Rescue controller",
   "102 Dalmatians PC gamepad",
@@ -169,7 +181,7 @@ scheme = "slate"
   "102 Dalmatians PC Steam Deck controls",
   "Puppies to the Rescue Steam Deck controls",
 ]
-"quick-start/using-the-settings-menu/" = [
+"user-guide/using-the-settings-menu/" = [
   "102 Dalmatians PC settings",
   "Puppies to the Rescue settings",
   "102 Dalmatians PC options",
@@ -192,7 +204,7 @@ scheme = "slate"
   "102 Dalmatians PC Linux settings",
   "Puppies to the Rescue Linux settings",
 ]
-"quick-start/troubleshooting/" = [
+"user-guide/troubleshooting/" = [
   "102 Dalmatians PC crash",
   "Puppies to the Rescue crash",
   "102 Dalmatians PC crashes",

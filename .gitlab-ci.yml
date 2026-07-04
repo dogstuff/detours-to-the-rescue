@@ -168,6 +168,8 @@ stages:
   extends:
     - .ci-image-job
   stage: test
+  variables:
+    GIT_DEPTH: "0"
   needs:
     - job: "build:tests"
       artifacts: true

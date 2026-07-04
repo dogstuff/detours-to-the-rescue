@@ -6,14 +6,14 @@ seo_type: "article"
 
 # Installing Mods
 
-!!! warning "Mod Ecosystem"
+!!! warning "Mods Are Pretty New"
 
     The DttR modding SDK and ecosystem is still very news and will likely have a limited
     number of stable mods available. This should improve with time!
 
 DttR mods require the "Modding" build. The "Vanilla" build is intended for speedruns and does not load third-party mods.
 
-[Download Modding (latest)](https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/permalink/latest/downloads/dttr-modding-release.zip)
+[Modding (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__)
 
 ## Installing a Mod
 

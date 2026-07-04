@@ -6,9 +6,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +25,41 @@ from symbol_manifest import MANIFEST_FILENAME, SCHEMA_FILENAME  # noqa: E402
 SYMBOL_REFERENCE_TITLE = "PCDogs Symbols"
 SYMBOL_REFERENCE_BASE_PATH = "modding-sdk/symbols/pcdogs"
 SYMBOL_REFERENCE_OVERVIEW_PATH = f"{SYMBOL_REFERENCE_BASE_PATH}/index.md"
+VERSION_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-(preview|rc)\.(\d+))?$")
+STABLE_RELEASE_FLOOR = (3, 0, 0)
+
+
+@dataclass(frozen=True, slots=True)
+class VersionTag:
+    tag: str
+    major: int
+    minor: int
+    patch: int
+    prerelease: str | None = None
+    prerelease_number: int = 0
+
+    @property
+    def is_stable(self) -> bool:
+        return self.prerelease is None
+
+    @property
+    def version(self) -> tuple[int, int, int]:
+        return (self.major, self.minor, self.patch)
+
+    @property
+    def sort_key(self) -> tuple[int, int, int, int, int]:
+        prerelease_rank = {
+            None: 3,
+            "rc": 2,
+            "preview": 1,
+        }[self.prerelease]
+        return (*self.version, prerelease_rank, self.prerelease_number)
+
+
+@dataclass(frozen=True, slots=True)
+class DocsDownloadVersions:
+    stable: str
+    nightly: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +191,151 @@ def run_checked(command: list[str], *, label: str) -> None:
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(f"{label} failed with exit code {exc.returncode}") from exc
+
+
+def parse_version_tag(tag: str) -> VersionTag | None:
+    match = VERSION_TAG_RE.fullmatch(tag)
+    if not match:
+        return None
+
+    prerelease = match.group(4)
+    prerelease_number = int(match.group(5) or 0)
+
+    return VersionTag(
+        tag=tag,
+        major=int(match.group(1)),
+        minor=int(match.group(2)),
+        patch=int(match.group(3)),
+        prerelease=prerelease,
+        prerelease_number=prerelease_number,
+    )
+
+
+def version_download_url(version: str, artifact: str) -> str:
+    return (
+        "https://gitlab.com/dogstuff/detours-to-the-rescue/-/releases/"
+        f"{version}/downloads/{artifact}"
+    )
+
+
+def git_version_tags() -> list[VersionTag]:
+    try:
+        result = subprocess.run(
+            ["git", "tag", "--list", "v*"],
+            cwd=REPO_ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        tags: list[str] = []
+    else:
+        tags = [line.strip() for line in result.stdout.splitlines()]
+
+    ci_tag = os.environ.get("CI_COMMIT_TAG", "").strip()
+    if ci_tag:
+        tags.append(ci_tag)
+
+    parsed = [version for tag in tags if (version := parse_version_tag(tag))]
+    return sorted(set(parsed), key=lambda version: version.sort_key)
+
+
+def latest_version_tag(*, stable: bool) -> VersionTag | None:
+    versions = git_version_tags()
+    if stable:
+        versions = [
+            version
+            for version in versions
+            if version.is_stable and version.version >= STABLE_RELEASE_FLOOR
+        ]
+
+    return versions[-1] if versions else None
+
+
+def resolve_docs_download_versions() -> DocsDownloadVersions:
+    nightly = os.environ.get("DTTR_DOCS_NIGHTLY_VERSION", "").strip()
+    stable = os.environ.get("DTTR_DOCS_STABLE_VERSION", "").strip()
+
+    if nightly and parse_version_tag(nightly) is None:
+        raise ValueError(f"invalid DTTR_DOCS_NIGHTLY_VERSION: {nightly}")
+
+    if stable and parse_version_tag(stable) is None:
+        raise ValueError(f"invalid DTTR_DOCS_STABLE_VERSION: {stable}")
+
+    if not nightly:
+        latest = latest_version_tag(stable=False)
+        if latest is None:
+            raise ValueError(
+                "could not resolve docs nightly version; fetch git tags or set "
+                "DTTR_DOCS_NIGHTLY_VERSION"
+            )
+
+        nightly = latest.tag
+
+    if not stable:
+        latest_stable = latest_version_tag(stable=True)
+        stable = latest_stable.tag if latest_stable else nightly
+
+    return DocsDownloadVersions(stable=stable, nightly=nightly)
+
+
+def docs_download_replacements() -> dict[str, str]:
+    versions = resolve_docs_download_versions()
+    return {
+        "__DTTR_DOCS_STABLE_VERSION__": versions.stable,
+        "__DTTR_DOCS_NIGHTLY_VERSION__": versions.nightly,
+        "__DTTR_DOCS_VANILLA_STABLE_DOWNLOAD_URL__": version_download_url(
+            versions.stable,
+            "dttr-release.zip",
+        ),
+        "__DTTR_DOCS_VANILLA_NIGHTLY_DOWNLOAD_URL__": version_download_url(
+            versions.nightly,
+            "dttr-release.zip",
+        ),
+        "__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__": version_download_url(
+            versions.stable,
+            "dttr-modding-release.zip",
+        ),
+        "__DTTR_DOCS_MODDING_NIGHTLY_DOWNLOAD_URL__": version_download_url(
+            versions.nightly,
+            "dttr-modding-release.zip",
+        ),
+        "__DTTR_DOCS_MOD_TEMPLATE_STABLE_DOWNLOAD_URL__": version_download_url(
+            versions.stable,
+            "dttr-mod-template-c.zip",
+        ),
+        "__DTTR_DOCS_MOD_TEMPLATE_NIGHTLY_DOWNLOAD_URL__": version_download_url(
+            versions.nightly,
+            "dttr-mod-template-c.zip",
+        ),
+    }
+
+
+def resolve_docs_download_placeholders(
+    text: str, replacements: Mapping[str, str] | None = None
+) -> str:
+    if replacements is None:
+        replacements = docs_download_replacements()
+
+    for token, value in replacements.items():
+        text = text.replace(token, value)
+
+    return text
+
+
+def resolve_docs_config(config_text: str) -> str:
+    return resolve_docs_download_placeholders(config_text)
+
+
+def resolve_docs_page_placeholders(
+    pages_out: Path, replacements: Mapping[str, str]
+) -> None:
+    for path in pages_out.rglob("*.md"):
+        text = path.read_text()
+        resolved = resolve_docs_download_placeholders(text, replacements)
+        if resolved != text:
+            path.write_text(resolved)
 
 
 def prepare_symbol_reference_docs(
@@ -312,6 +494,10 @@ def main() -> int:
             source_dir=source_dir,
             config_path=config_path,
         )
+        replacements = docs_download_replacements()
+        docs_config = resolve_docs_download_placeholders(
+            config_path.read_text(), replacements
+        )
     except (OSError, ValueError) as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -325,6 +511,7 @@ def main() -> int:
 
     pages_out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, pages_out)
+    resolve_docs_page_placeholders(pages_out, replacements)
 
     if overrides_dir.exists():
         validate_source_tree(overrides_dir)
@@ -347,7 +534,7 @@ def main() -> int:
         print(exc, file=sys.stderr)
         return 1
 
-    (output_dir / "zensical.toml").write_text(config_path.read_text())
+    (output_dir / "zensical.toml").write_text(docs_config)
 
     write_docs_manifest(
         output_dir=output_dir,
