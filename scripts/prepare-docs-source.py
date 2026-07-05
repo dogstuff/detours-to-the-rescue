@@ -220,27 +220,15 @@ def version_download_url(version: str, artifact: str) -> str:
     )
 
 
-def package_registry_download_url(version: str, artifact: str) -> str:
+def nightly_download_url(version: str, artifact: str) -> str:
+    artifact = {
+        "dttr-release.zip": f"dttr-{version}-release.zip",
+        "dttr-modding-release.zip": f"dttr-modding-{version}-release.zip",
+    }.get(artifact, artifact)
+
     return (
         "https://gitlab.com/api/v4/projects/"
         f"{PACKAGE_REGISTRY_PROJECT}/packages/generic/dttr/{version}/{artifact}"
-    )
-
-
-def nightly_artifact_name(version: str, artifact: str) -> str:
-    names = {
-        "dttr-release.zip": f"dttr-{version}-release.zip",
-        "dttr-modding-release.zip": f"dttr-modding-{version}-release.zip",
-        "dttr-debug.zip": f"dttr-{version}-debug.zip",
-        "dttr-modding-debug.zip": f"dttr-modding-{version}-debug.zip",
-    }
-    return names.get(artifact, artifact)
-
-
-def nightly_download_url(version: str, artifact: str) -> str:
-    return package_registry_download_url(
-        version,
-        nightly_artifact_name(version, artifact),
     )
 
 
@@ -304,29 +292,20 @@ def normalize_short_commit_hash(value: str, *, label: str) -> str:
     return value
 
 
-def resolve_docs_download_versions() -> DocsDownloadVersions:
-    nightly = os.environ.get("DTTR_DOCS_NIGHTLY_VERSION", "").strip()
-    stable = os.environ.get("DTTR_DOCS_STABLE_VERSION", "").strip()
+def short_commit_from_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    return normalize_short_commit_hash(value, label=name) if value else ""
 
-    if nightly:
-        nightly = normalize_short_commit_hash(
-            nightly,
-            label="DTTR_DOCS_NIGHTLY_VERSION",
-        )
+
+def resolve_docs_download_versions() -> DocsDownloadVersions:
+    nightly = short_commit_from_env("DTTR_DOCS_NIGHTLY_VERSION")
+    stable = os.environ.get("DTTR_DOCS_STABLE_VERSION", "").strip()
 
     if stable and parse_version_tag(stable) is None:
         raise ValueError(f"invalid DTTR_DOCS_STABLE_VERSION: {stable}")
 
     if not nightly:
-        nightly = os.environ.get("CI_COMMIT_SHORT_SHA", "").strip()
-        if nightly:
-            nightly = normalize_short_commit_hash(
-                nightly,
-                label="CI_COMMIT_SHORT_SHA",
-            )
-        else:
-            nightly = git_short_commit() or ""
-
+        nightly = short_commit_from_env("CI_COMMIT_SHORT_SHA") or git_short_commit()
         if not nightly:
             raise ValueError(
                 "could not resolve docs nightly version; set CI_COMMIT_SHORT_SHA or "
@@ -334,8 +313,7 @@ def resolve_docs_download_versions() -> DocsDownloadVersions:
             )
 
     if not stable:
-        latest_stable = latest_version_tag(stable=True)
-        latest_tag = latest_stable or latest_version_tag(stable=False)
+        latest_tag = latest_version_tag(stable=True) or latest_version_tag(stable=False)
         if latest_tag is None:
             raise ValueError(
                 "could not resolve docs stable version; fetch git tags or set "

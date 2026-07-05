@@ -138,12 +138,10 @@ stages:
   extends: .package-build-job
   script:
     - nix develop "$CI_NIX_SHELL" --command just package-release "${CI_COMMIT_TAG}" "${CI_COMMIT_TAG}"
-  artifacts:
+  artifacts: &package-artifacts
     paths:
       - dttr-*-debug.zip
       - dttr-*-release.zip
-      - dttr-modding-*-debug.zip
-      - dttr-modding-*-release.zip
       - dttr-mod-template-c.zip
     expire_in: 2 weeks
   rules:
@@ -152,21 +150,10 @@ stages:
 "build:nightly":
   extends: .package-build-job
   script:
-    - >-
-      nix develop "$CI_NIX_SHELL" --command
-      just package-release
-      "${CI_COMMIT_SHORT_SHA}"
-      "${CI_COMMIT_SHORT_SHA}"
-  artifacts:
-    paths:
-      - dttr-*-debug.zip
-      - dttr-*-release.zip
-      - dttr-modding-*-debug.zip
-      - dttr-modding-*-release.zip
-      - dttr-mod-template-c.zip
-    expire_in: 2 weeks
+    - nix develop "$CI_NIX_SHELL" --command just package-release "${CI_COMMIT_SHORT_SHA}" "${CI_COMMIT_SHORT_SHA}"
+  artifacts: *package-artifacts
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: &nightly-rule '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
 
 "test:ctest":
   extends:
@@ -194,7 +181,6 @@ stages:
     - job: "build:tests"
       artifacts: true
   script:
-    - export DTTR_DOCS_NIGHTLY_VERSION="$CI_COMMIT_SHORT_SHA"
     - nix develop "$CI_NIX_SHELL" --command bash -lc 'scripts/fetch-pcdogs-fixtures.sh && just ci-build-docs'
   artifacts:
     paths:
@@ -222,14 +208,7 @@ stages:
       "dttr-modding-${CI_COMMIT_TAG}-debug.zip"
       "dttr-modding-${CI_COMMIT_TAG}-release.zip"
       "dttr-mod-template-c.zip"
-  artifacts:
-    paths:
-      - dttr-*-debug.zip
-      - dttr-*-release.zip
-      - dttr-modding-*-debug.zip
-      - dttr-modding-*-release.zip
-      - dttr-mod-template-c.zip
-    expire_in: 2 weeks
+  artifacts: *package-artifacts
   rules:
     - if: $CI_COMMIT_TAG
 
@@ -251,16 +230,9 @@ stages:
       "dttr-modding-${CI_COMMIT_SHORT_SHA}-debug.zip"
       "dttr-modding-${CI_COMMIT_SHORT_SHA}-release.zip"
       "dttr-mod-template-c.zip"
-  artifacts:
-    paths:
-      - dttr-*-debug.zip
-      - dttr-*-release.zip
-      - dttr-modding-*-debug.zip
-      - dttr-modding-*-release.zip
-      - dttr-mod-template-c.zip
-    expire_in: 2 weeks
+  artifacts: *package-artifacts
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: *nightly-rule
 
 .pages-deploy-job: &pages-deploy-job
   stage: deploy
