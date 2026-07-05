@@ -48,7 +48,8 @@
 .md-nav__link[href*="/downloads/dttr-"] .md-ellipsis,
 .md-tabs__link[href$="downloads/"],
 .md-tabs__link[href*="/downloads/dttr-"],
-.md-typeset a[href*="/downloads/dttr-"] {
+.md-typeset a[href*="/downloads/dttr-"],
+.md-typeset a[href*="/packages/generic/dttr/"] {
     color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
 }
@@ -86,7 +87,8 @@
     -webkit-mask-image: var(--pcdogs-icon-download);
 }
 
-.md-typeset a[href*="/downloads/dttr-"]::before {
+.md-typeset a[href*="/downloads/dttr-"]::before,
+.md-typeset a[href*="/packages/generic/dttr/"]::before {
     content: "↓";
     margin-right: 0.35em;
     opacity: 0.8;

@@ -10,7 +10,7 @@ seo_type: "software"
 
 # 102 Patches: Detours to the Rescue! (DttR)
 
-DttR is a launcher and runtime for the PC version of *102 Dalmatians: Puppies to the Rescue* that lets the game run on modern systems and load user-created mods.
+DttR is a launcher and runtime for the PC version of *102 Dalmatians: Puppies to the Rescue* that helps the game run on modern systems, fixes crashes and bugs, and loads user-created mods.
 
 ![Preview of DttR in gameplay](assets/preview.webp){ width="600" }
 
@@ -21,7 +21,7 @@ By default, Detours to the Rescue includes:
 - Modern windowed and fullscreen modes (no DxWnd/dgVoodoo needed!)
 - Window-scoped/non-global keyboard inputs
 - Configurable controller support
-- Game fixes for audio, crashes, compatibility, and filesystem behavior
+- Game fixes for audio, crashes, bugs, compatibility, and filesystem behavior
 - An SDK and runtime for writing and running game mods
 
 ## Supported PC Releases
