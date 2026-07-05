@@ -30,8 +30,8 @@
 
           fetchMingwZip = url: hash: pkgs.fetchzip { inherit url hash; };
           sdl3 = fetchMingwZip
-            "https://github.com/libsdl-org/SDL/releases/download/release-3.4.0/SDL3-devel-3.4.0-mingw.tar.gz"
-            "sha256-BadBFy3kWT4v6JJthHaovBvK69AJB9N4ogOIEIL29LQ=";
+            "https://github.com/libsdl-org/SDL/releases/download/release-3.4.12/SDL3-devel-3.4.12-mingw.tar.gz"
+            "sha256-sVSlFJ5OK7ZNrXU1Apm5Hk+h3TRwHM6V0aYfOcqH1DY=";
           sdl3Mixer = fetchMingwZip
             "https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.0-mingw.tar.gz"
             "sha256-rgwPYQpO1IwCqT+gWtvlk3LzS9u00NxGqLS+A4kwv+8=";
