@@ -199,16 +199,12 @@ bool themed_row_button(
 	const char *label,
 	float width
 );
-void push_config_theme();
-void pop_config_theme();
 bool begin_config_content_region(
 	const DTTR_ImGuiDialogContext *ctx,
 	const config_ui_state *state
 );
-void end_config_content_region();
 void draw_footer_text(const config_ui_state *state);
 bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx);
-void end_padded_panel();
 bool begin_settings_table(
 	const DTTR_ImGuiDialogContext *ctx,
 	const char *id,

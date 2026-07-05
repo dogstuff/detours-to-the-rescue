@@ -209,14 +209,6 @@ bool themed_row_button(
 	);
 }
 
-void push_config_theme() {
-	DTTR_ImGuiDialog_PushTheme();
-}
-
-void pop_config_theme() {
-	DTTR_ImGuiDialog_PopTheme();
-}
-
 static bool status_visible(const config_ui_state *state) {
 	return state->status[0] && SDL_GetTicks() < state->status_expires_at_ms;
 }
@@ -271,10 +263,6 @@ bool begin_config_content_region(
 	);
 }
 
-void end_config_content_region() {
-	igEndChild();
-}
-
 static void draw_status_text(const char *text) {
 	igPushStyleColor_Vec4(ImGuiCol_Text, DTTR_CONFIG_UI_STATUS_TEXT_COLOR);
 	igTextWrapped("%s", text);
@@ -304,10 +292,6 @@ bool begin_padded_panel(const DTTR_ImGuiDialogContext *ctx) {
 		ImGuiChildFlags_AlwaysUseWindowPadding,
 		panel_flags
 	);
-}
-
-void end_padded_panel() {
-	DTTR_ImGuiDialog_EndPaddedPanel();
 }
 
 static ImVec2_c table_cell_padding(const DTTR_ImGuiDialogContext *ctx) {

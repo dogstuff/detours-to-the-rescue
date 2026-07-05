@@ -314,16 +314,6 @@ static void set_next_video_time(const double pts) {
 	movie.last_video_pts = pts;
 }
 
-// Chooses the best available frame timestamp before scheduling presentation.
-static double frame_pts_seconds(const AVFrame *frame) {
-	return video_pts_seconds(frame->best_effort_timestamp);
-}
-
-// Converts a packet timestamp into seconds for fallback movie pacing.
-static double packet_pts_seconds(const AVPacket *packet) {
-	return video_pts_seconds(packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts);
-}
-
 // Converts a decoded frame to BGRA and records when the renderer should present it.
 static bool queue_video_frame(const AVFrame *frame) {
 	const int w = frame->width;
@@ -382,7 +372,7 @@ static bool queue_video_frame(const AVFrame *frame) {
 		dst_linesize
 	);
 
-	set_next_video_time(frame_pts_seconds(frame));
+	set_next_video_time(video_pts_seconds(frame->best_effort_timestamp));
 	movie.video_frame_ready = true;
 	return true;
 }
@@ -551,7 +541,9 @@ static void send_packet() {
 	if (packet->stream_index == movie.video_stream) {
 		if (packet->size <= 0) {
 			if (movie.buffer) {
-				set_next_video_time(packet_pts_seconds(packet));
+				set_next_video_time(
+					video_pts_seconds(packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts)
+				);
 				movie.video_frame_ready = true;
 			}
 

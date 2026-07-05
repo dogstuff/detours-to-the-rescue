@@ -61,10 +61,6 @@ static bool error_buffer_show(const config_error_buffer *buffer) {
 	return true;
 }
 
-static void errors_clear() {
-	error_buffer_clear(&errors);
-}
-
 static void errors_addf(const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
@@ -511,7 +507,7 @@ static void apply_section(yyjson_val *obj, const char *section) {
 }
 
 bool DTTR_Config_Load(const char *filename) {
-	errors_clear();
+	error_buffer_clear(&errors);
 
 	if (!filename || !filename[0]) {
 		errors_addf("Load failed: empty filename");

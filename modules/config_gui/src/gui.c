@@ -227,7 +227,7 @@ static bool init_state_from_args(config_ui_state *state, int argc, char **argv) 
 }
 
 static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
-	push_config_theme();
+	DTTR_ImGuiDialog_PushTheme();
 	handle_shortcuts(ctx, state);
 
 	const bool panel_open = begin_padded_panel(ctx);
@@ -237,15 +237,15 @@ static void draw_ui(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 			draw_tabs(ctx, state);
 		}
 
-		end_config_content_region();
+		igEndChild();
 		draw_footer_text(state);
 		draw_toolbar(ctx, state);
 	}
 
-	end_padded_panel();
+	DTTR_ImGuiDialog_EndPaddedPanel();
 
 	draw_shortcut_debug_window(state);
-	pop_config_theme();
+	DTTR_ImGuiDialog_PopTheme();
 }
 
 // Capture owns keyboard/mouse events; gamepad stays forwarded because ImGui ignores it.

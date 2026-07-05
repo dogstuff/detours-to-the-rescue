@@ -134,10 +134,6 @@ void dttr_core_hook_set_last_error(DTTR_Status status, const char *message) {
 	hook_last_error = dttr_core_result(status, message);
 }
 
-static void hook_error_clear() {
-	dttr_core_hook_set_last_error(DTTR_OK, "ok");
-}
-
 static bool decoder_init() {
 	if (decoder_initialized) {
 		return true;
@@ -968,7 +964,7 @@ DTTR_Core_Hook *DTTR_Core_HookAttachFunction(
 	void *handler,
 	void **out_original
 ) {
-	hook_error_clear();
+	dttr_core_hook_set_last_error(DTTR_OK, "ok");
 	if (!addr || !handler) {
 		DTTR_LOG_ERROR(
 			"hook_attach_function: invalid parameters site=0x%08X handler=0x%08X",

@@ -41,10 +41,6 @@ static float overlay_text_width(const char *text) {
 	return text ? overlay_text_width_range(text, text + strlen(text)) : 0.0f;
 }
 
-static float overlay_line_height() {
-	return igGetTextLineHeight();
-}
-
 static float overlay_line_advance() {
 	return igGetTextLineHeight() * modding_badge_line_advance_factor;
 }
@@ -508,7 +504,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 			draw_mod_overlay_row(label, seconds, gap, text_width);
 		}
 
-		igDummy((ImVec2_c){text_width, overlay_line_height() - overlay_line_advance()});
+		igDummy((ImVec2_c){text_width, igGetTextLineHeight() - overlay_line_advance()});
 	}
 
 	igEnd();

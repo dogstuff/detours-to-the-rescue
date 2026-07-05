@@ -40,11 +40,6 @@ static HMODULE pc_dogs_module;
 
 DTTR_DEFINE_HOOK_STORAGE(dttr_hook_win_main)
 
-// Falls back to a stable unknown hash when the executable cannot be read during startup.
-static void set_default_exe_hash() {
-	memcpy(dttr_exe_hash, "0000000000000000", sizeof(dttr_exe_hash));
-}
-
 // Hashes the launched game executable for config, logs, and mods.
 static void compute_exe_hash() {
 	char exe_path[MAX_PATH];
@@ -99,7 +94,7 @@ fail:
 	}
 
 	free(buf);
-	set_default_exe_hash();
+	memcpy(dttr_exe_hash, "0000000000000000", sizeof(dttr_exe_hash));
 }
 
 // Resolves the sidecar directory used as the base for config files and mod loading.

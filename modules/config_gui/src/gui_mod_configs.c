@@ -324,10 +324,6 @@ static bool scan_mod_config_spec_dll(const char *dll_name, void *user_data) {
 	return true;
 }
 
-static void scan_mod_config_specs(config_ui_state *state) {
-	for_each_mod_dll(state ? state->mods_dir : NULL, scan_mod_config_spec_dll, state);
-}
-
 static void apply_mod_field_default(
 	DTTR_Config *config,
 	const config_mod_ui *mod,
@@ -377,7 +373,7 @@ void reload_mod_config_specs(config_ui_state *state) {
 	state->mod_config_count = 0;
 	state->mod_config_field_count = 0;
 	state->mod_config_choice_count = 0;
-	scan_mod_config_specs(state);
+	for_each_mod_dll(state->mods_dir, scan_mod_config_spec_dll, state);
 
 	DTTR_Config_SetDefaults(&state->defaults);
 	apply_mod_config_defaults(state, &state->defaults, true);

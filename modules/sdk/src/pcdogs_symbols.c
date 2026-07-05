@@ -2,12 +2,6 @@
 
 #include "core_internal.h"
 
-// DTTR_PCDOGS_T_Patch_Report shares DTTR_Core_TargetReport's layout, so the core
-// helpers populate it directly.
-static void patch_report_init(DTTR_PCDOGS_T_Patch_Report *report) {
-	dttr_core_report_init((DTTR_Core_TargetReport *)report);
-}
-
 static void patch_report_fail(
 	DTTR_PCDOGS_T_Patch_Report *report,
 	size_t index,
@@ -329,7 +323,8 @@ DTTR_Result DTTR_PCDOGS_PatchGroup_Install(
 	DTTR_Core_PatchGroup **out_group,
 	DTTR_PCDOGS_T_Patch_Report *out_report
 ) {
-	patch_report_init(out_report);
+	// DTTR_PCDOGS_T_Patch_Report shares DTTR_Core_TargetReport's layout.
+	dttr_core_report_init((DTTR_Core_TargetReport *)out_report);
 	if (!out_group || (!specs && spec_count)) {
 		DTTR_Result result = dttr_core_result(
 			DTTR_ERR_INVALID_ARGUMENT,
