@@ -26,7 +26,9 @@ SYMBOL_REFERENCE_TITLE = "PCDogs Symbols"
 SYMBOL_REFERENCE_BASE_PATH = "modding-sdk/symbols/pcdogs"
 SYMBOL_REFERENCE_OVERVIEW_PATH = f"{SYMBOL_REFERENCE_BASE_PATH}/index.md"
 VERSION_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-(preview|rc)\.(\d+))?$")
+SHORT_COMMIT_HASH_RE = re.compile(r"^[0-9a-f]{7,40}$", re.IGNORECASE)
 STABLE_RELEASE_FLOOR = (3, 0, 0)
+PACKAGE_REGISTRY_PROJECT = "dogstuff%2Fdetours-to-the-rescue"
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,6 +220,30 @@ def version_download_url(version: str, artifact: str) -> str:
     )
 
 
+def package_registry_download_url(version: str, artifact: str) -> str:
+    return (
+        "https://gitlab.com/api/v4/projects/"
+        f"{PACKAGE_REGISTRY_PROJECT}/packages/generic/dttr/{version}/{artifact}"
+    )
+
+
+def nightly_artifact_name(version: str, artifact: str) -> str:
+    names = {
+        "dttr-release.zip": f"dttr-{version}-release.zip",
+        "dttr-modding-release.zip": f"dttr-modding-{version}-release.zip",
+        "dttr-debug.zip": f"dttr-{version}-debug.zip",
+        "dttr-modding-debug.zip": f"dttr-modding-{version}-debug.zip",
+    }
+    return names.get(artifact, artifact)
+
+
+def nightly_download_url(version: str, artifact: str) -> str:
+    return package_registry_download_url(
+        version,
+        nightly_artifact_name(version, artifact),
+    )
+
+
 def git_version_tags() -> list[VersionTag]:
     try:
         result = subprocess.run(
@@ -253,29 +279,70 @@ def latest_version_tag(*, stable: bool) -> VersionTag | None:
     return versions[-1] if versions else None
 
 
+def git_short_commit() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short=8", "HEAD"],
+            cwd=REPO_ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+    value = result.stdout.strip()
+    return value if SHORT_COMMIT_HASH_RE.fullmatch(value) else None
+
+
+def normalize_short_commit_hash(value: str, *, label: str) -> str:
+    value = value.strip().lower()
+    if not SHORT_COMMIT_HASH_RE.fullmatch(value):
+        raise ValueError(f"invalid {label}: {value}")
+
+    return value
+
+
 def resolve_docs_download_versions() -> DocsDownloadVersions:
     nightly = os.environ.get("DTTR_DOCS_NIGHTLY_VERSION", "").strip()
     stable = os.environ.get("DTTR_DOCS_STABLE_VERSION", "").strip()
 
-    if nightly and parse_version_tag(nightly) is None:
-        raise ValueError(f"invalid DTTR_DOCS_NIGHTLY_VERSION: {nightly}")
+    if nightly:
+        nightly = normalize_short_commit_hash(
+            nightly,
+            label="DTTR_DOCS_NIGHTLY_VERSION",
+        )
 
     if stable and parse_version_tag(stable) is None:
         raise ValueError(f"invalid DTTR_DOCS_STABLE_VERSION: {stable}")
 
     if not nightly:
-        latest = latest_version_tag(stable=False)
-        if latest is None:
+        nightly = os.environ.get("CI_COMMIT_SHORT_SHA", "").strip()
+        if nightly:
+            nightly = normalize_short_commit_hash(
+                nightly,
+                label="CI_COMMIT_SHORT_SHA",
+            )
+        else:
+            nightly = git_short_commit() or ""
+
+        if not nightly:
             raise ValueError(
-                "could not resolve docs nightly version; fetch git tags or set "
+                "could not resolve docs nightly version; set CI_COMMIT_SHORT_SHA or "
                 "DTTR_DOCS_NIGHTLY_VERSION"
             )
 
-        nightly = latest.tag
-
     if not stable:
         latest_stable = latest_version_tag(stable=True)
-        stable = latest_stable.tag if latest_stable else nightly
+        latest_tag = latest_stable or latest_version_tag(stable=False)
+        if latest_tag is None:
+            raise ValueError(
+                "could not resolve docs stable version; fetch git tags or set "
+                "DTTR_DOCS_STABLE_VERSION"
+            )
+
+        stable = latest_tag.tag
 
     return DocsDownloadVersions(stable=stable, nightly=nightly)
 
@@ -289,7 +356,7 @@ def docs_download_replacements() -> dict[str, str]:
             versions.stable,
             "dttr-release.zip",
         ),
-        "__DTTR_DOCS_VANILLA_NIGHTLY_DOWNLOAD_URL__": version_download_url(
+        "__DTTR_DOCS_VANILLA_NIGHTLY_DOWNLOAD_URL__": nightly_download_url(
             versions.nightly,
             "dttr-release.zip",
         ),
@@ -297,7 +364,7 @@ def docs_download_replacements() -> dict[str, str]:
             versions.stable,
             "dttr-modding-release.zip",
         ),
-        "__DTTR_DOCS_MODDING_NIGHTLY_DOWNLOAD_URL__": version_download_url(
+        "__DTTR_DOCS_MODDING_NIGHTLY_DOWNLOAD_URL__": nightly_download_url(
             versions.nightly,
             "dttr-modding-release.zip",
         ),
@@ -305,7 +372,7 @@ def docs_download_replacements() -> dict[str, str]:
             versions.stable,
             "dttr-mod-template-c.zip",
         ),
-        "__DTTR_DOCS_MOD_TEMPLATE_NIGHTLY_DOWNLOAD_URL__": version_download_url(
+        "__DTTR_DOCS_MOD_TEMPLATE_NIGHTLY_DOWNLOAD_URL__": nightly_download_url(
             versions.nightly,
             "dttr-mod-template-c.zip",
         ),
