@@ -96,6 +96,7 @@
 .md-nav__link[href*="symbols/pcdogs/"][href$=".json"] .md-ellipsis {
     color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
+    decoration: none;
 }
 
 .md-nav__link[href$="internal/"] .md-ellipsis::before,
