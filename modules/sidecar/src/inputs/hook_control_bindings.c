@@ -10,6 +10,8 @@ DTTR_PCDOGS_F_Input_RegisterButtonMapping_proto
 	dttr_inputs_hook_register_button_mapping_original;
 DTTR_PCDOGS_F_Config_ApplySettings_proto dttr_inputs_hook_config_apply_settings_original;
 DTTR_PCDOGS_F_Input_ReadDevices_proto dttr_inputs_hook_read_devices_original;
+DTTR_PCDOGS_F_Input_InitializeButtonMappings_proto
+	dttr_inputs_hook_initialize_button_mappings_original;
 
 static uint32_t custom_sdl_button_masks[DTTR_INPUTS_SDL_BUTTON_COUNT];
 static bool applying_control_settings;
@@ -18,11 +20,50 @@ enum {
 	DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX = 10,
 	DTTR_INPUTS_SWITCH_PUPPIES_NATIVE_MASK = 0x0400,
 	DTTR_INPUTS_SWITCH_PUPPIES_BUTTON_MASK = 0x4000,
+	DTTR_INPUTS_DEFAULT_CONTROL_BINDING_COUNT = 10,
 };
+
+#define DTTR_INPUTS_SDL_BUTTON_CODE(button)                                              \
+	(DTTR_INPUTS_SDL_GAMEPAD_BUTTON_BASE + (int32_t)(button))
+
+static const int32_t
+	sdl_default_control_bindings[DTTR_INPUTS_DEFAULT_CONTROL_BINDING_COUNT] = {
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_DPAD_UP),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_DPAD_DOWN),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_DPAD_LEFT),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_DPAD_RIGHT),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_SOUTH),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_EAST),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_NORTH),
+		DTTR_INPUTS_SDL_BUTTON_CODE(SDL_GAMEPAD_BUTTON_WEST),
+};
+
+#undef DTTR_INPUTS_SDL_BUTTON_CODE
+
+static void copy_sdl_default_control_bindings(
+	int32_t out_bindings[DTTR_INPUTS_DEFAULT_CONTROL_BINDING_COUNT]
+) {
+	if (!out_bindings) {
+		return;
+	}
+
+	SDL_memcpy(
+		out_bindings,
+		sdl_default_control_bindings,
+		sizeof(sdl_default_control_bindings)
+	);
+}
 
 bool dttr_inputs_hook_mapping_prepare(const DTTR_Mods_Context *ctx) {
 	return ctx && DTTR_PCDOGS_F_Input_RegisterButtonMapping->IsCallable(&ctx->runtime)
 		   && DTTR_PCDOGS_F_Config_ApplySettings->IsCallable(&ctx->runtime);
+}
+
+bool dttr_inputs_hook_initialize_button_mappings_prepare(const DTTR_Mods_Context *ctx) {
+	return ctx && DTTR_PCDOGS_F_Input_InitializeButtonMappings->IsCallable(&ctx->runtime)
+		   && DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->IsResolved();
 }
 
 bool dttr_inputs_hook_read_devices_prepare(const DTTR_Mods_Context *ctx) {
@@ -45,8 +86,20 @@ void dttr_inputs_hook_mapping_reset() {
 	dttr_inputs_hook_register_button_mapping_original = NULL;
 	dttr_inputs_hook_config_apply_settings_original = NULL;
 	dttr_inputs_hook_read_devices_original = NULL;
+	dttr_inputs_hook_initialize_button_mappings_original = NULL;
 	applying_control_settings = false;
 	dttr_inputs_custom_button_mappings_clear();
+}
+
+static bool write_sdl_default_config2_controls() {
+	int32_t *controls = DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->Ptr();
+	if (!controls) {
+		DTTR_LOG_WARN("Config2 default control binding block unavailable");
+		return false;
+	}
+
+	copy_sdl_default_control_bindings(controls);
+	return true;
 }
 
 static int32_t switch_puppies_config2_binding() {
@@ -55,8 +108,8 @@ static int32_t switch_puppies_config2_binding() {
 	}
 
 	const int32_t *
-		player2_controls = DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->Ptr();
-	return player2_controls ? player2_controls[DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX]
+		config2_controls = DTTR_PCDOGS_D_Config_ApplySettings_InputPlayer2Controls->Ptr();
+	return config2_controls ? config2_controls[DTTR_INPUTS_SWITCH_PUPPIES_INI_INDEX]
 							: DTTR_CONFIG_CONTROL_BINDING_NONE;
 }
 
@@ -85,6 +138,24 @@ void dttr_inputs_apply_custom_button_mappings(DTTR_PCDOGS_T_Input_State *state) 
 			state->button_bits |= mask;
 		}
 	}
+}
+
+int32_t __cdecl dttr_inputs_hook_initialize_button_mappings_callback() {
+	int32_t result = 0;
+
+	if (dttr_inputs_hook_initialize_button_mappings_original) {
+		result = dttr_inputs_hook_initialize_button_mappings_original();
+	}
+
+	if (!write_sdl_default_config2_controls()) {
+		DTTR_LOG_WARN("Failed to rewrite default config2 controls");
+	}
+
+	if (dttr_inputs_hook_config_apply_settings_original) {
+		dttr_inputs_hook_config_apply_settings_callback();
+	}
+
+	return result;
 }
 
 int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(

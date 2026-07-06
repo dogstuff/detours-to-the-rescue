@@ -121,6 +121,7 @@ bool dttr_mss_wave_decode_f32(
 );
 void dttr_mss_wave_free(void *ptr);
 
+// These declarations manage SDL-backed MSS hook installation and cleanup.
 void dttr_mss_sdl_shutdown();
 void dttr_mss_sdl_release_hooks();
 bool dttr_mss_sdl_install_hooks(const DTTR_Mods_Context *ctx);

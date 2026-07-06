@@ -193,6 +193,22 @@ bool dttr_inputs_hooks_init(const DTTR_Mods_Context *ctx) {
 		return false;
 	}
 
+	if (!dttr_inputs_hook_initialize_button_mappings_prepare(ctx)) {
+		DTTR_LOG_ERROR("Default controls mapping hook unavailable");
+		kv_destroy(inputs_patches);
+		return false;
+	}
+
+	kv_push(
+		DTTR_PCDOGS_T_Patch_Spec,
+		inputs_patches,
+		DTTR_PCDOGS_F_Input_InitializeButtonMappings->PatchSpec(
+			true,
+			dttr_inputs_hook_initialize_button_mappings_callback,
+			&dttr_inputs_hook_initialize_button_mappings_original
+		)
+	);
+
 	kv_push(
 		DTTR_PCDOGS_T_Patch_Spec,
 		inputs_patches,

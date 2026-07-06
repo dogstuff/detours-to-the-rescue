@@ -8,6 +8,8 @@ static inline DTTR_Result dttr_core_result(DTTR_Status status, const char *messa
 }
 
 const DTTR_Core_Context *dttr_core_patch_group_context(const DTTR_Core_PatchGroup *group);
+
+// These declarations store the last SDK hook error for internal callers.
 DTTR_Result dttr_core_hook_last_error();
 void dttr_core_hook_set_last_error(DTTR_Status status, const char *message);
 

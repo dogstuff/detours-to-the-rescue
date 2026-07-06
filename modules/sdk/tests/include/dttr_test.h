@@ -42,6 +42,8 @@ typedef DTTR_TestTargetExpectation pcdogs_target_expectation;
 extern const DTTR_TestPCDOGSFixture DTTR_TEST_PCDOGS_FIXTURES[];
 extern const pcdogs_target_expectation DTTR_TEST_PCDOGS_SIDECAR_TARGETS[];
 extern const size_t DTTR_TEST_PCDOGS_SIDECAR_TARGET_COUNT;
+
+// MSS import hook expectations for PCDOGS tests.
 extern const char *const DTTR_TEST_PCDOGS_SIDECAR_MSS_IMPORT_HOOKS[];
 extern const size_t DTTR_TEST_PCDOGS_SIDECAR_MSS_IMPORT_HOOK_COUNT;
 
