@@ -52,6 +52,7 @@
 .md-typeset a[href*="/packages/generic/dttr/"] {
     color: var(--pcdogs-link-accent-fg);
     font-weight: 500;
+    text-decoration: none !important;
 }
 
 .md-nav__link[href$="downloads/"] .md-ellipsis::before,
