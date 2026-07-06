@@ -704,7 +704,10 @@ void __stdcall dttr_mss_ail_end_sample(void *sample_ptr) {
 }
 
 int __stdcall dttr_mss_ail_sample_status(void *sample_ptr) {
+	dttr_mss_core_pump_silent_mixer();
+
 	lock_sample_state();
+
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
 		unlock_sample_state();
@@ -712,6 +715,7 @@ int __stdcall dttr_mss_ail_sample_status(void *sample_ptr) {
 	}
 
 	const int status = sample->status;
+
 	unlock_sample_state();
 	return status;
 }

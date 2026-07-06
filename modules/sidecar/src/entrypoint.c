@@ -263,7 +263,7 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 	}
 
 	if (audio_driver == NULL) {
-		DTTR_LOG_WARN("No audio device available - audio disabled");
+		DTTR_LOG_WARN("No MSS audio driver available - audio disabled");
 	}
 
 	if (!dttr_inputs_late_init()) {

@@ -5,7 +5,6 @@
 #include <dttr_log.h>
 #include <dttr_pcdogs.h>
 
-#include "audio/hooks_private.h"
 #include "graphics/graphics_private.h"
 #include "inputs/inputs_private.h"
 #include "movies/movies_private.h"
@@ -76,12 +75,6 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 	case SDL_EVENT_JOYSTICK_ADDED:
 	case SDL_EVENT_JOYSTICK_REMOVED:
 		dttr_inputs_handle_device_event(event);
-		after_sdl_event(event, true);
-		return;
-
-	case SDL_EVENT_AUDIO_DEVICE_ADDED:
-	case SDL_EVENT_AUDIO_DEVICE_REMOVED:
-		dttr_audio_handle_device_event(event);
 		after_sdl_event(event, true);
 		return;
 

@@ -38,6 +38,8 @@ void dttr_mss_track_play(MIX_Track *track, int sdl_loops) {
 }
 
 int dttr_mss_track_status(MIX_Track *track, int previous_status) {
+	dttr_mss_core_pump_silent_mixer();
+
 	const int stopped_status = previous_status == DTTR_MSS_STATUS_STOPPED
 								   ? DTTR_MSS_STATUS_STOPPED
 								   : DTTR_MSS_STATUS_DONE;

@@ -72,6 +72,7 @@ static inline int dttr_mss_loops_to_sdl(int mss_loop_count) {
 }
 
 bool dttr_mss_core_has_driver();
+void dttr_mss_core_pump_silent_mixer();
 void dttr_mss_core_reset_preferences();
 void dttr_mss_core_ensure_preferences();
 int dttr_mss_core_get_preference(unsigned int preference);

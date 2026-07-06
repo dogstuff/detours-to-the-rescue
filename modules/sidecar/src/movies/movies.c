@@ -541,9 +541,10 @@ static void send_packet() {
 	if (packet->stream_index == movie.video_stream) {
 		if (packet->size <= 0) {
 			if (movie.buffer) {
-				set_next_video_time(
-					video_pts_seconds(packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts)
-				);
+				set_next_video_time(video_pts_seconds(
+					packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts
+				));
+
 				movie.video_frame_ready = true;
 			}
 
