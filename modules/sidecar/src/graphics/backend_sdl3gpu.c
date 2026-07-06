@@ -8,6 +8,15 @@
 #define DRIVER_DISPLAY_VULKAN "Vulkan"
 #define DRIVER_DISPLAY_DIRECT3D12 "Direct3D 12"
 
+// D3D12 texture-copy offsets need 512-byte alignment; Vulkan/Metal are looser.
+#define UPLOAD_POOL_OFFSET_ALIGN 512u
+
+// Per-frame upload cap; overflow stays queued for the next frame.
+#define UPLOAD_POOL_MAX_BYTES (256u * 1024u * 1024u)
+
+// Pre-touched at init so load frames do not fault in fresh mapped pages.
+#define UPLOAD_POOL_INITIAL_BYTES (16u * 1024u * 1024u)
+
 #ifdef DTTR_MODS_ENABLED
 #include "../mods/mods_private.h"
 #include "imgui_overlay_private.h"
@@ -20,6 +29,10 @@
 static const DTTR_RendererVtbl renderer;
 static void cleanup(DTTR_BackendState *state);
 static void release_deferred_texture_destroys(DTTR_BackendState *state);
+static SDL_GPUTransferBuffer *acquire_upload_pool(
+	DTTR_BackendState *state,
+	uint32_t bytes
+);
 
 static SDL_GPUSampleCount msaa_sample_count_from_config(int value) {
 	switch (value) {
@@ -215,6 +228,19 @@ static bool create_device(DTTR_BackendState *state) {
 	return false;
 }
 
+static void push_uniforms(SDL_GPUCommandBuffer *cmd, const DTTR_Uniforms *uniforms) {
+	SDL_PushGPUVertexUniformData(cmd, 0, uniforms, sizeof(*uniforms));
+	SDL_PushGPUFragmentUniformData(cmd, 0, uniforms, sizeof(*uniforms));
+}
+
+static void warm_uniform_pool(SDL_GPUCommandBuffer *cmd, int count) {
+	const DTTR_Uniforms uniforms = {0};
+
+	for (int i = 0; i < count; i++) {
+		push_uniforms(cmd, &uniforms);
+	}
+}
+
 bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	if (!create_device(state)) {
 		return false;
@@ -229,6 +255,11 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 	state->backend_data = bd;
 	state->backend_type = DTTR_BACKEND_SDL_GPU;
 	state->renderer = &renderer;
+
+	// Non-fatal: recreated on first upload if startup preallocation fails.
+	if (!acquire_upload_pool(state, UPLOAD_POOL_INITIAL_BYTES)) {
+		DTTR_LOG_WARN("Failed to preallocate upload pool");
+	}
 
 	state->msaa_sample_count = select_msaa_sample_count(state);
 	DTTR_LOG_INFO(
@@ -251,6 +282,15 @@ bool dttr_graphics_sdl3gpu_init(DTTR_BackendState *state) {
 		return false;
 	}
 
+	// Pre-warmup SDL's uniform pool while page faults are cheap.
+	SDL_GPUCommandBuffer *warm = SDL_AcquireGPUCommandBuffer(state->device);
+	if (warm) {
+		warm_uniform_pool(warm, 65536);
+
+		SDL_SubmitGPUCommandBuffer(warm);
+		SDL_WaitForGPUIdle(state->device);
+	}
+
 	return true;
 }
 
@@ -260,6 +300,21 @@ static void cleanup(DTTR_BackendState *state) {
 	}
 
 	release_deferred_texture_destroys(state);
+
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (bd) {
+		for (int i = 0; i < bd->texture_recycle_count; i++) {
+			SDL_ReleaseGPUTexture(state->device, bd->texture_recycle[i].tex);
+		}
+
+		for (int i = 0; i < bd->graveyard_texture_count; i++) {
+			SDL_ReleaseGPUTexture(state->device, bd->graveyard_textures[i]);
+		}
+
+		for (int i = 0; i < bd->graveyard_tbuf_count; i++) {
+			SDL_ReleaseGPUTransferBuffer(state->device, bd->graveyard_tbufs[i]);
+		}
+	}
 
 	for (int i = 0; i < DTTR_SAMPLER_COUNT; i++) {
 		if (state->samplers[i]) {
@@ -283,9 +338,37 @@ static void cleanup(DTTR_BackendState *state) {
 		SDL_ReleaseGPUTexture(state->device, state->render_target);
 	}
 
-	if (state->transfer_buffer) {
+	if (state->video_texture) {
+		SDL_ReleaseGPUTexture(state->device, state->video_texture);
+
+		state->video_texture = NULL;
+		state->video_width = 0;
+		state->video_height = 0;
+	}
+
+	if (bd) {
+		for (int i = 0; i < DTTR_VERTEX_RING_DEPTH; i++) {
+			if (bd->vertex_ring_fence[i]) {
+				SDL_ReleaseGPUFence(state->device, bd->vertex_ring_fence[i]);
+			}
+
+			if (bd->vertex_ring[i]) {
+				SDL_ReleaseGPUTransferBuffer(state->device, bd->vertex_ring[i]);
+			}
+
+			if (bd->vertex_gpu_ring[i]) {
+				if (state->vertex_buffer == bd->vertex_gpu_ring[i]) {
+					state->vertex_buffer = NULL;
+				}
+
+				SDL_ReleaseGPUBuffer(state->device, bd->vertex_gpu_ring[i]);
+			}
+		}
+	} else if (state->transfer_buffer) {
 		SDL_ReleaseGPUTransferBuffer(state->device, state->transfer_buffer);
 	}
+
+	state->transfer_buffer = NULL;
 
 	if (state->vertex_buffer) {
 		SDL_ReleaseGPUBuffer(state->device, state->vertex_buffer);
@@ -297,23 +380,128 @@ static void cleanup(DTTR_BackendState *state) {
 		}
 	}
 
+	if (bd && bd->upload_pool_fence) {
+		SDL_ReleaseGPUFence(state->device, bd->upload_pool_fence);
+	}
+
+	if (bd && bd->upload_pool) {
+		SDL_ReleaseGPUTransferBuffer(state->device, bd->upload_pool);
+	}
+
 	release_window_device(state);
-	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+
 	if (bd) {
+		free(bd->texture_recycle);
+		free(bd->graveyard_textures);
+		free(bd->graveyard_tbufs);
 		free(bd->deferred_destroys);
 	}
+
 	free(state->backend_data);
 	state->backend_data = NULL;
 }
 
 typedef struct {
 	SDL_GPUTexture *tex;
-	SDL_GPUTransferBuffer *transfer_buffer;
-	int texture_index;
 	uint32_t bytes;
 	bool generate_mips;
 	bool uploaded;
 } graphics_pending_upload;
+
+static uint32_t align_upload_offset(uint32_t offset) {
+	return (offset + (UPLOAD_POOL_OFFSET_ALIGN - 1)) & ~(UPLOAD_POOL_OFFSET_ALIGN - 1);
+}
+
+// Shared upload buffer; grows geometrically when a burst exceeds capacity.
+static SDL_GPUTransferBuffer *acquire_upload_pool(
+	DTTR_BackendState *state,
+	uint32_t bytes
+) {
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (!bd || bytes == 0) {
+		return NULL;
+	}
+
+	if (bd->upload_pool && bd->upload_pool_capacity >= bytes) {
+		return bd->upload_pool;
+	}
+
+	if (bd->upload_pool_fence) {
+		SDL_WaitForGPUFences(state->device, true, &bd->upload_pool_fence, 1);
+		SDL_ReleaseGPUFence(state->device, bd->upload_pool_fence);
+
+		bd->upload_pool_fence = NULL;
+	}
+
+	uint32_t new_capacity = bd->upload_pool_capacity > 0 ? bd->upload_pool_capacity
+														 : bytes;
+	while (new_capacity < bytes) {
+		if (new_capacity > UINT32_MAX / 2) {
+			new_capacity = bytes;
+			break;
+		}
+
+		new_capacity *= 2;
+	}
+
+	// Do not release mid-load: that re-arms SDL's Vulkan defrag.
+	if (bd->upload_pool) {
+		dttr_graphics_sdl3gpu_bury_transfer_buffer(state, bd->upload_pool);
+
+		bd->upload_pool = NULL;
+		bd->upload_pool_capacity = 0;
+	}
+
+	const SDL_GPUTransferBufferCreateInfo info = {
+		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+		.size = new_capacity,
+	};
+
+	bd->upload_pool = SDL_CreateGPUTransferBuffer(state->device, &info);
+	if (!bd->upload_pool) {
+		return NULL;
+	}
+
+	// Pre-touch now; first touches during Wine/MoltenVK load frames hitch badly.
+	void *mapped = SDL_MapGPUTransferBuffer(state->device, bd->upload_pool, false);
+	if (mapped) {
+		memset(mapped, 0, new_capacity);
+		SDL_UnmapGPUTransferBuffer(state->device, bd->upload_pool);
+	}
+
+	bd->upload_pool_capacity = new_capacity;
+	return bd->upload_pool;
+}
+
+// Normally a no-op by the time the next upload burst arrives.
+static void wait_upload_pool_fence(DTTR_BackendState *state) {
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (!bd || !bd->upload_pool_fence) {
+		return;
+	}
+
+	SDL_WaitForGPUFences(state->device, true, &bd->upload_pool_fence, 1);
+	SDL_ReleaseGPUFence(state->device, bd->upload_pool_fence);
+
+	bd->upload_pool_fence = NULL;
+}
+
+static void set_upload_pool_fence(DTTR_BackendState *state, SDL_GPUFence *fence) {
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (!bd) {
+		if (fence) {
+			SDL_ReleaseGPUFence(state->device, fence);
+		}
+
+		return;
+	}
+
+	if (bd->upload_pool_fence) {
+		SDL_ReleaseGPUFence(state->device, bd->upload_pool_fence);
+	}
+
+	bd->upload_pool_fence = fence;
+}
 
 typedef struct {
 	uint32_t draw_count;
@@ -326,23 +514,13 @@ typedef struct {
 	int last_pipeline_idx;
 	SDL_GPUTexture *last_texture;
 	SDL_GPUSampler *last_sampler;
+	DTTR_Uniforms last_uniforms;
+	bool uniforms_valid;
 } graphics_replay_state;
 
 static bool msaa_enabled(const DTTR_BackendState *state) {
 	return state->msaa_sample_count != SDL_GPU_SAMPLECOUNT_1
 		   && state->msaa_render_target != NULL;
-}
-
-static SDL_GPUTransferBuffer *create_upload_buffer(
-	DTTR_BackendState *state,
-	uint32_t bytes
-) {
-	const SDL_GPUTransferBufferCreateInfo info = {
-		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-		.size = bytes,
-	};
-
-	return SDL_CreateGPUTransferBuffer(state->device, &info);
 }
 
 static void bind_frame_vertex_buffer(
@@ -369,26 +547,152 @@ static void end_render_pass_if_active(DTTR_BackendState *state) {
 	state->render_pass = NULL;
 }
 
-// Frees textures queued from non-render threads once the GPU thread reaches a safe point.
+// Moves retired textures into the recycle pool at a GPU-thread safe point.
 static void release_deferred_texture_destroys(DTTR_BackendState *state) {
 	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
 	if (!bd) {
 		return;
 	}
 
-	SDL_LockMutex(state->texture_mutex);
+	if (state->texture_mutex) {
+		SDL_LockMutex(state->texture_mutex);
+	}
 
 	for (int i = 0; i < bd->deferred_destroy_count; i++) {
-		SDL_ReleaseGPUTexture(state->device, bd->deferred_destroys[i]);
+		const dttr_recycled_texture entry = bd->deferred_destroys[i];
+
+		if (bd->texture_recycle_count >= DTTR_TEXTURE_RECYCLE_CAP) {
+			DTTR_LOG_WARN(
+				"Texture recycle pool full (%d); releasing %ux%u",
+				bd->texture_recycle_count,
+				entry.width,
+				entry.height
+			);
+			SDL_ReleaseGPUTexture(state->device, entry.tex);
+			continue;
+		}
+
+		if (bd->texture_recycle_count >= bd->texture_recycle_capacity) {
+			int new_capacity = bd->texture_recycle_capacity > 0
+								   ? bd->texture_recycle_capacity * 2
+								   : 64;
+			dttr_recycled_texture *grown = realloc(
+				bd->texture_recycle,
+				(size_t)new_capacity * sizeof(*grown)
+			);
+			if (!grown) {
+				SDL_ReleaseGPUTexture(state->device, entry.tex);
+				continue;
+			}
+
+			bd->texture_recycle = grown;
+			bd->texture_recycle_capacity = new_capacity;
+		}
+
+		bd->texture_recycle[bd->texture_recycle_count++] = entry;
 	}
 
 	bd->deferred_destroy_count = 0;
-	SDL_UnlockMutex(state->texture_mutex);
+
+	if (state->texture_mutex) {
+		SDL_UnlockMutex(state->texture_mutex);
+	}
+}
+
+void dttr_graphics_sdl3gpu_bury_texture(DTTR_BackendState *state, SDL_GPUTexture *tex) {
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (!tex) {
+		return;
+	}
+
+	if (!bd) {
+		SDL_ReleaseGPUTexture(state->device, tex);
+		return;
+	}
+
+	if (bd->graveyard_texture_count >= bd->graveyard_texture_capacity) {
+		int new_capacity = bd->graveyard_texture_capacity > 0
+							   ? bd->graveyard_texture_capacity * 2
+							   : 16;
+		SDL_GPUTexture **grown = realloc(
+			bd->graveyard_textures,
+			(size_t)new_capacity * sizeof(*grown)
+		);
+		if (!grown) {
+			SDL_ReleaseGPUTexture(state->device, tex);
+			return;
+		}
+
+		bd->graveyard_textures = grown;
+		bd->graveyard_texture_capacity = new_capacity;
+	}
+
+	bd->graveyard_textures[bd->graveyard_texture_count++] = tex;
+}
+
+void dttr_graphics_sdl3gpu_bury_transfer_buffer(
+	DTTR_BackendState *state,
+	SDL_GPUTransferBuffer *tbuf
+) {
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (!tbuf) {
+		return;
+	}
+
+	if (!bd) {
+		SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
+		return;
+	}
+
+	if (bd->graveyard_tbuf_count >= bd->graveyard_tbuf_capacity) {
+		int new_capacity = bd->graveyard_tbuf_capacity > 0
+							   ? bd->graveyard_tbuf_capacity * 2
+							   : 8;
+		SDL_GPUTransferBuffer **grown = realloc(
+			bd->graveyard_tbufs,
+			(size_t)new_capacity * sizeof(*grown)
+		);
+		if (!grown) {
+			SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
+			return;
+		}
+
+		bd->graveyard_tbufs = grown;
+		bd->graveyard_tbuf_capacity = new_capacity;
+	}
+
+	bd->graveyard_tbufs[bd->graveyard_tbuf_count++] = tbuf;
+}
+
+SDL_GPUTexture *dttr_graphics_sdl3gpu_take_recycled_texture(
+	DTTR_BackendState *state,
+	Uint32 width,
+	Uint32 height
+) {
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (!bd || state->backend_type != DTTR_BACKEND_SDL_GPU) {
+		return NULL;
+	}
+
+	for (int i = 0; i < bd->texture_recycle_count; i++) {
+		if (bd->texture_recycle[i].width != width
+			|| bd->texture_recycle[i].height != height) {
+			continue;
+		}
+
+		SDL_GPUTexture *tex = bd->texture_recycle[i].tex;
+		bd->texture_recycle[i] = bd->texture_recycle[--bd->texture_recycle_count];
+		return tex;
+	}
+
+	return NULL;
 }
 
 static bool queue_deferred_texture_destroy(
 	sdl3_gpu_backend_data *bd,
-	SDL_GPUTexture *texture
+	SDL_GPUTexture *texture,
+	Uint32 width,
+	Uint32 height
 ) {
 	if (!bd || !texture) {
 		return true;
@@ -402,7 +706,7 @@ static bool queue_deferred_texture_destroy(
 			return false;
 		}
 
-		SDL_GPUTexture **new_destroys = realloc(
+		dttr_recycled_texture *new_destroys = realloc(
 			bd->deferred_destroys,
 			(size_t)new_capacity * sizeof(*new_destroys)
 		);
@@ -414,7 +718,11 @@ static bool queue_deferred_texture_destroy(
 		bd->deferred_destroy_capacity = new_capacity;
 	}
 
-	bd->deferred_destroys[bd->deferred_destroy_count++] = texture;
+	bd->deferred_destroys[bd->deferred_destroy_count++] = (dttr_recycled_texture){
+		.tex = texture,
+		.width = width,
+		.height = height,
+	};
 	return true;
 }
 
@@ -430,7 +738,12 @@ static bool defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 		return true;
 	}
 
-	if (!queue_deferred_texture_destroy(bd, st->gpu_tex)) {
+	if (!queue_deferred_texture_destroy(
+			bd,
+			st->gpu_tex,
+			(Uint32)st->width,
+			(Uint32)st->height
+		)) {
 		DTTR_LOG_WARN("Failed to queue SDL GPU texture destroy");
 		return false;
 	}
@@ -438,75 +751,16 @@ static bool defer_texture_destroy(DTTR_BackendState *state, int texture_index) {
 	return true;
 }
 
-static bool upload_texture_data(
-	DTTR_BackendState *state,
-	SDL_GPUCopyPass *copy,
-	SDL_GPUTexture *tex,
-	void *pixels,
-	int width,
-	int height,
-	uint32_t bytes,
-	SDL_GPUTransferBuffer **out_transfer_buffer
-) {
-	if (!copy || !tex || !pixels || bytes == 0) {
-		return false;
+static bool ensure_sdl_staged_texture(DTTR_BackendState *state, DTTR_StagedTexture *st) {
+	if (!st->gpu_tex) {
+		st->gpu_tex = dttr_graphics_sdl3gpu_take_recycled_texture(
+			state,
+			(Uint32)st->width,
+			(Uint32)st->height
+		);
 	}
 
-	if (out_transfer_buffer) {
-		*out_transfer_buffer = NULL;
-	}
-
-	SDL_GPUTransferBuffer *tbuf = create_upload_buffer(state, bytes);
-	if (!tbuf) {
-		return false;
-	}
-
-	void *mapped = SDL_MapGPUTransferBuffer(state->device, tbuf, false);
-
-	if (!mapped) {
-		SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
-		return false;
-	}
-
-	memcpy(mapped, pixels, bytes);
-	SDL_UnmapGPUTransferBuffer(state->device, tbuf);
-
-	const SDL_GPUTextureTransferInfo src = {
-		.transfer_buffer = tbuf,
-		.pixels_per_row = (Uint32)width,
-	};
-
-	const SDL_GPUTextureRegion dst = {
-		.texture = tex,
-		.w = (Uint32)width,
-		.h = (Uint32)height,
-		.d = 1,
-	};
-
-	SDL_UploadToGPUTexture(copy, &src, &dst, false);
-
-	if (out_transfer_buffer) {
-		*out_transfer_buffer = tbuf;
-	}
-
-	return true;
-}
-
-static void finish_pending_uploads(
-	DTTR_BackendState *state,
-	graphics_pending_upload *pending,
-	int pending_count
-) {
-	for (int i = 0; i < pending_count; i++) {
-		if (!pending[i].uploaded) {
-			continue;
-		}
-
-		if (pending[i].transfer_buffer) {
-			SDL_ReleaseGPUTransferBuffer(state->device, pending[i].transfer_buffer);
-			pending[i].transfer_buffer = NULL;
-		}
-	}
+	return dttr_graphics_ensure_staged_texture(state, st);
 }
 
 static bool requeue_detached_upload(
@@ -552,14 +806,14 @@ static void discard_detached_pixels(void **pixels) {
 static int collect_and_upload_pending(
 	DTTR_BackendState *state,
 	SDL_GPUCopyPass *copy,
-	graphics_pending_upload *pending_uploads,
-	int max_uploads
+	graphics_pending_upload *pending_uploads
 ) {
 	if (!state->texture_mutex) {
 		return 0;
 	}
 
 	int pending_count = 0;
+	uint32_t total_bytes = 0;
 	SDL_LockMutex(state->texture_mutex);
 	const size_t queued_count = kv_size(state->pending_upload_indices);
 	size_t deferred_write = 0;
@@ -570,6 +824,7 @@ static int collect_and_upload_pending(
 		int width;
 		int height;
 		uint32_t bytes;
+		uint32_t pool_offset;
 		int texture_index;
 		bool generate_mips;
 	} detached_upload;
@@ -590,20 +845,24 @@ static int collect_and_upload_pending(
 			continue;
 		}
 
-		if (max_uploads > 0 && pending_count >= max_uploads) {
+		const uint32_t bytes = (uint32_t)(st->width * st->height * 4);
+		const uint32_t aligned_offset = align_upload_offset(total_bytes);
+
+		// Overflow/budget guard for the shared pool: leave the remainder queued
+		// for the next frame rather than wrapping the uint32 offset math.
+		if (bytes > UPLOAD_POOL_MAX_BYTES
+			|| aligned_offset > UPLOAD_POOL_MAX_BYTES - bytes) {
 			kv_A(state->pending_upload_indices, deferred_write++) = idx;
 			continue;
 		}
 
 		st->pending_upload = false;
 
-		if (!dttr_graphics_ensure_staged_texture(state, st)) {
+		if (!ensure_sdl_staged_texture(state, st)) {
 			free(st->pixels);
 			st->pixels = NULL;
 			continue;
 		}
-
-		const uint32_t bytes = (uint32_t)(st->width * st->height * 4);
 
 		if (bytes == 0) {
 			free(st->pixels);
@@ -623,10 +882,12 @@ static int collect_and_upload_pending(
 			.width = st->width,
 			.height = st->height,
 			.bytes = bytes,
+			.pool_offset = aligned_offset,
 			.texture_index = idx,
 			.generate_mips = dttr_config.generate_texture_mipmaps,
 		};
 
+		total_bytes = aligned_offset + bytes;
 		st->pixels = NULL;
 		pending_count++;
 	}
@@ -634,25 +895,53 @@ static int collect_and_upload_pending(
 	state->pending_upload_indices.n = deferred_write;
 	SDL_UnlockMutex(state->texture_mutex);
 
+	SDL_GPUTransferBuffer *pool = NULL;
+	void *mapped = NULL;
+	if (copy && total_bytes > 0) {
+		pool = acquire_upload_pool(state, total_bytes);
+		if (pool) {
+			wait_upload_pool_fence(state);
+			mapped = SDL_MapGPUTransferBuffer(state->device, pool, false);
+		}
+	}
+
+	if (!mapped && pending_count > 0) {
+		DTTR_LOG_WARN("Failed to map upload pool (%u bytes)", total_bytes);
+	}
+
 	for (int i = 0; i < pending_count; i++) {
-		const bool ok = upload_texture_data(
-			state,
-			copy,
-			detached[i].tex,
-			detached[i].pixels,
-			detached[i].width,
-			detached[i].height,
-			detached[i].bytes,
-			&pending_uploads[i].transfer_buffer
-		);
+		bool ok = false;
+		if (mapped && detached[i].tex) {
+			memcpy(
+				(uint8_t *)mapped + detached[i].pool_offset,
+				detached[i].pixels,
+				detached[i].bytes
+			);
+
+			const SDL_GPUTextureTransferInfo src = {
+				.transfer_buffer = pool,
+				.offset = detached[i].pool_offset,
+				.pixels_per_row = (Uint32)detached[i].width,
+			};
+
+			const SDL_GPUTextureRegion dst = {
+				.texture = detached[i].tex,
+				.w = (Uint32)detached[i].width,
+				.h = (Uint32)detached[i].height,
+				.d = 1,
+			};
+
+			SDL_UploadToGPUTexture(copy, &src, &dst, false);
+			ok = true;
+		}
+
 		pending_uploads[i] = (graphics_pending_upload){
 			.tex = detached[i].tex,
-			.transfer_buffer = ok ? pending_uploads[i].transfer_buffer : NULL,
-			.texture_index = detached[i].texture_index,
 			.bytes = detached[i].bytes,
 			.generate_mips = detached[i].generate_mips,
 			.uploaded = ok,
 		};
+
 		if (ok) {
 			discard_detached_pixels(&detached[i].pixels);
 		} else if (!requeue_detached_upload(
@@ -662,6 +951,10 @@ static int collect_and_upload_pending(
 				   )) {
 			discard_detached_pixels(&detached[i].pixels);
 		}
+	}
+
+	if (mapped) {
+		SDL_UnmapGPUTransferBuffer(state->device, pool);
 	}
 
 	return pending_count;
@@ -698,24 +991,32 @@ static void generate_pending_mipmaps(
 	}
 }
 
-// Runs the pending texture upload copy pass and updates per-frame upload counters.
-static void upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBuffer *cmd) {
-	if (!cmd) {
+// Runs the pending texture upload copy pass on a dedicated command buffer.
+// A dedicated submission (with fence) keeps the pool's in-flight window
+// decoupled from the frame command buffer, so the pool can be remapped with
+// cycle=false and keep its pre-touched backing.
+static void upload_pending_textures(DTTR_BackendState *state) {
+	if (kv_size(state->pending_upload_indices) == 0) {
+		return;
+	}
+
+	SDL_GPUCommandBuffer *ucmd = SDL_AcquireGPUCommandBuffer(state->device);
+	if (!ucmd) {
+		// Textures stay queued; retried next frame.
 		return;
 	}
 
 	graphics_pending_upload pending[DTTR_MAX_STAGED_TEXTURES] = {0};
 
-	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(cmd);
-	const int pending_count = collect_and_upload_pending(state, copy, pending, 0);
+	SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(ucmd);
+	const int pending_count = collect_and_upload_pending(state, copy, pending);
 
 	if (copy) {
 		SDL_EndGPUCopyPass(copy);
 	}
 
-	finish_pending_uploads(state, pending, pending_count);
-
 	if (pending_count == 0) {
+		SDL_CancelGPUCommandBuffer(ucmd);
 		return;
 	}
 
@@ -723,12 +1024,14 @@ static void upload_pending_textures(DTTR_BackendState *state, SDL_GPUCommandBuff
 	uint64_t uploaded_bytes = 0;
 	generate_pending_mipmaps(
 		state,
-		cmd,
+		ucmd,
 		pending,
 		pending_count,
 		&uploaded_texture_count,
 		&uploaded_bytes
 	);
+
+	set_upload_pool_fence(state, SDL_SubmitGPUCommandBufferAndAcquireFence(ucmd));
 
 	state->perf_upload_textures_accum += uploaded_texture_count;
 	state->perf_upload_bytes_accum += uploaded_bytes;
@@ -808,6 +1111,7 @@ static void reset_replay_state(graphics_replay_state *replay_state) {
 	replay_state->last_pipeline_idx = -1;
 	replay_state->last_texture = NULL;
 	replay_state->last_sampler = NULL;
+	replay_state->uniforms_valid = false;
 }
 
 // Starts a render pass configured for the clear flags recorded by the DirectDraw replay
@@ -885,18 +1189,17 @@ static void draw_batch_record(
 		}
 	}
 
-	SDL_PushGPUVertexUniformData(
-		state->cmd,
-		0,
-		&rec->draw.uniforms,
-		sizeof(DTTR_Uniforms)
-	);
-	SDL_PushGPUFragmentUniformData(
-		state->cmd,
-		0,
-		&rec->draw.uniforms,
-		sizeof(DTTR_Uniforms)
-	);
+	// Uniform pushes are expensive under Wine's Vulkan mapping emulation.
+	if (!replay_state || !replay_state->uniforms_valid
+		|| memcmp(&replay_state->last_uniforms, &rec->draw.uniforms, sizeof(DTTR_Uniforms))
+			   != 0) {
+		push_uniforms(state->cmd, &rec->draw.uniforms);
+
+		if (replay_state) {
+			replay_state->last_uniforms = rec->draw.uniforms;
+			replay_state->uniforms_valid = true;
+		}
+	}
 
 	if (!replay_state || replay_state->last_texture != rec->draw.texture
 		|| replay_state->last_sampler != rec->draw.sampler) {
@@ -975,13 +1278,15 @@ static void begin_frame(DTTR_BackendState *state) {
 
 	release_deferred_texture_destroys(state);
 
-	if (!SDL_WaitAndAcquireGPUSwapchainTexture(
-			state->cmd,
-			state->window,
-			&state->swapchain_tex,
-			&state->swapchain_width,
-			&state->swapchain_height
-		)) {
+	const bool acquired = SDL_WaitAndAcquireGPUSwapchainTexture(
+		state->cmd,
+		state->window,
+		&state->swapchain_tex,
+		&state->swapchain_width,
+		&state->swapchain_height
+	);
+
+	if (!acquired) {
 		DTTR_LOG_WARN("Failed to acquire swapchain texture: %s", SDL_GetError());
 		SDL_CancelGPUCommandBuffer(state->cmd);
 		state->cmd = NULL;
@@ -996,14 +1301,50 @@ static void begin_frame(DTTR_BackendState *state) {
 	}
 
 	// Textures must be uploaded after swapchain acquire for Vulkan.
-	upload_pending_textures(state, state->cmd);
+	upload_pending_textures(state);
 
 	state->batch_records.n = 0;
 	state->vertex_offset = 0;
+
+	// Rotate pre-touched vertex buffers; avoid SDL cycle allocations mid-frame.
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (bd) {
+		// Let SDL recycle per-command resources as soon as fences signal.
+		for (int i = 0; i < DTTR_VERTEX_RING_DEPTH; i++) {
+			if (bd->vertex_ring_fence[i]
+				&& SDL_QueryGPUFence(state->device, bd->vertex_ring_fence[i])) {
+				SDL_ReleaseGPUFence(state->device, bd->vertex_ring_fence[i]);
+				bd->vertex_ring_fence[i] = NULL;
+			}
+		}
+
+		if (bd->upload_pool_fence
+			&& SDL_QueryGPUFence(state->device, bd->upload_pool_fence)) {
+			SDL_ReleaseGPUFence(state->device, bd->upload_pool_fence);
+			bd->upload_pool_fence = NULL;
+		}
+
+		bd->vertex_ring_index = (bd->vertex_ring_index + 1) % DTTR_VERTEX_RING_DEPTH;
+		SDL_GPUFence **fence = &bd->vertex_ring_fence[bd->vertex_ring_index];
+		if (*fence) {
+			SDL_WaitForGPUFences(state->device, true, fence, 1);
+			SDL_ReleaseGPUFence(state->device, *fence);
+			*fence = NULL;
+		}
+
+		if (bd->vertex_ring[bd->vertex_ring_index]) {
+			state->transfer_buffer = bd->vertex_ring[bd->vertex_ring_index];
+		}
+
+		if (bd->vertex_gpu_ring[bd->vertex_ring_index]) {
+			state->vertex_buffer = bd->vertex_gpu_ring[bd->vertex_ring_index];
+		}
+	}
+
 	state->transfer_mapped = SDL_MapGPUTransferBuffer(
 		state->device,
 		state->transfer_buffer,
-		true
+		false
 	);
 
 	if (!state->transfer_mapped) {
@@ -1038,9 +1379,15 @@ static void end_frame(DTTR_BackendState *state) {
 				.size = state->vertex_offset * DTTR_VERTEX_SIZE,
 			};
 
-			SDL_UploadToGPUBuffer(copy, &src, &dst, true);
+			// Ring fence proves the destination buffer is idle; no cycle needed.
+			SDL_UploadToGPUBuffer(copy, &src, &dst, false);
 			SDL_EndGPUCopyPass(copy);
 		}
+	}
+
+	// Draw-light loading frames keep SDL's uniform pool warm under Wine/MoltenVK.
+	if (kv_size(state->batch_records) < 32) {
+		warm_uniform_pool(state->cmd, 512);
 	}
 
 	const graphics_replay_stats replay_stats = replay_batch_records(state);
@@ -1121,7 +1468,13 @@ static void end_frame(DTTR_BackendState *state) {
 		dttr_graphics_mod_present_rect_before();
 	}
 
-	SDL_SubmitGPUCommandBuffer(state->cmd);
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	if (bd && bd->vertex_ring[bd->vertex_ring_index] == state->transfer_buffer) {
+		SDL_GPUFence *fence = SDL_SubmitGPUCommandBufferAndAcquireFence(state->cmd);
+		bd->vertex_ring_fence[bd->vertex_ring_index] = fence;
+	} else {
+		SDL_SubmitGPUCommandBuffer(state->cmd);
+	}
 
 	dttr_graphics_mod_present_rect_after();
 	dttr_graphics_mod_frame_end(state);
@@ -1136,7 +1489,7 @@ static bool ensure_video_texture(DTTR_BackendState *state, int width, int height
 	}
 
 	if (state->video_texture) {
-		SDL_ReleaseGPUTexture(state->device, state->video_texture);
+		dttr_graphics_sdl3gpu_bury_texture(state, state->video_texture);
 		state->video_texture = NULL;
 	}
 
@@ -1185,16 +1538,16 @@ static bool present_video_frame_bgra(
 	}
 
 	const Uint32 upload_size = (Uint32)(stride * height);
-	SDL_GPUTransferBuffer *tbuf = create_upload_buffer(state, upload_size);
+	SDL_GPUTransferBuffer *tbuf = acquire_upload_pool(state, upload_size);
 
 	if (!tbuf) {
 		return false;
 	}
 
+	wait_upload_pool_fence(state);
 	void *mapped = SDL_MapGPUTransferBuffer(state->device, tbuf, false);
 
 	if (!mapped) {
-		SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
 		return false;
 	}
 
@@ -1204,7 +1557,6 @@ static bool present_video_frame_bgra(
 	SDL_GPUCommandBuffer *cmd = SDL_AcquireGPUCommandBuffer(state->device);
 
 	if (!cmd) {
-		SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
 		return false;
 	}
 
@@ -1287,8 +1639,8 @@ static bool present_video_frame_bgra(
 		SDL_BlitGPUTexture(cmd, &blit);
 	}
 
-	SDL_SubmitGPUCommandBuffer(cmd);
-	SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
+	set_upload_pool_fence(state, SDL_SubmitGPUCommandBufferAndAcquireFence(cmd));
+
 	return true;
 }
 

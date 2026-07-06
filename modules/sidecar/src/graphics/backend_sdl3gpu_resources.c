@@ -13,14 +13,31 @@ static void create_frame_buffers(DTTR_BackendState *state) {
 		.size = frame_buffer_size,
 	};
 
-	state->vertex_buffer = SDL_CreateGPUBuffer(state->device, &vbuf_info);
-
 	const SDL_GPUTransferBufferCreateInfo tbuf_info = {
 		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
 		.size = frame_buffer_size,
 	};
 
-	state->transfer_buffer = SDL_CreateGPUTransferBuffer(state->device, &tbuf_info);
+	sdl3_gpu_backend_data *bd = (sdl3_gpu_backend_data *)state->backend_data;
+	for (int i = 0; i < DTTR_VERTEX_RING_DEPTH; i++) {
+		bd->vertex_gpu_ring[i] = SDL_CreateGPUBuffer(state->device, &vbuf_info);
+		bd->vertex_ring[i] = SDL_CreateGPUTransferBuffer(state->device, &tbuf_info);
+
+		if (!bd->vertex_ring[i]) {
+			continue;
+		}
+
+		// Avoid first-touch faults inside the vertex expansion loop.
+		void *mapped = SDL_MapGPUTransferBuffer(state->device, bd->vertex_ring[i], false);
+		if (mapped) {
+			memset(mapped, 0, frame_buffer_size);
+			SDL_UnmapGPUTransferBuffer(state->device, bd->vertex_ring[i]);
+		}
+	}
+
+	bd->vertex_ring_index = 0;
+	state->transfer_buffer = bd->vertex_ring[0];
+	state->vertex_buffer = bd->vertex_gpu_ring[0];
 }
 
 // Creates all sampler variants for wrap/clamp combinations.
@@ -164,7 +181,9 @@ static void upload_dummy_white_pixel(DTTR_BackendState *state) {
 	}
 
 	SDL_SubmitGPUCommandBuffer(cmd);
-	SDL_ReleaseGPUTransferBuffer(state->device, tbuf);
+
+	// Do not arm Vulkan defrag after the uniform pool was warmed.
+	dttr_graphics_sdl3gpu_bury_transfer_buffer(state, tbuf);
 }
 
 // Creates persistent GPU buffers, samplers, and textures required for rendering.
@@ -220,17 +239,17 @@ bool dttr_graphics_sdl3gpu_resize_render_textures(int width, int height) {
 	}
 
 	if (state->render_target) {
-		SDL_ReleaseGPUTexture(state->device, state->render_target);
+		dttr_graphics_sdl3gpu_bury_texture(state, state->render_target);
 		state->render_target = NULL;
 	}
 
 	if (state->msaa_render_target) {
-		SDL_ReleaseGPUTexture(state->device, state->msaa_render_target);
+		dttr_graphics_sdl3gpu_bury_texture(state, state->msaa_render_target);
 		state->msaa_render_target = NULL;
 	}
 
 	if (state->depth_texture) {
-		SDL_ReleaseGPUTexture(state->device, state->depth_texture);
+		dttr_graphics_sdl3gpu_bury_texture(state, state->depth_texture);
 		state->depth_texture = NULL;
 	}
 
