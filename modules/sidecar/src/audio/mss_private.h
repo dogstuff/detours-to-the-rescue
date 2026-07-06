@@ -32,6 +32,7 @@
 #define DTTR_MSS_MIXER_RATE DTTR_MSS_DEFAULT_RATE
 #define DTTR_MSS_MAX_VOLUME 127.0f
 #define DTTR_MSS_PREFERENCES_CAPACITY 64
+#define DTTR_MSS_LOG_TAG "MSS"
 #define DTTR_MSS_STREAM_HEADROOM_GAIN 1.0f
 
 typedef struct {
@@ -62,29 +63,6 @@ static inline void dttr_mss_reset_preferences(int *preferences, size_t count) {
 	}
 }
 
-static inline bool dttr_mss_wave_bits_supported(uint16_t bits_per_sample) {
-	return bits_per_sample == 8 || bits_per_sample == 16;
-}
-
-static inline bool dttr_mss_sample_rate_pauses_playback(int rate) {
-	return rate <= 0;
-}
-
-static inline int dttr_mss_pan_table_byte(int pan) {
-	return pan >= 63 ? 128 : pan * 2;
-}
-
-static inline void dttr_mss_pan_to_stereo_bytes(int pan, int *left_out, int *right_out) {
-	const int clamped_pan = pan < 0 ? 0 : (pan > 127 ? 127 : pan);
-	if (left_out) {
-		*left_out = dttr_mss_pan_table_byte(127 - clamped_pan);
-	}
-
-	if (right_out) {
-		*right_out = dttr_mss_pan_table_byte(clamped_pan);
-	}
-}
-
 static inline int dttr_mss_loops_to_sdl(int mss_loop_count) {
 	if (mss_loop_count <= 0) {
 		return mss_loop_count == 0 ? -1 : 0;
@@ -102,7 +80,6 @@ bool dttr_mss_core_ensure_mix_initialized();
 bool dttr_mss_core_ensure_mixer();
 void dttr_mss_core_destroy_mixer();
 MIX_Mixer *dttr_mss_core_mixer();
-SDL_AudioSpec dttr_mss_core_mixer_spec();
 void dttr_mss_core_set_desired_spec(const SDL_AudioSpec *spec);
 int dttr_mss_core_driver_open_count();
 void dttr_mss_core_increment_driver_open_count();
@@ -111,19 +88,23 @@ void dttr_mss_core_reset_driver_open_count();
 float dttr_mss_core_master_gain();
 void dttr_mss_core_set_master_gain(float gain);
 float dttr_mss_core_sample_headroom_gain();
-float dttr_mss_core_sample_preemphasis();
 
 void dttr_mss_sample_shutdown_all();
+void dttr_mss_sample_destroy_sync();
 void dttr_mss_sample_stop_all();
-void dttr_mss_sample_apply_master_gain();
+void dttr_mss_sample_set_master_gain(float gain);
+void dttr_mss_sample_mix_into(
+	const SDL_AudioSpec *spec,
+	float *pcm,
+	int values,
+	float *sfx_bus
+);
 
 void dttr_mss_stream_shutdown_all();
 void dttr_mss_stream_apply_master_gain();
 
 float dttr_mss_track_gain(int volume, float master_gain, float headroom);
-void dttr_mss_track_apply_pan(MIX_Track *track, int pan);
 void dttr_mss_track_play(MIX_Track *track, int sdl_loops);
-float dttr_mss_track_frequency_ratio(int rate, int reference_rate);
 int dttr_mss_track_status(MIX_Track *track, int previous_status);
 
 uint16_t dttr_mss_wave_read_u16le(const uint8_t *p);

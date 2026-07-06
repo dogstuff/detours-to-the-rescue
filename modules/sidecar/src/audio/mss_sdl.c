@@ -44,7 +44,7 @@ static bool wave_format_spec(const void *format, SDL_AudioSpec *spec) {
 		return false;
 	}
 
-	if (!dttr_mss_wave_bits_supported(bits_per_sample)) {
+	if (bits_per_sample != 8 && bits_per_sample != 16) {
 		return false;
 	}
 
@@ -59,8 +59,9 @@ void dttr_mss_sdl_shutdown() {
 	dttr_mss_stream_shutdown_all();
 	dttr_mss_sample_shutdown_all();
 	dttr_mss_core_destroy_mixer();
+	dttr_mss_sample_set_master_gain(DTTR_MSS_DEFAULT_MASTER_GAIN);
+	dttr_mss_sample_destroy_sync();
 	dttr_mss_core_reset_driver_open_count();
-	dttr_mss_core_set_master_gain(DTTR_MSS_DEFAULT_MASTER_GAIN);
 }
 
 // Installs one pointer hook for a Miles Sound System import.
@@ -264,7 +265,6 @@ int __stdcall dttr_mss_ail_waveOutOpen(
 	}
 
 	dttr_mss_core_increment_driver_open_count();
-
 	if (driver_out) {
 		*driver_out = dttr_mss_core_mixer();
 	}
@@ -309,7 +309,6 @@ void __stdcall dttr_mss_ail_waveOutClose(void *driver) {
 
 // Applies Miles digital master volume to all SDL-backed playback.
 void __stdcall dttr_mss_ail_set_digital_master_volume(void *driver, int volume) {
-	dttr_mss_core_set_master_gain(master_gain_for_volume(volume));
-	dttr_mss_sample_apply_master_gain();
+	dttr_mss_sample_set_master_gain(master_gain_for_volume(volume));
 	dttr_mss_stream_apply_master_gain();
 }

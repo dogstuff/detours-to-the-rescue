@@ -1,30 +1,34 @@
 #include "mss_private.h"
 
+#include <dttr_config.h>
 #include <dttr_log.h>
 
 #include <SDL3/SDL.h>
-#include <SDL3_mixer/SDL_mixer.h>
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
+
+#define DTTR_MSS_DIRECTSOUND_SFX_LATENCY_BASE_RATE 22050u
+#define DTTR_MSS_DIRECTSOUND_SFX_LATENCY_BASE_FRAMES 1845u
+#define DTTR_MSS_SFX_DELAY_MAX_CHANNELS 8u
+#define DTTR_MSS_SFX_DELAY_MAX_FRAMES 8192u
+#define DTTR_MSS_SFX_DELAY_VALUES                                                        \
+	(DTTR_MSS_SFX_DELAY_MAX_FRAMES * DTTR_MSS_SFX_DELAY_MAX_CHANNELS)
 
 typedef struct {
 	uint32_t magic;
-	MIX_Audio *audio;
-	MIX_Track *track;
 	float *pcm_frames;
 	size_t pcm_frame_count;
 	mss_wave_info wave;
 	int base_rate;
 	int current_rate;
-	int rendered_rate;
 	int volume;
 	int pan;
 	int loops;
 	int status;
+	int mixer_loops_remaining;
+	uint64_t playback_position_fp;
 	bool rate_overridden;
 	bool paused_by_rate;
 	bool allocated;
@@ -33,25 +37,139 @@ typedef struct {
 static const uint32_t SAMPLE_MAGIC = 0x4453414d;
 
 static mss_sample samples[DTTR_MSS_DEFAULT_MIXER_CHANNELS];
+static SDL_Mutex *sample_mutex;
+static float sfx_delay_ring[DTTR_MSS_SFX_DELAY_VALUES];
+static size_t sfx_delay_cursor;
+static size_t sfx_delay_frames;
+static int sfx_delay_channels;
+static int sfx_delay_rate;
 
-static void apply_rate(mss_sample *sample) {
-	if (!sample->track) {
+static bool ensure_sample_mutex() {
+	if (sample_mutex) {
+		return true;
+	}
+
+	sample_mutex = SDL_CreateMutex();
+	if (!sample_mutex) {
+		DTTR_LOG_ERROR(
+			"%s sample mutex create failed: %s",
+			DTTR_MSS_LOG_TAG,
+			SDL_GetError()
+		);
+		return false;
+	}
+
+	return true;
+}
+
+static void lock_sample_state() {
+	if (ensure_sample_mutex()) {
+		SDL_LockMutex(sample_mutex);
+	}
+}
+
+static void unlock_sample_state() {
+	if (sample_mutex) {
+		SDL_UnlockMutex(sample_mutex);
+	}
+}
+
+static void reset_sfx_delay_line() {
+	memset(sfx_delay_ring, 0, sizeof(sfx_delay_ring));
+	sfx_delay_cursor = 0;
+	sfx_delay_frames = 0;
+	sfx_delay_channels = 0;
+	sfx_delay_rate = 0;
+}
+
+static float clamp_mix(float value) {
+	return SDL_clamp(value, -1.0f, 1.0f);
+}
+
+static float directsound_pcm16_f32(float value) {
+	const float scaled = clamp_mix(value) * 32768.0f;
+	int sample = (int)(scaled + (scaled >= 0.0f ? 0.5f : -0.5f));
+	if (sample < -32768) {
+		sample = -32768;
+	} else if (sample > 32767) {
+		sample = 32767;
+	}
+
+	return (float)sample / 32768.0f;
+}
+
+static size_t directsound_sfx_latency_frames(int output_rate) {
+	if (output_rate <= 0) {
+		return 0;
+	}
+
+	return ((size_t)output_rate * (size_t)DTTR_MSS_DIRECTSOUND_SFX_LATENCY_BASE_FRAMES
+			+ (size_t)DTTR_MSS_DIRECTSOUND_SFX_LATENCY_BASE_RATE / 2u)
+		   / (size_t)DTTR_MSS_DIRECTSOUND_SFX_LATENCY_BASE_RATE;
+}
+
+static float sample_pan_gain(int pan, bool right) {
+	const int clamped = SDL_clamp(pan, 0, 127);
+	const int side = right ? clamped : 127 - clamped;
+	return (float)(side >= 63 ? 128 : side * 2) / 128.0f;
+}
+
+static void apply_directsound_sfx_latency(
+	const SDL_AudioSpec *spec,
+	float *values,
+	int value_count
+) {
+	if (!spec || !values || value_count <= 0 || spec->channels <= 0 || spec->freq <= 0) {
 		return;
 	}
 
-	const int reference_rate = sample->rendered_rate > 0 ? sample->rendered_rate
-														 : sample->base_rate;
-	const float ratio = dttr_mss_track_frequency_ratio(
-		sample->current_rate,
-		reference_rate
-	);
-	if (ratio == 0.0f) {
+	const int channels = spec->channels;
+	if ((size_t)channels > DTTR_MSS_SFX_DELAY_MAX_CHANNELS) {
+		reset_sfx_delay_line();
 		return;
 	}
 
-	if (!MIX_SetTrackFrequencyRatio(sample->track, ratio)) {
-		DTTR_LOG_ERROR("MIX_SetTrackFrequencyRatio failed: %s", SDL_GetError());
+	const size_t frames = (size_t)value_count / (size_t)channels;
+	const size_t delay_frames = directsound_sfx_latency_frames(spec->freq);
+	if (frames == 0 || delay_frames == 0
+		|| delay_frames > DTTR_MSS_SFX_DELAY_MAX_FRAMES) {
+		reset_sfx_delay_line();
+		return;
 	}
+
+	if (sfx_delay_frames != delay_frames || sfx_delay_channels != channels
+		|| sfx_delay_rate != spec->freq) {
+		reset_sfx_delay_line();
+
+		sfx_delay_frames = delay_frames;
+		sfx_delay_channels = channels;
+		sfx_delay_rate = spec->freq;
+	}
+
+	for (size_t frame = 0; frame < frames; frame++) {
+		const size_t ring_frame = sfx_delay_cursor * (size_t)channels;
+		const size_t bus_frame = frame * (size_t)channels;
+
+		for (int channel = 0; channel < channels; channel++) {
+			const size_t ring_index = ring_frame + (size_t)channel;
+			const size_t bus_index = bus_frame + (size_t)channel;
+			const float delayed = sfx_delay_ring[ring_index];
+
+			sfx_delay_ring[ring_index] = values[bus_index];
+			values[bus_index] = delayed;
+		}
+
+		sfx_delay_cursor = (sfx_delay_cursor + 1u) % sfx_delay_frames;
+	}
+}
+
+static int sample_loops_to_remaining(int loops) {
+	return loops == 0 ? 0 : (loops > 0 ? loops : 1);
+}
+
+static void reset_sample_playback_cursor(mss_sample *sample) {
+	sample->playback_position_fp = 0;
+	sample->mixer_loops_remaining = sample_loops_to_remaining(sample->loops);
 }
 
 static void reset_sample_defaults(mss_sample *sample) {
@@ -65,6 +183,7 @@ static void reset_sample_defaults(mss_sample *sample) {
 	sample->pan = DTTR_MSS_DEFAULT_PAN;
 	sample->loops = DTTR_MSS_DEFAULT_LOOP_COUNT;
 	sample->status = DTTR_MSS_STATUS_DONE;
+	reset_sample_playback_cursor(sample);
 	sample->rate_overridden = false;
 	sample->paused_by_rate = false;
 }
@@ -81,40 +200,7 @@ static int sample_slot(const mss_sample *sample) {
 }
 
 static mss_sample *require_sample(void *sample_ptr) {
-	if (is_sample(sample_ptr)) {
-		return sample_ptr;
-	}
-
-	return NULL;
-}
-
-static void apply_sample_gain(mss_sample *sample) {
-	if (!sample->track) {
-		return;
-	}
-
-	MIX_SetTrackGain(
-		sample->track,
-		dttr_mss_track_gain(
-			sample->volume,
-			dttr_mss_core_master_gain(),
-			dttr_mss_core_sample_headroom_gain()
-		)
-	);
-}
-
-static void destroy_sample_audio_object(mss_sample *sample) {
-	if (sample->track) {
-		MIX_SetTrackAudio(sample->track, NULL);
-	}
-
-	if (sample->audio) {
-		MIX_DestroyAudio(sample->audio);
-		sample->audio = NULL;
-	}
-
-	sample->rendered_rate = 0;
-	sample->paused_by_rate = false;
+	return is_sample(sample_ptr) ? sample_ptr : NULL;
 }
 
 static void clear_sample_wave(mss_sample *sample) {
@@ -125,215 +211,282 @@ static void clear_sample_wave(mss_sample *sample) {
 }
 
 static void free_sample_audio(mss_sample *sample) {
-	destroy_sample_audio_object(sample);
-	if (sample->track) {
-		MIX_DestroyTrack(sample->track);
-		sample->track = NULL;
-	}
-
 	clear_sample_wave(sample);
+	sample->paused_by_rate = false;
 }
 
 static void reset_sample_slot(mss_sample *sample) {
 	memset(sample, 0, sizeof(*sample));
-
 	sample->magic = SAMPLE_MAGIC;
-
 	reset_sample_defaults(sample);
-
 	sample->allocated = true;
 }
 
-static bool load_sample_frames(
-	mss_sample *sample,
+static bool decode_sample_file(
 	const void *file_image,
 	size_t size,
-	const mss_wave_info *wave
+	mss_wave_info *wave,
+	float **frames_out,
+	size_t *frame_count_out
 ) {
-	mss_wave_info decoded = *wave;
-	float *frames = NULL;
-	if (!dttr_mss_wave_decode_f32(file_image, size, &decoded, &frames)) {
+	if (!wave || !frames_out || !frame_count_out) {
 		return false;
 	}
 
-	if (decoded.frame_count > (uint64_t)SIZE_MAX) {
+	float *frames = NULL;
+	if (!dttr_mss_wave_decode_f32(file_image, size, wave, &frames)) {
+		return false;
+	}
+
+	if (wave->frame_count > (uint64_t)SIZE_MAX) {
 		dttr_mss_wave_free(frames);
 		return false;
 	}
 
-	sample->pcm_frames = frames;
-	sample->pcm_frame_count = (size_t)decoded.frame_count;
-	sample->wave = decoded;
+	*frames_out = frames;
+	*frame_count_out = (size_t)wave->frame_count;
 	return true;
 }
 
-static bool load_sample_audio_from_memory(
+static void commit_empty_sample_file_state(mss_sample *sample) {
+	free_sample_audio(sample);
+
+	sample->status = DTTR_MSS_STATUS_DONE;
+	sample->paused_by_rate = false;
+
+	reset_sample_playback_cursor(sample);
+}
+
+static void clear_sample_file_state_if_alive(void *sample_ptr) {
+	lock_sample_state();
+	mss_sample *sample = require_sample(sample_ptr);
+	if (sample) {
+		commit_empty_sample_file_state(sample);
+	}
+	unlock_sample_state();
+}
+
+static void commit_sample_file_state(
 	mss_sample *sample,
-	const void *file_image,
-	size_t size
+	float *frames,
+	size_t frame_count,
+	const mss_wave_info *wave
 ) {
-	SDL_IOStream *io = SDL_IOFromConstMem(file_image, size);
-	if (!io) {
-		DTTR_LOG_ERROR("SDL_IOFromConstMem failed: %s", SDL_GetError());
-		return false;
-	}
+	const int requested_rate = sample->current_rate;
+	const bool rate_overridden = sample->rate_overridden;
 
-	sample->audio = MIX_LoadAudio_IO(dttr_mss_core_mixer(), io, true, true);
-	if (!sample->audio) {
-		DTTR_LOG_ERROR("MIX_LoadAudio_IO sample failed: %s", SDL_GetError());
-		return false;
-	}
-
-	sample->rendered_rate = sample->base_rate;
-	return true;
-}
-
-static void apply_sample_track(mss_sample *sample) {
-	if (!sample->track || !sample->audio) {
-		return;
-	}
-
-	MIX_SetTrackAudio(sample->track, sample->audio);
-	apply_sample_gain(sample);
-	dttr_mss_track_apply_pan(sample->track, sample->pan);
-	apply_rate(sample);
+	commit_empty_sample_file_state(sample);
+	sample->pcm_frames = frames;
+	sample->pcm_frame_count = frame_count;
+	sample->wave = *wave;
+	sample->base_rate = dttr_mss_wave_rate(wave);
+	sample->current_rate = rate_overridden ? requested_rate : sample->base_rate;
+	sample->rate_overridden = rate_overridden;
+	sample->status = DTTR_MSS_STATUS_DONE;
+	reset_sample_playback_cursor(sample);
 }
 
 static void stop_sample(mss_sample *sample) {
-	if (sample->track) {
-		MIX_StopTrack(sample->track, 0);
-	}
-
 	sample->status = DTTR_MSS_STATUS_STOPPED;
 	sample->paused_by_rate = false;
 }
 
-static bool render_sample_audio(mss_sample *sample) {
-	if (!dttr_mss_core_mixer() || !sample->pcm_frames || sample->pcm_frame_count == 0
-		|| sample->current_rate <= 0 || sample->wave.channels == 0) {
-		return false;
-	}
-
-	const SDL_AudioSpec mixer_spec = dttr_mss_core_mixer_spec();
-	const int out_rate = mixer_spec.freq > 0 ? mixer_spec.freq : DTTR_MSS_MIXER_RATE;
+static float sample_frame_channel(const mss_sample *sample, size_t frame, int channel) {
 	const int channels = (int)sample->wave.channels;
-	const size_t in_frames_size = sample->pcm_frame_count;
+	return sample->pcm_frames[frame * (size_t)channels + (size_t)channel];
+}
 
-	if (in_frames_size > INT_MAX) {
-		return false;
-	}
+static float sample_interp_channel(
+	const mss_sample *sample,
+	size_t frame0,
+	size_t frame1,
+	float fraction,
+	int channel
+) {
+	const float a = sample_frame_channel(sample, frame0, channel);
+	const float b = sample_frame_channel(sample, frame1, channel);
+	return a + (b - a) * fraction;
+}
 
-	const int in_frames = (int)in_frames_size;
-
-	int64_t out_frames64 = ((int64_t)in_frames * out_rate + sample->current_rate - 1)
-						   / sample->current_rate;
-	if (out_frames64 <= 0 || out_frames64 > INT_MAX) {
-		return false;
-	}
-
-	const int out_frames = (int)out_frames64;
-	float previous_values[8] = {0};
-
-	if (channels > (int)SDL_arraysize(previous_values)) {
-		return false;
-	}
-
-	if ((size_t)out_frames > SIZE_MAX / (size_t)channels) {
-		return false;
-	}
-
-	const size_t out_values = (size_t)out_frames * (size_t)channels;
-	if (out_values > SIZE_MAX / sizeof(float)) {
-		return false;
-	}
-
-	float *converted = calloc(out_values, sizeof(float));
-	if (!converted) {
-		return false;
-	}
-
-	const float preemphasis = dttr_mss_core_sample_preemphasis();
-
-	uint64_t source_pos = 0;
-	const uint64_t source_step = ((uint64_t)sample->current_rate << 32) / out_rate;
-
-	for (int frame = 0; frame < out_frames; frame++) {
-		size_t source_frame = (size_t)(source_pos >> 32);
-
-		if (source_frame >= in_frames_size) {
-			source_frame = in_frames_size - 1;
-		}
-
-		for (int channel = 0; channel < channels; channel++) {
-			const size_t source_index = source_frame * (size_t)channels + (size_t)channel;
-			const float value = sample->pcm_frames[source_index];
-
-			converted
-				[(size_t)frame * (size_t)channels
-				 + (size_t)channel] = value
-									  + preemphasis * (value - previous_values[channel]);
-			previous_values[channel] = value;
-		}
-
-		source_pos += source_step;
-	}
-
-	const SDL_AudioSpec spec = {
-		.format = SDL_AUDIO_F32,
-		.channels = channels,
-		.freq = out_rate,
-	};
-
-	MIX_Audio *audio = MIX_LoadRawAudio(
-		dttr_mss_core_mixer(),
-		converted,
-		out_values * sizeof(float),
-		&spec
-	);
-	free(converted);
-	if (!audio) {
-		DTTR_LOG_ERROR("MSS sample render load failed: %s", SDL_GetError());
-		return false;
-	}
-
-	destroy_sample_audio_object(sample);
-
-	sample->audio = audio;
-	sample->rendered_rate = sample->current_rate;
-
-	if (!sample->track) {
+static bool advance_sample_position(
+	mss_sample *sample,
+	uint64_t *pos_fp,
+	uint64_t step_fp
+) {
+	*pos_fp += step_fp;
+	const uint64_t end_fp = (uint64_t)sample->pcm_frame_count << 16;
+	if (*pos_fp < end_fp) {
 		return true;
 	}
 
-	MIX_SetTrackAudio(sample->track, sample->audio);
+	uint64_t wrapped = *pos_fp / end_fp;
+	if (sample->mixer_loops_remaining == 0) {
+		*pos_fp -= wrapped * end_fp;
+		if (*pos_fp >= end_fp) {
+			*pos_fp = 0;
+		}
+
+		return true;
+	}
+
+	if (wrapped >= (uint64_t)sample->mixer_loops_remaining) {
+		sample->status = DTTR_MSS_STATUS_DONE;
+		sample->paused_by_rate = false;
+		*pos_fp = end_fp;
+		return false;
+	}
+
+	sample->mixer_loops_remaining -= (int)wrapped;
+	*pos_fp -= wrapped * end_fp;
+	if (*pos_fp >= end_fp) {
+		*pos_fp = 0;
+	}
+
 	return true;
 }
 
+void dttr_mss_sample_mix_into(
+	const SDL_AudioSpec *spec,
+	float *pcm,
+	int values,
+	float *sfx_bus
+) {
+	if (!spec || !pcm || values <= 0 || spec->channels <= 0 || spec->freq <= 0) {
+		return;
+	}
+
+	const int out_channels = spec->channels;
+	const int frames = values / out_channels;
+	if (frames <= 0) {
+		return;
+	}
+	if (sfx_bus) {
+		memset(sfx_bus, 0, (size_t)values * sizeof(*sfx_bus));
+	}
+
+	lock_sample_state();
+
+	const float master_gain = dttr_mss_core_master_gain();
+	const float sample_headroom = dttr_mss_core_sample_headroom_gain();
+	for (int slot = 0; slot < DTTR_MSS_DEFAULT_MIXER_CHANNELS; slot++) {
+		mss_sample *sample = &samples[slot];
+		if (!sample->allocated || sample->status != DTTR_MSS_STATUS_PLAYING
+			|| sample->paused_by_rate || !sample->pcm_frames
+			|| sample->pcm_frame_count == 0 || sample->wave.channels == 0
+			|| sample->current_rate <= 0) {
+			continue;
+		}
+
+		const uint64_t step_fp = ((uint64_t)sample->current_rate << 16)
+								 / (uint64_t)spec->freq;
+		if (step_fp == 0) {
+			continue;
+		}
+
+		uint64_t pos_fp = sample->playback_position_fp;
+
+		const float left_pan = sample_pan_gain(sample->pan, false);
+		const float right_pan = sample_pan_gain(sample->pan, true);
+		const float gain = dttr_mss_track_gain(
+			sample->volume,
+			master_gain,
+			sample_headroom
+		);
+		float *const out = sfx_bus ? sfx_bus : pcm;
+
+		for (int out_frame = 0; out_frame < frames; out_frame++) {
+			if (sample->status != DTTR_MSS_STATUS_PLAYING) {
+				break;
+			}
+
+			size_t frame0 = (size_t)(pos_fp >> 16);
+			if (frame0 >= sample->pcm_frame_count) {
+				frame0 = sample->pcm_frame_count - 1u;
+			}
+
+			const size_t frame1 = frame0 + 1u < sample->pcm_frame_count ? frame0 + 1u
+																		: frame0;
+			const uint32_t frac_fp = (uint32_t)(pos_fp & 0xffffu);
+			const float fraction = frac_fp >= 0x8000u ? 1.0f : (float)frac_fp / 65536.0f;
+			float left = sample_interp_channel(sample, frame0, frame1, fraction, 0);
+			float right = sample->wave.channels == 1
+							  ? left
+							  : sample_interp_channel(sample, frame0, frame1, fraction, 1);
+
+			left *= left_pan * gain;
+			right *= right_pan * gain;
+
+			const size_t out_index = (size_t)out_frame * (size_t)out_channels;
+			if (out_channels == 1) {
+				out[out_index] += (left + right) * 0.5f;
+			} else {
+				out[out_index] += left;
+				out[out_index + 1u] += right;
+				const float mono = (left + right) * 0.5f;
+				for (int channel = 2; channel < out_channels; channel++) {
+					out[out_index + (size_t)channel] += mono;
+				}
+			}
+
+			advance_sample_position(sample, &pos_fp, step_fp);
+		}
+
+		sample->playback_position_fp = pos_fp;
+	}
+
+	unlock_sample_state();
+
+	if (sfx_bus) {
+		for (int i = 0; i < values; i++) {
+			sfx_bus[i] = directsound_pcm16_f32(sfx_bus[i]);
+		}
+		if (dttr_config.mss_simulate_directsound_delay) {
+			apply_directsound_sfx_latency(spec, sfx_bus, values);
+		}
+		for (int i = 0; i < values; i++) {
+			pcm[i] = clamp_mix(pcm[i] + sfx_bus[i]);
+		}
+		return;
+	}
+
+	for (int i = 0; i < values; i++) {
+		pcm[i] = clamp_mix(pcm[i]);
+	}
+}
+
 void dttr_mss_sample_shutdown_all() {
+	lock_sample_state();
 	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
 		free_sample_audio(&samples[i]);
 		memset(&samples[i], 0, sizeof(samples[i]));
 	}
+	reset_sfx_delay_line();
+	unlock_sample_state();
+}
+
+void dttr_mss_sample_destroy_sync() {
+	if (!sample_mutex) {
+		return;
+	}
+
+	SDL_DestroyMutex(sample_mutex);
+	sample_mutex = NULL;
 }
 
 void dttr_mss_sample_stop_all() {
+	lock_sample_state();
 	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
-		if (!samples[i].allocated) {
-			continue;
+		if (samples[i].allocated) {
+			stop_sample(&samples[i]);
 		}
-
-		stop_sample(&samples[i]);
 	}
+	unlock_sample_state();
 }
 
-void dttr_mss_sample_apply_master_gain() {
-	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
-		if (!samples[i].allocated) {
-			continue;
-		}
-
-		apply_sample_gain(&samples[i]);
-	}
+void dttr_mss_sample_set_master_gain(float gain) {
+	lock_sample_state();
+	dttr_mss_core_set_master_gain(gain);
+	unlock_sample_state();
 }
 
 void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
@@ -344,6 +497,7 @@ void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
 		return NULL;
 	}
 
+	lock_sample_state();
 	for (int i = 0; i < DTTR_MSS_DEFAULT_MIXER_CHANNELS; i++) {
 		if (samples[i].allocated) {
 			continue;
@@ -352,17 +506,20 @@ void *__stdcall dttr_mss_ail_allocate_sample_handle(void *driver) {
 		mss_sample *sample = &samples[i];
 		reset_sample_slot(sample);
 		DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle -> sample[%d]=%p", i, sample);
+		unlock_sample_state();
 		return sample;
 	}
+	unlock_sample_state();
 
 	DTTR_LOG_TRACE("MSS AIL_allocate_sample_handle -> NULL (pool exhausted)");
-
 	return NULL;
 }
 
 void __stdcall dttr_mss_ail_release_sample_handle(void *sample_ptr) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
+		unlock_sample_state();
 		return;
 	}
 
@@ -371,21 +528,23 @@ void __stdcall dttr_mss_ail_release_sample_handle(void *sample_ptr) {
 		sample_slot(sample),
 		sample
 	);
-
 	free_sample_audio(sample);
 	memset(sample, 0, sizeof(*sample));
+	unlock_sample_state();
 }
 
 void __stdcall dttr_mss_ail_init_sample(void *sample_ptr) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
+		unlock_sample_state();
 		return;
 	}
 
 	DTTR_LOG_TRACE("MSS AIL_init_sample(sample[%d]=%p)", sample_slot(sample), sample);
-
 	free_sample_audio(sample);
 	reset_sample_defaults(sample);
+	unlock_sample_state();
 }
 
 int __stdcall dttr_mss_ail_set_sample_file(
@@ -393,7 +552,7 @@ int __stdcall dttr_mss_ail_set_sample_file(
 	const void *file_image,
 	int block
 ) {
-	if (!is_sample(sample_ptr) || !file_image || !dttr_mss_core_ensure_mixer()) {
+	if (!file_image || !dttr_mss_core_ensure_mixer()) {
 		DTTR_LOG_TRACE(
 			"MSS AIL_set_sample_file(sample=%p, file=%p, block=%d) -> 0 (invalid)",
 			sample_ptr,
@@ -403,35 +562,46 @@ int __stdcall dttr_mss_ail_set_sample_file(
 		return 0;
 	}
 
-	mss_sample *sample = sample_ptr;
+	lock_sample_state();
+	mss_sample *sample = require_sample(sample_ptr);
+	const int slot = sample_slot(sample);
+	unlock_sample_state();
+	if (!sample) {
+		DTTR_LOG_TRACE(
+			"MSS AIL_set_sample_file(sample=%p, file=%p, block=%d) -> 0 (invalid)",
+			sample_ptr,
+			file_image,
+			block
+		);
+		return 0;
+	}
 
 	DTTR_LOG_TRACE(
 		"MSS AIL_set_sample_file(sample[%d]=%p, file=%p, block=%d)",
-		sample_slot(sample),
-		sample,
+		slot,
+		sample_ptr,
 		file_image,
 		block
 	);
 
-	free_sample_audio(sample);
-
 	const size_t size = dttr_mss_wave_riff_size(file_image);
 	if (block > 0 && size > (size_t)block) {
 		DTTR_LOG_ERROR("AIL_set_sample_file received truncated WAVE data");
+		clear_sample_file_state_if_alive(sample_ptr);
 		return 0;
 	}
 
 	mss_wave_info wave = {0};
 	if (!size || !dttr_mss_wave_parse(file_image, &wave)) {
 		DTTR_LOG_ERROR("AIL_set_sample_file received non-WAVE data");
+		clear_sample_file_state_if_alive(sample_ptr);
 		return 0;
 	}
 
 	DTTR_LOG_TRACE(
 		"MSS AIL_set_sample_file sample[%d] RIFF size=%zu format=%u channels=%u "
-		"rate=%u "
-		"bits=%u data=%zu",
-		sample_slot(sample),
+		"rate=%u bits=%u data=%zu",
+		slot,
 		size,
 		wave.format_tag,
 		wave.channels,
@@ -440,107 +610,93 @@ int __stdcall dttr_mss_ail_set_sample_file(
 		wave.data_size
 	);
 
-	sample->track = MIX_CreateTrack(dttr_mss_core_mixer());
-	if (!sample->track) {
-		DTTR_LOG_ERROR("MIX_CreateTrack sample failed: %s", SDL_GetError());
-		free_sample_audio(sample);
+	mss_wave_info decoded_wave = wave;
+	float *decoded_frames = NULL;
+	size_t decoded_frame_count = 0;
+	if (!decode_sample_file(
+			file_image,
+			size,
+			&decoded_wave,
+			&decoded_frames,
+			&decoded_frame_count
+		)) {
+		DTTR_LOG_ERROR("%s sample[%d] decode failed", DTTR_MSS_LOG_TAG, slot);
+		clear_sample_file_state_if_alive(sample_ptr);
 		return 0;
 	}
 
-	const int requested_rate = sample->current_rate;
-	sample->base_rate = dttr_mss_wave_rate(&wave);
-	sample->current_rate = sample->rate_overridden && requested_rate > 0
-							   ? requested_rate
-							   : sample->base_rate;
-
-	const bool loaded = load_sample_frames(sample, file_image, size, &wave)
-						|| load_sample_audio_from_memory(sample, file_image, size);
-	if (!loaded) {
-		free_sample_audio(sample);
+	lock_sample_state();
+	sample = require_sample(sample_ptr);
+	if (!sample) {
+		unlock_sample_state();
+		dttr_mss_wave_free(decoded_frames);
 		return 0;
 	}
 
-	if (!sample->audio && !sample->pcm_frames) {
-		DTTR_LOG_ERROR("MSS sample load failed: %s", SDL_GetError());
-		free_sample_audio(sample);
-		return 0;
-	}
-
-	apply_sample_track(sample);
+	commit_sample_file_state(sample, decoded_frames, decoded_frame_count, &decoded_wave);
 	DTTR_LOG_TRACE(
-		"MSS AIL_set_sample_file sample[%d] -> 1 track=%p audio=%p pcm_frames=%zu "
-		"base_rate=%d current_rate=%d",
+		"MSS AIL_set_sample_file sample[%d] -> 1 pcm_frames=%zu base_rate=%d "
+		"current_rate=%d",
 		sample_slot(sample),
-		sample->track,
-		sample->audio,
 		sample->pcm_frame_count,
 		sample->base_rate,
 		sample->current_rate
 	);
+	unlock_sample_state();
 	return 1;
 }
 
 void __stdcall dttr_mss_ail_start_sample(void *sample_ptr) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
+		unlock_sample_state();
 		return;
 	}
 
 	DTTR_LOG_TRACE(
-		"MSS AIL_start_sample(sample[%d]=%p status=%d loops=%d volume=%d pan=%d "
-		"rate=%d "
-		"track=%p audio=%p)",
+		"MSS AIL_start_sample(sample[%d]=%p status=%d loops=%d volume=%d pan=%d rate=%d)",
 		sample_slot(sample),
 		sample,
 		sample->status,
 		sample->loops,
 		sample->volume,
 		sample->pan,
-		sample->current_rate,
-		sample->track,
-		sample->audio
+		sample->current_rate
 	);
 
-	if (sample->pcm_frames && sample->track && !sample->audio
-		&& !render_sample_audio(sample)) {
-		DTTR_LOG_ERROR("MSS sample render failed before start");
-		return;
-	}
-
-	if (!sample->track || !sample->audio) {
+	if (!sample->pcm_frames || sample->pcm_frame_count == 0
+		|| sample->wave.channels == 0) {
 		DTTR_LOG_TRACE(
-			"MSS AIL_start_sample sample[%d] skipped missing track/audio",
+			"MSS AIL_start_sample sample[%d] skipped missing decoded PCM",
 			sample_slot(sample)
 		);
+		unlock_sample_state();
 		return;
 	}
 
-	apply_sample_track(sample);
-	sample->paused_by_rate = false;
+	reset_sample_playback_cursor(sample);
+	sample->paused_by_rate = sample->current_rate <= 0;
 	sample->status = DTTR_MSS_STATUS_PLAYING;
-	const int sdl_loops = dttr_mss_loops_to_sdl(sample->loops);
-	dttr_mss_track_play(sample->track, sdl_loops);
-	DTTR_LOG_TRACE(
-		"MSS AIL_start_sample sample[%d] played sdl_loops=%d",
-		sample_slot(sample),
-		sdl_loops
-	);
+	unlock_sample_state();
 }
 
 void __stdcall dttr_mss_ail_stop_sample(void *sample_ptr) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
+		unlock_sample_state();
 		return;
 	}
 
 	DTTR_LOG_TRACE(
-		"MSS AIL_stop_sample(sample[%d]=%p status=%d track=%p)",
+		"MSS AIL_stop_sample(sample[%d]=%p status=%d)",
 		sample_slot(sample),
 		sample,
-		sample->status,
-		sample->track
+		sample->status
 	);
 	stop_sample(sample);
+	unlock_sample_state();
 }
 
 void __stdcall dttr_mss_ail_end_sample(void *sample_ptr) {
@@ -548,106 +704,75 @@ void __stdcall dttr_mss_ail_end_sample(void *sample_ptr) {
 }
 
 int __stdcall dttr_mss_ail_sample_status(void *sample_ptr) {
-	if (!is_sample(sample_ptr)) {
+	lock_sample_state();
+	mss_sample *sample = require_sample(sample_ptr);
+	if (!sample) {
+		unlock_sample_state();
 		return DTTR_MSS_STATUS_DONE;
 	}
 
-	mss_sample *sample = sample_ptr;
-	sample->status = dttr_mss_track_status(sample->track, sample->status);
-	return sample->status;
+	const int status = sample->status;
+	unlock_sample_state();
+	return status;
 }
 
 void __stdcall dttr_mss_ail_set_sample_loop_count(void *sample_ptr, int loops) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
+		unlock_sample_state();
 		return;
 	}
 
 	sample->loops = loops;
-	if (sample->track) {
-		MIX_SetTrackLoops(sample->track, dttr_mss_loops_to_sdl(loops));
+	if (sample->status == DTTR_MSS_STATUS_PLAYING) {
+		sample->mixer_loops_remaining = sample_loops_to_remaining(loops);
 	}
+	unlock_sample_state();
 }
 
 void __stdcall dttr_mss_ail_set_sample_volume(void *sample_ptr, int volume) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
-	if (!sample) {
-		return;
+	if (sample) {
+		sample->volume = volume;
 	}
-
-	sample->volume = volume;
-	apply_sample_gain(sample);
+	unlock_sample_state();
 }
 
 void __stdcall dttr_mss_ail_set_sample_pan(void *sample_ptr, int pan) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
-	if (!sample) {
-		return;
+	if (sample) {
+		sample->pan = pan;
 	}
-
-	sample->pan = pan;
-	dttr_mss_track_apply_pan(sample->track, pan);
+	unlock_sample_state();
 }
 
 void __stdcall dttr_mss_ail_set_sample_playback_rate(void *sample_ptr, int rate) {
+	lock_sample_state();
 	mss_sample *sample = require_sample(sample_ptr);
 	if (!sample) {
-		return;
-	}
-
-	const int previous = sample->current_rate;
-	const bool pause_for_rate = dttr_mss_sample_rate_pauses_playback(rate);
-
-	if (pause_for_rate) {
-		if (sample->track) {
-			MIX_PauseTrack(sample->track);
-		}
-
-		sample->paused_by_rate = true;
-		sample->status = DTTR_MSS_STATUS_PLAYING;
-		DTTR_LOG_TRACE(
-			"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d) "
-			"paused sample",
-			sample_slot(sample),
-			sample,
-			rate,
-			previous
-		);
+		unlock_sample_state();
 		return;
 	}
 
 	sample->current_rate = rate;
 	sample->rate_overridden = true;
-	if (sample->pcm_frames && sample->track && !MIX_TrackPlaying(sample->track)
-		&& sample->rendered_rate != sample->current_rate) {
-		render_sample_audio(sample);
-	}
-
-	apply_rate(sample);
-	if (sample->paused_by_rate && sample->track) {
-		MIX_ResumeTrack(sample->track);
-	}
-
-	sample->paused_by_rate = false;
-	DTTR_LOG_TRACE(
-		"MSS AIL_set_sample_playback_rate(sample[%d]=%p, rate=%d previous=%d "
-		"current=%d "
-		"base=%d resumed=%d)",
-		sample_slot(sample),
-		sample,
-		rate,
-		previous,
-		sample->current_rate,
-		sample->base_rate,
-		sample->track ? !MIX_TrackPaused(sample->track) : 0
-	);
+	sample->paused_by_rate = rate <= 0 && sample->status == DTTR_MSS_STATUS_PLAYING;
+	unlock_sample_state();
 }
 
 int __stdcall dttr_mss_ail_sample_playback_rate(void *sample_ptr) {
-	if (!is_sample(sample_ptr)) {
+	lock_sample_state();
+	mss_sample *sample = require_sample(sample_ptr);
+	if (!sample) {
+		unlock_sample_state();
 		return DTTR_MSS_DEFAULT_RATE;
 	}
 
-	mss_sample *sample = sample_ptr;
-	return sample->current_rate > 0 ? sample->current_rate : DTTR_MSS_DEFAULT_RATE;
+	const int rate = sample->current_rate > 0 ? sample->current_rate
+											  : DTTR_MSS_DEFAULT_RATE;
+	unlock_sample_state();
+	return rate;
 }

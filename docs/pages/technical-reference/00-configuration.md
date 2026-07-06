@@ -45,7 +45,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
   },
   "audio": {
     "mss_sample_gain": 1.0,
-    "mss_sample_preemphasis": 0.0
+    "mss_simulate_directsound_delay": false
   },
   "modding": {
     "hot_reload": false,

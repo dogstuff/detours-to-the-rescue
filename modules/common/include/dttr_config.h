@@ -143,7 +143,7 @@ typedef struct {
 	int mod_value_count;
 	DTTR_ConfigModValue mod_values[DTTR_CONFIG_MOD_VALUES_MAX];
 	float mss_sample_gain;
-	float mss_sample_preemphasis;
+	bool mss_simulate_directsound_delay;
 	bool gamepad_enabled;
 	bool gamepad_analog_remap;
 	int gamepad_index;

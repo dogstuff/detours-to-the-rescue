@@ -12,6 +12,8 @@ static DTTR_PCDOGS_F_Audio_StopAllSounds_proto audio_stop_all_sounds_original;
 static DTTR_PCDOGS_F_Audio_InitializeLevelAudio_proto audio_init_level_audio_original;
 static DTTR_PCDOGS_F_Audio_StopAllSamples_proto audio_stop_all_samples_original;
 static DTTR_Core_PatchGroup *audio_patch_group;
+static bool audio_hooks_installed;
+static bool audio_shim_installed;
 
 static int32_t audio_init_system();
 static int32_t __cdecl audio_init_system_detour();
@@ -41,7 +43,7 @@ static bool has_audio_driver() {
 
 // Stops SDL-backed samples before delegating only while an audio driver is alive.
 static int32_t run_guarded_audio_hook(int32_t(__cdecl *original)(), bool stop_all_samples) {
-	if (stop_all_samples) {
+	if (stop_all_samples && audio_shim_installed) {
 		dttr_mss_sample_stop_all();
 	}
 
@@ -112,6 +114,10 @@ static int32_t __cdecl audio_stop_all_samples_detour() {
 
 // Keeps the game MSS driver matched to SDL audio device availability.
 void dttr_audio_handle_device_event(const SDL_Event *event) {
+	if (!audio_hooks_installed) {
+		return;
+	}
+
 	switch (event->type) {
 	case SDL_EVENT_AUDIO_DEVICE_REMOVED:
 		handle_audio_device_removed();
@@ -126,6 +132,9 @@ void dttr_audio_handle_device_event(const SDL_Event *event) {
 
 // Installs the MSS audio patch group after SDL audio startup.
 bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
+	audio_hooks_installed = false;
+	audio_shim_installed = false;
+
 	if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
 		DTTR_LOG_ERROR("SDL_InitSubSystem(SDL_INIT_AUDIO) failed: %s", SDL_GetError());
 	}
@@ -158,6 +167,8 @@ bool dttr_audio_init(const DTTR_Mods_Context *ctx) {
 		DTTR_ARRAY_COUNT(audio_patches),
 		&audio_patch_group
 	);
+	audio_hooks_installed = patches_ok;
+	audio_shim_installed = imports_ok && patches_ok;
 	return imports_ok && patches_ok;
 }
 
@@ -169,5 +180,11 @@ void dttr_audio_cleanup(const DTTR_Mods_Context *) {
 	audio_init_level_audio_original = NULL;
 	audio_stop_all_samples_original = NULL;
 	dttr_mss_sdl_release_hooks();
-	dttr_mss_sdl_shutdown();
+
+	if (audio_shim_installed) {
+		dttr_mss_sdl_shutdown();
+	}
+
+	audio_hooks_installed = false;
+	audio_shim_installed = false;
 }

@@ -12,9 +12,12 @@ static int driver_open_count;
 static float master_gain = DTTR_MSS_DEFAULT_MASTER_GAIN;
 static int preferences[DTTR_MSS_PREFERENCES_CAPACITY];
 static SDL_AudioSpec desired_spec;
-static SDL_AudioSpec mixer_spec;
 static bool has_desired_spec;
 static bool preferences_initialized;
+
+#define DTTR_MSS_POSTMIX_SFX_BUS_VALUES 65536u
+
+static float postmix_sfx_bus[DTTR_MSS_POSTMIX_SFX_BUS_VALUES];
 
 static int *preference_slot(unsigned int preference) {
 	if (preference >= SDL_arraysize(preferences)) {
@@ -27,6 +30,41 @@ static int *preference_slot(unsigned int preference) {
 static void clear_desired_spec() {
 	memset(&desired_spec, 0, sizeof(desired_spec));
 	has_desired_spec = false;
+}
+
+static void SDLCALL mixer_postmix_callback(
+	void *userdata,
+	MIX_Mixer *callback_mixer,
+	const SDL_AudioSpec *spec,
+	float *pcm,
+	int values
+) {
+	if (values <= 0) {
+		return;
+	}
+
+	const int channels = spec && spec->channels > 0 ? spec->channels : 0;
+	if (channels <= 0) {
+		return;
+	}
+
+	int chunk_values = (int)(
+		DTTR_MSS_POSTMIX_SFX_BUS_VALUES
+		- (DTTR_MSS_POSTMIX_SFX_BUS_VALUES % (size_t)channels)
+	);
+	if (chunk_values <= 0) {
+		return;
+	}
+
+	const int complete_values = values - (values % channels);
+	for (int offset = 0; offset < complete_values; offset += chunk_values) {
+		int count = complete_values - offset;
+		if (count > chunk_values) {
+			count = chunk_values;
+		}
+
+		dttr_mss_sample_mix_into(spec, pcm + offset, count, postmix_sfx_bus);
+	}
 }
 
 bool dttr_mss_core_has_driver() {
@@ -72,10 +110,6 @@ float dttr_mss_core_sample_headroom_gain() {
 	return SDL_clamp(dttr_config.mss_sample_gain, 0.0f, 2.0f);
 }
 
-float dttr_mss_core_sample_preemphasis() {
-	return SDL_clamp(dttr_config.mss_sample_preemphasis, -1.0f, 2.0f);
-}
-
 bool dttr_mss_core_ensure_mix_initialized() {
 	if (mix_initialized) {
 		return true;
@@ -112,24 +146,45 @@ bool dttr_mss_core_ensure_mixer() {
 		return false;
 	}
 
+	if (!MIX_SetPostMixCallback(mixer, mixer_postmix_callback, NULL)) {
+		DTTR_LOG_ERROR(
+			"%s MIX_SetPostMixCallback failed: %s",
+			DTTR_MSS_LOG_TAG,
+			SDL_GetError()
+		);
+	}
+
 	SDL_AudioSpec actual = {0};
 	if (!MIX_GetMixerFormat(mixer, &actual)) {
-		mixer_spec = *desired;
+		DTTR_LOG_WARN(
+			"%s MIX_GetMixerFormat failed; using desired format=0x%04X channels=%d "
+			"freq=%d error=%s",
+			DTTR_MSS_LOG_TAG,
+			(unsigned)desired->format,
+			desired->channels,
+			desired->freq,
+			SDL_GetError()
+		);
 		return true;
 	}
 
-	mixer_spec = actual;
 	DTTR_LOG_INFO(
-		"MSS mixer opened: format=0x%04X channels=%d freq=%d",
+		"%s mixer opened: desired=0x%04X/%d/%d actual=0x%04X/%d/%d sample_gain=%.3f",
+		DTTR_MSS_LOG_TAG,
+		(unsigned)desired->format,
+		desired->channels,
+		desired->freq,
 		(unsigned)actual.format,
 		actual.channels,
-		actual.freq
+		actual.freq,
+		dttr_config.mss_sample_gain
 	);
 	return true;
 }
 
 void dttr_mss_core_destroy_mixer() {
 	if (mixer) {
+		MIX_SetPostMixCallback(mixer, NULL, NULL);
 		MIX_DestroyMixer(mixer);
 		mixer = NULL;
 	}
@@ -139,16 +194,11 @@ void dttr_mss_core_destroy_mixer() {
 		mix_initialized = false;
 	}
 
-	memset(&mixer_spec, 0, sizeof(mixer_spec));
 	clear_desired_spec();
 }
 
 MIX_Mixer *dttr_mss_core_mixer() {
 	return mixer;
-}
-
-SDL_AudioSpec dttr_mss_core_mixer_spec() {
-	return mixer_spec;
 }
 
 void dttr_mss_core_set_desired_spec(const SDL_AudioSpec *spec) {

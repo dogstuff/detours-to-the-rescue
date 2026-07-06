@@ -1,8 +1,8 @@
 #include "gui_internal.h"
 
-static const char *TOOLTIP_MSS_SAMPLE_GAIN = "MSS Sample Gain. Default: 1.0.";
-static const char *TOOLTIP_MSS_SAMPLE_PREEMPHASIS = "MSS Sample Preemphasis. Default: "
-													"0.0.";
+static const char *TOOLTIP_SAMPLE_GAIN = "Sample Gain. Default: 1.0.";
+static const char *TOOLTIP_DIRECTSOUND_DELAY = "Add DirectSound-style sample latency to "
+											   "the audio shim. Default: off.";
 
 void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!begin_tab_settings_table(ctx, "##audio_settings_table", DTTR_CONFIG_UI_INPUT_W)) {
@@ -11,19 +11,19 @@ void draw_audio_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) 
 
 	labeled_input_float(
 		ctx,
-		"MSS Sample Gain",
+		"Sample Gain",
 		"##mss_sample_gain",
 		&state->config.mss_sample_gain,
-		TOOLTIP_MSS_SAMPLE_GAIN,
+		TOOLTIP_SAMPLE_GAIN,
 		FIELD_LABEL_STATE(state, mss_sample_gain)
 	);
-	labeled_input_float(
+	labeled_checkbox(
 		ctx,
-		"MSS Sample Preemphasis",
-		"##mss_sample_preemphasis",
-		&state->config.mss_sample_preemphasis,
-		TOOLTIP_MSS_SAMPLE_PREEMPHASIS,
-		FIELD_LABEL_STATE(state, mss_sample_preemphasis)
+		"Simulate DirectSound Delay",
+		"##mss_simulate_directsound_delay",
+		&state->config.mss_simulate_directsound_delay,
+		TOOLTIP_DIRECTSOUND_DELAY,
+		FIELD_LABEL_STATE(state, mss_simulate_directsound_delay)
 	);
 	end_settings_table();
 }

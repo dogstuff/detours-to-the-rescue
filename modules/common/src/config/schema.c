@@ -50,7 +50,12 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 	FIELD("graphics", "fullscreen", fullscreen, CONFIG_BOOL),
 
 	FIELD("audio", "mss_sample_gain", mss_sample_gain, CONFIG_FLOAT),
-	FIELD("audio", "mss_sample_preemphasis", mss_sample_preemphasis, CONFIG_FLOAT),
+	FIELD(
+		"audio",
+		"mss_simulate_directsound_delay",
+		mss_simulate_directsound_delay,
+		CONFIG_BOOL
+	),
 
 	FIELD("modding", "hot_reload", hot_reload, CONFIG_BOOL),
 
