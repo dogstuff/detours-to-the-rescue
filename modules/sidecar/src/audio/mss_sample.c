@@ -407,7 +407,7 @@ void dttr_mss_sample_mix_into(
 			const size_t frame1 = frame0 + 1u < sample->pcm_frame_count ? frame0 + 1u
 																		: frame0;
 			const uint32_t frac_fp = (uint32_t)(pos_fp & 0xffffu);
-			const float fraction = frac_fp >= 0x8000u ? 1.0f : (float)frac_fp / 65536.0f;
+			const float fraction = (float)frac_fp / 65536.0f;
 			float left = sample_interp_channel(sample, frame0, frame1, fraction, 0);
 			float right = sample->wave.channels == 1
 							  ? left
