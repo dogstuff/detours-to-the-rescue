@@ -30,6 +30,11 @@ static const char *TOOLTIP_SHOW_CRASH_POPUP
 
 static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip Intro Movies at launch. Default: "
 											   "false.";
+static const char *TOOLTIP_LIMIT_TICKRATE = "Caps the host render loop to reduce CPU/GPU "
+											"pressure. Default: false.";
+static const char *TOOLTIP_TICKRATE_CAP = "Maximum host render-loop ticks per second "
+										  "when Limit Tickrate is enabled. Valid "
+										  "range: 1-999. Default: 120.";
 
 void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!begin_tab_settings_table(
@@ -105,5 +110,25 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		TOOLTIP_SKIP_INTRO_MOVIES,
 		FIELD_LABEL_STATE(state, skip_intro_movies)
 	);
+	labeled_checkbox(
+		ctx,
+		"Limit Tickrate",
+		"##limit_tickrate",
+		&state->config.limit_tickrate,
+		TOOLTIP_LIMIT_TICKRATE,
+		FIELD_LABEL_STATE(state, limit_tickrate)
+	);
+	igBeginDisabled(!state->config.limit_tickrate);
+	labeled_input_int(
+		ctx,
+		"Tickrate Cap",
+		"##tickrate_cap",
+		&state->config.tickrate_cap,
+		1,
+		10,
+		TOOLTIP_TICKRATE_CAP,
+		FIELD_LABEL_STATE(state, tickrate_cap)
+	);
+	igEndDisabled();
 	end_settings_table();
 }

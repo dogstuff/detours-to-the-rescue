@@ -57,6 +57,8 @@ typedef enum {
 #define DTTR_CONFIG_MOD_FIELD_ID_MAX 64
 #define DTTR_CONFIG_MOD_STRING_MAX 256
 #define DTTR_MODS_SHADOW_PREFIX "_dttr_hot_"
+#define DTTR_CONFIG_DEFAULT_TICKRATE_CAP 120
+#define DTTR_CONFIG_MAX_TICKRATE_CAP 999
 
 #define DTTR_GAMEPAD_AXIS_MAPPING_COUNT 3
 #define DTTR_GAMEPAD_AXIS_IDX_STICK_X 0
@@ -127,6 +129,8 @@ typedef struct {
 	DTTR_ScalingMode scaling_fit;
 	DTTR_ScalingMethod scaling_method;
 	DTTR_GraphicsAPI graphics_api;
+	bool limit_tickrate;
+	int tickrate_cap;
 	DTTR_VertexPrecision vertex_precision;
 	bool sprite_smooth;
 	SDL_GPUFilter present_filter;
@@ -152,6 +156,22 @@ typedef struct {
 	int gamepad_axis_sensitivity[DTTR_GAMEPAD_AXIS_MAPPING_COUNT];
 	int control_bindings[DTTR_CONFIG_CONTROL_ACTION_COUNT];
 } DTTR_Config;
+
+static inline int DTTR_Config_EffectiveTickrateCap(const DTTR_Config *config) {
+	if (!config || !config->limit_tickrate) {
+		return 0;
+	}
+
+	if (config->tickrate_cap < 1) {
+		return DTTR_CONFIG_DEFAULT_TICKRATE_CAP;
+	}
+
+	if (config->tickrate_cap > DTTR_CONFIG_MAX_TICKRATE_CAP) {
+		return DTTR_CONFIG_MAX_TICKRATE_CAP;
+	}
+
+	return config->tickrate_cap;
+}
 
 extern DTTR_Config dttr_config;
 

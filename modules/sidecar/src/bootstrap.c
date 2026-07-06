@@ -30,6 +30,54 @@
 #include "mods/mods_private.h"
 #endif
 
+#define DTTR_NS_PER_SECOND 1000000000ull
+
+static uint64_t next_tick_deadline_ns;
+static bool tickrate_cap_warned;
+
+static int effective_tickrate_cap() {
+	const int cap = DTTR_Config_EffectiveTickrateCap(&dttr_config);
+
+	if (dttr_config.limit_tickrate && cap != dttr_config.tickrate_cap
+		&& !tickrate_cap_warned) {
+		DTTR_LOG_WARN("Invalid tickrate_cap=%d; using %d", dttr_config.tickrate_cap, cap);
+		tickrate_cap_warned = true;
+	}
+
+	return cap;
+}
+
+static void pace_host_tick() {
+	const int cap = effective_tickrate_cap();
+	if (cap <= 0) {
+		next_tick_deadline_ns = 0;
+		SDL_DelayNS(1);
+
+		return;
+	}
+
+	const uint64_t step_ns = DTTR_NS_PER_SECOND / (uint64_t)cap;
+	if (step_ns == 0) {
+		return;
+	}
+
+	uint64_t now = SDL_GetTicksNS();
+	if (next_tick_deadline_ns == 0 || now > next_tick_deadline_ns + (step_ns * 2)) {
+		next_tick_deadline_ns = now + step_ns;
+		return;
+	}
+
+	if (now < next_tick_deadline_ns) {
+		SDL_DelayNS(next_tick_deadline_ns - now);
+		now = SDL_GetTicksNS();
+	}
+
+	next_tick_deadline_ns += step_ns;
+	if (next_tick_deadline_ns < now) {
+		next_tick_deadline_ns = now + step_ns;
+	}
+}
+
 // Initializes subsystems that own required hooks. The order mirrors
 // dttr_bootstrap_cleanup_runtime().
 bool dttr_bootstrap_install_required_hooks(const DTTR_Mods_Context *ctx) {
@@ -115,7 +163,7 @@ bool dttr_bootstrap_tick_main_loop() {
 		return true;
 	}
 
-	SDL_DelayNS(1);
+	pace_host_tick();
 
 	int32_t rendering_enabled = 0;
 	if (!REQUIRE_PCDOGS_CALL(

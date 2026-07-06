@@ -66,6 +66,8 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 	FIELD_TOP("pcdogs_path", pcdogs_path, CONFIG_STRING),
 	FIELD_TOP("saves_path", saves_path, CONFIG_STRING),
 	FIELD_TOP("skip_intro_movies", skip_intro_movies, CONFIG_BOOL),
+	FIELD_TOP("limit_tickrate", limit_tickrate, CONFIG_BOOL),
+	FIELD_TOP("tickrate_cap", tickrate_cap, CONFIG_INT),
 
 	FIELD("gamepad", "enabled", gamepad_enabled, CONFIG_BOOL),
 	FIELD("gamepad", "analog_remap", gamepad_analog_remap, CONFIG_BOOL),
