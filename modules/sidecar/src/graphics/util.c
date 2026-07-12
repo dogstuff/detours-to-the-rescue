@@ -122,6 +122,8 @@ const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
 		return "SPIRV";
+	case SDL_GPU_SHADERFORMAT_DXBC:
+		return "DXBC";
 	case SDL_GPU_SHADERFORMAT_DXIL:
 		return "DXIL";
 	case SDL_GPU_SHADERFORMAT_METALLIB:
@@ -134,7 +136,8 @@ const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format) {
 }
 
 SDL_GPUShaderFormat dttr_graphics_requested_shader_formats() {
-	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL;
+	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXBC
+		   | SDL_GPU_SHADERFORMAT_DXIL;
 }
 
 SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat formats) {
@@ -142,23 +145,11 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat forma
 		return SDL_GPU_SHADERFORMAT_DXIL;
 	}
 
+	if (formats & SDL_GPU_SHADERFORMAT_DXBC) {
+		return SDL_GPU_SHADERFORMAT_DXBC;
+	}
+
 	if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
-		return SDL_GPU_SHADERFORMAT_SPIRV;
-	}
-
-	return SDL_GPU_SHADERFORMAT_INVALID;
-}
-
-SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver) {
-	if (!driver || !driver[0]) {
-		return SDL_GPU_SHADERFORMAT_INVALID;
-	}
-
-	if (strcmp(driver, DTTR_DRIVER_DIRECT3D12) == 0) {
-		return SDL_GPU_SHADERFORMAT_DXIL;
-	}
-
-	if (strcmp(driver, DTTR_DRIVER_VULKAN) == 0) {
 		return SDL_GPU_SHADERFORMAT_SPIRV;
 	}
 
@@ -170,10 +161,24 @@ SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 	const char *driver,
 	SDL_GPUShaderFormat formats
 ) {
-	const SDL_GPUShaderFormat preferred = dttr_graphics_shader_format_for_driver(driver);
+	if (driver && strcmp(driver, DTTR_DRIVER_DIRECT3D12) == 0) {
+		if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
+			return SDL_GPU_SHADERFORMAT_DXIL;
+		}
 
-	if ((preferred != SDL_GPU_SHADERFORMAT_INVALID) && (formats & preferred)) {
-		return preferred;
+		if (formats & SDL_GPU_SHADERFORMAT_DXBC) {
+			return SDL_GPU_SHADERFORMAT_DXBC;
+		}
+
+		return SDL_GPU_SHADERFORMAT_INVALID;
+	}
+
+	if (driver && strcmp(driver, DTTR_DRIVER_VULKAN) == 0) {
+		if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
+			return SDL_GPU_SHADERFORMAT_SPIRV;
+		}
+
+		return SDL_GPU_SHADERFORMAT_INVALID;
 	}
 
 	return dttr_graphics_select_shader_format(formats);

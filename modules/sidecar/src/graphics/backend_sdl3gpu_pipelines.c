@@ -30,6 +30,8 @@ static graphics_shader_blob get_basic_vert_blob(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
 		return (graphics_shader_blob){basic_vert_spv, (size_t)basic_vert_spv_len};
+	case SDL_GPU_SHADERFORMAT_DXBC:
+		return (graphics_shader_blob){basic_vert_dxbc, (size_t)basic_vert_dxbc_len};
 	case SDL_GPU_SHADERFORMAT_DXIL:
 		return (graphics_shader_blob){basic_vert_dxil, (size_t)basic_vert_dxil_len};
 	default:
@@ -42,6 +44,8 @@ static graphics_shader_blob get_basic_frag_blob(SDL_GPUShaderFormat format) {
 	switch (format) {
 	case SDL_GPU_SHADERFORMAT_SPIRV:
 		return (graphics_shader_blob){basic_frag_spv, (size_t)basic_frag_spv_len};
+	case SDL_GPU_SHADERFORMAT_DXBC:
+		return (graphics_shader_blob){basic_frag_dxbc, (size_t)basic_frag_dxbc_len};
 	case SDL_GPU_SHADERFORMAT_DXIL:
 		return (graphics_shader_blob){basic_frag_dxil, (size_t)basic_frag_dxil_len};
 	default:

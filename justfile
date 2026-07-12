@@ -38,8 +38,10 @@ use-cached-sdl3gpu-shaders := env_var_or_default("DTTR_USE_CACHED_SDL3GPU_SHADER
 
 docker := env_var_or_default("DOCKER", "podman")
 container-image := "dttr-toolchain"
+shader-container-image := "dttr-shader-toolchain"
 container-platform := env_var_or_default("DTTR_CONTAINER_PLATFORM", "linux/amd64")
 build-containerfile := "build.Containerfile"
+shader-containerfile := "shader.Containerfile"
 
 # Show available local build recipes.
 _default:
@@ -114,6 +116,19 @@ build-container:
       "{{ git-short-sha }}" \
       {{ dttr-mods-enabled }}
 
+# Build the minimal shader-only toolchain container.
+build-shader-container:
+    {{ docker }} build --platform "{{ container-platform }}" -t "{{ shader-container-image }}" -f "{{ shader-containerfile }}" "{{ justfile_directory() }}"
+
+# Regenerate and verify SDL3 GPU shader cache inside the shader-only container.
+ci-build-shaders-container:
+    {{ docker }} build --platform "{{ container-platform }}" -t "{{ shader-container-image }}" -f "{{ shader-containerfile }}" "{{ justfile_directory() }}"
+    bash ./scripts/build-shaders-container.sh \
+      "{{ justfile_directory() }}" \
+      "{{ docker }}" \
+      "{{ shader-container-image }}" \
+      "{{ container-platform }}"
+
 # Build, archive, and optionally upload debug distributions.
 package-debug version=dttr-version archive-id=git-short-sha package-registry-url="" job-token="":
     bash ./scripts/package-builds.sh "{{ version }}" "{{ archive-id }}" debug "{{ package-registry-url }}" "{{ job-token }}"
@@ -150,20 +165,8 @@ ci-test:
       -L "common|sdk|sidecar|config_gui"
 
 # Build and check the SDL3 GPU shader cache for CI artifacts.
-ci-build-shaders: update-cached-sdl3gpu-shaders
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cache_dir="{{ cached-sdl3gpu-shaders-dir }}"
-    expected=(
-      sdl3gpu_shaders.h
-      shaders/basic.frag.dxil
-      shaders/basic.frag.spv
-      shaders/basic.vert.dxil
-      shaders/basic.vert.spv
-    )
-    for artifact in "${expected[@]}"; do
-      test -s "$cache_dir/$artifact"
-    done
+ci-build-shaders:
+    bash ./scripts/ci-build-shaders.sh "{{ cached-sdl3gpu-shaders-dir }}"
 
 # Build documentation from an existing build for CI.
 ci-build-docs:

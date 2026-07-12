@@ -29,8 +29,6 @@
           mcfgthreads = mingw.windows.mcfgthreads;
 
           fetchMingwZip = url: hash: pkgs.fetchzip { inherit url hash; };
-          # Disable SDL's Vulkan defrag to prevent Wine/MoltenVK stalls when it moves live
-          # buffers onto fresh pages.
           sdl3Version = "3.4.12";
           sdl3 = mingw.stdenv.mkDerivation {
             pname = "sdl3-i686";
@@ -44,13 +42,6 @@
               cmake
               ninja
             ];
-
-            postPatch = ''
-              substituteInPlace src/gpu/vulkan/SDL_gpu_vulkan.c \
-                --replace-fail \
-                $'static void VULKAN_INTERNAL_MarkAllocationsForDefrag(\n    VulkanRenderer *renderer)\n{' \
-                $'static void VULKAN_INTERNAL_MarkAllocationsForDefrag(\n    VulkanRenderer *renderer)\n{\n    return;'
-            '';
 
             cmakeFlags = [
               "-DSDL_SHARED=ON"
@@ -69,9 +60,7 @@
               cp ../LICENSE.txt "$out/LICENSE.txt"
             '';
           };
-          sdl3Mixer = fetchMingwZip
-            "https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.0-mingw.tar.gz"
-            "sha256-rgwPYQpO1IwCqT+gWtvlk3LzS9u00NxGqLS+A4kwv+8=";
+          sdl3Mixer = fetchMingwZip "https://www.libsdl.org/projects/SDL_mixer/release/SDL3_mixer-devel-3.2.4-mingw.tar.gz" "sha256-jvjf/I01gK3efWya1PksSpDbLj7yrtBQDqCl5eXJsio=";
 
           pkgConfigLibDir = lib.makeSearchPathOutput "" "lib/pkgconfig" [
             "${sdl3}/${target}"
@@ -181,10 +170,13 @@
                 mingwCc
                 cmocka
               ]
-              ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux (with pkgs; [
-                gnused
-                wineWow64Packages.stable
-              ]);
+              ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux (
+                with pkgs;
+                [
+                  gnused
+                  wineWow64Packages.stable
+                ]
+              );
 
             shellHook = ''
               export DTTR_PYTHON3="${pkgs.python3}/bin/python3"
@@ -248,11 +240,23 @@
               ]
               ++ lib.optionals (pkgs.stdenv.hostPlatform.isLinux && pkgs ? sdl3-shadercross) [
                 pkgs.sdl3-shadercross
+              ]
+              ++ lib.optionals (pkgs.stdenv.hostPlatform.isLinux && pkgs ? vkd3d) [
+                pkgs.vkd3d
               ];
 
-            shellHook = lib.optionalString (pkgs.stdenv.hostPlatform.isLinux && !(pkgs ? sdl3-shadercross)) ''
-              echo "sdl3-shadercross is not packaged for this nixpkgs/system; use a nixpkgs revision that provides it." >&2
-            '';
+            LD_LIBRARY_PATH =
+              lib.optionalString
+                (pkgs.stdenv.hostPlatform.isLinux && pkgs ? vkd3d)
+                (lib.makeLibraryPath [ pkgs.vkd3d ]);
+
+            shellHook =
+              lib.optionalString (pkgs.stdenv.hostPlatform.isLinux && !(pkgs ? sdl3-shadercross)) ''
+                echo "sdl3-shadercross is not packaged for this nixpkgs/system; use a nixpkgs revision that provides it." >&2
+              ''
+              + lib.optionalString (pkgs.stdenv.hostPlatform.isLinux && !(pkgs ? vkd3d)) ''
+                echo "vkd3d is not packaged for this nixpkgs/system; DXBC shader generation will fail without libvkd3d-utils." >&2
+              '';
           };
         }
       );

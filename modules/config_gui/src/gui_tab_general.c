@@ -30,11 +30,13 @@ static const char *TOOLTIP_SHOW_CRASH_POPUP
 
 static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip Intro Movies at launch. Default: "
 											   "false.";
-static const char *TOOLTIP_LIMIT_TICKRATE = "Caps the host render loop to reduce CPU/GPU "
-											"pressure. Default: false.";
-static const char *TOOLTIP_TICKRATE_CAP = "Maximum host render-loop ticks per second "
-										  "when Limit Tickrate is enabled. Valid "
-										  "range: 1-999. Default: 120.";
+static const char
+	*TOOLTIP_UPDATE_RATE_LIMITER = "Caps the host update rate to reduce CPU/GPU "
+								   "pressure. Default: false.";
+static const char
+	*TOOLTIP_UPDATE_RATE_LIMITER_CAP = "Maximum host update rate per second "
+									   "when Update Rate Limiter is enabled. Valid "
+									   "range: 1-999. Default: 120.";
 
 void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!begin_tab_settings_table(
@@ -112,22 +114,22 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 	);
 	labeled_checkbox(
 		ctx,
-		"Limit Tickrate",
-		"##limit_tickrate",
-		&state->config.limit_tickrate,
-		TOOLTIP_LIMIT_TICKRATE,
-		FIELD_LABEL_STATE(state, limit_tickrate)
+		"Update Rate Limiter",
+		"##update_rate_limiter",
+		&state->config.update_rate_limiter,
+		TOOLTIP_UPDATE_RATE_LIMITER,
+		FIELD_LABEL_STATE(state, update_rate_limiter)
 	);
-	igBeginDisabled(!state->config.limit_tickrate);
+	igBeginDisabled(!state->config.update_rate_limiter);
 	labeled_input_int(
 		ctx,
-		"Tickrate Cap",
-		"##tickrate_cap",
-		&state->config.tickrate_cap,
+		"Update Rate Limiter Cap",
+		"##update_rate_limiter_cap",
+		&state->config.update_rate_limiter_cap,
 		1,
 		10,
-		TOOLTIP_TICKRATE_CAP,
-		FIELD_LABEL_STATE(state, tickrate_cap)
+		TOOLTIP_UPDATE_RATE_LIMITER_CAP,
+		FIELD_LABEL_STATE(state, update_rate_limiter_cap)
 	);
 	igEndDisabled();
 	end_settings_table();

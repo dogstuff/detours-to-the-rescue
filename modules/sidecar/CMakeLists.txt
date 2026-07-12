@@ -8,8 +8,10 @@ set(DTTR_SIDECAR_OPENGL_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/open
 set(DTTR_SIDECAR_SDL3GPU_SHADER_HEADER "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/sdl3gpu_shaders.h")
 set(DTTR_SIDECAR_SDL3GPU_SHADER_OUTPUTS
     "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.dxbc"
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.dxil"
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.spv"
+    "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxbc"
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxil"
     "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.spv"
 )
@@ -31,8 +33,10 @@ option(
 set(DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cache/sdl3gpu")
 set(DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_INPUTS
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/sdl3gpu_shaders.h"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.dxbc"
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.dxil"
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.spv"
+    "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxbc"
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxil"
     "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.spv"
 )
@@ -72,11 +76,17 @@ if(DTTR_USE_CACHED_SDL3GPU_SHADERS)
             "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/sdl3gpu_shaders.h"
             "${DTTR_SIDECAR_SDL3GPU_SHADER_HEADER}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.dxbc"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.dxbc"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.dxil"
             "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.dxil"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.frag.spv"
             "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.frag.spv"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxbc"
+            "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxbc"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${DTTR_SIDECAR_CACHED_SDL3GPU_SHADER_DIR}/shaders/basic.vert.dxil"
             "${DTTR_SIDECAR_GENERATED_SHADER_DIR}/shaders/basic.vert.dxil"

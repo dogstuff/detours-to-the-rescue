@@ -33,22 +33,26 @@
 #define DTTR_NS_PER_SECOND 1000000000ull
 
 static uint64_t next_tick_deadline_ns;
-static bool tickrate_cap_warned;
+static bool update_rate_limiter_cap_warned;
 
-static int effective_tickrate_cap() {
-	const int cap = DTTR_Config_EffectiveTickrateCap(&dttr_config);
+static int effective_update_rate_limiter_cap() {
+	const int cap = DTTR_Config_EffectiveUpdateRateLimiterCap(&dttr_config);
 
-	if (dttr_config.limit_tickrate && cap != dttr_config.tickrate_cap
-		&& !tickrate_cap_warned) {
-		DTTR_LOG_WARN("Invalid tickrate_cap=%d; using %d", dttr_config.tickrate_cap, cap);
-		tickrate_cap_warned = true;
+	if (dttr_config.update_rate_limiter && cap != dttr_config.update_rate_limiter_cap
+		&& !update_rate_limiter_cap_warned) {
+		DTTR_LOG_WARN(
+			"Invalid update_rate_limiter_cap=%d; using %d",
+			dttr_config.update_rate_limiter_cap,
+			cap
+		);
+		update_rate_limiter_cap_warned = true;
 	}
 
 	return cap;
 }
 
 static void pace_host_tick() {
-	const int cap = effective_tickrate_cap();
+	const int cap = effective_update_rate_limiter_cap();
 	if (cap <= 0) {
 		next_tick_deadline_ns = 0;
 		SDL_DelayNS(1);

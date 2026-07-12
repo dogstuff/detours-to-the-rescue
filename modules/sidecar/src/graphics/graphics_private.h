@@ -369,7 +369,6 @@ void dttr_graphics_mat4_identity(float *m);
 const char *dttr_graphics_shader_format_name(SDL_GPUShaderFormat format);
 SDL_GPUShaderFormat dttr_graphics_requested_shader_formats();
 SDL_GPUShaderFormat dttr_graphics_select_shader_format(SDL_GPUShaderFormat formats);
-SDL_GPUShaderFormat dttr_graphics_shader_format_for_driver(const char *driver);
 SDL_GPUShaderFormat dttr_graphics_select_shader_format_for_driver(
 	const char *driver,
 	SDL_GPUShaderFormat formats

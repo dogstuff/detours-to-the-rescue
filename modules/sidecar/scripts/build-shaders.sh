@@ -56,6 +56,7 @@ for glsl in "$src_dir"/*.glsl; do
 
   spv="${bin_dir}/${stem}.spv"
   "$glslc" -fshader-stage="$stage" -o "$spv" "$glsl"
+  "$shadercross" -s SPIRV -d DXBC -t "$stage" -e main -o "${bin_dir}/${stem}.dxbc" "$spv"
   "$shadercross" -s SPIRV -d DXIL -t "$stage" -e main -o "${bin_dir}/${stem}.dxil" "$spv"
 done
 
@@ -65,7 +66,7 @@ done
   echo "#define DTTR_GENERATED_SHADERS_H"
   echo
   find "$bin_dir" -maxdepth 1 -type f \
-    \( -name '*.spv' -o -name '*.dxil' \) \
+    \( -name '*.spv' -o -name '*.dxbc' -o -name '*.dxil' \) \
     | sort \
     | while read -r bin; do
     symbol="$(basename "$bin" | tr '.' '_')"

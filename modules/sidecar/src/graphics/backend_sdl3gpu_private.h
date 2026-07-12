@@ -3,9 +3,11 @@
 
 #include "graphics_private.h"
 
-// Pre-touched vertex buffers rotated with fences, avoiding SDL cycle backings
-// that fault badly under Wine/MoltenVK.
+// Pre-touched vertex buffers rotated with fences, avoiding mid-frame backing churn.
 #define DTTR_VERTEX_RING_DEPTH 3
+#define DTTR_UPLOAD_POOL_RING_DEPTH 3
+#define DTTR_GRAVEYARD_TEXTURE_CAP 256
+#define DTTR_GRAVEYARD_TRANSFER_BUFFER_CAP 32
 
 /// A retired GPU texture kept for reuse by dimension.
 typedef struct {
@@ -14,10 +16,16 @@ typedef struct {
 	Uint32 height;
 } dttr_recycled_texture;
 
-// Reuse retired textures; releasing mid-session re-arms SDL Vulkan defrag.
+// Reuse retired textures without allowing unbounded growth.
 #define DTTR_TEXTURE_RECYCLE_CAP 4096
 
-/// SDL3GPU backend-private deferred texture destroy queue and upload pool.
+typedef struct {
+	SDL_GPUTransferBuffer *buffer;
+	Uint32 capacity;
+	SDL_GPUFence *fence;
+} dttr_upload_pool_slot;
+
+/// SDL3GPU backend-private deferred texture destroy queue and upload pools.
 typedef struct {
 	dttr_recycled_texture *deferred_destroys;
 	int deferred_destroy_count;
@@ -27,21 +35,21 @@ typedef struct {
 	int texture_recycle_count;
 	int texture_recycle_capacity;
 
-	// Parked until cleanup to avoid mid-session SDL Vulkan defrag.
+	// Parked until cleanup, bounded so failed reuse cannot grow forever.
 	SDL_GPUTexture **graveyard_textures;
 	int graveyard_texture_count;
 	int graveyard_texture_capacity;
 	SDL_GPUTransferBuffer **graveyard_tbufs;
 	int graveyard_tbuf_count;
 	int graveyard_tbuf_capacity;
-	// Persistent transfer buffer for texture/video upload bursts.
-	SDL_GPUTransferBuffer *upload_pool;
-	Uint32 upload_pool_capacity;
-	// Last command buffer that read from upload_pool.
-	SDL_GPUFence *upload_pool_fence;
+	// Persistent transfer buffers for texture/video upload bursts.
+	dttr_upload_pool_slot upload_pools[DTTR_UPLOAD_POOL_RING_DEPTH];
+	int upload_pool_index;
+	int upload_pool_active_index;
 
 	SDL_GPUTransferBuffer *vertex_ring[DTTR_VERTEX_RING_DEPTH];
 	SDL_GPUBuffer *vertex_gpu_ring[DTTR_VERTEX_RING_DEPTH];
+	bool vertex_ring_complete[DTTR_VERTEX_RING_DEPTH];
 	SDL_GPUFence *vertex_ring_fence[DTTR_VERTEX_RING_DEPTH];
 	int vertex_ring_index;
 } sdl3_gpu_backend_data;

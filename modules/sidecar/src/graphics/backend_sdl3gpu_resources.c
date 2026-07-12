@@ -23,9 +23,22 @@ static void create_frame_buffers(DTTR_BackendState *state) {
 		bd->vertex_gpu_ring[i] = SDL_CreateGPUBuffer(state->device, &vbuf_info);
 		bd->vertex_ring[i] = SDL_CreateGPUTransferBuffer(state->device, &tbuf_info);
 
-		if (!bd->vertex_ring[i]) {
+		if (!bd->vertex_ring[i] || !bd->vertex_gpu_ring[i]) {
+			if (bd->vertex_ring[i]) {
+				SDL_ReleaseGPUTransferBuffer(state->device, bd->vertex_ring[i]);
+				bd->vertex_ring[i] = NULL;
+			}
+
+			if (bd->vertex_gpu_ring[i]) {
+				SDL_ReleaseGPUBuffer(state->device, bd->vertex_gpu_ring[i]);
+				bd->vertex_gpu_ring[i] = NULL;
+			}
+
+			bd->vertex_ring_complete[i] = false;
 			continue;
 		}
+
+		bd->vertex_ring_complete[i] = true;
 
 		// Avoid first-touch faults inside the vertex expansion loop.
 		void *mapped = SDL_MapGPUTransferBuffer(state->device, bd->vertex_ring[i], false);
@@ -35,9 +48,17 @@ static void create_frame_buffers(DTTR_BackendState *state) {
 		}
 	}
 
-	bd->vertex_ring_index = 0;
-	state->transfer_buffer = bd->vertex_ring[0];
-	state->vertex_buffer = bd->vertex_gpu_ring[0];
+	int first_slot = -1;
+	for (int i = 0; i < DTTR_VERTEX_RING_DEPTH; i++) {
+		if (bd->vertex_ring_complete[i]) {
+			first_slot = i;
+			break;
+		}
+	}
+
+	bd->vertex_ring_index = first_slot >= 0 ? first_slot : 0;
+	state->transfer_buffer = first_slot >= 0 ? bd->vertex_ring[first_slot] : NULL;
+	state->vertex_buffer = first_slot >= 0 ? bd->vertex_gpu_ring[first_slot] : NULL;
 }
 
 // Creates all sampler variants for wrap/clamp combinations.
@@ -176,13 +197,12 @@ static void upload_dummy_white_pixel(DTTR_BackendState *state) {
 			.d = 1,
 		};
 
-		SDL_UploadToGPUTexture(copy, &src, &dst, false);
+		SDL_UploadToGPUTexture(copy, &src, &dst, true);
 		SDL_EndGPUCopyPass(copy);
 	}
 
 	SDL_SubmitGPUCommandBuffer(cmd);
 
-	// Do not arm Vulkan defrag after the uniform pool was warmed.
 	dttr_graphics_sdl3gpu_bury_transfer_buffer(state, tbuf);
 }
 
