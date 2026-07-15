@@ -3,6 +3,7 @@ import {
   KIND_LABELS,
   KIND_ORDER,
 } from "./constants";
+import { attachTypeUsageReferences } from "./type-references";
 import {
   dataReadExample,
   dataWriteExample,
@@ -120,8 +121,6 @@ export function dataSymbol(row: ManifestRow): ViewerSymbol {
     ? dataWriteExample(symbol.accessor, typeName, writePolicy)
     : "";
 
-  symbol.type = typeName;
-  symbol.write_policy = writePolicy;
   symbol.can_write = hasTypedAccessor && writePolicy === "raw_memory";
   symbol.read_example = hasTypedAccessor
     ? dataReadExample(symbol.accessor, typeName)
@@ -133,7 +132,7 @@ export function dataSymbol(row: ManifestRow): ViewerSymbol {
     : "";
   symbol.facts.push(
     { label: "Type", value: typeName },
-    { label: "Write Policy", value: symbol.write_policy },
+    { label: "Write Policy", value: writePolicy },
   );
   symbol.metadata = row?.resolver
     ? [
@@ -176,7 +175,10 @@ export function typeSymbol(row: ManifestRow): ViewerSymbol {
     { label: "SDK Name", value: symbol.sdk_name },
   ];
   if (row.source_type) {
-    symbol.metadata.push({ label: "Source Type", value: row.source_type });
+    symbol.metadata.push({
+      label: "Source Type",
+      value: row.source_type,
+    });
   }
 
   if (row.ret) {
@@ -435,6 +437,8 @@ export function manifestSymbols(manifest: Manifest): ViewerSymbol[] {
       }
     }
   }
+
+  attachTypeUsageReferences(symbols, manifest);
 
   return symbols;
 }

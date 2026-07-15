@@ -140,20 +140,12 @@ export type ViewerSymbol = {
   facts: MetadataRow[];
   reference_hierarchy_paths: string[][];
   pseudo_usage?: string | undefined;
-  pseudo_usage_html?: string | undefined;
   call_example?: string | undefined;
-  call_example_html?: string | undefined;
   patch_spec_example?: string | undefined;
-  patch_spec_example_html?: string | undefined;
   hook_example?: string | undefined;
-  hook_example_html?: string | undefined;
-  type?: unknown;
-  write_policy?: unknown;
   can_write?: boolean | undefined;
   read_example?: string | undefined;
-  read_example_html?: string | undefined;
   write_example?: string | undefined;
-  write_example_html?: string | undefined;
   write_policy_note?: string | undefined;
   untyped_note?: string | undefined;
   kind_label?: string | undefined;
@@ -165,7 +157,6 @@ export type ViewerSymbol = {
 export type ExampleTab = {
   label: string;
   value?: string | undefined;
-  htmlValue?: string | undefined;
 };
 
 export type HierarchyNode = {

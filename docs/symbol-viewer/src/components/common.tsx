@@ -17,24 +17,11 @@ export function TableFrame({
   );
 }
 
-function CodeBlock({
-  value,
-  htmlValue,
-}: {
-  value?: unknown;
-  htmlValue?: string | undefined;
-}): JSX.Element {
+function CodeBlock({ value }: { value?: unknown }): JSX.Element {
   return (
     <div class="highlight">
       <pre>
-        {htmlValue ? (
-          <code
-            class="language-c"
-            dangerouslySetInnerHTML={{ __html: htmlValue }}
-          />
-        ) : (
-          <code class="language-c">{text(value)}</code>
-        )}
+        <code class="language-c">{text(value)}</code>
       </pre>
     </div>
   );
@@ -96,9 +83,7 @@ export function ExampleTabs({
     <TabbedSet
       base={`pcdogs-symbol-example-${symbol.anchor}`}
       tabs={tabs.filter((tab) => tab.value)}
-      renderTab={(tab) => (
-        <CodeBlock value={tab.value} htmlValue={tab.htmlValue} />
-      )}
+      renderTab={(tab) => <CodeBlock value={tab.value} />}
     />
   );
 }
