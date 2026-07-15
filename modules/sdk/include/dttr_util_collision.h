@@ -68,9 +68,9 @@ static inline bool DTTR_Util_CollisionVertexWorld(
 		return false;
 	}
 
-	int32_t x = (int32_t)vertex->x;
-	int32_t y = (int32_t)vertex->y;
-	int32_t z = (int32_t)vertex->z;
+	int32_t x = (int32_t)vertex->pos.x;
+	int32_t y = (int32_t)vertex->pos.y;
+	int32_t z = (int32_t)vertex->pos.z;
 	if ((node->flags & 0x22u) != 0u) {
 		const int32_t rx = x;
 		const int32_t ry = y;

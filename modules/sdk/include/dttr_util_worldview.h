@@ -169,8 +169,8 @@ static inline bool DTTR_Util_WorldView_Refresh(
 	// Rescale focal length from reference resolution to draw rectangle, per axis.
 	double focal_x = (double)focal;
 	double focal_y = (double)focal;
-	const int32_t cam_ref_w = list_state->screen_half.width;
-	const int32_t cam_ref_h = list_state->screen_half.height;
+	const int32_t cam_ref_w = list_state->viewport.w;
+	const int32_t cam_ref_h = list_state->viewport.h;
 	if (cam_ref_w >= 64 && cam_ref_w <= 4096) {
 		focal_x = (double)focal * (double)target->w / (double)cam_ref_w;
 	}
