@@ -1412,8 +1412,8 @@ static void begin_frame(DTTR_BackendState *state) {
 
 		int next_slot = -1;
 		for (int offset = 1; offset <= DTTR_VERTEX_RING_DEPTH; offset++) {
-			const int candidate =
-				(bd->vertex_ring_index + offset) % DTTR_VERTEX_RING_DEPTH;
+			const int candidate = (bd->vertex_ring_index + offset)
+								  % DTTR_VERTEX_RING_DEPTH;
 			if (bd->vertex_ring_complete[candidate]) {
 				next_slot = candidate;
 				break;

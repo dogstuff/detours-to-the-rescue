@@ -418,6 +418,17 @@ stable.struct(
 )
 
 stable.struct(
+    "Audio_CollisionSoundCooldownEntry",
+    member("Actor_State*", "other_actor", 0x0),
+    member("Math_Vec3I32", "velocity", 0x4),
+    member("Math_Vec3I32", "impact_velocity", 0x10),
+    member("int32_t", "sound_key", 0x1C),
+    member("uint32_t", "start_frame", 0x20),
+    member("uint32_t", "expires_frame", 0x24),
+    size=0x28,
+)
+
+stable.struct(
     "Audio_SoundDefinition",
     member("void**", "sample_table_ptr", 0x0),
     member(
@@ -743,6 +754,29 @@ stable.struct(
     doc="Collision/contact slot containing normal data, contact-position data, and response "
     "payload storage.",
     unstable=True,
+)
+
+stable.struct(
+    "Component_TimerRecord",
+    member("Component_Instance*", "component", 0x0),
+    member("uint32_t", "state", 0x4),
+    member("uint32_t", "reserved_08[4]", 0x8),
+    member("uint32_t", "countdown", 0x18),
+    member("int32_t", "previous_duration", 0x1C),
+    member("int32_t", "current_duration", 0x20),
+    size=0x24,
+)
+
+stable.struct(
+    "Component_CollisionRecord",
+    member("Component_Definition*", "definition", 0x0),
+    member("uint32_t", "state", 0x4),
+    member("void*", "position_source", 0x8),
+    member("Math_Vec3I32", "position", 0xC),
+    member("Actor_State*", "reference_actor", 0x18),
+    member("int32_t", "previous_distance", 0x1C),
+    member("int32_t", "current_distance", 0x20),
+    size=0x24,
 )
 
 
@@ -3930,6 +3964,18 @@ stable.struct(
     size=0x4,
 )
 
+stable.struct(
+    "Tree_MapNode",
+    member("Tree_MapNode*", "next", 0x0),
+    member("Tree_MapNode*", "prev", 0x4),
+    member("Tree_MapNode*", "parent", 0x8),
+    member("Tree_MapNode*", "child", 0xC),
+    member("int16_t", "rank", 0x10),
+    member("uint8_t", "marked", 0x12),
+    member("uint8_t", "pad13", 0x13),
+    size=0x14,
+)
+
 
 stable.type_alias(
     "Win32_GUID",
@@ -4010,6 +4056,14 @@ stable.callback_type(
     params=[param("void*", "lhs_payload"), param("void*", "rhs_payload")],
     calling=CallingConvention.CDECL,
     doc="TreeMap payload comparator stored in the tree header and called with two node payload pointers.",
+)
+
+stable.struct(
+    "Tree_Map",
+    member("Tree_MapNode*", "min_root", 0x0),
+    member("int32_t", "node_alloc_size", 0x4),
+    member("Tree_MapCompareCallback", "compare", 0x8),
+    size=0xC,
 )
 
 stable.callback_type(
@@ -4514,19 +4568,19 @@ stable.fn(
     ret="int32_t*",
     params=[
         param(
-            "int32_t*",
-            "actor_snap_script_state",
-            doc="Entity/script snap state: target actor is at script slot and target position starts at index 82.",
+            "PKG_ActorRecord*",
+            "record",
+            doc="Actor record whose runtime_actor and path_target fields drive the snap transition.",
         ),
         param(
             "int16_t",
-            "target_angle",
-            doc="Angle forwarded to Actor_MoveToTarget for the selected target actor.",
+            "target_selector",
+            doc="Target selector forwarded to Actor_MoveToTarget.",
         ),
         param(
             "int32_t",
             "transition_speed",
-            doc="Transition speed/control value forwarded to Actor_MoveToTarget.",
+            doc="Transition speed forwarded to Actor_MoveToTarget.",
         ),
         param(
             "int32_t",
@@ -4535,7 +4589,7 @@ stable.fn(
         ),
     ],
     doc=(
-        "Reads a target actor from actor_snap_script_state target actor slot, clears its velocity slots, then moves it toward actor_snap_script_state target position slots through Actor_MoveToTarget."
+        "Clears record->runtime_actor velocity and moves it toward record->path_target through Actor_MoveToTarget."
     ),
 )
 
@@ -6720,12 +6774,12 @@ stable.fn(
     "Math_CalculateFaceNormal",
     "44 24 14 D8 CB DE E9 ??",
     match=-0x3E,
-    ret="float*",
+    ret="Math_Vec3F*",
     params=[
-        param("float*", "out_normal"),
-        param("float*", "point_0"),
-        param("float*", "point_1"),
-        param("float*", "point_2"),
+        param("Math_Vec3F*", "out_normal"),
+        param("Math_Vec3F const*", "point_0"),
+        param("Math_Vec3F const*", "point_1"),
+        param("Math_Vec3F const*", "point_2"),
     ],
     doc="Computes and normalizes the face normal from three 3D points, writes it to outNormal, and returns outNormal.",
 )
@@ -7058,8 +7112,8 @@ stable.fn(
     "8B 54 24 04 56 8B 74 24 0C 8B 42 0C 8B 4E 0C 3B C1 73 ?? 83 C8 FF 5E C3 76 ?? B8 01 00 00 00 5E C3 8B 42 08",
     ret="int32_t",
     params=[
-        param("const void*", "left"),
-        param("const void*", "right"),
+        param("DDraw_SurfaceDesc2 const*", "left"),
+        param("DDraw_SurfaceDesc2 const*", "right"),
     ],
     doc="Qsort comparator for enumerated display modes: sorts by width, then height, then pixel-format RGB bit count using DDSURFACEDESC2 mode fields.",
 )
@@ -7078,11 +7132,10 @@ stable.fn(
     cc=CallingConvention.STDCALL,
     ret="BOOL",
     params=[
-        param("void*", "surface_desc"),
-        param("void*", "enum_context"),
+        param("DDraw_SurfaceDesc2*", "surface_desc"),
+        param("D3D_DriverInfo*", "enum_context"),
     ],
     doc="IDirectDraw7::EnumDisplayModes callback that appends each DDSURFACEDESC2 to the driver enumeration context, increments the mode count, and returns TRUE while count is <= 0x4f.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -7092,13 +7145,12 @@ stable.fn(
     ret="BOOL",
     params=[
         param("Win32_GUID*", "guid"),
-        param("const char*", "driver_name"),
         param("char*", "driver_description"),
+        param("char*", "driver_name"),
         param("void*", "context"),
         param("HMONITOR", "monitor"),
     ],
     doc="DirectDrawEnumerateExA callback: creates DirectDraw/Direct3D interfaces for a driver, records display modes through DDraw_AddDisplayMode, sorts them with DDraw_CompareDisplayModes, enumerates D3D devices, and returns TRUE to continue enumeration.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -7253,10 +7305,10 @@ stable.fn(
     ret="BOOL",
     params=[
         param("const void*", "device_instance"),
-        param("int32_t*", "enum_state"),
+        param("DInput_DeviceEnumContext*", "enum_context"),
     ],
     doc="DirectInput EnumDevices callback that copies deviceInstance->guidInstance into "
-    "enumState, increments the count, marks that a DirectInput device is present, and returns "
+    "enumContext, increments the count, marks that a DirectInput device is present, and returns "
     "DIENUM_CONTINUE.",
 )
 
@@ -7901,8 +7953,8 @@ stable.fn(
     params=[
         param("Collision_Node*", "collision_node"),
         param("Collision_Polygon*", "polygon"),
-        param("int16_t*", "from_point"),
-        param("int16_t*", "to_point"),
+        param("Math_Vec3I16 const*", "from_point"),
+        param("Math_Vec3I16 const*", "to_point"),
     ],
     doc="Returns the crossed polygon edge index in range 0..3, or -1 for no eligible edge crossing.",
 )
@@ -8125,7 +8177,7 @@ stable.fn(
     match=-0x28,
     hook=0x6,
     ret="int32_t",
-    params=[param("int32_t", "level_id"), param("int32_t*", "array_index")],
+    params=[param("int32_t", "level_id"), param("int32_t", "array_index")],
 )
 
 stable.fn(
@@ -8235,9 +8287,8 @@ stable.fn(
     "Shared_LoadCommonResources",
     "A1 ?? ?? ?? ?? 85 C0 0F 85 ?? ?? ?? ?? 6A 00",
     required=Required.EN,
-    ret="Material_SectionHeader*",
+    ret="void",
     params=[],
-    abi_status=AbiStatus.PLACEHOLDER,
     doc=(
         "Common HUD/shared resource loader. EU/SC builds replace it with a multi-language loader "
         "plus the locale string-table path (String_InstallLocaleOverlay)."
@@ -8280,7 +8331,7 @@ stable.fn(
 stable.fn(
     "Menu_ShutdownResources",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? A1 ?? ?? ?? ?? 6A 00 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ??",
-    ret="Material_SectionHeader*",
+    ret="void",
     params=[],
 )
 
@@ -8314,7 +8365,7 @@ stable.fn(
     "8B 0D ?? ?? ?? ?? 83 EC 10",
     hook=0x6,
     ret="int32_t",
-    params=[param("int32_t", "packed_center_xy"), param("int32_t", "number")],
+    params=[param("uint32_t", "packed_center_xy"), param("int32_t", "number")],
     doc="Render a decimal HUD number centered on the packed x/y anchor and return the final sprite render result.",
 )
 
@@ -8356,9 +8407,9 @@ stable.fn(
 stable.fn(
     "Menu_GetPlayerLevelInfo",
     "E8 ?? ?? ?? ?? 85 C0 75 ?? 8B 4C",
-    ret="Actor_State*",
-    params=[param("Actor_State**", "out_info")],
-    doc="Stores the actor pointer used for menu level information in out_info and returns that pointer.",
+    ret="void",
+    params=[param("Menu_LevelProgressInfo*", "out_info")],
+    doc="Writes the current level and player puppy, bone, and lives counters to out_info.",
 )
 
 stable.fn(
@@ -8675,7 +8726,7 @@ stable.fn(
 stable.fn(
     "Menu_CheckPauseInput",
     "A0 ?? ?? ?? ?? 84 C0 0F 85 ?? ?? ?? ?? 66 A1",
-    ret="Actor_State*",
+    ret="void",
     params=[param("char", "allow_pause")],
 )
 
@@ -8761,7 +8812,7 @@ stable.fn(
     "8B 0D ?? ?? ?? ?? 56 8B 41",
     hook=0x6,
     ret="int32_t",
-    params=[param("char*", "text")],
+    params=[param("char const*", "text")],
 )
 
 stable.fn(
@@ -8789,7 +8840,12 @@ stable.fn(
     "51 6A 00 C7 05 ??",
     hook=0xD,
     ret="int32_t",
-    params=[param("char*", "text"), param("int32_t", "color")],
+    params=[
+        param("uint32_t", "packed_xy"),
+        param("char const*", "text"),
+        param("uint32_t", "color_flags"),
+        param("void*", "font_context"),
+    ],
 )
 
 stable.fn(
@@ -8860,8 +8916,7 @@ stable.fn(
     "Graphics_InitializeTextureBlendTextures",
     "8B 44 24 04 50 E8 ?? ?? ?? ?? 83 C4 04 C3",
     ret="Material_BlendTextureSet*",
-    params=[param("void*", "resource_data")],
-    abi_status=AbiStatus.PLACEHOLDER,
+    params=[param("uint8_t*", "pixel_data")],
 )
 
 stable.fn(
@@ -9237,13 +9292,13 @@ stable.fn(
     ret="BOOL",
     params=[
         param(
-            "int32_t*",
-            "timer_slots",
-            doc="Array of component timer/collision slots; each slot starts with a Component_Definition pointer.",
+            "Component_TimerRecord*",
+            "timer_records",
+            doc="Array of 0x24-byte component timer records.",
         ),
-        param("int32_t", "slot_count", doc="Number of timer slots to update."),
+        param("int32_t", "slot_count", doc="Number of timer records to update."),
     ],
-    doc="Updates component slot cooldowns and next timer deadlines, using Component_CalculateFrameDuration for active definitions.",
+    doc="Updates component timer record cooldowns and deadlines using Component_CalculateFrameDuration.",
 )
 
 stable.fn(
@@ -9254,32 +9309,32 @@ stable.fn(
     ret="int32_t*",
     params=[
         param(
-            "int32_t*",
-            "collision_slots",
-            doc="Array of component collision slots; negative slotCount processes the current slot only.",
+            "Component_CollisionRecord*",
+            "collision_records",
+            doc="Array of 0x24-byte component collision records.",
         ),
         param(
             "int32_t",
             "slot_count",
-            doc="Number of collision slots to scan; negative forces a single-slot probe path.",
+            doc="Record count; a negative value processes only the current record.",
         ),
         param(
             "Actor_State*",
             "actor",
-            doc="Actor whose component collision slots are evaluated.",
+            doc="Actor whose component collision records are tested.",
         ),
         param(
             "Actor_State*",
-            "other_actor",
-            doc="Optional target actor; when present, its world position is used as the probe position.",
+            "reference_actor",
+            doc="Optional reference actor; when present, its world position is used as the test position.",
         ),
         param(
-            "int32_t*",
-            "probe_position",
-            doc="Optional xyz world-position vector used when otherActor is null.",
+            "Math_Vec3I32*",
+            "test_pos",
+            doc="Optional world position used when reference_actor is null.",
         ),
     ],
-    doc="Tests component collision slots against another actor or probe position and records hit position, distance, and target actor state in matching slots.",
+    doc="Tests component collision records against a reference actor or position, then stores the hit position, distance, and reference actor in each match.",
 )
 
 stable.fn(
@@ -9555,7 +9610,10 @@ stable.fn(
     "85 C0 57 74 ?? 8B 2D ??",
     match=-0x2E,
     ret="int32_t",
-    params=[param("Actor_State*", "actor"), param("int32_t*", "collision_list")],
+    params=[
+        param("Actor_State*", "actor"),
+        param("BOOL", "use_cached_collision_list"),
+    ],
 )
 
 stable.fn(
@@ -9725,9 +9783,9 @@ stable.fn(
     "?? B0 01 5E C3 8B 0D ??",
     match=-0x20,
     hook=0x8,
-    ret="BOOL",
+    ret="uint8_t",
     params=[
-        param("int32_t*", "cooldown_entries"),
+        param("Audio_CollisionSoundCooldownEntry*", "cooldown_entries"),
         param("Actor_State*", "other_actor"),
         param("int32_t", "sound_key"),
     ],
@@ -9738,7 +9796,7 @@ stable.fn(
     "Audio_TriggerCollisionSound",
     "00 00 00 55 53 56 E8 ??",
     match=-0x2B,
-    ret="BOOL",
+    ret="uint8_t",
     params=[
         param("Actor_State*", "actor"),
         param("Actor_State*", "other_actor"),
@@ -9822,12 +9880,12 @@ stable.fn(
     ret="int32_t",
     params=[
         param("Actor_State*", "actor"),
+        param("int32_t", "unused_context"),
         param("Actor_State*", "platform_actor"),
-        param("int32_t*", "inout_velocity"),
+        param("Math_Vec3I32*", "inout_velocity"),
         param("int32_t*", "inout_speed"),
     ],
-    doc="Applies moving-platform velocity/force from platformActor into actor physics, updating the caller's velocity and speed in place.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Applies moving-platform force from platform_actor and updates the caller's velocity and speed.",
 )
 
 stable.fn(
@@ -9837,7 +9895,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("Actor_State*", "actor"),
-        param("int32_t*", "velocity_xz"),
+        param("Math_Vec3I32 const*", "velocity"),
         param("int32_t", "turn_step"),
     ],
 )
@@ -9914,7 +9972,7 @@ stable.fn(
     ret="void",
     params=[
         param("int32_t", "slot_index"),
-        param("int32_t*", "wave_data"),
+        param("uint32_t const*", "wave_data"),
         param("int32_t", "pitch_scale_q12"),
         param("int32_t", "volume"),
         param("int32_t", "pan"),
@@ -10612,9 +10670,9 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "Material_SectionHeader**",
-            "material_section_out",
-            doc="Receives the shared global material section.",
+            "Material_RefEntry*",
+            "out_ref",
+            doc="Receives the shared global material reference.",
         )
     ],
 )
@@ -10624,7 +10682,7 @@ stable.fn(
     "0F BE 05 ?? ?? ?? ?? 53 32 DB 83 E8 ??",
     hook=0x7,
     ret="BOOL",
-    params=[param("uint32_t*", "status_out")],
+    params=[param("Save_OperationStatus*", "status_out")],
     doc="Polls the active save-game operation state. Operation 8 reads savegame.dat, operation 9 writes it, and operation 12 verifies by reading and comparing buffers; writes the packed operation/status word to statusOut and returns whether the underlying file action succeeded.",
 )
 
@@ -10781,9 +10839,8 @@ stable.fn(
     match=-0x18,
     hook=0x7,
     ret="int32_t",
-    params=[param("void const*", "config_data")],
+    params=[param("Config_Data const*", "config_data")],
     doc="Copies the supplied settings block into the global config while preserving the current display setting, reapplies input mappings, then writes pcdogs.ini with the PCDOGS header and control bindings.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -11125,7 +11182,7 @@ stable.fn(
     "F6 C5 08 75 ?? 50 E8 ??",
     match=-0x1B,
     hook=0x7,
-    ret="void*",
+    ret="void",
     params=[
         param(
             "Material_SectionHeader*",
@@ -11133,7 +11190,6 @@ stable.fn(
             doc="Material section whose loaded descriptors and surfaces are released or unmarked.",
         )
     ],
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -11228,7 +11284,7 @@ stable.fn(
     "Level_LoadStateMachine",
     "8B 44 24 04 56 57 33 FF 8D 4C 40 24 A1 ??",
     required=Required.EN,
-    ret="uint32_t*",
+    ret="Level_DataHeader*",
     params=[param("int32_t", "level_index")],
     doc=(
         "Incremental level package loader keyed by package level_index. Level resources are "
@@ -11242,9 +11298,8 @@ stable.fn(
     "Level_UnloadResources",
     "A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 4C",
     ret="BOOL",
-    params=[param("void*", "level_resource_data")],
+    params=[param("Level_DataHeader*", "level_resource_data")],
     doc="Release the level material section and free the level resource blob plus cached level texture data buffers.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -11466,15 +11521,15 @@ stable.fn(
     "12 8B 44 24 08 50 E8 ??",
     match=-0x1B,
     hook=0x6,
-    ret="void* *",
+    ret="void",
     params=[
         param(
-            "int32_t*",
+            "Tree_Map*",
             "tree",
             doc="Tree header: root node, allocation size, and compare callback.",
         ),
         param(
-            "void* *",
+            "void*",
             "node_payload",
             doc="Payload pointer returned by Tree_AllocateMapNode; the node header begins immediately before it.",
         ),
@@ -11485,15 +11540,15 @@ stable.fn(
 stable.fn(
     "Tree_InsertMapNode",
     "56 57 8B 7C 24 0C 8B 07 85 C0 75 ?? 8B 44 24 10 89 40 ?? 89 00 89 07 5F 5E C3",
-    ret="void* *",
+    ret="void",
     params=[
         param(
-            "int32_t*",
+            "Tree_Map*",
             "tree",
             doc="Tree header whose root/list links and compare callback control insertion.",
         ),
         param(
-            "int32_t*",
+            "Tree_MapNode*",
             "node_header",
             doc="Internal node header to link into the tree/list.",
         ),
@@ -11506,9 +11561,11 @@ stable.fn(
     "8B 4C 24 08 85 C9 74 ?? 8B 44 24 04 56 8B 71 ?? 8B 00 8B 50 ?? 89 70 ??",
     ret="void",
     params=[
-        param("int32_t*", "tree", doc="Tree header whose root/list links are updated."),
         param(
-            "void*",
+            "Tree_Map*", "tree", doc="Tree header whose root/list links are updated."
+        ),
+        param(
+            "Tree_MapNode*",
             "node_header",
             doc="Internal node header to detach; nullptr is accepted as a no-op.",
         ),
@@ -11520,13 +11577,15 @@ stable.fn(
     "Tree_RemoveMapNode",
     "56 8D 70 EC 56 57 E8 ??",
     match=-0xD,
-    ret="void* *",
+    ret="void",
     params=[
-        param("int32_t*", "tree", doc="Tree header whose root/list links are updated."),
         param(
-            "void* *",
+            "Tree_Map*", "tree", doc="Tree header whose root/list links are updated."
+        ),
+        param(
+            "void*",
             "node_payload",
-            doc="Payload pointer for the node to remove; node metadata is stored storage before it.",
+            doc="Payload pointer for the node to remove; node metadata is stored immediately before it.",
         ),
     ],
     doc="Removes node_payload from tree, detaches/rethreads child links, and rebalances the remaining tree when needed.",
@@ -11535,10 +11594,10 @@ stable.fn(
 stable.fn(
     "Tree_RebalanceMap",
     "8B 44 24 04 53 55 56 8B 28 57 33 DB 8B FD 8B 6D 04 0F BF 4F 10 8B 34 8D ?? ?? ?? ?? 3B F3 74 ?? 0F BF 57 10 8D 47 14 8D 4E 14 89 1C 95 ?? ?? ?? ??",
-    ret="void* *",
+    ret="void",
     params=[
         param(
-            "int32_t*",
+            "Tree_Map*",
             "tree",
             doc="Tree header whose root chain is bucketized and rebuilt.",
         )
@@ -11550,15 +11609,15 @@ stable.fn(
     "Tree_RotateAndDetachMapNode",
     "8B 08 89 0A 50 53 E8 ??",
     match=-0x3C,
-    ret="int32_t*",
+    ret="void",
     params=[
         param(
-            "int32_t*",
+            "Tree_Map*",
             "tree",
             doc="Tree header passed back to Tree_InsertMapNode while rotating detached nodes.",
         ),
         param(
-            "int32_t*",
+            "Tree_MapNode*",
             "node_header",
             doc="Internal node header pointer, storage before the user payload.",
         ),
@@ -11570,10 +11629,10 @@ stable.fn(
     "Tree_GetFirstMapNode",
     "?? 83 C6 14 56 50 E8 ??",
     match=-0xE,
-    ret="int32_t*",
+    ret="void*",
     params=[
         param(
-            "int32_t*", "tree", doc="Tree header to pop from; nullptr returns nullptr."
+            "Tree_Map*", "tree", doc="Tree header to pop from; nullptr returns nullptr."
         )
     ],
     doc="Returns and removes the first/root payload from tree, or nullptr when the tree is empty.",
@@ -11586,7 +11645,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "int32_t*",
+            "Tree_Map*",
             "tree",
             doc="Tree header containing root, allocation size, and compare callback.",
         ),
@@ -11597,7 +11656,6 @@ stable.fn(
         ),
     ],
     doc="Fixes TreeMap ordering after insertion or priority update by comparing node_payload against parent/root links, detaching/reinserting when needed, and returning -1 for null payload.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -11607,13 +11665,12 @@ stable.fn(
     ret="void*",
     params=[
         param(
-            "void*",
+            "Tree_Map*",
             "tree",
             doc="Tree header whose allocation-size field in the record controls the node allocation size.",
         )
     ],
-    doc="Allocates one tree node block and returns the user payload pointer at the tree node header0x14.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Allocates one tree node block and returns the user payload pointer 0x14 bytes after the node header.",
 )
 
 stable.fn(
@@ -11629,14 +11686,13 @@ stable.fn(
         )
     ],
     doc="Frees the full tree node allocation by subtracting the hidden node header from node_payload.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
     "Tree_CreateMap",
     "6A 0C E8 ?? ?? ??",
     hook=0x7,
-    ret="uint32_t*",
+    ret="Tree_Map*",
     params=[
         param(
             "int32_t",
@@ -11650,7 +11706,6 @@ stable.fn(
         ),
     ],
     doc="Allocates and initializes a tree header: empty root, node allocation size, and compare callback.",
-    abi_status=AbiStatus.PLACEHOLDER,
 )
 
 stable.fn(
@@ -11660,7 +11715,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "int32_t*",
+            "Tree_Map*",
             "tree",
             doc="Tree header to destroy; all linked node headers are freed before the header itself.",
         )
@@ -11815,10 +11870,10 @@ stable.fn(
     "Graphics_AdjustColorQuadRGB",
     "83 EC 08 A1 ?? ?? ?? ?? 33",
     hook=0x8,
-    ret="int32_t",
+    ret="void",
     params=[
         param(
-            "const uint32_t*",
+            "uint32_t const*",
             "input_quad_rgb",
             doc="Four packed 0x00BBGGRR colors.",
         ),
@@ -12068,7 +12123,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "int32_t*",
+            "Math_Vec3I32*",
             "out_move_vec",
             doc="Output vector with at least three int32_t components written by this helper.",
         ),
@@ -12239,11 +12294,9 @@ stable.fn(
 stable.fn(
     "Title_InitializeSpots",
     "51 53 55 56 33 DB 57 66 89 1D ??",
-    cc=CallingConvention.FASTCALL,
     hook=0x6,
-    ret="int32_t",
-    params=[param("void*", "effect_data")],
-    abi_status=AbiStatus.PLACEHOLDER,
+    ret="void",
+    params=[],
 )
 
 stable.fn(
@@ -12251,7 +12304,7 @@ stable.fn(
     "53 55 8B 6C 24 0C 85 ED 75 ?? 66 A1 ??",
     hook=0x6,
     ret="void",
-    params=[param("int32_t*", "effect_state")],
+    params=[param("int32_t", "play_sound")],
 )
 
 stable.fn(
@@ -12283,9 +12336,9 @@ stable.fn(
     ret="BOOL",
     params=[
         param(
-            "Graphics_SpriteContext*",
-            "sprite",
-            doc="Sprite context slot; normal update callers pass nullptr and (Graphics_SpriteContext*)-1 forces the title-screen shutdown/reset path.",
+            "int32_t",
+            "command",
+            doc="Normal callers pass 0; -1 forces the title-screen shutdown/reset path.",
         ),
     ],
     doc="Advances the title-screen state machine, draws title sprites/text/title spots, and returns nonzero while the title screen remains active.",

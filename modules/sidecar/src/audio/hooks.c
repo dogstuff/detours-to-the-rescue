@@ -42,7 +42,6 @@ static int32_t run_guarded_audio_hook(int32_t(__cdecl *original)(), bool stop_al
 	return original();
 }
 
-
 // Mirrors stop-all-sounds into the SDL sample backend before delegating.
 static int32_t __cdecl audio_stop_all_sounds_detour() {
 	return run_guarded_audio_hook(audio_stop_all_sounds_original, true);
