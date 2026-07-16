@@ -1,9 +1,12 @@
 import { KIND_LABELS } from "./constants";
 import type { Manifest, ViewerSymbol } from "./types";
+import { text } from "./utils";
 
-const C_IDENTIFIER = /[A-Za-z_][A-Za-z0-9_]*/g;
+export function typeTextParts(value: unknown): string[] {
+  return text(value).split(/([A-Za-z_][A-Za-z0-9_]*)/g);
+}
 
-function typeIndex(symbols: ViewerSymbol[]): Map<string, ViewerSymbol> {
+export function typeIndex(symbols: ViewerSymbol[]): Map<string, ViewerSymbol> {
   const index = new Map<string, ViewerSymbol>();
 
   for (const symbol of symbols) {
@@ -54,7 +57,7 @@ function referencedTypes(
   const found = new Set<ViewerSymbol>();
 
   for (const value of typeUsageValues(symbol, manifest)) {
-    for (const name of String(value ?? "").match(C_IDENTIFIER) || []) {
+    for (const name of typeTextParts(value)) {
       const target = index.get(name);
       if (target && target !== symbol) {
         found.add(target);

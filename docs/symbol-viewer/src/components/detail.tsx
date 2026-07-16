@@ -18,6 +18,7 @@ import { Facts } from "./common";
 import { DetailsForKind } from "./details-kind";
 import { Hierarchy } from "./hierarchy";
 import { DetailRegionTables } from "./references";
+import { TypeText } from "./type-link";
 
 export function useDetailFramePosition(): {
   detailRef: RefObject<HTMLElement>;
@@ -162,7 +163,7 @@ export function Detail({
       </h1>
       <Facts rows={symbol.facts} />
       <p class={summaryClass(symbol.summary, "pcdogs-symbol-summary")}>
-        {text(symbol.summary)}
+        <TypeText value={symbol.summary} />
       </p>
       <DetailsForKind symbol={symbol} />
       <DetailRegionTables

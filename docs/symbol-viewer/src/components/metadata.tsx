@@ -2,6 +2,7 @@ import type { ComponentChildren, JSX } from "preact";
 import type { MetadataRow } from "../types";
 import { classes, text } from "../utils";
 import { TableFrame } from "./common";
+import { TypeText } from "./type-link";
 import { XRefOffset } from "./xref-offset";
 
 export function metadataLabel(row: MetadataRow, isAddress: boolean): string {
@@ -82,14 +83,14 @@ export function MetadataValue({ row }: { row: MetadataRow }): ComponentChildren 
   }
 
   if (row.label === "AOB Pattern" || row.label === "Signature") {
-    return <code>{text(value)}</code>;
+    return <code><TypeText value={value} /></code>;
   }
 
   if (row.label === "Resolver") {
     return <ResolverValue value={value} />;
   }
 
-  return text(value);
+  return <TypeText value={value} />;
 }
 
 export function MetadataTable({ rows }: { rows: MetadataRow[] }): JSX.Element {

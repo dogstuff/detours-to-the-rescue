@@ -1,6 +1,7 @@
 import type { ComponentChildren, JSX } from "preact";
 import type { ExampleTab, MetadataRow, ViewerSymbol } from "../types";
 import { classes, text } from "../utils";
+import { TypeText } from "./type-link";
 
 type ChildrenProps = { children?: ComponentChildren };
 
@@ -21,7 +22,7 @@ function CodeBlock({ value }: { value?: unknown }): JSX.Element {
   return (
     <div class="highlight">
       <pre>
-        <code class="language-c">{text(value)}</code>
+        <code class="language-c"><TypeText value={value} /></code>
       </pre>
     </div>
   );
@@ -108,7 +109,7 @@ export function Facts({
               row.label === "Type" && "pcdogs-symbol-fact__value--type",
             )}
           >
-            {text(row.value)}
+            <TypeText value={row.value} />
           </strong>
         </p>
       ))}

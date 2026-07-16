@@ -2,6 +2,7 @@ import type { JSX } from "preact";
 import type { ViewerSymbol } from "../types";
 import { text } from "../utils";
 import { TableFrame } from "./common";
+import { TypeText } from "./type-link";
 
 export function TypeDetails({ symbol }: { symbol: ViewerSymbol }): JSX.Element {
   return (
@@ -30,7 +31,7 @@ export function TypeDetails({ symbol }: { symbol: ViewerSymbol }): JSX.Element {
                   </td>
                   <td>
                     <div class="pcdogs-type-table__cell-scroll">
-                      <code>{text(member.type)}</code>
+                      <code><TypeText value={member.type} /></code>
                     </div>
                   </td>
                   <td>{text(member.doc)}</td>

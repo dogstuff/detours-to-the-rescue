@@ -8,6 +8,7 @@ import {
 } from "preact/hooks";
 import { manifestSymbols } from "../manifest";
 import { selectHash, selectedHash } from "../navigation";
+import { typeIndex } from "../type-references";
 import {
   normalizeStoredFilters,
   readStoredFilters,
@@ -23,6 +24,7 @@ import type {
 } from "../types";
 import { Detail, supportedVersions } from "./detail";
 import { Overview } from "./overview";
+import { TypeLinkContext } from "./type-link";
 
 export function Viewer({ root, src }: { root: HTMLElement; src: string }): JSX.Element {
   const [status, setStatus] = useState<ViewerStatus>("loading");
@@ -41,6 +43,7 @@ export function Viewer({ root, src }: { root: HTMLElement; src: string }): JSX.E
     () => new Map(symbols.map((symbol) => [symbol.anchor, symbol])),
     [symbols],
   );
+  const types = useMemo(() => typeIndex(symbols), [symbols]);
 
   const updateOverviewFilter = useCallback(
     <K extends keyof Filters>(name: K, value: Filters[K]) => {
@@ -155,13 +158,15 @@ export function Viewer({ root, src }: { root: HTMLElement; src: string }): JSX.E
 
   if (selected && symbol) {
     return (
-      <Detail
-        symbol={symbol}
-        byAnchor={byAnchor}
-        selectedVersion={selectedVersion}
-        onVersionChange={setSelectedVersion}
-        onSelect={select}
-      />
+      <TypeLinkContext.Provider value={{ types, onSelect: select }}>
+        <Detail
+          symbol={symbol}
+          byAnchor={byAnchor}
+          selectedVersion={selectedVersion}
+          onVersionChange={setSelectedVersion}
+          onSelect={select}
+        />
+      </TypeLinkContext.Provider>
     );
   }
 

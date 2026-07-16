@@ -603,6 +603,17 @@
     color: var(--pcdogs-type-fg);
 }
 
+.md-typeset a.pcdogs-type-link:is(:link,:visited) {
+    color: var(--pcdogs-type-fg);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.md-typeset a.pcdogs-type-link:is(:hover,:focus-visible),
+.md-typeset table.pcdogs-type-table--struct td:nth-child(3) a.pcdogs-type-link:is(:hover,:focus-visible) {
+    text-decoration: underline;
+}
+
 .md-typeset table.pcdogs-symbol-overview-table tr[data-kind="signature"] .pcdogs-symbol-overview-name code {
     color: var(--pcdogs-signature-fg);
 }
