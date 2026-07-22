@@ -369,10 +369,6 @@ def resolve_docs_download_placeholders(
     return text
 
 
-def resolve_docs_config(config_text: str) -> str:
-    return resolve_docs_download_placeholders(config_text)
-
-
 def resolve_docs_page_placeholders(
     pages_out: Path, replacements: Mapping[str, str]
 ) -> None:

@@ -226,8 +226,6 @@ bool DTTR_Config_FieldChanged(
 );
 bool DTTR_Config_SchemaChanged(const DTTR_Config *current, const DTTR_Config *base);
 
-int DTTR_Config_ChoiceCount(DTTR_ConfigChoiceList list);
-const DTTR_ConfigChoice *DTTR_Config_ChoiceGet(DTTR_ConfigChoiceList list, int index);
 const DTTR_ConfigChoice *DTTR_Config_Choices(DTTR_ConfigChoiceList list, int *count);
 
 const char *DTTR_Config_ControlActionKey(int index);

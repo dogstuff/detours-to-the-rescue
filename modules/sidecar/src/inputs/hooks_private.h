@@ -83,7 +83,6 @@ bool dttr_inputs_key_state_uses_live_state(int32_t key_code);
 bool dttr_inputs_controller_button_pressed(int button);
 int dttr_inputs_key_code_scancode(int32_t key_code);
 int dttr_inputs_key_code_sdl_button(int32_t key_code);
-SDL_GamepadButton dttr_inputs_key_code_gamepad_button(int32_t key_code);
 int dttr_inputs_vkey_scancode(int vkey);
 const char *dttr_inputs_key_code_name(int32_t key_code);
 

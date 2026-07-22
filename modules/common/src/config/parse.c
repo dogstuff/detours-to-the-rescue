@@ -130,20 +130,6 @@ static const config_choice_list_data *config_choice_list(DTTR_ConfigChoiceList l
 	return &CONFIG_CHOICE_LISTS[list];
 }
 
-int DTTR_Config_ChoiceCount(DTTR_ConfigChoiceList list) {
-	const config_choice_list_data *data = config_choice_list(list);
-	return data ? data->count : 0;
-}
-
-const DTTR_ConfigChoice *DTTR_Config_ChoiceGet(DTTR_ConfigChoiceList list, int index) {
-	const config_choice_list_data *data = config_choice_list(list);
-	if (!data || index < 0 || index >= data->count) {
-		return NULL;
-	}
-
-	return &data->choices[index];
-}
-
 const DTTR_ConfigChoice *DTTR_Config_Choices(DTTR_ConfigChoiceList list, int *count) {
 	const config_choice_list_data *data = config_choice_list(list);
 	if (count) {

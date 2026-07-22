@@ -218,13 +218,6 @@ int dttr_inputs_key_code_sdl_button(int32_t key_code) {
 	return button >= 0 && button < DTTR_INPUTS_SDL_BUTTON_COUNT ? button : -1;
 }
 
-SDL_GamepadButton dttr_inputs_key_code_gamepad_button(int32_t key_code) {
-	const int button = dttr_inputs_key_code_sdl_button(key_code);
-	return button >= SDL_GAMEPAD_BUTTON_SOUTH && button < SDL_GAMEPAD_BUTTON_COUNT
-			   ? (SDL_GamepadButton)button
-			   : SDL_GAMEPAD_BUTTON_INVALID;
-}
-
 DTTR_Input_KeyCodeKind dttr_inputs_key_code_kind(int32_t key_code) {
 	if (key_code < 0) {
 		return DTTR_INPUTS_KEY_CODE_NONE;

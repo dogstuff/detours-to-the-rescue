@@ -12,7 +12,6 @@ import {
   isOneOf,
   isUnstable,
   summaryClass,
-  text,
 } from "../utils";
 import { Facts } from "./common";
 import { DetailsForKind } from "./details-kind";
