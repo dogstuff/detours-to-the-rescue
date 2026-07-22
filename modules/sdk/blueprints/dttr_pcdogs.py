@@ -32,10 +32,17 @@ stable.type_alias(
 
 stable.struct(
     "DInput_DeviceEnumContext",
-    member("uint32_t", "count", 0x0),
-    member("Win32_GUID*", "guid_list", 0x4),
+    member("uint32_t", "count", 0x0, doc="Count of discovered joystick device GUIDs."),
+    member(
+        "Win32_GUID*",
+        "guid_list",
+        0x4,
+        doc="Caller-owned destination array for discovered device GUIDs.",
+    ),
     size=0x8,
     doc="DirectInput joystick enumeration context for discovered device GUIDs.",
+    stable=True,
+    incomplete=False,
 )
 
 
@@ -458,7 +465,8 @@ stable.struct(
     member("int32_t", "spatial_range_fp12", 0x10),
     size=0x14,
     doc="Sound definition used by Audio_PlaySoundDefinition3D and Audio_AllocateSoundSlot. It stores the sample table, flags, eviction priority, Q12 volume/pitch/range, and the bit 0x40 script-playback latch.",
-    unstable=True,
+    stable=True,
+    incomplete=False,
 )
 
 stable.struct(
@@ -944,6 +952,8 @@ stable.struct(
     member("int32_t", "share", 0x4),
     size=0x8,
     doc="Access/share-mode pair, passed through file-open wrappers.",
+    stable=True,
+    incomplete=False,
 )
 
 stable.struct(
@@ -962,6 +972,8 @@ stable.struct(
     ),
     size=0x8,
     doc="Compact input event record, passed through game input processing.",
+    stable=True,
+    incomplete=False,
 )
 
 stable.struct(
@@ -1008,6 +1020,8 @@ stable.struct(
     member("uint32_t", "mesh_collision_offset", 0x8),
     size=0xC,
     doc="Package level-blob header whose relocation fields are rebased from the loaded blob base.",
+    stable=True,
+    incomplete=False,
 )
 
 
@@ -1018,6 +1032,8 @@ stable.struct(
     member("int32_t", "level_data_offset", 0x8),
     size=0xC,
     doc="Level data header containing relocation fields fixed up against the loaded level-data relocation base.",
+    stable=True,
+    incomplete=False,
 )
 
 stable.struct(
@@ -1030,6 +1046,8 @@ stable.struct(
     member("uint32_t", "data_size", 0x14),
     size=0x18,
     doc="Level-file header for material, object-tree, and collision data. The payload after the header is still undocumented.",
+    stable=True,
+    incomplete=False,
 )
 
 
@@ -1040,6 +1058,8 @@ stable.struct(
     member("int32_t", "end_duration_fp12", 0x8),
     size=0xC,
     doc="FP12 level-transition timing block passed to Level_TriggerTransition: start delay, mid duration, and end duration.",
+    stable=True,
+    incomplete=False,
 )
 
 stable.struct(
@@ -1236,9 +1256,7 @@ stable.struct(
         "uint16_t",
         "reserved_00",
         0x0,
-        doc=(
-            "Initialized frame-set header word used near the frame count and frame pointer array fields."
-        ),
+        doc="Header word zeroed by Material_BuildStructure.",
     ),
     member(
         "int16_t",
@@ -1251,7 +1269,8 @@ stable.struct(
     member("Material_FrameData**", "frame_ptr_array", 0x4),
     size=0x8,
     doc="Material animation frame-set header, built for Material_FindTextureByFrame lookups.",
-    unstable=True,
+    stable=True,
+    incomplete=False,
 )
 
 
@@ -1588,6 +1607,8 @@ stable.struct(
     member("Actor_State*", "target", 0x4),
     size=0x8,
     doc="One actor-contact tracking slot: squared/scored distance plus the contacted actor.",
+    stable=True,
+    incomplete=False,
 )
 
 stable.struct(
@@ -2047,6 +2068,8 @@ stable.struct(
     member("int32_t", "y", 0x8),
     size=0xC,
     doc="Three signed 32-bit vector components stored in X/Z/Y order.",
+    stable=True,
+    incomplete=False,
 )
 
 
@@ -4195,6 +4218,7 @@ stable.sig(
     "Display_SetMode_Anchor",
     "A1 ?? ?? ?? ?? 56 57 8B 7C 24",
     doc="Signature anchor for Display_SetMode, the HWND display-mode initializer.",
+    stable=True,
 )
 
 stable.sig("Game_InitializeSystems", "E8 ?? ?? ?? ?? 8D 54 24 ?? 56")
@@ -4251,6 +4275,7 @@ stable.fn(
         "0x11 rejects scalars in the open range 0x30d40..0x493e0. EU/SC builds carry a rewritten, "
         "larger variant of this gate that this pattern does not match."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -4475,9 +4500,10 @@ stable.fn(
         param("Math_Vec3I32*", "position"),
     ],
     doc=(
-        "Resolves a level-local sound index through current_level_data->sound_definition_list, then forwards to Audio_PlaySoundDefinition3D."
+        "Resolves a level-local sound index. Reuses a flagged matching active sound through "
+        "Audio_FindSoundByType when available; otherwise plays the resolved definition at position."
     ),
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -4743,7 +4769,8 @@ stable.fn(
     "E9 ?? ?? ?? ?? 90 90 90 90 90 90 90 90 90 90 90 55",
     ret="int32_t",
     params=[],
-    unstable=True,
+    doc="Tail-call thunk that returns Timer_GetElapsedTickCount().",
+    stable=True,
 )
 
 stable.fn(
@@ -4901,7 +4928,7 @@ stable.fn(
         "target position, and orbit yaw with a Q12 ease curve; when requested it also "
         "wrap-interpolates the first two angle words and calls Camera_CalculatePosition."
     ),
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -5033,11 +5060,10 @@ stable.fn(
         )
     ],
     doc=(
-        "Adjusts the global level/render scale from measured_fps during Graphics_RenderFrame. "
-        "Eligible 10..30 FPS modes use the reciprocal lookup path; higher frame rates restore the "
-        "base level scale."
+        "Updates dynamic_level_scale in eligible game modes. FPS below 10 leaves it unchanged; "
+        "10..30 applies base level scale * measured_fps / 30; above 30 restores base level scale."
     ),
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -6098,9 +6124,11 @@ stable.fn(
             doc="Round/mini-game parameter stored in the global word at pcdogs.exe .",
         ),
     ],
-    doc="Initializes mini-game round globals by setting the default round counter to 10 and "
-    "storing round_param.",
-    unstable=True,
+    doc=(
+        "Sets the default mini-game round counter to 10 and stores round_param. position is an "
+        "unused ABI slot."
+    ),
+    stable=True,
 )
 
 stable.fn(
@@ -6767,7 +6795,7 @@ stable.fn(
     doc="Clips a polygon through the camera clipping plane slab using Graphics_ClipPolygonByPlane "
     "and local temp buffers. Returns 0 as soon as a clipping pass leaves fewer than three "
     "vertices; otherwise writes final clipped vertices/attributes to the caller buffers.",
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -7061,6 +7089,7 @@ stable.fn(
     ret="void",
     params=[param("uint32_t", "rgb_color")],
     doc="Fills the current viewport with a solid color by drawing a full-screen rectangle while depth writes are disabled.",
+    stable=True,
 )
 
 stable.fn(
@@ -7094,6 +7123,7 @@ stable.fn(
     ret="void",
     params=[param("const char*", "path")],
     doc="Writes the current 640x480 backbuffer to a BMP file at path; the original game writes a larger pixel payload than the header size field reports.",
+    stable=True,
 )
 
 stable.fn(
@@ -7103,7 +7133,7 @@ stable.fn(
     ret="int32_t",
     params=[param("float", "gamma_scale")],
     doc="Caches the requested gamma scale, clamps the applied gamma to 0.1 for inputs below 0.1 and to 5.0 for inputs above 10.0, builds a RGB DirectDraw gamma ramp through IDirectDrawGammaControl, and returns the residual HRESULT/status from the DirectDraw calls.",
-    unstable=True,
+    stable=True,
 )
 
 
@@ -7116,6 +7146,7 @@ stable.fn(
         param("DDraw_SurfaceDesc2 const*", "right"),
     ],
     doc="Qsort comparator for enumerated display modes: sorts by width, then height, then pixel-format RGB bit count using DDSURFACEDESC2 mode fields.",
+    stable=True,
 )
 
 stable.fn(
@@ -7136,6 +7167,7 @@ stable.fn(
         param("D3D_DriverInfo*", "enum_context"),
     ],
     doc="IDirectDraw7::EnumDisplayModes callback that appends each DDSURFACEDESC2 to the driver enumeration context, increments the mode count, and returns TRUE while count is <= 0x4f.",
+    stable=True,
 )
 
 stable.fn(
@@ -7151,6 +7183,7 @@ stable.fn(
         param("HMONITOR", "monitor"),
     ],
     doc="DirectDrawEnumerateExA callback: creates DirectDraw/Direct3D interfaces for a driver, records display modes through DDraw_AddDisplayMode, sorts them with DDraw_CompareDisplayModes, enumerates D3D devices, and returns TRUE to continue enumeration.",
+    stable=True,
 )
 
 stable.fn(
@@ -7166,6 +7199,7 @@ stable.fn(
         param("D3D_DriverInfo*", "enum_context"),
     ],
     doc="IDirect3D7::EnumDevices callback: filters/copies accepted D3DDEVICEDESC7 records into the global enumerated-device list and returns TRUE to continue enumeration.",
+    stable=True,
 )
 
 stable.fn(
@@ -7179,6 +7213,7 @@ stable.fn(
         param("int32_t*", "count_out"),
     ],
     doc="Writes the global accepted DirectDraw/Direct3D driver list and accepted-device count to caller-provided output pointers.",
+    stable=True,
 )
 
 stable.fn(
@@ -7198,6 +7233,7 @@ stable.fn(
     ret="int32_t",
     params=[param("D3D_DriverInfo*", "driver_info")],
     doc="D3D_DriverAcceptCallback implementation that ignores driverInfo and always returns accepted/nonzero.",
+    stable=True,
 )
 
 stable.fn(
@@ -7207,6 +7243,7 @@ stable.fn(
     ret="D3D_DriverInfo*",
     params=[],
     doc="Enumerates DirectDraw/Direct3D drivers with D3D_AcceptAnyDriver, selects the default/best driver with flags 0, and returns the selected D3D_DriverInfo pointer.",
+    stable=True,
 )
 
 stable.fn(
@@ -7220,6 +7257,7 @@ stable.fn(
         "range dispatch/index tables, optionally copies it to outBuffer, and returns the "
         "static buffer pointer."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -7230,6 +7268,7 @@ stable.fn(
     ret="DInput_IDirectInputA*",
     params=[param("HINSTANCE", "h_instance")],
     doc="Calls DirectInputCreateA(hInstance, 0x700, &directInput, NULL) and returns the created IDirectInputA pointer on success or NULL on failure.",
+    stable=True,
 )
 
 stable.fn(
@@ -7252,6 +7291,7 @@ stable.fn(
         "created device for IDirectInputDevice2A, releases the temporary device, "
         "and returns the Device2A interface or NULL on failure."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -7261,6 +7301,7 @@ stable.fn(
     ret="DInput_IDirectInputDevice*",
     params=[param("DInput_IDirectInputDevice*", "device")],
     doc="Queries a DirectInput device for IID_IDirectInputDevice2A and returns the interface pointer.",
+    stable=True,
 )
 
 stable.fn(
@@ -7273,6 +7314,7 @@ stable.fn(
         param("void*", "data_format"),
     ],
     doc="Calls IDirectInputDevice::SetDataFormat and returns 1 on success, 0 on failure.",
+    stable=True,
 )
 
 stable.fn(
@@ -9461,7 +9503,7 @@ stable.fn(
     doc=(
         "Component and projectile collision-response callback target. It consumes the contextual Collision_Polygon and collision_depth from the collision query, handles sentinel collisionDepth values -2/-1, updates projectile runtime state, records a hit cache in spawn-context storage, and dispatches hit behavior; projectile tail layout is still not decoded."
     ),
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -9602,7 +9644,7 @@ stable.fn(
         "payloads. The velocity, surfaceNormal, contactPoint, and result parameters are raw "
         "payload pointers owned by the specific call site."
     ),
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -9870,6 +9912,7 @@ stable.fn(
         ),
     ],
     doc="Calculates and applies the actor velocity from physics state, caller velocity, steering, ground, and slope inputs.",
+    stable=True,
 )
 
 stable.fn(
@@ -9886,6 +9929,7 @@ stable.fn(
         param("int32_t*", "inout_speed"),
     ],
     doc="Applies moving-platform force from platform_actor and updates the caller's velocity and speed.",
+    stable=True,
 )
 
 stable.fn(
@@ -9983,6 +10027,7 @@ stable.fn(
         "handle, caching its base playback rate, applying pitch/pan/volume, and forcing the "
         "Miles loop count to zero when loopFlag is nonzero."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -9996,6 +10041,7 @@ stable.fn(
         "Set a sound slot's sample volume, scaling the game volume down to Miles' 0..128 range before "
         "calling AIL_set_sample_volume."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -10006,6 +10052,7 @@ stable.fn(
     ret="int32_t",
     params=[param("int32_t", "slot_index"), param("int32_t", "pitch_scale_q12")],
     doc="Set a sound slot's sample playback rate to base_playback_rate * pitchScaleQ12 / 4096.",
+    stable=True,
 )
 
 stable.fn(
@@ -10044,6 +10091,7 @@ stable.fn(
         "Set the current music stream volume, scaling the game volume down to Miles' 0..128 range "
         "before calling AIL_set_stream_volume."
     ),
+    stable=True,
 )
 
 stable.fn(
@@ -10052,6 +10100,7 @@ stable.fn(
     ret="void",
     params=[param("int32_t*", "stream_record"), param("int32_t", "volume")],
     doc="Optionally opens streamRecord, publishes its handle as the active music stream, sets volume, starts playback, and sets the stream loop count to zero.",
+    stable=True,
 )
 
 stable.fn(
@@ -10060,6 +10109,7 @@ stable.fn(
     ret="void",
     params=[],
     doc="Pauses the active Miles music stream when one is published.",
+    stable=True,
 )
 
 stable.fn(
@@ -10068,6 +10118,7 @@ stable.fn(
     ret="void",
     params=[],
     doc="Resumes the active Miles music stream when one is published.",
+    stable=True,
 )
 
 stable.fn(
@@ -10076,7 +10127,7 @@ stable.fn(
     ret="void",
     params=[],
     doc="Pauses and closes the active Miles music stream, clears music_stream_handle, and decrements open_stream_count; residual Miles/counter return is ignored.",
-    unstable=True,
+    stable=True,
 )
 
 stable.fn(
@@ -10086,6 +10137,7 @@ stable.fn(
     ret="int32_t",
     params=[param("char", "enabled_flag")],
     doc="Stores the one-byte global audio enabled flag and returns the written value.",
+    stable=True,
 )
 
 stable.fn(
@@ -10098,6 +10150,7 @@ stable.fn(
         param("int16_t", "frame_count_minus_one"),
     ],
     doc="Sets the music fade target volume and stores frameCountMinusOne + 1 as the fade frame count; negative targets scale the current target volume by -target/4096.",
+    stable=True,
 )
 
 stable.fn(
@@ -10116,6 +10169,9 @@ stable.fn(
     hook=0x7,
     ret="void",
     params=[],
+    doc="Restores the saved fade target, clears fade/stop flags, and resumes the active music "
+    "stream if one exists.",
+    stable=True,
 )
 
 stable.fn(
@@ -10695,7 +10751,8 @@ stable.fn(
     ret="BOOL",
     params=[param("void*", "buffer"), param("uint32_t", "size")],
     doc="Opens savegame.dat in rb mode, reads exactly size bytes into buffer, then verifies the file length equals size before returning TRUE.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -10706,8 +10763,10 @@ stable.fn(
     hook=0x6,
     ret="BOOL",
     params=[param("void const*", "buffer"), param("uint32_t", "size")],
-    doc="Opens savegame.dat in wb mode, writes one size-byte record from buffer, closes the file, and returns TRUE if the file was opened.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Writes one size-byte record from buffer to savegame.dat in wb mode, closes the file, and "
+    "reports whether the write succeeded.",
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -10725,7 +10784,8 @@ stable.fn(
         "operations allocate or reuse it, store the active buffer and size globals, and leave "
         "only verify-buffer/allocation return metadata."
     ),
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -11251,7 +11311,8 @@ stable.fn(
         param("int32_t", "enable"),
     ],
     doc="Resolves sound-definition alias entries whose sample_table_ptr slot holds a tagged index (table[idx >> 1]); all known callers pass sound-definition tables.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -11261,7 +11322,8 @@ stable.fn(
     ret="BOOL",
     params=[param("void*", "resource_data")],
     doc="Thin wrapper around PKG_FreeResourceData for resource data pointers.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -11277,7 +11339,8 @@ stable.fn(
         )
     ],
     doc="Wrapper around PKG_LoadEntry(toc_index, NULL) that allocates destination storage for one package TOC entry and returns the loaded buffer pointer.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -11755,8 +11818,9 @@ stable.fn(
     hook=0x6,
     ret="void*",
     params=[param("Actor_State*", "actor"), param("int32_t", "chain_index")],
-    doc="Resets the actor chain state selected by chain_index.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Resets the selected actor animation chain and linked queue state.",
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -11862,8 +11926,10 @@ stable.fn(
         param("Graphics_PolygonRenderRef*", "polygon_ref"),
         param("uint32_t*", "out_colors"),
     ],
-    doc="Computes the packed per-vertex colors for a polygon render ref from runtime vertex colors and returns out_colors.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Writes four clamped packed RGB colors for a polygon render reference, then returns the "
+    "output cursor.",
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -12159,7 +12225,8 @@ stable.fn(
     ret="void",
     params=[],
     doc="Clears demo playback input mode, frees loaded replay data when present, clears the replay data pointer, and restores the saved random seed.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -12277,7 +12344,8 @@ stable.fn(
         ),
     ],
     doc="Stores the active string table pointer and returns the same pointer.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -12505,7 +12573,9 @@ stable.fn(
     "8B 4C 24 04 56 49 0F 88 ??",
     ret="BOOL",
     params=[param("uint32_t", "handle")],
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Checks a 1-based extent handle, frees its backing block, and returns BOOL status.",
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -12514,7 +12584,9 @@ stable.fn(
     hook=0x6,
     ret="BOOL",
     params=[param("uint32_t", "handle")],
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Checks the range and generation of a 1-based extent handle.",
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -12980,7 +13052,8 @@ stable.fn(
     ],
     doc="Fwrite-like buffered writer: writes count elements of size bytes from buffer to stream "
     "and returns the element count written.",
-    abi_status=AbiStatus.PLACEHOLDER,
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -12989,7 +13062,10 @@ stable.fn(
     match=-0xA,
     ret="void*",
     params=[param("void*", "ptr"), param("uint32_t", "size")],
-    abi_status=AbiStatus.PLACEHOLDER,
+    doc="Implements CRT realloc behavior: allocates for a null ptr, frees on zero size, and "
+    "otherwise resizes without losing contents.",
+    abi_status=AbiStatus.VERIFIED,
+    stable=True,
 )
 
 stable.fn(
@@ -13291,6 +13367,8 @@ stable.fn(
     "8B 4C 24 04 57 F7 ?? 03 00 00 00 74 ?? 8A ??",
     ret="char*",
     params=[param("char*", "dest"), param("char const*", "src")],
+    doc="Appends src at the NUL terminator in dest, copies the source terminator, and returns dest.",
+    stable=True,
 )
 
 stable.fn(
@@ -13989,6 +14067,7 @@ stable.data(
     type="float",
     doc="Float constant 240.0, half of the fixed 480-pixel projection/screen height used by clipping math.",
     write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ProjectScreenWidthHalf",
@@ -14001,6 +14080,7 @@ stable.data(
     type="float",
     doc="Small positive Z-bias constant loaded by Graphics_DrawQuad; split from the project-screen-height constant at 0x44D038.",
     write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data("Graphics_DrawQuad_AltUVOffset", xref("Graphics_DrawQuad", 0x261, 0x2))
 stable.data(
@@ -14021,7 +14101,7 @@ stable.data(
     type="float",
     doc="Float constant 640.0 used by polygon-batch projection checks.",
     write_policy=WritePolicy.READ_ONLY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Graphics_WindowWidth",
@@ -14097,6 +14177,7 @@ stable.data(
     type="Win32_GUID",
     doc="IID_IDirectInputDevice2A GUID passed to IDirectInputDevice::QueryInterface.",
     write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "String_CheckFloatPrecision_CRTZero",
@@ -14141,6 +14222,7 @@ stable.data(
     type="float",
     doc="Scalar float constant 1/30 (one frame at 30 FPS); not a reciprocal lookup table.",
     write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "Video_MCI_OpenAVIVideo",
@@ -14247,6 +14329,7 @@ stable.data(
     type="char[4]",
     doc='Debug-log line format string "%s\\n" used before writing the formatted message.',
     write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_ErrZEnable",
@@ -14507,20 +14590,28 @@ stable.data(
     xref("Menu_RenderDifficultySelection", 0x3E, 0x1),
 )
 stable.data(
-    "Level_InitializeBonusData_MenuDifficultyToken",
+    "Level_BonusDataToken_TOB",
     xref("Level_InitializeBonusData", 0x52, 0x1),
-    doc="Menu difficulty token/string selector consumed while initializing bonus data.",
-    unstable=True,
+    doc='Read-only "TOB" token used by Level_InitializeBonusData for bonus-data case 31.',
+    type="char[4]",
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
-    "Level_InitializeBonusData_RFF",
+    "Level_BonusDataToken_RFF",
     xref("Level_InitializeBonusData", 0x2E, 0x1),
+    doc='Read-only "RFF" token used by Level_InitializeBonusData for bonus-data cases 27 and 29.',
+    type="char[4]",
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
-    "Menu_UpdatePauseMenu_CheatState",
+    "Menu_PauseCheaterText",
     xref("Menu_UpdatePauseMenu", 0x21F, 0x1),
-    doc="Pause-menu cheat-state selector/counter; exact input/menu ownership remains unstable.",
-    unstable=True,
+    doc='Read-only "Cheater!" text displayed by Menu_UpdatePauseMenu.',
+    type="char[9]",
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data("Menu_RenderSaveGame_Percent", xref("Menu_RenderSaveGame", 0x348, 0x1))
 stable.data(
@@ -14540,12 +14631,12 @@ stable.data(
     xref("Menu_RenderControlsConfiguration", 0x16E, 0x1),
 )
 stable.data(
-    "Player_ProcessMovement_CurrentLevelID",
+    "g_currentLevelID",
     xref("Player_ProcessMovement", 0x141, 0x2),
-    type="int32_t",
+    type="int16_t",
     doc="Canonical live runtime level id read from the player/gameplay global.",
     write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Input_CheckCheatCodeSequence_Sequence",
@@ -14626,12 +14717,12 @@ stable.data(
     xref("Audio_ShutdownSystem", 0x4A, 0x1),
 )
 stable.data(
-    "Audio_OpenStream_MusicPath",
+    "g_fmt_Audio_MusicPath",
     xref("Audio_OpenStream", 0x2B, 0x1),
-    type="char",
-    doc="First byte/base of the data/music path format literal used by Audio_OpenStream.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    type="char[0x10]",
+    doc="Read-only music path format string used by Audio_OpenStream.",
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "PKG_FixUpResourceLevelPointers_End",
@@ -14751,12 +14842,12 @@ stable.data(
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
-    "Config_LoadFromINI_FileConfigChecksum",
+    "g_configFileChecksum",
     xref("Config_LoadFromINI", 0x43, 0x1),
     type="int32_t",
-    doc="Scalar checksum/header accumulator used by Config_LoadFromINI to validate the PCDOGS pcdogs.ini header.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    doc="Expected pcdogs.ini header checksum checked by Config_LoadFromINI.",
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "Input_ButtonNameStringIDs",
@@ -14766,8 +14857,8 @@ stable.data(
         "First entry/base of the input button-name string-id table consumed by Input_FormatButtonName and "
         "Input_GetButtonString."
     ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data("Config_LoadFromINI_FilePcdogsINI", xref("Config_LoadFromINI", 0x9, 0x1))
 stable.data(
@@ -14787,12 +14878,12 @@ stable.data(
     xref("Input_InitializeControllerMappings", 0x4, 0x1),
 )
 stable.data(
-    "Input_FormatButtonName_NoKeyAssigned",
+    "g_sz_Input_NoKeyAssigned",
     xref("Input_FormatButtonName", 0x70, 0x1),
-    type="char",
-    doc='First byte/base of the inline "No key assigned" string literal used by Input_FormatButtonName.',
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    type="char[0x10]",
+    doc='Read-only "No key assigned" string used by Input_FormatButtonName.',
+    write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
     "Window_RunWinMain_GameTitle102Dalmatians",
@@ -15139,12 +15230,12 @@ stable.data(
     xref("Checkers_UpdateStateMachine", 0x59D, 0x2),
 )
 stable.data(
-    "Checkers_UpdateStateMachine_AISearchJmpBuf",
+    "g_checkersAISearchJumpBuffer",
     xref("Checkers_UpdateStateMachine", 0x587, 0x1),
-    type="uint32_t",
-    doc="First word of a setjmp/longjmp buffer used to abort/pause checkers AI search from input/render polling; exposed as the first word because the backing value is a raw buffer.",
+    type="uint32_t[0x10]",
+    doc="Setjmp/longjmp buffer that aborts or pauses checkers AI search during input and render polling.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Checkers_UpdateStateMachine_AIThinkTimeout",
@@ -15502,7 +15593,7 @@ stable.data(
     type="DDraw_IDirectDrawSurface7*",
     doc="Shared graphics current-bound texture surface cleared by material texture-array release paths.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "D3D_SetBlendMode_GraphicsCurrentBlendMode",
@@ -15556,7 +15647,7 @@ stable.data(
     type="DInput_IDirectInputA*",
     doc="DirectInput interface created by DInput_CreateInterface; used for joystick enumeration/creation and released by DInput_ReleaseResources.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_JoystickState",
@@ -15568,7 +15659,7 @@ stable.data(
         "near Input_ReadGamepad gives live analog freshness."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "DInput_InitializeJoystickInput_Device",
@@ -15576,7 +15667,7 @@ stable.data(
     type="DInput_IDirectInputDevice*",
     doc="DirectInput joystick device created by DInput_CreateConfiguredJoystickDevice; acquired, polled, and released by input shutdown.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "DInput_CreateConfiguredJoystickDevice_ConstantForceEffect",
@@ -15584,7 +15675,7 @@ stable.data(
     type="void*",
     doc="DirectInput constant-force effect object returned by IDirectInputDevice::CreateEffect when force feedback is available.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Video_CloseMovieFile_Handle",
@@ -15592,7 +15683,7 @@ stable.data(
     type="int32_t",
     doc="Winplay/RPL movie handle initialized by Movie_InitMovie and shut down by Movie_ShutdownMovie.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Video_CloseMovieFile_SurfaceHandle",
@@ -15601,7 +15692,7 @@ stable.data(
     doc="Winplay video surface handle initialized by Movie_InitVideo, prepared for playback, and "
     "shut down by Movie_ShutdownVideo.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Video_CloseMovieFile_SoundHandle",
@@ -15609,7 +15700,7 @@ stable.data(
     type="int32_t",
     doc="Winplay sound handle initialized by Movie_InitSound and passed into movie playback.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Graphics_RenderPolygonBatch_Flags",
@@ -15798,6 +15889,7 @@ stable.data(
     type="uint32_t",
     doc="Packed HUD counter animation state: low word drives bone counter animation, high word drives lives icon animation.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Save_LoadGameState_FileBuffer",
@@ -16014,6 +16106,7 @@ stable.data(
     type="int16_t",
     doc="Last/displayed lives value used to restart the HUD lives-counter animation when the live value changes.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Shared_LoadCommonResources_PKGResourceHandle1",
@@ -16059,6 +16152,7 @@ stable.data(
     type="uint8_t",
     doc="Save operation result/status byte written by Menu_HandleSaveGameLogic.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_RenderSaveGame_Active",
@@ -16087,6 +16181,7 @@ stable.data(
     type="uint8_t",
     doc="Async save dirty/completion byte set while save-slot data is copied and operation 9 is queued.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_RenderSaveGame_State",
@@ -16103,6 +16198,7 @@ stable.data(
     type="int16_t",
     doc="Two-byte controls prompt descriptor filled by Menu_RenderButtonPrompt.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_HandleOptionsLogic_InputMenuControlsButtonIndex",
@@ -16110,6 +16206,7 @@ stable.data(
     type="int16_t",
     doc="Second two-byte controls prompt descriptor filled by Menu_RenderButtonPrompt for duplicate/conflict checks.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Level_InitializeSaveState_GameBackupPuppyCount",
@@ -16129,6 +16226,7 @@ stable.data(
     type="int32_t",
     doc=("One-shot menu-input up pulse dword in the menu input pulse cluster."),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_UpdateInput_Down",
@@ -16136,6 +16234,7 @@ stable.data(
     type="int32_t",
     doc=("One-shot menu-input down pulse dword in the menu input pulse cluster."),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_UpdateInput_Left",
@@ -16143,6 +16242,7 @@ stable.data(
     type="int32_t",
     doc=("One-shot menu-input left pulse dword in the menu input pulse cluster."),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_UpdateInput_Right",
@@ -16150,6 +16250,7 @@ stable.data(
     type="int32_t",
     doc=("One-shot menu-input right pulse dword in the menu input pulse cluster."),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_UpdateInput_Confirm",
@@ -16157,6 +16258,7 @@ stable.data(
     type="int32_t",
     doc=("One-shot menu-input confirm pulse dword in the menu input pulse cluster."),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_UpdateInput_Cancel",
@@ -16164,6 +16266,7 @@ stable.data(
     type="int32_t",
     doc=("One-shot menu-input cancel pulse dword in the menu input pulse cluster."),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_UpdateInput_UpHeld",
@@ -16209,6 +16312,7 @@ stable.data(
     type="int32_t",
     doc="Selected options-menu row dword.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_HandleOptionsLogic_InputMenuButtonRemappingActive",
@@ -16217,6 +16321,7 @@ stable.data(
     type="int32_t",
     doc="Control-remapping active/latch dword in the options submenu state cluster.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_HandleOptionsLogic_State",
@@ -16231,6 +16336,7 @@ stable.data(
     type="int32_t",
     doc="Auxiliary options-menu UI state dword read by Menu_HandleOptionsLogic.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_HandleOptionsLogic_SubState",
@@ -16238,6 +16344,7 @@ stable.data(
     type="int32_t",
     doc="Options/control-remap substate dword read at Menu_HandleOptionsLogic entry.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Graphics_DrawSortedLists_Cursor",
@@ -16281,7 +16388,10 @@ stable.data(
 stable.data(
     "PKG_CleanupResourceGameState_LevelHandle",
     xref("PKG_CleanupResourceGameState", 0x0, 0x1),
+    type="void*",
     doc="Global latch for the completed level resource/blob handle returned by Level_LoadStateMachine; PKG_CleanupResourceGameState passes the non-null handle to Level_UnloadResources and then clears it.",
+    write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "PKG_UpdateLoadingScreen_LoadingFadeCounter",
@@ -16310,6 +16420,7 @@ stable.data(
     type="int32_t",
     doc="Countdown used by the menu/load transition state machine before advancing loading fade steps.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Menu_ProcessMenuTransition_SkipTitleScreen",
@@ -16447,6 +16558,7 @@ stable.data(
     type="uint8_t",
     doc="Byte-sized audio enabled flag stored by Audio_SetEnabledFlag and read by Audio_GetEnabledFlag.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_ShutdownSystem_OpenStreamCount",
@@ -16454,6 +16566,7 @@ stable.data(
     type="int32_t",
     doc="Count of open Miles streams, incremented by Audio_OpenStream and decremented by Audio_CloseMusicStream.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_StartSoundPlayback_Slots",
@@ -16487,6 +16600,7 @@ stable.data(
     doc="Selected music stream record pointer stored by Audio_ResetMusicState and later passed to "
     "Audio_PlayMusicStream by Audio_ProcessMusicFade.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_ShutdownSystem_ActiveWaveCount", xref("Audio_ShutdownSystem", 0x42, 0x2)
@@ -16497,6 +16611,7 @@ stable.data(
     type="uint8_t",
     doc="Byte-sized audio/music state flags used by music fade/transition routines.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_ShutdownSystem_MusicTransitionTarget",
@@ -16504,6 +16619,7 @@ stable.data(
     type="int16_t",
     doc="Signed 16-bit music transition target/state value cleared during audio shutdown.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_StartMusicWithFade_TransitionState",
@@ -16511,6 +16627,7 @@ stable.data(
     type="int16_t",
     doc="Signed 16-bit current music fade/transition volume state advanced by Audio_ProcessMusicFade.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_SetMusicFadeTarget_Volume",
@@ -16518,6 +16635,7 @@ stable.data(
     type="int16_t",
     doc="Signed 16-bit target volume used by Audio_SetMusicFadeTarget and Audio_ProcessMusicFade.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Trail_ResetBone_CurrentPathNodeSelector",
@@ -16632,6 +16750,7 @@ stable.data(
     type="int32_t*",
     doc="Heap array of registered keyboard virtual-key codes, grown by Input_RegisterButtonMapping.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_RegisterButtonMapping_KeyboardMappingButtons",
@@ -16639,6 +16758,7 @@ stable.data(
     type="uint32_t*",
     doc="Heap array parallel to keyboard_mapping_keys; each entry is the Input_State.button_bits mask for that key.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Graphics_RenderFrame_LastFrameTick",
@@ -16674,6 +16794,7 @@ stable.data(
     type="float",
     doc="Frames-per-second value rendered by the debug overlay after Graphics_RenderFrame updates the accumulator.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Graphics_RenderFrame_DebugFPSAccumulatedFrameTime",
@@ -16735,7 +16856,7 @@ stable.data(
     type="File_Handle*",
     doc="Open package File_Handle consumed by PKG_LoadEntry while reading aligned package entries.",
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "PKG_LoadEntry_Toc",
@@ -16746,16 +16867,6 @@ stable.data(
     ),
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
-)
-stable.data(
-    "PKG_LoadEntry_TocFileSizes",
-    xref("PKG_LoadEntry", 0x7, 0x3),
-    type="uint32_t",
-    doc=(
-        "Size-field view used by PKG_LoadEntry; this overlaps the PKG_TOCEntry.size lane within "
-        "the package TOC allocation."
-    ),
-    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data("Tree_RebalanceMap_Buckets", xref("Tree_RebalanceMap", 0x15, 0x3))
 stable.data(
@@ -16775,16 +16886,18 @@ stable.data(
 stable.data(
     "Signal_Queue",
     xref("Signal_Poll", 0x1D, 0x1),
-    type="int16_t",
-    doc="Base of the queued signal records scanned by Signal_Poll.",
+    type="Signal_QueueEntry[0x28]",
+    doc="Forty-entry signal queue scanned by Signal_Poll.",
     write_policy=WritePolicy.READ_ONLY,
+    stable=True,
 )
 stable.data(
-    "Audio_ProcessSoundQueue_PlaybackRateTable",
+    "g_soundVolumeArray",
     xref("Audio_ProcessSoundQueue", 0x1F2, 0x4),
-    type="uint16_t",
-    doc="First halfword/base of the sound pitch/playback-rate cache used before AIL_set_sample_playback_rate.",
+    type="uint16_t[0x9]",
+    doc="Nine sound-volume values read by Audio_ProcessSoundQueue.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Audio_FreeSoundSlot_Entries",
@@ -16832,6 +16945,7 @@ stable.data(
     type="int32_t",
     doc="Last Timer_GetElapsedTickCount value captured by Audio_UpdateSoundChannels for per-channel sound timing updates.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Replay_StartDemoPlayback_InputPtr",
@@ -16875,11 +16989,13 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "Menu_RenderFormattedText_InputButtonNameBuffers",
+    "g_inputButtonNameBuffers",
     xref("Menu_RenderFormattedText", 0x32, 0x3),
-    type="char*",
-    doc="First entry/base of the heap-allocated input button-name buffer pointer array.",
+    type="char*[13]",
+    doc="Thirteen input button-name buffer pointers indexed by button id. Slot 12 overlaps the "
+    "no-key-assigned string at 0x634970.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Title_InitializeSpots_ActiveCount",
@@ -16961,14 +17077,17 @@ stable.data(
         "Raw input/VK state clear buffer zeroed by Input_ClearState. Public fixed-array accessors use pointer-to-array read and write signatures."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Display_CurrentWindowHandle",
     xref("Display_IsActive", 0x0, 0x2),
     xref("Display_SetMode", 0x0, 0x2),
     xref("Display_ReleaseMode", 0x0, 0x2),
+    type="HWND",
     doc="Current HWND bound to the active display/D3D mode; checked by Display_IsActive, written by Display_SetMode, and tested before Display_ReleaseMode cleanup.",
     write_policy=WritePolicy.ENGINE_MANAGED,
+    stable=True,
 )
 stable.data(
     "String_ConvertFloatToExponential_FormatPrecision",
@@ -17067,14 +17186,6 @@ stable.data(
     ),
 )
 stable.data(
-    "Input_CurrentX",
-    xref("Input_CalculateMovementVector", 0xAD, 0x3),
-    xref("Input_Update", 0x9E, 0x1),
-    doc=(
-        "Input/movement local value used by Input_Update and Input_CalculateMovementVector."
-    ),
-)
-stable.data(
     "Replay_DemoBonusReplayDataTable",
     xref("Replay_LoadBonusReplay", 0x24, 0x1),
     doc="Demo bonus-replay data table consumed by replay loading; name avoids the generic Data suffix.",
@@ -17085,7 +17196,7 @@ stable.data(
     xref("Graphics_RenderMeshNode", 0x6D8, 0x2),
 )
 stable.data(
-    "Script_OpMoveToTarget_CurrentActor",
+    "Script_CurrentEntity",
     xref("Script_OpMoveToTarget", 0x87, 0x2),
     type="Entity_State*",
     doc=(
@@ -17093,7 +17204,7 @@ stable.data(
         "and read by script command handlers; engine-managed transient state."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Script_OpCheckTerminator_EntityIndex",
@@ -17254,6 +17365,7 @@ stable.data(
         "this address."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "UI_InitializedFlag",
@@ -17272,6 +17384,7 @@ stable.data(
     type="int32_t",
     doc="Number of entries in the keyboard_mapping_keys/keyboard_mapping_buttons arrays.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_AxisYNegativeMask",
@@ -17279,6 +17392,7 @@ stable.data(
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3e8; ORed when DIJOYSTATE.lY < -700.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_AxisYPositiveMask",
@@ -17286,6 +17400,7 @@ stable.data(
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3e9; ORed when DIJOYSTATE.lY > 700.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_AxisXNegativeMask",
@@ -17293,6 +17408,7 @@ stable.data(
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ea; ORed when DIJOYSTATE.lX < -700.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_AxisXPositiveMask",
@@ -17300,6 +17416,7 @@ stable.data(
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3eb; ORed when DIJOYSTATE.lX > 700.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_AxisRzNegativeMask",
@@ -17307,6 +17424,7 @@ stable.data(
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ec; ORed when DIJOYSTATE.lRz < -600.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_AxisRzPositiveMask",
@@ -17314,6 +17432,7 @@ stable.data(
     type="uint32_t",
     doc="Direct gamepad lookup entry for control code 0x3ed; ORed when DIJOYSTATE.lRz > 600.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_ReadGamepad_Button0Mask",
@@ -17442,6 +17561,7 @@ stable.data(
     doc="Additional pcdogs.ini button binding assigned to Input_State mask 0x4000; defaults to "
     "VK_SPACE (0x20) when unset.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Config_ApplySettings_InputPlayer2Controls",
@@ -17742,6 +17862,7 @@ stable.data(
     type="int32_t",
     doc="Last winplay video/sound/movie initialization or playback status code.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "DInput_EnumerateForceFeedbackJoysticks_Available",
@@ -17749,6 +17870,7 @@ stable.data(
     type="int32_t",
     doc="Set to 1 when force-feedback joystick enumeration finds at least one attached device; allows constant-force effect creation and playback.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "DInput_InitializeJoystickInput_WindowHandle",
@@ -17756,6 +17878,7 @@ stable.data(
     type="HWND",
     doc="Main game window handle used by DirectInput cooperative-level setup.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "DInput_EnumJoystickDeviceCallback_Seen",
@@ -17763,6 +17886,7 @@ stable.data(
     type="int32_t",
     doc="Set by the DirectInput joystick enumeration callback after copying an enumerated device GUID into the caller-provided list.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "Input_InitializeInputSubsystem_Initialized",
@@ -17832,6 +17956,7 @@ stable.data(
     type="D3D_IDirect3D7*",
     doc="IDirect3D7 interface obtained from IDirectDraw7::QueryInterface; used for device enumeration and device creation.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "D3D_CreateTextureSurface_GraphicsPixelBlueMask",
@@ -17843,6 +17968,7 @@ stable.data(
     type="uint32_t",
     doc="Power-of-two texture width computed by D3D_CreateTextureSurface: rounds requested width up, clamps to 256, and mirrors height when device caps require square textures.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_DDrawBackBuffer",
@@ -17850,6 +17976,7 @@ stable.data(
     type="DDraw_IDirectDrawSurface7*",
     doc="Attached DirectDraw back buffer used as the active D3D render target and screenshot source.",
     write_policy=WritePolicy.ENGINE_MANAGED,
+    stable=True,
 )
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_DDrawPrimarySurface",
@@ -17857,6 +17984,7 @@ stable.data(
     type="DDraw_IDirectDrawSurface7*",
     doc="Primary/front DirectDraw surface created during D3D initialization and flipped/presented by frame rendering.",
     write_policy=WritePolicy.ENGINE_MANAGED,
+    stable=True,
 )
 stable.data(
     "Camera_SetupClipPlanes_D3DState", xref("Camera_SetupClipPlanes", 0x5B, 0x2)
@@ -17972,6 +18100,7 @@ stable.data(
         "and material cleanup paths."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
+    stable=True,
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_CurrentVertexFormat",
@@ -17997,6 +18126,7 @@ stable.data(
     type="uint32_t",
     doc="Power-of-two texture height computed by D3D_CreateTextureSurface: rounds requested height up, clamps to 256, and mirrors width when device caps require square textures.",
     write_policy=WritePolicy.RAW_MEMORY,
+    stable=True,
 )
 stable.data(
     "D3D_CreateTextureSurface_GraphicsTextureSurfaceDesc",
@@ -18016,6 +18146,7 @@ stable.data(
     type="DDraw_IDirectDrawSurface7*",
     doc="DirectDraw z-buffer surface attached to the D3D render target and released during D3D/DirectDraw shutdown.",
     write_policy=WritePolicy.ENGINE_MANAGED,
+    stable=True,
 )
 stable.data(
     "D3D_CreateTextureSurface_GraphicsPixelRedBitsToDiscard",
@@ -18178,7 +18309,7 @@ stable.data(
         "to the unstable Level_RuntimeData layout."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Graphics_AdjustLevelScale_Factor",
@@ -18220,7 +18351,7 @@ stable.data(
         "by 12 into Graphics_ListState.dynamic_level_scale."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
+    stable=True,
 )
 stable.data(
     "Audio_TriggerMusicTransition_Active",
@@ -18244,7 +18375,7 @@ stable.data(
         "current-player/current-entity authority."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
+    stable=True,
 )
 stable.data("Script_OpPauseToggle_State", xref("Script_OpPauseToggle", 0x1B, 0x1))
 stable.data(
