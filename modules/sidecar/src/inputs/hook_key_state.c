@@ -23,7 +23,7 @@ bool dttr_inputs_hook_key_state_prepare(const DTTR_Mods_Context *ctx) {
 bool dttr_inputs_hook_format_button_name_prepare(const DTTR_Mods_Context *ctx) {
 	return ctx && DTTR_PCDOGS_F_Input_FormatButtonName->IsCallable(&ctx->runtime)
 		   && DTTR_PCDOGS_F_Input_GetButtonIndex->IsCallable(&ctx->runtime)
-		   && DTTR_PCDOGS_D_Menu_RenderFormattedText_InputButtonNameBuffers->IsResolved();
+		   && DTTR_PCDOGS_D_G_InputButtonNameBuffers->IsResolved();
 }
 
 void dttr_inputs_hook_key_state_reset() {
@@ -76,11 +76,13 @@ static char *format_custom_button_name(const char *name, uint32_t button_mask) {
 		return (char *)name;
 	}
 
-	char **button_names = DTTR_PCDOGS_D_Menu_RenderFormattedText_InputButtonNameBuffers
-							  ->Ptr();
-	if (!button_names) {
+	char *(
+		*button_name_slots
+	)[DTTR_INPUTS_BUTTON_NAME_SLOT_COUNT] = DTTR_PCDOGS_D_G_InputButtonNameBuffers->Ptr();
+	if (!button_name_slots) {
 		return (char *)name;
 	}
+	char **button_names = *button_name_slots;
 
 	if (!button_names[button_index]) {
 		void *buffer = NULL;

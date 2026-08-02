@@ -3999,6 +3999,19 @@ stable.struct(
     size=0x14,
 )
 
+stable.struct(
+    "Signal_QueueEntry",
+    member("int16_t", "signal_id", 0x0),
+    member("uint8_t", "event_type", 0x2),
+    member("uint8_t", "reserved_03", 0x3, doc="Reserved byte."),
+    member("int16_t", "payload_04", 0x4),
+    member("int16_t", "payload_06", 0x6),
+    size=0x8,
+    doc="Queued signal record with signal ID, event type, and two payload words.",
+    stable=True,
+    incomplete=False,
+)
+
 
 stable.type_alias(
     "Win32_GUID",

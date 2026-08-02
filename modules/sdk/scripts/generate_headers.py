@@ -107,7 +107,6 @@ class HeaderTypes:
     packed_type_rows: list[object]
     forward_names: list[str]
     generated_type_names: dict[str, str]
-    unstable_type_names: set[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -328,7 +327,6 @@ class HeaderContext:
     type_prefix_rows: list[object]
     packed_type_rows: list[object]
     forward_names: list[str]
-    unstable_type_names: set[str]
     signatures: list[SignatureRow]
     functions: list[FunctionRow]
     globals: list[GlobalRow]
@@ -830,11 +828,51 @@ def validate_blueprint(blueprint: BlueprintRows) -> None:
     check_public_token_unique(blueprint.functions, "function")
     check_public_token_unique([row for row in blueprint.globals if row.typed], "data")
     check_public_token_unique(blueprint.structs, "type")
+    validate_stable_complete_type_dependencies(blueprint)
 
     functions = {row.name for row in blueprint.functions}
     for row in blueprint.function_xrefs:
         if row.function not in functions:
             raise ValueError(f"function XRef has unknown target: {row.function}")
+
+
+def validate_stable_complete_type_dependencies(blueprint: BlueprintRows) -> None:
+    """Reject stable declarations that need unavailable generated type layouts."""
+
+    type_rows = {row.name: row for row in blueprint.structs}
+    declared_names = set(type_rows)
+
+    def require(type_: object, owner_kind: str, owner_name: str) -> None:
+        text = c_type(type_)
+        if "*" in text:
+            return
+
+        dependency = base_type_name(text)
+        row = type_rows.get(dependency)
+        if row is not None:
+            if row.unstable:
+                raise ValueError(
+                    f"stable {owner_kind} {owner_name} requires unstable type "
+                    f"{dependency}"
+                )
+
+            return
+
+        if is_struct_ref(dependency, declared_names):
+            raise ValueError(
+                f"stable {owner_kind} {owner_name} requires missing type {dependency}"
+            )
+
+    for row in blueprint.structs:
+        if row.unstable or type_row_kind(row) != TypeRowKind.STRUCT:
+            continue
+
+        for member in row.members:
+            require(member.type, "type", row.name)
+
+    for row in blueprint.globals:
+        if not row.unstable and row.typed:
+            require(row.typed.type, "global", row.name)
 
 
 def clang_format_header(path: Path, text: str) -> str:
@@ -1645,7 +1683,6 @@ def header_type_context(blueprint: BlueprintRows) -> HeaderTypes:
         packed_type_rows=packed_type_rows,
         forward_names=forward_names,
         generated_type_names=generated_type_names,
-        unstable_type_names={row.name for row in blueprint.structs if row.unstable},
     )
 
 
@@ -1718,7 +1755,6 @@ def header_context(blueprint: BlueprintRows) -> HeaderContext:
         type_prefix_rows=header_types.type_prefix_rows,
         packed_type_rows=header_types.packed_type_rows,
         forward_names=header_types.forward_names,
-        unstable_type_names=header_types.unstable_type_names,
         signatures=blueprint.signatures,
         functions=blueprint.functions,
         globals=blueprint.globals,

@@ -51,13 +51,7 @@ typedef enum ${enum_name(row.name)} {
 	% endif
 		</%def>
 % for name in forward_names:
-% if name in unstable_type_names:
-#if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
-% endif
 typedef struct ${struct_name(name)} ${struct_name(name)};
-% if name in unstable_type_names:
-#endif
-% endif
 % endfor
 	% for row in type_prefix_rows:
 % if row.unstable:
