@@ -50,6 +50,30 @@ static LONG read_axis(int axis_idx) {
 	return (value > -deadzone && value < deadzone) ? 0 : value;
 }
 
+static bool axis_is_trigger(int sdl_axis) {
+	return sdl_axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER
+		|| sdl_axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+}
+
+static LONG read_camera_rz() {
+	const int alt_axis = dttr_config.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT];
+
+	// if no axis_camera_rz_alt, use axis_camera_rz for both directions
+	if (alt_axis == DTTR_GAMEPAD_MAPPING_NONE) {
+		return read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ);
+	}
+
+	// handle axis_camera_rz_alt assignment (split left / right)
+	const int primary_axis = dttr_config.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ];
+	const LONG primary = read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ);
+	const LONG alt = read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT);
+	const LONG primary_mag = axis_is_trigger(primary_axis) ? (primary < 0 ? 0 : primary)
+														   : (primary < 0 ? -primary : 0);
+	const LONG alt_mag = axis_is_trigger(alt_axis) ? (alt < 0 ? 0 : alt)
+												   : (alt > 0 ? alt : 0);
+	return alt_mag - primary_mag;
+}
+
 void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 	di_joy_state *state = NULL;
 	if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Mem_MallocCRT->Call(
@@ -73,7 +97,7 @@ void *__cdecl dttr_inputs_hook_dinput_poll_callback(void *device) {
 		state->y = read_axis(DTTR_GAMEPAD_AXIS_IDX_STICK_Y);
 	}
 
-	state->rz = read_axis(DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ);
+	state->rz = read_camera_rz();
 
 	return state;
 }

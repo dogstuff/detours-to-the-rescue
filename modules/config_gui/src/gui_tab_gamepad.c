@@ -35,6 +35,11 @@ static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_POSITION
 	= "Live position from the configured Camera RZ / Pan axis with its deadzone circled "
 	  "in red. Camera controls must still be bound manually using this axis in the game "
 	  "controls menu.";
+static const char *TOOLTIP_GAMEPAD_CAMERA_RZ
+	= "Primary Camera RZ / Pan axis (use for right stick).";
+static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_ALT
+	= "Optional secondary Camera RZ / Pan axis for the opposite direction. "
+	  "Ex: Left trigger and Right trigger can both be assigned, matching PS1 behavior.";
 static const char *TOOLTIP_CONTROL_BINDINGS
 	= "Click a binding, then press a keyboard key or gamepad button. "
 	  "This behavior cannot be bound from the in-game controls menu.";
@@ -57,8 +62,20 @@ typedef struct {
 static const gamepad_axis_field GAMEPAD_AXIS_FIELDS[] = {
 	{"Stick X", "##axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X},
 	{"Stick Y", "##axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y},
-	{"Camera RZ (Pan)", "##axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+	{"Camera Pan", "##axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ},
+	{"Camera Pan Alt", "##axis_camera_rz_alt", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT},
 };
+
+static const char *gamepad_axis_field_tooltip(int axis_index) {
+	switch (axis_index) {
+	case DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ:
+		return TOOLTIP_GAMEPAD_CAMERA_RZ;
+	case DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT:
+		return TOOLTIP_GAMEPAD_CAMERA_RZ_ALT;
+	default:
+		return TOOLTIP_GAMEPAD_AXIS;
+	}
+}
 
 static void reset_preview_gamepad(config_ui_state *state) {
 	state->preview_gamepad = NULL;
@@ -131,6 +148,31 @@ static int32_t preview_axis_dinput(SDL_Gamepad *gamepad, int axis) {
 
 	return SDL_GetGamepadAxis(gamepad, (SDL_GamepadAxis)axis)
 		   / (int32_t)GAMEPAD_DINPUT_AXIS_SCALE;
+}
+
+static bool preview_axis_is_trigger(int axis) {
+	return axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER
+		|| axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+}
+
+static int32_t combine_camera_rz_values(
+	const int *axes,
+	int32_t primary_value,
+	int32_t alt_value
+) {
+	if (axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT] == DTTR_GAMEPAD_MAPPING_NONE) {
+		return primary_value;
+	}
+
+	const int primary_axis = axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ];
+	const int alt_axis = axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT];
+	const int32_t primary_mag = preview_axis_is_trigger(primary_axis)
+			? (primary_value < 0 ? 0 : primary_value)
+			: (primary_value < 0 ? -primary_value : 0);
+	const int32_t alt_mag = preview_axis_is_trigger(alt_axis)
+		? (alt_value < 0 ? 0 : alt_value)
+		: (alt_value > 0 ? alt_value : 0);
+	return alt_mag - primary_mag;
 }
 
 static float dinput_axis_unit(int32_t axis) {
@@ -258,10 +300,11 @@ static void draw_gamepad_axis_mapping_row(
 	const gamepad_axis_field *axis
 ) {
 	begin_setting_row();
+	const char *tooltip = gamepad_axis_field_tooltip(axis->axis_index);
 	igAlignTextToFramePadding();
 	draw_config_label(
 		axis->label,
-		TOOLTIP_GAMEPAD_AXIS,
+		tooltip,
 		gamepad_axis_mapping_label_state(state, axis->axis_index)
 	);
 
@@ -278,7 +321,7 @@ static void draw_gamepad_axis_mapping_row(
 		DTTR_CONFIG_CHOICES_GAMEPAD_AXIS,
 		GAMEPAD_AXIS_TOOLTIPS
 	);
-	show_tooltip(TOOLTIP_GAMEPAD_AXIS);
+	show_tooltip(tooltip);
 
 	igTableNextColumn();
 	draw_axis_field_label("Deadzone", TOOLTIP_GAMEPAD_DEADZONE);
@@ -465,9 +508,10 @@ static void draw_axis_positions(
 		gamepad,
 		axes[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]
 	);
-	const int32_t raw_camera_rz_dinput = preview_axis_dinput(
-		gamepad,
-		axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ]
+	const int32_t raw_camera_rz_dinput = combine_camera_rz_values(
+		axes,
+		preview_axis_dinput(gamepad, axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ]),
+		preview_axis_dinput(gamepad, axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT])
 	);
 	const int32_t stick_x_dinput = dttr_inputs_scale_dinput_axis(
 		raw_stick_x_dinput,
@@ -477,10 +521,18 @@ static void draw_axis_positions(
 		raw_stick_y_dinput,
 		sensitivity[DTTR_GAMEPAD_AXIS_IDX_STICK_Y]
 	);
-	const int32_t camera_rz_dinput = normal_dinput_axis_from_config(
-		raw_camera_rz_dinput,
-		deadzone[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ],
-		sensitivity[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ]
+	const int32_t camera_rz_dinput = combine_camera_rz_values(
+		axes,
+		normal_dinput_axis_from_config(
+			preview_axis_dinput(gamepad, axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ]),
+			deadzone[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ],
+			sensitivity[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ]
+		),
+		normal_dinput_axis_from_config(
+			preview_axis_dinput(gamepad, axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT]),
+			deadzone[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT],
+			sensitivity[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT]
+		)
 	);
 	axis_preview_values stick = {
 		.raw_x = dinput_axis_unit(raw_stick_x_dinput),

@@ -26,17 +26,20 @@ enum {
 #define CONFIG_GAMEPAD_AXIS_FIELDS(X)                                                    \
 	X("axis_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                     \
 	X("axis_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                     \
-	X("axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+	X("axis_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)                                 \
+	X("axis_camera_rz_alt", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT)
 
 #define CONFIG_GAMEPAD_DEADZONE_FIELDS(X)                                                \
 	X("deadzone_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                                 \
 	X("deadzone_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                                 \
-	X("deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+	X("deadzone_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)                             \
+	X("deadzone_camera_rz_alt", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT)
 
 #define CONFIG_GAMEPAD_SENSITIVITY_FIELDS(X)                                             \
 	X("sensitivity_stick_x", DTTR_GAMEPAD_AXIS_IDX_STICK_X)                              \
 	X("sensitivity_stick_y", DTTR_GAMEPAD_AXIS_IDX_STICK_Y)                              \
-	X("sensitivity_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)
+	X("sensitivity_camera_rz", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ)                          \
+	X("sensitivity_camera_rz_alt", DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT)
 
 #define CONFIG_IN_GAME_CONTROL_ACTION_COUNT 10
 
