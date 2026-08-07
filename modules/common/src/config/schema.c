@@ -66,6 +66,7 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 	FIELD_TOP("pcdogs_path", pcdogs_path, CONFIG_STRING),
 	FIELD_TOP("saves_path", saves_path, CONFIG_STRING),
 	FIELD_TOP("skip_intro_movies", skip_intro_movies, CONFIG_BOOL),
+	FIELD_TOP("prevent_title_exit", prevent_title_exit, CONFIG_BOOL),
 	FIELD_TOP("update_rate_limiter", update_rate_limiter, CONFIG_BOOL),
 	FIELD_TOP("update_rate_limiter_cap", update_rate_limiter_cap, CONFIG_INT),
 

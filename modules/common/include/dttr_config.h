@@ -126,6 +126,7 @@ typedef struct {
 	char pcdogs_path[MAX_PATH];
 	char saves_path[MAX_PATH];
 	bool skip_intro_movies;
+	bool prevent_title_exit;
 	DTTR_ScalingMode scaling_fit;
 	DTTR_ScalingMethod scaling_method;
 	DTTR_GraphicsAPI graphics_api;

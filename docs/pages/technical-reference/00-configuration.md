@@ -30,6 +30,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
   "pcdogs_path": "",
   "saves_path": "saves",
   "skip_intro_movies": false,
+  "prevent_title_exit": true,
   "graphics": {
     "scaling_fit": "letterbox",
     "scaling_method": "logical",

@@ -14,6 +14,7 @@ static const DTTR_Config default_config = {
 	.pcdogs_path = "",
 	.saves_path = "saves",
 	.skip_intro_movies = false,
+	.prevent_title_exit = true,
 	.scaling_fit = DTTR_SCALING_MODE_LETTERBOX,
 	.scaling_method = DTTR_SCALING_METHOD_LOGICAL,
 	.graphics_api = DTTR_GRAPHICS_API_AUTO,

@@ -17060,6 +17060,11 @@ stable.data(
 stable.data(
     "Title_UpdateAndRenderScreen_State",
     xref("Title_UpdateAndRenderScreen", 0x10, 0x3),
+    type="uint8_t",
+    doc=(
+        "Byte-sized title-screen state machine value 0..6; state 4 is the "
+        "interactive title screen."
+    ),
 )
 stable.data(
     "Title_SoundDefTable",

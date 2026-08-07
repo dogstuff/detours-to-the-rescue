@@ -30,6 +30,8 @@ static const char *TOOLTIP_SHOW_CRASH_POPUP
 
 static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip Intro Movies at launch. Default: "
 											   "false.";
+static const char *TOOLTIP_PREVENT_TITLE_EXIT = "Prevents Escape from closing the game "
+												"on the title screen. Default: true.";
 static const char
 	*TOOLTIP_UPDATE_RATE_LIMITER = "Caps the host update rate to reduce CPU/GPU "
 								   "pressure. Default: false.";
@@ -111,6 +113,14 @@ void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		&state->config.skip_intro_movies,
 		TOOLTIP_SKIP_INTRO_MOVIES,
 		FIELD_LABEL_STATE(state, skip_intro_movies)
+	);
+	labeled_checkbox(
+		ctx,
+		"Prevent Title Exit",
+		"##prevent_title_exit",
+		&state->config.prevent_title_exit,
+		TOOLTIP_PREVENT_TITLE_EXIT,
+		FIELD_LABEL_STATE(state, prevent_title_exit)
 	);
 	labeled_checkbox(
 		ctx,

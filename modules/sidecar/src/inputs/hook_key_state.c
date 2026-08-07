@@ -33,6 +33,14 @@ void dttr_inputs_hook_key_state_reset() {
 }
 
 BOOL __cdecl dttr_inputs_hook_is_key_pressed_async_callback(int32_t virtual_key) {
+	uint8_t title_state = 0;
+	const DTTR_Result title_state_result = DTTR_PCDOGS_D_Title_UpdateAndRenderScreen_State
+											   ->Read(&title_state);
+	if (dttr_config.prevent_title_exit && virtual_key == VK_ESCAPE
+		&& DTTR_ResultOK(title_state_result) && title_state == 4) {
+		return FALSE;
+	}
+
 	int keyboard_state_count = 0;
 	const bool *keyboard_state = SDL_GetKeyboardState(&keyboard_state_count);
 
