@@ -3,7 +3,7 @@ image: docker.io/nixos/nix:2.24.11
 
 variables:
   NIX_CONFIG: "experimental-features = nix-command flakes"
-  CI_IMAGE: "$CI_REGISTRY_IMAGE:main"
+  CI_IMAGE: "${CI_REGISTRY}/dogstuff/detours-to-the-rescue:main"
   CI_NIX_SHELL: ".#devShells.x86_64-linux.default"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_TAG}"
   NIGHTLY_PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/dttr/${CI_COMMIT_SHORT_SHA}"
