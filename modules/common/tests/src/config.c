@@ -206,8 +206,37 @@ static void mod_configs_apply_default(void **) {
 	);
 }
 
+static void gamepad_axis_mapping_round_trip(void **) {
+	DTTR_Config cfg;
+	DTTR_Config_SetDefaults(&cfg);
+
+	cfg.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = SDL_GAMEPAD_AXIS_LEFT_TRIGGER;
+	cfg.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT] =
+		SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+
+	DTTR_Config defaults;
+	DTTR_Config_SetDefaults(&defaults);
+	assert_true(DTTR_Config_SchemaChanged(&cfg, &defaults));
+
+	char path[MAX_PATH];
+	assert_true(temp_config_path(path, sizeof(path)));
+	assert_true(DTTR_Config_Save(path, &cfg));
+	assert_true(DTTR_Config_Load(path));
+	DeleteFileA(path);
+
+	assert_int_equal(
+		dttr_config.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ],
+		SDL_GAMEPAD_AXIS_LEFT_TRIGGER
+	);
+	assert_int_equal(
+		dttr_config.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT],
+		SDL_GAMEPAD_AXIS_RIGHT_TRIGGER
+	);
+}
+
 static const DTTR_TestCase TEST_CASES[] = {
 	{"control-bindings-round-trip", control_bindings_round_trip},
+	{"gamepad-axis-mapping-round-trip", gamepad_axis_mapping_round_trip},
 	{"mod-round-trip", mod_configs_round_trip_typed_values},
 	{"mod-validation", mod_configs_validation},
 	{"mod-apply-default", mod_configs_apply_default},
