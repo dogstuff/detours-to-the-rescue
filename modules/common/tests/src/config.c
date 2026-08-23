@@ -211,8 +211,7 @@ static void gamepad_axis_mapping_round_trip(void **) {
 	DTTR_Config_SetDefaults(&cfg);
 
 	cfg.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ] = SDL_GAMEPAD_AXIS_LEFT_TRIGGER;
-	cfg.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT] =
-		SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+	cfg.gamepad_axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT] = SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
 
 	DTTR_Config defaults;
 	DTTR_Config_SetDefaults(&defaults);

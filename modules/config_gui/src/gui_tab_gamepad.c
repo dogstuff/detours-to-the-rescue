@@ -35,8 +35,8 @@ static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_POSITION
 	= "Live position from the configured Camera RZ / Pan axis with its deadzone circled "
 	  "in red. Camera controls must still be bound manually using this axis in the game "
 	  "controls menu.";
-static const char *TOOLTIP_GAMEPAD_CAMERA_RZ
-	= "Primary Camera RZ / Pan axis (use for right stick).";
+static const char
+	*TOOLTIP_GAMEPAD_CAMERA_RZ = "Primary Camera RZ / Pan axis (use for right stick).";
 static const char *TOOLTIP_GAMEPAD_CAMERA_RZ_ALT
 	= "Optional secondary Camera RZ / Pan axis for the opposite direction. "
 	  "Ex: Left trigger and Right trigger can both be assigned, matching PS1 behavior.";
@@ -152,7 +152,7 @@ static int32_t preview_axis_dinput(SDL_Gamepad *gamepad, int axis) {
 
 static bool preview_axis_is_trigger(int axis) {
 	return axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER
-		|| axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+		   || axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
 }
 
 static int32_t combine_camera_rz_values(
@@ -167,11 +167,11 @@ static int32_t combine_camera_rz_values(
 	const int primary_axis = axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ];
 	const int alt_axis = axes[DTTR_GAMEPAD_AXIS_IDX_CAMERA_RZ_ALT];
 	const int32_t primary_mag = preview_axis_is_trigger(primary_axis)
-			? (primary_value < 0 ? 0 : primary_value)
-			: (primary_value < 0 ? -primary_value : 0);
+									? (primary_value < 0 ? 0 : primary_value)
+									: (primary_value < 0 ? -primary_value : 0);
 	const int32_t alt_mag = preview_axis_is_trigger(alt_axis)
-		? (alt_value < 0 ? 0 : alt_value)
-		: (alt_value > 0 ? alt_value : 0);
+								? (alt_value < 0 ? 0 : alt_value)
+								: (alt_value > 0 ? alt_value : 0);
 	return alt_mag - primary_mag;
 }
 

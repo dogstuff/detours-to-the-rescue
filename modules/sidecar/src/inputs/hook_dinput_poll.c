@@ -52,7 +52,7 @@ static LONG read_axis(int axis_idx) {
 
 static bool axis_is_trigger(int sdl_axis) {
 	return sdl_axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER
-		|| sdl_axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+		   || sdl_axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
 }
 
 static LONG read_camera_rz() {
