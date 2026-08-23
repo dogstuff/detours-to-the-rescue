@@ -6,6 +6,7 @@
 #include <dttr_pcdogs.h>
 
 #include "graphics/graphics_private.h"
+#include "graphics/resize_private.h"
 #include "inputs/inputs_private.h"
 #include "movies/movies_private.h"
 #include "sidecar_private.h"
@@ -89,7 +90,6 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 
 	case SDL_EVENT_WINDOW_RESIZED:
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-		dttr_graphics_handle_window_resize(event->window.data1, event->window.data2);
 		after_sdl_event(event, true);
 		return;
 
@@ -103,8 +103,26 @@ void dttr_sidecar_handle_sdl_event(const SDL_Event *event) {
 // Drains SDL events through the sidecar event bridge.
 void dttr_sidecar_poll_sdl_events() {
 	SDL_Event event;
+	DTTR_WindowResizePending pending_resize = {0};
+	SDL_Window *host_window = dttr_graphics_get_window();
+	const SDL_WindowID host_window_id = host_window ? SDL_GetWindowID(host_window) : 0;
 
 	while (SDL_PollEvent(&event)) {
+		if (host_window_id && event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
+			&& event.window.windowID == host_window_id) {
+			dttr_window_resize_record(
+				&pending_resize,
+				event.window.data1,
+				event.window.data2
+			);
+		}
+
 		dttr_sidecar_handle_sdl_event(&event);
+	}
+
+	int width = 0;
+	int height = 0;
+	if (dttr_window_resize_take(&pending_resize, &width, &height)) {
+		dttr_graphics_handle_window_resize(width, height);
 	}
 }

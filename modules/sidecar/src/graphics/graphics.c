@@ -1,5 +1,6 @@
 #include "graphics_private.h"
 #include "hooks_private.h"
+#include "resize_private.h"
 
 #include <dttr_config.h>
 #include <dttr_errors.h>
@@ -72,69 +73,30 @@ static int clamp_dim(int value, int fallback) {
 	return (value < DTTR_MIN_WINDOW_DIM) ? fallback : value;
 }
 
-// Derives the internal render target size from logical-scaling settings and the current
-// window size.
-static void select_render_resolution(
+// Derives the internal render target size from logical-scaling settings and a pixel size.
+static DTTR_Size select_render_resolution(
 	const DTTR_BackendState *state,
-	int *out_width,
-	int *out_height
+	DTTR_Size window_pixels
 ) {
-	int width = state->logical_width;
-	int height = state->logical_height;
-
-	if (dttr_config.scaling_method == DTTR_SCALING_METHOD_LOGICAL) {
-		int window_px_width = 0;
-		int window_px_height = 0;
-		int target_width = dttr_config.window_width;
-		int target_height = dttr_config.window_height;
-
-		if (state->window
-			&& SDL_GetWindowSizeInPixels(
-				state->window,
-				&window_px_width,
-				&window_px_height
-			)) {
-			if (window_px_width > target_width) {
-				target_width = window_px_width;
-			}
-
-			if (window_px_height > target_height) {
-				target_height = window_px_height;
-			}
-		}
-
-		if (dttr_config.scaling_fit == DTTR_SCALING_MODE_STRETCH) {
-			width = target_width;
-			height = target_height;
-		} else {
-			const int lw = clamp_dim(state->logical_width, WINDOW_WIDTH);
-			const int lh = clamp_dim(state->logical_height, WINDOW_HEIGHT);
-			const float scale = SDL_min(
-				(float)target_width / (float)lw,
-				(float)target_height / (float)lh
-			);
-
-			width = (int)((float)lw * scale);
-			height = (int)((float)lh * scale);
-		}
-	}
-
-	*out_width = clamp_dim(width, WINDOW_WIDTH);
-	*out_height = clamp_dim(height, WINDOW_HEIGHT);
+	return dttr_select_render_resolution(
+		dttr_config.scaling_method,
+		dttr_config.scaling_fit,
+		(DTTR_Size){state->logical_width, state->logical_height},
+		(DTTR_Size){dttr_config.window_width, dttr_config.window_height},
+		window_pixels
+	);
 }
 
 // Resizes backend render targets only when the selected logical resolution has changed.
-static void refresh_render_resolution(DTTR_BackendState *state) {
-	int rw = state->width;
-	int rh = state->height;
-	select_render_resolution(state, &rw, &rh);
+static void refresh_render_resolution(DTTR_BackendState *state, DTTR_Size window_pixels) {
+	const DTTR_Size size = select_render_resolution(state, window_pixels);
 
-	if (rw == state->width && rh == state->height) {
+	if (size.width == state->width && size.height == state->height) {
 		return;
 	}
 
-	if (!state->renderer->resize(state, rw, rh)) {
-		DTTR_LOG_WARN("Failed to resize render targets to %dx%d", rw, rh);
+	if (!state->renderer->resize(state, size.width, size.height)) {
+		DTTR_LOG_WARN("Failed to resize render targets to %dx%d", size.width, size.height);
 	}
 }
 
@@ -390,7 +352,9 @@ HWND dttr_graphics_init() {
 
 	state->logical_width = WINDOW_WIDTH;
 	state->logical_height = WINDOW_HEIGHT;
-	select_render_resolution(state, &state->width, &state->height);
+	const DTTR_Size render_size = select_render_resolution(state, (DTTR_Size){0, 0});
+	state->width = render_size.width;
+	state->height = render_size.height;
 
 	const backend_range backend_range = select_backend_range(dttr_config.graphics_api);
 
@@ -465,7 +429,16 @@ void dttr_graphics_set_logical_resolution(int width, int height) {
 		state->viewport_h = state->logical_height;
 	}
 
-	refresh_render_resolution(state);
+	DTTR_Size window_pixels = {0};
+	if (state->window) {
+		SDL_GetWindowSizeInPixels(
+			state->window,
+			&window_pixels.width,
+			&window_pixels.height
+		);
+	}
+
+	refresh_render_resolution(state, window_pixels);
 }
 
 // Returns the SDL window owned by the active graphics backend.
@@ -484,7 +457,7 @@ void dttr_graphics_handle_window_resize(int width, int height) {
 		return;
 	}
 
-	refresh_render_resolution(&dttr_backend);
+	refresh_render_resolution(&dttr_backend, (DTTR_Size){width, height});
 	update_window_title(&dttr_backend);
 	dttr_graphics_mod_window_resized(&dttr_backend);
 }

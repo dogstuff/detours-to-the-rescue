@@ -143,6 +143,7 @@ add_library(dttr_sidecar SHARED
     src/inputs/hook_rumble.c
 
     src/graphics/graphics.c
+    src/graphics/resize.c
     src/graphics/util.c
     src/graphics/hooks.c
     src/graphics/backend_sdl3gpu.c

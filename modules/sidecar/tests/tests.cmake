@@ -60,3 +60,49 @@ target_link_options(dttr_sidecar_key_state_tests PRIVATE
     -Wl,--wrap=SDL_RumbleGamepad
     -Wl,--wrap=SDL_GetGamepadButton
 )
+
+dttr_add_cmocka_test_suite(dttr_sidecar_events_tests
+    GROUP
+        dttr_sidecar_tests
+    SOURCES
+        "${DTTR_SIDECAR_TEST_SOURCE_DIR}/src/events.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/events.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/graphics/resize.c"
+    INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
+        "${CMAKE_SOURCE_DIR}/modules/common/include"
+        "${CMAKE_SOURCE_DIR}/modules/sdk/include"
+        "${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+    LINK_LIBRARIES
+        dttr_pcdogs_signatures
+        klib
+        common
+        PkgConfig::SDL3
+    LABELS
+        sidecar
+        events
+        graphics
+    RUNTIME_FILES
+        ${DTTR_SDL3_RUNTIME_DLL}
+)
+target_compile_definitions(dttr_sidecar_events_tests PRIVATE DTTR_SDK_ENABLE_UNSTABLE)
+target_link_options(dttr_sidecar_events_tests PRIVATE
+    -Wl,--wrap=SDL_PollEvent
+    -Wl,--wrap=SDL_GetWindowID
+)
+
+dttr_add_cmocka_test_suite(dttr_sidecar_resize_tests
+    GROUP
+        dttr_sidecar_tests
+    SOURCES
+        "${DTTR_SIDECAR_TEST_SOURCE_DIR}/src/resize.c"
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src/graphics/resize.c"
+    INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}/modules/sidecar/src"
+        "${CMAKE_SOURCE_DIR}/modules/common/include"
+    LINK_LIBRARIES
+        common
+    LABELS
+        sidecar
+        graphics
+)
