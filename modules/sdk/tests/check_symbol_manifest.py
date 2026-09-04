@@ -112,6 +112,50 @@ def check_manifest_counts(manifest: JsonObject, actual_counts: dict[str, int]) -
         )
 
 
+def manifest_public_function_count(manifest: JsonObject) -> int:
+    symbols = manifest.get("symbols")
+    expect(isinstance(symbols, dict), "top-level symbols must be an object")
+
+    sdk_ids: list[int] = []
+    for name, entry in symbols.items():
+        if not isinstance(entry, dict) or "function" not in entry:
+            continue
+
+        function = entry["function"]
+        expect(isinstance(function, dict), f"symbols.{name}.function must be an object")
+        sdk = function.get("sdk")
+        expect(isinstance(sdk, dict), f"symbols.{name}.function.sdk must be an object")
+        sdk_id = sdk.get("id")
+        if sdk_id is None:
+            expect(
+                "accessor" not in sdk and "sdk_id" not in sdk,
+                f"symbols.{name}.function private sdk metadata exposes public fields",
+            )
+            continue
+
+        expect(
+            type(sdk_id) is int and sdk_id >= 0,
+            f"symbols.{name}.function.sdk.id must be a nonnegative integer",
+        )
+        sdk_ids.append(sdk_id)
+
+    if not sdk_ids:
+        return 0
+
+    expect(0 in sdk_ids, "function sdk ids must contain public id zero")
+    max_sdk_id = max(sdk_ids)
+    expect(
+        len(sdk_ids) == len(set(sdk_ids)),
+        "public function sdk ids must be unique",
+    )
+    expect(
+        set(sdk_ids) == set(range(max_sdk_id + 1)),
+        "public function sdk ids must be contiguous",
+    )
+
+    return max_sdk_id + 1
+
+
 def header_counts(header: str) -> dict[str, int]:
     counts: dict[str, int] = {}
     for key, token in HEADER_COUNTS.items():
@@ -121,10 +165,12 @@ def header_counts(header: str) -> dict[str, int]:
     return counts
 
 
-def check_header_counts(actual_counts: dict[str, int], header: str) -> None:
+def check_header_counts(
+    actual_counts: dict[str, int], public_functions: int, header: str
+) -> None:
     counts = header_counts(header)
     expected = {
-        "functions": actual_counts["function"],
+        "functions": public_functions,
         "data": actual_counts["data"],
         "symbol_functions": actual_counts["function"],
         "symbol_data": actual_counts["data"],
@@ -148,7 +194,8 @@ def main() -> int:
     check_supported_builds(manifest)
     actual_counts = check_symbol_shape(manifest)
     check_manifest_counts(manifest, actual_counts)
-    check_header_counts(actual_counts, header)
+    public_functions = manifest_public_function_count(manifest)
+    check_header_counts(actual_counts, public_functions, header)
     SymbolManifest.model_validate(manifest)
 
     return 0

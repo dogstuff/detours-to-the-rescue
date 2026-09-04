@@ -125,28 +125,36 @@ void dttr_bootstrap_cleanup_runtime(const DTTR_Mods_Context *ctx) {
 // Enters PKG_InitializeSystem through its true per-build entry. EU/SC builds prefix
 // the shared body with the instruction that enables the multi-language boot flow
 // (the pre-title region/language select); entering past it suppresses that screen.
-static bool call_pkg_initialize_system(const DTTR_Core_Context *ctx, int32_t *ret) {
+static bool call_pkg_initialize_system(const DTTR_Core_Context *ctx, HWND hwnd) {
+	HINSTANCE h_instance = GetModuleHandleA(NULL);
+
 	if (DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->IsCallable(ctx)) {
 		return REQUIRE_PCDOGS_CALL(
-			DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->Call(ctx, ret)
+			DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->Call(ctx, hwnd, h_instance)
 		);
 	}
 
-	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, ret));
+	return REQUIRE_PCDOGS_CALL(
+		DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, hwnd, h_instance)
+	);
 }
 
 // Runs required PCDOGS startup calls after the game window exists.
 bool dttr_bootstrap_initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
+	bool resource_engine_initialized = false;
 	int32_t ret = 0;
 
-	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_FindAndOpenFile->Call(ctx, &ret))
+	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_LocatePackagePath->Call(ctx))
 		   && REQUIRE_PCDOGS_CALL(
-			   DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->Call(ctx, &ret)
+			   DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->Call(
+				   ctx,
+				   &resource_engine_initialized
+			   )
 		   )
 		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_Input_InitializeInputSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )
-		   && call_pkg_initialize_system(ctx, &ret);
+		   && call_pkg_initialize_system(ctx, hwnd);
 }
 
 // Moves the modding runtime into its started state after initialization succeeds.
@@ -154,7 +162,7 @@ bool dttr_bootstrap_start_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd
 	int32_t ret = 0;
 	int32_t config_ret = 0;
 	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Display_SetMode->Call(ctx, hwnd, &ret))
-		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Input_ResetState->Call(ctx, &ret))
+		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Input_ResetState->Call(ctx))
 		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_Config_LoadAlternateFromINI->Call(ctx, &config_ret)
 		   );

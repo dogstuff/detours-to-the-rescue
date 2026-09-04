@@ -257,6 +257,7 @@ typedef struct {
 } DTTR_Mods_Info;
 
 typedef bool (*DTTR_Mods_InitFn)(const DTTR_Mods_Context *ctx);
+typedef uint32_t (*DTTR_Mods_ABIVersionFn)();
 typedef void (*DTTR_Mods_CleanupFn)();
 typedef void (*DTTR_Mods_TickFn)();
 typedef bool (*DTTR_Mods_EventFn)(const SDL_Event *event);
@@ -498,6 +499,11 @@ typedef void (*DTTR_Mods_GameFrameAdvancedFn)();
 
 #define DTTR_MODS_CONFIG DTTR_EXPORT const DTTR_Mods_ConfigSpec *DTTR_Mod_Config()
 
+static inline bool DTTR_Mods_ABIVersionCompatible(uint32_t abi_version) {
+	return abi_version >= DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION
+		   && abi_version <= DTTR_SDK_ABI_VERSION;
+}
+
 static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 	return ctx && ctx->abi_version >= DTTR_SDK_ABI_VERSION
 		   && ctx->struct_size >= sizeof(DTTR_Mods_Context);
@@ -506,6 +512,7 @@ static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
 /// Check SDK ABI compatibility and delegate to the mod body.
 #define DTTR_MODS_INIT                                                                   \
 	static bool dttr_mod_init(const DTTR_Mods_Context *);                                \
+	DTTR_EXPORT uint32_t DTTR_Mod_ABIVersion() { return DTTR_SDK_ABI_VERSION; }           \
 	DTTR_EXPORT bool DTTR_Mod_Init(const DTTR_Mods_Context *ctx) {                       \
 		if (!DTTR_Mods_ContextIsCompatible(ctx)) {                                       \
 			return false;                                                                \

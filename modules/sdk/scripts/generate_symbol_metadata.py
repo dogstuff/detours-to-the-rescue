@@ -95,6 +95,7 @@ SDK_FIELD_NAMES = (
     ("symbol_id", "symbol_id"),
     ("sdk_name", "name"),
 )
+PRIVATE_FUNCTION_SDK_FIELDS = {"id", "accessor", "sdk_id"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -393,6 +394,10 @@ def flattened_symbol_kind(
     row.pop("builds", None)
     normalize_hook_payload(row)
     normalize_calling_convention_payload(row)
+
+    if getattr(blueprint_row, "public", True) is False:
+        for key in PRIVATE_FUNCTION_SDK_FIELDS:
+            row.pop(key, None)
 
     sdk = sdk_payload(row)
     if sdk:

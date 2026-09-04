@@ -194,6 +194,6 @@ int32_t __cdecl dttr_inputs_hook_rumble_callback(
 extern DTTR_PCDOGS_F_Settings_SetRumbleSuppressFlag_proto
 	dttr_inputs_hook_set_rumble_suppress_flag_original;
 bool dttr_inputs_hook_set_rumble_suppress_flag_prepare(const DTTR_Mods_Context *ctx);
-int32_t __cdecl dttr_inputs_hook_set_rumble_suppress_flag_callback(char suppress_rumble);
+void __cdecl dttr_inputs_hook_set_rumble_suppress_flag_callback(uint8_t suppress_rumble);
 
 #endif // DTTR_INPUTS_HOOKS_PRIVATE_H

@@ -25,6 +25,14 @@ ENUM_PREFIXES = {
     "hook": "DTTR_PCDOGS_HOOK",
 }
 
+X86_PARAM_TYPE_BYTES = {
+    "_LDBL12": 12,
+    "double": 8,
+    "int64_t": 8,
+    "uint64_t": 8,
+    "Win32_GUID": 16,
+}
+
 
 def prefixed_enum(kind: str, value: object) -> str:
     return f"{ENUM_PREFIXES[kind]}_{str(value).upper()}"
@@ -52,14 +60,22 @@ def function_cc(fn: object) -> object:
     return getattr(fn, "cc", None) or fn.calling_convention
 
 
+def x86_stack_slot_bytes(param: object) -> int:
+    """Return the x86 stack space occupied by one recovered parameter."""
+
+    return X86_PARAM_TYPE_BYTES.get(param.type.strip(), 4)
+
+
 def abi_stack_bytes(fn: object) -> int:
     """Compute expected stack cleanup bytes from reverse-engineered calling convention metadata."""
 
     params = typed_params(fn)
-    stack_bytes = len(params) * 4
+    slot_bytes = [x86_stack_slot_bytes(param) for param in params]
+    stack_bytes = sum(slot_bytes)
 
     if str(function_cc(fn)) == "fastcall":
-        stack_bytes = max(0, stack_bytes - min(2, len(params)) * 4)
+        register_bytes = sum([size for size in slot_bytes if size == 4][:2])
+        stack_bytes -= register_bytes
 
     return stack_bytes
 

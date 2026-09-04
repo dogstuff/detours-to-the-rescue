@@ -105,21 +105,22 @@ static inline bool DTTR_Util_CollisionVertexWorld(
 
 /// Report whether a polygon pointer belongs to a node's polygon array and
 /// the node's vertex array can satisfy the polygon's indices.
-///
-/// A zero polygon_count is normal on live nodes, in which case vertex_count
-/// stands in as the membership upper bound.
+/// Negative values are rejected.
 static inline bool DTTR_Util_CollisionPolygonInNode(
 	const DTTR_PCDOGS_T_Collision_Node *node,
 	const DTTR_PCDOGS_T_Collision_Polygon *polygon
 ) {
 	if (!node || !polygon || !DTTR_Util_MemReadable(node, sizeof(*node))
-		|| !node->polygons || !node->vertices || node->vertex_count == 0
-		|| node->vertex_count > DTTR_UTIL_COLLISION_MAX_VERTICES) {
+		|| !node->polygons || !node->vertices || node->vertex_count <= 0
+		|| node->polygon_count < 0
+		|| (uint32_t)node->vertex_count > DTTR_UTIL_COLLISION_MAX_VERTICES) {
 		return false;
 	}
 
-	const uint32_t polygon_count = node->polygon_count != 0u ? node->polygon_count
-															 : node->vertex_count;
+	const uint32_t vertex_count = (uint32_t)node->vertex_count;
+	const uint32_t polygon_count = node->polygon_count != 0
+														 ? (uint32_t)node->polygon_count
+														 : vertex_count;
 
 	if (polygon_count > DTTR_UTIL_COLLISION_MAX_POLYGONS
 		|| !DTTR_Util_MemReadable(
@@ -128,7 +129,7 @@ static inline bool DTTR_Util_CollisionPolygonInNode(
 		)
 		|| !DTTR_Util_MemReadable(
 			node->vertices,
-			sizeof(node->vertices[0]) * node->vertex_count
+			sizeof(node->vertices[0]) * vertex_count
 		)) {
 		return false;
 	}
@@ -147,7 +148,7 @@ static inline bool DTTR_Util_CollisionPolygonInNode(
 
 	// Records are quad-width, so all four indices must be valid, even for triangles.
 	for (uint32_t i = 0; i < 4u; ++i) {
-		if (polygon->vertex_idx[i] >= node->vertex_count) {
+		if (polygon->vertex_idx[i] >= vertex_count) {
 			return false;
 		}
 	}
@@ -157,10 +158,11 @@ static inline bool DTTR_Util_CollisionPolygonInNode(
 
 /// Decode a polygon's packed edge adjacency locally and return the neighbor.
 ///
-/// The packed words live at +0xC of the polygon's face-plane record: the low
-/// two bits hold the neighbor edge, and the rest is a one-based index into the
-/// owning node's polygon array. Local decoding avoids the native helper's
-/// stale-record crashes and leaves walkability filtering to callers.
+/// On package-backed records, the packed words begin at +0xC after the common
+/// 0x0C plane prefix: the low two bits hold the neighbor edge, and the rest is
+/// a one-based index into the owning node's polygon array. Runtime temporary
+/// face planes end at +0xC and do not carry this adjacency tail. Local decoding
+/// avoids native stale-record crashes and leaves walkability filtering to callers.
 static inline DTTR_PCDOGS_T_Collision_Polygon *DTTR_Util_CollisionAdjacentPolygon(
 	const DTTR_PCDOGS_T_Collision_Node *node,
 	const DTTR_PCDOGS_T_Collision_Polygon *polygon,
@@ -179,8 +181,9 @@ static inline DTTR_PCDOGS_T_Collision_Polygon *DTTR_Util_CollisionAdjacentPolygo
 												   + 0x0c);
 	const uint16_t encoded = adj_edges[edge_index];
 	const uint32_t one_based_index = (uint32_t)encoded >> 2;
-	if (one_based_index == 0u || !node->polygons
-		|| (node->polygon_count != 0u && one_based_index > node->polygon_count)) {
+	if (one_based_index == 0u || !node->polygons || node->polygon_count < 0
+		|| (node->polygon_count != 0
+			&& one_based_index > (uint32_t)node->polygon_count)) {
 		return NULL;
 	}
 
@@ -210,7 +213,8 @@ static inline bool dttr_util_collision_edge_vertices(
 
 	const uint16_t i0 = polygon->vertex_idx[edge_index];
 	const uint16_t i1 = polygon->vertex_idx[(edge_index + 1u) & 3u];
-	if (i0 >= node->vertex_count || i1 >= node->vertex_count) {
+	if (node->vertex_count <= 0 || i0 >= (uint32_t)node->vertex_count
+		|| i1 >= (uint32_t)node->vertex_count) {
 		return false;
 	}
 
@@ -227,7 +231,7 @@ static inline uint8_t dttr_util_collision_vertex_wall_tag(
 }
 
 /// Return whether a polygon edge is a wall, per the engine's rule in
-/// Collision_ProcessActorGroundCheck. Make sure you validate polygon
+/// Collision_BuildAndResolveGroundEdgeWalls. Make sure you validate polygon
 /// membership with DTTR_Util_CollisionPolygonInNode first.
 ///
 /// A wall edge belongs to a boundary polygon (flags 0x4000), has at least
@@ -292,8 +296,8 @@ static inline bool DTTR_Util_CollisionWallEdgeQuad(
 		return false;
 	}
 
-	DTTR_PCDOGS_T_Math_Vec3I32 base0 = {0};
-	DTTR_PCDOGS_T_Math_Vec3I32 base1 = {0};
+	DTTR_PCDOGS_T_Math_Vec3I32 base0 = {0, 0, 0};
+	DTTR_PCDOGS_T_Math_Vec3I32 base1 = {0, 0, 0};
 	if (!DTTR_Util_CollisionVertexWorld(node, &node->vertices[i0], &base0)
 		|| !DTTR_Util_CollisionVertexWorld(node, &node->vertices[i1], &base1)) {
 		return false;

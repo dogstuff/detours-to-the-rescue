@@ -1629,11 +1629,16 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
     names = []
     seen = set()
     excluded_names = declared_type_names(rows)
+    struct_names = {
+        row.name for row in rows if type_row_kind(row) == TypeRowKind.STRUCT
+    }
 
     def add(name: str) -> None:
         """Append one forward type when it has not already been declared."""
 
-        if name and name not in seen and is_struct_ref(name, excluded_names):
+        if name and name not in seen and (
+            name in struct_names or is_struct_ref(name, excluded_names)
+        ):
             seen.add(name)
             names.append(name)
 

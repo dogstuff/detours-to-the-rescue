@@ -22,7 +22,7 @@ enum {
 
 static bool required_read_gamepad_symbols_available(const DTTR_Mods_Context *ctx) {
 	return DTTR_PCDOGS_F_Input_ReadGamepad->IsCallable(&ctx->runtime)
-		   && DTTR_PCDOGS_F_Mem_FreeCRT->IsCallable(&ctx->runtime)
+		   && DTTR_PCDOGS_F_Mem_FreeMemoryExCRT->IsCallable(&ctx->runtime)
 		   && DTTR_PCDOGS_D_Input_ReadGamepad_JoystickState->IsResolved()
 		   && DTTR_PCDOGS_D_Input_GetPressedButton_JoystickAvailable->IsResolved();
 }
@@ -72,10 +72,11 @@ static void apply_rz_buttons(
 	}
 }
 
-static void release_joystick_state(struct DIJOYSTATE *state) {
-	struct DIJOYSTATE **slot = DTTR_PCDOGS_D_Input_ReadGamepad_JoystickState->Ptr();
+static void release_joystick_state(DTTR_PCDOGS_T_Input_JoystickState *state) {
+	DTTR_PCDOGS_T_Input_JoystickState **slot =
+		DTTR_PCDOGS_D_Input_ReadGamepad_JoystickState->Ptr();
 	REQUIRE_PCDOGS_CALL(
-		DTTR_PCDOGS_F_Mem_FreeCRT->Call(&read_gamepad_ctx->runtime, state)
+		DTTR_PCDOGS_F_Mem_FreeMemoryExCRT->Call(&read_gamepad_ctx->runtime, state)
 	);
 	*slot = NULL;
 }
@@ -106,14 +107,15 @@ void __cdecl dttr_inputs_hook_read_gamepad_callback(DTTR_PCDOGS_T_Input_State *s
 		return;
 	}
 
-	struct DIJOYSTATE *polled = dttr_inputs_hook_dinput_poll_callback(NULL);
+	DTTR_PCDOGS_T_Input_JoystickState *polled =
+		dttr_inputs_hook_dinput_poll_callback(NULL);
 	if (!polled) {
 		DTTR_LOG_WARN("Analog remap poll state allocation failed");
 		dttr_inputs_apply_custom_button_mappings(state);
 		return;
 	}
 
-	const DTTR_PCDOGS_T_Input_JoystickState *joystick = (const void *)polled;
+	const DTTR_PCDOGS_T_Input_JoystickState *joystick = polled;
 	DTTR_StickAxes axes = {0};
 	dttr_inputs_apply_ps1_stick_axes(
 		&axes,

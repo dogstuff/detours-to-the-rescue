@@ -15,7 +15,7 @@ static int register_original_calls;
 static int32_t register_original_code;
 static uint32_t register_original_mask;
 static int set_rumble_suppress_original_calls;
-static int32_t set_rumble_suppress_original_value;
+static uint8_t set_rumble_suppress_original_value;
 static int sdl_rumble_calls;
 static SDL_Gamepad *sdl_rumble_gamepad;
 static uint16_t sdl_rumble_low_frequency;
@@ -33,10 +33,9 @@ static int32_t __cdecl register_button_mapping_original_stub(
 	return 123;
 }
 
-static int32_t __cdecl set_rumble_suppress_original_stub(char suppress_rumble) {
+static void __cdecl set_rumble_suppress_original_stub(uint8_t suppress_rumble) {
 	set_rumble_suppress_original_calls++;
 	set_rumble_suppress_original_value = suppress_rumble;
-	return suppress_rumble;
 }
 
 static void __cdecl read_devices_original_stub(
@@ -340,7 +339,7 @@ static void setting_rumble_suppression_stops_active_sdl_rumble(void **) {
 	dttr_inputs_gamepad = (SDL_Gamepad *)0x1234;
 	dttr_inputs_hook_set_rumble_suppress_flag_original = set_rumble_suppress_original_stub;
 
-	assert_int_equal(dttr_inputs_hook_set_rumble_suppress_flag_callback(1), 1);
+	dttr_inputs_hook_set_rumble_suppress_flag_callback(1);
 	assert_int_equal(set_rumble_suppress_original_calls, 1);
 	assert_int_equal(set_rumble_suppress_original_value, 1);
 	assert_int_equal(sdl_rumble_calls, 1);
@@ -350,7 +349,7 @@ static void setting_rumble_suppression_stops_active_sdl_rumble(void **) {
 	assert_int_equal(sdl_rumble_duration_ms, 0);
 
 	sdl_rumble_calls = 0;
-	assert_int_equal(dttr_inputs_hook_set_rumble_suppress_flag_callback(0), 0);
+	dttr_inputs_hook_set_rumble_suppress_flag_callback(0);
 	assert_int_equal(set_rumble_suppress_original_calls, 2);
 	assert_int_equal(set_rumble_suppress_original_value, 0);
 	assert_int_equal(sdl_rumble_calls, 0);

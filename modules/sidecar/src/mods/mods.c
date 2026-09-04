@@ -374,14 +374,29 @@ static bool prepare_mod(
 		return false;
 	}
 
+	out->abi_version =
+		(DTTR_Mods_ABIVersionFn)GetProcAddress(out->handle, "DTTR_Mod_ABIVersion");
 	out->init = (DTTR_Mods_InitFn)GetProcAddress(out->handle, "DTTR_Mod_Init");
 	out->cleanup = (DTTR_Mods_CleanupFn)GetProcAddress(out->handle, "DTTR_Mod_Cleanup");
 
-	if (!out->init || !out->cleanup) {
+	if (!out->abi_version || !out->init || !out->cleanup) {
 		DTTR_LOG_WARN(
 			"Mod %s missing required exports "
-			"(DTTR_Mod_Init/DTTR_Mod_Cleanup) - skipping",
+			"(DTTR_Mod_ABIVersion/DTTR_Mod_Init/DTTR_Mod_Cleanup) - skipping",
 			filename
+		);
+		unload_mod(out);
+		return false;
+	}
+
+	const uint32_t abi_version = out->abi_version();
+	if (!DTTR_Mods_ABIVersionCompatible(abi_version)) {
+		DTTR_LOG_WARN(
+			"Mod %s uses incompatible SDK ABI %u (host accepts %u through %u) - skipping",
+			filename,
+			(unsigned)abi_version,
+			(unsigned)DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION,
+			(unsigned)DTTR_SDK_ABI_VERSION
 		);
 		unload_mod(out);
 		return false;

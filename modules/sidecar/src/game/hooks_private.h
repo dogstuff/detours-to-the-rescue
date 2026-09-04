@@ -19,7 +19,7 @@ DTTR_STORAGE_SLOT(
 	DTTR_PCDOGS_F_Title_CleanupScreenResources_proto,
 	dttr_hook_cleanup_title_resources_original
 )
-BOOL __cdecl dttr_hook_cleanup_title_resources_callback();
+void __cdecl dttr_hook_cleanup_title_resources_callback();
 
 // Points the game at the resolved PCDogs data path.
 uint32_t __cdecl dttr_hook_resolve_pcdogs_path_callback();

@@ -146,18 +146,14 @@ void dttr_inputs_hook_rumble_reset() {
 	sdl_rumble_warning_logged = false;
 }
 
-int32_t __cdecl dttr_inputs_hook_set_rumble_suppress_flag_callback(char suppress_rumble) {
-	const int32_t result = dttr_inputs_hook_set_rumble_suppress_flag_original
-							   ? dttr_inputs_hook_set_rumble_suppress_flag_original(
-									 suppress_rumble
-								 )
-							   : suppress_rumble;
+void __cdecl dttr_inputs_hook_set_rumble_suppress_flag_callback(uint8_t suppress_rumble) {
+	if (dttr_inputs_hook_set_rumble_suppress_flag_original) {
+		dttr_inputs_hook_set_rumble_suppress_flag_original(suppress_rumble);
+	}
 
 	if (suppress_rumble != 0) {
 		stop_sdl_rumble();
 	}
-
-	return result;
 }
 
 int32_t __cdecl dttr_inputs_hook_rumble_callback(

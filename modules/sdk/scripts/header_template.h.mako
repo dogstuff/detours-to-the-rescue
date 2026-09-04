@@ -20,7 +20,7 @@ ${doxy_brief(row_doc(row) or "PCDOGS value alias.")}
 typedef ${c_type(row.source_type)} ${alias_name(row.name)};
 % elif type_row_kind(row) == TYPE_ROW.FUNCTION_TYPE_ALIAS:
 ${doxy_comment(row_doc(row) or "PCDOGS callback type.", params=param_doc_pairs(row.params))}
-typedef ${c_type(row.ret)}(${row.calling}*${function_type_name(row.name)})${c_params(row.params)};
+typedef ${c_type(row.ret)}(${row.calling}*${function_type_name(row.name)})${c_params(row.params) if row.params else "(void)"};
 % elif type_row_kind(row) == TYPE_ROW.STRUCT:
 % if row.incomplete:
 #if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
@@ -1082,6 +1082,7 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 		fn->resolved = fn->address != 0;
 	}
 
+% if function_xrefs:
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_COUNT; i++) {
 		const DTTR_PCDOGS_T_Symbol_Function_XRef* xref = &dttr_pcdogs_symbol_function_xrefs[i];
 		if (xref->function_index < 0 || xref->ref_function_index < 0
@@ -1107,6 +1108,7 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 			fn->resolved = true;
 		}
 	}
+% endif
 
 	bool all_ok = true;
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT; i++) {

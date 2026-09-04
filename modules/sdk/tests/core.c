@@ -167,9 +167,7 @@ static DTTR_PCDOGS_T_File_Handle *__cdecl pcdogs_file_open_detour(
 	return NULL;
 }
 
-static BOOL __cdecl pcdogs_cleanup_title_resources_detour() {
-	return TRUE;
-}
+static void __cdecl pcdogs_cleanup_title_resources_detour() {}
 
 static HRESULT __stdcall pcdogs_ddraw_create_ex_detour(
 	DTTR_PCDOGS_T_Win32_GUID *guid,

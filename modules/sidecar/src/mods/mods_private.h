@@ -68,6 +68,7 @@ typedef struct {
 	char display_version[64];
 	mod_file_id source_file;
 	mod_file_id pending_file;
+	DTTR_Mods_ABIVersionFn abi_version;
 	DTTR_Mods_InitFn init;
 	DTTR_Mods_CleanupFn cleanup;
 	DTTR_Mods_TickFn tick;
