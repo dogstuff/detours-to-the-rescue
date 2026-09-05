@@ -13,7 +13,7 @@ This guide walks you through getting DttR running with 102 Dalmatians: Puppies t
 Download the build of DttR that matches your needs:
 
 - [Vanilla (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_VANILLA_STABLE_DOWNLOAD_URL__) is the normal build and does not allow the installation of game modifications. **This is the only build allowed in speedruns.**
-- [Modding (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__) is the build that's required to load and run third-party modifications.
+- [Modding (__DTTR_DOCS_STABLE_VERSION__; ABI __DTTR_DOCS_STABLE_SDK_ABI__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__) is the build that's required to load and run third-party modifications.
 
 Extract the archive wherever you'd like and then run `dttr.exe`.
 

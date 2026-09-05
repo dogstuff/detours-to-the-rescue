@@ -10,7 +10,7 @@ A DttR mod is a 32-bit Windows DLL that includes `dttr_sdk.h`, exports mod lifec
 
 The easiest starting point is the C template from the stable release:
 
-[`dttr-mod-template-c.zip` (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_MOD_TEMPLATE_STABLE_DOWNLOAD_URL__)
+[`dttr-mod-template-c.zip` (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_MOD_TEMPLATE_STABLE_DOWNLOAD_URL__) (ABI `__DTTR_DOCS_STABLE_SDK_ABI__`)
 
 ## Project Template
 

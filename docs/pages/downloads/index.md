@@ -17,7 +17,7 @@ Below you can find the downloads for the latest stable release of DttR. If you'r
 Download whichever variant suits your needs:
 
 - [Vanilla (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_VANILLA_STABLE_DOWNLOAD_URL__) does not support modding and is the only build allowed in speedruns.
-- [Modding (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__) includes support for loading third-party mods.
+- [Modding (__DTTR_DOCS_STABLE_VERSION__; ABI __DTTR_DOCS_STABLE_SDK_ABI__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__) includes support for loading third-party mods.
 
 ---
 
@@ -32,10 +32,10 @@ Nightly builds are built from the latest DttR code available, including code tha
 which makes them helpful for testing out new but unstable bug fixes and features.
 
 - [Vanilla (__DTTR_DOCS_NIGHTLY_VERSION__)](__DTTR_DOCS_VANILLA_NIGHTLY_DOWNLOAD_URL__)
-- [Modding (__DTTR_DOCS_NIGHTLY_VERSION__)](__DTTR_DOCS_MODDING_NIGHTLY_DOWNLOAD_URL__)
+- [Modding (__DTTR_DOCS_NIGHTLY_VERSION__; ABI __DTTR_DOCS_NIGHTLY_SDK_ABI__)](__DTTR_DOCS_MODDING_NIGHTLY_DOWNLOAD_URL__)
 
 ---
 
 ## Mod Template (C)
 
-Interested in creating a mod? Download the [C Mod Project Template](__DTTR_DOCS_MOD_TEMPLATE_STABLE_DOWNLOAD_URL__) to get started.
+Interested in creating a mod? Download the [C Mod Project Template](__DTTR_DOCS_MOD_TEMPLATE_STABLE_DOWNLOAD_URL__) (ABI `__DTTR_DOCS_STABLE_SDK_ABI__`) to get started.

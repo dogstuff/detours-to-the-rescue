@@ -13,7 +13,7 @@ seo_type: "article"
 
 DttR mods require the "Modding" build. The "Vanilla" build is intended for speedruns and does not load third-party mods.
 
-[Modding (__DTTR_DOCS_STABLE_VERSION__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__)
+[Modding (__DTTR_DOCS_STABLE_VERSION__; ABI __DTTR_DOCS_STABLE_SDK_ABI__)](__DTTR_DOCS_MODDING_STABLE_DOWNLOAD_URL__)
 
 ## Installing a Mod
 
