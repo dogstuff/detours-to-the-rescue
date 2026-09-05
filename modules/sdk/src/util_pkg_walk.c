@@ -72,9 +72,7 @@ static bool default_load_entry(
 	}
 
 	void *loaded = NULL;
-	if (!DTTR_ResultOK(
-			DTTR_PCDOGS_F_PKG_LoadEntry->Call(ctx, toc_index, NULL, 1, &loaded)
-		)
+	if (!DTTR_ResultOK(DTTR_PCDOGS_F_PKG_LoadEntry->Call(ctx, toc_index, NULL, 1, &loaded))
 		|| !loaded) {
 		if (out_status) {
 			*out_status = DTTR_UTIL_PKG_STATUS_LOAD_FAILED;

@@ -1636,8 +1636,10 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
     def add(name: str) -> None:
         """Append one forward type when it has not already been declared."""
 
-        if name and name not in seen and (
-            name in struct_names or is_struct_ref(name, excluded_names)
+        if (
+            name
+            and name not in seen
+            and (name in struct_names or is_struct_ref(name, excluded_names))
         ):
             seen.add(name)
             names.append(name)

@@ -58,6 +58,7 @@ static const DTTR_ConfigFieldSpec config_schema[] = {
 	),
 
 	FIELD("modding", "hot_reload", hot_reload, CONFIG_BOOL),
+	FIELD("modding", "show_loaded_mods", show_loaded_mods, CONFIG_BOOL),
 
 	FIELD_TOP("log_level", log_level, CONFIG_LOG_LEVEL),
 	FIELD_TOP("minidump_type", minidump_type, CONFIG_MINIDUMP_TYPE),

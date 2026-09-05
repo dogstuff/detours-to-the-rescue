@@ -142,6 +142,7 @@ typedef struct {
 	bool generate_texture_mipmaps;
 	bool fullscreen;
 	bool hot_reload;
+	bool show_loaded_mods;
 	int disabled_mod_count;
 	char disabled_mods[DTTR_CONFIG_DISABLED_MODS_MAX][MAX_PATH];
 	int mod_config_count;

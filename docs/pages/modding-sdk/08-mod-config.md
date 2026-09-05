@@ -143,7 +143,7 @@ static DTTR_Mods_ConfigInputBinding screenshot_key = {0};
 DTTR_MODS_INIT {
     mod_ctx = ctx;
 
-    // Each accessor is NULL when the host predates that field, so guard before calling.
+    // Accessors return function pointers; guard against NULL before calling.
     // A failed read leaves the variable at its initialized default, so the result is
     // safe to ignore here.
     DTTR_Mods_ConfigGetFloatFn get_float = DTTR_Mods_GetConfigFloatFn(ctx->api);

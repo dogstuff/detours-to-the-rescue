@@ -374,8 +374,8 @@ static bool prepare_mod(
 		return false;
 	}
 
-	out->abi_version =
-		(DTTR_Mods_ABIVersionFn)GetProcAddress(out->handle, "DTTR_Mod_ABIVersion");
+	out->abi_version = (DTTR_Mods_ABIVersionFn)
+		GetProcAddress(out->handle, "DTTR_Mod_ABIVersion");
 	out->init = (DTTR_Mods_InitFn)GetProcAddress(out->handle, "DTTR_Mod_Init");
 	out->cleanup = (DTTR_Mods_CleanupFn)GetProcAddress(out->handle, "DTTR_Mod_Cleanup");
 

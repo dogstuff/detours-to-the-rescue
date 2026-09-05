@@ -119,8 +119,8 @@ static inline bool DTTR_Util_CollisionPolygonInNode(
 
 	const uint32_t vertex_count = (uint32_t)node->vertex_count;
 	const uint32_t polygon_count = node->polygon_count != 0
-														 ? (uint32_t)node->polygon_count
-														 : vertex_count;
+									   ? (uint32_t)node->polygon_count
+									   : vertex_count;
 
 	if (polygon_count > DTTR_UTIL_COLLISION_MAX_POLYGONS
 		|| !DTTR_Util_MemReadable(

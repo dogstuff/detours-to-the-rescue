@@ -145,12 +145,8 @@ bool dttr_bootstrap_initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND
 	int32_t ret = 0;
 
 	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_LocatePackagePath->Call(ctx))
-		   && REQUIRE_PCDOGS_CALL(
-			   DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine->Call(
-				   ctx,
-				   &resource_engine_initialized
-			   )
-		   )
+		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine
+									  ->Call(ctx, &resource_engine_initialized))
 		   && REQUIRE_PCDOGS_CALL(
 			   DTTR_PCDOGS_F_Input_InitializeInputSubsystem->Call(ctx, hwnd, NULL, &ret)
 		   )

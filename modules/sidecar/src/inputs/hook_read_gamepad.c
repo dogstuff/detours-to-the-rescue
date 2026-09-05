@@ -73,8 +73,8 @@ static void apply_rz_buttons(
 }
 
 static void release_joystick_state(DTTR_PCDOGS_T_Input_JoystickState *state) {
-	DTTR_PCDOGS_T_Input_JoystickState **slot =
-		DTTR_PCDOGS_D_Input_ReadGamepad_JoystickState->Ptr();
+	DTTR_PCDOGS_T_Input_JoystickState *
+		*slot = DTTR_PCDOGS_D_Input_ReadGamepad_JoystickState->Ptr();
 	REQUIRE_PCDOGS_CALL(
 		DTTR_PCDOGS_F_Mem_FreeMemoryExCRT->Call(&read_gamepad_ctx->runtime, state)
 	);
@@ -107,8 +107,9 @@ void __cdecl dttr_inputs_hook_read_gamepad_callback(DTTR_PCDOGS_T_Input_State *s
 		return;
 	}
 
-	DTTR_PCDOGS_T_Input_JoystickState *polled =
-		dttr_inputs_hook_dinput_poll_callback(NULL);
+	DTTR_PCDOGS_T_Input_JoystickState *polled = dttr_inputs_hook_dinput_poll_callback(
+		NULL
+	);
 	if (!polled) {
 		DTTR_LOG_WARN("Analog remap poll state allocation failed");
 		dttr_inputs_apply_custom_button_mappings(state);

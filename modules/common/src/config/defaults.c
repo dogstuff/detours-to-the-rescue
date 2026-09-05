@@ -29,6 +29,7 @@ static const DTTR_Config default_config = {
 	.generate_texture_mipmaps = true,
 	.fullscreen = false,
 	.hot_reload = false,
+	.show_loaded_mods = false,
 	.mss_sample_gain = 1.0f,
 	.mss_simulate_directsound_delay = false,
 	.gamepad_enabled = true,

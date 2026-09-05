@@ -496,6 +496,14 @@ void draw_modding_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state
 		TOOLTIP_HOT_RELOAD,
 		FIELD_LABEL_STATE(state, hot_reload)
 	);
+	labeled_checkbox(
+		ctx,
+		"Show Loaded Mods",
+		"##show_loaded_mods",
+		&state->config.show_loaded_mods,
+		"Show loaded mod names, versions, and load times below the modding build label.",
+		FIELD_LABEL_STATE(state, show_loaded_mods)
+	);
 	end_settings_table();
 
 	config_mod_dll_list mods;

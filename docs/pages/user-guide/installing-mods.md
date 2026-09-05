@@ -30,6 +30,12 @@ mods/
   some-mod.dll
 ```
 
+## ABI Compatibility
+
+Use mods built for your DttR SDK ABI. The top-left `Modding Build (ABI <version>)` label shows the running SDK's current ABI. The ABI version is separate from the DttR version.
+
+Enable **Show Loaded Mods** in the **Modding** tab to list mods that actually initialized.
+
 ## Disabling a Mod
 
 To disable a mod without deleting it, open `dttr-config.exe`, go to the `Modding` tab, uncheck the mod, then save.

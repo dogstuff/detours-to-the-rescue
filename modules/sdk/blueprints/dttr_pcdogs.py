@@ -1165,12 +1165,32 @@ stable.struct(
     "Collision_TemporaryNodeContext",
     member("Collision_Node*", "next_in_list", 0x0),
     member("uint8_t", "reserved_04[0x28]", 0x4),
-    member("Math_Matrix3x3I16", "transform_matrix", 0x2C, doc="Initialized to the identity matrix."),
+    member(
+        "Math_Matrix3x3I16",
+        "transform_matrix",
+        0x2C,
+        doc="Initialized to the identity matrix.",
+    ),
     member("int16_t", "transform_padding", 0x3E),
-    member("Math_Vec3I32", "origin", 0x40, doc="Initialized for the synthesized wall source."),
-    member("Math_Vec3I32", "collision_offset", 0x4C, doc="Copied from the source collision node."),
+    member(
+        "Math_Vec3I32",
+        "origin",
+        0x40,
+        doc="Initialized for the synthesized wall source.",
+    ),
+    member(
+        "Math_Vec3I32",
+        "collision_offset",
+        0x4C,
+        doc="Copied from the source collision node.",
+    ),
     member("uint8_t", "reserved_58[0xC]", 0x58),
-    member("uint8_t", "node_type", 0x64, doc="Initialized to type 0 for temporary wall resolution."),
+    member(
+        "uint8_t",
+        "node_type",
+        0x64,
+        doc="Initialized to type 0 for temporary wall resolution.",
+    ),
     member("uint8_t", "node_cull_flags", 0x65),
     member("uint8_t", "reserved_66[2]", 0x66),
     size=0x68,
@@ -1190,7 +1210,12 @@ stable.struct(
 
 stable.struct(
     "Collision_HitEvent",
-    member("Actor_State*", "actor", 0x0, doc="Stored actor. Collision keys are derived through its record."),
+    member(
+        "Actor_State*",
+        "actor",
+        0x0,
+        doc="Stored actor. Collision keys are derived through its record.",
+    ),
     member("uint32_t", "start_frame", 0x4),
     member("uint32_t", "expire_frame", 0x8),
     size=0xC,
@@ -1359,8 +1384,18 @@ stable.struct(
 
 stable.struct(
     "Component_HitEvent",
-    member("Actor_State*", "actor", 0x0, doc="Stored actor. Collision keys are derived through its record."),
-    member("Math_RangeI32", "frame_range", 0x4, doc="Start and expiry frames for duplicate admission."),
+    member(
+        "Actor_State*",
+        "actor",
+        0x0,
+        doc="Stored actor. Collision keys are derived through its record.",
+    ),
+    member(
+        "Math_RangeI32",
+        "frame_range",
+        0x4,
+        doc="Start and expiry frames for duplicate admission.",
+    ),
     size=0xC,
     doc="One entry in the fixed eight-slot component hit-cooldown table.",
 )
@@ -2444,14 +2479,21 @@ stable.struct(
         0x0,
         doc="Selector 0 uses polygon vertices (3,0,1). Selector 1 uses (3,2,1), including true triangles.",
     ),
-    member("int16_t", "weight_a_q12", 0x2, doc="Signed Q12 weight for polygon vertex 3."),
+    member(
+        "int16_t", "weight_a_q12", 0x2, doc="Signed Q12 weight for polygon vertex 3."
+    ),
     member(
         "int16_t",
         "weight_b_q12",
         0x4,
         doc="Signed Q12 weight for polygon vertex 0 when selector is 0, or vertex 2 when it is 1.",
     ),
-    member("int16_t", "weight_c_q12", 0x6, doc="Signed Q12 weight for vertex 1. Equals 0x1000 minus weights A and B."),
+    member(
+        "int16_t",
+        "weight_c_q12",
+        0x6,
+        doc="Signed Q12 weight for vertex 1. Equals 0x1000 minus weights A and B.",
+    ),
     size=0x8,
     doc="Ground-contact interpretation of Actor_State+0x20. The three signed Q12 weights sum to 0x1000.",
     unstable=True,
@@ -3725,7 +3767,12 @@ stable.struct(
     "Collision_Node",
     member("Collision_Node*", "next_in_list", 0x0),
     member("uint8_t", "reserved_04[40]", 0x4),
-    member("Math_Matrix3x3I16", "transform_matrix", 0x2C, doc="Signed Q12 local-to-world rotation matrix."),
+    member(
+        "Math_Matrix3x3I16",
+        "transform_matrix",
+        0x2C,
+        doc="Signed Q12 local-to-world rotation matrix.",
+    ),
     member("int16_t", "transform_padding", 0x3E),
     member("Math_Vec3I32", "origin", 0x40, doc="Signed Q6 world-space origin."),
     member("Math_Vec3I32", "collision_offset", 0x4C),
@@ -5968,8 +6015,16 @@ stable.struct(
     member("DInput_IDirectInputDeviceA_GetDeviceStateFn", "get_device_state", 0x24),
     member("DInput_IDirectInputDeviceA_GetDeviceDataFn", "get_device_data", 0x28),
     member("DInput_IDirectInputDeviceA_SetDataFormatFn", "set_data_format", 0x2C),
-    member("DInput_IDirectInputDeviceA_SetEventNotificationFn", "set_event_notification", 0x30),
-    member("DInput_IDirectInputDeviceA_SetCooperativeLevelFn", "set_cooperative_level", 0x34),
+    member(
+        "DInput_IDirectInputDeviceA_SetEventNotificationFn",
+        "set_event_notification",
+        0x30,
+    ),
+    member(
+        "DInput_IDirectInputDeviceA_SetCooperativeLevelFn",
+        "set_cooperative_level",
+        0x34,
+    ),
     member("DInput_IDirectInputDeviceA_GetObjectInfoFn", "get_object_info", 0x38),
     member("DInput_IDirectInputDeviceA_GetDeviceInfoFn", "get_device_info", 0x3C),
     member("DInput_IDirectInputDeviceA_RunControlPanelFn", "run_control_panel", 0x40),
@@ -6003,8 +6058,16 @@ stable.struct(
     member("DInput_IDirectInputDevice2A_GetDeviceStateFn", "get_device_state", 0x24),
     member("DInput_IDirectInputDevice2A_GetDeviceDataFn", "get_device_data", 0x28),
     member("DInput_IDirectInputDevice2A_SetDataFormatFn", "set_data_format", 0x2C),
-    member("DInput_IDirectInputDevice2A_SetEventNotificationFn", "set_event_notification", 0x30),
-    member("DInput_IDirectInputDevice2A_SetCooperativeLevelFn", "set_cooperative_level", 0x34),
+    member(
+        "DInput_IDirectInputDevice2A_SetEventNotificationFn",
+        "set_event_notification",
+        0x30,
+    ),
+    member(
+        "DInput_IDirectInputDevice2A_SetCooperativeLevelFn",
+        "set_cooperative_level",
+        0x34,
+    ),
     member("DInput_IDirectInputDevice2A_GetObjectInfoFn", "get_object_info", 0x38),
     member("DInput_IDirectInputDevice2A_GetDeviceInfoFn", "get_device_info", 0x3C),
     member("DInput_IDirectInputDevice2A_RunControlPanelFn", "run_control_panel", 0x40),
@@ -6012,9 +6075,21 @@ stable.struct(
     member("DInput_IDirectInputDevice2A_CreateEffectFn", "create_effect", 0x48),
     member("DInput_IDirectInputDevice2A_EnumEffectsFn", "enum_effects", 0x4C),
     member("DInput_IDirectInputDevice2A_GetEffectInfoFn", "get_effect_info", 0x50),
-    member("DInput_IDirectInputDevice2A_GetForceFeedbackStateFn", "get_force_feedback_state", 0x54),
-    member("DInput_IDirectInputDevice2A_SendForceFeedbackCommandFn", "send_force_feedback_command", 0x58),
-    member("DInput_IDirectInputDevice2A_EnumCreatedEffectObjectsFn", "enum_created_effect_objects", 0x5C),
+    member(
+        "DInput_IDirectInputDevice2A_GetForceFeedbackStateFn",
+        "get_force_feedback_state",
+        0x54,
+    ),
+    member(
+        "DInput_IDirectInputDevice2A_SendForceFeedbackCommandFn",
+        "send_force_feedback_command",
+        0x58,
+    ),
+    member(
+        "DInput_IDirectInputDevice2A_EnumCreatedEffectObjectsFn",
+        "enum_created_effect_objects",
+        0x5C,
+    ),
     member("DInput_IDirectInputDevice2A_EscapeFn", "escape", 0x60),
     member("DInput_IDirectInputDevice2A_NoArgsFn", "poll", 0x64),
     member("DInput_IDirectInputDevice2A_SendDeviceDataFn", "send_device_data", 0x68),
@@ -6673,7 +6748,10 @@ stable.callback_type(
 stable.callback_type(
     "D3D_IDirect3DDevice7_GetDirect3DFn",
     ret="HRESULT",
-    params=[param("D3D_IDirect3DDevice7*", "self"), param("D3D_IDirect3D7**", "out_d3d")],
+    params=[
+        param("D3D_IDirect3DDevice7*", "self"),
+        param("D3D_IDirect3D7**", "out_d3d"),
+    ],
     calling=CallingConvention.CALLBACK,
     unstable=True,
 )
@@ -7157,23 +7235,39 @@ stable.struct(
     member("DDraw_IDirectDrawSurface7_QueryInterfaceFn", "query_interface", 0x0),
     member("DDraw_IDirectDrawSurface7_AddRefFn", "add_ref", 0x4),
     member("DDraw_IDirectDrawSurface7_ReleaseFn", "release", 0x8),
-    member("DDraw_IDirectDrawSurface7_AddAttachedSurfaceFn", "add_attached_surface", 0xC),
+    member(
+        "DDraw_IDirectDrawSurface7_AddAttachedSurfaceFn", "add_attached_surface", 0xC
+    ),
     member("DDraw_IDirectDrawSurface7_RectFn", "add_overlay_dirty_rect", 0x10),
     member("DDraw_IDirectDrawSurface7_BltFn", "blt", 0x14),
     member("DDraw_IDirectDrawSurface7_BltBatchFn", "blt_batch", 0x18),
     member("DDraw_IDirectDrawSurface7_BltFastFn", "blt_fast", 0x1C),
-    member("DDraw_IDirectDrawSurface7_DeleteAttachedSurfaceFn", "delete_attached_surface", 0x20),
-    member("DDraw_IDirectDrawSurface7_EnumAttachedSurfacesFn", "enum_attached_surfaces", 0x24),
-    member("DDraw_IDirectDrawSurface7_EnumOverlayZOrdersFn", "enum_overlay_z_orders", 0x28),
+    member(
+        "DDraw_IDirectDrawSurface7_DeleteAttachedSurfaceFn",
+        "delete_attached_surface",
+        0x20,
+    ),
+    member(
+        "DDraw_IDirectDrawSurface7_EnumAttachedSurfacesFn",
+        "enum_attached_surfaces",
+        0x24,
+    ),
+    member(
+        "DDraw_IDirectDrawSurface7_EnumOverlayZOrdersFn", "enum_overlay_z_orders", 0x28
+    ),
     member("DDraw_IDirectDrawSurface7_FlipFn", "flip", 0x2C),
-    member("DDraw_IDirectDrawSurface7_GetAttachedSurfaceFn", "get_attached_surface", 0x30),
+    member(
+        "DDraw_IDirectDrawSurface7_GetAttachedSurfaceFn", "get_attached_surface", 0x30
+    ),
     member("DDraw_IDirectDrawSurface7_DwordFn", "get_blt_status", 0x34),
     member("DDraw_IDirectDrawSurface7_GetCapsFn", "get_caps", 0x38),
     member("DDraw_IDirectDrawSurface7_OutObjectFn", "get_clipper", 0x3C),
     member("DDraw_IDirectDrawSurface7_ColorKeyFn", "get_color_key", 0x40),
     member("DDraw_IDirectDrawSurface7_GetDCFn", "get_dc", 0x44),
     member("DDraw_IDirectDrawSurface7_DwordFn", "get_flip_status", 0x48),
-    member("DDraw_IDirectDrawSurface7_GetOverlayPositionFn", "get_overlay_position", 0x4C),
+    member(
+        "DDraw_IDirectDrawSurface7_GetOverlayPositionFn", "get_overlay_position", 0x4C
+    ),
     member("DDraw_IDirectDrawSurface7_OutObjectFn", "get_palette", 0x50),
     member("DDraw_IDirectDrawSurface7_GetPixelFormatFn", "get_pixel_format", 0x54),
     member("DDraw_IDirectDrawSurface7_GetSurfaceDescFn", "get_surface_desc", 0x58),
@@ -7184,7 +7278,9 @@ stable.struct(
     member("DDraw_IDirectDrawSurface7_NoArgsFn", "restore", 0x6C),
     member("DDraw_IDirectDrawSurface7_SetOpaqueInterfaceFn", "set_clipper", 0x70),
     member("DDraw_IDirectDrawSurface7_ColorKeyFn", "set_color_key", 0x74),
-    member("DDraw_IDirectDrawSurface7_SetOverlayPositionFn", "set_overlay_position", 0x78),
+    member(
+        "DDraw_IDirectDrawSurface7_SetOverlayPositionFn", "set_overlay_position", 0x78
+    ),
     member("DDraw_IDirectDrawSurface7_SetOpaqueInterfaceFn", "set_palette", 0x7C),
     member("DDraw_IDirectDrawSurface7_UnlockFn", "unlock", 0x80),
     member("DDraw_IDirectDrawSurface7_UpdateOverlayFn", "update_overlay", 0x84),
@@ -7246,18 +7342,36 @@ stable.struct(
     member("D3D_IDirect3DDevice7_DwordOutFn", "end_state_block", 0x5C),
     member("D3D_IDirect3DDevice7_SurfaceFn", "preload", 0x60),
     member("D3D_IDirect3DDevice7_DrawPrimitiveFn", "draw_primitive", 0x64),
-    member("D3D_IDirect3DDevice7_DrawIndexedPrimitiveFn", "draw_indexed_primitive", 0x68),
+    member(
+        "D3D_IDirect3DDevice7_DrawIndexedPrimitiveFn", "draw_indexed_primitive", 0x68
+    ),
     member("D3D_IDirect3DDevice7_OpaqueFn", "set_clip_status", 0x6C),
     member("D3D_IDirect3DDevice7_OpaqueFn", "get_clip_status", 0x70),
     member("D3D_IDirect3DDevice7_DrawPrimitiveFn", "draw_primitive_strided", 0x74),
-    member("D3D_IDirect3DDevice7_DrawIndexedPrimitiveFn", "draw_indexed_primitive_strided", 0x78),
+    member(
+        "D3D_IDirect3DDevice7_DrawIndexedPrimitiveFn",
+        "draw_indexed_primitive_strided",
+        0x78,
+    ),
     member("D3D_IDirect3DDevice7_DrawPrimitiveVBFn", "draw_primitive_vb", 0x7C),
-    member("D3D_IDirect3DDevice7_DrawIndexedPrimitiveVBFn", "draw_indexed_primitive_vb", 0x80),
-    member("D3D_IDirect3DDevice7_ComputeSphereVisibilityFn", "compute_sphere_visibility", 0x84),
+    member(
+        "D3D_IDirect3DDevice7_DrawIndexedPrimitiveVBFn",
+        "draw_indexed_primitive_vb",
+        0x80,
+    ),
+    member(
+        "D3D_IDirect3DDevice7_ComputeSphereVisibilityFn",
+        "compute_sphere_visibility",
+        0x84,
+    ),
     member("D3D_IDirect3DDevice7_GetTextureFn", "get_texture", 0x88),
     member("D3D_IDirect3DDevice7_SetTextureFn", "set_texture", 0x8C),
-    member("D3D_IDirect3DDevice7_GetTextureStageStateFn", "get_texture_stage_state", 0x90),
-    member("D3D_IDirect3DDevice7_SetTextureStageStateFn", "set_texture_stage_state", 0x94),
+    member(
+        "D3D_IDirect3DDevice7_GetTextureStageStateFn", "get_texture_stage_state", 0x90
+    ),
+    member(
+        "D3D_IDirect3DDevice7_SetTextureStageStateFn", "set_texture_stage_state", 0x94
+    ),
     member("D3D_IDirect3DDevice7_DwordOutFn", "validate_device", 0x98),
     member("D3D_IDirect3DDevice7_DwordFn", "apply_state_block", 0x9C),
     member("D3D_IDirect3DDevice7_DwordFn", "capture_state_block", 0xA0),
@@ -7863,7 +7977,10 @@ stable.fn(
     hook=0x7,
     public=False,
     ret="void",
-    params=[param("Entity_State*", "entity"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc="Opcode 0x15 callback. Updates the selected collision record, restores path_result, then sets the requested entity flag bit.",
     stable=True,
 )
@@ -7874,7 +7991,10 @@ stable.fn(
     match=-0x5A,
     public=False,
     ret="void",
-    params=[param("Entity_State*", "entity"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc="Opcode 0x19 callback. Polls a queued signal.",
     stable=True,
 )
@@ -8039,7 +8159,10 @@ stable.fn(
     match=-0x5A,
     public=False,
     ret="void",
-    params=[param("Entity_State*", "entity"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc="Opcode 0x11 callback. Selects player-control state and sets Entity bit 0x4 as the current pass's active-worklist request.",
     stable=True,
 )
@@ -8233,7 +8356,10 @@ stable.fn(
     "A1 ?? ?? ?? ?? 53 33 DB 55",
     public=False,
     ret="void",
-    params=[param("Entity_State*", "entity"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc="Opcode 0x23 callback. Pause sets Entity flag 0x2000 for script-paused state and sets flag 0x4000 when unlinking a live actor from the collision list.",
     stable=True,
 )
@@ -10450,13 +10576,19 @@ stable.fn(
             doc="Packed RGB color for the top-left vertex. Alpha comes from blend state.",
         ),
         param(
-            "uint32_t", "top_right_rgb", doc="Packed RGB color for the top-right vertex."
+            "uint32_t",
+            "top_right_rgb",
+            doc="Packed RGB color for the top-right vertex.",
         ),
         param(
-            "uint32_t", "bottom_left_rgb", doc="Packed RGB color for the bottom-left vertex."
+            "uint32_t",
+            "bottom_left_rgb",
+            doc="Packed RGB color for the bottom-left vertex.",
         ),
         param(
-            "uint32_t", "bottom_right_rgb", doc="Packed RGB color for the bottom-right vertex."
+            "uint32_t",
+            "bottom_right_rgb",
+            doc="Packed RGB color for the bottom-right vertex.",
         ),
     ],
     doc="Draws a filled screen-space rectangle as D3DPT_TRIANGLESTRIP/FVF 0x44 with top-left, top-right, bottom-left, and bottom-right diffuse colors. Alpha comes from blend state.",
@@ -13008,7 +13140,11 @@ stable.fn(
             "collision_records",
             doc="Writable array of 0x24-byte collision records.",
         ),
-        param("int32_t", "slot_count", doc="Positive number of collision records to refresh."),
+        param(
+            "int32_t",
+            "slot_count",
+            doc="Positive number of collision records to refresh.",
+        ),
     ],
     doc="Refreshes collision ranges while decrementing cooldowns and clearing reference actors. Callers must pass a positive slot_count.",
     stable=True,
@@ -13196,7 +13332,11 @@ stable.fn(
     hook=0x6,
     ret="uint8_t",
     params=[
-        param("Component_HitEvent*", "hit_events", doc="Base of the fixed eight-slot cooldown table."),
+        param(
+            "Component_HitEvent*",
+            "hit_events",
+            doc="Base of the fixed eight-slot cooldown table.",
+        ),
         param("Actor_State*", "actor"),
     ],
     doc="Returns zero when admission is denied. Otherwise returns 1 after using the first expired slot, though a full table also returns 1 without inserting anything.",
@@ -13209,7 +13349,11 @@ stable.fn(
     public=False,
     ret="uint8_t",
     params=[
-        param("Component_HitEvent*", "hit_events", doc="Base of the fixed eight-slot cooldown table."),
+        param(
+            "Component_HitEvent*",
+            "hit_events",
+            doc="Base of the fixed eight-slot cooldown table.",
+        ),
         param("Actor_State*", "actor"),
         param("int32_t", "actor_collision_key"),
     ],
@@ -15284,7 +15428,9 @@ stable.fn(
     params=[
         param("Actor_State*", "powerup_actor"),
         param("Actor_State*", "other_actor"),
-        param("int32_t", "reserved_zero", doc="Unused slot. The dispatcher passes zero."),
+        param(
+            "int32_t", "reserved_zero", doc="Unused slot. The dispatcher passes zero."
+        ),
         param("int32_t", "collision_result"),
     ],
     doc="Powerup_CollisionCallback returning -2 to suppress flagged, disabled, or non-player collisions and 0 for player collection. Flags 0x12 also clear collision class and request lifecycle removal.",
@@ -16032,10 +16178,20 @@ stable.fn(
     hook=hook(0x2, kind=HookKind.HOTPATCH),
     ret="int32_t",
     params=[
-        param("void*", "subject", doc="Collision-dispatch subject. Intentionally unused."),
-        param("void*", "other_object", doc="Other collision object. Intentionally unused."),
-        param("Collision_Polygon*", "collision_poly", doc="Collision polygon. Intentionally unused."),
-        param("int32_t", "collision_depth", doc="Collision depth. Intentionally unused."),
+        param(
+            "void*", "subject", doc="Collision-dispatch subject. Intentionally unused."
+        ),
+        param(
+            "void*", "other_object", doc="Other collision object. Intentionally unused."
+        ),
+        param(
+            "Collision_Polygon*",
+            "collision_poly",
+            doc="Collision polygon. Intentionally unused.",
+        ),
+        param(
+            "int32_t", "collision_depth", doc="Collision depth. Intentionally unused."
+        ),
     ],
     doc=(
         "Default ActorCollisionProbeCallback installed in collision slot 0. It ignores all four "
@@ -17406,627 +17562,627 @@ stable.fn(
 
 
 stable.callback_type(
-    'CRT_ExitCallback',
-    ret='void',
+    "CRT_ExitCallback",
+    ret="void",
     params=[],
     calling=CallingConvention.CDECL,
-    doc='CRT process-exit callback registered by CRT_OnExit and CRT_AtExit.',
+    doc="CRT process-exit callback registered by CRT_OnExit and CRT_AtExit.",
     unstable=True,
 )
 
 # 2026-08-14 decomp-pass functions (strictly sorted by EN VA).
 stable.fn(
-    'Actor_ReleaseBindings',
-    '8B 44 24 04 56 BE 02 00 00 00',
+    "Actor_ReleaseBindings",
+    "8B 44 24 04 56 BE 02 00 00 00",
     public=False,
-    ret='void',
-    params=[param('PKG_ActorRecord*', 'record')],
+    ret="void",
+    params=[param("PKG_ActorRecord*", "record")],
     doc="Clears two actor-record binding pointers and decrements each referenced object's refcount when nonzero.",
     unstable=True,
 )
 
 stable.fn(
-    'Math_EaseInOutQuadraticQ12',
-    '55 8B EC 8B 45 08 3D 00 08 00 00',
+    "Math_EaseInOutQuadraticQ12",
+    "55 8B EC 8B 45 08 3D 00 08 00 00",
     hook=0x6,
-    ret='int32_t',
-    params=[param('int32_t', 'input_q12')],
-    doc='Evaluates a normalized quadratic ease-in-out curve using Q12 input and output.',
+    ret="int32_t",
+    params=[param("int32_t", "input_q12")],
+    doc="Evaluates a normalized quadratic ease-in-out curve using Q12 input and output.",
     stable=True,
 )
 
 stable.fn(
-    'Bone_InitVertexBufferFromSkin',
-    '8B 4C 24 0C 8B 44 24 08',
+    "Bone_InitVertexBufferFromSkin",
+    "8B 4C 24 0C 8B 44 24 08",
     hook=0x8,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('Actor_State*', 'actor'),
-        param('Mesh_RuntimeVertex*', 'dst_vertices'),
-        param('Animation_FrameVertex*', 'skin_vertices'),
-        param('int32_t', 'vertex_count'),
+        param("Actor_State*", "actor"),
+        param("Mesh_RuntimeVertex*", "dst_vertices"),
+        param("Animation_FrameVertex*", "skin_vertices"),
+        param("int32_t", "vertex_count"),
     ],
     doc="A do/while loop copies x/y/z int16 values from 8-byte Animation_FrameVertex entries into 12-byte Mesh_RuntimeVertex entries and clears referenced normal accumulators for nonnegative normal_group_index. Both callers discard the final advanced EAX pointer.",
     stable=True,
 )
 
 stable.fn(
-    'Actor_GetAnimSeqIndex',
-    '8B 4C 24 04 33 C0 66 8B 41 5C',
+    "Actor_GetAnimSeqIndex",
+    "8B 4C 24 04 33 C0 66 8B 41 5C",
     hook=0x6,
-    ret='int32_t',
-    params=[param('Actor_State*', 'actor')],
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
     doc="Returns actor's zero-extended current animation sequence index.",
     stable=True,
 )
 
 stable.fn(
-    'Actor_GetAnimationProgress',
-    '8B 54 24 04 33 C0 66 8B 42 5C',
+    "Actor_GetAnimationProgress",
+    "8B 54 24 04 33 C0 66 8B 42 5C",
     hook=0x6,
-    ret='int32_t',
-    params=[param('Actor_State*', 'actor')],
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
     doc="Returns current animation progress in Q12. Missing or zero-span animation data yields 0x1000.",
     stable=True,
 )
 
 stable.fn(
-    'Graphics_MarkMeshDirty',
-    '8B 44 24 04 56 85 C0 74 ?? F6 00 80',
+    "Graphics_MarkMeshDirty",
+    "8B 44 24 04 56 85 C0 74 ?? F6 00 80",
     public=False,
-    ret='void',
-    params=[param('Mesh_CmdList*', 'cmd_list')],
+    ret="void",
+    params=[param("Mesh_CmdList*", "cmd_list")],
     doc="Resets each mesh command's progress/state and marks it dirty for reprocessing.",
     unstable=True,
 )
 
 stable.fn(
-    'Input_SetDeviceCooperativeLevel',
-    '8B 54 24 0C 8B 44 24 04 52',
+    "Input_SetDeviceCooperativeLevel",
+    "8B 54 24 0C 8B 44 24 04 52",
     hook=0x8,
     public=False,
-    ret='BOOL',
+    ret="BOOL",
     params=[
-        param('DInput_IDirectInputDeviceA*', 'device'),
-        param('HWND', 'hwnd'),
-        param('DWORD', 'flags'),
+        param("DInput_IDirectInputDeviceA*", "device"),
+        param("HWND", "hwnd"),
+        param("DWORD", "flags"),
     ],
     doc="Calls SetCooperativeLevel on IDirectInputDevice(device, hwnd, flags) and normalizes DI_OK to TRUE and every other HRESULT to FALSE. Inputs are not validated.",
     unstable=True,
 )
 
 stable.fn(
-    'Settings_GetDifficulty',
-    '8B 44 24 04 33 C9 85 C0 0F 94 C1 51 A2 ?? ?? ?? ?? E8 ?? ?? ?? ?? 59 C3 90 90 90 90 90 90 90 90',
+    "Settings_GetDifficulty",
+    "8B 44 24 04 33 C9 85 C0 0F 94 C1 51 A2 ?? ?? ?? ?? E8 ?? ?? ?? ?? 59 C3 90 90 90 90 90 90 90 90",
     match=0x20,
     hook=0x7,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
-    doc='Returns current signed difficulty setting used by menu and save-game logic.',
+    doc="Returns current signed difficulty setting used by menu and save-game logic.",
     stable=True,
 )
 
 stable.fn(
-    'Settings_SetDifficulty',
-    '8B 44 24 04 33 C9 85 C0 0F 94 C1 51 A2 ?? ?? ?? ?? E8 ?? ?? ?? ?? 59 C3 90 90 90 90 90 90 90 90',
+    "Settings_SetDifficulty",
+    "8B 44 24 04 33 C9 85 C0 0F 94 C1 51 A2 ?? ?? ?? ?? E8 ?? ?? ?? ?? 59 C3 90 90 90 90 90 90 90 90",
     match=0x30,
     hook=0x9,
-    ret='void',
-    params=[param('uint8_t', 'difficulty')],
-    doc='Stores the difficulty setting.',
+    ret="void",
+    params=[param("uint8_t", "difficulty")],
+    doc="Stores the difficulty setting.",
     stable=True,
 )
 
 stable.fn(
-    'Settings_SetPlayerCharacter',
-    '8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90',
+    "Settings_SetPlayerCharacter",
+    "8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90",
     required=Required.EN,
     hook=0x9,
-    ret='void',
-    params=[param('uint8_t', 'character_id')],
-    doc='Stores the selected player-character ID.',
+    ret="void",
+    params=[param("uint8_t", "character_id")],
+    doc="Stores the selected player-character ID.",
     stable=True,
 )
 
 stable.fn(
-    'Level_GetCampaignProgressOrdinal',
-    '8B 44 24 04 83 F8 07 7C ??',
+    "Level_GetCampaignProgressOrdinal",
+    "8B 44 24 04 83 F8 07 7C ??",
     hook=0x7,
     public=False,
-    ret='int32_t',
-    params=[param('int32_t', 'level_id')],
+    ret="int32_t",
+    params=[param("int32_t", "level_id")],
     doc="Maps campaign level IDs 7-26 to progress ordinals 1-20. Returns -1 for other IDs.",
     stable=True,
 )
 
 stable.fn(
-    'Color_UpdateGradient',
-    '8B 4C 24 04 8A 41 07 84 C0',
+    "Color_UpdateGradient",
+    "8B 4C 24 04 8A 41 07 84 C0",
     hook=0x7,
-    ret='uint32_t',
-    params=[param('Menu_ColorGradientState*', 'gradient_state')],
+    ret="uint32_t",
+    params=[param("Menu_ColorGradientState*", "gradient_state")],
     doc="Advances an eight-byte ping-pong color gradient, honoring endpoint holds, and returns the current 0 through 255 intensity.",
     unstable=True,
 )
 
 stable.fn(
-    'Material_FindIndex',
-    '8B 44 24 04 55 56 57 85 C0',
+    "Material_FindIndex",
+    "8B 44 24 04 55 56 57 85 C0",
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('Material_SectionHeader*', 'section'),
-        param('Material_TableEntry*', 'entry'),
-        param('int32_t', 'node_type'),
+        param("Material_SectionHeader*", "section"),
+        param("Material_TableEntry*", "entry"),
+        param("int32_t", "node_type"),
     ],
-    doc='Finds a material node matching an entry and type, returning its packed node reference or -1 when absent.',
+    doc="Finds a material node matching an entry and type, returning its packed node reference or -1 when absent.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_HasSpawnCapacity',
-    '8B 4C 24 04 8A 41 4B 84 C0',
+    "Component_HasSpawnCapacity",
+    "8B 4C 24 04 8A 41 4B 84 C0",
     hook=0x7,
-    ret='BOOL',
-    params=[param('Component_Definition*', 'definition')],
-    doc='Returns TRUE when the definition has no active-instance limit or its live count remains below the limit.',
+    ret="BOOL",
+    params=[param("Component_Definition*", "definition")],
+    doc="Returns TRUE when the definition has no active-instance limit or its live count remains below the limit.",
     stable=True,
 )
 
 stable.fn(
-    'Component_GetDamageAmount',
-    '8B 44 24 04 8B 88 F4 00 00 00 8B 44 24 08',
+    "Component_GetDamageAmount",
+    "8B 44 24 04 8B 88 F4 00 00 00 8B 44 24 08",
     hook=0xA,
-    ret='uint16_t',
+    ret="uint16_t",
     params=[
-        param('Component_Instance*', 'comp'),
-        param('int32_t*', 'out_hit_flag'),
+        param("Component_Instance*", "comp"),
+        param("int32_t*", "out_hit_flag"),
     ],
     doc="Returns the component definition's 16-bit damage amount and writes 1 to outHitFlag when non-NULL.",
     stable=True,
 )
 
 stable.fn(
-    'Collision_GetCooldownFrames',
-    'B8 0F 00 00 00 C3 90 90',
+    "Collision_GetCooldownFrames",
+    "B8 0F 00 00 00 C3 90 90",
     public=False,
-    ret='int32_t',
-    params=[param('Actor_State*', 'actor')],
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
     doc="Returns the fixed 15-frame cooldown. Actor is ignored.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_GetTeamID',
-    '8B 44 24 04 85 C0 75 ?? 83 C8 FF',
+    "Component_GetTeamID",
+    "8B 44 24 04 85 C0 75 ?? 83 C8 FF",
     hook=0x6,
-    ret='int32_t',
-    params=[param('Actor_State*', 'actor')],
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
     doc="Returns -1 for null actor. Otherwise returns the spawned component actor's zero-extended definition team ID.",
     stable=True,
 )
 
 stable.fn(
-    'Component_GetOwnerActor',
-    '8B 44 24 04 8B 88 F4 00 00 00 8B 01',
+    "Component_GetOwnerActor",
+    "8B 44 24 04 8B 88 F4 00 00 00 8B 01",
     hook=0xA,
-    ret='Actor_State*',
-    params=[param('Actor_State*', 'actor')],
+    ret="Actor_State*",
+    params=[param("Actor_State*", "actor")],
     doc="Returns the owner from a spawned actor's Component_SpawnParams. Actor and record_ptr must be valid.",
     stable=True,
 )
 
 stable.fn(
-    'Actor_HandleNullDamage',
-    '33 C0 C3 90 90 90 90 90 90 90 90 90 90 90 90 90 8B 44 24 04 8B 88 F4 00 00 00 8B 41 2C C3',
+    "Actor_HandleNullDamage",
+    "33 C0 C3 90 90 90 90 90 90 90 90 90 90 90 90 90 8B 44 24 04 8B 88 F4 00 00 00 8B 41 2C C3",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
-    params=[param('Actor_State*', 'actor')],
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
     doc="Three-byte null stub. Actor is unused.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_GetSpawnFrame',
-    '8B 44 24 04 8B 88 F4 00 00 00 8B 41 2C',
+    "Component_GetSpawnFrame",
+    "8B 44 24 04 8B 88 F4 00 00 00 8B 41 2C",
     hook=0xA,
-    ret='int32_t',
-    params=[param('Actor_State*', 'actor')],
+    ret="int32_t",
+    params=[param("Actor_State*", "actor")],
     doc="Returns spawn_frame from the spawned actor's Component_SpawnParams.",
     stable=True,
 )
 
 stable.fn(
-    'Component_CheckHeightConstraint',
-    '8B 44 24 08 8B 40 04 85 C0',
+    "Component_CheckHeightConstraint",
+    "8B 44 24 08 8B 40 04 85 C0",
     hook=0x7,
     public=False,
-    ret='BOOL',
+    ret="BOOL",
     params=[
-        param('Actor_State*', 'actor'),
-        param('Component_Definition*', 'definition'),
+        param("Actor_State*", "actor"),
+        param("Component_Definition*", "definition"),
     ],
     doc="Tests actor vertical separation against definition +0x04. The threshold field label remains uncertain.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_GetNextInChain',
-    '8B 44 24 04 85 C0 75 ?? C3 8B 40 08',
+    "Component_GetNextInChain",
+    "8B 44 24 04 85 C0 75 ?? C3 8B 40 08",
     hook=0x6,
     public=False,
-    ret='Component_Instance*',
-    params=[param('Component_Instance*', 'comp')],
-    doc='Returns the next component in the intrusive chain, or null when the input is null.',
+    ret="Component_Instance*",
+    params=[param("Component_Instance*", "comp")],
+    doc="Returns the next component in the intrusive chain, or null when the input is null.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_GetFlags',
-    '8B 44 24 04 85 C0 75 ?? C3 66 8B 40 20',
+    "Component_GetFlags",
+    "8B 44 24 04 85 C0 75 ?? C3 66 8B 40 20",
     hook=0x6,
     public=False,
-    ret='uint16_t',
-    params=[param('Component_Instance*', 'comp')],
+    ret="uint16_t",
+    params=[param("Component_Instance*", "comp")],
     doc="Returns the component's 16-bit raw flags, or zero when the input is null.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_GetPreviousInChain',
-    '8B 44 24 04 85 C0 75 ?? C3 8B 40 0C',
+    "Component_GetPreviousInChain",
+    "8B 44 24 04 85 C0 75 ?? C3 8B 40 0C",
     hook=0x6,
     public=False,
-    ret='Component_Instance*',
-    params=[param('Component_Instance*', 'comp')],
-    doc='Returns the previous component in the intrusive chain, or null when the input is null.',
+    ret="Component_Instance*",
+    params=[param("Component_Instance*", "comp")],
+    doc="Returns the previous component in the intrusive chain, or null when the input is null.",
     unstable=True,
 )
 
 stable.fn(
-    'Component_GetLifetime',
-    '8B 4C 24 04 85 C9 75 ?? 33 C0',
+    "Component_GetLifetime",
+    "8B 4C 24 04 85 C9 75 ?? 33 C0",
     hook=0x6,
-    ret='int32_t',
-    params=[param('Component_Instance*', 'comp')],
+    ret="int32_t",
+    params=[param("Component_Instance*", "comp")],
     doc="Returns zero for a null component. Otherwise returns its zero-extended 16-bit lifetime value.",
     stable=True,
 )
 
 stable.fn(
-    'ComponentBinding_ResolveActorByKey',
-    '8B 44 24 0C 56 85 C0 74 ?? 8B 4C 24 08 33 D2 66 8B 51 04 3B D0 74 ??',
+    "ComponentBinding_ResolveActorByKey",
+    "8B 44 24 0C 56 85 C0 74 ?? 8B 4C 24 08 33 D2 66 8B 51 04 3B D0 74 ??",
     hook=0x5,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('void*', 'bindings'),
-        param('int32_t', 'binding_count'),
-        param('int32_t', 'binding_key'),
-        param('Actor_State**', 'out_actor'),
+        param("void*", "bindings"),
+        param("int32_t", "binding_count"),
+        param("int32_t", "binding_key"),
+        param("Actor_State**", "out_actor"),
     ],
-    doc='Scans 0x24-byte component-binding slots for binding_key and writes the live matching actor to out_actor.',
+    doc="Scans 0x24-byte component-binding slots for binding_key and writes the live matching actor to out_actor.",
     unstable=True,
 )
 
 stable.fn(
-    'Collision_CheckEnemyCanBeHit',
-    '8B 44 24 08 80 78 64 04 75 ?? 80 78 67 0B 77 ?? 83 C8 FF C3 33 C0 C3',
+    "Collision_CheckEnemyCanBeHit",
+    "8B 44 24 08 80 78 64 04 75 ?? 80 78 67 0B 77 ?? 83 C8 FF C3 33 C0 C3",
     hook=0x8,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('Component_Instance*', 'comp'),
-        param('Actor_State*', 'other_actor'),
+        param("Component_Instance*", "comp"),
+        param("Actor_State*", "other_actor"),
     ],
     doc="Returns -1 only for eligible type-4 other_actor targets. Comp is an unused native ABI parameter.",
     unstable=True,
 )
 
 stable.fn(
-    'Collision_CheckLineSphereIntersection',
-    '55 8B EC 83 EC 10 8B 45 08 8B 4D 14 53 56 0F BF 90 AA 00 00 00 03 CA 8B 75 0C 0F AF C9',
+    "Collision_CheckLineSphereIntersection",
+    "55 8B EC 83 EC 10 8B 45 08 8B 4D 14 53 56 0F BF 90 AA 00 00 00 03 CA 8B 75 0C 0F AF C9",
     hook=0x6,
     public=False,
-    ret='uint8_t',
+    ret="uint8_t",
     params=[
-        param('Actor_State*', 'actor'),
-        param('Math_Vec3I32*', 'sphere_center'),
-        param('Math_Vec3I32*', 'segment_delta'),
-        param('uint32_t', 'sphere_radius'),
+        param("Actor_State*", "actor"),
+        param("Math_Vec3I32*", "sphere_center"),
+        param("Math_Vec3I32*", "segment_delta"),
+        param("uint32_t", "sphere_radius"),
     ],
-    doc='Tests actor position against a swept sphere and returns the byte-sized intersection result.',
+    doc="Tests actor position against a swept sphere and returns the byte-sized intersection result.",
     unstable=True,
 )
 
 stable.fn(
-    'Collision_CalculateImpactVelocity',
-    '55 8B EC 83 EC 10 53 8B 5D 18',
+    "Collision_CalculateImpactVelocity",
+    "55 8B EC 83 EC 10 53 8B 5D 18",
     hook=0x6,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('Actor_State*', 'actor'),
-        param('Actor_State*', 'other_actor'),
-        param('int32_t', 'collision_push'),
-        param('Math_Vec3I32*', 'velocity'),
-        param('Math_Vec3I32*', 'impact_velocity'),
+        param("Actor_State*", "actor"),
+        param("Actor_State*", "other_actor"),
+        param("int32_t", "collision_push"),
+        param("Math_Vec3I32*", "velocity"),
+        param("Math_Vec3I32*", "impact_velocity"),
     ],
     doc="Partitions impact velocity via the class-specific +0xC8 collision-shape overlay. +0x6E is a mode-dependent signed Q6 scalar.",
     unstable=True,
 )
 
 stable.fn(
-    'Actor_UpdateWorldRenderPosition',
-    '55 8B EC 83 EC 08 8B 45 08',
+    "Actor_UpdateWorldRenderPosition",
+    "55 8B EC 83 EC 08 8B 45 08",
     hook=0x6,
     public=False,
-    ret='void',
-    params=[param('Actor_State*', 'actor')],
+    ret="void",
+    params=[param("Actor_State*", "actor")],
     doc="Updates world_render_pos through a class-specific, allocation-relative Actor +0xC8 pointer to Scene_Node-compatible local_pos. Other layouts use +0xCA as animation frame count.",
     unstable=True,
 )
 
 stable.fn(
-    'Collision_ResolveActorToActorCollision',
-    '55 8B EC 81 EC A4 00 00 00 8B 45 0C 8B 55 08 66 8B 88 CE 00 00 00 66 3B 8A CE 00 00 00',
+    "Collision_ResolveActorToActorCollision",
+    "55 8B EC 81 EC A4 00 00 00 8B 45 0C 8B 55 08 66 8B 88 CE 00 00 00 66 3B 8A CE 00 00 00",
     hook=0x9,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('Actor_State*', 'actor_a'),
-        param('Actor_State*', 'actor_b'),
-        param('int32_t', 'actor_a_response'),
-        param('int32_t', 'actor_b_response'),
+        param("Actor_State*", "actor_a"),
+        param("Actor_State*", "actor_b"),
+        param("int32_t", "actor_a_response"),
+        param("int32_t", "actor_b_response"),
     ],
     doc=(
-        'Resolves class-specific Actor +0xC8 shape overlays, then passes actor_b as a node-compatible '
-        'collision source sharing transform, position, sub_pos, and type offsets.'
+        "Resolves class-specific Actor +0xC8 shape overlays, then passes actor_b as a node-compatible "
+        "collision source sharing transform, position, sub_pos, and type offsets."
     ),
     unstable=True,
 )
 
 stable.fn(
-    'Actor_ApplyDamageScaling',
-    '55 8B EC 8B 45 08 56 8B 75 0C',
+    "Actor_ApplyDamageScaling",
+    "55 8B EC 8B 45 08 56 8B 75 0C",
     hook=0x6,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('Actor_State*', 'actor'),
-        param('PKG_ActorRecord*', 'record'),
-        param('int32_t', 'damage'),
+        param("Actor_State*", "actor"),
+        param("PKG_ActorRecord*", "record"),
+        param("int32_t", "damage"),
     ],
-    doc='Initialize actor-record damage response constants, then Q12-scale response motion by damage and actor scale.',
+    doc="Initialize actor-record damage response constants, then Q12-scale response motion by damage and actor scale.",
     unstable=True,
 )
 
 stable.fn(
-    'Audio_ReleaseSoundHandle',
-    '8B 44 24 04 56 8D 34 80',
+    "Audio_ReleaseSoundHandle",
+    "8B 44 24 04 56 8D 34 80",
     public=False,
-    ret='void',
-    params=[param('int32_t', 'slot_index')],
-    doc='Stop and end an active Miles sample slot, clearing its cached base playback rate.',
+    ret="void",
+    params=[param("int32_t", "slot_index")],
+    doc="Stop and end an active Miles sample slot, clearing its cached base playback rate.",
     unstable=True,
 )
 
 stable.fn(
-    'Actor_ResetAnimationChains',
-    '8B 44 24 04 33 C9 33 D2 8A 88 BA 00 00 00',
+    "Actor_ResetAnimationChains",
+    "8B 44 24 04 33 C9 33 D2 8A 88 BA 00 00 00",
     hook=0x6,
     public=False,
-    ret='void',
-    params=[param('Actor_State*', 'actor')],
-    doc='Reset byte flags and 16-bit cursors for every 0x20-byte actor trail-chain record.',
+    ret="void",
+    params=[param("Actor_State*", "actor")],
+    doc="Reset byte flags and 16-bit cursors for every 0x20-byte actor trail-chain record.",
     unstable=True,
 )
 
 stable.fn(
-    'Actor_ResetComponentAnimations',
-    '8B 44 24 04 33 C9 33 D2 8A 88 BB 00 00 00',
+    "Actor_ResetComponentAnimations",
+    "8B 44 24 04 33 C9 33 D2 8A 88 BB 00 00 00",
     hook=0x6,
     public=False,
-    ret='void',
-    params=[param('Actor_State*', 'actor')],
-    doc='Zero two 16-bit animation fields in every 0x28-byte actor component record.',
+    ret="void",
+    params=[param("Actor_State*", "actor")],
+    doc="Zero two 16-bit animation fields in every 0x28-byte actor component record.",
     unstable=True,
 )
 
 stable.fn(
-    'Actor_DetachFromParent',
-    '8B 4C 24 04 33 D2 8B 81 08 01 00 00',
+    "Actor_DetachFromParent",
+    "8B 4C 24 04 33 D2 8B 81 08 01 00 00",
     hook=0x6,
-    ret='void',
-    params=[param('Actor_State*', 'actor')],
+    ret="void",
+    params=[param("Actor_State*", "actor")],
     doc="Detaches actor, clears runtime attachment_transform_node, and releases a type-3 parent's attachment reference.",
     stable=True,
 )
 
 stable.fn(
-    'Math_ClampAngleDelta',
-    '8B 44 24 08 56 66 8B 74 24 10',
-    ret='uint16_t',
+    "Math_ClampAngleDelta",
+    "8B 44 24 08 56 66 8B 74 24 10",
+    ret="uint16_t",
     params=[
-        param('int16_t', 'target_angle'),
-        param('int16_t', 'current_angle'),
-        param('int16_t', 'max_delta'),
+        param("int16_t", "target_angle"),
+        param("int16_t", "current_angle"),
+        param("int16_t", "max_delta"),
     ],
-    doc='Move a 12-bit circular angle toward its target by half the allowed delta, honoring the 0x1000 sentinel.',
+    doc="Move a 12-bit circular angle toward its target by half the allowed delta, honoring the 0x1000 sentinel.",
     stable=True,
 )
 
 stable.fn(
-    'Material_MarkSharedTextureReference',
-    '8B 44 24 04 8B 54 24 0C',
+    "Material_MarkSharedTextureReference",
+    "8B 44 24 04 8B 54 24 0C",
     hook=0x8,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('Material_SectionLoadView*', 'section'),
-        param('Material_TableEntryRaw*', 'entry'),
-        param('int32_t', 'entry_index'),
+        param("Material_SectionLoadView*", "section"),
+        param("Material_TableEntryRaw*", "entry"),
+        param("int32_t", "entry_index"),
     ],
-    doc='Marks a material entry when an earlier entry with the same texture descriptor already carries the shared-reference flag.',
+    doc="Marks a material entry when an earlier entry with the same texture descriptor already carries the shared-reference flag.",
     stable=True,
 )
 
 stable.fn(
-    'Math_SinFP12',
-    '8B 4C 24 04 81 E1 FF 0F 00 00',
+    "Math_SinFP12",
+    "8B 4C 24 04 81 E1 FF 0F 00 00",
     hook=0xA,
-    ret='int32_t',
-    params=[param('int32_t', 'angle')],
+    ret="int32_t",
+    params=[param("int32_t", "angle")],
     doc="Returns Q12 sine for a 12-bit turn angle using the engine's mirrored lookup table.",
     stable=True,
 )
 
 stable.fn(
-    'Math_CalculateAtan2Fast',
-    '8B 54 24 04 56 8B 74 24 0C 8B C2',
-    ret='int32_t',
+    "Math_CalculateAtan2Fast",
+    "8B 54 24 04 56 8B 74 24 0C 8B C2",
+    ret="int32_t",
     params=[
-        param('int32_t', 'y'),
-        param('int32_t', 'x'),
+        param("int32_t", "y"),
+        param("int32_t", "x"),
     ],
-    doc='Approximates atan2(y, x) as a 12-bit turn angle using downscaled inputs and reciprocal/angle lookup tables.',
+    doc="Approximates atan2(y, x) as a 12-bit turn angle using downscaled inputs and reciprocal/angle lookup tables.",
     stable=True,
 )
 
 stable.fn(
-    'Math_CalculateAtan2FP12',
-    '53 8B 5C 24 0C 56 57 8B 7C 24 10',
-    ret='int32_t',
+    "Math_CalculateAtan2FP12",
+    "53 8B 5C 24 0C 56 57 8B 7C 24 10",
+    ret="int32_t",
     params=[
-        param('int32_t', 'y'),
-        param('int32_t', 'x'),
+        param("int32_t", "y"),
+        param("int32_t", "x"),
     ],
-    doc='Computes atan2(y, x) as a 12-bit turn angle using integer division and an angle lookup table.',
+    doc="Computes atan2(y, x) as a 12-bit turn angle using integer division and an angle lookup table.",
     stable=True,
 )
 
 stable.fn(
-    'Math_CalculateAtan2Lookup12',
-    '8B 44 24 08 56 57 8B 7C 24 0C',
+    "Math_CalculateAtan2Lookup12",
+    "8B 44 24 08 56 57 8B 7C 24 0C",
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('int32_t', 'sin_value'),
-        param('int32_t', 'cos_value'),
+        param("int32_t", "sin_value"),
+        param("int32_t", "cos_value"),
     ],
     doc="Computes the engine's clamped signed atan-ratio angle. This is not an unrestricted atan2 implementation.",
     stable=True,
 )
 
 stable.fn(
-    'UI_CompareSpriteDepth',
-    '8B 44 24 04 33 D2 8B 08',
+    "UI_CompareSpriteDepth",
+    "8B 44 24 04 33 D2 8B 08",
     hook=0x6,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('PKG_SpriteEntry*const*', 'lhs'),
-        param('PKG_SpriteEntry*const*', 'rhs'),
+        param("PKG_SpriteEntry*const*", "lhs"),
+        param("PKG_SpriteEntry*const*", "rhs"),
     ],
-    doc='Compares two sprite pointers by signed 16-bit sort_key for ascending depth ordering.',
+    doc="Compares two sprite pointers by signed 16-bit sort_key for ascending depth ordering.",
     stable=True,
 )
 
 stable.fn(
-    'Math_EaseInOut',
-    '55 8B EC 51 8B 4D 10 56',
+    "Math_EaseInOut",
+    "55 8B EC 51 8B 4D 10 56",
     hook=0x7,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('int32_t', 't_q12'),
-        param('int32_t', 'ease_in_q12'),
-        param('int32_t', 'ease_out_q12'),
+        param("int32_t", "t_q12"),
+        param("int32_t", "ease_in_q12"),
+        param("int32_t", "ease_out_q12"),
     ],
-    doc='Maps Q12 time through quadratic ease-in, linear travel, and quadratic ease-out segments.',
+    doc="Maps Q12 time through quadratic ease-in, linear travel, and quadratic ease-out segments.",
     stable=True,
 )
 
 stable.fn(
-    'Actor_SetMovingRight',
-    '8B 44 24 04 8B 88 88 00 00 00 80 CD 08',
+    "Actor_SetMovingRight",
+    "8B 44 24 04 8B 88 88 00 00 00 80 CD 08",
     hook=0xA,
-    ret='void',
-    params=[param('Actor_State*', 'actor')],
-    doc='Sets actor rightward movement/orientation flags and clears the opposing lifecycle direction bit.',
+    ret="void",
+    params=[param("Actor_State*", "actor")],
+    doc="Sets actor rightward movement/orientation flags and clears the opposing lifecycle direction bit.",
     stable=True,
 )
 
 stable.fn(
-    'Actor_SetMovingLeft',
-    '8B 44 24 04 8B 88 88 00 00 00 81 E1 F7 EF FF FF',
+    "Actor_SetMovingLeft",
+    "8B 44 24 04 8B 88 88 00 00 00 81 E1 F7 EF FF FF",
     hook=0xA,
-    ret='void',
-    params=[param('Actor_State*', 'actor')],
-    doc='Sets actor leftward movement/orientation flags while clearing conflicting movement flags.',
+    ret="void",
+    params=[param("Actor_State*", "actor")],
+    doc="Sets actor leftward movement/orientation flags while clearing conflicting movement flags.",
     stable=True,
 )
 
 stable.fn(
-    'Input_SetKeyDown',
-    '8B 44 24 04 25 FF 00 00 00 C6 80 ?? ?? ?? ?? 01',
+    "Input_SetKeyDown",
+    "8B 44 24 04 25 FF 00 00 00 C6 80 ?? ?? ?? ?? 01",
     hook=0x9,
     public=False,
-    ret='void',
-    params=[param('uint8_t', 'scan_code')],
-    doc='Marks one raw 8-bit scan-code slot as pressed in the engine input-state buffer.',
+    ret="void",
+    params=[param("uint8_t", "scan_code")],
+    doc="Marks one raw 8-bit scan-code slot as pressed in the engine input-state buffer.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_InitializeFloatingPoint',
-    'E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A3 ?? ?? ?? ?? E8 ?? ?? ?? ?? DB E2 C3',
+    "CRT_InitializeFloatingPoint",
+    "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A3 ?? ?? ?? ?? E8 ?? ?? ?? ?? DB E2 C3",
     public=False,
-    ret='void',
+    ret="void",
     params=[],
-    doc='Initializes CRT floating-format dispatch and records whether the CPU has the Pentium FDIV precision erratum.',
+    doc="Initializes CRT floating-format dispatch and records whether the CPU has the Pentium FDIV precision erratum.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_InitFloatFormatDispatch',
-    'B8 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ?? A3 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ??',
+    "CRT_InitFloatFormatDispatch",
+    "B8 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ?? A3 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ?? C7 05 ?? ?? ?? ?? ?? ?? ?? ??",
     public=False,
-    ret='void',
+    ret="void",
     params=[],
-    doc='Installs the CRT function-pointer dispatch table used by printf-style floating conversion.',
+    doc="Installs the CRT function-pointer dispatch table used by printf-style floating conversion.",
     unstable=True,
 )
 
 stable.fn(
-    'String_FormatCRTString',
-    '55 8B EC 83 EC 20 8B 45 08 56 89 45 E8',
+    "String_FormatCRTString",
+    "55 8B EC 83 EC 20 8B 45 08 56 89 45 E8",
     hook=0x6,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('char*', 'buffer'),
-        param('char const*', 'format'),
+        param("char*", "buffer"),
+        param("char const*", "format"),
     ],
-    doc='Formats into a caller buffer and terminates it. Variadic arguments are not modeled, so this row is not callable.',
+    doc="Formats into a caller buffer and terminates it. Variadic arguments are not modeled, so this row is not callable.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_Setjmp3',
-    '8B 54 24 04 89 2A 89 5A 04 89 7A 08 89 72 0C 89 62 10 8B 04 24 89 42 14 C7 42 20 30 32 43 56',
+    "CRT_Setjmp3",
+    "8B 54 24 04 89 2A 89 5A 04 89 7A 08 89 72 0C 89 62 10 8B 04 24 89 42 14 C7 42 20 30 32 43 56",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint32_t*', 'jump_buffer'),
-        param('int32_t', 'argument_count'),
+        param("uint32_t*", "jump_buffer"),
+        param("int32_t", "argument_count"),
     ],
     doc="Captures MSVC register, stack, PC, and SEH state. Optional words selected by argument_count are not modeled.",
     abi_status=AbiStatus.PLACEHOLDER,
@@ -18034,16 +18190,16 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_Longjmp',
-    '8B 5C 24 04 8B 2B 8B 73 18',
+    "CRT_Longjmp",
+    "8B 5C 24 04 8B 2B 8B 73 18",
     hook=0x6,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='void',
+    ret="void",
     params=[
-        param('int32_t*', 'jump_buffer'),
-        param('int32_t', 'value'),
+        param("int32_t*", "jump_buffer"),
+        param("int32_t", "value"),
     ],
     doc="Restores a private MSVC jump buffer, unwinds SEH state, and jumps to the saved PC. It never returns to its caller.",
     abi_status=AbiStatus.PLACEHOLDER,
@@ -18051,237 +18207,237 @@ stable.fn(
 )
 
 stable.fn(
-    'File_FlushCRTFile',
-    '56 8B 74 24 08 85 F6 75 ??',
-    ret='int32_t',
-    params=[param('File_Handle*', 'stream')],
+    "File_FlushCRTFile",
+    "56 8B 74 24 08 85 F6 75 ??",
+    ret="int32_t",
+    params=[param("File_Handle*", "stream")],
     doc="NULL stream dispatches to flush-all mode. Otherwise flushes buffered bytes and optionally calls FlushFileBuffers for commit-enabled streams.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_FlushAll',
-    '6A 01 E8 ?? ?? ?? ?? 59 C3 53 56 57',
+    "CRT_FlushAll",
+    "6A 01 E8 ?? ?? ?? ?? 59 C3 53 56 57",
     public=False,
     hook=0x7,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
-    doc='Returns File_FlushAllCRT(1).',
+    doc="Returns File_FlushAllCRT(1).",
     stable=True,
 )
 
 stable.fn(
-    'File_FlushAllCRT',
-    '53 56 57 33 F6 33 DB 33 FF',
+    "File_FlushAllCRT",
+    "53 56 57 33 F6 33 DB 33 FF",
     public=False,
-    ret='int32_t',
-    params=[param('int32_t', 'flush_mode')],
+    ret="int32_t",
+    params=[param("int32_t", "flush_mode")],
     doc="Scans CRT FILE table. Mode 1 flushes all active streams and counts successes, mode 0 flushes writable streams and accumulates failure.",
     unstable=True,
 )
 
 stable.fn(
-    'File_WriteCRTFileFormat',
-    '55 8B EC 56 57 FF 75 08',
+    "File_WriteCRTFileFormat",
+    "55 8B EC 56 57 FF 75 08",
     required=Required.EN,
     public=False,
     callable=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('File_Handle*', 'stream'),
-        param('char const*', 'format'),
+        param("File_Handle*", "stream"),
+        param("char const*", "format"),
     ],
-    doc='Formats output to a CRT stream. Variadic arguments are not modeled, so this row is not callable.',
+    doc="Formats output to a CRT stream. Variadic arguments are not modeled, so this row is not callable.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'String_PrintFormatCRT',
-    '53 56 BE ?? ?? ?? ?? 57 56 E8 ?? ?? ?? ?? 8B F8',
+    "String_PrintFormatCRT",
+    "53 56 BE ?? ?? ?? ?? 57 56 E8 ?? ?? ?? ?? 8B F8",
     hook=0x7,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='int32_t',
-    params=[param('char const*', 'format')],
-    doc='Formats output to the CRT stdout stream. Variadic arguments are not modeled, so this row is not callable.',
+    ret="int32_t",
+    params=[param("char const*", "format")],
+    doc="Formats output to the CRT stdout stream. Variadic arguments are not modeled, so this row is not callable.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_OnExit',
-    '56 FF 35 ?? ?? ?? ?? E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 59 8B 0D ?? ?? ?? ??',
+    "CRT_OnExit",
+    "56 FF 35 ?? ?? ?? ?? E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 59 8B 0D ?? ?? ?? ??",
     hook=0x7,
     public=False,
-    ret='CRT_ExitCallback',
-    params=[param('CRT_ExitCallback', 'callback')],
-    doc='Grows heap-backed exit-callback array in 16-byte increments, appends callback, advances end pointer, returns callback or NULL on allocation.',
+    ret="CRT_ExitCallback",
+    params=[param("CRT_ExitCallback", "callback")],
+    doc="Grows heap-backed exit-callback array in 16-byte increments, appends callback, advances end pointer, returns callback or NULL on allocation.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_AtExit',
-    'FF 74 24 04 E8 ?? ?? ?? ?? F7 D8 1B C0',
+    "CRT_AtExit",
+    "FF 74 24 04 E8 ?? ?? ?? ?? F7 D8 1B C0",
     hook=0x9,
     public=False,
-    ret='int32_t',
-    params=[param('CRT_ExitCallback', 'callback')],
-    doc='Registers callback through CRT_OnExit and maps non-NULL result to 0, NULL to -1.',
+    ret="int32_t",
+    params=[param("CRT_ExitCallback", "callback")],
+    doc="Registers callback through CRT_OnExit and maps non-NULL result to 0, NULL to -1.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_AtExitInit',
-    '68 80 00 00 00 E8 ?? ?? ?? ?? 85 C0',
+    "CRT_AtExitInit",
+    "68 80 00 00 00 E8 ?? ?? ?? ?? 85 C0",
     public=False,
-    ret='void',
+    ret="void",
     params=[],
-    doc='Allocates initial 0x80-byte callback table, aborts with runtime error 0x18 on failure, zeroes first slot, and initializes base/next globals.',
+    doc="Allocates initial 0x80-byte callback table, aborts with runtime error 0x18 on failure, zeroes first slot, and initializes base/next globals.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_NhMalloc',
-    '83 7C 24 04 E0 77 ?? FF 74 24 04',
+    "CRT_NhMalloc",
+    "83 7C 24 04 E0 77 ?? FF 74 24 04",
     public=False,
-    ret='void*',
+    ret="void*",
     params=[
-        param('uint32_t', 'size'),
-        param('int32_t', 'new_mode'),
+        param("uint32_t", "size"),
+        param("int32_t", "new_mode"),
     ],
-    doc='Rejects sizes above 0xFFFFFFE0, retries Mem_HeapAllocCRT while new_mode is enabled and CRT_CallNewHandler(size) succeeds, otherwise returns NULL.',
+    doc="Rejects sizes above 0xFFFFFFE0, retries Mem_HeapAllocCRT while new_mode is enabled and CRT_CallNewHandler(size) succeeds, otherwise returns NULL.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_Strstr',
-    '8B 4C 24 08 57 53 56 8A 11',
+    "CRT_Strstr",
+    "8B 4C 24 08 57 53 56 8A 11",
     public=False,
-    ret='char*',
+    ret="char*",
     params=[
-        param('char const*', 'haystack'),
-        param('char const*', 'needle'),
+        param("char const*", "haystack"),
+        param("char const*", "needle"),
     ],
     doc="Finds the first needle occurrence in read-only haystack. The returned pointer aliases haystack.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_CInit',
-    'A1 ?? ?? ?? ?? 85 C0 74 ?? FF D0 68 ?? ?? ?? ?? 68 ?? ?? ?? ??',
+    "CRT_CInit",
+    "A1 ?? ?? ?? ?? 85 C0 74 ?? FF D0 68 ?? ?? ?? ?? 68 ?? ?? ?? ??",
     public=False,
-    ret='void',
+    ret="void",
     params=[],
     doc="Calls optional CRT_InitializeFloatingPoint, then walks.CRT initializer ranges 0x44E008 through 0x44E018 and 0x44E000 through 0x44E004 via CRT_InitTerm.",
     unstable=True,
 )
 
 stable.fn(
-    'exit',
-    '6A 00 6A 00 FF 74 24 0C',
+    "exit",
+    "6A 00 6A 00 FF 74 24 0C",
     hook=0x8,
     public=False,
-    ret='void',
-    params=[param('int32_t', 'status')],
+    ret="void",
+    params=[param("int32_t", "status")],
     doc="Runs normal CRT exit processing, then terminates through ExitProcess. It never returns.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_QuickExit',
-    '6A 00 6A 01 FF 74 24 0C',
+    "CRT_QuickExit",
+    "6A 00 6A 01 FF 74 24 0C",
     hook=0x8,
     public=False,
-    ret='void',
-    params=[param('int32_t', 'status')],
+    ret="void",
+    params=[param("int32_t", "status")],
     doc="Skips normal atexit processing and terminates through ExitProcess. It never returns.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_DoExit',
-    '57 6A 01 5F 39 3D ?? ?? ?? ?? 75 ?? FF 74 24 08',
+    "CRT_DoExit",
+    "57 6A 01 5F 39 3D ?? ?? ?? ?? 75 ?? FF 74 24 08",
     hook=0xA,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('int32_t', 'status'),
-        param('int32_t', 'quick_exit'),
-        param('int32_t', 'return_to_caller'),
+        param("int32_t", "status"),
+        param("int32_t", "quick_exit"),
+        param("int32_t", "return_to_caller"),
     ],
-    doc='Coordinates CRT termination, runs callbacks once, flushes streams as requested, and exits or returns according to its flags.',
+    doc="Coordinates CRT termination, runs callbacks once, flushes streams as requested, and exits or returns according to its flags.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_InitTerm',
-    '56 8B 74 24 08 3B 74 24 0C',
+    "CRT_InitTerm",
+    "56 8B 74 24 08 3B 74 24 0C",
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('CRT_ExitCallback*', 'first'),
-        param('CRT_ExitCallback*', 'last'),
+        param("CRT_ExitCallback*", "first"),
+        param("CRT_ExitCallback*", "last"),
     ],
     doc="Invokes each nonnull function pointer from first up to but excluding last.",
     unstable=True,
 )
 
 stable.fn(
-    'File_FlushAndCloseOnExitCRT',
-    'E8 ?? ?? ?? ?? 80 3D ?? ?? ?? ?? 00 74 ?? E9 ?? ?? ?? ?? C3',
+    "File_FlushAndCloseOnExitCRT",
+    "E8 ?? ?? ?? ?? 80 3D ?? ?? ?? ?? 00 74 ?? E9 ?? ?? ?? ?? C3",
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
     doc="Calls CRT_FlushAll. When g_crtExitProcessing is nonzero, tail-calls File_CloseAllOpenFilesCRT.",
     unstable=True,
 )
 
 stable.fn(
-    'String_FormatCRTVString',
-    '55 8B EC 83 EC 20 8B 45 08 56 FF 75 10',
+    "String_FormatCRTVString",
+    "55 8B EC 83 EC 20 8B 45 08 56 FF 75 10",
     hook=0x6,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('char*', 'buffer'),
-        param('char const*', 'format'),
-        param('uint8_t*', 'argument_cursor'),
+        param("char*", "buffer"),
+        param("char const*", "format"),
+        param("uint8_t*", "argument_cursor"),
     ],
-    doc='Forwards buffer, format, and the x86 variadic byte cursor to the formatting core, then writes a trailing NUL.',
+    doc="Forwards buffer, format, and the x86 variadic byte cursor to the formatting core, then writes a trailing NUL.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_AmsgExit',
-    '83 3D ?? ?? ?? ?? 01 75 ?? E8 ?? ?? ?? ?? FF 74 24 04 E8 ?? ?? ?? ?? 68 FF 00 00 00',
+    "CRT_AmsgExit",
+    "83 3D ?? ?? ?? ?? 01 75 ?? E8 ?? ?? ?? ?? FF 74 24 04 E8 ?? ?? ?? ?? 68 FF 00 00 00",
     hook=0x7,
     callable=False,
     public=False,
-    ret='void',
-    params=[param('int32_t', 'runtime_error')],
+    ret="void",
+    params=[param("int32_t", "runtime_error")],
     doc="Displays the selected runtime error, then invokes the immutable quick-exit callback with status 255. It never returns.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ExitWithRuntimeError',
-    '83 3D ?? ?? ?? ?? 01 75 ?? E8 ?? ?? ?? ?? FF 74 24 04 E8 ?? ?? ?? ?? 59',
+    "CRT_ExitWithRuntimeError",
+    "83 3D ?? ?? ?? ?? 01 75 ?? E8 ?? ?? ?? ?? FF 74 24 04 E8 ?? ?? ?? ?? 59",
     hook=0x7,
     callable=False,
     public=False,
-    ret='void',
-    params=[param('int32_t', 'runtime_error')],
+    ret="void",
+    params=[param("int32_t", "runtime_error")],
     doc="Displays the selected CRT runtime error, then calls ExitProcess with status 255. It never returns.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_SetDefaultPrecision',
-    '68 00 00 03 00 68 00 00 01 00',
+    "CRT_SetDefaultPrecision",
+    "68 00 00 03 00 68 00 00 01 00",
     public=False,
-    ret='void',
+    ret="void",
     params=[],
     doc="Sets the x87 precision-control field through CRT_Control87(0x10000, 0x30000). No result is consumed.",
     abi_status=AbiStatus.VERIFIED,
@@ -18289,56 +18445,56 @@ stable.fn(
 )
 
 stable.fn(
-    'String_FindDecimalPointFloat',
-    '8B 44 24 04 8A 15 ?? ?? ?? ?? 8A 08',
+    "String_FindDecimalPointFloat",
+    "8B 44 24 04 8A 15 ?? ?? ?? ?? 8A 08",
     hook=0xA,
     public=False,
-    ret='char*',
-    params=[param('char*', 'formatted_string')],
-    doc='Removes redundant fractional zeroes in place and returns the resulting decimal boundary.',
+    ret="char*",
+    params=[param("char*", "formatted_string")],
+    doc="Removes redundant fractional zeroes in place and returns the resulting decimal boundary.",
     unstable=True,
 )
 
 stable.fn(
-    'Float_IsNonnegative',
-    '8B 44 24 04 DD 00 DC 1D ?? ?? ?? ??',
+    "Float_IsNonnegative",
+    "8B 44 24 04 DD 00 DC 1D ?? ?? ?? ??",
     hook=0x6,
     public=False,
-    ret='int32_t',
-    params=[param('double const*', 'value')],
+    ret="int32_t",
+    params=[param("double const*", "value")],
     doc="Returns true for an ordered value greater than or equal to zero. Negative values and NaNs return false.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_CfltCvt',
-    '55 8B EC 83 7D 10 65 74 ??',
+    "CRT_CfltCvt",
+    "55 8B EC 83 7D 10 65 74 ??",
     hook=0x7,
     public=False,
-    ret='char*',
+    ret="char*",
     params=[
-        param('double*', 'value'),
-        param('char*', 'buffer'),
-        param('int32_t', 'format'),
-        param('int32_t', 'precision'),
-        param('int32_t', 'flags'),
+        param("double*", "value"),
+        param("char*", "buffer"),
+        param("int32_t", "format"),
+        param("int32_t", "precision"),
+        param("int32_t", "flags"),
     ],
-    doc='Dispatches floating conversion by format character among exponential/fixed/general paths and writes caller buffer.',
+    doc="Dispatches floating conversion by format character among exponential/fixed/general paths and writes caller buffer.",
     unstable=True,
 )
 
 stable.fn(
-    'String_FormatCRTVStringAlt',
-    '55 8B EC 81 EC 48 02 00 00',
+    "String_FormatCRTVStringAlt",
+    "55 8B EC 81 EC 48 02 00 00",
     hook=0x9,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('int32_t*', 'output_context'),
-        param('char const*', 'format'),
-        param('uint8_t*', 'argument_cursor'),
+        param("int32_t*", "output_context"),
+        param("char const*", "format"),
+        param("uint8_t*", "argument_cursor"),
     ],
     doc="Formats values from an x86 variadic byte cursor into a FILE-like output context. Internal and non-callable.",
     abi_status=AbiStatus.PLACEHOLDER,
@@ -18346,83 +18502,83 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_VaArgInt',
-    '8B 44 24 04 83 00 04 8B 00 8B 40 FC',
+    "CRT_VaArgInt",
+    "8B 44 24 04 83 00 04 8B 00 8B 40 FC",
     hook=0x7,
     public=False,
-    ret='int32_t',
-    params=[param('uint8_t**', 'argument_cursor')],
-    doc='Reads one 32-bit promoted slot and advances the mutable byte cursor by four bytes.',
+    ret="int32_t",
+    params=[param("uint8_t**", "argument_cursor")],
+    doc="Reads one 32-bit promoted slot and advances the mutable byte cursor by four bytes.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_VaArgInt64',
-    '8B 44 24 04 83 00 08 8B 08',
+    "CRT_VaArgInt64",
+    "8B 44 24 04 83 00 08 8B 08",
     hook=0x7,
     public=False,
-    ret='int64_t',
-    params=[param('uint8_t**', 'argument_cursor')],
+    ret="int64_t",
+    params=[param("uint8_t**", "argument_cursor")],
     doc="Reads eight bytes, advances the mutable byte cursor by eight, and returns the value in EDX.EAX.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_GlobalUnwind2',
-    '55 8B EC 53 56 57 55 6A 00',
+    "CRT_GlobalUnwind2",
+    "55 8B EC 53 56 57 55 6A 00",
     required=Required.EN,
     public=False,
     callable=False,
-    ret='void',
-    params=[param('void*', 'target_frame')],
-    doc='Runs the MSVC global SEH unwind path. Its compiler frame ABI is not callable through the SDK.',
+    ret="void",
+    params=[param("void*", "target_frame")],
+    doc="Runs the MSVC global SEH unwind path. Its compiler frame ABI is not callable through the SDK.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_UnwindHandler',
-    '8B 4C 24 04 F7 41 04 06 00 00 00 B8 01 00 00 00 74 0F 8B 44 24 08 8B 54 24 10 89 02 B8 03 00 00 00 C3',
+    "CRT_UnwindHandler",
+    "8B 4C 24 04 F7 41 04 06 00 00 00 B8 01 00 00 00 74 0F 8B 44 24 08 8B 54 24 10 89 02 B8 03 00 00 00 C3",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('void*', 'exception_record'),
-        param('void*', 'establisher_frame'),
-        param('void*', 'context_record'),
-        param('void**', 'dispatcher_context'),
+        param("void*", "exception_record"),
+        param("void*", "establisher_frame"),
+        param("void*", "context_record"),
+        param("void**", "dispatcher_context"),
     ],
-    doc='Returns ContinueSearch normally or records the establisher frame and returns CollidedUnwind during unwind.',
+    doc="Returns ContinueSearch normally or records the establisher frame and returns CollidedUnwind during unwind.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_LocalUnwind2',
-    '53 56 57 8B 44 24 10 50',
+    "CRT_LocalUnwind2",
+    "53 56 57 8B 44 24 10 50",
     hook=0x7,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='void',
+    ret="void",
     params=[
-        param('void*', 'registration'),
-        param('int32_t', 'stop_try_level'),
+        param("void*", "registration"),
+        param("int32_t", "stop_try_level"),
     ],
-    doc='Runs local MSVC SEH termination handlers. Its compiler frame ABI is not callable through the SDK.',
+    doc="Runs local MSVC SEH termination handlers. Its compiler frame ABI is not callable through the SDK.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_AbnormalTermination',
-    '33 C0 64 8B 0D 00 00 00 00',
+    "CRT_AbnormalTermination",
+    "33 C0 64 8B 0D 00 00 00 00",
     hook=0x9,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
     doc="Checks the current MSVC SEH registration for abnormal termination. Not callable through the SDK.",
     abi_status=AbiStatus.PLACEHOLDER,
@@ -18430,241 +18586,241 @@ stable.fn(
 )
 
 stable.fn(
-    'Mem_GetCRTSize',
-    '56 8B 74 24 08 56 E8 ?? ?? ?? ?? 85 C0',
-    ret='uint32_t',
-    params=[param('void*', 'ptr')],
+    "Mem_GetCRTSize",
+    "56 8B 74 24 08 56 E8 ?? ?? ?? ?? 85 C0",
+    ret="uint32_t",
+    params=[param("void*", "ptr")],
     doc="Custom-segment allocation size comes from block header minus overhead. External heap allocation uses HeapSize.",
     stable=True,
 )
 
 stable.fn(
-    'File_AllocateFileHandleCRT',
-    '8B 15 ?? ?? ?? ?? 53 55 56 33 ED 33 F6',
+    "File_AllocateFileHandleCRT",
+    "8B 15 ?? ?? ?? ?? 53 55 56 33 ED 33 F6",
     hook=0x6,
     public=False,
-    ret='File_Handle*',
+    ret="File_Handle*",
     params=[],
-    doc='Scans FILE table for empty/inactive slot, allocates 0x20-byte FILE object for absent slot, then clears fields and sets descriptor -1.',
+    doc="Scans FILE table for empty/inactive slot, allocates 0x20-byte FILE object for absent slot, then clears fields and sets descriptor -1.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_CallNewHandler',
-    'A1 ?? ?? ?? ?? 85 C0 74 ?? FF 74 24 04',
+    "CRT_CallNewHandler",
+    "A1 ?? ?? ?? ?? 85 C0 74 ?? FF 74 24 04",
     public=False,
-    ret='int32_t',
-    params=[param('uint32_t', 'size')],
+    ret="int32_t",
+    params=[param("uint32_t", "size")],
     doc="Invokes configured new-handler with requested size and returns boolean success. Absent handler returns 0.",
     stable=True,
 )
 
 stable.fn(
-    'Mem_InitializeHeapCRT',
-    '33 C0 6A 00 39 44 24 08',
+    "Mem_InitializeHeapCRT",
+    "33 C0 6A 00 39 44 24 08",
     hook=0x8,
     public=False,
-    ret='int32_t',
-    params=[param('int32_t', 'mt_flag')],
-    doc='Creates private Win32 heap with growable mode based on mtFlag, initializes custom allocator metadata, and destroys heap on metadata failure.',
+    ret="int32_t",
+    params=[param("int32_t", "mt_flag")],
+    doc="Creates private Win32 heap with growable mode based on mtFlag, initializes custom allocator metadata, and destroys heap on metadata failure.",
     unstable=True,
 )
 
 stable.fn(
-    'String_StrchrCRT',
-    '53 8B D8 C1 E0 08 8B 54 24 08 F7 C2 03 00 00 00 74 13 8A 0A 42 38 D9 74 D1 84 C9 74 51',
+    "String_StrchrCRT",
+    "53 8B D8 C1 E0 08 8B 54 24 08 F7 C2 03 00 00 00 74 13 8A 0A 42 38 D9 74 D1 84 C9 74 51",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='char*',
-    params=[param('char const*', 'string')],
+    ret="char*",
+    params=[param("char const*", "string")],
     doc="Optimized strchr entry. String is stack-passed, search character arrives in EAX, and return tail is shared.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'Mem_MemmoveBackwardACRT',
-    '83 25 ?? ?? ?? ?? 00 C7 05 ?? ?? ?? ?? 09 00 00 00 83 C8 FF 5F 5E 5B C9 C3 55 8B EC 57 56 8B 75 0C 8B',
+    "Mem_MemmoveBackwardACRT",
+    "83 25 ?? ?? ?? ?? 00 C7 05 ?? ?? ?? ?? 09 00 00 00 83 C8 FF 5F 5E 5B C9 C3 55 8B EC 57 56 8B 75 0C 8B",
     match=0x19,
     public=False,
-    ret='char*',
+    ret="char*",
     params=[
-        param('char*', 'dest'),
-        param('char const*', 'src'),
-        param('uint32_t', 'count'),
+        param("char*", "dest"),
+        param("char const*", "src"),
+        param("uint32_t", "count"),
     ],
     doc="Overlap-aware byte move selects forward or backward copy and uses aligned dword/jump-table fast paths. Returns original destination.",
     unstable=True,
 )
 
 stable.fn(
-    'Mem_CallocCRT',
-    '53 56 8B 74 24 0C 57 0F AF 74 24 14',
+    "Mem_CallocCRT",
+    "53 56 8B 74 24 0C 57 0F AF 74 24 14",
     hook=0x6,
-    ret='void*',
+    ret="void*",
     params=[
-        param('uint32_t', 'count'),
-        param('uint32_t', 'elem_size'),
+        param("uint32_t", "count"),
+        param("uint32_t", "elem_size"),
     ],
-    doc='Checks count*elemSize overflow, allocates total bytes through Mem_MallocCRT, and zero-fills successful allocation.',
+    doc="Checks count*elemSize overflow, allocates total bytes through Mem_MallocCRT, and zero-fills successful allocation.",
     stable=True,
 )
 
 stable.fn(
-    'File_CloseAllOpenFilesCRT',
-    '56 57 6A 03 33 FF 5E 39 35 ?? ?? ?? ??',
+    "File_CloseAllOpenFilesCRT",
+    "56 57 6A 03 33 FF 5E 39 35 ?? ?? ?? ??",
     hook=0x6,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
     doc="Scans CRT FILE slots 3 through g_maxFileHandleCount, closes active streams, frees dynamically allocated slots >=20, clears table entries, and returns.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_XcptFilter',
-    '55 8B EC 53 FF 75 08 E8 ?? ?? ?? ??',
+    "CRT_XcptFilter",
+    "55 8B EC 53 FF 75 08 E8 ?? ?? ?? ??",
     hook=0x7,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint32_t', 'xcptnum'),
-        param('void*', 'pxcptinfoptrs'),
+        param("uint32_t", "xcptnum"),
+        param("void*", "pxcptinfoptrs"),
     ],
-    doc='Maps an OS exception code through the CRT table, invokes its handler, and returns the CRT exception-filter action.',
+    doc="Maps an OS exception code through the CRT table, invokes its handler, and returns the CRT exception-filter action.",
     unstable=True,
 )
 
 stable.fn(
-    'File_FindFileHandleEntryCRT',
-    '8B 54 24 04 8B 0D ?? ?? ?? ?? 39 15 ?? ?? ?? ??',
+    "File_FindFileHandleEntryCRT",
+    "8B 54 24 04 8B 0D ?? ?? ?? ?? 39 15 ?? ?? ?? ??",
     hook=0xA,
     public=False,
-    ret='int32_t*',
-    params=[param('int32_t', 'file_handle')],
-    doc='Resolves a CRT descriptor into its 12-byte table entry after range and table-presence checks.',
+    ret="int32_t*",
+    params=[param("int32_t", "file_handle")],
+    doc="Resolves a CRT descriptor into its 12-byte table entry after range and table-presence checks.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_SkipProgramNameInCmdLine',
-    '83 3D ?? ?? ?? ?? 00 75 ?? E8 ?? ?? ?? ?? 56 8B 35 ?? ?? ?? ??',
+    "CRT_SkipProgramNameInCmdLine",
+    "83 3D ?? ?? ?? ?? 00 75 ?? E8 ?? ?? ?? ?? 56 8B 35 ?? ?? ?? ??",
     hook=0x7,
     public=False,
-    ret='char*',
+    ret="char*",
     params=[],
-    doc='Walks g_commandLine past quoted or unquoted executable token, handles multibyte lead bytes, then skips whitespace.',
+    doc="Walks g_commandLine past quoted or unquoted executable token, handles multibyte lead bytes, then skips whitespace.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_SetEnvp',
-    '53 33 DB 39 1D ?? ?? ?? ?? 56 57 75 ?? E8 ?? ?? ?? ?? 8B 35 ?? ?? ?? ??',
+    "CRT_SetEnvp",
+    "53 33 DB 39 1D ?? ?? ?? ?? 56 57 75 ?? E8 ?? ?? ?? ?? 8B 35 ?? ?? ?? ??",
     hook=0x9,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
     doc="Counts non-'=' strings in copied environment block, allocates g_environ, duplicates each visible entry, frees source block, and terminates.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_SetArgv',
-    '55 8B EC 51 51 53 33 DB',
+    "CRT_SetArgv",
+    "55 8B EC 51 51 53 33 DB",
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
-    doc='Parses the process command line, allocates argv storage, populates __argc/__argv, and returns 0 or -1 on allocation failure.',
+    doc="Parses the process command line, allocates argv storage, populates __argc/__argv, and returns 0 or -1 on allocation failure.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ParseCmdLine',
-    '55 8B EC 8B 4D 18 8B 45 14',
+    "CRT_ParseCmdLine",
+    "55 8B EC 8B 4D 18 8B 45 14",
     hook=0x6,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('char*', 'command_line'),
-        param('char**', 'argv'),
-        param('char*', 'arg_buffer'),
-        param('int32_t*', 'argc_out'),
-        param('int32_t*', 'char_count_out'),
+        param("char*", "command_line"),
+        param("char**", "argv"),
+        param("char*", "arg_buffer"),
+        param("int32_t*", "argc_out"),
+        param("int32_t*", "char_count_out"),
     ],
-    doc='Counts or populates argv and its character buffer from a Windows command line, honoring quotes and escaped quotes.',
+    doc="Counts or populates argv and its character buffer from a Windows command line, honoring quotes and escaped quotes.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_GetEnvironmentStringsA',
-    '51 51 A1 ?? ?? ?? ?? 53 55 8B 2D ?? ?? ?? ?? 56',
+    "CRT_GetEnvironmentStringsA",
+    "51 51 A1 ?? ?? ?? ?? 53 55 8B 2D ?? ?? ?? ?? 56",
     hook=0x7,
     public=False,
-    ret='char*',
+    ret="char*",
     params=[],
-    doc='Returns a heap-owned ANSI environment block, converting from Unicode when only the wide environment API is available.',
+    doc="Returns a heap-owned ANSI environment block, converting from Unicode when only the wide environment API is available.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_SEHLongjmpUnwind',
-    '55 8B 4C 24 08 8B 29 8B 41 1C',
+    "CRT_SEHLongjmpUnwind",
+    "55 8B 4C 24 08 8B 29 8B 41 1C",
     cc=CallingConvention.STDCALL,
     required=Required.EN,
     public=False,
     callable=False,
-    ret='void',
-    params=[param('int32_t*', 'jump_buffer')],
-    doc='Unwinds MSVC SEH state from a private jump buffer. Its compiler frame ABI is not callable through the SDK.',
+    ret="void",
+    params=[param("int32_t*", "jump_buffer")],
+    doc="Unwinds MSVC SEH state from a private jump buffer. Its compiler frame ABI is not callable through the SDK.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ControlFP',
-    '55 8B EC 51 56 9B D9 7D FC',
+    "CRT_ControlFP",
+    "55 8B EC 51 56 9B D9 7D FC",
     public=False,
-    ret='uint32_t',
+    ret="uint32_t",
     params=[
-        param('uint32_t', 'new_control'),
-        param('uint32_t', 'mask'),
+        param("uint32_t", "new_control"),
+        param("uint32_t", "mask"),
     ],
-    doc='Translates abstract control-word masks, updates x87 control state, and returns abstracted prior/current flags.',
+    doc="Translates abstract control-word masks, updates x87 control state, and returns abstracted prior/current flags.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_Control87',
-    '8B 44 24 08 25 FF FF F7 FF',
+    "CRT_Control87",
+    "8B 44 24 08 25 FF FF F7 FF",
     public=False,
     hook=0x9,
-    ret='uint32_t',
+    ret="uint32_t",
     params=[
-        param('uint32_t', 'new_value'),
-        param('uint32_t', 'mask'),
+        param("uint32_t", "new_value"),
+        param("uint32_t", "mask"),
     ],
-    doc='Converts abstract mask/control values to x87 form, applies FLDCW, then converts resulting control word back.',
+    doc="Converts abstract mask/control values to x87 form, applies FLDCW, then converts resulting control word back.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_AbstractCWToCW',
-    '53 8B 5C 24 08 33 C0 55',
+    "CRT_AbstractCWToCW",
+    "53 8B 5C 24 08 33 C0 55",
     public=False,
-    ret='uint32_t',
-    params=[param('uint32_t', 'abstract_control_word')],
-    doc='Maps CRT abstract floating-control flags to hardware x87 control-word bits.',
+    ret="uint32_t",
+    params=[param("uint32_t", "abstract_control_word")],
+    doc="Maps CRT abstract floating-control flags to hardware x87 control-word bits.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_CWToAbstractCW',
-    '53 8B 5C 24 08 33 C0 56',
+    "CRT_CWToAbstractCW",
+    "53 8B 5C 24 08 33 C0 56",
     public=False,
-    ret='uint32_t',
-    params=[param('uint32_t', 'control_word')],
-    doc='Maps x87 control-word bits to CRT abstract floating-control flags.',
+    ret="uint32_t",
+    params=[param("uint32_t", "control_word")],
+    doc="Maps x87 control-word bits to CRT abstract floating-control flags.",
     unstable=True,
 )
 
@@ -18795,12 +18951,12 @@ stable.fn(
 
 stable.fn(
     "CRT_ToLower",
-    '55 8B EC 51 83 3D ?? ?? ?? ?? 00 53',
+    "55 8B EC 51 83 3D ?? ?? ?? ?? 00 53",
     public=False,
     hook=0xB,
-    ret='int32_t',
-    params=[param('int32_t', 'ch')],
-    doc='Maps ASCII A-Z to lowercase directly and otherwise uses the active locale mapping.',
+    ret="int32_t",
+    params=[param("int32_t", "ch")],
+    doc="Maps ASCII A-Z to lowercase directly and otherwise uses the active locale mapping.",
     abi_status=AbiStatus.VERIFIED,
     stable=True,
 )
@@ -18822,15 +18978,15 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_LD12Increment',
-    '8B 44 24 08 53 56 57 6A 20',
+    "CRT_LD12Increment",
+    "8B 44 24 08 53 56 57 6A 20",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint32_t*', 'value'),
-        param('uint32_t', 'bit_index'),
+        param("uint32_t*", "value"),
+        param("uint32_t", "bit_index"),
     ],
     doc="Sets one ld12 mantissa bit and propagates carry through preceding dwords. Returns carry status.",
     abi_status=AbiStatus.VERIFIED,
@@ -18838,75 +18994,75 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_LD12RoundAndClear',
-    '55 8B EC 51 51 8B 45 0C',
+    "CRT_LD12RoundAndClear",
+    "55 8B EC 51 51 8B 45 0C",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint32_t*', 'value'),
-        param('uint32_t', 'bit_index'),
+        param("uint32_t*", "value"),
+        param("uint32_t", "bit_index"),
     ],
-    doc='Rounds the ld12 mantissa at bit_index, propagates carry, and clears discarded low bits.',
+    doc="Rounds the ld12 mantissa at bit_index, propagates carry, and clears discarded low bits.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_LD12Copy',
-    '8B 44 24 08 8B 4C 24 04 56',
+    "CRT_LD12Copy",
+    "8B 44 24 08 8B 4C 24 04 56",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='void',
+    ret="void",
     params=[
-        param('uint32_t*', 'dest'),
-        param('uint32_t const*', 'src'),
+        param("uint32_t*", "dest"),
+        param("uint32_t const*", "src"),
     ],
-    doc='Copies the three dwords of an internal ld12 value from src to dest.',
+    doc="Copies the three dwords of an internal ld12 value from src to dest.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_LD12Clear',
-    '57 8B 7C 24 08 33 C0 AB',
+    "CRT_LD12Clear",
+    "57 8B 7C 24 08 33 C0 AB",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='void',
-    params=[param('uint32_t*', 'value')],
-    doc='Clears all three dwords of an internal ld12 value.',
+    ret="void",
+    params=[param("uint32_t*", "value")],
+    doc="Clears all three dwords of an internal ld12 value.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_LD12IsZero',
-    '8B 44 24 04 33 C9 83 38 00',
+    "CRT_LD12IsZero",
+    "8B 44 24 04 33 C9 83 38 00",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
-    params=[param('uint32_t const*', 'value')],
-    doc='Returns 1 when all three dwords of an internal ld12 value are zero.',
+    ret="int32_t",
+    params=[param("uint32_t const*", "value")],
+    doc="Returns 1 when all three dwords of an internal ld12 value are zero.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_LD12ShiftRight',
-    '55 8B EC 83 EC 0C 8B 45 0C 53 56 57 6A 20',
+    "CRT_LD12ShiftRight",
+    "55 8B EC 83 EC 0C 8B 45 0C 53 56 57 6A 20",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='void',
+    ret="void",
     params=[
-        param('uint32_t*', 'value'),
-        param('uint32_t', 'bit_count'),
+        param("uint32_t*", "value"),
+        param("uint32_t", "bit_count"),
     ],
-    doc='Shifts an ld12 mantissa right in place by bit_count with cross-dword carry.',
+    doc="Shifts an ld12 mantissa right in place by bit_count with cross-dword carry.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
@@ -18929,79 +19085,79 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_LD12ToDouble',
-    '68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3 68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3',
+    "CRT_LD12ToDouble",
+    "68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3 68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint16_t const*', 'value'),
-        param('double*', 'output'),
+        param("uint16_t const*", "value"),
+        param("double*", "output"),
     ],
-    doc='Converts an ld12 value to an IEEE double and returns conversion status.',
+    doc="Converts an ld12 value to an IEEE double and returns conversion status.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_LD12ToFloat',
-    '68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3 68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3',
+    "CRT_LD12ToFloat",
+    "68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3 68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3",
     match=0x16,
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint16_t const*', 'value'),
-        param('float*', 'output'),
+        param("uint16_t const*", "value"),
+        param("float*", "output"),
     ],
-    doc='Converts an ld12 value to an IEEE float and returns conversion status.',
+    doc="Converts an ld12 value to an IEEE float and returns conversion status.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_AtoDbl',
-    '55 8B EC 83 EC 0C 33 C0 50 50 50 50 FF 75 0C 8D 45 0C 50 8D 45 F4 50 E8 83 18 00 00',
+    "CRT_AtoDbl",
+    "55 8B EC 83 EC 0C 33 C0 50 50 50 50 FF 75 0C 8D 45 0C 50 8D 45 F4 50 E8 83 18 00 00",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('double*', 'output'),
-        param('char const*', 'text'),
+        param("double*", "output"),
+        param("char const*", "text"),
     ],
-    doc='Parses text through the ld12 core, stores an IEEE double, and returns conversion status.',
+    doc="Parses text through the ld12 core, stores an IEEE double, and returns conversion status.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_AtoFlt',
-    '55 8B EC 83 EC 0C 33 C0 50 50 50 50 FF 75 0C 8D 45 0C 50 8D 45 F4 50 E8 56 18 00 00',
+    "CRT_AtoFlt",
+    "55 8B EC 83 EC 0C 33 C0 50 50 50 50 FF 75 0C 8D 45 0C 50 8D 45 F4 50 E8 56 18 00 00",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('float*', 'output'),
-        param('char const*', 'text'),
+        param("float*", "output"),
+        param("char const*", "text"),
     ],
-    doc='Parses text through the ld12 core, stores an IEEE float, and returns conversion status.',
+    doc="Parses text through the ld12 core, stores an IEEE float, and returns conversion status.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'String_CopyStringCRT',
-    '57 8B 7C 24 08 EB ?? 8D A4 24 00 00 00 00',
-    ret='char*',
+    "String_CopyStringCRT",
+    "57 8B 7C 24 08 EB ?? 8D A4 24 00 00 00 00",
+    ret="char*",
     params=[
-        param('char*', 'dest'),
-        param('char const*', 'src'),
+        param("char*", "dest"),
+        param("char const*", "src"),
     ],
-    doc='Copies source bytes including terminating NUL to destination and returns original destination.',
+    doc="Copies source bytes including terminating NUL to destination and returns original destination.",
     stable=True,
 )
 
@@ -19019,17 +19175,17 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_DoubleToLongDouble80',
-    '55 8B EC 51 8B 55 0C 53',
+    "CRT_DoubleToLongDouble80",
+    "55 8B EC 51 8B 55 0C 53",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='void',
+    ret="void",
     params=[
-        param('uint16_t*', 'destination'),
-        param('double const*', 'source'),
+        param("uint16_t*", "destination"),
+        param("double const*", "source"),
     ],
-    doc='Converts an IEEE double into the 10-byte x87 extended value at destination.',
+    doc="Converts an IEEE double into the 10-byte x87 extended value at destination.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
@@ -19119,188 +19275,188 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_Memset',
-    '8B 54 24 0C 8B 4C 24 04',
+    "CRT_Memset",
+    "8B 54 24 0C 8B 4C 24 04",
     public=False,
     hook=0x8,
-    ret='void*',
+    ret="void*",
     params=[
-        param('void*', 'dest'),
-        param('int32_t', 'value'),
-        param('uint32_t', 'count'),
+        param("void*", "dest"),
+        param("int32_t", "value"),
+        param("uint32_t", "count"),
     ],
     doc="Fills count bytes at destination with repeated low byte of value using aligned optimized stores. Returns destination.",
     stable=True,
 )
 
 stable.fn(
-    'Mem_MemmoveBackwardBCRT',
-    '8B 44 24 08 5F C3 8B 44 24 04 C3 CC CC CC CC CC CC CC CC 55 8B EC 57 56 8B 75 0C 8B 4D 10 8B 7D',
+    "Mem_MemmoveBackwardBCRT",
+    "8B 44 24 08 5F C3 8B 44 24 04 C3 CC CC CC CC CC CC CC CC 55 8B EC 57 56 8B 75 0C 8B 4D 10 8B 7D",
     match=0x13,
     public=False,
-    ret='void*',
+    ret="void*",
     params=[
-        param('void*', 'dest'),
-        param('void const*', 'src'),
-        param('uint32_t', 'count'),
+        param("void*", "dest"),
+        param("void const*", "src"),
+        param("uint32_t", "count"),
     ],
     doc="Second overlap-aware memmove implementation with forward/backward aligned dword fast paths. Returns original destination.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_Strlen',
-    '8B 4C 24 04 F7 C1 03 00 00 00',
+    "CRT_Strlen",
+    "8B 4C 24 04 F7 C1 03 00 00 00",
     public=False,
     hook=0xA,
-    ret='uint32_t',
-    params=[param('char const*', 'str')],
-    doc='Scans for NUL with aligned dword zero-byte detection and returns byte length.',
+    ret="uint32_t",
+    params=[param("char const*", "str")],
+    doc="Scans for NUL with aligned dword zero-byte detection and returns byte length.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_AbortFloatSupportNotLoaded',
-    '6A 02 E8 ?? ?? ?? ?? 59 C3 55 8B EC',
+    "CRT_AbortFloatSupportNotLoaded",
+    "6A 02 E8 ?? ?? ?? ?? 59 C3 55 8B EC",
     hook=0x7,
     callable=False,
     public=False,
-    ret='void',
+    ret="void",
     params=[],
     doc="Calls CRT_AmsgExit with runtime error 2 when floating-point support is unavailable. It never returns.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_IsLeadByteL',
-    '8B 44 24 04 3B 05 ?? ?? ?? ?? 72 ?? 33 C0',
+    "CRT_IsLeadByteL",
+    "8B 44 24 04 3B 05 ?? ?? ?? ?? 72 ?? 33 C0",
     public=False,
     hook=0xA,
-    ret='int32_t',
-    params=[param('int32_t', 'character')],
-    doc='Checks active multibyte character table for lead-byte classification.',
+    ret="int32_t",
+    params=[param("int32_t", "character")],
+    doc="Checks active multibyte character table for lead-byte classification.",
     stable=True,
 )
 
 stable.fn(
-    'String_ConvertCRTWideCharToMultiByte',
-    '55 8B EC 8B 45 08 85 C0',
+    "String_ConvertCRTWideCharToMultiByte",
+    "55 8B EC 8B 45 08 85 C0",
     hook=0x6,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('char*', 'buffer'),
-        param('uint16_t', 'wide_char'),
+        param("char*", "buffer"),
+        param("uint16_t", "wide_char"),
     ],
     doc="Converts one UTF-16 code unit into current-codepage multibyte bytes, or direct-copies <=0xFF in C locale. Sets error 0x2A on failure.",
     unstable=True,
 )
 
 stable.fn(
-    'File_AllocateFileDescriptorCRT',
-    '53 56 57 83 CB FF 33 FF',
+    "File_AllocateFileDescriptorCRT",
+    "53 56 57 83 CB FF 33 FF",
     hook=0x6,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[],
-    doc='Scans 32-entry descriptor blocks for unused slot, lazily allocates/initializes 0x100-byte block, and returns fd or -1.',
+    doc="Scans 32-entry descriptor blocks for unused slot, lazily allocates/initializes 0x100-byte block, and returns fd or -1.",
     unstable=True,
 )
 
 stable.fn(
-    'File_SetOSHandleCRT',
-    '8B 44 24 04 56 3B 05 ?? ?? ?? ?? 57',
+    "File_SetOSHandleCRT",
+    "8B 44 24 04 56 3B 05 ?? ?? ?? ?? 57",
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('int32_t', 'file_no'),
-        param('HANDLE', 'os_handle'),
+        param("int32_t", "file_no"),
+        param("HANDLE", "os_handle"),
     ],
-    doc='Validates unused fd slot, installs OS HANDLE, mirrors stdin/stdout/stderr through SetStdHandle in console mode, else sets EBADF.',
+    doc="Validates unused fd slot, installs OS HANDLE, mirrors stdin/stdout/stderr through SetStdHandle in console mode, else sets EBADF.",
     unstable=True,
 )
 
 stable.fn(
-    'File_ClearFileDescriptorCRT',
-    '8B 4C 24 04 56 3B 0D ?? ?? ?? ?? 57',
+    "File_ClearFileDescriptorCRT",
+    "8B 4C 24 04 56 3B 0D ?? ?? ?? ?? 57",
     public=False,
-    ret='int32_t',
-    params=[param('int32_t', 'file_no')],
-    doc='Validates open fd, clears corresponding standard handle when applicable, replaces stored HANDLE with -1, else sets EBADF.',
+    ret="int32_t",
+    params=[param("int32_t", "file_no")],
+    doc="Validates open fd, clears corresponding standard handle when applicable, replaces stored HANDLE with -1, else sets EBADF.",
     unstable=True,
 )
 
 stable.fn(
-    'File_GetOSHandleCRT',
-    '8B 44 24 04 3B 05 ?? ?? ?? ?? 73 ?? 8B C8 83 E0 1F',
+    "File_GetOSHandleCRT",
+    "8B 44 24 04 3B 05 ?? ?? ?? ?? 73 ?? 8B C8 83 E0 1F",
     hook=0xA,
-    ret='HANDLE',
-    params=[param('int32_t', 'file_no')],
+    ret="HANDLE",
+    params=[param("int32_t", "file_no")],
     doc="Validates fd range/open flag and returns stored OS HANDLE. Invalid input sets EBADF and returns -1.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_DosMapErr',
-    '8B 4C 24 04 33 D2 89 0D ?? ?? ?? ??',
+    "CRT_DosMapErr",
+    "8B 4C 24 04 33 D2 89 0D ?? ?? ?? ??",
     public=False,
     hook=0x6,
-    ret='int32_t',
-    params=[param('uint32_t', 'os_error_code')],
-    doc='Stores Win32 error, searches mapping table for errno, then applies range fallbacks for EACCES/ENOMEM/EINVAL.',
+    ret="int32_t",
+    params=[param("uint32_t", "os_error_code")],
+    doc="Stores Win32 error, searches mapping table for errno, then applies range fallbacks for EACCES/ENOMEM/EINVAL.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_IsDigit',
-    '6A 04 6A 00 FF 74 24 0C',
+    "CRT_IsDigit",
+    "6A 04 6A 00 FF 74 24 0C",
     public=False,
     hook=0x8,
-    ret='int32_t',
-    params=[param('int32_t', 'ch')],
-    doc='Tests input against CRT digit character-type mask.',
+    ret="int32_t",
+    params=[param("int32_t", "ch")],
+    doc="Tests input against CRT digit character-type mask.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_SetMbcp',
-    '55 8B EC 83 EC 18 53 56 57',
+    "CRT_SetMbcp",
+    "55 8B EC 83 EC 18 53 56 57",
     public=False,
     hook=0x6,
-    ret='int32_t',
-    params=[param('int32_t', 'requested_code_page')],
-    doc='Resolves requested codepage, resets or selects built-in lead/trail-byte ranges, otherwise queries OS CP info, then rebuilds multibyte.',
+    ret="int32_t",
+    params=[param("int32_t", "requested_code_page")],
+    doc="Resolves requested codepage, resets or selects built-in lead/trail-byte ranges, otherwise queries OS CP info, then rebuilds multibyte.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_ResolveRequestedCodePage',
-    '8B 44 24 04 83 25 ?? ?? ?? ?? 00 83 F8 FE',
+    "CRT_ResolveRequestedCodePage",
+    "8B 44 24 04 83 25 ?? ?? ?? ?? 00 83 F8 FE",
     hook=0xB,
     public=False,
-    ret='uint32_t',
-    params=[param('int32_t', 'requested_code_page')],
+    ret="uint32_t",
+    params=[param("int32_t", "requested_code_page")],
     doc="Maps sentinel -2/-3/-4 to OEMCP/ACP/current codepage and marks sentinel-derived mode. Otherwise returns requested codepage.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_MapCodePageToLocaleId',
-    '8B 44 24 04 2D A4 03 00 00',
+    "CRT_MapCodePageToLocaleId",
+    "8B 44 24 04 2D A4 03 00 00",
     hook=0x9,
     public=False,
-    ret='uint32_t',
-    params=[param('uint32_t', 'code_page')],
-    doc='Maps codepages 932/936/949/950 to locale IDs 0x411/0x804/0x412/0x404, else 0.',
+    ret="uint32_t",
+    params=[param("uint32_t", "code_page")],
+    doc="Maps codepages 932/936/949/950 to locale IDs 0x411/0x804/0x412/0x404, else 0.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ResetMbcp',
-    '57 6A 40 59 33 C0 BF ?? ?? ?? ?? F3 AB',
+    "CRT_ResetMbcp",
+    "57 6A 40 59 33 C0 BF ?? ?? ?? ?? F3 AB",
     hook=0x6,
     public=False,
-    ret='void',
+    ret="void",
     params=[],
     doc="Clears multibyte classification/case tables and codepage state. The terminal zero-fill result is unused.",
     abi_status=AbiStatus.VERIFIED,
@@ -19308,197 +19464,196 @@ stable.fn(
 )
 
 stable.fn(
-    'CRT_InitMbcTable',
-    '83 3D ?? ?? ?? ?? 00 75 ?? 6A FD E8 ?? ?? ?? ?? 59',
+    "CRT_InitMbcTable",
+    "83 3D ?? ?? ?? ?? 00 75 ?? 6A FD E8 ?? ?? ?? ?? 59",
     hook=0x7,
     public=False,
-    ret='void',
+    ret="void",
     params=[],
-    doc='Once-only guard calls CRT_SetMbcp(-3/ACP) then marks multibyte tables initialized.',
+    doc="Once-only guard calls CRT_SetMbcp(-3/ACP) then marks multibyte tables initialized.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ShowMessageBoxA',
-    '53 33 DB 39 1D ?? ?? ?? ?? 56 57 75 ?? 68 ?? ?? ?? ??',
+    "CRT_ShowMessageBoxA",
+    "53 33 DB 39 1D ?? ?? ?? ?? 56 57 75 ?? 68 ?? ?? ?? ??",
     hook=0x9,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('LPCSTR', 'lp_text'),
-        param('LPCSTR', 'lp_caption'),
-        param('UINT', 'u_type'),
+        param("LPCSTR", "lp_text"),
+        param("LPCSTR", "lp_caption"),
+        param("UINT", "u_type"),
     ],
-    doc='Lazily loads user32.dll, resolves MessageBoxA/GetActiveWindow/GetLastActivePopup, chooses active popup owner, and displays.',
+    doc="Lazily loads user32.dll, resolves MessageBoxA/GetActiveWindow/GetLastActivePopup, chooses active popup owner, and displays.",
     unstable=True,
 )
 
 stable.fn(
-    'CRT_Strncpy',
-    '8B 4C 24 0C 57 85 C9 74 ??',
+    "CRT_Strncpy",
+    "8B 4C 24 0C 57 85 C9 74 ??",
     public=False,
-    ret='char*',
+    ret="char*",
     params=[
-        param('char*', 'dest'),
-        param('char const*', 'src'),
-        param('uint32_t', 'count'),
+        param("char*", "dest"),
+        param("char const*", "src"),
+        param("uint32_t", "count"),
     ],
-    doc='Copies at most count bytes, pads destination with NUL when source ends, and returns destination.',
+    doc="Copies at most count bytes, pads destination with NUL when source ends, and returns destination.",
     stable=True,
 )
 
 stable.fn(
-    'strnlen',
-    '8B 54 24 08 8B 44 24 04 85 D2',
+    "strnlen",
+    "8B 54 24 08 8B 44 24 04 85 D2",
     hook=0x8,
-    ret='uint32_t',
+    ret="uint32_t",
     params=[
-        param('char const*', 'str'),
-        param('uint32_t', 'max_count'),
+        param("char const*", "str"),
+        param("uint32_t", "max_count"),
     ],
-    doc='Scans until NUL or maxCount and returns traversed length.',
+    doc="Scans until NUL or maxCount and returns traversed length.",
     stable=True,
 )
 
 stable.fn(
-    'CRT_AddWithOverflowCheck',
-    '8B 54 24 04 56 8B 74 24 0C 33 C0',
+    "CRT_AddWithOverflowCheck",
+    "8B 54 24 04 56 8B 74 24 0C 33 C0",
     callable=False,
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint32_t', 'left'),
-        param('uint32_t', 'right'),
-        param('uint32_t*', 'sum'),
+        param("uint32_t", "left"),
+        param("uint32_t", "right"),
+        param("uint32_t*", "sum"),
     ],
-    doc='Stores left plus right through sum and returns 1 exactly when the unsigned addition carries.',
+    doc="Stores left plus right through sum and returns 1 exactly when the unsigned addition carries.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_Add12',
-    '56 8B 74 24 08 57 8B 7C 24 10',
+    "CRT_Add12",
+    "56 8B 74 24 08 57 8B 7C 24 10",
     callable=False,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('uint32_t*', 'accumulator'),
-        param('uint32_t const*', 'addend'),
+        param("uint32_t*", "accumulator"),
+        param("uint32_t const*", "addend"),
     ],
-    doc='Adds a 12-byte addend into accumulator with carry propagation across three dwords.',
+    doc="Adds a 12-byte addend into accumulator with carry propagation across three dwords.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ShiftLeft12Byte',
-    '8B 44 24 04 56 57 8B 30',
+    "CRT_ShiftLeft12Byte",
+    "8B 44 24 04 56 57 8B 30",
     callable=False,
     public=False,
-    ret='void',
-    params=[param('uint32_t*', 'value')],
-    doc='Shifts a 12-byte value left one bit in place across all three dwords.',
+    ret="void",
+    params=[param("uint32_t*", "value")],
+    doc="Shifts a 12-byte value left one bit in place across all three dwords.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_ShiftRight12Byte',
-    '8B 44 24 04 56 57 8B 50 08',
+    "CRT_ShiftRight12Byte",
+    "8B 44 24 04 56 57 8B 50 08",
     callable=False,
     public=False,
-    ret='void',
-    params=[param('uint32_t*', 'value')],
-    doc='Shifts a 12-byte value right one bit in place across all three dwords.',
+    ret="void",
+    params=[param("uint32_t*", "value")],
+    doc="Shifts a 12-byte value right one bit in place across all three dwords.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_MtoLD12',
-    '55 8B EC 83 EC 10 8B 45 0C 53 8B 5D 10 33 D2 3B C2 56 C7 45 FC 4E 40 00 00',
+    "CRT_MtoLD12",
+    "55 8B EC 83 EC 10 8B 45 0C 53 8B 5D 10 33 D2 3B C2 56 C7 45 FC 4E 40 00 00",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='void',
+    ret="void",
     params=[
-        param('uint8_t const*', 'digits'),
-        param('uint32_t', 'digit_count'),
-        param('uint16_t*', 'output'),
+        param("uint8_t const*", "digits"),
+        param("uint32_t", "digit_count"),
+        param("uint16_t*", "output"),
     ],
-    doc='Accumulates digit bytes into a normalized 12-byte ld12 value at output.',
+    doc="Accumulates digit bytes into a normalized 12-byte ld12 value at output.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_StrgToLD12',
-    '55 8B EC 83 EC 5C 53 56 57 8B 7D 10 8D 45 A4 6A 01 89 45 F4 33 C0 5A 89 45 D8',
+    "CRT_StrgToLD12",
+    "55 8B EC 83 EC 5C 53 56 57 8B 7D 10 8D 45 A4 6A 01 89 45 F4 33 C0 5A 89 45 D8",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('uint16_t*', 'output'),
-        param('char**', 'end_pointer'),
-        param('char const*', 'text'),
-        param('int32_t', 'mult12'),
-        param('int32_t', 'scale'),
-        param('int32_t', 'decimal_point'),
-        param('int32_t', 'implicit_exponent'),
+        param("uint16_t*", "output"),
+        param("char**", "end_pointer"),
+        param("char const*", "text"),
+        param("int32_t", "mult12"),
+        param("int32_t", "scale"),
+        param("int32_t", "decimal_point"),
+        param("int32_t", "implicit_exponent"),
     ],
-    doc='Parses text to ld12, updates end_pointer, and returns the CRT conversion status flags.',
+    doc="Parses text to ld12, updates end_pointer, and returns the CRT conversion status flags.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_FltMul',
-    '55 8B EC 83 EC 24 53 8B 5D 0C',
+    "CRT_FltMul",
+    "55 8B EC 83 EC 24 53 8B 5D 0C",
     hook=0x6,
     callable=False,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('uint16_t*', 'left_and_result'),
-        param('uint16_t const*', 'right'),
+        param("uint16_t*", "left_and_result"),
+        param("uint16_t const*", "right"),
     ],
-    doc='Multiplies two ld12 values and writes the normalized result over the left operand.',
+    doc="Multiplies two ld12 values and writes the normalized result over the left operand.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_FltPower10',
-    '55 8B EC 83 EC 0C 53 BB ?? ?? ?? ??',
+    "CRT_FltPower10",
+    "55 8B EC 83 EC 0C 53 BB ?? ?? ?? ??",
     hook=0x6,
     callable=False,
     public=False,
-    ret='void',
+    ret="void",
     params=[
-        param('uint16_t*', 'value'),
-        param('int32_t', 'power'),
-        param('int32_t', 'mult12'),
+        param("uint16_t*", "value"),
+        param("int32_t", "power"),
+        param("int32_t", "mult12"),
     ],
-    doc='Scales value by a signed power of ten through table-driven ld12 multiplication.',
+    doc="Scales value by a signed power of ten through table-driven ld12 multiplication.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    'CRT_Strcmpi',
-    '55 8B EC 57 56 53 8B 75 0C',
+    "CRT_Strcmpi",
+    "55 8B EC 57 56 53 8B 75 0C",
     public=False,
-    ret='int32_t',
+    ret="int32_t",
     params=[
-        param('char const*', 's1'),
-        param('char const*', 's2'),
+        param("char const*", "s1"),
+        param("char const*", "s2"),
     ],
-    doc='Compares strings bytewise after locale-aware lowercase normalization, stopping at mismatch or NUL.',
+    doc="Compares strings bytewise after locale-aware lowercase normalization, stopping at mismatch or NUL.",
     stable=True,
 )
-
 
 
 stable.fn(
@@ -21028,13 +21183,19 @@ stable.data(
     xref("Window_ProcessGameProc", 0x49, 0x1),
 )
 stable.data("Window_RunWinMain_RequiresNT", xref("Window_RunWinMain", 0x75, 0x1))
-stable.data("PKG_LocatePackagePath_CantFindPKG", xref("PKG_LocatePackagePath", 0x141, 0x1))
+stable.data(
+    "PKG_LocatePackagePath_CantFindPKG", xref("PKG_LocatePackagePath", 0x141, 0x1)
+)
 stable.data("PKG_LocatePackagePath_SetupPath", xref("PKG_LocatePackagePath", 0xD5, 0x1))
-stable.data("PKG_LocatePackagePath_SearchPattern", xref("PKG_LocatePackagePath", 0xAB, 0x1))
+stable.data(
+    "PKG_LocatePackagePath_SearchPattern", xref("PKG_LocatePackagePath", 0xAB, 0x1)
+)
 stable.data(
     "PKG_LocatePackagePath_DalmsSetupPath", xref("PKG_LocatePackagePath", 0x93, 0x1)
 )
-stable.data("PKG_LocatePackagePath_DriveLetter", xref("PKG_LocatePackagePath", 0x60, 0x1))
+stable.data(
+    "PKG_LocatePackagePath_DriveLetter", xref("PKG_LocatePackagePath", 0x60, 0x1)
+)
 stable.data(
     "PKG_LocatePackagePath_PcdogsPKG",
     xref("PKG_LocatePackagePath", 0x45, 0x1, required=Required.EN),

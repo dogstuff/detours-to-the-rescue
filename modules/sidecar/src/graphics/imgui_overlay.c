@@ -3,6 +3,7 @@
 #include "../mods/mods_private.h"
 #include "imgui_overlay_private.h"
 
+#include <dttr_config.h>
 #include <dttr_imgui.h>
 #include <dttr_log.h>
 
@@ -20,14 +21,10 @@ static const float modding_badge_min_font_size = 6.0f;
 static const float modding_badge_default_font_size = 13.0f;
 static const float modding_badge_line_advance_factor = 0.86f;
 static const float modding_badge_bold_offset = 0.5f;
-static const ImVec4_c modding_badge_header_color = {1.0f, 1.0f, 1.0f, 1.0f};
+static const ImVec4_c modding_badge_header_color = {0.65f, 0.65f, 0.65f, 0.5f};
 static const ImVec4_c modding_badge_seconds_color = {0.35f, 1.0f, 0.35f, 1.0f};
 static const ImVec4_c modding_badge_separator_color = {0.80f, 0.80f, 0.80f, 0.4f};
 static const float modding_badge_separator_pad = 2.0f;
-static const ImVec4_c modding_badge_hot_reload_on_color = {0.35f, 1.0f, 0.35f, 1.0f};
-static const ImVec4_c modding_badge_hot_reload_off_color = {1.0f, 0.35f, 0.35f, 1.0f};
-static const char modding_badge_hot_reload_label[] = "Hot Reload:";
-
 static float overlay_text_width_range(const char *begin, const char *end) {
 	if (!begin || !end || end <= begin) {
 		return 0.0f;
@@ -103,39 +100,6 @@ static void draw_bold_overlay_text(
 	if (text) {
 		draw_bold_overlay_text_range(draw_list, pos, color, text, text + strlen(text));
 	}
-}
-
-static float hot_reload_width() {
-	const char *state = dttr_mods_hot_reload_enabled() ? "on" : "off";
-	return overlay_text_width(modding_badge_hot_reload_label) + overlay_mod_gap()
-		   + overlay_text_width(state);
-}
-
-static void draw_hot_reload_header(float width) {
-	ImDrawList *draw_list = igGetWindowDrawList();
-	if (!draw_list) {
-		return;
-	}
-
-	const bool hot_reload_enabled = dttr_mods_hot_reload_enabled();
-	const char *state = hot_reload_enabled ? "on" : "off";
-	const ImVec4_c state_color = hot_reload_enabled ? modding_badge_hot_reload_on_color
-													: modding_badge_hot_reload_off_color;
-	const float gap = overlay_mod_gap();
-	const float label_width = overlay_text_width(modding_badge_hot_reload_label);
-	const ImVec2_c cursor = igGetCursorScreenPos();
-	const ImU32 label_color = igGetColorU32_Vec4(modding_badge_header_color);
-	const ImU32 state_color_u32 = igGetColorU32_Vec4(state_color);
-
-	draw_bold_overlay_text(draw_list, cursor, label_color, modding_badge_hot_reload_label);
-	draw_bold_overlay_text(
-		draw_list,
-		(ImVec2_c){cursor.x + label_width + gap, cursor.y},
-		state_color_u32,
-		state
-	);
-
-	igDummy((ImVec2_c){width, overlay_line_advance()});
 }
 
 static void mod_overlay_elapsed_text(char *out, size_t out_size, size_t mod_index) {
@@ -427,7 +391,7 @@ static ImDrawData *render_game_frame(uint32_t w, uint32_t h) {
 static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	const float game_scale = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 	const float desktop_scale = DTTR_ImGui_GetCurrentDesktopScale(&imgui_scale);
-	const float margin = 6.0f * game_scale * desktop_scale;
+	const float margin = 4.0f * game_scale;
 	const ImVec2_c pos = {
 		(float)ctx->game_x + margin,
 		(float)ctx->game_y + margin,
@@ -439,6 +403,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	igPushStyleVar_Float(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	igPushStyleVar_Float(ImGuiStyleVar_WindowRounding, 0.0f);
 	igPushStyleVar_Vec2(ImGuiStyleVar_WindowPadding, (ImVec2_c){0.0f, 0.0f});
+	igPushStyleVar_Vec2(ImGuiStyleVar_ItemSpacing, imgui_scale.base_style.ItemSpacing);
 
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
 								   | ImGuiWindowFlags_NoBackground
@@ -470,10 +435,16 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 										  ? scaled_font_size
 										  : modding_badge_min_font_size;
 
-		igPushFont(font, badge_font_size);
+		// Game scale already tracks the viewport size. PushFont also applies
+		// FontScaleMain, so cancel its desktop DPI factor for this badge.
+		igPushFont(font, badge_font_size / desktop_scale);
 	}
 
-	const size_t loaded_count = dttr_mods_loaded_count();
+	char header[64];
+	snprintf(header, sizeof(header), "Modding Build (ABI %u)", DTTR_SDK_ABI_VERSION);
+
+	const size_t loaded_count = dttr_config.show_loaded_mods ? dttr_mods_loaded_count()
+															 : 0;
 	float rows_width = 0.0f;
 	const float gap = overlay_mod_gap();
 
@@ -488,12 +459,12 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 		rows_width = fmaxf(rows_width, row_width);
 	}
 
-	const float text_width = fmaxf(hot_reload_width(), rows_width);
+	const float text_width = fmaxf(overlay_text_width(header), rows_width);
 
 	igSetNextWindowContentSize((ImVec2_c){text_width, 0.0f});
 
 	if (igBegin("##modding_overlay", NULL, flags)) {
-		draw_hot_reload_header(text_width);
+		igTextColored(modding_badge_header_color, "%s", header);
 
 		for (size_t i = 0; i < loaded_count; i++) {
 			char seconds[32];
@@ -508,7 +479,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	}
 
 	igEnd();
-	igPopStyleVar(3);
+	igPopStyleVar(4);
 
 	if (font) {
 		igPopFont();

@@ -183,22 +183,10 @@ typedef struct {
 	DTTR_Mods_ConfigGetInputBindingFn config_get_input_binding;
 } DTTR_Mods_API;
 
-static inline bool DTTR_Mods_APIHasField(const DTTR_Mods_API *api, size_t end_offset) {
-	return api && api->abi_version >= DTTR_SDK_ABI_VERSION
-		   && api->struct_size >= end_offset;
-}
-
-#define DTTR_MODS_API_FIELD_END(field)                                                   \
-	(offsetof(DTTR_Mods_API, field) + sizeof(((DTTR_Mods_API *)0)->field))
-
-// Each accessor returns the API function pointer, or NULL when the host's API
-// struct predates the field.
+// ABI compatibility is enforced by the runtime loader.
 #define DTTR_MODS_API_ACCESSOR(ReturnType, FnName, field)                                \
 	static inline ReturnType FnName(const DTTR_Mods_API *api) {                          \
-		if (!DTTR_Mods_APIHasField(api, DTTR_MODS_API_FIELD_END(field))) {               \
-			return NULL;                                                                 \
-		}                                                                                \
-		return api->field;                                                               \
+		return api ? api->field : NULL;                                                  \
 	}
 
 DTTR_MODS_API_ACCESSOR(
@@ -229,7 +217,6 @@ DTTR_MODS_API_ACCESSOR(
 )
 
 #undef DTTR_MODS_API_ACCESSOR
-#undef DTTR_MODS_API_FIELD_END
 
 /// Host context passed to DTTR_Mod_Init. The pointer is valid until DTTR_Mod_Cleanup
 /// returns, so mods may retain it for logging and runtime cleanup. Contained
@@ -504,15 +491,17 @@ static inline bool DTTR_Mods_ABIVersionCompatible(uint32_t abi_version) {
 		   && abi_version <= DTTR_SDK_ABI_VERSION;
 }
 
+// The runtime loader validates the ABI before calling mod exports.
 static inline bool DTTR_Mods_ContextIsCompatible(const DTTR_Mods_Context *ctx) {
-	return ctx && ctx->abi_version >= DTTR_SDK_ABI_VERSION
-		   && ctx->struct_size >= sizeof(DTTR_Mods_Context);
+	return ctx && ctx->struct_size >= sizeof(DTTR_Mods_Context);
 }
 
-/// Check SDK ABI compatibility and delegate to the mod body.
+/// Declare the SDK ABI, validate the context size, and delegate to the mod body.
 #define DTTR_MODS_INIT                                                                   \
 	static bool dttr_mod_init(const DTTR_Mods_Context *);                                \
-	DTTR_EXPORT uint32_t DTTR_Mod_ABIVersion() { return DTTR_SDK_ABI_VERSION; }           \
+	DTTR_EXPORT uint32_t DTTR_Mod_ABIVersion() {                                         \
+		return DTTR_SDK_ABI_VERSION;                                                     \
+	}                                                                                    \
 	DTTR_EXPORT bool DTTR_Mod_Init(const DTTR_Mods_Context *ctx) {                       \
 		if (!DTTR_Mods_ContextIsCompatible(ctx)) {                                       \
 			return false;                                                                \
