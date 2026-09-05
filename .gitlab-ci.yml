@@ -251,8 +251,18 @@ stages:
 "deploy:pages:latest":
   <<: *pages-deploy-job
   rules:
-    - if: '$CI_COMMIT_REF_NAME == "main"'
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-(preview|rc)\.[0-9]+)?$/'
+      needs:
+        - job: "test:docs"
+          artifacts: true
+        - job: "package:release"
+          artifacts: false
+    - if: *nightly-rule
+      needs:
+        - job: "test:docs"
+          artifacts: true
+        - job: "package:nightly"
+          artifacts: false
 
 "release:gitlab":
   stage: release
