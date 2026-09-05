@@ -107,7 +107,7 @@ char *__cdecl dttr_inputs_hook_get_button_string_callback(int32_t button_code);
 extern DTTR_PCDOGS_F_Input_FormatButtonName_proto
 	dttr_inputs_hook_format_button_name_original;
 bool dttr_inputs_hook_format_button_name_prepare(const DTTR_Mods_Context *ctx);
-char *__cdecl dttr_inputs_hook_format_button_name_callback(
+void __cdecl dttr_inputs_hook_format_button_name_callback(
 	int32_t control_code,
 	uint32_t button_mask
 );
@@ -116,7 +116,7 @@ char *__cdecl dttr_inputs_hook_format_button_name_callback(
 extern DTTR_PCDOGS_F_Input_InitializeButtonMappings_proto
 	dttr_inputs_hook_initialize_button_mappings_original;
 bool dttr_inputs_hook_initialize_button_mappings_prepare(const DTTR_Mods_Context *ctx);
-int32_t __cdecl dttr_inputs_hook_initialize_button_mappings_callback();
+void __cdecl dttr_inputs_hook_initialize_button_mappings_callback();
 
 // These declarations manage shared control-mapping hook storage.
 bool dttr_inputs_hook_mapping_prepare(const DTTR_Mods_Context *ctx);

@@ -142,13 +142,12 @@ static bool call_pkg_initialize_system(const DTTR_Core_Context *ctx, HWND hwnd) 
 // Runs required PCDOGS startup calls after the game window exists.
 bool dttr_bootstrap_initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	bool resource_engine_initialized = false;
-	int32_t ret = 0;
 
 	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_LocatePackagePath->Call(ctx))
 		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_PKG_InitializeResourceGameEngine
 									  ->Call(ctx, &resource_engine_initialized))
 		   && REQUIRE_PCDOGS_CALL(
-			   DTTR_PCDOGS_F_Input_InitializeInputSubsystem->Call(ctx, hwnd, NULL, &ret)
+			   DTTR_PCDOGS_F_Input_InitializeInputSubsystem->Call(ctx, hwnd, NULL)
 		   )
 		   && call_pkg_initialize_system(ctx, hwnd);
 }
@@ -156,12 +155,9 @@ bool dttr_bootstrap_initialize_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND
 // Moves the modding runtime into its started state after initialization succeeds.
 bool dttr_bootstrap_start_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd) {
 	int32_t ret = 0;
-	int32_t config_ret = 0;
 	return REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Display_SetMode->Call(ctx, hwnd, &ret))
 		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Input_ResetState->Call(ctx))
-		   && REQUIRE_PCDOGS_CALL(
-			   DTTR_PCDOGS_F_Config_LoadAlternateFromINI->Call(ctx, &config_ret)
-		   );
+		   && REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Config_LoadAlternateFromINI->Call(ctx));
 }
 
 // Runs per-frame sidecar systems before yielding back to the original game loop.

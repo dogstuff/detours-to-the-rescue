@@ -13,9 +13,9 @@ static DTTR_PCDOGS_F_Audio_StopAllSamples_proto audio_stop_all_samples_original;
 static DTTR_Core_PatchGroup *audio_patch_group;
 static bool audio_shim_installed;
 
-static int32_t __cdecl audio_stop_all_sounds_detour();
-static int32_t __cdecl audio_init_level_audio_detour();
-static int32_t __cdecl audio_stop_all_samples_detour();
+static void __cdecl audio_stop_all_sounds_detour();
+static void __cdecl audio_init_level_audio_detour();
+static void __cdecl audio_stop_all_samples_detour();
 
 // Treats either the original MSS driver or SDL shim as an active audio backend.
 static bool has_audio_driver() {
@@ -30,31 +30,31 @@ static bool has_audio_driver() {
 }
 
 // Stops SDL-backed samples before delegating only while an audio driver is alive.
-static int32_t run_guarded_audio_hook(int32_t(__cdecl *original)(), bool stop_all_samples) {
+static void run_guarded_audio_hook(void(__cdecl *original)(), bool stop_all_samples) {
 	if (stop_all_samples && audio_shim_installed) {
 		dttr_mss_sample_stop_all();
 	}
 
 	if (!original || !has_audio_driver()) {
-		return 0;
+		return;
 	}
 
-	return original();
+	original();
 }
 
 // Mirrors stop-all-sounds into the SDL sample backend before delegating.
-static int32_t __cdecl audio_stop_all_sounds_detour() {
-	return run_guarded_audio_hook(audio_stop_all_sounds_original, true);
+static void __cdecl audio_stop_all_sounds_detour() {
+	run_guarded_audio_hook(audio_stop_all_sounds_original, true);
 }
 
 // Skips level-audio initialization only if neither MSS nor the shim is active.
-static int32_t __cdecl audio_init_level_audio_detour() {
-	return run_guarded_audio_hook(audio_init_level_audio_original, false);
+static void __cdecl audio_init_level_audio_detour() {
+	run_guarded_audio_hook(audio_init_level_audio_original, false);
 }
 
 // Clears SDL sample playback before the original stop-samples routine runs.
-static int32_t __cdecl audio_stop_all_samples_detour() {
-	return run_guarded_audio_hook(audio_stop_all_samples_original, true);
+static void __cdecl audio_stop_all_samples_detour() {
+	run_guarded_audio_hook(audio_stop_all_samples_original, true);
 }
 
 // Installs the MSS audio patch group after SDL audio startup.

@@ -27,11 +27,11 @@
 static DTTR_Core_PatchGroup *movie_patch_group;
 
 // Replaces the game's blocking movie call with sidecar-managed FFmpeg playback.
-static BOOL __cdecl movie_play_file_detour(
+static void __cdecl movie_play_file_detour(
 	const char *movie_path,
 	char use_alt_video_rect
 ) {
-	return dttr_movies_hook_movie_play_file_callback(movie_path, use_alt_video_rect);
+	dttr_movies_hook_movie_play_file_callback(movie_path, use_alt_video_rect);
 }
 
 #define AUDIO_CHANNELS 2

@@ -140,11 +140,9 @@ void dttr_inputs_apply_custom_button_mappings(DTTR_PCDOGS_T_Input_State *state) 
 	}
 }
 
-int32_t __cdecl dttr_inputs_hook_initialize_button_mappings_callback() {
-	int32_t result = 0;
-
+void __cdecl dttr_inputs_hook_initialize_button_mappings_callback() {
 	if (dttr_inputs_hook_initialize_button_mappings_original) {
-		result = dttr_inputs_hook_initialize_button_mappings_original();
+		dttr_inputs_hook_initialize_button_mappings_original();
 	}
 
 	if (!write_sdl_default_config2_controls()) {
@@ -154,8 +152,6 @@ int32_t __cdecl dttr_inputs_hook_initialize_button_mappings_callback() {
 	if (dttr_inputs_hook_config_apply_settings_original) {
 		dttr_inputs_hook_config_apply_settings_callback();
 	}
-
-	return result;
 }
 
 int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(

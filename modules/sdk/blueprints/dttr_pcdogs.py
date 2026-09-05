@@ -21,12 +21,66 @@ stable = Blueprint("stable")
 
 stable.type_alias("Audio_AILHSample", "void*")
 
-stable.type_alias("Audio_AILHStream", "void*")
+stable.type_alias("Audio_AILHStream", "void*", stable=True)
 
 stable.type_alias(
     "Audio_AILHDigitalDriver",
     "void*",
     doc="Miles digital-driver handle stored by audio initialization and used by playback guards.",
+    stable=True,
+)
+
+stable.struct(
+    "Audio_MusicStreamRecord",
+    member("Audio_AILHStream", "handle", 0x0),
+    size=0x4,
+    doc="Stream handle prefix. The music filename follows at byte 4.",
+    stable=True,
+)
+
+stable.struct(
+    "Nav_OpenSetEntry",
+    member("uint32_t", "cost", 0x0),
+    member("int16_t", "node_id", 0x4),
+    member("int16_t", "path_depth", 0x6),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "CRT_HeapSegment",
+    member("uint32_t", "low_class_bitmap", 0x0),
+    member("uint32_t", "high_class_bitmap", 0x4),
+    member("uint32_t", "free_page_bitmap", 0x8),
+    member("uint8_t*", "reserved_base", 0xC),
+    member("void*", "page_map", 0x10),
+    size=0x14,
+    unstable=True,
+    doc="CRT heap segment header. Page-map contents remain opaque.",
+)
+
+stable.struct(
+    "DInput_ObjectDataFormat",
+    member("Win32_GUID*", "guid", 0x0),
+    member("uint32_t", "offset", 0x4),
+    member("uint32_t", "type", 0x8),
+    member("uint32_t", "flags", 0xC),
+    size=0x10,
+    incomplete=False,
+    stable=True,
+)
+
+stable.struct(
+    "DInput_DataFormat",
+    member("uint32_t", "size", 0x0),
+    member("uint32_t", "object_size", 0x4),
+    member("uint32_t", "flags", 0x8),
+    member("uint32_t", "data_size", 0xC),
+    member("uint32_t", "object_count", 0x10),
+    member("DInput_ObjectDataFormat*", "objects", 0x14),
+    size=0x18,
+    incomplete=False,
     stable=True,
 )
 
@@ -37,6 +91,33 @@ stable.struct(
     incomplete=False,
     unstable=True,
     doc="Private CRT 12-byte container for an x87 extended value and two bytes of alignment padding.",
+)
+
+stable.struct(
+    "CRT_IEEEFormatDescriptor",
+    member("int32_t", "overflow_exponent", 0x0),
+    member("int32_t", "subnormal_exponent", 0x4),
+    member("int32_t", "precision_bits", 0x8),
+    member("int32_t", "exponent_bits", 0xC),
+    member("int32_t", "storage_bits", 0x10),
+    member("int32_t", "exponent_bias", 0x14),
+    size=0x18,
+    incomplete=False,
+    unstable=True,
+    doc="Format limits used by the CRT long-double converter.",
+)
+
+stable.struct(
+    "Component_MovementParametersView",
+    member("uint8_t", "reserved_00[8]", 0x0),
+    member("int32_t", "speed_limit_q12", 0x8),
+    member("int32_t", "acceleration_q12", 0xC),
+    member("uint8_t", "reserved_10[16]", 0x10),
+    member("int16_t", "turn_step_angle12", 0x20),
+    member("uint8_t", "reserved_22[2]", 0x22),
+    size=0x24,
+    unstable=True,
+    doc="Movement values read by the speed, acceleration, and turn-step accessors.",
 )
 
 stable.struct(
@@ -8252,7 +8333,7 @@ stable.fn(
 stable.fn(
     "Timer_GetElapsedTickCountThunk",
     "E9 ?? ?? ?? ?? 90 90 90 90 90 90 90 90 90 90 90 55",
-    ret="int32_t",
+    ret="uint32_t",
     params=[],
     doc="Tail-call thunk that returns Timer_GetElapsedTickCount().",
     stable=True,
@@ -8284,7 +8365,7 @@ stable.fn(
     "00 00 53 50 6A FE E8 ??",
     match=-0x17,
     hook=0x6,
-    ret="uint32_t",
+    ret="void",
     params=[
         param(
             "Entity_State*",
@@ -8292,7 +8373,7 @@ stable.fn(
             doc="Entity slot whose active_actor is detached and cleared.",
         ),
         param(
-            "uint32_t",
+            "int32_t",
             "restore_defaults",
             doc="Nonzero restores default collision radius/height and default flags with bit 0x800 set after teardown.",
         ),
@@ -8509,7 +8590,7 @@ stable.fn(
     "Trail_SpawnFromEntry",
     "8B 15 ?? ?? ?? ?? 83 EC 24",
     hook=0x6,
-    ret="int32_t*",
+    ret="Actor_State*",
     params=[param("Actor_State*", "actor"), param("int32_t", "trail_index")],
 )
 
@@ -8991,7 +9072,7 @@ stable.fn(
     params=[
         param("uint32_t", "sample_time"),
         param("Animation_SplineChannel*", "morph_channels"),
-        param("void*", "actor_or_mesh_state"),
+        param("Actor_State*", "actor_or_mesh_state"),
     ],
     abi_status=AbiStatus.PLACEHOLDER,
 )
@@ -9072,7 +9153,7 @@ stable.fn(
             doc="Actor/render state whose transformed vertex buffer and normal accumulator are updated.",
         ),
         param(
-            "int16_t**",
+            "Animation_FrameVertex**",
             "skin_tables",
             doc="Array of source skin/bone xyz delta tables, each stored as 4 int16 values per vertex.",
         ),
@@ -9191,7 +9272,7 @@ stable.fn(
     "Video_InitializeAVIPlayer",
     "6A 00 6A 00 6A 00 68 ?? ?? ?? ?? C7",
     hook=0x6,
-    ret="int32_t",
+    ret="BOOL",
     params=[
         param(
             "char*",
@@ -9211,7 +9292,7 @@ stable.fn(
     "?? FF 15 ?? ?? ?? ?? C7",
     match=-0xA,
     hook=0x6,
-    ret="int32_t",
+    ret="uint32_t",
     params=[],
     doc='Sends the MCI "close avivideo" command, clears avi_player_initialized, and returns the MCI status/result.',
 )
@@ -9219,16 +9300,16 @@ stable.fn(
 stable.fn(
     "Video_OpenAVIFile",
     "A1 ?? ?? ?? ?? 85 C0 75 ?? 33",
-    ret="int32_t",
-    params=[param("int32_t", "file_handle")],
-    abi_status=AbiStatus.PLACEHOLDER,
+    ret="BOOL",
+    params=[param("char const*", "filename")],
+    abi_status=AbiStatus.VERIFIED,
 )
 
 stable.fn(
     "Video_CloseAVIFile",
     "01 FF 15 ?? ?? ?? ?? C3",
     match=-0x22,
-    ret="int32_t",
+    ret="uint32_t",
     params=[],
 )
 
@@ -9236,7 +9317,7 @@ stable.fn(
     "Video_PlayAVIFullscreen",
     "0C 6A 00 6A 00 6A 00 68 ?? ?? ?? ?? FF 15 ?? ?? ?? ?? F7",
     match=-0x17,
-    ret="int32_t",
+    ret="BOOL",
     params=[],
 )
 
@@ -9244,7 +9325,7 @@ stable.fn(
     "Video_IsAVIPlaying",
     "83 EC 50 68 ?? ?? ?? ?? 68 ??",
     hook=0x8,
-    ret="int32_t",
+    ret="BOOL",
     params=[],
 )
 
@@ -9523,7 +9604,7 @@ stable.fn(
     "00 04 00 00 74 ?? 80 ??",
     match=-0x1A,
     hook=0xA,
-    ret="Actor_State*",
+    ret="void",
     params=[
         param(
             "Entity_State*",
@@ -9531,7 +9612,7 @@ stable.fn(
             doc="Source entity whose active actor pointer is returned or spawned when camera activation requires it.",
         )
     ],
-    doc="Returns a source entity's active actor, creating one when needed for script or camera activation. Existing active actors are returned directly.",
+    doc="Ensures the entity has an active actor, spawning one when needed.",
 )
 
 stable.fn(
@@ -9673,7 +9754,7 @@ stable.fn(
     "Checkers_ProcessInputAndRender",
     "56 8B 35 ?? ?? ?? ?? 57 33",
     hook=0x7,
-    ret="bool",
+    ret="BOOL",
     params=[],
     doc="Snapshots Checkers_MinGameState, renders one frame, and consumes ANIMATION_COMPLETE. Simple states finish.",
     stable=True,
@@ -10635,7 +10716,7 @@ stable.fn(
     "Graphics_DisabledFadeBackendStub",
     "32 C0 C3 90 90 90 90 90 90 90 90 90 90 90 90 90 81 EC 80 00 00 00 A1 ??",
     hook=hook(0x2, kind=HookKind.HOTPATCH),
-    ret="BOOL",
+    ret="bool",
     params=[param("int32_t", "fade_level")],
     doc="Three-byte no-op stub that ignores fade_level and always returns FALSE. Loading-screen and world-select callers continue through the software fade-overlay path.",
 )
@@ -10675,7 +10756,7 @@ stable.fn(
     "D3D_CloseDebugLog",
     "E8 ?? ?? ?? ?? 83 C4 1C C3",
     match=-0x37,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc=(
         "Writes the closing D3D.log entry and closes the global log handle without validating or "
@@ -10772,7 +10853,7 @@ stable.fn(
     "D9 44 24 04 D8 1D ?? ?? ?? ?? 8B",
     hook=0xA,
     public=False,
-    ret="int32_t",
+    ret="void",
     params=[param("float", "linear_ramp_scale")],
     doc="Caches linear_ramp_scale, clamps values below 0.1 to 0.1, and replaces direct values above 10.0 with 5.0 before building an equal-channel DDGAMMARAMP. Each channel entry is clamp(i * scale - 1, 0, 65535).",
     stable=True,
@@ -10965,7 +11046,7 @@ stable.fn(
     ret="BOOL",
     params=[
         param("DInput_IDirectInputDeviceA*", "device"),
-        param("void const*", "data_format"),
+        param("DInput_DataFormat const*", "data_format"),
     ],
     doc="Calls SetDataFormat on IDirectInputDevice and normalizes DI_OK to 1 and every other HRESULT to 0. Device and data_format must be valid.",
     stable=True,
@@ -12386,7 +12467,7 @@ stable.fn(
     match=-0x10,
     ret="void",
     params=[
-        param("char*", "out_result"),
+        param("Menu_ActionResult*", "out_result"),
         param("int32_t", "selected_slot"),
         param("int32_t", "allow_save"),
     ],
@@ -12570,7 +12651,7 @@ stable.fn(
     ret="void",
     params=[
         param("Menu_ColorGradientState*", "gradient_state"),
-        param("uint8_t", "step_count"),
+        param("int32_t", "step_count"),
         param("uint32_t", "packed_hold_frames"),
         param("uint32_t", "packed_intensity_bounds"),
     ],
@@ -12944,7 +13025,7 @@ stable.fn(
     "?? C1 F8 02 83 C4 08 8B",
     match=-0x1D,
     hook=0x6,
-    ret="Math_Matrix3x3I16*",
+    ret="void",
     params=[
         param(
             "Math_Matrix3x3I16*",
@@ -12952,7 +13033,7 @@ stable.fn(
             doc="Receives the Y-axis rotation matrix.",
         ),
         param(
-            "Math_Matrix3x3I16*",
+            "Math_Matrix3x3I16 const*",
             "post_multiply",
             doc="Optional matrix multiplied after the Y rotation.",
         ),
@@ -13010,12 +13091,12 @@ stable.fn(
             doc="Receives the combined X/Y/Z rotation matrix.",
         ),
         param(
-            "Math_Matrix3x3I16*",
+            "Math_Matrix3x3I16 const*",
             "post_multiply",
             doc="Optional matrix composed before the rotations.",
         ),
         param(
-            "int32_t",
+            "int16_t",
             "sin_x_q12",
             doc="Precomputed X sine in signed Q12/Q14 table form. Low word is stored into the X rotation template.",
         ),
@@ -13025,7 +13106,7 @@ stable.fn(
             doc="Precomputed X cosine stored into the X rotation template.",
         ),
         param(
-            "int32_t",
+            "int16_t",
             "sin_y_q12",
             doc="Precomputed Y sine in signed Q12/Q14 table form. Low word is stored into the Y rotation template.",
         ),
@@ -13048,7 +13129,7 @@ stable.fn(
     "PKG_AllocateResourceMemory",
     "8B 44 24 04 85 C0 75 ?? C3 50 E8 ?? ?? ?? ?? 83 C4 04 C3",
     ret="void*",
-    params=[param("int32_t", "size")],
+    params=[param("uint32_t", "size")],
     doc="Size == 0 returns null. Otherwise forwards to PKG_AllocateResourceWithHeader.",
     abi_status=AbiStatus.PLACEHOLDER,
 )
@@ -13056,10 +13137,10 @@ stable.fn(
 stable.fn(
     "PKG_AllocateResourceWithHeader",
     "8B 44 24 04 56 83 C0 04 50 E8 ??",
-    ret="uint32_t*",
+    ret="void*",
     params=[
         param(
-            "int32_t",
+            "uint32_t",
             "size",
             doc="Requested resource data size, excluding the hidden leading handle dword.",
         )
@@ -13778,7 +13859,7 @@ stable.fn(
     "00 55 56 57 FF 15 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 8B 35",
     match=-0x5,
     hook=0x6,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Initializes the Miles audio system and opens the digital driver handle used by game audio playback.",
     stable=True,
@@ -13787,12 +13868,10 @@ stable.fn(
 stable.fn(
     "Audio_ShutdownSystem",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 53 8B",
-    ret="int32_t",
+    ret="void",
     params=[],
     doc=(
-        "Shuts down Miles audio when audio_digital_driver is active, releasing non-null sample "
-        "handles across Audio_SoundSlot entries, clearing slot sample/base-rate fields, calling "
-        "AIL_shutdown, and clearing audio_digital_driver. Returns 0 when already inactive."
+        "Releases active samples, shuts down Miles, and clears the digital driver handle."
     ),
     stable=True,
 )
@@ -13802,7 +13881,7 @@ stable.fn(
     "?? ?? ?? BE ?? ?? ?? ?? 8B 06 50 FF D7 83 C6 14",
     match=-0x5,
     hook=0x8,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Stops all active Miles sample playback slots while leaving the audio system initialized.",
     stable=True,
@@ -13812,7 +13891,7 @@ stable.fn(
     "Audio_StopAllSounds",
     "6A 00 50 FF 15 ?? ?? ?? ?? E9 ?? ?? ?? ?? 90",
     match=-0x5,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Stops all currently playing game sounds through the active Miles digital driver.",
     stable=True,
@@ -13822,7 +13901,7 @@ stable.fn(
     "Audio_InitializeLevelAudio",
     "6A 7F 50 FF 15 ?? ?? ?? ?? C3 90",
     match=-0x5,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Initializes level audio playback state using the active Miles digital driver.",
     stable=True,
@@ -13854,7 +13933,7 @@ stable.fn(
     "?? 8B 4C 24 08 C1 E9 ??",
     match=-0x13,
     hook=0x7,
-    ret="int32_t",
+    ret="void",
     params=[param("int32_t", "slot_index"), param("int32_t", "volume")],
     doc="Set a sound slot's sample volume, scaling the game volume down to Miles' 0 through 128 range before calling AIL_set_sample_volume.",
     stable=True,
@@ -13865,7 +13944,7 @@ stable.fn(
     "0F AC D0 0C 3B 81 ?? ??",
     match=-0x1F,
     hook=0x6,
-    ret="int32_t",
+    ret="void",
     params=[param("int32_t", "slot_index"), param("int32_t", "pitch_scale_q12")],
     doc="Set a sound slot's sample playback rate to base_playback_rate * pitchScaleQ12 / 4096.",
     stable=True,
@@ -13877,7 +13956,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "int32_t*",
+            "Audio_MusicStreamRecord*",
             "stream_record",
             doc="Record whose first dword receives the Audio_AILHStream. Bytes at +4 hold the music filename.",
         )
@@ -13891,7 +13970,7 @@ stable.fn(
     "8B 44 24 04 8B 00 85 C0 74 ?? 50 FF 15 ??",
     hook=0x6,
     ret="int32_t",
-    params=[param("Audio_AILHStream*", "stream_handle_ptr")],
+    params=[param("Audio_MusicStreamRecord const*", "stream_handle_ptr")],
 )
 
 stable.fn(
@@ -13908,7 +13987,10 @@ stable.fn(
     "Audio_PlayMusicStream",
     "56 8B 74 24 08 85 F6 74 ?? 56 E8 ?? ?? ?? ?? 8B 06 83 C4 04 A3 ?? ?? ?? ?? A1 ?? ?? ?? ?? 5E 85 C0 74 ?? 8B 4C 24 08 51 E8 ?? ?? ?? ??",
     ret="void",
-    params=[param("int32_t*", "stream_record"), param("int32_t", "volume")],
+    params=[
+        param("Audio_MusicStreamRecord*", "stream_record"),
+        param("int32_t", "volume"),
+    ],
     doc="Optionally opens streamRecord, publishes its handle as the active music stream, sets volume, starts playback, and sets the stream loop count to zero.",
     stable=True,
 )
@@ -13999,7 +14081,7 @@ stable.fn(
     "8B 44 24 04 A3 ?? ?? ?? ?? A0",
     hook=0x9,
     ret="void",
-    params=[param("int32_t*", "stream_record")],
+    params=[param("Audio_MusicStreamRecord*", "stream_record")],
     doc="Stores the selected music stream record pointer for the fade/playback path and clears the low nibble of sound_system_flags. The previous scalar return was flag status.",
 )
 
@@ -14008,7 +14090,7 @@ stable.fn(
     "6A 1E 68 00 10 00 00 66 C7 05 ??",
     hook=0x7,
     ret="void",
-    params=[param("int32_t*", "stream_record")],
+    params=[param("Audio_MusicStreamRecord*", "stream_record")],
     doc="Arms faded playback for the selected music stream record with a 0x1000 target volume over 31 fade frames, then resets music state. Residual flag return is ignored.",
     unstable=True,
 )
@@ -14018,7 +14100,7 @@ stable.fn(
     "8B 44 24 04 85 C0 74 ?? 50 E8 ??",
     hook=0x6,
     ret="int32_t",
-    params=[param("Audio_AILHStream*", "stream_handle_ptr")],
+    params=[param("Audio_MusicStreamRecord const*", "stream_handle_ptr")],
     doc="Returns nonzero when stream_handle_ptr is non-null and the pointed Miles stream is currently playing.",
 )
 
@@ -14107,10 +14189,10 @@ stable.fn(
     "54 C1 0E 85 D2 0F 84 ??",
     match=-0x1D,
     hook=0x6,
-    ret="int32_t",
+    ret="void",
     params=[
         param(
-            "void*",
+            "Tree_Map*",
             "open_set",
             doc="Internal priority/open-set handle allocated by the pathfinding queue helpers.",
         ),
@@ -14120,7 +14202,7 @@ stable.fn(
             doc="Navigation network whose current node neighbors are expanded.",
         ),
         param(
-            "Nav_PathState*",
+            "Nav_OpenSetEntry*",
             "current_state",
             doc="Open-set state entry for the node being processed.",
         ),
@@ -14242,7 +14324,7 @@ stable.fn(
     "Actor_UpdateFadeOut",
     "BF C0 6A 00 50 56 E8 ??",
     match=-0x20,
-    ret="BOOL",
+    ret="uint8_t",
     params=[param("Actor_State*", "actor"), param("int16_t", "fade_ticks")],
     doc="Advances an actor fade-out/lifecycle step and returns a low-byte boolean completion/status value.",
 )
@@ -14458,12 +14540,12 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "int32_t*",
+            "uint32_t*",
             "rel_node_list",
             doc="Relative node-list head/link field fixed in place.",
         ),
         param(
-            "int32_t",
+            "BOOL",
             "advance_by_link_slot",
             doc="Nonzero advances through consecutive link slots. Zero follows each rebased node link.",
         ),
@@ -14556,7 +14638,7 @@ stable.fn(
     "Save_ProcessGameOperation",
     "0F BE 05 ?? ?? ?? ?? 53 32 DB 83 E8 ??",
     hook=0x7,
-    ret="BOOL",
+    ret="uint8_t",
     params=[param("Save_OperationStatus*", "status_out")],
     doc="Polls the active save-game operation state. Operation 8 reads savegame.dat, operation 9 writes it, and operation 12 verifies by reading and comparing buffers.",
 )
@@ -14567,7 +14649,7 @@ stable.fn(
     match=-0x22,
     required=Required.EN,
     hook=0x6,
-    ret="BOOL",
+    ret="uint8_t",
     params=[param("void*", "buffer"), param("uint32_t", "size")],
     doc="Opens savegame.dat in rb mode, reads exactly size bytes into buffer, then verifies the file length equals size before returning TRUE.",
     abi_status=AbiStatus.VERIFIED,
@@ -14580,7 +14662,7 @@ stable.fn(
     match=-0x20,
     required=Required.EN,
     hook=0x6,
-    ret="BOOL",
+    ret="uint8_t",
     params=[param("void const*", "buffer"), param("uint32_t", "size")],
     doc="Writes one size-byte record from buffer to savegame.dat in wb mode, closes the file, and "
     "reports whether the write succeeded.",
@@ -14593,7 +14675,7 @@ stable.fn(
     "A1 ?? ?? ?? ?? 53 8B 5C",
     ret="void",
     params=[
-        param("uint8_t", "operation"),
+        param("int32_t", "operation"),
         param("void*", "buffer"),
         param("uint32_t", "size"),
     ],
@@ -14607,7 +14689,7 @@ stable.fn(
     "0D ?? ?? ?? ?? 8B 54 24 04 56 50 A1 ?? ?? ?? ?? 51 52 50 E8",
     match=-0x5,
     hook=0xA,
-    ret="BOOL",
+    ret="void",
     params=[
         param(
             "char const*",
@@ -14627,7 +14709,7 @@ stable.fn(
 stable.fn(
     "Video_PlayMovieIntro",
     "56 8B 74 24 08 C7 05 ??",
-    ret="int32_t",
+    ret="void",
     params=[
         param(
             "int32_t",
@@ -14682,7 +14764,7 @@ stable.fn(
     "D3D_SetGammaFromMenuSetting",
     "DB 44 24 04 D8 15 ??",
     hook=0xA,
-    ret="int32_t",
+    ret="void",
     params=[
         param(
             "int32_t",
@@ -14706,7 +14788,7 @@ stable.fn(
     "Config_LoadFromINI",
     "83 EC 08 57 68 ??",
     hook=0x9,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Loads pcdogs.ini when present and checksum-valid, clamps the display setting, restores default special-button binding when missing, reads player control bindings, then applies the resulting input mapping.",
 )
@@ -14716,7 +14798,7 @@ stable.fn(
     "A5 A2 ?? ?? ?? ?? E8 ??",
     match=-0x18,
     hook=0x7,
-    ret="int32_t",
+    ret="void",
     params=[param("Config_Data const*", "config_data")],
     doc="Copies the supplied settings block into the global config while preserving the current display setting, reapplies input mappings, then writes pcdogs.ini with the PCDOGS header and control bindings.",
 )
@@ -14725,7 +14807,7 @@ stable.fn(
     "Input_InitializeButtonMappings",
     "?? ?? 00 00 00 00 68 80",
     match=-0x32,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc=(
         "Free and rebuild the keyboard mapping arrays, register the default control masks, and initialize the "
@@ -14737,7 +14819,7 @@ stable.fn(
     "Input_InitializeControllerMappings",
     "53 55 56 57 68 ?? ?? ?? ?? 68",
     hook=0x9,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc=(
         "Initialize built-in controller preset names and 10-button mapping tables for Hammerhead FX, "
@@ -14748,7 +14830,7 @@ stable.fn(
 stable.fn(
     "Input_InitializeInputSubsystem",
     "E8 ?? ?? ?? ?? 8B 44 24 08 8B",
-    ret="int32_t",
+    ret="void",
     params=[
         param(
             "HWND",
@@ -14768,7 +14850,7 @@ stable.fn(
 stable.fn(
     "Config_LoadAlternateFromINI",
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 90 A1",
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Alternate config-loading entry point that initializes controller and button mappings before tail-calling Config_LoadFromINI.",
     stable=True,
@@ -14777,7 +14859,7 @@ stable.fn(
 stable.fn(
     "Input_ReadKeyboard",
     "A1 ?? ?? ?? ?? 53 8B 1D",
-    ret="int32_t",
+    ret="void",
     params=[
         param(
             "Input_State*",
@@ -14881,7 +14963,7 @@ stable.fn(
 stable.fn(
     "Input_FormatButtonName",
     "8B 44 24 08 56 50 E8 ??",
-    ret="char*",
+    ret="void",
     params=[
         param(
             "int32_t",
@@ -14948,7 +15030,7 @@ stable.fn(
 stable.fn(
     "Input_ProcessWindowMessages",
     "A1 ?? ?? ?? ?? 83 EC 1C",
-    ret="int32_t",
+    ret="BOOL",
     params=[],
     doc="Pumps pending Win32 messages and updates the game quit flag when window processing requests shutdown.",
     stable=True,
@@ -14981,12 +15063,12 @@ stable.fn(
     "FF 00 01 00 00 C7 05 ??",
     cc=CallingConvention.STDCALL,
     match=-0xB,
-    ret="int32_t",
+    ret="LRESULT",
     params=[
         param("HWND", "hwnd"),
-        param("uint32_t", "u_msg"),
-        param("uint32_t", "w_param"),
-        param("int32_t", "l_param"),
+        param("UINT", "u_msg"),
+        param("WPARAM", "w_param"),
+        param("LPARAM", "l_param"),
     ],
     doc=(
         "Dispatches Win32 key, system, and window messages. WM_CLOSE tears down package, menu, "
@@ -15292,7 +15374,7 @@ stable.fn(
             doc="Object radius/margin scaled by the frustum tests before near/far comparisons.",
         ),
         param(
-            "uint8_t", "cull_flags", doc="Bit 2 bypasses the far-depth rejection path."
+            "uint32_t", "cull_flags", doc="Bit 2 bypasses the far-depth rejection path."
         ),
     ],
     doc="Tests position against the active camera frustum planes. Returns 0 when culled.",
@@ -15315,7 +15397,7 @@ stable.fn(
             doc="Object radius/margin used for frustum and distance checks.",
         ),
         param(
-            "uint8_t",
+            "uint32_t",
             "cull_flags",
             doc="Flag byte forwarded to Graphics_CheckActorVisibilityAndFrustum.",
         ),
@@ -15326,7 +15408,7 @@ stable.fn(
 stable.fn(
     "Collision_CheckActorGround",
     "83 EC 18 53 55 8B 2D ??",
-    ret="BOOL",
+    ret="uint8_t",
     params=[
         param(
             "Math_Vec3I32*",
@@ -15614,7 +15696,7 @@ stable.fn(
     "Tree_FreeMapNode",
     "8B 44 24 04 85 C0 74 ?? 83 C0 EC 50 E8 ??",
     hook=0x6,
-    ret="BOOL",
+    ret="void",
     params=[
         param(
             "void*",
@@ -15664,7 +15746,7 @@ stable.fn(
     "Signal_ClearQueue",
     "C6 05 ?? ?? ?? ?? 00 C3 90 90 90 90 90 90 90 90 A0 ?? ?? ?? ?? 84 C0 74 ?? 8B 54 24 04 55 56 57 32 C0 0F BF 32 85 F6 74 ?? C6 42 02 00 B9 ??",
     hook=0x7,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Clears the queued signal/event count in signal queue state.",
 )
@@ -15673,8 +15755,11 @@ stable.fn(
     "Signal_Poll",
     "74 ?? C6 42 02 00 B9 ??",
     match=-0x17,
-    ret="int32_t",
-    params=[param("int16_t*", "event_buffer"), param("int32_t", "max_events")],
+    ret="uint8_t",
+    params=[
+        param("Signal_QueueEntry*", "event_buffer"),
+        param("int32_t", "max_events"),
+    ],
 )
 
 stable.fn(
@@ -15905,7 +15990,7 @@ stable.fn(
     "75 ?? 8B 48 04 89 0D ??",
     match=-0x2E,
     hook=0x7,
-    ret="BOOL",
+    ret="uint8_t",
     params=[param("int32_t", "slot_index"), param("BOOL", "clear_resource_flag")],
 )
 
@@ -15954,9 +16039,7 @@ stable.fn(
     params=[param("int32_t", "channel_mask")],
 )
 
-stable.fn(
-    "Audio_ProcessSoundQueue", "A1 ?? ?? ?? ?? 83 EC 18", ret="int32_t", params=[]
-)
+stable.fn("Audio_ProcessSoundQueue", "A1 ?? ?? ?? ?? 83 EC 18", ret="void", params=[])
 
 stable.fn(
     "Audio_CalculateSpatialVolumeAndPan",
@@ -16130,7 +16213,7 @@ stable.fn(
     "Actor_PollMovementSignals",
     "F6 C4 04 75 ?? 56 E8 ??",
     match=-0x11,
-    ret="int32_t",
+    ret="uint8_t",
     params=[
         param("Actor_State*", "actor"),
         param(
@@ -16501,7 +16584,7 @@ stable.fn(
     "Mem_InitializeAllocator",
     "C7 05 ?? ?? ?? ?? ?? ?? ?? ?? B8 ?? ?? ?? ?? 33",
     hook=0xA,
-    ret="int32_t",
+    ret="BOOL",
     params=[],
 )
 
@@ -16509,7 +16592,7 @@ stable.fn(
     "Mem_FreeAllExtents",
     "56 BE ?? ?? ?? ?? 8B 46",
     hook=0x6,
-    ret="int32_t",
+    ret="BOOL",
     params=[],
 )
 
@@ -16555,7 +16638,7 @@ stable.fn(
 stable.fn(
     "Input_IsKeyPressed",
     "A1 ?? ?? ?? ?? 33 C9 85 C0 53",
-    ret="BOOL",
+    ret="uint8_t",
     params=[param("uint8_t", "scan_code")],
     doc="Returns the mapped logical-key state for scan_code, or false when no mapping exists.",
     stable=True,
@@ -17094,7 +17177,7 @@ stable.fn(
     params=[
         param("char const*", "filename"),
         param("char const*", "mode"),
-        param("uint8_t", "sharing_flag"),
+        param("int32_t", "sharing_flag"),
     ],
     doc="Opens a file with an explicit mode string and sharing flag, returning the game's CRT-compatible file handle.",
     abi_status=AbiStatus.VERIFIED,
@@ -17134,7 +17217,7 @@ stable.fn(
 stable.fn(
     "Sort_RunInsertionSort",
     "55 8B EC 8B 45 08 57 8B 7D 0C 3B F8 76 ?? 8B 4D 10 53 03 C1 56 89 45 0C",
-    ret="char*",
+    ret="void",
     params=[
         param("char*", "first_element"),
         param("char*", "last_element"),
@@ -17416,7 +17499,7 @@ stable.fn(
     params=[
         param("int32_t", "file_no"),
         param("void const*", "buffer"),
-        param("int32_t", "byte_count"),
+        param("uint32_t", "byte_count"),
     ],
     abi_status=AbiStatus.PLACEHOLDER,
 )
@@ -17463,7 +17546,7 @@ stable.fn(
 stable.fn(
     "Mem_FindHeapBlockByAddress",
     "A1 ?? ?? ?? ?? 8D 0C 80",
-    ret="void*",
+    ret="CRT_HeapSegment*",
     params=[
         param(
             "void*",
@@ -17483,7 +17566,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "void*",
+            "CRT_HeapSegment*",
             "heap_segment",
             doc="Heap segment entry returned by Mem_FindHeapBlockByAddress.",
         ),
@@ -17814,9 +17897,9 @@ stable.fn(
     "8B 44 24 04 85 C0 75 ?? C3 8B 40 08",
     hook=0x6,
     public=False,
-    ret="Component_Instance*",
-    params=[param("Component_Instance*", "comp")],
-    doc="Returns the next component in the intrusive chain, or null when the input is null.",
+    ret="int32_t",
+    params=[param("Component_MovementParametersView*", "comp")],
+    doc="Returns the movement speed limit in Q12, or zero for null input.",
     unstable=True,
 )
 
@@ -17825,9 +17908,9 @@ stable.fn(
     "8B 44 24 04 85 C0 75 ?? C3 66 8B 40 20",
     hook=0x6,
     public=False,
-    ret="uint16_t",
-    params=[param("Component_Instance*", "comp")],
-    doc="Returns the component's 16-bit raw flags, or zero when the input is null.",
+    ret="int16_t",
+    params=[param("Component_MovementParametersView*", "comp")],
+    doc="Returns the signed movement turn step, or zero for null input.",
     unstable=True,
 )
 
@@ -17836,9 +17919,9 @@ stable.fn(
     "8B 44 24 04 85 C0 75 ?? C3 8B 40 0C",
     hook=0x6,
     public=False,
-    ret="Component_Instance*",
-    params=[param("Component_Instance*", "comp")],
-    doc="Returns the previous component in the intrusive chain, or null when the input is null.",
+    ret="int32_t",
+    params=[param("Component_MovementParametersView*", "comp")],
+    doc="Returns movement acceleration in Q12, or zero for null input.",
     unstable=True,
 )
 
@@ -17859,7 +17942,7 @@ stable.fn(
     public=False,
     ret="int32_t",
     params=[
-        param("void*", "bindings"),
+        param("Component_CollisionRecord*", "bindings"),
         param("int32_t", "binding_count"),
         param("int32_t", "binding_key"),
         param("Actor_State**", "out_actor"),
@@ -18055,7 +18138,7 @@ stable.fn(
 stable.fn(
     "Math_CalculateAtan2FP12",
     "53 8B 5C 24 0C 56 57 8B 7C 24 10",
-    ret="int32_t",
+    ret="int16_t",
     params=[
         param("int32_t", "y"),
         param("int32_t", "x"),
@@ -18492,11 +18575,11 @@ stable.fn(
     callable=False,
     ret="int32_t",
     params=[
-        param("int32_t*", "output_context"),
+        param("File_Handle*", "output_context"),
         param("char const*", "format"),
         param("uint8_t*", "argument_cursor"),
     ],
-    doc="Formats values from an x86 variadic byte cursor into a FILE-like output context. Internal and non-callable.",
+    doc="Formats values from an x86 variadic cursor into a CRT file stream. Internal and non-callable.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
@@ -18544,7 +18627,7 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("void*", "exception_record"),
+        param("struct _EXCEPTION_RECORD*", "exception_record"),
         param("void*", "establisher_frame"),
         param("void*", "context_record"),
         param("void**", "dispatcher_context"),
@@ -18686,7 +18769,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("uint32_t", "xcptnum"),
-        param("void*", "pxcptinfoptrs"),
+        param("struct _EXCEPTION_POINTERS*", "pxcptinfoptrs"),
     ],
     doc="Maps an OS exception code through the CRT table, invokes its handler, and returns the CRT exception-filter action.",
     unstable=True,
@@ -18719,7 +18802,7 @@ stable.fn(
     "53 33 DB 39 1D ?? ?? ?? ?? 56 57 75 ?? E8 ?? ?? ?? ?? 8B 35 ?? ?? ?? ??",
     hook=0x9,
     public=False,
-    ret="int32_t",
+    ret="void",
     params=[],
     doc="Counts non-'=' strings in copied environment block, allocates g_environ, duplicates each visible entry, frees source block, and terminates.",
     unstable=True,
@@ -18970,7 +19053,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("uint32_t const*", "value"),
-        param("uint32_t", "start_bit"),
+        param("int32_t", "start_bit"),
     ],
     doc="Returns whether the ld12 mantissa tail beginning at start_bit is zero.",
     abi_status=AbiStatus.VERIFIED,
@@ -18986,7 +19069,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("uint32_t*", "value"),
-        param("uint32_t", "bit_index"),
+        param("int32_t", "bit_index"),
     ],
     doc="Sets one ld12 mantissa bit and propagates carry through preceding dwords. Returns carry status.",
     abi_status=AbiStatus.VERIFIED,
@@ -19002,7 +19085,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("uint32_t*", "value"),
-        param("uint32_t", "bit_index"),
+        param("int32_t", "bit_index"),
     ],
     doc="Rounds the ld12 mantissa at bit_index, propagates carry, and clears discarded low bits.",
     abi_status=AbiStatus.VERIFIED,
@@ -19060,7 +19143,7 @@ stable.fn(
     ret="void",
     params=[
         param("uint32_t*", "value"),
-        param("uint32_t", "bit_count"),
+        param("int32_t", "bit_count"),
     ],
     doc="Shifts an ld12 mantissa right in place by bit_count with cross-dword carry.",
     abi_status=AbiStatus.VERIFIED,
@@ -19077,7 +19160,7 @@ stable.fn(
     params=[
         param("uint16_t const*", "value"),
         param("void*", "output"),
-        param("int32_t const*", "format"),
+        param("CRT_IEEEFormatDescriptor const*", "format"),
     ],
     doc="Converts an ld12 value to the IEEE representation selected by format and returns conversion status.",
     abi_status=AbiStatus.VERIFIED,
@@ -19401,7 +19484,7 @@ stable.fn(
     "8B 4C 24 04 33 D2 89 0D ?? ?? ?? ??",
     public=False,
     hook=0x6,
-    ret="int32_t",
+    ret="void",
     params=[param("uint32_t", "os_error_code")],
     doc="Stores Win32 error, searches mapping table for errno, then applies range fallbacks for EACCES/ENOMEM/EINVAL.",
     stable=True,
