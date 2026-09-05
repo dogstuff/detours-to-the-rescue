@@ -30,26 +30,35 @@ case "${range}" in
 esac
 release_ref="${release_ref:-HEAD}"
 
-read_abi_version() {
+read_abi_range() {
   git show "${1}:modules/sdk/include/dttr_versions.h.in" 2>/dev/null |
-    sed -n 's/^#define[[:space:]]\{1,\}DTTR_SDK_ABI_VERSION[[:space:]]\{1,\}\([0-9]\{1,\}\)u\{0,1\}[[:space:]]*$/\1/p'
+    awk '
+      $1 == "#define" && $3 ~ /^[0-9]+u?$/ {
+        sub(/u$/, "", $3)
+        if ($2 == "DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION") minimum = $3
+        if ($2 == "DTTR_SDK_ABI_VERSION") maximum = $3
+      }
+      END {
+        if (minimum != "" && maximum != "") printf "%s - %s", minimum, maximum
+      }
+    '
 }
 
-abi_version="$(read_abi_version "${release_ref}")"
+abi_range="$(read_abi_range "${release_ref}")"
 
-if [ -z "${abi_version}" ]; then
-  echo "Cannot read SDK ABI version at ${release_ref}." >&2
+if [ -z "${abi_range}" ]; then
+  echo "Cannot read supported SDK ABI version range at ${release_ref}." >&2
   exit 1
 fi
 
-printf 'SDK ABI version: `%s`\n\n' "${abi_version}"
+printf 'Supported SDK ABI versions: `%s`\n\n' "${abi_range}"
 
 if [ -n "${previous_ref}" ]; then
-  previous_abi_version="$(read_abi_version "${previous_ref}")"
+  previous_abi_range="$(read_abi_range "${previous_ref}")"
 
-  if [ -n "${previous_abi_version}" ] && [ "${previous_abi_version}" != "${abi_version}" ]; then
-    printf '> **WARNING: SDK ABI version changed: `%s` → `%s`.**\n' "${previous_abi_version}" "${abi_version}"
-    printf '> Mods built for an older ABI may be incompatible. Check for updated mods or rebuild them against this release’s SDK.\n\n'
+  if [ -n "${previous_abi_range}" ] && [ "${previous_abi_range}" != "${abi_range}" ]; then
+    printf '> **WARNING: Supported SDK ABI versions changed: `%s` → `%s`.**\n' "${previous_abi_range}" "${abi_range}"
+    printf '> Mods built for an ABI outside this range are incompatible. Check for updated mods or rebuild them against this release’s SDK.\n\n'
   fi
 fi
 

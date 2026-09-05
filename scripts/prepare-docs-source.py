@@ -325,7 +325,7 @@ def resolve_docs_download_versions() -> DocsDownloadVersions:
     return DocsDownloadVersions(stable=stable, nightly=nightly)
 
 
-def sdk_abi_at_revision(revision: str) -> str:
+def sdk_abi_range_at_revision(revision: str) -> str:
     header = "modules/sdk/include/dttr_versions.h.in"
     try:
         result = subprocess.run(
@@ -341,13 +341,16 @@ def sdk_abi_at_revision(revision: str) -> str:
             f"could not resolve SDK ABI for {revision}; fetch the download's git revision"
         ) from exc
 
-    match = re.search(
-        r"^#define\s+DTTR_SDK_ABI_VERSION\s+(\d+)u?\b", result.stdout, re.MULTILINE
-    )
-    if match is None:
-        raise ValueError(f"{revision}:{header} missing DTTR_SDK_ABI_VERSION")
+    versions = []
+    for name in ("DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION", "DTTR_SDK_ABI_VERSION"):
+        match = re.search(
+            rf"^#define\s+{name}\s+(\d+)u?\b", result.stdout, re.MULTILINE
+        )
+        if match is None:
+            raise ValueError(f"{revision}:{header} missing {name}")
+        versions.append(match.group(1))
 
-    return match.group(1)
+    return " - ".join(versions)
 
 
 def docs_download_replacements() -> dict[str, str]:
@@ -355,8 +358,8 @@ def docs_download_replacements() -> dict[str, str]:
     return {
         "__DTTR_DOCS_STABLE_VERSION__": versions.stable,
         "__DTTR_DOCS_NIGHTLY_VERSION__": versions.nightly,
-        "__DTTR_DOCS_STABLE_SDK_ABI__": sdk_abi_at_revision(versions.stable),
-        "__DTTR_DOCS_NIGHTLY_SDK_ABI__": sdk_abi_at_revision(versions.nightly),
+        "__DTTR_DOCS_STABLE_SDK_ABI__": sdk_abi_range_at_revision(versions.stable),
+        "__DTTR_DOCS_NIGHTLY_SDK_ABI__": sdk_abi_range_at_revision(versions.nightly),
         "__DTTR_DOCS_VANILLA_STABLE_DOWNLOAD_URL__": version_download_url(
             versions.stable,
             "dttr-release.zip",
