@@ -26,7 +26,7 @@ ENUM_PREFIXES = {
 }
 
 X86_PARAM_TYPE_BYTES = {
-    "_LDBL12": 12,
+    "CRT_LongDouble12": 12,
     "double": 8,
     "int64_t": 8,
     "uint64_t": 8,

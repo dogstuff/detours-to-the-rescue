@@ -31,7 +31,7 @@ stable.type_alias(
 )
 
 stable.struct(
-    "_LDBL12",
+    "CRT_LongDouble12",
     member("uint8_t", "ld12[12]", 0x0),
     size=0xC,
     incomplete=False,
@@ -17196,7 +17196,7 @@ stable.fn(
         ),
         param("int32_t", "mask", doc="CRT ctype mask to test."),
     ],
-    doc="CRT _isctype-style helper. Returns mask bits for ch using the ctype table or __crtGetStringTypeA for multibyte characters.",
+    doc="CRT _isctype-style helper. Returns mask bits for ch using the ctype table or CRT_GetStringTypeA for multibyte characters.",
 )
 
 stable.fn(
@@ -17224,7 +17224,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__NLG_Notify1",
+    "CRT_NLGNotify1",
     "53 51 BB ?? ?? ?? ?? 8B",
     cc=CallingConvention.STDCALL,
     callable=False,
@@ -17383,7 +17383,7 @@ stable.fn(
     ret="BOOL",
     params=[
         param(
-            "_LDBL12",
+            "CRT_LongDouble12",
             "value",
             doc="Twelve-byte by-value CRT container holding the x87 extended input.",
         ),
@@ -17410,7 +17410,7 @@ stable.callback_type(
     ret='void',
     params=[],
     calling=CallingConvention.CDECL,
-    doc='CRT process-exit callback registered by _onexit and _atexit.',
+    doc='CRT process-exit callback registered by CRT_OnExit and CRT_AtExit.',
     unstable=True,
 )
 
@@ -18018,7 +18018,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__setjmp3',
+    'CRT_Setjmp3',
     '8B 54 24 04 89 2A 89 5A 04 89 7A 08 89 72 0C 89 62 10 8B 04 24 89 42 14 C7 42 20 30 32 43 56',
     callable=False,
     public=False,
@@ -18034,7 +18034,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_longjmp',
+    'CRT_Longjmp',
     '8B 5C 24 04 8B 2B 8B 73 18',
     hook=0x6,
     required=Required.EN,
@@ -18060,8 +18060,9 @@ stable.fn(
 )
 
 stable.fn(
-    '__flushall',
+    'CRT_FlushAll',
     '6A 01 E8 ?? ?? ?? ?? 59 C3 53 56 57',
+    public=False,
     hook=0x7,
     ret='int32_t',
     params=[],
@@ -18110,7 +18111,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_onexit',
+    'CRT_OnExit',
     '56 FF 35 ?? ?? ?? ?? E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 59 8B 0D ?? ?? ?? ??',
     hook=0x7,
     public=False,
@@ -18121,18 +18122,18 @@ stable.fn(
 )
 
 stable.fn(
-    '_atexit',
+    'CRT_AtExit',
     'FF 74 24 04 E8 ?? ?? ?? ?? F7 D8 1B C0',
     hook=0x9,
     public=False,
     ret='int32_t',
     params=[param('CRT_ExitCallback', 'callback')],
-    doc='Registers callback through _onexit and maps non-NULL result to 0, NULL to -1.',
+    doc='Registers callback through CRT_OnExit and maps non-NULL result to 0, NULL to -1.',
     unstable=True,
 )
 
 stable.fn(
-    '_atexit_init',
+    'CRT_AtExitInit',
     '68 80 00 00 00 E8 ?? ?? ?? ?? 85 C0',
     public=False,
     ret='void',
@@ -18142,7 +18143,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__nh_malloc',
+    'CRT_NhMalloc',
     '83 7C 24 04 E0 77 ?? FF 74 24 04',
     public=False,
     ret='void*',
@@ -18150,13 +18151,14 @@ stable.fn(
         param('uint32_t', 'size'),
         param('int32_t', 'new_mode'),
     ],
-    doc='Rejects sizes above 0xFFFFFFE0, retries Mem_HeapAllocCRT while new_mode is enabled and _callnewh(size) succeeds, otherwise returns NULL.',
+    doc='Rejects sizes above 0xFFFFFFE0, retries Mem_HeapAllocCRT while new_mode is enabled and CRT_CallNewHandler(size) succeeds, otherwise returns NULL.',
     unstable=True,
 )
 
 stable.fn(
-    '_strstr',
+    'CRT_Strstr',
     '8B 4C 24 08 57 53 56 8A 11',
+    public=False,
     ret='char*',
     params=[
         param('char const*', 'haystack'),
@@ -18167,12 +18169,12 @@ stable.fn(
 )
 
 stable.fn(
-    '_cinit',
+    'CRT_CInit',
     'A1 ?? ?? ?? ?? 85 C0 74 ?? FF D0 68 ?? ?? ?? ?? 68 ?? ?? ?? ??',
     public=False,
     ret='void',
     params=[],
-    doc="Calls optional CRT_InitializeFloatingPoint, then walks.CRT initializer ranges 0x44E008 through 0x44E018 and 0x44E000 through 0x44E004 via _initterm.",
+    doc="Calls optional CRT_InitializeFloatingPoint, then walks.CRT initializer ranges 0x44E008 through 0x44E018 and 0x44E000 through 0x44E004 via CRT_InitTerm.",
     unstable=True,
 )
 
@@ -18199,7 +18201,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_doexit',
+    'CRT_DoExit',
     '57 6A 01 5F 39 3D ?? ?? ?? ?? 75 ?? FF 74 24 08',
     hook=0xA,
     public=False,
@@ -18214,7 +18216,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_initterm',
+    'CRT_InitTerm',
     '56 8B 74 24 08 3B 74 24 0C',
     public=False,
     ret='void',
@@ -18232,7 +18234,7 @@ stable.fn(
     public=False,
     ret='int32_t',
     params=[],
-    doc="Calls __flushall. When g_crtExitProcessing is nonzero, tail-calls File_CloseAllOpenFilesCRT.",
+    doc="Calls CRT_FlushAll. When g_crtExitProcessing is nonzero, tail-calls File_CloseAllOpenFilesCRT.",
     unstable=True,
 )
 
@@ -18252,7 +18254,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__amsg_exit',
+    'CRT_AmsgExit',
     '83 3D ?? ?? ?? ?? 01 75 ?? E8 ?? ?? ?? ?? FF 74 24 04 E8 ?? ?? ?? ?? 68 FF 00 00 00',
     hook=0x7,
     callable=False,
@@ -18276,12 +18278,12 @@ stable.fn(
 )
 
 stable.fn(
-    '_setdefaultprecision',
+    'CRT_SetDefaultPrecision',
     '68 00 00 03 00 68 00 00 01 00',
     public=False,
     ret='void',
     params=[],
-    doc="Sets the x87 precision-control field through _control87(0x10000, 0x30000). No result is consumed.",
+    doc="Sets the x87 precision-control field through CRT_Control87(0x10000, 0x30000). No result is consumed.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
@@ -18309,7 +18311,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__cfltcvt',
+    'CRT_CfltCvt',
     '55 8B EC 83 7D 10 65 74 ??',
     hook=0x7,
     public=False,
@@ -18366,7 +18368,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__global_unwind2',
+    'CRT_GlobalUnwind2',
     '55 8B EC 53 56 57 55 6A 00',
     required=Required.EN,
     public=False,
@@ -18379,7 +18381,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__unwind_handler',
+    'CRT_UnwindHandler',
     '8B 4C 24 04 F7 41 04 06 00 00 00 B8 01 00 00 00 74 0F 8B 44 24 08 8B 54 24 10 89 02 B8 03 00 00 00 C3',
     callable=False,
     public=False,
@@ -18397,7 +18399,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__local_unwind2',
+    'CRT_LocalUnwind2',
     '53 56 57 8B 44 24 10 50',
     hook=0x7,
     required=Required.EN,
@@ -18414,7 +18416,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__abnormal_termination',
+    'CRT_AbnormalTermination',
     '33 C0 64 8B 0D 00 00 00 00',
     hook=0x9,
     required=Required.EN,
@@ -18448,8 +18450,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_callnewh',
+    'CRT_CallNewHandler',
     'A1 ?? ?? ?? ?? 85 C0 74 ?? FF 74 24 04',
+    public=False,
     ret='int32_t',
     params=[param('uint32_t', 'size')],
     doc="Invokes configured new-handler with requested size and returns boolean success. Absent handler returns 0.",
@@ -18520,7 +18523,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_XcptFilter',
+    'CRT_XcptFilter',
     '55 8B EC 53 FF 75 08 E8 ?? ?? ?? ??',
     hook=0x7,
     public=False,
@@ -18556,7 +18559,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_setenvp',
+    'CRT_SetEnvp',
     '53 33 DB 39 1D ?? ?? ?? ?? 56 57 75 ?? E8 ?? ?? ?? ?? 8B 35 ?? ?? ?? ??',
     hook=0x9,
     public=False,
@@ -18567,7 +18570,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_setargv',
+    'CRT_SetArgv',
     '55 8B EC 51 51 53 33 DB',
     public=False,
     ret='int32_t',
@@ -18577,7 +18580,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_parse_cmdline',
+    'CRT_ParseCmdLine',
     '55 8B EC 8B 4D 18 8B 45 14',
     hook=0x6,
     public=False,
@@ -18594,7 +18597,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__crtGetEnvironmentStringsA',
+    'CRT_GetEnvironmentStringsA',
     '51 51 A1 ?? ?? ?? ?? 53 55 8B 2D ?? ?? ?? ?? 56',
     hook=0x7,
     public=False,
@@ -18605,7 +18608,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__seh_longjmp_unwind',
+    'CRT_SEHLongjmpUnwind',
     '55 8B 4C 24 08 8B 29 8B 41 1C',
     cc=CallingConvention.STDCALL,
     required=Required.EN,
@@ -18619,8 +18622,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_controlfp',
+    'CRT_ControlFP',
     '55 8B EC 51 56 9B D9 7D FC',
+    public=False,
     ret='uint32_t',
     params=[
         param('uint32_t', 'new_control'),
@@ -18631,8 +18635,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_control87',
+    'CRT_Control87',
     '8B 44 24 08 25 FF FF F7 FF',
+    public=False,
     hook=0x9,
     ret='uint32_t',
     params=[
@@ -18644,7 +18649,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_abstract_cw_to_cw',
+    'CRT_AbstractCWToCW',
     '53 8B 5C 24 08 33 C0 55',
     public=False,
     ret='uint32_t',
@@ -18654,7 +18659,7 @@ stable.fn(
 )
 
 stable.fn(
-    '_cw_to_abstract_cw',
+    'CRT_CWToAbstractCW',
     '53 8B 5C 24 08 33 C0 56',
     public=False,
     ret='uint32_t',
@@ -18664,7 +18669,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__fassign",
+    "CRT_FAssign",
     "55 8B EC 51 51 83 7D 08 00 FF 75 10 74 1B 8D 45 F8 50 E8 ?? ?? ?? ??",
     cc=CallingConvention.CDECL,
     callable=False,
@@ -18682,7 +18687,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__allmul",
+    "CRT_AllMul",
     "8B 44 24 08 8B 4C 24 10 0B C8 8B 4C 24 0C 75 ?? 8B 44 24 04 F7 E1 C2 10 00",
     cc=CallingConvention.STDCALL,
     callable=False,
@@ -18745,7 +18750,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__except_handler3",
+    "CRT_ExceptHandler3",
     "55 8B EC 83 EC 08 53 56 57 55 FC 8B 5D 0C 8B 45 08 F7 40 04 06 00 00 00",
     callable=False,
     public=False,
@@ -18776,7 +18781,7 @@ stable.fn(
 )
 
 stable.fn(
-    "_NMSG_WRITE",
+    "CRT_NmsgWrite",
     "55 8B EC 81 EC A4 01 00 00 8B 55 08 33 C9 B8 ?? ?? ?? ?? 3B 10 74 0B 83 C0 08 41 3D ?? ?? ?? ??",
     callable=False,
     public=False,
@@ -18789,8 +18794,9 @@ stable.fn(
 )
 
 stable.fn(
-    "_tolower",
+    "CRT_ToLower",
     '55 8B EC 51 83 3D ?? ?? ?? ?? 00 53',
+    public=False,
     hook=0xB,
     ret='int32_t',
     params=[param('int32_t', 'ch')],
@@ -18800,7 +18806,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__ld12_is_zero_upper",
+    "CRT_LD12IsZeroUpper",
     "8B 44 24 08 56 6A 20 99 59 F7 F9 6A 1F 8B F0",
     callable=False,
     public=False,
@@ -18816,7 +18822,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_increment',
+    'CRT_LD12Increment',
     '8B 44 24 08 53 56 57 6A 20',
     callable=False,
     public=False,
@@ -18832,7 +18838,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_round_and_clear',
+    'CRT_LD12RoundAndClear',
     '55 8B EC 51 51 8B 45 0C',
     callable=False,
     public=False,
@@ -18848,7 +18854,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_copy',
+    'CRT_LD12Copy',
     '8B 44 24 08 8B 4C 24 04 56',
     callable=False,
     public=False,
@@ -18864,7 +18870,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_clear',
+    'CRT_LD12Clear',
     '57 8B 7C 24 08 33 C0 AB',
     callable=False,
     public=False,
@@ -18877,7 +18883,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_is_zero',
+    'CRT_LD12IsZero',
     '8B 44 24 04 33 C9 83 38 00',
     callable=False,
     public=False,
@@ -18890,7 +18896,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_shr',
+    'CRT_LD12ShiftRight',
     '55 8B EC 83 EC 0C 8B 45 0C 53 56 57 6A 20',
     callable=False,
     public=False,
@@ -18906,7 +18912,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__ld12_to_ieee",
+    "CRT_LD12ToIEEE",
     "55 8B EC 83 EC 18 8B 45 08 53 56 57 0F B7 48 0A 8B D9 81 E1 00 80 00 00",
     callable=False,
     public=False,
@@ -18923,7 +18929,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_to_double',
+    'CRT_LD12ToDouble',
     '68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3 68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3',
     callable=False,
     public=False,
@@ -18939,7 +18945,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__ld12_to_float',
+    'CRT_LD12ToFloat',
     '68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3 68 ?? ?? ?? ?? FF 74 24 0C FF 74 24 0C E8 ?? ?? ?? ?? 83 C4 0C C3',
     match=0x16,
     callable=False,
@@ -18956,7 +18962,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__atodbl',
+    'CRT_AtoDbl',
     '55 8B EC 83 EC 0C 33 C0 50 50 50 50 FF 75 0C 8D 45 0C 50 8D 45 F4 50 E8 83 18 00 00',
     callable=False,
     public=False,
@@ -18972,7 +18978,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__atoflt',
+    'CRT_AtoFlt',
     '55 8B EC 83 EC 0C 33 C0 50 50 50 50 FF 75 0C 8D 45 0C 50 8D 45 F4 50 E8 56 18 00 00',
     callable=False,
     public=False,
@@ -19000,20 +19006,20 @@ stable.fn(
 )
 
 stable.fn(
-    "__fpmath",
+    "CRT_FPMath",
     "55 8B EC 83 EC 0C 56 8D 45 08 57 50 8D 45 F4 50 E8 ?? ?? ?? ?? 59 8D 75 F4",
     callable=False,
     public=False,
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="CRT_FloatConversionRecord*",
     params=[param("double", "value")],
-    doc="Converts value through _LDBL12 and returns a shared record containing sign, point position, finiteness, and digits.",
+    doc="Converts value through CRT_LongDouble12 and returns a shared record containing sign, point position, finiteness, and digits.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    '__double_to_long_double80',
+    'CRT_DoubleToLongDouble80',
     '55 8B EC 51 8B 55 0C 53',
     callable=False,
     public=False,
@@ -19029,7 +19035,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__crtGetStringTypeA",
+    "CRT_GetStringTypeA",
     "55 8B EC 6A FF 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 64 89 25 00 00 00 00 83 EC 18 53 56 57",
     callable=False,
     public=False,
@@ -19050,7 +19056,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__aulldiv",
+    "CRT_AullDiv",
     "53 56 8B 44 24 18 0B C0 75 ?? 8B 4C 24 14 8B 44 24 10 33 D2 F7 F1 8B D8",
     cc=CallingConvention.STDCALL,
     callable=False,
@@ -19064,7 +19070,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__aullrem",
+    "CRT_AullRem",
     "53 8B 44 24 14 0B C0 75 ?? 8B 4C 24 10 8B 44 24 0C 33 D2 F7 F1 8B 44 24 08",
     cc=CallingConvention.STDCALL,
     callable=False,
@@ -19078,7 +19084,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__setmbcp_updatetables",
+    "CRT_SetMbcpUpdateTables",
     "55 8B EC 81 EC 14 05 00 00 8D 45 EC 56 50 FF 35 ?? ?? ?? ?? FF 15 ?? ?? ?? ?? 83 F8 01",
     callable=False,
     public=False,
@@ -19091,7 +19097,7 @@ stable.fn(
 )
 
 stable.fn(
-    "__crtLCMapStringA",
+    "CRT_LCMapStringA",
     "55 8B EC 6A FF 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 64 89 25 00 00 00 00 83 EC 1C 53 56 57",
     callable=False,
     public=False,
@@ -19113,8 +19119,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_memset',
+    'CRT_Memset',
     '8B 54 24 0C 8B 4C 24 04',
+    public=False,
     hook=0x8,
     ret='void*',
     params=[
@@ -19142,8 +19149,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_strlen',
+    'CRT_Strlen',
     '8B 4C 24 04 F7 C1 03 00 00 00',
+    public=False,
     hook=0xA,
     ret='uint32_t',
     params=[param('char const*', 'str')],
@@ -19159,13 +19167,14 @@ stable.fn(
     public=False,
     ret='void',
     params=[],
-    doc="Calls __amsg_exit with runtime error 2 when floating-point support is unavailable. It never returns.",
+    doc="Calls CRT_AmsgExit with runtime error 2 when floating-point support is unavailable. It never returns.",
     unstable=True,
 )
 
 stable.fn(
-    '__isleadbyte_l',
+    'CRT_IsLeadByteL',
     '8B 44 24 04 3B 05 ?? ?? ?? ?? 72 ?? 33 C0',
+    public=False,
     hook=0xA,
     ret='int32_t',
     params=[param('int32_t', 'character')],
@@ -19232,8 +19241,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_dosmaperr',
+    'CRT_DosMapErr',
     '8B 4C 24 04 33 D2 89 0D ?? ?? ?? ??',
+    public=False,
     hook=0x6,
     ret='int32_t',
     params=[param('uint32_t', 'os_error_code')],
@@ -19242,8 +19252,9 @@ stable.fn(
 )
 
 stable.fn(
-    '__isdigit',
+    'CRT_IsDigit',
     '6A 04 6A 00 FF 74 24 0C',
+    public=False,
     hook=0x8,
     ret='int32_t',
     params=[param('int32_t', 'ch')],
@@ -19252,8 +19263,9 @@ stable.fn(
 )
 
 stable.fn(
-    '__setmbcp',
+    'CRT_SetMbcp',
     '55 8B EC 83 EC 18 53 56 57',
+    public=False,
     hook=0x6,
     ret='int32_t',
     params=[param('int32_t', 'requested_code_page')],
@@ -19284,7 +19296,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__resetmbcp',
+    'CRT_ResetMbcp',
     '57 6A 40 59 33 C0 BF ?? ?? ?? ?? F3 AB',
     hook=0x6,
     public=False,
@@ -19296,13 +19308,13 @@ stable.fn(
 )
 
 stable.fn(
-    '__initmbctable',
+    'CRT_InitMbcTable',
     '83 3D ?? ?? ?? ?? 00 75 ?? 6A FD E8 ?? ?? ?? ?? 59',
     hook=0x7,
     public=False,
     ret='void',
     params=[],
-    doc='Once-only guard calls __setmbcp(-3/ACP) then marks multibyte tables initialized.',
+    doc='Once-only guard calls CRT_SetMbcp(-3/ACP) then marks multibyte tables initialized.',
     unstable=True,
 )
 
@@ -19322,8 +19334,9 @@ stable.fn(
 )
 
 stable.fn(
-    '_strncpy',
+    'CRT_Strncpy',
     '8B 4C 24 0C 57 85 C9 74 ??',
+    public=False,
     ret='char*',
     params=[
         param('char*', 'dest'),
@@ -19348,7 +19361,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__add_with_overflow_check',
+    'CRT_AddWithOverflowCheck',
     '8B 54 24 04 56 8B 74 24 0C 33 C0',
     callable=False,
     public=False,
@@ -19364,7 +19377,7 @@ stable.fn(
 )
 
 stable.fn(
-    '___add_12',
+    'CRT_Add12',
     '56 8B 74 24 08 57 8B 7C 24 10',
     callable=False,
     public=False,
@@ -19379,7 +19392,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__shl_12byte',
+    'CRT_ShiftLeft12Byte',
     '8B 44 24 04 56 57 8B 30',
     callable=False,
     public=False,
@@ -19391,7 +19404,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__shr_12byte',
+    'CRT_ShiftRight12Byte',
     '8B 44 24 04 56 57 8B 50 08',
     callable=False,
     public=False,
@@ -19403,7 +19416,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__mtold12',
+    'CRT_MtoLD12',
     '55 8B EC 83 EC 10 8B 45 0C 53 8B 5D 10 33 D2 3B C2 56 C7 45 FC 4E 40 00 00',
     callable=False,
     public=False,
@@ -19420,7 +19433,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__strgtold12',
+    'CRT_StrgToLD12',
     '55 8B EC 83 EC 5C 53 56 57 8B 7D 10 8D 45 A4 6A 01 89 45 F4 33 C0 5A 89 45 D8',
     callable=False,
     public=False,
@@ -19441,7 +19454,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__flt_mul',
+    'CRT_FltMul',
     '55 8B EC 83 EC 24 53 8B 5D 0C',
     hook=0x6,
     callable=False,
@@ -19457,7 +19470,7 @@ stable.fn(
 )
 
 stable.fn(
-    '__flt_power10',
+    'CRT_FltPower10',
     '55 8B EC 83 EC 0C 53 BB ?? ?? ?? ??',
     hook=0x6,
     callable=False,
@@ -19474,8 +19487,9 @@ stable.fn(
 )
 
 stable.fn(
-    '__strcmpi',
+    'CRT_Strcmpi',
     '55 8B EC 57 56 53 8B 75 0C',
+    public=False,
     ret='int32_t',
     params=[
         param('char const*', 's1'),
