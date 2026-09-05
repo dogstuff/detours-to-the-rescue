@@ -10,7 +10,9 @@ import re
 import shutil
 import subprocess
 import sys
-from collections.abc import Mapping
+import urllib.parse
+import urllib.request
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,6 +31,9 @@ VERSION_TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-(preview|rc)\.(\d+))?$")
 SHORT_COMMIT_HASH_RE = re.compile(r"^[0-9a-f]{7,40}$", re.IGNORECASE)
 STABLE_RELEASE_FLOOR = (3, 0, 0)
 PACKAGE_REGISTRY_PROJECT = "dogstuff%2Fdetours-to-the-rescue"
+PACKAGES_API_URL = (
+    f"https://gitlab.com/api/v4/projects/{PACKAGE_REGISTRY_PROJECT}/packages"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -226,10 +231,7 @@ def nightly_download_url(version: str, artifact: str) -> str:
         "dttr-modding-release.zip": f"dttr-modding-{version}-release.zip",
     }.get(artifact, artifact)
 
-    return (
-        "https://gitlab.com/api/v4/projects/"
-        f"{PACKAGE_REGISTRY_PROJECT}/packages/generic/dttr/{version}/{artifact}"
-    )
+    return f"{PACKAGES_API_URL}/generic/dttr/{version}/{artifact}"
 
 
 def git_version_tags() -> list[VersionTag]:
@@ -267,21 +269,52 @@ def latest_version_tag(*, stable: bool) -> VersionTag | None:
     return versions[-1] if versions else None
 
 
-def git_short_commit() -> str | None:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--short=8", "HEAD"],
-            cwd=REPO_ROOT,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return None
+def package_registry_items(path: str = "", **filters: str) -> Iterator[dict]:
+    page = "1"
+    while page:
+        query = urllib.parse.urlencode({**filters, "per_page": "100", "page": page})
+        with urllib.request.urlopen(
+            f"{PACKAGES_API_URL}{path}?{query}", timeout=30
+        ) as response:
+            yield from json.load(response)
+            page = response.headers.get("X-Next-Page", "")
 
-    value = result.stdout.strip()
-    return value if SHORT_COMMIT_HASH_RE.fullmatch(value) else None
+
+def latest_published_nightly() -> str:
+    try:
+        packages = package_registry_items(
+            package_type="generic",
+            package_name="dttr",
+            status="default",
+            order_by="created_at",
+            sort="desc",
+        )
+        for package in packages:
+            version = package.get("version", "")
+            if package.get("name") != "dttr" or not SHORT_COMMIT_HASH_RE.fullmatch(
+                version
+            ):
+                continue
+
+            # Uploads happen one file at a time; skip unfinished packages.
+            required = {
+                f"dttr-{version}-release.zip",
+                f"dttr-modding-{version}-release.zip",
+                "dttr-mod-template-c.zip",
+            }
+            files = package_registry_items(f"/{package['id']}/package_files")
+            if required.issubset(item["file_name"] for item in files):
+                return version
+
+    except (OSError, ValueError) as exc:
+        raise ValueError(
+            "could not query published nightly packages; set DTTR_DOCS_NIGHTLY_VERSION "
+            "to a published commit for offline docs builds"
+        ) from exc
+
+    raise ValueError(
+        "no complete published nightly package found; set DTTR_DOCS_NIGHTLY_VERSION"
+    )
 
 
 def normalize_short_commit_hash(value: str, *, label: str) -> str:
@@ -305,12 +338,16 @@ def resolve_docs_download_versions() -> DocsDownloadVersions:
         raise ValueError(f"invalid DTTR_DOCS_STABLE_VERSION: {stable}")
 
     if not nightly:
-        nightly = short_commit_from_env("CI_COMMIT_SHORT_SHA") or git_short_commit()
-        if not nightly:
-            raise ValueError(
-                "could not resolve docs nightly version; set CI_COMMIT_SHORT_SHA or "
-                "DTTR_DOCS_NIGHTLY_VERSION"
-            )
+        # Scheduled Pages deployment waits for this pipeline's package:nightly.
+        default_branch = os.environ.get("CI_DEFAULT_BRANCH", "")
+        if (
+            os.environ.get("CI_PIPELINE_SOURCE") == "schedule"
+            and default_branch
+            and os.environ.get("CI_COMMIT_REF_NAME") == default_branch
+        ):
+            nightly = short_commit_from_env("CI_COMMIT_SHORT_SHA")
+
+        nightly = nightly or latest_published_nightly()
 
     if not stable:
         latest_tag = latest_version_tag(stable=True) or latest_version_tag(stable=False)
