@@ -5,9 +5,15 @@
 #define DTTR_VERSIONS_H
 
 #define DTTR_SDK_VERSION "@DTTR_VERSION@"
-// Increment by one when the SDK binary contract changes.
+// Increment for binary contract changes, including compatible additions.
+// Internal fixes do not change the ABI.
 #define DTTR_SDK_ABI_VERSION 1u
 // Oldest ABI still supported; raise to the current ABI after a breaking change.
 #define DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION 1u
+
+#if DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION < 1                                              \
+	|| DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION > DTTR_SDK_ABI_VERSION
+#error "Invalid SDK ABI version range"
+#endif
 
 #endif // DTTR_VERSIONS_H

@@ -1,6 +1,6 @@
 /// Mod DLL API for modules loaded from `mods/`.
 ///
-/// Mods must export `DTTR_Mod_Init` and `DTTR_Mod_Cleanup`;
+/// Mods must export `DTTR_Mod_ABIVersion`, `DTTR_Mod_Init`, and `DTTR_Mod_Cleanup`;
 /// optional callbacks can be exported to observe frame, window, graphics, input,
 /// event, and unload lifecycle events.
 
@@ -183,10 +183,14 @@ typedef struct {
 	DTTR_Mods_ConfigGetInputBindingFn config_get_input_binding;
 } DTTR_Mods_API;
 
-// ABI compatibility is enforced by the runtime loader.
+// The loader checks the ABI; accessors also check that the table contains the field.
 #define DTTR_MODS_API_ACCESSOR(ReturnType, FnName, field)                                \
 	static inline ReturnType FnName(const DTTR_Mods_API *api) {                          \
-		return api ? api->field : NULL;                                                  \
+		return api                                                                       \
+					   && api->struct_size                                               \
+							  >= offsetof(DTTR_Mods_API, field) + sizeof(api->field)     \
+				   ? api->field                                                          \
+				   : NULL;                                                               \
 	}
 
 DTTR_MODS_API_ACCESSOR(
@@ -487,6 +491,10 @@ typedef void (*DTTR_Mods_GameFrameAdvancedFn)();
 #define DTTR_MODS_CONFIG DTTR_EXPORT const DTTR_Mods_ConfigSpec *DTTR_Mod_Config()
 
 static inline bool DTTR_Mods_ABIVersionCompatible(uint32_t abi_version) {
+	// ABI 1 renamed the last datecode without changing its binary contract.
+	if (abi_version == 2026090502u) {
+		abi_version = 1u;
+	}
 	return abi_version >= DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION
 		   && abi_version <= DTTR_SDK_ABI_VERSION;
 }
