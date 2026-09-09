@@ -43,6 +43,7 @@ void dttr_mods_render_game(const DTTR_Mods_RenderGameContext *ctx);
 void dttr_mods_render(const DTTR_Mods_RenderContext *ctx);
 bool dttr_mods_handle_event(const SDL_Event *event);
 size_t dttr_mods_loaded_count();
+const char *dttr_mods_load_error();
 const char *dttr_mods_loaded_name(size_t index);
 const char *dttr_mods_loaded_version(size_t index);
 DWORD dttr_mods_loaded_elapsed_ms(size_t index);

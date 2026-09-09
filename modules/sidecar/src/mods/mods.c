@@ -23,10 +23,30 @@
 typedef kvec_t(loaded_mod) mod_vec;
 
 static mod_vec loaded_mods;
+static sds mod_load_error;
 static char mods_dir[MAX_PATH];
 static DWORD last_reload_scan_ms = 0;
 static unsigned long shadow_counter = 0;
 static uintptr_t hook_owner_counter = 0;
+
+static void record_failed_mod(const char *filename) {
+	if (!mod_load_error) {
+		mod_load_error = sdsempty();
+		if (!mod_load_error) {
+			return;
+		}
+	}
+
+	sds error = sdscatprintf(
+		mod_load_error,
+		"%s%s",
+		sdslen(mod_load_error) ? ", " : "Mod(s) failed to load (see logs for details): ",
+		filename
+	);
+	if (error) {
+		mod_load_error = error;
+	}
+}
 
 static DTTR_Mods_Context mod_context(const DTTR_Mods_Context *base_ctx) {
 	return (DTTR_Mods_Context){
@@ -569,15 +589,13 @@ static void load_mod(
 ) {
 	if (kv_size(loaded_mods) >= MODS_MAX) {
 		DTTR_LOG_WARN("Maximum mod count (%d) reached - skipping %s", MODS_MAX, filename);
+		record_failed_mod(filename);
 		return;
 	}
 
 	loaded_mod mod;
-	if (!prepare_mod(filename, source_path, source_file, &mod)) {
-		return;
-	}
-
-	if (!init_mod(&mod)) {
+	if (!prepare_mod(filename, source_path, source_file, &mod) || !init_mod(&mod)) {
+		record_failed_mod(filename);
 		return;
 	}
 
@@ -590,6 +608,7 @@ static bool reload_mod(int index, const char *source_path, const mod_file_id *so
 
 	loaded_mod new_mod;
 	if (!prepare_mod(old_mod->filename, source_path, source_file, &new_mod)) {
+		record_failed_mod(old_mod->filename);
 		return false;
 	}
 
@@ -597,6 +616,7 @@ static bool reload_mod(int index, const char *source_path, const mod_file_id *so
 	unload_mod(old_mod);
 
 	if (!init_mod(&new_mod)) {
+		record_failed_mod(new_mod.filename);
 		remove_mod_at(index);
 		return true;
 	}
@@ -652,6 +672,8 @@ static bool scan_mod_file(
 
 	sds source_path = NULL;
 	if (!make_mod_path(&source_path, find_data->cFileName)) {
+		DTTR_LOG_WARN("Failed to build mod path: %s", find_data->cFileName);
+		record_failed_mod(find_data->cFileName);
 		sdsfree(source_path);
 		return false;
 	}
@@ -682,6 +704,9 @@ static bool scan_mod_file(
 
 static void scan_mods(bool initial_scan) {
 	for (;;) {
+		if (mod_load_error) {
+			sdsclear(mod_load_error);
+		}
 		bool seen[MODS_MAX] = {0};
 
 		sds search_pattern = NULL;
@@ -1089,6 +1114,10 @@ size_t dttr_mods_loaded_count() {
 	return kv_size(loaded_mods);
 }
 
+const char *dttr_mods_load_error() {
+	return mod_load_error ? mod_load_error : "";
+}
+
 const char *dttr_mods_loaded_name(size_t index) {
 	if (index >= kv_size(loaded_mods)) {
 		return NULL;
@@ -1122,6 +1151,8 @@ void dttr_mods_cleanup() {
 	remove_all_mods(false);
 	kv_destroy(loaded_mods);
 	kv_init(loaded_mods);
+	sdsfree(mod_load_error);
+	mod_load_error = NULL;
 	mods_dir[0] = '\0';
 	last_reload_scan_ms = 0;
 }

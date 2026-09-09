@@ -22,6 +22,7 @@ static const float modding_badge_default_font_size = 13.0f;
 static const float modding_badge_line_advance_factor = 0.86f;
 static const float modding_badge_bold_offset = 0.5f;
 static const ImVec4_c modding_badge_header_color = {0.65f, 0.65f, 0.65f, 0.5f};
+static const ImVec4_c modding_badge_error_color = {1.0f, 0.25f, 0.25f, 1.0f};
 static const ImVec4_c modding_badge_seconds_color = {0.35f, 1.0f, 0.35f, 1.0f};
 static const ImVec4_c modding_badge_separator_color = {0.80f, 0.80f, 0.80f, 0.4f};
 static const float modding_badge_separator_pad = 2.0f;
@@ -459,12 +460,19 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 		rows_width = fmaxf(rows_width, row_width);
 	}
 
-	const float text_width = fmaxf(overlay_text_width(header), rows_width);
+	const char *load_error = dttr_mods_load_error();
+	const float text_width = fmaxf(
+		fmaxf(overlay_text_width(header), rows_width),
+		overlay_text_width(load_error)
+	);
 
 	igSetNextWindowContentSize((ImVec2_c){text_width, 0.0f});
 
 	if (igBegin("##modding_overlay", NULL, flags)) {
 		igTextColored(modding_badge_header_color, "%s", header);
+		if (load_error[0]) {
+			igTextColored(modding_badge_error_color, "%s", load_error);
+		}
 
 		for (size_t i = 0; i < loaded_count; i++) {
 			char seconds[32];
