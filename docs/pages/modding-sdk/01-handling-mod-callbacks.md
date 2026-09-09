@@ -38,18 +38,13 @@ Use `DTTR_MODS_CLEANUP` to undo anything your mod set up:
 
 The SDK ABI identifies the binary contract between a mod and DttR. It is separate from the DttR release version and the mod version.
 
-`DTTR_MODS_INIT` exports both `DTTR_Mod_ABIVersion()` and `DTTR_Mod_Init()`. The ABI export returns the `DTTR_SDK_ABI_VERSION` from the SDK used to compile the mod. `DTTR_MODS_CLEANUP` supplies the third required export, `DTTR_Mod_Cleanup()`.
+ABI versions start at `1`. Increment `DTTR_SDK_ABI_VERSION` by one when the binary contract changes. Keep `DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION` unchanged while older mods remain compatible; set it to the new ABI version after a breaking change.
 
-If you write the exports manually you should also provide `DTTR_Mod_ABIVersion()`.
+`DTTR_MODS_INIT` exports `DTTR_Mod_Init()` and `DTTR_Mod_ABIVersion()`, which returns the SDK's `DTTR_SDK_ABI_VERSION`. `DTTR_MODS_CLEANUP` exports `DTTR_Mod_Cleanup()`. Manual implementations must provide all three functions.
 
 ### Runtime Loader Checks
 
-The DttR runtime is responsible for ABI validation. Before initializing a mod, it checks that:
-
-- The mod DLL exports `DTTR_Mod_ABIVersion`, `DTTR_Mod_Init`, and `DTTR_Mod_Cleanup`.
-- Its ABI falls within the host’s accepted range, from `DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION` through `DTTR_SDK_ABI_VERSION`.
-
-Failed checks cause the DLL to be unloaded and skipped. The log identifies missing exports or reports the incompatible ABI and accepted range.
+Before initializing a mod, DttR checks for the required exports and an ABI within `DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION` through `DTTR_SDK_ABI_VERSION`, inclusive. Failed checks unload and skip the DLL; the log reports missing exports or the incompatible ABI and accepted range.
 
 ## Tick and Frame Updates
 

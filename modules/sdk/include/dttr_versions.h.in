@@ -5,7 +5,9 @@
 #define DTTR_VERSIONS_H
 
 #define DTTR_SDK_VERSION "@DTTR_VERSION@"
-#define DTTR_SDK_ABI_VERSION 2026090502u
-#define DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION 2026090502u
+// Increment by one when the SDK binary contract changes.
+#define DTTR_SDK_ABI_VERSION 1u
+// Oldest ABI still supported; raise to the current ABI after a breaking change.
+#define DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION 1u
 
 #endif // DTTR_VERSIONS_H
