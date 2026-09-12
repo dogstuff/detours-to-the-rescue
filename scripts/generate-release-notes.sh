@@ -39,7 +39,7 @@ read_abi_range() {
         if ($2 == "DTTR_SDK_ABI_VERSION") maximum = $3
       }
       END {
-        if (minimum != "" && maximum != "") printf "%s - %s", minimum, maximum
+        if (minimum != "" && maximum != "") printf "v%s - v%s", minimum, maximum
       }
     '
 }

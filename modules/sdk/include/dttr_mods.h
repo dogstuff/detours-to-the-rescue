@@ -491,7 +491,7 @@ typedef void (*DTTR_Mods_GameFrameAdvancedFn)();
 #define DTTR_MODS_CONFIG DTTR_EXPORT const DTTR_Mods_ConfigSpec *DTTR_Mod_Config()
 
 static inline bool DTTR_Mods_ABIVersionCompatible(uint32_t abi_version) {
-	// ABI 1 renamed the last datecode without changing its binary contract.
+	// ABI v1 renamed the last datecode without changing its binary contract.
 	if (abi_version == 2026090502u) {
 		abi_version = 1u;
 	}

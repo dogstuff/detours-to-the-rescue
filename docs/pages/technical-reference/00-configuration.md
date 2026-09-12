@@ -80,7 +80,7 @@ Set string fields to `null` to clear them. DttR treats unknown or mistyped scala
 }
 ```
 
-Modding builds show a translucent gray `Modding Build (ABI <version>)` label in the top left. Enable **Show Loaded Mods** in the config menu’s **Modding** tab (`modding.show_loaded_mods`) to display loaded mod names, versions, and time since loading beneath it. The list is hidden by default.
+Modding builds show a translucent gray `Modding Build (ABI v<version>)` label in the top left. Enable **Show Loaded Mods** in the config menu’s **Modding** tab (`modding.show_loaded_mods`) to display loaded mod names, versions, and time since loading beneath it. The list is hidden by default.
 
 ## Mod Configs (`modding.mod_configs`)
 

@@ -385,7 +385,8 @@ def sdk_abi_range_at_revision(revision: str) -> str:
         )
         if match is None:
             raise ValueError(f"{revision}:{header} missing {name}")
-        versions.append(match.group(1))
+
+        versions.append(f"v{match.group(1)}")
 
     return " - ".join(versions)
 

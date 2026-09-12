@@ -412,7 +412,7 @@ static bool prepare_mod(
 	const uint32_t abi_version = out->abi_version();
 	if (!DTTR_Mods_ABIVersionCompatible(abi_version)) {
 		DTTR_LOG_WARN(
-			"Mod %s uses incompatible SDK ABI %u (host accepts %u through %u) - skipping",
+			"Mod %s uses incompatible SDK ABI v%u (host accepts v%u through v%u) - skipping",
 			filename,
 			(unsigned)abi_version,
 			(unsigned)DTTR_SDK_MIN_COMPATIBLE_ABI_VERSION,

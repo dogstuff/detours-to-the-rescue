@@ -32,7 +32,7 @@ mods/
 
 ## ABI Compatibility
 
-Use mods built for your DttR SDK ABI. The top-left `Modding Build (ABI <version>)` label shows the running SDK's current ABI. The ABI version is separate from the DttR version.
+Use mods built for your DttR SDK ABI. The top-left `Modding Build (ABI v<version>)` label shows the running SDK's current ABI. The ABI version is separate from the DttR version.
 
 Enable **Show Loaded Mods** in the **Modding** tab to list mods that actually initialized.
 

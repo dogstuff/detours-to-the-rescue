@@ -439,7 +439,7 @@ static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	}
 
 	char header[64];
-	snprintf(header, sizeof(header), "Modding Build (ABI %u)", DTTR_SDK_ABI_VERSION);
+	snprintf(header, sizeof(header), "Modding Build (ABI v%u)", DTTR_SDK_ABI_VERSION);
 
 	const size_t loaded_count = dttr_config.show_loaded_mods ? dttr_mods_loaded_count()
 															 : 0;
