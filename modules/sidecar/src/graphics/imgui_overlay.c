@@ -388,15 +388,12 @@ static ImDrawData *render_game_frame(uint32_t w, uint32_t h) {
 	return igGetDrawData();
 }
 
-// Draws the small modding badge in game coordinates after mod UI has rendered.
+// Draws the small modding badge at the screen corner after mod UI has rendered.
 static void draw_modding_overlay(const DTTR_Mods_RenderContext *ctx) {
 	const float game_scale = ctx->scale > 0.0f ? ctx->scale : 1.0f;
 	const float desktop_scale = DTTR_ImGui_GetCurrentDesktopScale(&imgui_scale);
 	const float margin = 4.0f * game_scale;
-	const ImVec2_c pos = {
-		(float)ctx->game_x + margin,
-		(float)ctx->game_y + margin,
-	};
+	const ImVec2_c pos = {margin, margin};
 
 	const ImVec2_c pivot = {0.0f, 0.0f};
 
