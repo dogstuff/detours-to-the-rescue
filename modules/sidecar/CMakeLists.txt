@@ -160,6 +160,8 @@ add_library(dttr_sidecar SHARED
     ${DTTR_MSS_SOURCES}
 
     src/game/hooks.c
+    src/game/frame_pacing.c
+    src/game/host_pacing.c
     src/game_data.c
     src/game/hook_crt_open_file.c
     src/game/hook_cleanup_title_resources.c
@@ -205,7 +207,6 @@ target_link_libraries(dttr_sidecar PRIVATE
 if(DTTR_MODS_ENABLED)
     target_sources(dttr_sidecar PRIVATE
         src/timing.c
-        src/game/frame_pacing.c
         src/mods/mods.c
         src/graphics/imgui_overlay.c
     )

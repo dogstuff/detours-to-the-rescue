@@ -14,6 +14,8 @@
 #include "crash_private.h"
 #include "events_private.h"
 #include "game/hooks_private.h"
+#include "game/frame_pacing_private.h"
+#include "game/host_pacing.h"
 #include "game_data_private.h"
 #include "graphics/graphics_private.h"
 #include "graphics/hooks_private.h"
@@ -25,14 +27,11 @@
 #include "timing_private.h"
 
 #ifdef DTTR_MODS_ENABLED
-#include "game/frame_pacing_private.h"
 #include "graphics/imgui_overlay_private.h"
 #include "mods/mods_private.h"
 #endif
 
-#define DTTR_NS_PER_SECOND 1000000000ull
-
-static uint64_t next_tick_deadline_ns;
+static dttr_host_pacing host_pacing;
 static bool update_rate_limiter_cap_warned;
 
 static int effective_update_rate_limiter_cap() {
@@ -51,35 +50,16 @@ static int effective_update_rate_limiter_cap() {
 	return cap;
 }
 
-static void pace_host_tick() {
-	const int cap = effective_update_rate_limiter_cap();
-	if (cap <= 0) {
-		next_tick_deadline_ns = 0;
-		SDL_DelayNS(1);
-
-		return;
-	}
-
-	const uint64_t step_ns = DTTR_NS_PER_SECOND / (uint64_t)cap;
-	if (step_ns == 0) {
-		return;
-	}
-
+static uint64_t pace_host_tick(int cap, bool fixed_policy, bool steady_scene) {
 	uint64_t now = SDL_GetTicksNS();
-	if (next_tick_deadline_ns == 0 || now > next_tick_deadline_ns + (step_ns * 2)) {
-		next_tick_deadline_ns = now + step_ns;
-		return;
-	}
-
-	if (now < next_tick_deadline_ns) {
-		SDL_DelayNS(next_tick_deadline_ns - now);
+	const uint64_t wait = dttr_host_pacing_wait_ns(
+		&host_pacing, now, cap, fixed_policy, steady_scene
+	);
+	if (wait > 0) {
+		SDL_DelayPrecise(wait);
 		now = SDL_GetTicksNS();
 	}
-
-	next_tick_deadline_ns += step_ns;
-	if (next_tick_deadline_ns < now) {
-		next_tick_deadline_ns = now + step_ns;
-	}
+	return now;
 }
 
 // Initializes subsystems that own required hooks. The order mirrors
@@ -101,6 +81,7 @@ bool dttr_bootstrap_install_required_hooks(const DTTR_Mods_Context *ctx) {
 
 // Releases modding runtime hooks and mod state before graphics and audio shutdown.
 void dttr_bootstrap_cleanup_runtime(const DTTR_Mods_Context *ctx) {
+	host_pacing = (dttr_host_pacing){0};
 	dttr_pcdogs_crash_symbols_clear();
 	dttr_game_data_cleanup();
 
@@ -163,11 +144,23 @@ bool dttr_bootstrap_start_pcdogs_runtime(const DTTR_Core_Context *ctx, HWND hwnd
 // Runs per-frame sidecar systems before yielding back to the original game loop.
 bool dttr_bootstrap_tick_main_loop() {
 	if (dttr_movies_is_playing()) {
+		host_pacing = (dttr_host_pacing){0};
+		dttr_sidecar_poll_sdl_events();
 		dttr_movies_tick();
 		return true;
 	}
 
-	pace_host_tick();
+	const int cap = effective_update_rate_limiter_cap();
+	bool fixed_policy = false;
+#ifdef DTTR_MODS_ENABLED
+	fixed_policy = dttr_timing_fixed_policy_active();
+#endif
+	const uint64_t tick_start = pace_host_tick(
+		cap, fixed_policy, dttr_game_scene_is_steady()
+	);
+	// Sample input after waiting so simulation sees the latest device state.
+	dttr_sidecar_poll_sdl_events();
+	const bool steady_scene = dttr_game_scene_is_steady();
 
 	int32_t rendering_enabled = 0;
 	if (!REQUIRE_PCDOGS_CALL(
@@ -176,53 +169,83 @@ bool dttr_bootstrap_tick_main_loop() {
 		return false;
 	}
 
+	bool advanced = false;
+	bool progress_available = true;
 	if (rendering_enabled) {
 #ifdef DTTR_MODS_ENABLED
-		dttr_timing_host_frame_begin();
+		dttr_timing_host_frame_begin(!steady_scene);
+		fixed_policy = dttr_timing_fixed_policy_active();
 
-		bool ran_simulation_step = false;
 		while (dttr_timing_should_run_simulation_step()) {
 			dttr_timing_before_simulation_step();
 			dttr_game_neutralize_frame_limiter(dttr_sidecar_runtime_context());
 
+			dttr_game_frame_progress before, after;
+			progress_available = dttr_game_frame_progress_read(&before);
 			uint8_t frame_status = 0;
-			const bool rendered = REQUIRE_PCDOGS_CALL(
-				DTTR_PCDOGS_F_Graphics_RenderFrame
-					->Call(dttr_sidecar_runtime_context(), &frame_status)
-			);
-			if (!rendered) {
-				dttr_timing_after_simulation_step();
+			if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
+					dttr_sidecar_runtime_context(), &frame_status
+				))) {
+				dttr_timing_cancel_simulation_step();
 				dttr_timing_host_frame_end();
 				return false;
 			}
+			progress_available = progress_available && dttr_game_frame_progress_read(&after);
+			if (!progress_available) {
+				// Optional timing symbols must never prevent the original game loop
+				// from progressing, including loading and unsupported game builds.
+				dttr_timing_cancel_simulation_step();
+				dttr_timing_use_native_policy();
+				fixed_policy = false;
+				break;
+			}
 
+			if (!dttr_game_frame_advanced(&before, &after)) {
+				dttr_timing_cancel_simulation_step();
+				break;
+			}
 			dttr_timing_after_simulation_step();
 			dttr_mods_game_frame_advanced();
-			ran_simulation_step = true;
+			advanced = true;
+			// A step may initiate loading. Resume unrestricted host ticks instead
+			// of consuming the remaining gameplay catch-up budget.
+			if (!dttr_game_scene_is_steady()) {
+				break;
+			}
 		}
 
 		if (dttr_timing_has_deferred_simulation_step()) {
 			dttr_timing_simulation_step_deferred();
 		}
 
-		if (!ran_simulation_step && dttr_game_render_only_scene_replay()) {
+		if (!advanced && dttr_game_render_only_scene_replay()) {
 			dttr_graphics_begin_frame();
 			dttr_graphics_end_frame();
 		}
-
 		dttr_timing_host_frame_end();
-
 #else
+		const bool track_progress = cap > 0 && cap <= 30 && steady_scene;
+		dttr_game_frame_progress before, after;
+		if (track_progress) {
+			progress_available = dttr_game_frame_progress_read(&before);
+		}
 		uint8_t frame_status = 0;
 		if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
-				dttr_sidecar_runtime_context(),
-				&frame_status
+				dttr_sidecar_runtime_context(), &frame_status
 			))) {
 			return false;
+		}
+		if (track_progress && progress_available) {
+			progress_available = dttr_game_frame_progress_read(&after);
+			advanced = progress_available && dttr_game_frame_advanced(&before, &after);
 		}
 #endif
 	}
 
+	dttr_host_pacing_complete(
+		&host_pacing, tick_start, cap, fixed_policy,
+		rendering_enabled && progress_available && dttr_game_scene_is_steady(), advanced
+	);
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_tick();
 #endif
@@ -257,7 +280,6 @@ dttr_startup_movies_result dttr_bootstrap_attempt_play_startup_movies() {
 		sdsfree(path);
 
 		while (dttr_movies_is_playing()) {
-			dttr_sidecar_poll_sdl_events();
 			if (!dttr_bootstrap_tick_main_loop()) {
 				dttr_movies_stop();
 				return DTTR_STARTUP_MOVIES_FAILED;

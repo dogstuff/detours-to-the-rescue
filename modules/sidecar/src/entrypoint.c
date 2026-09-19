@@ -301,7 +301,6 @@ int32_t _stdcall DTTR_Hook_WinMainCallback(
 			break;
 		}
 
-		dttr_sidecar_poll_sdl_events();
 		if (!dttr_bootstrap_tick_main_loop()) {
 			exit_code = 1;
 			break;

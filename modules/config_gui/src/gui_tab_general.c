@@ -32,13 +32,12 @@ static const char *TOOLTIP_SKIP_INTRO_MOVIES = "Skip Intro Movies at launch. Def
 											   "false.";
 static const char *TOOLTIP_PREVENT_TITLE_EXIT = "Prevents Escape from closing the game "
 												"on the title screen. Default: true.";
-static const char
-	*TOOLTIP_UPDATE_RATE_LIMITER = "Caps the host update rate to reduce CPU/GPU "
-								   "pressure. Default: false.";
-static const char
-	*TOOLTIP_UPDATE_RATE_LIMITER_CAP = "Maximum host update rate per second "
-									   "when Update Rate Limiter is enabled. Valid "
-									   "range: 1-999. Default: 120.";
+static const char *TOOLTIP_UPDATE_RATE_LIMITER
+	= "Limits gameplay updates. Loading and transitions stay uncapped. "
+	  "Native timing keeps its own approximately 30 Hz ceiling. Default: false.";
+static const char *TOOLTIP_UPDATE_RATE_LIMITER_CAP
+	= "Maximum steady gameplay update rate, or host frame rate with a fixed-timing "
+	  "mod. Loading stays uncapped. Valid range: 1-999. Default: 120.";
 
 void draw_general_tab(const DTTR_ImGuiDialogContext *ctx, config_ui_state *state) {
 	if (!begin_tab_settings_table(

@@ -15,6 +15,7 @@ typedef struct {
 	bool policy_selected;
 	bool fixed_timing;
 	bool first_host_frame;
+	bool unrestricted_host_frame;
 	bool sim_step_in_progress;
 	bool render_reuses_previous_sim_state;
 	bool render_frame_pending_advance;
@@ -141,13 +142,27 @@ bool dttr_timing_fixed_policy_active() {
 	return timing.fixed_timing;
 }
 
+void dttr_timing_use_native_policy() {
+	select_policy_once();
+
+	if (timing.fixed_timing) {
+		DTTR_LOG_WARN("Frame progress unavailable; falling back to native timing");
+	}
+
+	timing.fixed_timing = false;
+	timing.policy.mode = DTTR_MODS_TIMING_NATIVE;
+	timing.accumulator_ns = 0;
+}
+
 bool dttr_timing_render_reuses_previous_sim_state() {
 	return timing.fixed_timing && timing.sim_steps_ran_this_host_frame == 0
 		   && !timing.sim_step_in_progress;
 }
 
-void dttr_timing_host_frame_begin() {
+void dttr_timing_host_frame_begin(bool unrestricted) {
 	select_policy_once();
+	const bool entering_scene = timing.unrestricted_host_frame && !unrestricted;
+	timing.unrestricted_host_frame = unrestricted;
 
 	const uint64_t now_ns = monotonic_time_ns();
 	if (timing.first_host_frame) {
@@ -174,7 +189,14 @@ void dttr_timing_host_frame_begin() {
 	timing.sim_steps_ran_this_host_frame = 0;
 	timing.sim_steps_deferred_this_host_frame = 0;
 
-	if (timing.fixed_timing) {
+	if (unrestricted) {
+		timing.accumulator_ns = 0;
+		timing.sim_steps_due = 1;
+	} else if (timing.fixed_timing) {
+		if (entering_scene) {
+			timing.accumulator_ns = timing.sim_step_ns;
+			timing.host_delta_ns = 0;
+		}
 		timing.accumulator_ns += timing.host_delta_ns;
 		if (timing.accumulator_ns > timing.policy.max_accumulator_debt_ns) {
 			timing.accumulator_ns = timing.policy.max_accumulator_debt_ns;
@@ -219,7 +241,9 @@ void dttr_timing_after_simulation_step() {
 	timing.sim_step_in_progress = false;
 	timing.sim_steps_ran_this_host_frame++;
 	timing.simulation_tick_index++;
-	if (timing.fixed_timing && timing.accumulator_ns >= timing.sim_step_ns) {
+
+	if (timing.fixed_timing && !timing.unrestricted_host_frame
+		&& timing.accumulator_ns >= timing.sim_step_ns) {
 		timing.accumulator_ns -= timing.sim_step_ns;
 	}
 
@@ -228,8 +252,13 @@ void dttr_timing_after_simulation_step() {
 	dttr_mods_timing_after_simulation_step(&frame_state);
 }
 
+void dttr_timing_cancel_simulation_step() {
+	timing.sim_step_in_progress = false;
+}
+
 bool dttr_timing_has_deferred_simulation_step() {
-	return timing.sim_steps_due > timing.sim_steps_ran_this_host_frame;
+	return timing.fixed_timing && !timing.unrestricted_host_frame
+		   && timing.sim_steps_due > timing.sim_steps_ran_this_host_frame;
 }
 
 void dttr_timing_simulation_step_deferred() {
