@@ -1,7 +1,10 @@
 #include "host_pacing.h"
 
 static bool prepare(
-	dttr_host_pacing *state, int cap, bool fixed_policy, bool steady_scene
+	dttr_host_pacing *state,
+	int cap,
+	bool fixed_policy,
+	bool steady_scene
 ) {
 	if (!state) {
 		return false;
@@ -19,7 +22,11 @@ static bool prepare(
 }
 
 uint64_t dttr_host_pacing_wait_ns(
-	dttr_host_pacing *state, uint64_t now, int cap, bool fixed_policy, bool steady_scene
+	dttr_host_pacing *state,
+	uint64_t now,
+	int cap,
+	bool fixed_policy,
+	bool steady_scene
 ) {
 	if (!prepare(state, cap, fixed_policy, steady_scene)) {
 		return 0;
@@ -35,11 +42,12 @@ void dttr_host_pacing_complete(
 	bool steady_scene,
 	bool advanced
 ) {
-	if (!prepare(state, cap, fixed_policy, steady_scene) || (!fixed_policy && !advanced)) {
+	if (!prepare(state, cap, fixed_policy, steady_scene)
+		|| (!fixed_policy && !advanced)) {
 		return;
 	}
 	const uint64_t step_ns = 1000000000ull / (uint64_t)cap;
 	state->next_deadline_ns = tick_start_ns > UINT64_MAX - step_ns
-		? UINT64_MAX
-		: tick_start_ns + step_ns;
+								  ? UINT64_MAX
+								  : tick_start_ns + step_ns;
 }

@@ -38,7 +38,9 @@ bool dttr_game_frame_progress_read(dttr_game_frame_progress *out) {
 	}
 
 	dttr_game_frame_progress progress;
-	if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Game_FrameTransitionFlags->Read(&progress.flags))
+	if (!REQUIRE_PCDOGS_CALL(
+			DTTR_PCDOGS_D_Game_FrameTransitionFlags->Read(&progress.flags)
+		)
 		|| !REQUIRE_PCDOGS_CALL(
 			DTTR_PCDOGS_D_Graphics_RenderFrame_LastFrameTick->Read(&progress.last_tick)
 		)) {

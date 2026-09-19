@@ -11,7 +11,11 @@ typedef struct {
 } dttr_host_pacing;
 
 uint64_t dttr_host_pacing_wait_ns(
-	dttr_host_pacing *state, uint64_t now, int cap, bool fixed_policy, bool steady_scene
+	dttr_host_pacing *state,
+	uint64_t now,
+	int cap,
+	bool fixed_policy,
+	bool steady_scene
 );
 void dttr_host_pacing_complete(
 	dttr_host_pacing *state,

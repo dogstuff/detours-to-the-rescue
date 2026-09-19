@@ -13,8 +13,8 @@
 #include "context_private.h"
 #include "crash_private.h"
 #include "events_private.h"
-#include "game/hooks_private.h"
 #include "game/frame_pacing_private.h"
+#include "game/hooks_private.h"
 #include "game/host_pacing.h"
 #include "game_data_private.h"
 #include "graphics/graphics_private.h"
@@ -53,7 +53,11 @@ static int effective_update_rate_limiter_cap() {
 static uint64_t pace_host_tick(int cap, bool fixed_policy, bool steady_scene) {
 	uint64_t now = SDL_GetTicksNS();
 	const uint64_t wait = dttr_host_pacing_wait_ns(
-		&host_pacing, now, cap, fixed_policy, steady_scene
+		&host_pacing,
+		now,
+		cap,
+		fixed_policy,
+		steady_scene
 	);
 	if (wait > 0) {
 		SDL_DelayPrecise(wait);
@@ -156,7 +160,9 @@ bool dttr_bootstrap_tick_main_loop() {
 	fixed_policy = dttr_timing_fixed_policy_active();
 #endif
 	const uint64_t tick_start = pace_host_tick(
-		cap, fixed_policy, dttr_game_scene_is_steady()
+		cap,
+		fixed_policy,
+		dttr_game_scene_is_steady()
 	);
 	// Sample input after waiting so simulation sees the latest device state.
 	dttr_sidecar_poll_sdl_events();
@@ -184,13 +190,15 @@ bool dttr_bootstrap_tick_main_loop() {
 			progress_available = dttr_game_frame_progress_read(&before);
 			uint8_t frame_status = 0;
 			if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
-					dttr_sidecar_runtime_context(), &frame_status
+					dttr_sidecar_runtime_context(),
+					&frame_status
 				))) {
 				dttr_timing_cancel_simulation_step();
 				dttr_timing_host_frame_end();
 				return false;
 			}
-			progress_available = progress_available && dttr_game_frame_progress_read(&after);
+			progress_available = progress_available
+								 && dttr_game_frame_progress_read(&after);
 			if (!progress_available) {
 				// Optional timing symbols must never prevent the original game loop
 				// from progressing, including loading and unsupported game builds.
@@ -231,7 +239,8 @@ bool dttr_bootstrap_tick_main_loop() {
 		}
 		uint8_t frame_status = 0;
 		if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_F_Graphics_RenderFrame->Call(
-				dttr_sidecar_runtime_context(), &frame_status
+				dttr_sidecar_runtime_context(),
+				&frame_status
 			))) {
 			return false;
 		}
@@ -243,8 +252,12 @@ bool dttr_bootstrap_tick_main_loop() {
 	}
 
 	dttr_host_pacing_complete(
-		&host_pacing, tick_start, cap, fixed_policy,
-		rendering_enabled && progress_available && dttr_game_scene_is_steady(), advanced
+		&host_pacing,
+		tick_start,
+		cap,
+		fixed_policy,
+		rendering_enabled && progress_available && dttr_game_scene_is_steady(),
+		advanced
 	);
 #ifdef DTTR_MODS_ENABLED
 	dttr_mods_tick();

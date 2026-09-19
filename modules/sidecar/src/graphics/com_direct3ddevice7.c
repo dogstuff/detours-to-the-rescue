@@ -192,16 +192,6 @@ static void d3d_device7_record_clear(
 	kv_push(DTTR_BatchRecord, state->batch_records, clear_rec);
 }
 
-static DTTR_PrimitiveType d3d_device7_uploaded_primitive_type(DTTR_PrimitiveType type) {
-	switch (type) {
-	case DTTR_PRIM_TRIANGLESTRIP:
-	case DTTR_PRIM_TRIANGLEFAN:
-		return DTTR_PRIM_TRIANGLELIST;
-	default:
-		return type;
-	}
-}
-
 static uint32_t d3d_device7_expanded_primitive_count(
 	DTTR_PrimitiveType type,
 	uint32_t count
@@ -262,18 +252,10 @@ static void d3d_device7_record_draw(
 	if (count > DTTR_MAX_FRAME_VERTICES)
 		count = DTTR_MAX_FRAME_VERTICES;
 
-	const DTTR_PrimitiveType upload_type = d3d_device7_uploaded_primitive_type(type);
 	const uint32_t upload_count = d3d_device7_expanded_primitive_count(type, count);
 	if (upload_count == 0) {
 		return;
 	}
-
-	const bool fill_mesh_seams = dttr_graphics_should_fill_mesh_seams(
-		upload_type,
-		transformed,
-		state->depth_test,
-		state->blend_enabled
-	);
 
 	if (!state->transfer_mapped)
 		return;
@@ -291,17 +273,6 @@ static void d3d_device7_record_draw(
 												+ state->vertex_offset
 													  * DTTR_VERTEX_SIZE);
 	d3d_device7_copy_or_expand_primitive(&type, verts, count, upload_verts);
-
-	if (fill_mesh_seams) {
-		dttr_graphics_fill_mesh_seams(
-			upload_verts,
-			upload_count,
-			state->logical_width,
-			state->logical_height,
-			state->width,
-			state->height
-		);
-	}
 
 	DTTR_BatchRecord draw_rec = {0};
 	draw_rec.type = DTTR_BATCH_DRAW;
