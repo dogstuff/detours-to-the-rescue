@@ -125,7 +125,7 @@ void dttr_inputs_hook_mapping_reset();
 // Captures custom SDL button bindings.
 extern DTTR_PCDOGS_F_Input_RegisterButtonMapping_proto
 	dttr_inputs_hook_register_button_mapping_original;
-int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
+void __cdecl dttr_inputs_hook_register_button_mapping_callback(
 	int32_t control_code,
 	uint32_t button_mask
 );

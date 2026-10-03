@@ -154,19 +154,19 @@ void __cdecl dttr_inputs_hook_initialize_button_mappings_callback() {
 	}
 }
 
-int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
+void __cdecl dttr_inputs_hook_register_button_mapping_callback(
 	int32_t control_code,
 	uint32_t button_mask
 ) {
 	if (is_switch_puppies_native_mask_collision(control_code, button_mask)) {
-		return 0;
+		return;
 	}
 
 	const DTTR_Input_KeyCodeKind kind = dttr_inputs_key_code_kind(control_code);
 	if (kind == DTTR_INPUTS_KEY_CODE_SDL_GAMEPAD) {
 		const int button = dttr_inputs_key_code_sdl_button(control_code);
 		custom_sdl_button_masks[button] |= button_mask;
-		return 0;
+		return;
 	}
 
 	if (kind == DTTR_INPUTS_KEY_CODE_NONE
@@ -176,15 +176,12 @@ int32_t __cdecl dttr_inputs_hook_register_button_mapping_callback(
 			control_code,
 			button_mask
 		);
-		return 0;
+		return;
 	}
 
-	return dttr_inputs_hook_register_button_mapping_original
-			   ? dttr_inputs_hook_register_button_mapping_original(
-					 control_code,
-					 button_mask
-				 )
-			   : 0;
+	if (dttr_inputs_hook_register_button_mapping_original) {
+		dttr_inputs_hook_register_button_mapping_original(control_code, button_mask);
+	}
 }
 
 static void register_switch_puppies_controller_override() {

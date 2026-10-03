@@ -93,8 +93,8 @@ static inline bool DTTR_Util_GameDraw_Viewport(
 	*out = (DTTR_PCDOGS_T_Math_RectI32){
 		.x = (int32_t)vp.dwX,
 		.y = (int32_t)vp.dwY,
-		.w = vp.dwWidth,
-		.h = vp.dwHeight,
+		.w = (int32_t)vp.dwWidth,
+		.h = (int32_t)vp.dwHeight,
 	};
 	return true;
 }
@@ -197,13 +197,17 @@ static inline bool DTTR_Util_WorldView_RefreshFromDraw(
 	uint32_t fallback_w,
 	uint32_t fallback_h
 ) {
-	DTTR_PCDOGS_T_Math_RectI32 target = {
-		.x = 0,
-		.y = 0,
-		.w = fallback_w,
-		.h = fallback_h,
-	};
-	DTTR_Util_GameDraw_Viewport(draw, &target);
+	DTTR_PCDOGS_T_Math_RectI32 target = {0};
+	if (!DTTR_Util_GameDraw_Viewport(draw, &target)) {
+		if (fallback_w > INT32_MAX || fallback_h > INT32_MAX) {
+			if (view) {
+				view->valid = false;
+			}
+			return false;
+		}
+		target.w = (int32_t)fallback_w;
+		target.h = (int32_t)fallback_h;
+	}
 	return DTTR_Util_WorldView_Refresh(view, &target);
 }
 

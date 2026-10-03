@@ -23,14 +23,13 @@ static uint16_t sdl_rumble_high_frequency;
 static uint32_t sdl_rumble_duration_ms;
 static bool pressed_gamepad_buttons[SDL_GAMEPAD_BUTTON_COUNT];
 
-static int32_t __cdecl register_button_mapping_original_stub(
+static void __cdecl register_button_mapping_original_stub(
 	int32_t control_code,
 	uint32_t button_mask
 ) {
 	register_original_calls++;
 	register_original_code = control_code;
 	register_original_mask = button_mask;
-	return 123;
 }
 
 static void __cdecl set_rumble_suppress_original_stub(uint8_t suppress_rumble) {
@@ -286,14 +285,8 @@ static void custom_sdl_button_mappings_apply_direct_masks(void **) {
 	dttr_inputs_custom_button_mappings_clear();
 
 	const int32_t sdl_button = sdl_button_code(SDL_GAMEPAD_BUTTON_SOUTH);
-	assert_int_equal(
-		dttr_inputs_hook_register_button_mapping_callback(sdl_button, 0x80),
-		0
-	);
-	assert_int_equal(
-		dttr_inputs_hook_register_button_mapping_callback(sdl_button, 0x400),
-		0
-	);
+	dttr_inputs_hook_register_button_mapping_callback(sdl_button, 0x80);
+	dttr_inputs_hook_register_button_mapping_callback(sdl_button, 0x400);
 	assert_int_equal(register_original_calls, 0);
 	assert_int_equal(
 		dttr_inputs_custom_button_mapping_mask(SDL_GAMEPAD_BUTTON_SOUTH),
@@ -319,7 +312,7 @@ static void custom_sdl_button_mappings_apply_direct_masks(void **) {
 		0x8000
 	);
 
-	assert_int_equal(dttr_inputs_hook_register_button_mapping_callback('A', 0x10), 123);
+	dttr_inputs_hook_register_button_mapping_callback('A', 0x10);
 	assert_int_equal(register_original_calls, 1);
 	assert_int_equal(register_original_code, 'A');
 	assert_int_equal(register_original_mask, 0x10);

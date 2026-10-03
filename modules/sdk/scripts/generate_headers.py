@@ -1085,6 +1085,17 @@ def c_data_ptr_decl(value: object, declarator: str) -> str:
     return f"{base} (*{declarator})[{count}]"
 
 
+def c_data_read_param(value: object, name: str) -> str:
+    """Copy const storage into a mutable output, preserving pointee qualifiers."""
+
+    text = c_type(value)
+    split = text.rfind("*") + 1
+    output_type = (
+        text[:split] + re.sub(r"\b(?:const|volatile)\b", "", text[split:]).strip()
+    )
+    return c_data_ptr_decl(output_type, name)
+
+
 def c_data_write_param(value: object, name: str) -> str:
     """Declare the input parameter for generated data Write/UnsafeWrite accessors."""
 
@@ -1093,7 +1104,9 @@ def c_data_write_param(value: object, name: str) -> str:
         return f"{c_type(value)} {name}"
 
     base, count = parts
-    return f"const {base} (*{name})[{count}]"
+    if not re.search(r"\bconst\b", base[base.rfind("*") + 1 :]):
+        base = f"{base} const"
+    return f"{base} (*{name})[{count}]"
 
 
 def c_data_ptr_cast(value: object) -> str:
@@ -1785,7 +1798,7 @@ def header_context(blueprint: BlueprintRows) -> HeaderContext:
         c_data_ptr_decl=lambda value, declarator: c_data_ptr_decl(
             local_c_type(value), declarator
         ),
-        c_data_read_param=lambda value, name: c_data_ptr_decl(
+        c_data_read_param=lambda value, name: c_data_read_param(
             local_c_type(value), name
         ),
         c_data_write_param=lambda value, name: c_data_write_param(
