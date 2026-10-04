@@ -23,6 +23,16 @@ typedef struct {
 	uint32_t stack_param_bytes;
 } blueprint_function;
 
+typedef struct {
+	const char *name;
+	uint32_t data_index;
+	uint32_t function_index;
+	uint32_t instr_off;
+	uint32_t addr_off;
+	uint32_t indirections;
+	DTTR_TestFixtureMask required;
+} blueprint_data_xref;
+
 #include "pcdogs_blueprint_test_rows.h"
 
 #define SIGNATURE_COUNT (sizeof(DTTR_PCDOGS_SIGNATURES) / sizeof(*DTTR_PCDOGS_SIGNATURES))
@@ -330,8 +340,113 @@ static void test_blueprint_functions_resolve_and_match_abi(void **state) {
 	assert_true(pcdogs_for_each_fixture(assert_blueprint_functions_for_fixture, NULL));
 }
 
+// Check every declared reference, including alternatives hidden by first-match selection.
+static bool assert_global_xrefs_for_fixture(
+	size_t fixture_index,
+	const DTTR_TestBinaryFixture *fixture,
+	const char *path,
+	const DTTR_TestPEImage *image,
+	void *userdata
+) {
+	uintptr_t functions[FUNCTION_COUNT] = {0};
+	uint32_t targets[BLUEPRINT_DATA_COUNT] = {0};
+
+	const IMAGE_DOS_HEADER *dos = (const IMAGE_DOS_HEADER *)image->image;
+	const IMAGE_NT_HEADERS32 *nt = (const IMAGE_NT_HEADERS32 *)(image->image
+																+ dos->e_lfanew);
+	const uint32_t base = nt->OptionalHeader.ImageBase;
+
+	for (size_t i = 0; i < DTTR_ARRAY_COUNT(DTTR_PCDOGS_DATA_XREFS); ++i) {
+		const blueprint_data_xref *ref = &DTTR_PCDOGS_DATA_XREFS[i];
+
+		if (!dttr_test_fixture_required(ref->required, fixture_index)) {
+			continue;
+		}
+
+		const blueprint_function *fn = &DTTR_PCDOGS_FUNCTIONS[ref->function_index];
+
+		if (!functions[ref->function_index]) {
+			functions[ref->function_index] = blueprint_function_site(fixture, fn, image);
+		}
+
+		const uintptr_t entry = functions[ref->function_index];
+		const uintptr_t site = entry + ref->instr_off;
+		uintptr_t cursor = entry;
+		DTTR_TestDecodedInstruction decoded = {0};
+
+		while (cursor < site) {
+			assert_true(dttr_test_zydis_decode32_at(image, cursor, &decoded));
+			cursor += decoded.instruction.length;
+		}
+
+		if (cursor != site || !dttr_test_zydis_decode32_at(image, site, &decoded)) {
+			fail_msg("%s %s xref is not an instruction boundary", fixture->id, ref->name);
+		}
+
+		bool operand = decoded.instruction.raw.disp.size == 32
+					   && decoded.instruction.raw.disp.offset == ref->addr_off;
+
+		for (unsigned j = 0; j < 2; ++j) {
+			operand |= decoded.instruction.raw.imm[j].size == 32
+					   && !decoded.instruction.raw.imm[j].is_relative
+					   && decoded.instruction.raw.imm[j].offset == ref->addr_off;
+		}
+
+		if (!operand) {
+			fail_msg(
+				"%s %s xref does not select an absolute 32-bit operand",
+				fixture->id,
+				ref->name
+			);
+		}
+
+		assert_true(
+			dttr_test_signed_range_valid(site, ref->addr_off, 4, image->image_size)
+		);
+
+		uint32_t target = 0;
+		memcpy(&target, image->image + site + ref->addr_off, 4);
+
+		for (uint32_t j = 0; j < ref->indirections; ++j) {
+			assert_true(
+				target >= base && (size_t)(target - base) <= image->image_size - 4
+			);
+			memcpy(&target, image->image + target - base, 4);
+		}
+
+		if (target < base || (size_t)(target - base) >= image->image_size) {
+			fail_msg(
+				"%s %s xref points outside module: 0x%08X",
+				fixture->id,
+				ref->name,
+				target
+			);
+		}
+
+		if (targets[ref->data_index] && targets[ref->data_index] != target) {
+			fail_msg(
+				"%s %s xrefs disagree: 0x%08X / 0x%08X",
+				fixture->id,
+				ref->name,
+				targets[ref->data_index],
+				target
+			);
+		}
+
+		targets[ref->data_index] = target;
+	}
+
+	return true;
+}
+
+static void test_global_xrefs_select_consistent_objects(void **state) {
+	dttr_test_require_available(pcdogs_fixtures_available());
+	assert_true(pcdogs_for_each_fixture(assert_global_xrefs_for_fixture, NULL));
+}
+
 static const DTTR_TestCase TEST_CASES[] = {
 	{"signatures", test_expected_pcdogs_signatures_resolve},
+	{"global-xrefs", test_global_xrefs_select_consistent_objects},
 	{"blueprint-functions", test_blueprint_functions_resolve_and_match_abi},
 };
 

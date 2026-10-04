@@ -301,6 +301,7 @@ class TypedFunctionRow:
     try_args: str
     signature: str
     delta: str
+    reuse_symbol_address: bool
     hook_kind: str
     hook_prologue_size: str
     callable: str
@@ -673,9 +674,7 @@ def attach_symbol_metadata(blueprint: BlueprintRows) -> None:
         row.ref_function_symbol = function_symbol(row.ref_function)
 
     function_required = {row.name: row.required for row in blueprint.functions}
-    globals_with_xrefs, xref_functions_by_global = _global_xref_support_rows(
-        blueprint.xrefs
-    )
+
     for row in blueprint.xrefs:
         row.global_symbol = global_symbol_ids[row.global_name]
         row.function_symbol = function_symbol(row.function)
@@ -691,53 +690,23 @@ def attach_symbol_metadata(blueprint: BlueprintRows) -> None:
 
     for public_data_index, row in enumerate(blueprint.globals):
         row.public_index = public_data_index
-        row.supported_builds = _global_supported_builds(
-            row,
-            function_required,
-            globals_with_xrefs,
-            xref_functions_by_global,
-        )
 
+        bits = 0
 
-def _runtime_required(row: object) -> bool:
-    return str(row.required) == "all"
+        for ref in blueprint.xrefs:
+            if ref.global_name == row.name:
+                bits |= build_mask_bits(ref.required) & build_mask_bits(
+                    function_required.get(ref.function, [])
+                )
 
+        if row.typed:
+            bits |= build_mask_bits(row.typed.required) & build_mask_bits(
+                function_required.get(row.typed.ref_function, [])
+            )
 
-def _global_xref_support_rows(
-    xrefs: list[XRefRow],
-) -> tuple[set[str], dict[str, list[str]]]:
-    globals_with_xrefs: set[str] = set()
-    runtime_functions_by_global: dict[str, list[str]] = {}
-    for row in xrefs:
-        globals_with_xrefs.add(row.global_name)
-        if not _runtime_required(row):
-            continue
-
-        runtime_functions_by_global.setdefault(row.global_name, []).append(row.function)
-
-    return globals_with_xrefs, runtime_functions_by_global
-
-
-def _global_supported_builds(
-    row: GlobalRow,
-    function_required: dict[str, object],
-    globals_with_xrefs: set[str],
-    runtime_functions_by_global: dict[str, list[str]],
-) -> object:
-    refs = list(runtime_functions_by_global.get(row.name, []))
-    if row.typed and _runtime_required(row.typed):
-        refs.append(row.typed.ref_function)
-
-    supported_builds = [
-        function_required[ref] for ref in refs if ref in function_required
-    ]
-    if supported_builds:
-        return supported_builds
-
-    if row.name in globals_with_xrefs or row.supported_builds == []:
-        return []
-
-    return ["all"]
+        row.supported_builds = [
+            region for region, bit in (("en", 1), ("eu", 2), ("sc", 4)) if bits & bit
+        ]
 
 
 def load_blueprint(path: Path) -> BlueprintRows:
@@ -1495,6 +1464,9 @@ def typed_function_template_row(
         try_args=c_args(typed.try_args),
         signature=signature,
         delta=c_int(typed.delta),
+        reuse_symbol_address=(
+            signature not in explicit_signature_names and typed.delta == fn.match_offset
+        ),
         hook_kind=HOOK_ENUM[str(typed.hook_kind)],
         hook_prologue_size=c_uint(typed.hook_prologue_size),
         callable=c_bool(typed.callable),
@@ -1764,9 +1736,7 @@ def header_context(blueprint: BlueprintRows) -> HeaderContext:
 
     public_functions = public_function_rows(blueprint.functions)
     explicit_names = signature_symbols(blueprint.signatures)
-    runtime_function_xrefs = [
-        row for row in blueprint.function_xrefs if str(row.required) == "all"
-    ]
+    runtime_function_xrefs = list(blueprint.function_xrefs)
     runtime_xrefs = list(blueprint.xrefs)
 
     return HeaderContext(

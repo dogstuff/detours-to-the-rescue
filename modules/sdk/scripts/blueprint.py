@@ -468,12 +468,6 @@ class Blueprint(BlueprintModel):
             if ref is None:
                 raise ValueError(f"typed global {name} needs a resolver XRef")
 
-            if ref.required != Required.ALL:
-                raise ValueError(
-                    f"typed global {name} canonical resolver must use Required.ALL; "
-                    "add build-specific resolver candidates as positional xrefs"
-                )
-
             typed = TypedData(
                 type=type,
                 ref_function=ref.function,

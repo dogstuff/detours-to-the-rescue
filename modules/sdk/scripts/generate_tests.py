@@ -10,7 +10,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 from codegen import c_mask, c_sig, write_or_check
-from generate_headers import load_blueprint
+from generate_headers import load_blueprint, build_mask_bits
 
 try:
     from mako.template import Template
@@ -98,6 +98,16 @@ static const blueprint_function ${symbol}_FUNCTIONS[] = {
 % endfor
 };
 
+static const blueprint_data_xref ${symbol}_DATA_XREFS[] = {
+% for ref in blueprint.xrefs:
+<% fn_index = next(i for i, fn in enumerate(blueprint.functions) if fn.name == ref.function) %>\
+<% data_index = next(i for i, data in enumerate(blueprint.globals) if data.name == ref.global_name) %>\
+    {"${ref.global_name}", ${data_index}u, ${fn_index}u, ${ref.instr_off}u, ${ref.addr_off}u, ${ref.indirections}u, ${build_mask_bits(ref.required) & build_mask_bits(blueprint.functions[fn_index].required)}u},
+% endfor
+};
+
+#define BLUEPRINT_DATA_COUNT ${len(blueprint.globals)}u
+
 % endfor
 """.lstrip(),
     strict_undefined=True,
@@ -108,6 +118,7 @@ def render(template: Template, **kwargs: object) -> str:
     """Render one generated test artifact with stable newline handling for CMake checks."""
 
     text = template.render_unicode(
+        build_mask_bits=build_mask_bits,
         c_mask=c_mask,
         c_sig=c_sig,
         required_enum=required_enum,

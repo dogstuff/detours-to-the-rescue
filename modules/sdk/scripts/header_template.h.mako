@@ -615,6 +615,30 @@ static const DTTR_PCDOGS_T_Symbol_XRef dttr_pcdogs_symbol_xrefs[DTTR_PCDOGS_SYMB
 #undef DTTR_PCDOGS_SYMBOL_XREF_ROW
 };
 
+static const DTTR_PCDOGS_T_Build_Mask dttr_pcdogs_function_xref_builds[DTTR_PCDOGS_SYMBOL_FUNCTION_XREF_STORAGE_COUNT] = {
+% for row in function_xrefs:
+    ${c_build_mask(row.required)},
+% endfor
+};
+
+static const DTTR_PCDOGS_T_Build_Mask dttr_pcdogs_xref_builds[DTTR_PCDOGS_SYMBOL_XREF_COUNT_VALUE] = {
+% for row in xrefs:
+    ${c_build_mask(row.required)},
+% endfor
+};
+
+static const uint32_t dttr_pcdogs_xref_indirections[DTTR_PCDOGS_SYMBOL_XREF_COUNT_VALUE] = {
+% for row in xrefs:
+    ${c_uint(row.indirections)},
+% endfor
+};
+
+static const size_t dttr_pcdogs_data_sizes[DTTR_PCDOGS_SYMBOL_DATA_COUNT_VALUE] = {
+% for row in globals:
+    ${'sizeof(' + c_type(row.typed.type) + ')' if row.typed else '1u'},
+% endfor
+};
+
 #endif  // DTTR_PCDOGS_IMPLEMENTATION
 
 #ifndef DTTR_PCDOGS_CORE_HOOK_HELPERS_DEFINED
@@ -925,6 +949,59 @@ static bool dttr_pcdogs_context_valid(const DTTR_Core_Context* ctx) {
 	return ctx && ctx->game_module && ctx->api && ctx->api->sigscan;
 }
 
+// Match known PE build identities before trusting region-specific signatures.
+// Unknown/repacked builds remain unavailable until their layout is verified.
+static DTTR_PCDOGS_T_Build_Mask dttr_pcdogs_context_build(const DTTR_Core_Context* ctx) {
+    if (!dttr_pcdogs_context_valid(ctx)) {
+        return DTTR_PCDOGS_BUILD_MASK_NONE;
+    }
+
+    const uintptr_t base = (uintptr_t)ctx->game_module;
+
+    if (!dttr_pcdogs_region_has(base, sizeof(IMAGE_DOS_HEADER), false, false)) {
+        return DTTR_PCDOGS_BUILD_MASK_NONE;
+    }
+
+    const IMAGE_DOS_HEADER* dos = (const IMAGE_DOS_HEADER*)base;
+
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew < 0
+        || (uintptr_t)dos->e_lfanew > 0x100000u) {
+        return DTTR_PCDOGS_BUILD_MASK_NONE;
+    }
+
+    const uintptr_t nt_addr = base + (uintptr_t)dos->e_lfanew;
+
+    if (nt_addr < base || !dttr_pcdogs_module_region_has(ctx, nt_addr, sizeof(IMAGE_NT_HEADERS32), false, false)) {
+        return DTTR_PCDOGS_BUILD_MASK_NONE;
+    }
+
+    const IMAGE_NT_HEADERS32* nt = (const IMAGE_NT_HEADERS32*)nt_addr;
+
+    if (nt->Signature != IMAGE_NT_SIGNATURE || nt->FileHeader.Machine != IMAGE_FILE_MACHINE_I386
+        || nt->FileHeader.SizeOfOptionalHeader < sizeof(IMAGE_OPTIONAL_HEADER32)
+        || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+        return DTTR_PCDOGS_BUILD_MASK_NONE;
+    }
+
+    const uint32_t stamp = nt->FileHeader.TimeDateStamp;
+    const uint32_t size = nt->OptionalHeader.SizeOfImage;
+    const uint32_t entry = nt->OptionalHeader.AddressOfEntryPoint;
+
+    if (stamp == 0x39ef3485u && size == 0x16a2000u && entry == 0x46e01u) {
+        return DTTR_PCDOGS_BUILD_MASK_EN;
+    }
+
+    if (stamp == 0x3a3e692fu && size == 0x16a4000u && entry == 0x48ca1u) {
+        return DTTR_PCDOGS_BUILD_MASK_EU;
+    }
+
+    if (stamp == 0x3a36795bu && size == 0x16a4000u && entry == 0x48bc1u) {
+        return DTTR_PCDOGS_BUILD_MASK_SC;
+    }
+
+    return DTTR_PCDOGS_BUILD_MASK_NONE;
+}
+
 static bool dttr_pcdogs_function_address_valid(
 	const DTTR_Core_Context* ctx,
 	uintptr_t addr,
@@ -939,7 +1016,8 @@ static bool dttr_pcdogs_function_address_valid(
 	if (!match || (uintptr_t)((intptr_t)match + match_to_entry_delta) != addr) {
 		return false;
 	}
-	return dttr_pcdogs_region_has(addr, 1u, false, true);
+
+	return dttr_pcdogs_module_region_has(ctx, addr, 1u, false, true);
 }
 
 static uintptr_t dttr_pcdogs_resolve_function(
@@ -1057,6 +1135,7 @@ bool DTTR_PCDOGS_SymbolFunctionIsCallable(
 	const DTTR_PCDOGS_T_Symbol_Function* fn
 ) {
 	return fn && fn->callable
+           && (fn->supported_builds & dttr_pcdogs_context_build(ctx))
 		   && dttr_pcdogs_function_address_valid(
 			   ctx,
 			   fn->address,
@@ -1067,18 +1146,18 @@ bool DTTR_PCDOGS_SymbolFunctionIsCallable(
 }
 
 bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
-	if (!dttr_pcdogs_context_valid(ctx)) {
-		return false;
-	}
+    const DTTR_PCDOGS_T_Build_Mask build = dttr_pcdogs_context_build(ctx);
+    bool conflicts[DTTR_PCDOGS_SYMBOL_DATA_COUNT_VALUE] = {false};
 
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT; i++) {
 		DTTR_PCDOGS_T_Symbol_Function* fn = &dttr_pcdogs_symbol_functions[i];
-		fn->address = dttr_pcdogs_resolve_function(
+
+		fn->address = (fn->supported_builds & build) ? dttr_pcdogs_resolve_function(
 			ctx,
 			fn->sig,
 			fn->mask,
 			fn->match_offset
-		);
+		) : 0;
 		fn->resolved = fn->address != 0;
 	}
 
@@ -1090,13 +1169,17 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 			|| (uint32_t)xref->ref_function_index >= DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT) {
 			continue;
 		}
+
 		DTTR_PCDOGS_T_Symbol_Function* fn =
 			&dttr_pcdogs_symbol_functions[xref->function_index];
 		const DTTR_PCDOGS_T_Symbol_Function* ref_fn =
 			&dttr_pcdogs_symbol_functions[xref->ref_function_index];
-		if (fn->resolved || !ref_fn->resolved) {
+
+		if (fn->resolved || !ref_fn->resolved || !(fn->supported_builds & build)
+            || !(dttr_pcdogs_function_xref_builds[i] & build)) {
 			continue;
 		}
+
 		uintptr_t value = dttr_pcdogs_resolve_xref_u32(
 			ref_fn->address,
 			xref->instr_off,
@@ -1110,9 +1193,11 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 	}
 % endif
 
-	bool all_ok = true;
+	bool all_ok = build != DTTR_PCDOGS_BUILD_MASK_NONE;
+
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT; i++) {
-		if (!dttr_pcdogs_symbol_functions[i].resolved) {
+		if ((dttr_pcdogs_symbol_functions[i].supported_builds & build)
+            && !dttr_pcdogs_symbol_functions[i].resolved) {
 			all_ok = false;
 		}
 	}
@@ -1129,30 +1214,43 @@ bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
 			|| (uint32_t)xref->function_index >= DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT) {
 			continue;
 		}
+
 		const DTTR_PCDOGS_T_Symbol_Function* fn = &dttr_pcdogs_symbol_functions
 												  [xref->function_index];
-		if (!fn->resolved) {
+        DTTR_PCDOGS_T_Symbol_Data* global = &dttr_pcdogs_symbol_globals[xref->data_index];
+
+		if (!fn->resolved || !(dttr_pcdogs_xref_builds[i] & build)
+            || !(global->supported_builds & build) || conflicts[xref->data_index]) {
 			continue;
 		}
+
 		uintptr_t value = dttr_pcdogs_resolve_xref_u32(
 			fn->address,
 			xref->instr_off,
 			xref->addr_off,
-			0u
+            dttr_pcdogs_xref_indirections[i]
 		);
-		if (value && dttr_pcdogs_module_region_has(ctx, value, 1u, false, false)) {
-			DTTR_PCDOGS_T_Symbol_Data* global = &dttr_pcdogs_symbol_globals
-												  [xref->data_index];
+
+		if (value && dttr_pcdogs_module_region_has(ctx, value, dttr_pcdogs_data_sizes[xref->data_index], false, false)) {
+            if (global->resolved && global->address != value) {
+                conflicts[xref->data_index] = true;
+                global->address = 0;
+                global->resolved = false;
+                continue;
+            }
+
 			global->address = value;
 			global->resolved = true;
 		}
 	}
 
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SYMBOL_DATA_COUNT; i++) {
-		if (!dttr_pcdogs_symbol_globals[i].resolved) {
+		if ((dttr_pcdogs_symbol_globals[i].supported_builds & build)
+            && !dttr_pcdogs_symbol_globals[i].resolved) {
 			all_ok = false;
 		}
 	}
+
 	return all_ok;
 }
 
@@ -1163,6 +1261,7 @@ static bool dttr_pcdogs_${row.name}_IsResolved() {
 
 static bool dttr_pcdogs_${row.name}_IsCallable(const DTTR_Core_Context* ctx) {
 	return ${row.callable}
+           && (dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & dttr_pcdogs_context_build(ctx))
 		   && dttr_pcdogs_function_address_valid(
 			   ctx,
 			   dttr_pcdogs_${row.name}_addr,
@@ -1178,12 +1277,19 @@ static DTTR_Result dttr_pcdogs_${row.name}_Status(
 	if (!dttr_pcdogs_context_valid(ctx)) {
 		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
 	}
+
+    if (!(dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & dttr_pcdogs_context_build(ctx))) {
+        return (DTTR_Result){DTTR_ERR_UNRESOLVED, NULL};
+    }
+
 	if (!${row.callable}) {
 		return (DTTR_Result){DTTR_ERR_NOT_CALLABLE, NULL};
 	}
+
 	if (!dttr_pcdogs_${row.name}_addr) {
 		return (DTTR_Result){DTTR_ERR_UNRESOLVED, NULL};
 	}
+
 	if (!dttr_pcdogs_function_address_valid(
 			ctx,
 			dttr_pcdogs_${row.name}_addr,
@@ -1193,6 +1299,7 @@ static DTTR_Result dttr_pcdogs_${row.name}_Status(
 		)) {
 		return (DTTR_Result){DTTR_ERR_ABI_MISMATCH, NULL};
 	}
+
 	return (DTTR_Result){DTTR_OK, NULL};
 }
 
@@ -1425,36 +1532,29 @@ uint32_t DTTR_PCDOGS_DataCount() {
 }
 
 bool DTTR_PCDOGS_ResolveAll(const DTTR_Core_Context* ctx) {
-	bool all_ok = true;
-#define DTTR_PCDOGS_RESOLVE_ONE(                                                         \
-	name,                                                                                \
-	public,                                                                              \
-	cc,                                                                                  \
-	ret,                                                                                 \
-	return_kind,                                                                         \
-	params,                                                                              \
-	args,                                                                                \
-	try_params,                                                                          \
-	try_args,                                                                            \
-	signature,                                                                           \
-	delta,                                                                               \
-	hook_kind,                                                                           \
-	hook_prologue_size,                                                                  \
-	callable                                                                             \
-)                                                                                        \
-	dttr_pcdogs_##name##_addr = dttr_pcdogs_resolve_function(                          \
-		ctx,                                                                             \
-		DTTR_PCDOGS_SIG(signature),                                                      \
-		DTTR_PCDOGS_MASK(signature),                                                     \
-		delta                                                                            \
-	);                                                                                   \
-	if (!dttr_pcdogs_##name##_addr) {                                                  \
-		all_ok = false;                                                                  \
-	}
-DTTR_PCDOGS_TYPED_FUNCTION_ROWS(DTTR_PCDOGS_RESOLVE_ONE)
-#undef DTTR_PCDOGS_RESOLVE_ONE
+	bool all_ok = DTTR_PCDOGS_SymbolsResolveAll(ctx);
+% if any(not row.reuse_symbol_address for row in typed_function_rows):
+	const DTTR_PCDOGS_T_Build_Mask build = dttr_pcdogs_context_build(ctx);
+% endif
 
-	DTTR_PCDOGS_SymbolsResolveAll(ctx);
+% for row in typed_function_rows:
+% if row.reuse_symbol_address:
+	dttr_pcdogs_${row.name}_addr = dttr_pcdogs_symbol_functions[${row.symbol_id}].address;
+% else:
+	dttr_pcdogs_${row.name}_addr = 0;
+	if (dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & build) {
+		dttr_pcdogs_${row.name}_addr = dttr_pcdogs_resolve_function(
+			ctx,
+			DTTR_PCDOGS_SIG(${row.signature}),
+			DTTR_PCDOGS_MASK(${row.signature}),
+			${row.delta}
+		);
+		if (!dttr_pcdogs_${row.name}_addr) {
+			all_ok = false;
+		}
+	}
+% endif
+% endfor
 
 #define DTTR_PCDOGS_CLEAR_DATA(                                                        \
 	name,                                                                                \
@@ -1489,9 +1589,6 @@ DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_CLEAR_DATA)
 				? DTTR_PCDOGS_SymbolDataAt((uint32_t)symbol_id_)                           \
 				: NULL;                                                                     \
 		dttr_pcdogs_##name##_addr = symbol_data_ ? symbol_data_->address : 0;            \
-		if (!dttr_pcdogs_##name##_addr) {                                                \
-			all_ok = false;                                                              \
-		}                                                                                \
 	} while (0);
 DTTR_PCDOGS_TYPED_DATA_ROWS(DTTR_PCDOGS_RESOLVE_DATA)
 #undef DTTR_PCDOGS_RESOLVE_DATA

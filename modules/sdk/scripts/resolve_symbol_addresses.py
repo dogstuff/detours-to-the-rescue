@@ -402,8 +402,10 @@ def resolve_data(
     resolved: dict[str, int] = {}
     unresolved: dict[str, str] = {}
 
+    conflicts: set[str] = set()
+
     for ref in iter_global_refs(blueprint, region, supported_functions):
-        if ref.name in resolved:
+        if ref.name in conflicts:
             continue
 
         base = functions.get(ref.ref_function)
@@ -428,10 +430,18 @@ def resolve_data(
             unresolved.setdefault(ref.name, f"invalid-xref-target:{ref.ref_function}")
             continue
 
+        if ref.name in resolved and resolved[ref.name] != value:
+            conflicts.add(ref.name)
+            del resolved[ref.name]
+            unresolved[ref.name] = "conflicting-xrefs"
+            continue
+
         resolved[ref.name] = value
         unresolved.pop(ref.name, None)
 
-    return resolved, unresolved_rows(unresolved)
+    return resolved, unresolved_rows(
+        {name: reason for name, reason in unresolved.items() if name not in resolved}
+    )
 
 
 def resolve_payload(

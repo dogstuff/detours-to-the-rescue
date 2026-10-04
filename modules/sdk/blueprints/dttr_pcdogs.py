@@ -7908,13 +7908,13 @@ stable.callback_type(
     ret="int32_t",
     params=[
         param("Actor_State*", "actor"),
-        param("Actor_State*", "other_actor"),
-        param("int32_t", "collision_depth"),
+        param("void*", "other_actor_or_out_reference"),
+        param("int32_t", "depth_or_reference_selector"),
     ],
     calling=CallingConvention.CDECL,
     doc=(
         "Actor collision callback initialized to Physics_ProcessActorCollision. Shares "
-        "storage with collision_state_handler_table slot 2."
+        "storage with collision_state_handler_table slot 2. Nonnegative argument 3 takes an Actor_State* peer; negative argument 3 selects -1-value and takes an Actor_State** output cell, which may receive a fallback actor."
     ),
 )
 
@@ -9029,14 +9029,14 @@ stable.fn(
     ret="int32_t",
     params=[
         param("Actor_State*", "actor"),
-        param("Actor_State*", "other_actor"),
+        param("void*", "other_actor_or_out_reference"),
         param(
             "int32_t",
-            "collision_depth",
-            doc="Signed contact/penetration scalar used by collision response.",
+            "depth_or_reference_selector",
+            doc="Nonnegative: contact depth with an Actor_State* peer. Negative: selector -1-value with an Actor_State** output cell.",
         ),
     ],
-    doc="Resolves collision overlap between actor and otherActor. CollisionDepth is a signed contact/penetration scalar.",
+    doc="For nonnegative depth, resolves collision with an Actor_State* peer. For a negative selector, argument 2 must point to an Actor_State* output cell; selection index is -1-selector. The routine may write a fallback actor through that cell.",
 )
 
 stable.fn(
@@ -20414,13 +20414,15 @@ stable.data(
     doc="Ten-entry uint32_t jump table used by Entity_SetActorProperty for property ids 0..9.",
     write_policy=WritePolicy.READ_ONLY,
 )
+
 stable.data(
     "Actor_ProcessPlayerBehavior_StateDispatchTable",
-    xref("Actor_ProcessPlayerBehavior", 0x26F, 0x3),
+    xref("Actor_ProcessPlayerBehavior", 0x26F, 0x3, required=Required.EN),
     type="uint32_t",
     doc="Five-entry uint32_t jump table used by Actor_ProcessPlayerBehavior for player behavior state values 0..4.",
     write_policy=WritePolicy.READ_ONLY,
 )
+
 stable.data(
     "Actor_ProcessCollisionResponse_NodeTypeDispatchTable",
     xref("Actor_ProcessCollisionResponse", 0x14F, 0x3),
@@ -20837,18 +20839,19 @@ stable.data(
     xref("Graphics_ClipAndDrawPolygon", 0x68D, 0x2),
     type="float",
 )
+
 stable.data(
     "Math_One",
     xref("Graphics_RenderTexturedQuad", 0xC2, 0x2),
-    xref("DInput_SetConstantForceEffect", 0x17, 0x2),
     type="float",
 )
+
 stable.data(
     "Math_Zero",
     xref("Graphics_ClipPolygonByPlane", 0x117, 0x2),
-    xref("Video_OpenMovieFile", 0x1B, 0x2),
     type="int32_t",
 )
+
 stable.data(
     "Camera_SetupClipPlanes_FOVAngleScale",
     xref("Camera_SetupClipPlanes", 0x17, 0x2),
@@ -21076,15 +21079,16 @@ stable.data(
     write_policy=WritePolicy.READ_ONLY,
     stable=True,
 )
+
 stable.data(
     "Video_MCI_OpenAVIVideo",
     xref("Video_InitializeAVIPlayer", 0x6, 0x1),
-    xref("Video_OpenAVIFile", 0x33, 0x1),
     type="char",
     doc='NUL-terminated MCI command fragment "open" used by AVI/movie playback setup.',
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
+
 stable.data(
     "Video_ShutdownAVIPlayer_MCICloseAVIVideo",
     xref("Video_ShutdownAVIPlayer", 0x6, 0x1),
@@ -21729,53 +21733,63 @@ stable.data(
     write_policy=WritePolicy.READ_ONLY,
     stable=True,
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_End",
-    xref("PKG_FixUpResourceLevelPointers", 0x560, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x560, 0x1, required=Required.EN),
     type="char[0xf]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_UsableMaterials",
-    xref("PKG_FixUpResourceLevelPointers", 0x4D7, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x4D7, 0x1, required=Required.EN),
     type="char[0x14]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_NavNet",
-    xref("PKG_FixUpResourceLevelPointers", 0x466, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x466, 0x1, required=Required.EN),
     type="char[0xf]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_PowerupCount",
     xref("PKG_FixUpResourceLevelPointers", 0x420, 0x1, required=Required.EN),
     xref("PKG_FixUpResourceLevelPointers", 0x468, 0x1, required=Required.EU_SC),
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_TrailList",
-    xref("PKG_FixUpResourceLevelPointers", 0x371, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x371, 0x1, required=Required.EN),
     type="char[0x12]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_MaxThemes",
-    xref("PKG_FixUpResourceLevelPointers", 0x32D, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x32D, 0x1, required=Required.EN),
     type="char[0x11]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_SpriteList",
-    xref("PKG_FixUpResourceLevelPointers", 0x2B7, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x2B7, 0x1, required=Required.EN),
     type="char[0x13]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_PowerupCountEllipsis",
-    xref("PKG_FixUpResourceLevelPointers", 0x26B, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x26B, 0x1, required=Required.EN),
     type="char[0x17]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_VariableList",
-    xref("PKG_FixUpResourceLevelPointers", 0x241, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x241, 0x1, required=Required.EN),
     type="char[0x10]",
     doc="Level variable-list pointer/count region processed by PKG_FixUpResourceLevelPointers.",
     unstable=True,
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_SoundDefinitionList",
     xref("PKG_FixUpResourceLevelPointers", 0x217, 0x1),
@@ -21796,46 +21810,55 @@ stable.data(
     xref("PKG_FixUpResourceLevelPointers", 0xFA, 0x1),
     type="char",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_ActorCountZero",
-    xref("PKG_FixUpResourceLevelPointers", 0xD1, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0xD1, 0x1, required=Required.EN),
     type="char[0x16]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_ActorCount",
-    xref("PKG_FixUpResourceLevelPointers", 0xB8, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0xB8, 0x1, required=Required.EN),
     type="char[0x13]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_CamDefaultNull",
-    xref("PKG_FixUpResourceLevelPointers", 0xA0, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0xA0, 0x1, required=Required.EN),
     type="char[0x1a]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_CamDefaultNotNull",
-    xref("PKG_FixUpResourceLevelPointers", 0x93, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x93, 0x1, required=Required.EN),
     type="char[0x1b]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_CamDefaultGetAddr",
-    xref("PKG_FixUpResourceLevelPointers", 0x70, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x70, 0x1, required=Required.EN),
     type="char[0x25]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_CamDefaultAbsAddr",
-    xref("PKG_FixUpResourceLevelPointers", 0x53, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x53, 0x1, required=Required.EN),
     type="char[0x24]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_BaseNull",
-    xref("PKG_FixUpResourceLevelPointers", 0x3B, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x3B, 0x1, required=Required.EN),
     type="char[0x21]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_Null",
-    xref("PKG_FixUpResourceLevelPointers", 0x23, 0x1),
+    xref("PKG_FixUpResourceLevelPointers", 0x23, 0x1, required=Required.EN),
     type="char[0x1d]",
 )
+
 stable.data(
     "PKG_FixUpResourceLevelPointers_Start",
     xref("PKG_FixUpResourceLevelPointers", 0xB, 0x1),
@@ -22009,31 +22032,37 @@ stable.data(
     xref("Window_RunWinMain", 0x75, 0x1),
     type="char[0x22]",
 )
+
 stable.data(
     "PKG_LocatePackagePath_CantFindPKG",
-    xref("PKG_LocatePackagePath", 0x141, 0x1),
+    xref("PKG_LocatePackagePath", 0x141, 0x1, required=Required.EN),
     type="char[0x22]",
 )
+
 stable.data(
     "PKG_LocatePackagePath_SetupPath",
-    xref("PKG_LocatePackagePath", 0xD5, 0x1),
+    xref("PKG_LocatePackagePath", 0xD5, 0x1, required=Required.EN),
     type="char[0x12]",
 )
+
 stable.data(
     "PKG_LocatePackagePath_SearchPattern",
-    xref("PKG_LocatePackagePath", 0xAB, 0x1),
+    xref("PKG_LocatePackagePath", 0xAB, 0x1, required=Required.EN),
     type="char[0xd]",
 )
+
 stable.data(
     "PKG_LocatePackagePath_DalmsSetupPath",
-    xref("PKG_LocatePackagePath", 0x93, 0x1),
+    xref("PKG_LocatePackagePath", 0x93, 0x1, required=Required.EN),
     type="char[0x1d]",
 )
+
 stable.data(
     "PKG_LocatePackagePath_DriveLetter",
-    xref("PKG_LocatePackagePath", 0x60, 0x1),
+    xref("PKG_LocatePackagePath", 0x60, 0x1, required=Required.EN),
     type="char[0x5]",
 )
+
 stable.data(
     "PKG_LocatePackagePath_PcdogsPKG",
     xref("PKG_LocatePackagePath", 0x45, 0x1, required=Required.EN),
@@ -22054,16 +22083,19 @@ stable.data(
     xref("Player_ProcessMovement", 0x4A, 0x1),
     type="uint8_t*",
 )
+
 stable.data(
     "String_GetByIndex_NoString",
-    xref("String_GetByIndex", 0x2DD, 0x1),
+    xref("String_GetByIndex", 0x2DD, 0x1, required=Required.EN),
     type="char[0xc]",
 )
+
 stable.data(
     "String_GetByIndex_TwoStrings",
-    xref("String_GetByIndex", 0x1AC, 0x1),
+    xref("String_GetByIndex", 0x1AC, 0x1, required=Required.EN),
     type="char[0x7]",
 )
+
 stable.data(
     "Graphics_AdjustLevelScale_ListState",
     xref("Graphics_AdjustLevelScale", 0x65, 0x2),
@@ -22161,6 +22193,7 @@ stable.data(
     xref("String_FormatFloat", 0x40, 0x2),
     type="char",
 )
+
 stable.data(
     "Graphics_RenderPolygonCallback",
     xref("Scene_TraverseNodeTree", 0x401, 0x2),
@@ -22171,6 +22204,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Graphics_RenderMeshNode_CapabilityFlags",
     xref("Graphics_RenderMeshNode", 0xF76, 0x1),
@@ -22185,15 +22219,16 @@ stable.data(
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
 )
+
 stable.data(
     "Script_OpPauseToggle_ScreenBorderStateFlag",
-    xref("Script_OpPauseToggle", 0x66, 0x1),
+    xref("Script_OpPauseToggle", 0x66, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "EntityNavigationWorkList_ActiveBufferPtr",
     xref("Entity_UpdateVisibilityAndSpawn", 0xE8, 0x1),
-    xref("Camera_UpdateFollow", 0x86D, 0x1),
     type="EntityNavigationWorkListBuffer*",
     doc=(
         "Active work-buffer pointer promoted from the prior staging pass. Its four entity slots and "
@@ -22201,11 +22236,13 @@ stable.data(
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
 )
+
 stable.data(
     "Script_OpPauseToggle_FadeCounter",
-    xref("Script_OpPauseToggle", 0x8D, 0x1),
+    xref("Script_OpPauseToggle", 0x8D, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Audio_TriggerMusicTransition_Volume",
     xref("Audio_TriggerMusicTransition", 0x99, 0x2),
@@ -22227,11 +22264,13 @@ stable.data(
         "Fallback byte used by Actor_TracePath when the source actor is NULL. Path tracing still uses path_trace_work_buffer, the current level entity slots, and EntityNavigationWorkList_ActiveBufferPtr."
     ),
 )
+
 stable.data(
     "Actor_TracePath_NullActorState1",
     xref("Actor_TracePath", 0x1D, 0x2),
     type="Math_Vec3I32*",
 )
+
 stable.data(
     "Actor_TracePath_NullActorState3",
     xref("Actor_TracePath", 0x17, 0x2),
@@ -22242,17 +22281,19 @@ stable.data(
     xref("Camera_UpdateFollow", 0x29C, 0x1),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_CameraTransitionCountdown",
-    xref("Script_OpPauseToggle", 0x17B, 0x2),
+    xref("Script_OpPauseToggle", 0x17B, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Audio_MusicFadeFrameCount",
     xref("Audio_TriggerMusicTransition", 0x66, 0x2),
-    xref("Audio_InitializeSystem", 0x117, 0x2),
     type="int32_t",
 )
+
 stable.data(
     "Audio_TriggerMusicTransition_FadeStartFrame",
     xref("Audio_TriggerMusicTransition", 0xC7, 0x1),
@@ -22278,27 +22319,29 @@ stable.data(
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
 )
+
 stable.data(
     "Script_OpPauseToggle_LevelTransitionFlag",
-    xref("Script_OpPauseToggle", 0x174, 0x2),
-    xref("Script_OpPauseToggle", 0x18F, 0x2),
+    xref("Script_OpPauseToggle", 0x174, 0x2, required=Required.EN),
     type="uint8_t",
 )
+
 stable.data(
     "Level_InitializeActorSystem_TransitionStartFrame",
     xref("Level_InitializeActorSystem", 0xC3, 0x1),
     type="int32_t",
 )
+
 stable.data(
     "Game_TransitionAndSettingsFlags",
     xref("Camera_UpdateFollow", 0x7BA, 0x1),
-    xref("Settings_SetSoundEnabled", 0xC, 0x1),
     type="int32_t",
     doc=(
-        "Shared game-state/settings dword used in camera transition and sound-setting paths. The "
-        "broad symbol covers multiple settings and transition bits."
+        "Level-transition midpoint frame used by Camera_UpdateFollow. Historical name retained; "
+        "this dword is separate from Config_GameSettings."
     ),
 )
+
 stable.data(
     "Level_InitializeActorSystem_TransitionEndFrame",
     xref("Level_InitializeActorSystem", 0xD9, 0x1),
@@ -22319,11 +22362,13 @@ stable.data(
     xref("Camera_InterpolateTransition", 0x16, 0x1),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_AnimationTimerState",
-    xref("Script_OpPauseToggle", 0xF7, 0x2),
+    xref("Script_OpPauseToggle", 0xF7, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Animation_QueueStateChange_AnimQueuedStateChange",
     xref("Animation_QueueStateChange", 0x9, 0x3),
@@ -22460,28 +22505,36 @@ stable.data(
     xref("Checkers_UpdateStateMachine", 0x5B8, 0x2),
     type="int32_t",
 )
+
 stable.data("Graphics_DrawQuad_Vertex0", xref("Graphics_DrawQuad", 0x3CC, 0x6))
+
 stable.data(
     "Graphics_DrawQuad_Vertex0U", xref("Graphics_DrawQuad", 0x288, 0x2), type="float"
 )
 stable.data(
     "Graphics_DrawQuad_Vertex0V", xref("Graphics_DrawQuad", 0x29D, 0x2), type="float"
 )
+
 stable.data("Graphics_DrawQuad_Vertex1", xref("Graphics_DrawQuad", 0x3D6, 0x6))
+
 stable.data(
     "Graphics_DrawQuad_Vertex1U", xref("Graphics_DrawQuad", 0x2B4, 0x2), type="float"
 )
 stable.data(
     "Graphics_DrawQuad_Vertex1V", xref("Graphics_DrawQuad", 0x2C9, 0x2), type="float"
 )
+
 stable.data("Graphics_DrawQuad_Vertex2", xref("Graphics_DrawQuad", 0x3E0, 0x6))
+
 stable.data(
     "Graphics_DrawQuad_Vertex2U", xref("Graphics_DrawQuad", 0x2EC, 0x2), type="float"
 )
 stable.data(
     "Graphics_DrawQuad_Vertex2V", xref("Graphics_DrawQuad", 0x304, 0x2), type="float"
 )
+
 stable.data("Graphics_DrawQuad_Vertex3", xref("Graphics_DrawQuad", 0x3EA, 0x6))
+
 stable.data(
     "Graphics_DrawQuad_Vertex3U", xref("Graphics_DrawQuad", 0x35A, 0x2), type="float"
 )
@@ -22743,18 +22796,22 @@ stable.data(
     "Graphics_DrawQuad_UntexturedVertexBuffer",
     xref("Graphics_DrawQuad", 0x4ED, 0x1),
 )
+
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBufferVertex1",
     xref("Graphics_DrawQuad", 0x512, 0x6),
 )
+
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBufferVertex2",
     xref("Graphics_DrawQuad", 0x52D, 0x6),
 )
+
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBufferVertex3",
     xref("Graphics_DrawQuad", 0x523, 0x6),
 )
+
 stable.data(
     "Camera_SetupProjection_MatrixXScale",
     xref("Camera_SetupProjection", 0x40, 0x1),
@@ -22891,21 +22948,25 @@ stable.data(
     xref("Graphics_DrawQuad", 0x6C, 0x2),
     type="D3D_TransformedVertexNoTex*",
 )
+
 stable.data(
     "Graphics_DrawQuad_Vertex1Ptr",
     xref("Graphics_DrawQuad", 0x3D6, 0x2),
     type="D3D_TransformedVertexNoTex*",
 )
+
 stable.data(
     "Graphics_DrawQuad_Vertex2Ptr",
     xref("Graphics_DrawQuad", 0x3E0, 0x2),
     type="D3D_TransformedVertexNoTex*",
 )
+
 stable.data(
     "Graphics_DrawQuad_Vertex3Ptr",
     xref("Graphics_DrawQuad", 0x3EA, 0x2),
     type="D3D_TransformedVertexNoTex*",
 )
+
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_GraphicsSelectedDriverIndex",
     xref("D3D_InitDirectDrawAndDirect3D", 0x1B1, 0x1),
@@ -23203,12 +23264,14 @@ stable.data(
     xref("Menu_RenderConfirmPrompt", 0x20, 0x2),
     type="char",
 )
+
 stable.data(
     "Menu_PauseTransitionTimer",
     xref("Menu_UpdatePauseMenu", 0xD2, 0x3),
-    xref("Menu_ResetState", 0x2, 0x1),
     type="int16_t",
+    doc="Bone-counter UI state word read by the pause menu. Historical name retained; separate from the byte pause timer.",
 )
+
 stable.data(
     "Save_VolumeSettings",
     xref("Settings_GetSfxVolume", 0x0, 0x1),
@@ -23303,9 +23366,10 @@ stable.data(
     doc="Editable options/config backup block copied before controls remapping and passed to Config_SaveSettingsToINI.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_InputKeyboardMappings",
-    xref("Menu_HandleOptionsLogic", 0x425, 0x3),
+    xref("Menu_HandleOptionsLogic", 0x425, 0x3, required=Required.EN),
     type="int32_t",
     doc=(
         (
@@ -23316,6 +23380,7 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_InputGamepadMappings",
     xref("Menu_HandleOptionsLogic", 0x9A, 0x1),
@@ -23340,12 +23405,13 @@ stable.data(
 stable.data(
     "Menu_ProcessMenuState_State", xref("Menu_ProcessMenuState", 0xA0, 0x3), type="char"
 )
+
 stable.data(
     "Menu_Selection",
     xref("Menu_LoadLevelProgressState", 0x44, 0x2),
-    xref("Menu_ProcessMenuState", 0xD2, 0x1),
     type="int32_t",
 )
+
 stable.data(
     "Menu_ProcessMenuState_SkipBackgroundRender",
     xref("Menu_ProcessMenuState", 0x250, 0x1),
@@ -23376,12 +23442,13 @@ stable.data(
     xref("Menu_ProcessMenuState", 0x39F, 0x1),
     type="char",
 )
+
 stable.data(
     "Menu_ProcessMenuState_FadeCounter",
     xref("Menu_ProcessMenuState", 0x7BC, 0x2),
-    xref("Menu_ProcessMenuState", 0x5B, 0x1),
     type="char",
 )
+
 stable.data(
     "Menu_ProcessMenuState_StoredFadeLevel",
     xref("Menu_ProcessMenuState", 0x989, 0x2),
@@ -23615,10 +23682,10 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "g_backupPuppyCount",
     xref("Level_InitializeSaveState", 0xF, 0x1),
-    xref("Level_InitializeSaveState", 0x14, 0x2),
     type="uint8_t",
     doc=(
         "Backed-up player lives later copied into the active save slot. The puppy-count name "
@@ -23627,6 +23694,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     stable=True,
 )
+
 stable.data(
     "Save_GameLevelCompletion_CurrentLevelCompletionBits",
     xref("Save_SaveGameLevelCompletion", 0x10D, 0x2),
@@ -23721,38 +23789,42 @@ stable.data(
     type="uint8_t",
     doc=("Held and debounce state for menu confirm input."),
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_Column",
-    xref("Menu_HandleOptionsLogic", 0xE1, 0x1),
+    xref("Menu_HandleOptionsLogic", 0xE1, 0x1, required=Required.EN),
     type="int32_t",
     doc="Options/control-remap column cursor dword used by Menu_HandleOptionsLogic.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Options_MenuSelection",
-    xref("Menu_HandleOptionsLogic", 0x3A, 0x2),
-    xref("Level_UpdateInterLevelMenu", 0xB5, 0x3),
+    xref("Menu_HandleOptionsLogic", 0x3A, 0x2, required=Required.EN),
     type="int32_t",
     doc="Selected options-menu row dword.",
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_InputMenuButtonRemappingActive",
-    xref("Menu_HandleOptionsLogic", 0x203, 0x1),
+    xref("Menu_HandleOptionsLogic", 0x203, 0x1, required=Required.EN),
     xref("Menu_HandleOptionsLogic", 0x202, 0x1, required=Required.EU_SC),
     type="int32_t",
     doc="Control-remapping active/latch dword in the options submenu state cluster.",
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_State",
-    xref("Menu_HandleOptionsLogic", 0x147, 0x2),
+    xref("Menu_HandleOptionsLogic", 0x147, 0x2, required=Required.EN),
     type="int32_t",
     doc="Auxiliary options-menu UI state dword.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_UIState5",
     xref("Menu_HandleOptionsLogic", 0x2E, 0x2),
@@ -23849,6 +23921,7 @@ stable.data(
     xref("PKG_UpdateLoadingScreen", 0x35, 0x1),
     type="void*",
 )
+
 stable.data(
     "Menu_LoadingFadeDelay",
     xref("UI_Update", 0x34, 0x2),
@@ -23857,6 +23930,7 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "Menu_ProcessMenuTransition_SkipTitleScreen",
     xref("Menu_ProcessMenuTransition", 0x8F, 0x2),
@@ -23876,11 +23950,13 @@ stable.data(
     "Collision_DetectActorCollisions_ObjectList",
     xref("Collision_DetectActorCollisions", 0x41, 0x1),
 )
+
 stable.data(
     "Collision_BuildAndResolveGroundEdgeWalls_Result",
-    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x44, 0x1),
+    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x44, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Collision_DetectObjectNodeCollisions_TestPosX",
     xref("Collision_DetectObjectNodeCollisions", 0xD9, 0x2),
@@ -23928,15 +24004,16 @@ stable.data(
     "Collision_ResolveObjectNodeCollision_PlaneBuffer",
     xref("Collision_ResolveObjectNodeCollision", 0x1FC, 0x1),
 )
+
 stable.data(
     "Collision_BuildAndResolveGroundEdgeWalls_NormalY",
-    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x4F, 0x2),
+    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x4F, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Collision_DebugPolygonListCount",
     xref("Graphics_IsPolygonInDebugList", 0xC, 0x2),
-    xref("Collision_DetectActorCollisions", 0x33, 0x2),
     type="int32_t",
     doc=(
         "Number of registered collision polygon list slices used by Graphics_IsPolygonInDebugList. "
@@ -23944,25 +24021,30 @@ stable.data(
         "parallel arrays, then increments this bounded index."
     ),
 )
+
 stable.data(
     "Collision_BuildAndResolveGroundEdgeWalls_NormalX",
-    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x34, 0x1),
+    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x34, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Collision_BuildAndResolveGroundEdgeWalls_NormalZ",
-    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x39, 0x2),
+    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x39, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Collision_InitializePlaneLookupTables_CollisionResponsePlanes",
     xref("Collision_InitializePlaneLookupTables", 0xF, 0x1),
 )
+
 stable.data(
     "Collision_BuildAndResolveGroundEdgeWalls_Dist",
-    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x60, 0x2),
+    xref("Collision_BuildAndResolveGroundEdgeWalls", 0x60, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Actor_DefaultUpdateCallbackSlot",
     xref("Graphics_InitializeDispatchTables", 0x1D, 0x2),
@@ -23975,6 +24057,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Level_InitializeActorSystem_CollisionDispatchActorFunc",
     xref("Level_InitializeActorSystem", 0x11, 0x2),
@@ -23983,6 +24066,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Collision_InitializeFunctionPointers_ComponentResponseFunc",
     xref("Collision_InitializeFunctionPointers", 0xA, 0x2),
@@ -23991,6 +24075,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Powerup_CollisionFilterCallback",
     xref("Collision_ProcessPowerupCollisions", 0x3, 0x1),
@@ -24107,11 +24192,13 @@ stable.data(
     xref("Trail_FindBonePath", 0x25F, 0x1),
     type="Math_Vec3I32*",
 )
+
 stable.data(
     "Trail_CheckBoneAvailable_Timer",
-    xref("Trail_CheckBoneAvailable", 0x13, 0x2),
+    xref("Trail_CheckBoneAvailable", 0x13, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Trail_UpdateAndRenderBone_Entries",
     xref("Trail_UpdateAndRenderBone", 0x497, 0x1),
@@ -24125,11 +24212,13 @@ stable.data(
     "Trail_UpdateAndRenderBone_Entry0PosX",
     xref("Trail_UpdateAndRenderBone", 0x40B, 0x1),
 )
+
 stable.data(
     "Trail_UpdateAndRenderBone_PathNodes",
-    xref("Trail_UpdateAndRenderBone", 0x3B5, 0x6),
+    xref("Trail_UpdateAndRenderBone", 0x3BA, 0x1),
     type="int32_t",
 )
+
 stable.data(
     "Trail_UpdateAndRenderBone_PathBufferY",
     xref("Trail_UpdateAndRenderBone", 0x44B, 0x2),
@@ -24295,6 +24384,7 @@ stable.data(
     doc="Number of frames accumulated since the last current_fps refresh.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Menu_LoadState",
     xref("PKG_CleanupResourceGameState", 0x1D, 0x2),
@@ -24305,6 +24395,7 @@ stable.data(
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Level_LoadStateMachine_PKGLevelStreamLoadState",
     xref("Level_LoadStateMachine", 0xC, 0x1),
@@ -24584,16 +24675,18 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "Display_CurrentWindowHandle",
     xref("Display_IsActive", 0x0, 0x2),
-    xref("Display_SetMode", 0x0, 0x2),
-    xref("Display_ReleaseMode", 0x0, 0x2),
+    xref("Display_SetMode", 0x0, 0x1),
+    xref("Display_ReleaseMode", 0x0, 0x1),
     type="HWND",
     doc="Current HWND bound to the active display/D3D mode; checked by Display_IsActive, written by Display_SetMode, and tested before Display_ReleaseMode cleanup.",
     write_policy=WritePolicy.ENGINE_MANAGED,
     stable=True,
 )
+
 stable.data(
     "String_ConvertToExponentialFloat_FormatPrecision",
     xref("String_ConvertToExponentialFloat", 0x11, 0x1),
@@ -24741,6 +24834,7 @@ stable.data(
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
 )
+
 stable.data(
     "Level_InitializeActorSystem_BehaviorProcessActorFunc",
     xref("Level_InitializeActorSystem", 0x2F, 0x2),
@@ -24749,6 +24843,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Collision_InitializeFunctionPointers_BehaviorProcessProjectileFunc",
     xref("Collision_InitializeFunctionPointers", 0x14, 0x2),
@@ -24757,6 +24852,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Level_InitializeActorSystem_BehaviorProcessSnapFunc",
     xref("Level_InitializeActorSystem", 0x39, 0x2),
@@ -24765,6 +24861,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Graphics_InitializeDispatchTables_BehaviorTargetActor",
     xref("Graphics_InitializeDispatchTables", 0x31, 0x2),
@@ -24773,6 +24870,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Graphics_InitializeDispatchTables_BehaviorParam0",
     xref("Graphics_InitializeDispatchTables", 0x3B, 0x2),
@@ -24781,6 +24879,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Graphics_InitializeDispatchTables_BehaviorParam1",
     xref("Graphics_InitializeDispatchTables", 0x45, 0x2),
@@ -24789,6 +24888,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Graphics_InitializeDispatchTables_BehaviorParam2",
     xref("Graphics_InitializeDispatchTables", 0x4F, 0x2),
@@ -24797,6 +24897,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Powerup_InitializeSystem_UpdateCallback",
     xref("Powerup_InitializeSystem", 0x9, 0x2),
@@ -24808,6 +24909,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Physics_UpdateActorPreprocess_MovementHandlerTable",
     xref("Physics_UpdateActorPreprocess", 0x8D, 0x3),
@@ -24816,6 +24918,7 @@ stable.data(
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
 )
+
 stable.data(
     "Level_InitializeActorSystem_PlayerMovementFunc",
     xref("Level_InitializeActorSystem", 0x25, 0x2),
@@ -24824,6 +24927,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Collision_InitializeFunctionPointers_ProjectileLogicFunc",
     xref("Collision_InitializeFunctionPointers", 0x0, 0x2),
@@ -24832,6 +24936,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Menu_RenderSaveGame_UnloadDelayCounter",
     xref("Menu_RenderSaveGame", 0x5D, 0x1),
@@ -24866,11 +24971,13 @@ stable.data(
     xref("Graphics_ClipAndDrawPolygon", 0x81D, 0x2),
     type="int32_t",
 )
+
 stable.data(
     "Window_RunWinMain_InstanceHandle",
-    xref("Window_RunWinMain", 0x21C, 0x1),
+    xref("Window_RunWinMain", 0x21C, 0x1, required=Required.EN),
     type="HWND",
 )
+
 stable.data(
     "Graphics_ClipAndDrawPolygon_BatchPrimitiveCount",
     xref("Graphics_ClipAndDrawPolygon", 0x7CF, 0x1),
@@ -24881,32 +24988,39 @@ stable.data(
     xref("Input_ProcessWindowMessages", 0x8B, 0x1),
     type="HACCEL",
 )
+
 stable.data(
-    "Window_RunWinMain_ShowCmd", xref("Window_RunWinMain", 0x18C, 0x2), type="HINSTANCE"
+    "Window_RunWinMain_ShowCmd", xref("Window_RunWinMain", 0x18C, 0x2, required=Required.EN), type="HINSTANCE"
 )
+
 stable.data(
     "Graphics_DrawQuad_RenderFrameCount",
     xref("Graphics_DrawQuad", 0xB9D, 0x2),
     type="int32_t",
 )
+
 stable.data(
     "String_GetByIndex_LocalizationLanguageID",
-    xref("String_GetByIndex", 0xA1, 0x1),
+    xref("String_GetByIndex", 0xA1, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "String_GetByIndex_TableLoaded",
-    xref("String_GetByIndex", 0x7C, 0x1),
+    xref("String_GetByIndex", 0x7C, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Menu_RenderConfirmPrompt_StringMenuBufferPtr",
     xref("Menu_RenderConfirmPrompt", 0x50, 0x2),
     type="char*",
 )
+
 stable.data(
-    "String_GetByIndex_TableSize", xref("String_GetByIndex", 0x61, 0x2), type="int32_t"
+    "String_GetByIndex_TableSize", xref("String_GetByIndex", 0x61, 0x2, required=Required.EN), type="int32_t"
 )
+
 stable.data(
     "Input_FormatButtonName_NoKeyAssignedString",
     xref("Input_FormatButtonName", 0x5C, 0x1),
@@ -24918,13 +25032,14 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "UI_InitializedFlag",
-    xref("Menu_AnimateSlots", 0x124, 0x1),
     xref("UI_Update", 0x0, 0x1),
     type="BOOL",
-    doc="UI initialization flag checked by UI_Update/Menu_AnimateSlots.",
+    doc="UI initialization flag checked by UI_Update. The Menu_AnimateSlots reference was a separate array boundary.",
 )
+
 stable.data(
     "Graphics_RenderFrame_Index",
     xref("Graphics_RenderFrame", 0x122, 0x2),
@@ -25077,16 +25192,18 @@ stable.data(
     doc="Direct gamepad lookup entry for control code 0x3fa; ORed when DIJOYSTATE.rgbButtons[12] is pressed.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_DisplayMenuSetting",
-    xref("Menu_HandleOptionsLogic", 0x37F, 0x1),
+    xref("Menu_HandleOptionsLogic", 0x37F, 0x1, required=Required.EN),
     type="uint8_t",
     doc="Saved display/detail setting byte from pcdogs.ini; clamped to 0..10 before being applied.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Config_ApplySettings_InputPlayer1Controls",
-    xref("Config_ApplySettings", 0x77, 0x2),
+    xref("Config_ApplySettings", 0x77, 0x2, required=Required.EN),
     xref("Config_ApplySettings", 0x86, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc=(
@@ -25097,6 +25214,7 @@ stable.data(
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Input_InitializeButtonMappings_Player1DownKey",
     xref("Input_InitializeButtonMappings", 0x167, 0x2),
@@ -25109,9 +25227,10 @@ stable.data(
     doc="Eight adjacent player-1 button mapping dwords after the down-key entry.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Config_ApplySettings_InputSpecialButton",
-    xref("Config_ApplySettings", 0x8F, 0x2),
+    xref("Config_ApplySettings", 0x8F, 0x2, required=Required.EN),
     xref("Config_ApplySettings", 0x9E, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc="Additional pcdogs.ini button binding assigned to Input_State mask 0x4000; defaults to "
@@ -25119,9 +25238,10 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
+
 stable.data(
     "Config_ApplySettings_InputPlayer2Controls",
-    xref("Config_ApplySettings", 0x57, 0x2),
+    xref("Config_ApplySettings", 0x57, 0x2, required=Required.EN),
     xref("Config_ApplySettings", 0x66, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc=(
@@ -25132,6 +25252,7 @@ stable.data(
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Input_InitializeButtonMappings_Player2DownButton",
     xref("Input_InitializeButtonMappings", 0x1D5, 0x2),
@@ -25176,14 +25297,16 @@ stable.data(
     xref("Shadow_ClearList", 0x0, 0x2),
     type="Shadow_OccluderView*",
 )
+
 stable.data(
     "Actor_CollisionListHead",
-    xref("Script_OpPauseToggle", 0x1D3, 0x1),
+    xref("Script_OpPauseToggle", 0x1D3, 0x1, required=Required.EN),
     type="Actor_State*",
     doc=(
         "Head of the actor-to-actor collision-processing linked list. Actor_AddToCollisionList prepends Actor_State records here via list_next; pause/entity update paths walk and prune it."
     ),
 )
+
 stable.data(
     "Collision_ProcessActorToActorCollisions_StateHandlerTable",
     xref("Collision_ProcessActorToActorCollisions", 0xC6, 0x3),
@@ -25195,6 +25318,7 @@ stable.data(
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
 )
+
 stable.data(
     "Level_InitializeActorSystem_CollisionProcessFunc",
     xref("Level_InitializeActorSystem", 0x1B, 0x2),
@@ -25203,6 +25327,7 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
+
 stable.data(
     "Collision_DebugPolygonListCounts",
     xref("Graphics_IsPolygonInDebugList", 0x0, 0x1),
@@ -25267,13 +25392,15 @@ stable.data(
     doc="Hammerhead controller name and preset information shown in menus.",
     unstable=True,
 )
+
 stable.data(
     "Menu_HandleOptionsLogic_InputControllerHammerheadButtons",
-    xref("Menu_HandleOptionsLogic", 0x154, 0x3),
+    xref("Menu_HandleOptionsLogic", 0x154, 0x3, required=Required.EN),
     type="int32_t[10]",
     doc="Ten adjacent Hammerhead button preset dwords inside a controller profile record.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
+
 stable.data(
     "Input_InitializeControllerMappings_SidewinderButtons",
     xref("Input_InitializeControllerMappings", 0x94, 0x2),
@@ -25903,36 +26030,43 @@ stable.data(
     type="int32_t",
     doc="Current checkers side: live play uses player values 1 and 2, toggled with xor 3, and is set to 0 for the no-move/end state.",
 )
+
 stable.data(
     "Script_OpPauseToggle_CameraTransitionCounter",
-    xref("Script_OpPauseToggle", 0x199, 0x1),
+    xref("Script_OpPauseToggle", 0x199, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_CameraRotationAngle",
-    xref("Script_OpPauseToggle", 0x19E, 0x1),
+    xref("Script_OpPauseToggle", 0x19E, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_TargetRotationAngle",
-    xref("Script_OpPauseToggle", 0x1A3, 0x2),
+    xref("Script_OpPauseToggle", 0x1A3, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_TargetYOffset",
-    xref("Script_OpPauseToggle", 0x1A9, 0x2),
+    xref("Script_OpPauseToggle", 0x1A9, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_TargetDistance",
-    xref("Script_OpPauseToggle", 0x1AF, 0x2),
+    xref("Script_OpPauseToggle", 0x1AF, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Script_OpPauseToggle_CameraFOV",
-    xref("Script_OpPauseToggle", 0x1C3, 0x2),
+    xref("Script_OpPauseToggle", 0x1C3, 0x2, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Checkers_UpdateStateMachine_SaveGameWorld0CompletionBits",
     xref("Checkers_UpdateStateMachine", 0x518, 0x2),
@@ -26030,16 +26164,19 @@ stable.data(
     xref("Level_InitializeActorSystem", 0x1C1, 0x2),
     type="float",
 )
+
 stable.data(
     "Actor_ProcessPlayerBehavior_AIState0",
-    xref("Actor_ProcessPlayerBehavior", 0x863, 0x1),
+    xref("Actor_ProcessPlayerBehavior", 0x863, 0x1, required=Required.EN),
     type="int32_t",
 )
+
 stable.data(
     "Actor_ProcessPlayerBehavior_RenderingDepthMode",
-    xref("Actor_ProcessPlayerBehavior", 0x86E, 0x2),
+    xref("Actor_ProcessPlayerBehavior", 0x86E, 0x2, required=Required.EN),
     type="Collision_Polygon*",
 )
+
 stable.data(
     "Camera_UpdateFollow_DynamicLevelScale",
     xref("Camera_UpdateFollow", 0xA0B, 0x1),
@@ -26076,38 +26213,44 @@ stable.data(
     write_policy=WritePolicy.ENGINE_MANAGED,
     stable=True,
 )
+
 stable.data(
     "Script_OpPauseToggle_State",
-    xref("Script_OpPauseToggle", 0x1B, 0x1),
+    xref("Script_OpPauseToggle", 0x1B, 0x1, required=Required.EN),
     type="Actor_State*",
 )
+
 stable.data(
     "Script_OpPauseToggle_SavedActorWorldRenderPosX",
-    xref("Script_OpPauseToggle", 0x29, 0x2),
+    xref("Script_OpPauseToggle", 0x29, 0x2, required=Required.EN),
     type="int32_t",
     doc="Saved active actor world_render_pos_x used for pause/menu distance checks.",
 )
+
 stable.data(
     "Script_OpPauseToggle_SavedActorWorldRenderPosY",
-    xref("Script_OpPauseToggle", 0x32, 0x2),
+    xref("Script_OpPauseToggle", 0x32, 0x2, required=Required.EN),
     type="int32_t",
     doc="Saved active actor world_render_pos_y used for pause/menu distance checks.",
 )
+
 stable.data(
     "Script_OpPauseToggle_SavedActorWorldRenderPosZ",
-    xref("Script_OpPauseToggle", 0x3B, 0x1),
+    xref("Script_OpPauseToggle", 0x3B, 0x1, required=Required.EN),
     type="int32_t",
     doc="Saved active actor world_render_pos_z used for pause/menu distance checks.",
 )
+
 stable.data(
     "Projectile_LiveActorListHead",
-    xref("Trail_SpawnFromEntry", 0x5C, 0x1),
+    xref("Trail_SpawnFromEntry", 0x5C, 0x1, required=Required.EN),
     type="Actor_State*",
     doc=(
         "Live projectile Actor_State linked-list head populated by Trail_SpawnFromEntry "
         "and walked by Actor_UpdateProjectileList."
     ),
 )
+
 stable.data(
     "File_SeekAndGetPosition_DescriptorTable",
     xref("File_SeekAndGetPosition", 0x5C, 0x3),
