@@ -54,10 +54,10 @@ stable.struct(
     member("uint32_t", "high_class_bitmap", 0x4),
     member("uint32_t", "free_page_bitmap", 0x8),
     member("uint8_t*", "reserved_base", 0xC),
-    member("void*", "page_map", 0x10),
+    member("CRT_HeapPageMap*", "page_map", 0x10),
     size=0x14,
     unstable=True,
-    doc="CRT heap segment header. Page-map contents remain opaque.",
+    doc="CRT heap segment header with per-page free lists and class bitmaps.",
 )
 
 stable.struct(
@@ -1127,10 +1127,10 @@ stable.enum(
 stable.enum(
     "Checkers_MoveExecutionResult",
     enum_value("CHECKERS_EXEC_INVALID", 0),
-    enum_value("CHECKERS_EXEC_CAPTURE_MUST_CONTINUE", 1),
+    enum_value("CHECKERS_EXEC_CAPTURE_CAN_CONTINUE", 1),
     enum_value("CHECKERS_EXEC_TURN_COMPLETE", 2),
     enum_value("CHECKERS_EXEC_TURN_COMPLETE_PROMOTED", 3),
-    doc="A move can be invalid, require another capture, complete the turn, or complete a promoted turn.",
+    doc="A move can be invalid, allow another capture, complete the turn, or complete a promoted turn.",
     stable=True,
 )
 
@@ -1452,77 +1452,55 @@ stable.struct(
     member("int32_t", "homing_strength", 0x10),
     member(
         "int32_t",
-        "lifetime_range",
+        "base_pitch_angle12",
         0x14,
-        doc=(
-            "Base pitch angle in 12-bit turn units. The lifetime_range name is kept for "
-            "compatibility."
-        ),
+        doc=("Base pitch angle in 12-bit turn units."),
     ),
     member("int16_t", "speed_min", 0x18),
     member("int16_t", "speed_variance", 0x1A),
     member("int32_t", "speed_max", 0x1C),
     member(
         "int32_t",
-        "collision_damage_type",
+        "homing_turn_step_angle12",
         0x20,
-        doc=(
-            "Homing turn step in 12-bit turn units, passed to Component_TrackTarget. The "
-            "collision_damage_type name is kept for compatibility."
-        ),
+        doc=("Homing turn step in 12-bit turn units, passed to Component_TrackTarget."),
     ),
-    member(
-        "Math_Vec2I32XZ",
-        "scatter_angle_xz",
-        0x24,
-        doc=(
-            "x stores angular scatter width in 12-bit turn units. z covers the adjacent word at "
-            "+0x28."
-        ),
-    ),
+    member("int32_t", "angular_scatter_width_angle12", 0x24),
+    member("int32_t", "initial_target_turn_step_angle12", 0x28),
     member(
         "int32_t",
-        "bounce_factor",
+        "yaw_offset_angle12",
         0x2C,
         doc=(
-            "Yaw offset in 12-bit turn units, added by Component_CalculateOrientation. The "
-            "bounce_factor name is kept for compatibility."
+            "Yaw offset in 12-bit turn units, added by Component_CalculateOrientation."
         ),
     ),
     member(
         "int32_t",
-        "trail_effect_id",
+        "pitch_offset_angle12",
         0x30,
         doc=(
-            "Pitch offset in 12-bit turn units, added by Component_CalculateOrientation. The "
-            "trail_effect_id name is kept for compatibility."
+            "Pitch offset in 12-bit turn units, added by Component_CalculateOrientation."
         ),
     ),
     member(
         "int32_t",
-        "return_to_owner",
+        "owner_turn_step_angle12",
         0x34,
-        doc=(
-            "Turn step toward the owner in 12-bit turn units. The return_to_owner name is kept "
-            "for compatibility."
-        ),
+        doc=("Turn step toward the owner in 12-bit turn units."),
     ),
     member(
         "int32_t",
-        "collision_radius",
+        "spawn_camera_shake_amplitude",
         0x38,
-        doc=(
-            "Camera shake amplitude passed to Camera_StartShake on spawn. The collision_radius "
-            "name is kept for compatibility."
-        ),
+        doc=("Camera shake amplitude passed to Camera_StartShake on spawn."),
     ),
     member(
         "int32_t",
-        "collision_height",
+        "followup_camera_shake_amplitude",
         0x3C,
         doc=(
-            "Camera shake amplitude passed to Camera_StartShake for a follow-up projectile. The "
-            "collision_height name is kept for compatibility."
+            "Camera shake amplitude passed to Camera_StartShake for a follow-up projectile."
         ),
     ),
     member("uint16_t", "type0_duration_base", 0x40),
@@ -1581,27 +1559,18 @@ stable.struct(
     "Component_SpawnParams",
     member("Actor_State*", "owner", 0x0),
     member("Component_Definition*", "definition", 0x4),
-    member(
-        "uint32_t",
-        "spawn_value_08",
-        0x8,
-        doc=(
-            "Attachment joint index in the low 16 bits and damage cooldown in the high 16 bits."
-        ),
-    ),
+    member("uint16_t", "attachment_joint_index", 0x8),
+    member("uint16_t", "damage_cooldown", 0xA),
     member(
         "Actor_State*",
-        "spawn_value_0c",
+        "position_source_actor",
         0xC,
-        doc=(
-            "Actor supplying the spawn position to Component_InitializeProjectile. The "
-            "spawn_value_0c name is kept for compatibility."
-        ),
+        doc=("Actor supplying the spawn position to Component_InitializeProjectile."),
     ),
     member("Math_Vec3I32", "target_pos", 0x10),
     member("Actor_State*", "attached_actor", 0x1C),
-    member("int32_t", "reserved_20", 0x20),
-    member("int32_t", "reserved_24", 0x24),
+    member("int32_t", "previous_distance", 0x20),
+    member("int32_t", "current_distance", 0x24),
     member("uint8_t", "state_flags", 0x28),
     member("uint8_t", "pad_29[3]", 0x29),
     member("int32_t", "spawn_frame", 0x2C),
@@ -1615,12 +1584,9 @@ stable.struct(
     member("int16_t", "hit_depths[6]", 0xA8),
     member(
         "Math_Vec3I32",
-        "impact_velocities[6]",
+        "hit_positions[6]",
         0xB4,
-        doc=(
-            "World-space hit positions used when spawning follow-up projectiles. The "
-            "impact_velocities name is kept for compatibility."
-        ),
+        doc=("World-space hit positions used when spawning follow-up projectiles."),
     ),
     member("uint8_t", "hit_count", 0xFC),
     member("uint8_t", "pad_0FD", 0xFD),
@@ -1922,7 +1888,7 @@ stable.struct(
     member("Win32_GUID*", "lp_guid", 0x11C),
     member("DDCAPS", "driver_caps", 0x120),
     member("DDCAPS", "hel_caps", 0x29C),
-    member("uint8_t", "reserved_418[124]", 0x418),
+    member("DDraw_SurfaceDesc2", "preferred_mode", 0x418),
     member("uint32_t", "selected_marker", 0x494),
     member("uint8_t", "reserved_498[4]", 0x498),
     member("Win32_GUID", "device_guid", 0x49C),
@@ -1932,21 +1898,17 @@ stable.struct(
     member("int32_t", "preferred_mode_index", 0x2B80),
     member(
         "int32_t",
-        "selected_mode_index",
+        "desktop_compatible",
         0x2B84,
         doc=(
-            "Desktop compatibility flag copied from the driver to its device records. The "
-            "selected_mode_index name is kept for compatibility."
+            "Desktop compatibility flag copied from the driver to its device records."
         ),
     ),
     member(
         "uint32_t",
-        "mode_has_hardware_caps",
+        "has_stereo_modes",
         0x2B88,
-        doc=(
-            "Set when at least one stereo display mode exists. The mode_has_hardware_caps name is "
-            "kept for compatibility."
-        ),
+        doc=("Set when at least one stereo display mode exists."),
     ),
     size=0x2B8C,
     doc="DirectDraw/Direct3D driver enumeration record. The hardware and HEL capability blocks are 0x17C-byte DDCAPS values at +0x120 and +0x29C.",
@@ -2170,10 +2132,8 @@ stable.struct(
         "reserved_12[2]",
         0x12,
         doc=(
-            (
-                "Padding at the end of the sprite context. Graphics_RenderTexturedSprite may "
-                "include these bytes in a masked load."
-            )
+            "Padding at the end of the sprite context. Graphics_RenderTexturedSprite may "
+            "include these bytes in a masked load."
         ),
     ),
     member("Math_ColorRGB8", "color_mod", 0x14),
@@ -2200,7 +2160,7 @@ stable.struct(
     "Material_Node",
     member("Material_TableEntry*", "material", 0x0),
     member("uint8_t", "node_type", 0x4),
-    member("uint8_t", "unknown_05", 0x5),
+    member("uint8_t", "controller_flags", 0x5),
     member("uint8_t", "unknown_06", 0x6),
     member("uint8_t", "unknown_07", 0x7),
     member("uint8_t*", "animation_record", 0x8),
@@ -2446,15 +2406,8 @@ stable.struct(
     member("uint32_t", "material_tint", 0x8),
     member("Material_TextureInfo", "texture_info", 0xC),
     member("Math_UV8", "uv_tile_offset", 0x10),
-    member(
-        "uint8_t",
-        "texture_info_hi_reserved[2]",
-        0x12,
-        doc=(
-            "UV scroll factors minus one: byte 0 stores U and byte 1 stores V. The reserved array "
-            "name is kept for compatibility."
-        ),
-    ),
+    member("uint8_t", "uv_scroll_u_factor_minus_one", 0x12),
+    member("uint8_t", "uv_scroll_v_factor_minus_one", 0x13),
     member("Math_ColorRGB8", "color_adjust", 0x14),
     member("uint8_t", "reserved_17", 0x17),
     member("Material_TableEntry*", "next_material_entry", 0x18),
@@ -2802,10 +2755,8 @@ stable.struct(
         "mesh_polygon_count_or_ground_y",
         0x8C,
         doc=(
-            (
-                "Count or limit for records in mesh_polygon_array. Keep it consistent with the "
-                "associated render data when copying actor state."
-            )
+            "Count or limit for records in mesh_polygon_array. Keep it consistent with the "
+            "associated render data when copying actor state."
         ),
     ),
     member(
@@ -2839,10 +2790,8 @@ stable.struct(
         "visual_morph_or_skin_target_table",
         0xB0,
         doc=(
-            (
-                "Morph and skin target pointers read by Bone_TransformVerticesWeighted alongside "
-                "the shared mesh and scene vertex resources."
-            )
+            "Morph and skin target pointers read by Bone_TransformVerticesWeighted alongside "
+            "the shared mesh and scene vertex resources."
         ),
     ),
     member("int32_t", "anim_tick", 0xB4),
@@ -3097,9 +3046,34 @@ stable.struct(
     member("void*", "shared_ref_50", 0x50),
     member("void*", "shared_ref_54", 0x54),
     member("Math_Vec3I32*", "runtime_target_pos", 0x58),
-    member("uint8_t", "reserved_5C[44]", 0x5C),
+    member("int32_t", "saved_param_gravity_friction", 0x5C),
+    member("int32_t", "saved_param_C8", 0x60),
+    member("int32_t", "saved_param_CC", 0x64),
+    member("int32_t", "saved_param_max_speed_0", 0x68),
+    member("int32_t", "saved_param_max_speed_1", 0x6C),
+    member("int32_t", "saved_param_accel_0", 0x70),
+    member("int32_t", "saved_param_max_speed_2", 0x74),
+    member("int32_t", "saved_param_accel_1", 0x78),
+    member("int32_t", "saved_param_accel_2", 0x7C),
+    member("int32_t", "saved_param_accel_3", 0x80),
+    member("int32_t", "saved_param_accel_4", 0x84),
     member("int32_t", "respawn_transition_speed", 0x88),
-    member("uint8_t", "reserved_8C[52]", 0x8C),
+    member("int32_t", "saved_param_turn_step", 0x8C),
+    member("int32_t", "saved_param_mass", 0x90),
+    member("int32_t", "saved_param_FC", 0x94),
+    member("uint8_t", "saved_param_jump_frames", 0x98),
+    member("uint8_t", "saved_param_jump_strength", 0x99),
+    member("uint8_t", "saved_param_direction_mode", 0x9A),
+    member("uint8_t", "saved_param_pad_103", 0x9B),
+    member("int32_t", "saved_param_max_health", 0x9C),
+    member("int32_t", "saved_param_108", 0xA0),
+    member("int32_t", "saved_param_10C", 0xA4),
+    member("int32_t", "saved_param_110", 0xA8),
+    member("int32_t", "saved_param_114", 0xAC),
+    member("int32_t", "saved_param_118", 0xB0),
+    member("int32_t", "saved_param_11C", 0xB4),
+    member("int32_t", "saved_param_120", 0xB8),
+    member("int32_t", "saved_param_124", 0xBC),
     member("Math_Vec3I32*", "position_ptr", 0xC0),
     member("int32_t", "param_gravity_friction", 0xC4),
     member("int32_t", "param_c8", 0xC8),
@@ -3142,7 +3116,7 @@ stable.struct(
     member("int32_t", "path_best_distance", 0x144),
     member("Math_Vec3I32", "path_target", 0x148),
     member("Math_Vec3I32", "path_result", 0x154),
-    member("uint8_t", "reserved_160[12]", 0x160),
+    member("Math_Vec3I32", "navigation_command_position", 0x160),
     member("int32_t", "target_offset_phase", 0x16C),
     member("int32_t", "target_offset_step", 0x170),
     member("int32_t", "saved_collision_radius_sq", 0x174),
@@ -3416,11 +3390,11 @@ stable.struct(
 stable.struct(
     "Mesh_CmdList",
     member("uint8_t", "flags", 0x0),
-    member("uint8_t", "reserved_01", 0x1),
+    member("uint8_t", "base_command_count", 0x1),
     member("int16_t", "count", 0x2),
     member("Mesh_Command**", "cmd_ptrs", 0x4),
     size=0x8,
-    doc="Mesh command-list header. List flags are stored at +0 and byte +1 is unused.",
+    doc="Mesh command-list header. Byte +1 stores the base command count restored into count by Actor_UpdateAnimationAndVisibility.",
     unstable=True,
     incomplete=False,
 )
@@ -3469,11 +3443,9 @@ stable.struct(
     member("uint16_t", "vertex_indices[4]", 0x4),
     member(
         "Mesh_FaceNormal*",
-        "texture_data_ptr",
+        "face_normal",
         0xC,
-        doc=(
-            "Runtime face-normal pointer. The texture_data_ptr name is kept for compatibility."
-        ),
+        doc=("Runtime face-normal pointer."),
     ),
     member("uint16_t", "flags", 0x10),
     member("uint16_t", "uv_index", 0x12),
@@ -3553,12 +3525,9 @@ stable.struct(
     member("uint16_t", "unk_00", 0x0),
     member(
         "char",
-        "render_node_entry_index",
+        "trail_index_1based",
         0x2,
-        doc=(
-            "Signed one-based trail index; zero means no trail. The render_node_entry_index name "
-            "is kept for compatibility."
-        ),
+        doc=("Signed one-based trail index; zero means no trail."),
     ),
     member("uint8_t", "unk_03", 0x3),
     member("uint32_t", "unk_04", 0x4),
@@ -3894,7 +3863,10 @@ stable.struct(
 stable.struct(
     "PKG_ActorTemplate",
     member("PKG_ObjectNodeFixupView*", "lod_nodes", 0x0),
-    member("uint32_t", "reserved_0c", 0xC),
+    member("PKG_ObjectNodeFixupView*", "alternate_lod_node", 0x4),
+    member("PKG_ObjectNodeFixupView*", "third_node", 0x8),
+    member("int16_t", "sound_index_base", 0xC),
+    member("uint16_t", "lod_distance_threshold", 0xE),
     member("Animation_StateTable*", "anim_table", 0x10),
     size=0x14,
 )
@@ -4143,11 +4115,9 @@ stable.struct(
         "powerup_actor_template_offsets[16]",
         0x24,
         doc=(
-            (
-                "Sixteen package-relative offsets to powerup actor templates. Fixup converts "
-                "these to PKG_ActorTemplate pointers in "
-                "Level_RuntimeData.powerup_actor_template_slots."
-            )
+            "Sixteen package-relative offsets to powerup actor templates. Fixup converts "
+            "these to PKG_ActorTemplate pointers in "
+            "Level_RuntimeData.powerup_actor_template_slots."
         ),
     ),
     member("uint32_t", "theme_0_offset", 0x64),
@@ -4277,11 +4247,10 @@ stable.struct(
     member("uint16_t", "vertex_indices[4]", 0x4),
     member(
         "uint32_t",
-        "uv_data_offset",
+        "face_normal_offset",
         0xC,
         doc=(
-            "Serialized face-normal offset. The uv_data_offset name is kept for compatibility; "
-            "PKG_PolygonListEntry exposes the relocated pointer."
+            "Serialized face-normal offset; PKG_PolygonListEntry exposes the relocated pointer."
         ),
     ),
     member(
@@ -4512,7 +4481,7 @@ stable.struct(
     member("uint32_t", "flags", 0x0),
     member("Actor_State*", "parent_actor", 0x4),
     member("Mesh_Node*", "mesh_data_ptr", 0x8),
-    member("Mesh_RuntimeVertex*", "vertex_buffer", 0xC),
+    member("Mesh_Vertex*", "vertex_buffer", 0xC),
     member("Mesh_RuntimePolygon*", "index_buffer", 0x10),
     member("int32_t", "mesh_offset", 0x14),
     member("int32_t", "material_offset", 0x18),
@@ -4613,11 +4582,10 @@ stable.struct(
     member("uint16_t", "vertex_indices[4]", 0x4),
     member(
         "Mesh_FaceNormal*",
-        "normal_offset",
+        "face_normal",
         0xC,
         doc=(
-            "Relocated face-normal pointer. The normal_offset name is kept for compatibility; "
-            "serialized offsets belong to PKG_PolygonDataRaw."
+            "Relocated face-normal pointer; serialized offsets belong to PKG_PolygonDataRaw."
         ),
     ),
     member("uint16_t", "flags", 0x10),
@@ -4798,19 +4766,18 @@ stable.struct(
     member("uint8_t", "sound_enabled", 0x0),
     member(
         "uint8_t",
-        "difficulty",
+        "selected_save_slot",
         0x1,
         doc=(
-            "Selected save-slot index. The difficulty name is kept for compatibility. The EN "
-            "getter and setter access byte 0x49b70d."
+            "Selected save-slot index. The EN getter and setter access byte 0x49b70d."
         ),
     ),
     member(
         "uint8_t",
-        "language",
+        "player_character",
         0x2,
         doc=(
-            "Persisted language ID in EU/SC. EN uses the same byte for Settings_SetPlayerCharacter. The language name is kept for compatibility."
+            "Player-character byte in EN. The EU/SC language interpretation remains unverified."
         ),
     ),
     member("uint8_t", "initialized", 0x3),
@@ -4874,12 +4841,9 @@ stable.struct(
     ),
     member(
         "uint8_t",
-        "save_game_puppy_count_backup",
+        "lives_backup",
         0x2,
-        doc=(
-            "Backed-up player lives, copied by Save_BackupGamePuppyCount. The puppy-count "
-            "name is kept for compatibility."
-        ),
+        doc=("Backed-up player lives, copied by Save_BackupLivesToSlot."),
     ),
     member(
         "uint8_t",
@@ -5039,10 +5003,8 @@ stable.struct(
         "world_rot_reserved",
         0x3E,
         doc=(
-            (
-                "Reserved word after world_rot_matrix. Scene_UpdateNodeAnimation writes the "
-                "surrounding matrix fields."
-            )
+            "Reserved word after world_rot_matrix. Scene_UpdateNodeAnimation writes the "
+            "surrounding matrix fields."
         ),
     ),
     member("Math_Vec3I32", "world_pos", 0x40),
@@ -5139,11 +5101,10 @@ stable.struct(
     ),
     member(
         "Mesh_AccumulatedNormal*",
-        "mesh_cmd_list",
+        "normal_table",
         0x74,
         doc=(
-            "Normal accumulators for type-1 mesh nodes. Other node variants may reuse this field. "
-            "The mesh_cmd_list name is kept for compatibility."
+            "Normal accumulators for type-1 mesh nodes. Other node variants may reuse this field."
         ),
     ),
     member("uint8_t", "visibility_flags[4]", 0x78),
@@ -5174,11 +5135,9 @@ stable.struct(
         "model_runtime_flags",
         0x88,
         doc=(
-            (
-                "Node flags used by traversal, rendering, and fixup. "
-                "PKG_FixUpResourceObjectNodeType1MeshActorLike tests bit 1; collision tests "
-                "transform coordinates when bits 0x22 are set."
-            )
+            "Node flags used by traversal, rendering, and fixup. "
+            "PKG_FixUpResourceObjectNodeType1MeshActorLike tests bit 1; collision tests "
+            "transform coordinates when bits 0x22 are set."
         ),
     ),
     member(
@@ -5364,11 +5323,10 @@ stable.struct(
     member("int16_t", "level_puppy_count", 0x2),
     member(
         "int16_t",
-        "player_bone_count",
+        "player_health_or_energy",
         0x4,
         doc=(
-            "Nonnegative player health or energy from Player_ControllerRecordView +0x74. The "
-            "player_bone_count name is kept for compatibility."
+            "Nonnegative player health or energy from Player_ControllerRecordView +0x74."
         ),
     ),
     member("int16_t", "player_lives", 0x6),
@@ -7921,10 +7879,10 @@ stable.callback_type(
 
 stable.enum(
     "Actor_PropID",
-    enum_value("PROP_RENDERY", 0),
+    enum_value("PROP_MAX_HEALTH", 0),
     enum_value("PROP_SPEED", 1),
     enum_value("PROP_ROTATION", 2),
-    enum_value("PROP_PARENT", 3),
+    enum_value("PROP_PARAM_108", 3),
     enum_value("PROP_PUSHXZ", 4),
     enum_value("PROP_RESPONSEXZ", 5),
     enum_value("PROP_LIVESPEED", 6),
@@ -7937,7 +7895,7 @@ stable.enum(
     enum_value("PROP_TRACEMODE3", 103),
 )
 
-stable.enum("Camera_TransitionMode", enum_value("CAMERA_SNAP", 0))
+stable.enum("Camera_TransitionMode", enum_value("CAMERA_SNAP", 200))
 
 stable.sig("DDraw_ObjectAnchor", "A1 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 81 EC 9C 00 00 00")
 
@@ -8004,7 +7962,7 @@ stable.sig("Mem_Malloc", "FF 35 ?? ?? ?? ?? FF 74 24")
 stable.sig("Audio_ShutdownSystem", "A1 ?? ?? ?? ?? 85 C0 74 ?? 53 8B 1D")
 
 stable.sig(
-    "Actor_CheckSavedActiveActorCameraDistance",
+    "Actor_PassesPauseCameraCoordinateGate",
     "8B 44 24 04 85 C0 75 ?? 33 C0 C3 8B 15 ??",
     required=Required.EN,
 )
@@ -8029,16 +7987,17 @@ stable.sig("Entity_SetActorProperty", "00 00 83 F9 09 0F 87 ??")
 stable.sig("Graphics_AdjustLevelScale", "A1 ?? ?? ?? ?? 85 C0 7C")
 
 stable.fn(
-    "Actor_CheckSavedActiveActorCameraDistance",
+    "Actor_PassesPauseCameraCoordinateGate",
     "8B 44 24 04 85 C0 75 ?? 33 C0 C3 8B 15 ??",
     required=Required.EN,
     hook=0x6,
     ret="BOOL",
     params=[param("Actor_State*", "actor")],
     doc=(
-        "Returns TRUE when actor is non-null and the pause/menu distance check allows "
-        "processing. Measures distance from the active actor position saved by "
-        "Script_OpPauseToggle to the current Graphics_ListState eye position."
+        "Returns FALSE for a null actor or an excluded saved-position/camera coordinate result. "
+        "The actor is used only for the null check. Mode 0 rejects 0x8381. Mode 0x11 rejects "
+        "unsigned results strictly between 200000 and 300000. The coordinate test is not a "
+        "distance calculation."
     ),
     stable=True,
 )
@@ -8090,7 +8049,10 @@ stable.fn(
     public=False,
     ret="void",
     params=[param("Actor_State*", "actor")],
-    doc="Updates each actor trail once, renders active histories outside frame transition 0x200000, then clears processed flags.",
+    doc=(
+        "Updates unprocessed, unexpired trails as inactive. Renders trail histories unless frame "
+        "flag 0x2000 is set, then clears all processed flags."
+    ),
     stable=True,
 )
 
@@ -8104,12 +8066,12 @@ stable.fn(
     params=[
         param("Component_TrailObject*", "trail"),
         param(
-            "Actor_State*",
+            "Actor_State const*",
             "actor",
             doc="Actor supplying scene vertices for active samples. Null is valid only for inactive or bit-1-suppressed updates.",
         ),
         param(
-            "Graphics_PolygonRenderRef*",
+            "Graphics_PolygonRenderRef const*",
             "polygon_ref",
             doc="Polygon reference whose vertex indices 0 and 3 select the trail endpoints.",
         ),
@@ -8144,6 +8106,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[],
+    doc="Builds camera/view/frustum transforms, submits static and dynamic scene passes, then flushes sorted render lists. Frame flag 0x8 skips the frame.",
 )
 
 stable.fn(
@@ -8153,7 +8116,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[],
-    doc="Walks visible static-scene records and submits their geometry. Far-distance flag 0x40000000 selects Graphics_RenderSceneGeometryWrapper.",
+    doc="Walks visible static-scene records and submits their geometry. Far-distance flag 0x40000000 selects Graphics_RenderPolygonBatchAdapter.",
     stable=True,
 )
 
@@ -8259,7 +8222,7 @@ stable.fn(
         param("PKG_ActorTemplate const*", "actor_template"),
         param("int32_t", "encoded_sound_selector"),
     ],
-    doc="Resolves selectors 100 through 199 through the signed sound-index base at actor_template +0x0C. Returns -1 for no usable base.",
+    doc="Returns signed template sound base + selector - 100, or -1 when no usable base exists. The resolver does not check the selector range.",
     stable=True,
 )
 
@@ -8290,7 +8253,11 @@ stable.fn(
         param("Actor_State*", "actor"),
         param("Component_Instance*", "damage_component"),
     ],
-    doc="Queues navigation response work for an eligible damage component after owner, team, and entity-state checks. Returns 1 when the response is accepted.",
+    doc=(
+        "Queues a navigation command for a nonnegative damage-team ID, then checks entity and "
+        "team-mask acceptance. Returns 1 on acceptance. Returns 0 without undoing the queued "
+        "command. Accepted airborne targets receive a 60-tick reaction timer."
+    ),
     stable=True,
 )
 
@@ -8361,10 +8328,10 @@ stable.fn(
         param(
             "int32_t",
             "state_index",
-            doc="Input state slot to query. Invalid or empty slots fall back to slot zero.",
+            doc="Input state slot to query. Values >=2 or slots with button word 0x20000000 fall back to slot zero; negative indices are not rejected.",
         ),
         param(
-            "Input_State*",
+            "Input_State const*",
             "state_table",
             doc="Two-entry input state table used by scripts and menus.",
         ),
@@ -8416,13 +8383,13 @@ stable.fn(
         ),
         param(
             "int16_t",
-            "target_selector",
-            doc="Target selector forwarded to Actor_MoveToTarget.",
+            "facing_selector",
+            doc="Facing-target selector forwarded to Actor_SetFacingTarget.",
         ),
         param(
             "int32_t",
-            "transition_speed",
-            doc="Transition speed forwarded to Actor_MoveToTarget.",
+            "facing_angle_degrees_q12",
+            doc="Facing-angle offset in Q12 degrees; movement speed is derived from displacement and duration.",
         ),
         param(
             "int32_t",
@@ -8443,11 +8410,19 @@ stable.fn(
     params=[
         param("Actor_State*", "actor"),
         param("Math_Vec3I32 const*", "target_pos"),
-        param("int16_t", "target_selector"),
-        param("int32_t", "transition_speed"),
+        param(
+            "int16_t",
+            "facing_selector",
+            doc="Facing-target selector forwarded to Actor_SetFacingTarget.",
+        ),
+        param(
+            "int32_t",
+            "facing_angle_degrees_q12",
+            doc="Facing-angle offset in Q12 degrees; movement speed is derived from displacement and duration.",
+        ),
         param("int32_t", "duration_frames"),
     ],
-    doc="Reads nullable target_pos as borrowed const input, releases the prior attachment, and stores the low 16 bits of duration_frames at PKG_ActorRecord +0x18C and target_selector at +0x18E. Zero duration snaps immediately.",
+    doc="Starts a move toward borrowed target_pos, with NULL selecting world origin. Saves facing selector and Q12-degree angle separately from movement duration. A zero low word of duration_frames snaps immediately; other paths derive velocity using the full duration.",
     stable=True,
 )
 
@@ -8472,9 +8447,9 @@ stable.fn(
     ret="void",
     params=[param("Actor_State*", "actor")],
     doc=(
-        "Completes a pending actor movement transition by applying recorded target and velocity, "
-        "rebuilding collision/model state, resolving ground and parent collision, updating the linked "
-        "actor, and clearing transition bookkeeping. Also applies and finalizes the facing target."
+        "Finishes a pending move using the saved target and velocity. Rebuilds collision and "
+        "model state, resolves ground and parent collision, and updates the linked actor. Applies "
+        "the facing target and clears movement state."
     ),
     stable=True,
 )
@@ -8537,7 +8512,7 @@ stable.fn(
         param(
             "int32_t",
             "target_selector",
-            doc="Signed script/actor selector. Positive values address actor slots and negative sentinel values select special path targets.",
+            doc="Signed entity/navigation selector. Positive values ordinarily select one-based entity slots; negative values select special targets or navigation-command modes.",
         ),
         param(
             "int32_t",
@@ -8552,7 +8527,7 @@ stable.fn(
         param(
             "int32_t",
             "trace_flags",
-            doc="Bitfield controlling recursive trace/result modes. Known values include 0, 0x20, and 0x300.",
+            doc="Trace/result flags in ordinary modes. Navigation-command selectors -20000..-19746 instead interpret this argument as a source-selector filter.",
         ),
     ],
     doc="Traces and selects an entity path target. Returns the selected path or actor index, or zero when none is available.",
@@ -8580,8 +8555,7 @@ stable.fn(
     ret="void",
     params=[param("Actor_State*", "actor")],
     doc=(
-        "Refreshes the actor record from its owning entity defaults while preserving selected "
-        "runtime fields and active position overrides."
+        "Refreshes the actor record from entity defaults while preserving current health and, conditionally, movement parameters. Record state flag 0x20 suppresses the refresh."
     ),
     stable=True,
 )
@@ -8620,6 +8594,7 @@ stable.fn(
     hook=0x6,
     ret="Actor_State*",
     params=[param("Entity_State*", "source_entity")],
+    doc="Clones and initializes an entity runtime actor on first activation, returning the actor or NULL. The spawn gate is set before cloning, so failure prevents retry until entity teardown clears it.",
 )
 
 stable.fn(
@@ -8845,7 +8820,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Physics_CheckGroundFriction",
+    "Player_CacheGroundJumpVelocity",
     "71 ?? C9 75 ?? 50 E8 ??",
     match=-0xD,
     ret="void",
@@ -8856,7 +8831,7 @@ stable.fn(
             doc="Actor whose record/ground-friction state is checked and updated.",
         )
     ],
-    doc="Reads record_ptr from actor at offset 0xF4. When record offset 0x71 is clear, calls Physics_CalculateFrictionForce and updates the friction fields.",
+    doc="Caches Physics_CalculateGroundJumpVelocity in the player controller record when its jump-block byte is clear. A nonzero result starts a three-tick airborne jump grace countdown; blocked or zero-result cases clear the countdown.",
     stable=True,
 )
 
@@ -8866,6 +8841,7 @@ stable.fn(
     hook=0x6,
     ret="Actor_State*",
     params=[param("Actor_State*", "actor"), param("int32_t", "trail_index")],
+    doc="Spawns the selected level trail/effect entry as a component actor or actor-template clone, initializes its transform/state, and returns the result. A null entry returns NULL.",
 )
 
 stable.fn(
@@ -8884,7 +8860,7 @@ stable.fn(
     ret="void",
     params=[param("Graphics_ListState*", "camera")],
     doc=(
-        "Updates shake fields in the full Graphics_ListState. A Camera_Runtime prefix alone does not include those tail fields."
+        "Applies the next signed shake sample to camera eye and target together, using the countdown and amplitude in the camera effect-state tail."
     ),
     stable=True,
 )
@@ -8939,7 +8915,7 @@ stable.fn(
     params=[param("Actor_State*", "actor")],
     public=False,
     callable=False,
-    doc="Actor-phase slot 3 in the nine-entry table selected by Actor_State+0xC5. Its return value is ignored. Maintains record +0x18C countdown, snaps at zero, then clears entity-state bit 0x20.",
+    doc="Actor-phase slot 3 in the nine-entry table selected by Actor_State+0xC5. Maintains the 16-bit movement countdown, snaps at zero, and conditionally clears Entity flag 0x2000. Indexed callers ignore its return register.",
 )
 
 stable.fn(
@@ -8987,7 +8963,11 @@ stable.fn(
     params=[
         param("Actor_State*", "actor"),
         param("Player_ControllerRecordView*", "record"),
-        param("int32_t", "update_from_input"),
+        param(
+            "int32_t",
+            "surface_trail_mode",
+            doc="Surface/trail selector: -1 when airborne, otherwise ((ground flags >> 7) & 3) - 1. Zero selects the special grounded animation path.",
+        ),
     ],
     doc="Selects and queues player animation state from current progress, entity defaults, movement input, behavior flags, attachment state, and forced record state. States 4/6/8/9 wait for Q12 progress 0x1000.",
     stable=True,
@@ -9032,11 +9012,11 @@ stable.fn(
         param("void*", "other_actor_or_out_reference"),
         param(
             "int32_t",
-            "depth_or_reference_selector",
-            doc="Nonnegative: contact depth with an Actor_State* peer. Negative: selector -1-value with an Actor_State** output cell.",
+            "distance_or_reference_selector",
+            doc="Nonnegative: contact distance with an Actor_State* peer. Negative: component selector -1-value with an Actor_State** output cell.",
         ),
     ],
-    doc="For nonnegative depth, resolves collision with an Actor_State* peer. For a negative selector, argument 2 must point to an Actor_State* output cell; selection index is -1-selector. The routine may write a fallback actor through that cell.",
+    doc="For nonnegative contact distance, aggregates and caches an Actor_State* peer contact. For a negative selector, argument 2 is an Actor_State** output cell receiving the explicit component reference or a filtered cached fallback; the component key is -1-selector.",
 )
 
 stable.fn(
@@ -9138,7 +9118,7 @@ stable.fn(
             doc="Receives the interpolated three-component vector.",
         ),
     ],
-    doc="Writes a three-int32 vector from a constant or keyed 0x28-byte animation channel. Keyed paths bracket time and evaluate fixed-point Hermite/linear terms.",
+    doc="Writes a three-int32 vector from a constant or keyed animation channel. Keyed paths bracket time and evaluate Hermite terms using a Q20 parameter and flag-dependent truncation/overflow rules.",
     stable=True,
 )
 
@@ -9175,7 +9155,7 @@ stable.fn(
         ),
     ],
     doc=(
-        "Computes a Q12 interpolation weight from the surrounding key times and easing records before keyframe_data. Uses an interval reciprocal lookup when available. Vector and quaternion interpolators consume the result."
+        "Computes a Q20 interpolation weight from the surrounding key times and easing records before keyframe_data. Uses an interval reciprocal lookup when available. Vector and quaternion interpolators consume the result."
     ),
 )
 
@@ -9207,7 +9187,7 @@ stable.fn(
             doc="Destination quaternion that is blended in place.",
         ),
     ],
-    doc="Samples a Q14 quaternion, chooses normalized LERP or trigonometric interpolation from the dot product, and overwrites four int16 components in inout_quat. Both callers discard EAX.",
+    doc="Samples a Q14 quaternion, chooses unnormalized LERP or trigonometric interpolation from the dot product, and overwrites four int16 components in inout_quat. Both callers discard EAX.",
     stable=True,
 )
 
@@ -9263,8 +9243,7 @@ stable.fn(
         ),
     ],
     doc=(
-        "Writes out_quat using SLERP when angle_fp12 has a usable sine. Degenerate cases use "
-        "normalized or linear interpolation. Results are written through the output pointer."
+        "Writes out_quat using Q14 quaternion SLERP when the angle has a usable sine, with conditional renormalization on that path. Zero angle or zero sine uses unnormalized component LERP."
     ),
     stable=True,
 )
@@ -9314,9 +9293,7 @@ stable.fn(
         ),
     ],
     doc=(
-        "Applies the time bias from the low 16 bits at +4 and the end time from bits 20 "
-        "through 31, then finds the active keyframe. Constant channels use the inline time at "
-        "+4."
+        "Tests a channel's visibility/active state at sample_time. Constant channels compare against the complete signed threshold; keyed channels select a four-byte visibility key and return bit 31, excluding that bit from its packed time."
     ),
 )
 
@@ -9339,7 +9316,7 @@ stable.fn(
         ),
         param("int16_t*", "out_value", doc="Receives the sampled int16 channel value."),
     ],
-    doc="Writes one int16 sample from a constant or keyed scalar channel. Keyed paths bracket time, calculate a Q12 spline parameter, and evaluate cubic fixed-point terms.",
+    doc="Writes one int16 sample from a constant or keyed scalar channel. Keyed paths bracket time, calculate a Q20 spline parameter, and evaluate cubic fixed-point terms.",
     stable=True,
 )
 
@@ -9355,6 +9332,7 @@ stable.fn(
         param("Actor_State*", "actor_or_mesh_state"),
     ],
     abi_status=AbiStatus.PLACEHOLDER,
+    doc="Copies base morph vertices and normals, then adds weighted indexed morph deltas for keyed channels. The keyed path compacts nonzero weights into ten-entry local arrays without a capacity check.",
 )
 
 stable.fn(
@@ -9485,7 +9463,11 @@ stable.fn(
     params=[
         param("Bone_JointTrackState*", "track"),
         param("Actor_State*", "target_actor"),
-        param("int32_t", "direct_tracking_mode"),
+        param(
+            "int32_t",
+            "explicit_reference_joint_index",
+            doc="Resolved explicit-reference joint index. Nonzero bypasses acquisition-cone gating; final yaw/pitch clamps still apply.",
+        ),
     ],
     doc="Updates Bone_JointTrackState current yaw/pitch and node world rotation toward target_actor. The third stack argument is only tested for zero.",
     stable=True,
@@ -9500,8 +9482,8 @@ stable.fn(
     params=[
         param(
             "Scene_Type1RenderOwnerView*",
-            "actor",
-            doc="Actor/render state providing animation tick, animation data table, behavior flags, and mesh-piece table.",
+            "owner",
+            doc="Scene render/animation owner providing the direct animation data block, tick, behavior flags, and submesh table.",
         ),
         param(
             "Scene_Node*",
@@ -9515,23 +9497,25 @@ stable.fn(
         ),
     ],
     doc=(
-        "Updates local animation channels and composes the node's world transform from its parent. Skips anim_seq_index == -1. Samples available position, rotation, scale, and scalar channels; types 1 and 6 use Bone_TransformVerticesWeighted, and type 8 uses scalar pairs. Writes world position, velocity delta, and world rotation."
+        "Samples position, rotation, extent, morph, and scalar channels, then combines the node "
+        "transform with its parent. Index -1 skips the update. Cached ticks skip sampling only. "
+        "Extent channels update fields specific to the node type."
     ),
 )
 
 stable.fn(
-    "Actor_ApplyVerticalVelocity",
+    "Actor_AdvanceRootMotionTick",
     "7C ?? 10 57 50 56 E8 ??",
     match=-0x31,
     ret="void",
     params=[
-        param("Scene_Type1RenderOwnerView*", "actor"),
-        param("int32_t", "velocity"),
+        param("Scene_Type1RenderOwnerView*", "owner"),
+        param("int32_t", "tick_delta"),
     ],
     doc=(
-        "Advances the actor's vertical animation tick, directly or through "
-        "Actor_ApplySplineMovement. Applies looping or clamping and sets bit 0x40 at actor "
-        "+0x65."
+        "Advances a type-1 scene owner by signed tick_delta, directly or through "
+        "Actor_ApplySplineMovement. Wraps or clamps the timeline and sets bit 0x40 at owner "
+        "+0x65. Sampling can update all three local-position components."
     ),
     stable=True,
 )
@@ -9543,11 +9527,15 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[
-        param("Scene_Type1RenderOwnerView*", "actor"),
+        param("Scene_Type1RenderOwnerView*", "owner"),
         param("Animation_SplineChannelVec3*", "spline_track"),
-        param("int32_t", "velocity"),
+        param(
+            "int32_t",
+            "tick_delta",
+            doc="Proposed advance in the spline animation time domain, scaled for partial segments.",
+        ),
     ],
-    doc="Advances anim_tick over a vec3 spline and moves attach_offset within the actor's move_anim_speed distance budget. Partial segments scale both spatial delta and tick advance.",
+    doc="Advances the scene owner animation tick and local translation along a Vec3 spline. Normal segments consume the movement distance budget and scale partial-segment tick advance; the endpoint direct-sample path bypasses that budget.",
     stable=True,
 )
 
@@ -9558,7 +9546,7 @@ stable.fn(
     ret="BOOL",
     params=[
         param(
-            "char*",
+            "char const*",
             "window_handle_text",
             doc="Decimal HWND string passed by Video_PlayMovieIntro and parsed into avi_window_handle on successful MCI AVI initialization.",
         )
@@ -9586,14 +9574,16 @@ stable.fn(
     ret="BOOL",
     params=[param("char const*", "filename")],
     abi_status=AbiStatus.VERIFIED,
+    doc="Opens an AVI path through MCI under a generated movie alias and returns command success. Requires the AVI player to be initialized.",
 )
 
 stable.fn(
     "Video_CloseAVIFile",
-    "01 FF 15 ?? ?? ?? ?? C3",
+    "?? FF 15 ?? ?? ?? ?? C3 90 90 90 90 90 90 68",
     match=-0x22,
     ret="uint32_t",
     params=[],
+    doc="Closes the current AVI alias through MCI and returns its raw error/status code.",
 )
 
 stable.fn(
@@ -9602,6 +9592,7 @@ stable.fn(
     match=-0x17,
     ret="BOOL",
     params=[],
+    doc="Starts fullscreen MCI playback of the current AVI alias and returns command success.",
 )
 
 stable.fn(
@@ -9610,6 +9601,7 @@ stable.fn(
     hook=0x8,
     ret="BOOL",
     params=[],
+    doc="Queries the current AVI alias mode and returns whether the text equals playing, ignoring a separate MCI query-error check.",
 )
 
 stable.fn(
@@ -9618,18 +9610,20 @@ stable.fn(
     match=-0xF,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
-    doc="Handles script terminator opcodes 1 through 4. Clears *ip for hard end cases, skips nested variable-length blocks for opcode 2, and rotates actor script-nesting state bytes for opcodes 3/4.",
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Handles terminator opcodes 1 through 4 and clears the script cursor on end/stack operations. Opcode 2 skips nested blocks; opcode 3 changes pending bytes [a,b,c] to [current_index,a,a], while opcode 4 restores the entity behavior index and shifts the pending bytes.",
 )
 
 stable.fn(
     "Script_OpSetEntityIndex",
     "8B 44 24 08 8B 08 41 89 08 8B C1 8B 4C 24 04 8A 40 ?? 88 81 ?? ?? ?? ?? C3",
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc=(
-        "Consumes one script byte from *script_cursor_inout and stores it as the actor "
-        "entity-slot selector."
+        "Consumes one script byte from *script_cursor_inout and stores it as the current entity-slot selector."
     ),
 )
 
@@ -9637,10 +9631,12 @@ stable.fn(
     "Script_OpJumpConditional",
     "51 8B 4C 24 0C 33 D2 8B 01 83 C0 02 89 01 8A 70 ?? 8A 50 ?? 03 D0 40 89 01",
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc=(
-        "Reads a 16-bit relative target and selector byte, then restores *script_cursor_inout to "
-        "the target when the selector differs from the actor entity-slot selector."
+        "Reads a 16-bit relative target and selector byte, then redirects *script_cursor_inout when the selector differs from the current entity-slot selector."
     ),
 )
 
@@ -9650,7 +9646,7 @@ stable.fn(
     hook=0x8,
     ret="int32_t",
     params=[
-        param("Entity_State*", "actor"),
+        param("Entity_State*", "entity"),
         param("int32_t* *", "value_storage_inout"),
         param("int32_t", "ref_id"),
     ],
@@ -9671,8 +9667,7 @@ stable.fn(
         )
     ],
     doc=(
-        "Returns the script variable selected by ID. The legacy animation-related name is "
-        "kept for compatibility."
+        "Returns the level/global script value for reference (progress_var_index + 9) modulo 256. Ordinary supported indices are 0 through 240; later byte indices select special or entity-local references."
     ),
 )
 
@@ -9704,7 +9699,7 @@ stable.fn(
     match=-0x5B,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc=(
         "Consumes destination ref, RHS ref kind, arithmetic opcode, and a four-byte big-endian RHS. "
         "Opcodes add, saturating-subtract, multiply, or guarded-divide the resolved destination."
@@ -9717,7 +9712,8 @@ stable.fn(
     match=-0x1E,
     hook=0x8,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes one variable-reference byte, resolves its storage, and decrements the value only when it is nonzero.",
 )
 
 stable.fn(
@@ -9738,7 +9734,7 @@ stable.fn(
     match=-0x7C,
     hook=0x6,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc="Consumes a rel16 failure target, i16 selector, and u32 big-endian best-path-distance bound. Selector 0x7FFF exits.",
 )
 
@@ -9747,7 +9743,7 @@ stable.fn(
     "89 4C 24 1C 75 ?? A1 ??",
     match=-0x62,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc="Consumes a failure target, target selector, animation selector, and maximum path distance. Calls Actor_TracePath and rewinds the script pointer on failure.",
 )
 
@@ -9756,8 +9752,8 @@ stable.fn(
     "03 C8 83 C0 02 8B E9 ??",
     match=-0x1E,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
-    doc="Consumes a rel16 failure target, i16 target selector, i16 attach/animation selector, and u32 big-endian best-path-distance bound. Calls Actor_TracePath(g_scriptCurrentEntity, selector, INT_MAX, bound, 0x40), treating zero bound as INT_MAX.",
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes an unsigned BE16 success displacement, signed BE16 target selector, BE16 default-animation word, and BE32 path-distance bound. Successful tracing selects the relative cursor; failure falls through. Selector 0x8008 copies the current position and takes success without tracing; a zero bound means INT_MAX.",
 )
 
 stable.fn(
@@ -9766,7 +9762,8 @@ stable.fn(
     match=-0x1D,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes ten bytes containing a failure displacement, facing selector, Q12-degree angle, and animation value. Updates entity state, calls Actor_SetFacingTarget, and selects the relative cursor when facing is not yet satisfied.",
 )
 
 stable.fn(
@@ -9775,7 +9772,8 @@ stable.fn(
     match=-0x64,
     hook=0x8,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a movement selector, facing selector, Q12-degree angle, and Q12 duration. Resolves the destination, then stops the runtime actor and starts its move/facing transition; no relative branch operand is encoded.",
 )
 
 stable.fn(
@@ -9784,7 +9782,8 @@ stable.fn(
     match=-0x1D,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a relative wait displacement and animation ID, updates the current entity default animation state, and redirects the script cursor while Actor_GetAnimationWaitStatus is nonzero.",
 )
 
 stable.fn(
@@ -9793,7 +9792,8 @@ stable.fn(
     match=-0x41,
     hook=0x6,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a property byte and BE32 value, then calls Entity_SetActorProperty on the current entity. Properties 0x64/0x65 force the consumed value to zero and select direction modes.",
 )
 
 stable.fn(
@@ -9801,7 +9801,8 @@ stable.fn(
     "8B 44 24 08 6A FF 8B 08 41 89 08 8B C1 8B 0D ??",
     hook=0x6,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a property byte and calls Entity_SetActorProperty on the current entity with the -1 restore/clear sentinel.",
 )
 
 stable.fn(
@@ -9810,7 +9811,8 @@ stable.fn(
     match=-0x2A,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a failure displacement and entity selector, sets current-entity flag 8, and traces the target. A zero low-word result selects failure; success stores that word as the entity selector.",
 )
 
 stable.fn(
@@ -9818,7 +9820,7 @@ stable.fn(
     "83 C0 04 89 07 8B 35 ??",
     match=-0x4B,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc="Parses a path-trace command from *ip and resolves special entity or actor selectors against current_level_data.entity_array. It saves transient path state, calls Actor_TracePath, and advances the script pointer.",
 )
 
@@ -9827,7 +9829,7 @@ stable.fn(
     "88 54 24 10 75 ?? 8B ??",
     match=-0x13,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc="Parses one navigation opcode from *ip. Opcode 0x67 updates the current entity index and skips its payload, while other opcodes enqueue a navigation command.",
 )
 
@@ -9836,7 +9838,8 @@ stable.fn(
     "58 FF 8B EB 72 ?? 80 ??",
     match=-0x4E,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a nine-byte path-test payload and conditionally traces a navigation-command selector. Restores only the three path-result vector dwords afterward and selects the relative failure cursor when required.",
 )
 
 stable.fn(
@@ -9844,7 +9847,8 @@ stable.fn(
     "C2 3C FE 75 ?? C1 E8 ??",
     match=-0x4B,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a signal type, BE16 ID, and four-byte value slot, then emits the signal. Types 3 through 7 decode the value; other types consume the slot but emit zero.",
 )
 
 stable.fn(
@@ -9852,10 +9856,12 @@ stable.fn(
     "?? 83 C4 08 85 C0 7C ?? 8B 15 ?? ?? ?? ?? 8B",
     match=-0x46,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc=(
-        "Script sound opcode that reads one byte from *script_cursor_inout, advances the "
-        "cursor by one byte, and plays it as a level-local sound index."
+        "Consumes one sound selector: values below 100 select level sounds directly, 100..199 resolve through the template sound base, and values at least 200 select the alternate sound bank."
     ),
 )
 
@@ -9864,7 +9870,8 @@ stable.fn(
     "?? 83 C4 08 85 C0 7C ?? 8B 15 ?? ?? ?? ?? 6A",
     match=-0x4D,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a sound selector. Values below 200 use template sound base + selector - 100; 200..254 use the global definition table. Selector 255 stops all sounds matching the current entity position-pointer identity.",
 )
 
 stable.fn(
@@ -9873,7 +9880,8 @@ stable.fn(
     match=-0x29,
     hook=0x6,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a signed BE16 selector and one ignored byte, then destroys the selected entity actor. Selector 0x8008 and the selector-zero fallback refer to the original Entity argument, not the scoped current-entity global.",
 )
 
 stable.fn(
@@ -9882,11 +9890,12 @@ stable.fn(
     match=-0x21,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Runs a nested opcode block under a temporarily replaced current-entity global, then restores it. Handlers still receive the original Entity argument; eligible blocks execute at least one opcode and stop at the exact block-end cursor or NULL.",
 )
 
 stable.fn(
-    "Entity_GetOrSpawnCameraActor",
+    "Entity_EnsureCameraActorActive",
     "00 04 00 00 74 ?? 80 ??",
     match=-0x1A,
     hook=0xA,
@@ -9898,7 +9907,7 @@ stable.fn(
             doc="Source entity whose active actor pointer is returned or spawned when camera activation requires it.",
         )
     ],
-    doc="Ensures the entity has an active actor, spawning one when needed.",
+    doc="Ensures camera-actor activation has been requested, spawning when no runtime actor exists and flags require it. This side-effect-only helper has no reliable actor-pointer return value.",
 )
 
 stable.fn(
@@ -9907,7 +9916,8 @@ stable.fn(
     match=-0x42,
     hook=0x6,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a signed entity selector and ensures the selected entity actor exists. Nonpositive selectors trace from the original Entity argument and use a positive signed low-word result as a one-based index.",
 )
 
 stable.fn(
@@ -9915,7 +9925,8 @@ stable.fn(
     "03 C8 40 89 06 8B E9 ??",
     match=-0x1C,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a fixed 16-byte level-transition payload and redirects to its relative wait cursor while transition work remains busy. Transition ID 0xC8 updates the current entity/camera transition state.",
 )
 
 stable.fn(
@@ -9923,7 +9934,8 @@ stable.fn(
     "83 EC 10 8B 44 24 18 56 C7 05 ??",
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a fixed 18-byte music-transition payload and passes the duration unchanged to Audio_TriggerMusicTransition. Mode zero consumes the parameter block but supplies a zero timing vector.",
 )
 
 stable.fn(
@@ -9932,7 +9944,8 @@ stable.fn(
     match=-0x81,
     hook=0x6,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a ten-byte music-fade payload. Unless inhibited, converts volume percent to Q12 and optional Q12 duration to 30 Hz ticks, then sets the fade target.",
 )
 
 stable.fn(
@@ -9941,7 +9954,10 @@ stable.fn(
     match=-0x1B,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "script_cursor_inout")],
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
     doc=(
         "Length-prefixed script sound block opcode. It reads the block length and sound operand "
         "from *script_cursor_inout, can hold the cursor while playback is active, and uses "
@@ -9955,45 +9971,45 @@ stable.fn(
     match=-0x6A,
     hook=0x8,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a failure displacement, input slot, control code, and mode/threshold byte. Redirects when input strength is below 100; control 0xFF consumes the payload without querying or branching.",
 )
 
 stable.fn(
-    "MiniGame_InitializeRoundParams",
+    "Camera_StartShake",
     "66 8B 44 24 08 66 C7 05 ??",
     ret="void",
     params=[
         param(
             "Math_Vec3I32*",
-            "position",
+            "unused_position",
             doc="Actor position vector passed by both known callers. Unused by the callee.",
         ),
         param(
             "int16_t",
-            "round_param",
+            "amplitude",
             doc="Round or mini-game parameter stored in a global word.",
         ),
     ],
-    doc="Sets the default mini-game round counter to 10 and stores round_param. Position is an unused ABI slot.",
+    doc="Starts camera shake with ten remaining ticks and the supplied signed amplitude. The position argument is unused; no distance attenuation is applied.",
     stable=True,
 )
 
 stable.fn(
-    "MiniGame_SetScoreValues",
+    "Camera_StartRollEffect",
     "8B 44 24 08 66 A3 ??",
     hook=0xA,
     ret="void",
-    params=[param("int16_t", "player_1_score"), param("int16_t", "player_2_score")],
+    params=[param("int16_t", "amplitude"), param("int16_t", "duration_ticks")],
     doc=(
-        "Stores player_2_score in two adjacent mini-game state words and player_1_score in the "
-        "following score word."
+        "Starts a camera roll effect by storing amplitude and initializing both remaining ticks and total duration from duration_ticks. A zero duration disables updates without immediately clearing the existing roll."
     ),
     stable=True,
 )
 
 stable.fn(
     "Camera_UpdateEffects",
-    "62 00 E8 ?? ?? ?? ?? 83 C4 0C",
+    "?? ?? E8 ?? ?? ?? ?? 83 C4 0C C3 90 90 90 90 90 90 90 90 90 90 90 90 90 90 55",
     match=-0x17,
     ret="void",
     params=[],
@@ -10011,7 +10027,7 @@ stable.fn(
     ret="void",
     params=[param("Graphics_ListState*", "camera")],
     doc=(
-        "Updates roll-effect fields in the full Graphics_ListState, including offsets +0x100d8 through +0x100dc."
+        "Advances the roll-effect countdown, computes eased signed roll from its stored duration and amplitude, and writes camera.view_roll. The final tick clears roll."
     ),
     stable=True,
 )
@@ -10022,7 +10038,11 @@ stable.fn(
     hook=0x9,
     ret="void",
     params=[],
-    doc="Runs the Checkers_MinGameState lifecycle from INITIALIZE through BEGIN_PLAY, input, simple or capture animation, promotion, completed turns, no-move endings, and AI search. Move result 1 forces same-piece capture continuation.",
+    doc=(
+        "Updates checkers setup, input, moves, promotion, turn completion, endings, and AI "
+        "search. Move result 1 allows another capture. Capture rules and player-control state "
+        "determine whether play continues with that piece."
+    ),
 )
 
 stable.fn(
@@ -10142,7 +10162,7 @@ stable.fn(
         param(
             "Checkers_MoveSequence**",
             "move_cursor_in_out",
-            doc="Cursor advanced as terminal capture sequences are appended.",
+            doc="Cursor advanced as capture sequences are appended; optional capture rules may retain shorter prefixes.",
         ),
     ],
     doc=(
@@ -10189,7 +10209,7 @@ stable.fn(
         param("int32_t", "to_col"),
         param("int32_t", "to_row"),
     ],
-    doc="Validates and applies one move, removes a jumped piece, tests for another capture, and promotes men on terminal rows. A capture with another legal jump returns CHECKERS_EXEC_CAPTURE_MUST_CONTINUE.",
+    doc="Validates and applies one move, removes a jumped piece, tests for another capture, and promotes men on terminal rows. A capture with another legal jump returns CHECKERS_EXEC_CAPTURE_CAN_CONTINUE.",
     stable=True,
 )
 
@@ -10330,7 +10350,7 @@ stable.fn(
     hook=0x6,
     ret="bool",
     params=[
-        param("Material_Node**", "controller_slots"),
+        param("Material_Node**", "material_nodes"),
         param(
             "Animation_PackedControllerState*",
             "packed_controller_state_inout",
@@ -10338,7 +10358,7 @@ stable.fn(
         ),
         param("int32_t", "frame_count_q12"),
     ],
-    doc="Leaves ANIM_CTRL_STATE_DISABLED unchanged. Otherwise decodes and repacks the slot, phase, saved random frame, and playback flags.",
+    doc="Leaves ANIM_CTRL_STATE_DISABLED unchanged. Material controller types 1 and 2 update UV/color state without repacking; type 3 selects animation frames and repacks phase, random-frame, and playback flags.",
     stable=True,
 )
 
@@ -10349,7 +10369,7 @@ stable.fn(
     ret="void",
     params=[
         param("Mesh_CmdList*", "cmd_list"),
-        param("Material_Node**", "controller_slots"),
+        param("Material_Node**", "material_nodes"),
         param("void*", "owner_context"),
     ],
     doc="Dispatches dirty Animation_ControllerCommand and Animation_VertexColorController records, clearing MESH_CMD_DIRTY before each handler. Controller state at +0xC persists across frames, with ANIM_CTRL_STATE_DISABLED suppressing updates.",
@@ -10490,13 +10510,12 @@ stable.fn(
         param("uint8_t*", "pixel_data"),
         param("uint32_t", "width"),
         param("uint32_t", "height"),
-        param("uint8_t*", "out_red"),
-        param("uint8_t*", "out_green"),
-        param("uint8_t*", "out_blue"),
+        param("uint8_t*", "out_byte0"),
+        param("uint8_t*", "out_byte1"),
+        param("uint8_t*", "out_byte2"),
     ],
     doc=(
-        "Computes the average non-black horizontal-neighbor color around black or transparent RGBx "
-        "pixels and writes the three channel averages to out_red, out_green, and out_blue."
+        "Averages nonblack horizontal neighbors of pixels whose three color bytes are zero. Writes averages in input-byte order 0, 1, 2; duplicate neighbor contributions are possible and no samples produce zeros."
     ),
     stable=True,
 )
@@ -10513,7 +10532,7 @@ stable.fn(
         param(
             "uint32_t",
             "unused_pixel_count",
-            doc="Present in the native signature but never read by the routine.",
+            doc="Unused pixel count.",
         ),
         param("uint32_t", "width"),
         param("uint32_t", "height"),
@@ -10560,8 +10579,7 @@ stable.fn(
     ret="void",
     params=[param("Material_TableEntry*", "material_entry")],
     doc=(
-        "Expands indexed or 16-bit material pixels into RGBA storage, computes average transparent "
-        "color, uploads two texture surfaces, and sets flag 0x00400000 when transparency is found."
+        "Expands packed, grayscale, or indexed material pixels into four-byte work storage, computes average nontransparent color, uploads two texture surfaces, and sets flag 0x00400000 when transparency is detected."
     ),
     stable=True,
 )
@@ -10795,7 +10813,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Math_SnapVertexToNearestPoint",
+    "Graphics_SnapPointToFirstNearbyVertex",
     "53 8B 5C 24 14 55 33 C9 56 57 85 DB 0F 8E ??",
     ret="void",
     params=[
@@ -10815,14 +10833,17 @@ stable.fn(
     ret="void",
     params=[
         param("Graphics_PolygonBatchRecord*", "batch"),
-        param("D3D_TransformedVertex const*", "unused_vertex_buffer"),
+        param(
+            "D3D_TransformedVertex const*",
+            "prepared_vertices",
+            doc="Prepared textured vertices supplying UVs at offsets 0x14/0x18 with 0x1C stride.",
+        ),
         param("uint8_t", "alpha_byte"),
         param("int32_t", "unused_batch_alias"),
         param("int32_t", "brighten_colors"),
     ],
     doc=(
-        "Builds, clips, and draws polygon vertices from batch data. alpha_byte supplies diffuse "
-        "alpha, brighten_colors doubles and clamps RGB, and parameters 2 and 4 are unused."
+        "Builds, clips, and draws polygon vertices from batch data, copying UVs from prepared_vertices. alpha_byte supplies diffuse alpha, brighten_colors doubles and clamps RGB, and parameter 4 is unused."
     ),
     stable=True,
 )
@@ -10849,8 +10870,8 @@ stable.fn(
     "Debug_Log",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? 8B 44 24 08",
     ret="void",
-    params=[param("char const*", "category"), param("char const*", "message")],
-    doc="Writes each non-null category and message as a newline-terminated entry to the open debug log, then flushes it.",
+    params=[param("char const*", "message"), param("char const*", "category")],
+    doc="Writes each non-null message and category as separate newline-terminated entries to the open debug log, flushing after each. Message is written first.",
     stable=True,
 )
 
@@ -10920,9 +10941,9 @@ stable.fn(
         ),
     ],
     doc=(
-        "Unpacks the rectangle, derives color scale and blend state from blend_flags, and draws a "
-        "D3DPT_TRIANGLESTRIP with FVF 0x44. It assumes the global device is valid, ignores render "
-        "HRESULTs, and restores depth writes to enabled rather than restoring the prior value."
+        "Draws the packed rectangle as a D3DPT_TRIANGLESTRIP with FVF 0x44. Uses blend_flags for "
+        "color and blending. Requires a valid device and ignores render errors. Enables depth "
+        "writes afterward, regardless of their previous state."
     ),
 )
 
@@ -11082,8 +11103,9 @@ stable.fn(
     ret="void",
     params=[param("uint32_t", "rgb_color")],
     doc=(
-        "Draws a solid rectangle from the viewport origin through width+1,height+1 while depth "
-        "writes are disabled. It restores depth writes to enabled rather than the prior value."
+        "Draws a solid rectangle from (0,0) with width+1 and the unchanged window height. "
+        "Disables depth writes while drawing, then enables them regardless of their previous "
+        "state."
     ),
     stable=True,
 )
@@ -11251,7 +11273,7 @@ stable.fn(
         param("D3D_DriverInfo**", "selected_device_out"),
         param("uint32_t", "flags"),
     ],
-    doc="Selects desktop-compatible hardware-TnL, hardware, software, then reference devices, returning E_INVALIDARG for a null output or 0x81000004 when none exists. Flags bit 0 is D3DENUM_SOFTWAREONLY and skips both hardware classes.",
+    doc="Selects hardware-TnL, other hardware, software, then reference devices, using the last accepted record in each category. Returns E_INVALIDARG for a null output or 0x81000004 when none exists. Flags bit 0 excludes both hardware classes.",
 )
 
 stable.fn(
@@ -11363,9 +11385,7 @@ stable.fn(
         param("DWORD", "state_size"),
     ],
     doc=(
-        "Allocates state_size bytes, passes the allocation to GetDeviceState without a null check, "
-        "and transfers caller ownership on success. A negative GetDeviceState HRESULT returns NULL "
-        "without freeing the allocation."
+        "Allocates state_size bytes and passes the result to GetDeviceState without a null check. Returns the allocation only for HRESULT zero; every nonzero result returns NULL without freeing it."
     ),
 )
 
@@ -11688,7 +11708,11 @@ stable.fn(
         param("DDraw_IDirectDraw7*", "unused_ddraw"),
         param("char", "use_alt_video_rect"),
     ],
-    doc="Opens and maps an RPL movie, selects the alternate rectangle only when requested, gates audio setup on nonzero format fields, and starts playback. unused_ddraw is ABI-retained but unread.",
+    doc=(
+        "Opens and maps an RPL movie, selects the requested playback rectangle, and starts "
+        "playback. Initializes audio only when its format fields are nonzero. unused_ddraw is "
+        "unused."
+    ),
     unstable=True,
 )
 
@@ -11726,7 +11750,7 @@ stable.fn(
         param("int16_t", "uv_index_or_sentinel"),
         param("Mesh_RuntimeVertex**", "polygon_vertices"),
     ],
-    doc="Copies material and render state, then writes four packed UV pairs. A null texture exits early, while other branches trust all input pointers and indexes.",
+    doc="Copies material/render state, then compiles four UV pairs. A null texture leaves UV bytes untouched. Environment mapping with null polygon_vertices instead emits full-texture corners and returns, allowing a null node for that fallback.",
 )
 
 stable.fn(
@@ -11797,7 +11821,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Graphics_RenderSceneGeometryWrapper",
+    "Graphics_RenderPolygonBatchAdapter",
     "54 24 04 50 51 52 E8 ??",
     match=-0x9,
     hook=0x8,
@@ -11855,7 +11879,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[param("Trail_RenderRuntimeView*", "trail")],
-    doc="Builds camera-facing animated trail polygon batches from Component_TrailObject/Trail_Segment data and links them into render buckets.",
+    doc="Builds camera-facing animated trail polygon batches from renderer-specific trail records and their segment ring, then links them into render buckets.",
 )
 
 stable.fn(
@@ -11920,9 +11944,7 @@ stable.fn(
         param("int32_t", "vertex_count"),
     ],
     doc=(
-        "Accumulates per-vertex normals for render polygon refs when graphics bit 0x1000 is "
-        "active. Quads average two triangle normals, triangles touch three vertices, and callers "
-        "ignore the residual return value."
+        "Accumulates polygon normals when graphics capability 0x1000 is active. The native triangle path reads absolute addresses 0, 2, and 4; the normalization loop repeatedly normalizes accumulator record 0 instead of advancing through vertices."
     ),
     unstable=True,
 )
@@ -11937,7 +11959,7 @@ stable.fn(
         param("int32_t", "dy"),
         param("int32_t", "dz"),
     ],
-    doc="Returns (15*max/16) + (3*mid/8) + (9*min/32) for the absolute components, preserving the input coordinate scale.",
+    doc="Approximates distance after ordering absolute components as max, mid, min. Uses (15*max>>4)+(3*mid>>3)+(9*min>>5) when min is nonzero, (123*max>>7)+(51*mid>>7) when only min is zero, and max when both smaller components are zero. Arithmetic retains native 32-bit wrapping.",
     stable=True,
 )
 
@@ -11987,7 +12009,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[param("Actor_State*", "actor")],
-    doc="Builds the uint16 selector and three signed Q12 weights in the grounded +0x20 overlay, then reconstructs actor Q6 world position. Triangles use (3,2,1).",
+    doc="Builds the uint16 selector and three signed Q12 weights in the grounded +0x20 overlay, then reconstructs actor Q6 world position. Triangle weights use vertices (0,2,1); reconstruction uses (3,2,1), requiring slot 3 to duplicate slot 0.",
     stable=True,
 )
 
@@ -12034,8 +12056,7 @@ stable.fn(
         param("Collision_Vertex const*", "tri_c"),
     ],
     doc=(
-        "Interpolates signed Q6 local X/Z over three signed Q0 vertices and returns signed Q6 Y with "
-        "x87-to-integer truncation. A zero XZ determinant returns the maximum signed vertex Y shifted to Q6."
+        "Interpolates signed Q6 local X/Z over three signed Q0 vertices and returns signed Q6 Y with x87-to-integer truncation. For zero XZ determinant, with vertex heights a,b,c, returns (a>b ? max(a,c) : min(b,c)) << 6."
     ),
     stable=True,
 )
@@ -12079,7 +12100,10 @@ stable.fn(
         param("int16_t", "point_x"),
         param("int16_t", "point_z"),
     ],
-    doc="Tests local integer XZ using three edges when polygon flag 0x0001 is set and four when clear, honoring node transform flags 0x22. Across 88,174 shipped polygons, all 7,420 bit-set records repeat vertex index 0 in slot 3, while all 80,754 clear records keep slots 0 and 3 distinct.",
+    doc=(
+        "Tests a point in local integer XZ coordinates using node transform flags 0x22. Uses "
+        "three edges when polygon flag 0x0001 is set and four edges otherwise."
+    ),
 )
 
 stable.fn(
@@ -12214,11 +12238,7 @@ stable.fn(
     hook=0x7,
     ret="int32_t",
     params=[],
-    doc=(
-        "Returns the signed controller vibration suppression flag. The pattern includes the "
-        "two trailing setters and the byte-identical Save_IsGameComplete getter so it anchors "
-        "the rumble getter instead of colliding with that routine."
-    ),
+    doc=("Returns the signed controller vibration suppression flag."),
 )
 
 stable.fn(
@@ -12229,9 +12249,7 @@ stable.fn(
     ret="int32_t",
     params=[],
     doc=(
-        "Returns the signed persisted language ID (Config_GameSettings.language). The pattern spans "
-        "the byte-identical accessor neighborhood through the String_GetRuntimeByNegativeIndex head so it anchors "
-        "the language getter instead of a twin."
+        "Returns the signed persisted language ID from settings byte offset 2 in EU/SC."
     ),
 )
 
@@ -12249,8 +12267,7 @@ stable.fn(
         )
     ],
     doc=(
-        "Stores the persisted language ID (Config_GameSettings.language). Called by the "
-        "multi-language boot flow with the selected language and zeroed by Save_InitializeNewGame."
+        "Stores the persisted language ID in settings byte offset 2 in EU/SC. The multi-language boot flow supplies the selected language; Save_InitializeNewGame clears it."
     ),
 )
 
@@ -12281,7 +12298,7 @@ stable.fn(
     public=False,
     ret="char*",
     params=[param("int32_t", "negative_string_id")],
-    doc="Resolves the intentional dynamic-text token -1 through g_dynamicStringSlot0. The 29 nonempty shipped sprite lists contain 912 payload records plus 29 terminators.",
+    doc="Resolves dynamic-text token -1 through g_dynamicStringSlot0.",
     stable=True,
 )
 
@@ -12348,25 +12365,23 @@ stable.fn(
 )
 
 stable.fn(
-    "Save_BackupGamePuppyCount",
+    "Save_BackupLivesToSlot",
     "A0 ?? ?? ?? ?? A2 ?? ?? ?? ?? C3 90 90 90 90 90",
     ret="void",
     params=[],
     doc=(
-        "Copies the backed-up player lives into the active save slot. The "
-        "Save_BackupGamePuppyCount name is kept for compatibility."
+        "Copies the backed-up remaining-lives byte into the active save slot's lives_backup field."
     ),
     stable=True,
 )
 
 stable.fn(
-    "Save_SetGameBackupPuppyCount",
+    "Save_SetBackupLives",
     "8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BF 0D ?? ?? ?? ?? A0 ?? ?? ?? ??",
     ret="void",
-    params=[param("uint8_t", "puppy_count")],
+    params=[param("uint8_t", "lives")],
     doc=(
-        "Stores the backed-up player lives later copied by Save_BackupGamePuppyCount. The "
-        "puppy-count name is kept for compatibility."
+        "Stores the low byte of remaining lives for Save_BackupLivesToSlot. Performs no local range check."
     ),
     stable=True,
 )
@@ -12516,7 +12531,7 @@ stable.fn(
     "A1 ?? ?? ?? ?? 66 8B 0D",
     ret="void",
     params=[],
-    doc="Updates the in-level pause and save menu. Callers ignore the return register.",
+    doc="Updates the in-level HUD/pause overlay, including collectible counters, lives, confirmation prompt, and slot icons. Callers ignore the return register.",
 )
 
 stable.fn(
@@ -12695,7 +12710,7 @@ stable.fn(
 
 stable.fn(
     "Level_ResetBonusState",
-    "FA B5 49 00 C3 C7 05 ??",
+    "?? ?? ?? ?? C3 C7 05 ?? ?? ?? ?? 03",
     match=-0x1A,
     required=Required.EN,
     ret="int32_t",
@@ -12851,25 +12866,25 @@ stable.fn(
 )
 
 stable.fn(
-    "Menu_RenderMusicSelection",
+    "Menu_RenderControllerPresetSelection",
     "04 8B E8 ?? ?? ?? ?? 00",
     match=-0x10,
     hook=0x9,
     ret="void",
     params=[],
-    doc="Updates the highlight gradient and renders four music-selection rows.",
+    doc="Updates the highlight gradient and renders four controller preset names: Hammerhead FX, Microsoft Sidewinder, Gravis Gamepad Pro, and Wingman RumblePad.",
     stable=True,
 )
 
 stable.fn(
-    "Menu_RenderDifficultySelection",
+    "Menu_RenderControllerPresetConfirmation",
     "04 8B E8 ?? ?? ?? ?? 68",
     match=-0x10,
     required=Required.EN,
     hook=0x9,
     ret="void",
     params=[],
-    doc="Renders the difficulty title and two choices, highlighting the selected row.",
+    doc="Renders the controller-preset confirmation title and Yes/No choices, highlighting the selected row.",
     stable=True,
 )
 
@@ -13054,7 +13069,7 @@ stable.fn(
 )
 
 stable.fn(
-    "UI_RenderStringWithFormatting",
+    "UI_RenderFixedAdvanceText",
     "?? ?? ?? C6 44 24 10 01",
     match=-0x1E,
     required=Required.EN,
@@ -13067,7 +13082,7 @@ stable.fn(
         param("Material_RefEntry*", "font_context"),
         param("uint32_t", "glyph_advance"),
     ],
-    doc="Renders NUL-terminated text at packed_xy using fixed-advance glyph_advance spacing.",
+    doc="Renders NUL-terminated text at packed_xy with glyph_advance + 1 spacing. text_flags selects alignment, render mode, and optional RGB tint; a null font context selects the shared default.",
 )
 
 stable.fn(
@@ -13102,7 +13117,7 @@ stable.fn(
 
 stable.fn(
     "Graphics_IncrementPassCounter",
-    "E4 BA 49 00 75 05 E9 ??",
+    "?? ?? ?? ?? 75 05 E9 ?? BA",
     match=-0xC,
     required=Required.EN,
     ret="void",
@@ -13112,7 +13127,7 @@ stable.fn(
 
 stable.fn(
     "Graphics_EndRendering",
-    "E4 BA 49 00 75 0E E8 ??",
+    "?? ?? ?? ?? 75 0E E8 ?? 12",
     match=-0xC,
     required=Required.EN,
     ret="void",
@@ -13213,7 +13228,7 @@ stable.fn(
     ret="bool",
     params=[
         param(
-            "uint8_t*",
+            "uint8_t const*",
             "bonus_replay_source",
             doc="Base of the packed bonus-replay source. Null only queries whether the replay buffer already exists.",
         )
@@ -13328,14 +13343,18 @@ stable.fn(
             "material_ref",
             doc="Material reference whose frame set is searched.",
         ),
-        param("int32_t", "frame_index", doc="Requested animation/frame index."),
+        param(
+            "int32_t",
+            "frame_index",
+            doc="Requested nonnegative animation/frame index. Negative values bypass the upper-bound fallback check.",
+        ),
         param(
             "Graphics_SpriteContext**",
             "out_sprite",
             doc="Receives the render sprite context. Its texture descriptor is updated to the selected frame or frame-zero fallback.",
         ),
     ],
-    doc="Resolves material_ref at frame_index into out_sprite, falling back to frame zero when the requested frame is unavailable.",
+    doc="Resolves material_ref at a nonnegative frame_index into out_sprite. Frames above the signed upper bound fall back to frame zero; negative indices are not rejected.",
     stable=True,
 )
 
@@ -13353,8 +13372,8 @@ stable.fn(
         ),
         param(
             "Math_Matrix3x3I16 const*",
-            "post_multiply",
-            doc="Optional matrix multiplied after the Y rotation.",
+            "left_factor",
+            doc="Optional transform multiplied on the left of the Y rotation.",
         ),
         param(
             "int32_t",
@@ -13362,7 +13381,7 @@ stable.fn(
             doc="Y angle in the game's 0x1000-turn sine-table domain.",
         ),
     ],
-    doc="Builds a signed Q12 Y-axis 3x3 rotation matrix, optionally post-multiplied by post_multiply.",
+    doc="Builds a signed Q12 Y-axis rotation Ry. Writes Ry when left_factor is NULL, otherwise left_factor * Ry.",
 )
 
 stable.fn(
@@ -13373,11 +13392,11 @@ stable.fn(
     ret="void",
     params=[
         param("Math_Matrix3x3I16*", "out_matrix"),
-        param("Math_Matrix3x3I16*", "post_multiply"),
+        param("Math_Matrix3x3I16 const*", "left_factor"),
         param("int32_t", "angle_x"),
         param("int32_t", "angle_y"),
     ],
-    doc="Builds the combined Q12 X/Y rotation matrix and optionally composes it with post_multiply.",
+    doc="Builds a Q12 rotation as Ry * Rx, or left_factor * Ry * Rx when left_factor is non-null.",
     stable=True,
 )
 
@@ -13389,12 +13408,12 @@ stable.fn(
     ret="void",
     params=[
         param("Math_Matrix3x3I16*", "out_matrix"),
-        param("Math_Matrix3x3I16*", "post_multiply"),
+        param("Math_Matrix3x3I16 const*", "left_factor"),
         param("int32_t", "angle_x"),
         param("int32_t", "angle_y"),
         param("int32_t", "angle_z"),
     ],
-    doc="Builds a signed Q12 XYZ rotation matrix and optionally composes it with post_multiply.",
+    doc="Builds a Q12 rotation as Rx * Ry, optionally inserting left_factor before Rx. A nonzero low word of angle_z additionally places Rz on the left: Rz * left_factor * Rx * Ry.",
     stable=True,
 )
 
@@ -13411,7 +13430,7 @@ stable.fn(
         ),
         param(
             "Math_Matrix3x3I16 const*",
-            "post_multiply",
+            "left_factor",
             doc="Optional matrix composed before the rotations.",
         ),
         param(
@@ -13782,12 +13801,12 @@ stable.fn(
         param("Component_ProjectileActorView*", "comp"),
         param("Actor_State*", "other_actor"),
     ],
-    doc="Filters component hits, returning 0 when accepted, -2 for owner self-collision, and -1 for other rejections.",
+    doc="Runs component collision policy and optional retargeting. Returns -2 for a class-3 peer sharing the component's nonnull owner, -1 for later rejection, and 0 for an early policy bypass or an accepted final path.",
     stable=True,
 )
 
 stable.fn(
-    "Component_CalculateHomingVelocity",
+    "Component_ApplyImpactReflection",
     "8B 40 08 89 41 08 E9 ??",
     match=-0x9F,
     hook=0x6,
@@ -13960,7 +13979,7 @@ stable.fn(
         param("Math_Vec3I32*", "segment_delta"),
         param("uint32_t", "sphere_radius"),
     ],
-    doc="Tests a segment against the global swept-sphere state and returns the byte-sized intersection result.",
+    doc="Returns a byte-sized swept-sphere broadphase candidate result. After endpoint tests, the projected-distance test uses the supporting infinite line without bounding the projection to the segment.",
 )
 
 stable.fn(
@@ -14102,11 +14121,11 @@ stable.fn(
 )
 
 stable.fn(
-    "Physics_CalculateFrictionForce",
+    "Physics_CalculateGroundJumpVelocity",
     "55 8B EC 51 53 56 57 8B 7D 08 33 C0 8B 8F E8 ??",
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
-    doc="Returns a Q12 ground-friction scalar from the active collision normal and component multiplier.",
+    doc="Calculates ground jump launch velocity from the transformed ground normal and controller jump scalar. Returns zero without a ground node; world-Y normals at or below 0x800 are returned unchanged. Higher values scale the launch scalar through 0xB50, then use it directly, with an optional collision-slot-3 Q12 multiplier.",
 )
 
 stable.fn(
@@ -14323,6 +14342,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("Audio_MusicStreamRecord const*", "stream_handle_ptr")],
+    doc="Returns whether the supplied music record's Miles stream status equals 4. The record itself must be non-null.",
 )
 
 stable.fn(
@@ -14409,11 +14429,12 @@ stable.fn(
     hook=0x7,
     ret="void",
     params=[],
+    doc="Preserves the resume target and arms a fade to zero unless transition flags 0x06 block it. The requested duration of 15 produces 16 fade updates before pause.",
 )
 
 stable.fn(
     "Audio_FadeInMusic",
-    "BE 49 00 6A 0F 50 E8 ??",
+    "?? ?? ?? 6A 0F 50 E8 ?? FF",
     match=-0xD,
     required=Required.EN,
     hook=0x7,
@@ -14484,7 +14505,11 @@ stable.fn(
 )
 
 stable.fn(
-    "Trail_CheckBoneAvailable", "A1 ?? ?? ?? ?? 8B 88 84", ret="int32_t", params=[]
+    "Trail_CheckBoneAvailable",
+    "A1 ?? ?? ?? ?? 8B 88 84",
+    ret="int32_t",
+    params=[],
+    doc="Returns -1 when the current level has no navigation network; otherwise returns whether the bone-trail timer is nonnegative.",
 )
 
 stable.fn(
@@ -14591,7 +14616,7 @@ stable.fn(
 
 stable.fn(
     "Projectile_DestroyAllLiveActors",
-    "56 8B 35 ?? ?? ?? ?? 85 F6 74 ?? 57 C7 05 ?? ?? A8",
+    "56 8B 35 ?? ?? ?? ?? 85 F6 74 ?? 57 C7 05 ?? ?? ?? ?? 00 00 00 00 56",
     hook=0x7,
     ret="void",
     params=[],
@@ -14923,6 +14948,7 @@ stable.fn(
             doc="Nonzero advances through consecutive link slots. Zero follows each rebased node link.",
         ),
     ],
+    doc="Fixes polygon nodes in an inline pointer table or linked chain. Type 7 delegates to the sprite fixup; other nodes receive the level material section at +0x78, conditionally rebase the normal table at +0x74, and relocate the material-index list at +0x7C.",
 )
 
 stable.fn(
@@ -14988,7 +15014,7 @@ stable.fn(
             doc="Base of the separate texture-data package entry used to relocate descriptor pixel and palette offsets.",
         ),
     ],
-    doc="Rebases links and texture entry offsets 4 and 8. Offsets 0xC through 0x6F become 25 surface pointers.",
+    doc="Rebases material-entry links and the optional node table within the material section, then delegates texture loading to Material_LoadAllEntries using the separate texture-data entry base.",
 )
 
 stable.fn(
@@ -15229,7 +15255,7 @@ stable.fn(
     "E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 90 A1",
     ret="void",
     params=[],
-    doc="Alternate config-loading entry point that initializes controller and button mappings before tail-calling Config_LoadFromINI.",
+    doc="Initializes controller presets and button mappings, then tail-calls Config_LoadFromINI.",
     stable=True,
 )
 
@@ -15282,7 +15308,7 @@ stable.fn(
             doc="Input state structure cleared, then updated from keyboard and gamepad devices.",
         ),
     ],
-    doc="Clears one Input_State and combines keyboard and gamepad sampling into it. player_index is preserved for the ABI.",
+    doc="Clears an Input_State and fills it from keyboard and gamepad input. player_index is retained in the call signature.",
     unstable=True,
 )
 
@@ -15492,9 +15518,8 @@ stable.fn(
     ret="void",
     params=[param("HWND", "hwnd"), param("HINSTANCE", "h_instance")],
     doc=(
-        "Bootstraps package/resource startup from the legacy hwnd and h_instance call ABI, "
-        "although the EN body ignores both arguments. Opens the package TOC, initializes audio "
-        "and render dispatch, and seeds graphics capability state."
+        "Opens the package TOC, initializes audio and render dispatch, and sets graphics "
+        "capability state. The EN implementation ignores hwnd and h_instance."
     ),
     unstable=True,
 )
@@ -15507,8 +15532,7 @@ stable.fn(
     ret="void",
     params=[param("HWND", "hwnd"), param("HINSTANCE", "h_instance")],
     doc=(
-        "EU/SC entry that sets the multi-language game flag before entering "
-        "PKG_InitializeSystem through the same legacy two-argument startup ABI."
+        "Sets the EU/SC multi-language flag, then calls PKG_InitializeSystem with the two startup arguments."
     ),
     unstable=True,
 )
@@ -15640,7 +15664,7 @@ stable.fn(
         param(
             "int32_t",
             "unused_zero",
-            doc="Unused ABI slot. All known callers pass zero.",
+            doc="Unused argument. Known callers pass zero.",
         ),
     ],
     doc="Allocating wrapper for PKG_LoadEntry. Retains the ignored second cdecl slot.",
@@ -15681,7 +15705,7 @@ stable.fn(
         param(
             "int32_t",
             "unused_mode",
-            doc="Unused third ABI slot retained by every known three-argument call site.",
+            doc="Unused third argument.",
         ),
     ],
     doc="Loads one of 138 raw TOC entries while retaining all three cdecl slots. Index, file bounds, destination capacity, seek, and read results are unchecked.",
@@ -15797,12 +15821,12 @@ stable.fn(
             doc="Flags/mask used to skip matching collision entries. Bit 0x8000 selects the positive-depth threshold path.",
         ),
     ],
-    doc="Tests a position/radius against the active collision/shadow plane list and returns nonzero when the point is rejected by the plane set.",
+    doc="Tests projected occluder plane groups and returns 1 when an unmasked list entry satisfies the base-plane and grouped edge-plane tests, or 0 after list exhaustion.",
 )
 
 stable.fn(
     "Powerup_Cleanup",
-    "56 8B 35 ?? ?? ?? ?? 85 F6 74 ?? 57 C7 05 ?? ?? 63",
+    "56 8B 35 ?? ?? ?? ?? 85 F6 74 ?? 57 C7 05 ?? ?? ?? ?? 00 00 00 00 8D",
     hook=0x7,
     ret="void",
     params=[],
@@ -15964,7 +15988,7 @@ stable.fn(
         param(
             "Tree_MapNode*",
             "node_header",
-            doc="Internal node header to detach. NULL is accepted as a no-op.",
+            doc="Node header in the circular sibling ring to splice into the root list. NULL is a no-op.",
         ),
     ],
     doc="Splices node_header's circular sibling ring into the root list headed by tree[0], concatenating the child ring into the root ring.",
@@ -16139,6 +16163,7 @@ stable.fn(
         param("Signal_QueueEntry*", "event_buffer"),
         param("int32_t", "max_events"),
     ],
+    doc="Nondestructively polls requested signal IDs and returns a byte boolean indicating any match. Duplicate queued IDs select the earliest entry; unmatched nonzero IDs clear only event_type when the queue is nonempty.",
 )
 
 stable.fn(
@@ -16147,6 +16172,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[],
+    doc="Unlinks every node from the timed-event list and resets its link marker to -1 without freeing nodes.",
 )
 
 stable.fn(
@@ -16217,7 +16243,7 @@ stable.fn(
         param(
             "int32_t",
             "reserved_arg",
-            doc="Unused callback argument kept for compatibility.",
+            doc="Unused callback argument.",
         )
     ],
     doc=(
@@ -16263,6 +16289,7 @@ stable.fn(
     "56 8B 74 24 08 85 F6 57 89 35 ??",
     ret="void",
     params=[param("Entity_State*", "entity")],
+    doc="Executes one entity behavior script from its encoded entry offset, dispatching through the 45-entry opcode table until the cursor is cleared. It updates script elapsed-time state and performs no opcode-range or null-handler check.",
 )
 
 stable.fn(
@@ -16301,12 +16328,12 @@ stable.fn(
 )
 
 stable.fn(
-    "Math_Atan2ToCosPhaseFP12",
+    "Math_AcosRatioFP12",
     "8B 44 24 08 8B 4C 24 04 50 51 E8 ?? ?? ?? ?? 0F",
     hook=0x8,
     ret="int32_t",
-    params=[param("int32_t", "sin_value"), param("int32_t", "cos_value")],
-    doc="Converts the Q12 atan2 lookup angle for sin_value and cos_value into its wrapped complementary cosine phase.",
+    params=[param("int32_t", "numerator"), param("int32_t", "denominator")],
+    doc="Computes the complementary angle of Math_AsinRatioFP12 in 4096 units per turn, corresponding to a saturated acos ratio when the callee's finite-width arithmetic does not overflow. A zero denominator maps the callee's 0x1000 sentinel to 0x400.",
     stable=True,
 )
 
@@ -16340,18 +16367,18 @@ stable.fn(
     params=[
         param(
             "Math_Vec3I16*",
-            "up_vector",
-            doc="First normalized signed fixed-point vector.",
+            "from_vector",
+            doc="Normalized signed fixed-point source direction.",
         ),
         param(
             "Math_Vec3I16*",
-            "forward_vector",
-            doc="Second normalized signed fixed-point vector.",
+            "to_vector",
+            doc="Normalized signed fixed-point destination direction.",
         ),
         param(
             "Math_Matrix3x3I16*",
             "out_matrix",
-            doc="Receives the rotation matrix mapping up_vector toward forward_vector.",
+            doc="Receives the Q12 rotation matrix mapping from_vector toward to_vector.",
         ),
     ],
     doc="Builds a Q12 rotation matrix from two 3-component vectors. Emits a neutral matrix for near-equal vectors and a 180-degree fallback for opposing vectors.",
@@ -16374,6 +16401,7 @@ stable.fn(
     hook=0x7,
     ret="uint8_t",
     params=[param("int32_t", "slot_index"), param("BOOL", "clear_resource_flag")],
+    doc="Unlinks a logical sound slot, optionally clears its resource flag, and returns its prior started state as a byte boolean. Non-reserved slots return to the free list; slot 8 stays reserved.",
 )
 
 stable.fn(
@@ -16400,6 +16428,7 @@ stable.fn(
     match=-0xB,
     ret="int32_t",
     params=[param("Audio_SoundDefinition*", "sound_def")],
+    doc="Allocates a free or eligible lower-priority sound slot, using reserved slot 8 when definition flag 0x80 is set. Appends the selected slot to the active list and returns its index or -1.",
 )
 
 stable.fn(
@@ -16412,6 +16441,7 @@ stable.fn(
         param("Audio_SoundDefinition*", "sound_def"),
         param("Math_Vec3I32*", "position"),
     ],
+    doc="Finds an active sound by optional definition and exact position-pointer identity, freeing finished non-looping sounds while searching. Returns an eligible slot index or -1.",
 )
 
 stable.fn(
@@ -16419,9 +16449,16 @@ stable.fn(
     "53 8B 5C 24 08 56 8B 35 ??",
     ret="void",
     params=[param("int32_t", "channel_mask")],
+    doc="With zero mode, stops all sounds and music and refreshes the sound timer. Nonzero mode immediately stops every non-looping sound while preserving loops; empty-list setup initializes the eight normal free slots.",
 )
 
-stable.fn("Audio_ProcessSoundQueue", "A1 ?? ?? ?? ?? 83 EC 18", ret="void", params=[])
+stable.fn(
+    "Audio_ProcessSoundQueue",
+    "A1 ?? ?? ?? ?? 83 EC 18",
+    ret="void",
+    params=[],
+    doc="Updates active sound initialization, spatial volume/pan, source/listener snapshots, directional pitch effects, playback, and finished-slot cleanup, then processes music fading.",
+)
 
 stable.fn(
     "Audio_CalculateSpatialVolumeAndPan",
@@ -16448,7 +16485,7 @@ stable.fn(
         param(
             "int16_t*",
             "out_pan_angle",
-            doc="Output 12-bit pan/facing angle relative to player_facing_angle.",
+            doc="Output 12-bit pan angle relative to the selected camera/listener orientation.",
         ),
     ],
     doc=(
@@ -16493,8 +16530,8 @@ stable.fn(
     "Script_OpAnimateSpriteMove",
     "83 EC ?? 53 55 56 57 8B 7C 24 ?? 33 C9 33 DB 8B 2F 83 C5 ?? 8B C5 89 2F",
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
-    doc="Sprite move-tween opcode. Reads target/duration/easing bytes and loops by restoring *ip until the computed end tick.",
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a 19-byte sprite position-tween payload and replaces the tween when its target changes. While the tween remains active, selects the encoded relative continuation cursor.",
     unstable=True,
 )
 
@@ -16503,27 +16540,29 @@ stable.fn(
     "33 D2 8A 50 FF 8B E9 ??",
     match=-0x7D,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     unstable=True,
+    doc="Consumes a 17-byte sprite scale-tween payload and replaces the tween when its target changes. While the tween remains active, selects the encoded relative continuation cursor.",
 )
 
 stable.fn(
     "Script_OpProcessSpriteRotation",
     "55 8B EC 83 EC ?? 53 56 57 8B 7D ?? 33 C9 33 DB 8B 37 83 C6 ?? 8B C6 89 37",
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
-    doc="Reads sprite rotation animation target/duration/easing bytes, updates actor rotation fields, and loops until the end tick.",
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
+    doc="Consumes a 14-byte sprite rotation-tween payload and replaces the tween when its target changes. While the tween remains active, selects the encoded relative continuation cursor.",
     unstable=True,
 )
 
 stable.fn(
-    "Script_OpAnimateTarget",
+    "Script_OpAnimateSpriteColor",
     "14 52 8D 04 50 8B 15 ??",
     match=-0x98,
     hook=0x7,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     unstable=True,
+    doc="Decodes a sprite RGB tween with duration and easing, snapshots cached current color, and clears the color cache flag. The stored target high byte is zero; no alpha operand is decoded. While the tween is active, applies the bytecode continuation offset.",
 )
 
 stable.fn(
@@ -16531,7 +16570,7 @@ stable.fn(
     "0C 49 8D 04 48 8B 0D ??",
     match=-0x47,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc="Script opcode that mutates PKG_SpriteEntry fields.",
 )
 
@@ -16607,10 +16646,10 @@ stable.fn(
         param(
             "int32_t",
             "max_events",
-            doc="Signal_Poll capacity. 3 in Actor_ProcessMovementCommands and 1 in Actor_ProcessMovementBehavior.",
+            doc="Number of requested 8-byte signal records: 3 in Actor_ProcessMovementCommands and 1 in Actor_ProcessMovementBehavior.",
         ),
     ],
-    doc="Normalizes right-moving state when required, then polls movement signals into the Actor_State +0xD8 scratch overlay. Returns the Signal_Poll event count.",
+    doc="Normalizes right-moving state when required, then polls movement signals into the Actor_State +0xD8 scratch overlay. Returns the Signal_Poll any-match byte boolean.",
 )
 
 stable.fn(
@@ -16647,7 +16686,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Actor_HandleDefaultUpdate",
+    "Actor_RejectCollisionProbe",
     "33 C0 C3 90 90 90 90 90 90 90 90 90 90 90 90 90 8B 4C 24 04 8B 81 88 00 00 00 A9 00 10 08 00 74 ?? A9 00 00 02 00 0F BF 81 B8 00 00 00 74 ?? F7 D8 50 51 E8 ??",
     hook=hook(0x2, kind=HookKind.HOTPATCH),
     ret="int32_t",
@@ -16701,7 +16740,7 @@ stable.fn(
     match=-0xC,
     ret="void",
     params=[param("Actor_State*", "actor")],
-    doc="Actor-phase slot 5 that dispatches the three-entry movement-command queue. Indexed dispatchers ignore EAX.",
+    doc="Actor-phase slot 5 that scans the three-entry movement-command queue and dispatches the first active entry. Indexed dispatchers ignore EAX.",
 )
 
 stable.fn(
@@ -16749,6 +16788,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[],
+    doc="Builds up to 24 title spots on a 6-by-4 grid and schedules retained spots in random staggered order. The native scheduling loop has no zero-retained-count escape.",
 )
 
 stable.fn(
@@ -16760,10 +16800,10 @@ stable.fn(
         param(
             "BOOL",
             "hold_animation",
-            doc="Nonzero freezes animation timing and sound while still rendering current spots.",
+            doc="Nonzero freezes shared scheduling/fade time and sound, but rendered spots still advance their local onset frames.",
         )
     ],
-    doc="Updates and renders title spots. hold_animation freezes frame advance and timed sound.",
+    doc="Updates and renders title spots. hold_animation freezes the shared timeline and timed sound, while each rendered spot may still advance its local onset frame.",
     stable=True,
 )
 
@@ -16837,10 +16877,14 @@ stable.fn(
             "frustum_dirs",
             doc="Receives five int16 direction triples (stride 8), not a 3x3 view matrix.",
         ),
-        param("int16_t*", "screen_half_size"),
+        param(
+            "int16_t*",
+            "viewport_size",
+            doc="Pair of signed int16 viewport width and height values.",
+        ),
         param("int32_t", "focal_distance"),
     ],
-    doc="Writes the five frustum direction entries derived from the current view angles, screen half size, and focal distance.",
+    doc="Writes five frustum direction entries derived from the current view angles, viewport width and height, and focal distance.",
 )
 
 stable.fn(
@@ -16850,6 +16894,7 @@ stable.fn(
     hook=0x7,
     ret="int32_t",
     params=[param("Camera_Runtime*", "camera"), param("int16_t", "fov")],
+    doc="Returns camera focal distance from viewport width and half-FOV using fixed-point cotangent arithmetic. Does not write camera state; only an exactly zero signed half-FOV has an explicit early guard.",
 )
 
 stable.fn(
@@ -16859,6 +16904,7 @@ stable.fn(
     hook=0x9,
     ret="int32_t",
     params=[param("Camera_Runtime*", "camera")],
+    doc="Sets camera FOV to 0x030F and returns the corresponding focal distance.",
 )
 
 stable.fn(
@@ -16955,6 +17001,7 @@ stable.fn(
     hook=0x7,
     ret="uint32_t",
     params=[param("uint32_t", "size")],
+    doc="Allocates a block and one slot in the fixed 100000-entry handle pool, returning its one-based handle or zero on failure.",
 )
 
 stable.fn(
@@ -16977,6 +17024,7 @@ stable.fn(
     hook=0xA,
     ret="BOOL",
     params=[],
+    doc="Clears all 100000 handle-pool entries, links the free list, and returns 1.",
 )
 
 stable.fn(
@@ -16985,6 +17033,7 @@ stable.fn(
     hook=0x6,
     ret="BOOL",
     params=[],
+    doc="Reports and frees allocated blocks across all 100000 handle slots, clears their records, and nulls the free-list head. Returns 1; reinitialization is required before reuse.",
 )
 
 stable.fn(
@@ -17003,7 +17052,7 @@ stable.fn(
     hook=0x6,
     ret="BOOL",
     params=[param("uint32_t", "handle")],
-    doc="Checks the range and generation of a 1-based extent handle.",
+    doc="Checks that the handle is in 1..100000 and equals the stored slot handle ID. Handles have no generation counter and can alias a later allocation after reuse.",
     abi_status=AbiStatus.VERIFIED,
     stable=True,
 )
@@ -17154,6 +17203,7 @@ stable.fn(
         param("int32_t", "soundHandle"),
         param("int32_t", "syncAdjust"),
     ],
+    doc="Forwards movie handle, sound handle, and synchronization adjustment to WINPLAY Movie_SetSyncAdjust.",
 )
 
 stable.fn(
@@ -17163,6 +17213,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("int32_t", "movieHandle")],
+    doc="Returns the movie audio sample rate through the WINPLAY import thunk.",
 )
 
 stable.fn(
@@ -17172,6 +17223,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("int32_t", "movieHandle")],
+    doc="Returns the movie audio sample precision through the WINPLAY import thunk.",
 )
 
 stable.fn(
@@ -17181,6 +17233,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("int32_t", "movieHandle")],
+    doc="Returns the movie audio channel count through the WINPLAY import thunk.",
 )
 
 stable.fn(
@@ -17190,6 +17243,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("int32_t", "movieHandle")],
+    doc="Returns the movie frame width through the WINPLAY import thunk.",
 )
 
 stable.fn(
@@ -17199,11 +17253,12 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("int32_t", "movieHandle")],
+    doc="Returns the movie frame height through the WINPLAY import thunk.",
 )
 
 stable.fn(
     "Video_GetMovieCurrentFrame",
-    "08 D5 A8 01 FF 25 ?? ??",
+    "?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? FF 25 ?? ?? ?? ?? E8",
     match=-0x8,
     required=Required.EN,
     hook=0x6,
@@ -17309,6 +17364,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[],
+    doc="Forwards to WINPLAY Player_ReturnPlaybackMode to restore playback/display mode.",
 )
 
 stable.fn(
@@ -17518,6 +17574,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[],
+    doc="Shuts down the WINPLAY sound subsystem through its import thunk.",
 )
 
 stable.fn(
@@ -17526,6 +17583,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[],
+    doc="Shuts down the WINPLAY video subsystem through its import thunk.",
 )
 
 stable.fn(
@@ -17639,7 +17697,7 @@ stable.fn(
 )
 
 stable.fn(
-    "File_SeekAndGetPosition",
+    "File_GetPosition",
     "5F 04 6A 01 53 56 E8 ??",
     match=-0x1A,
     hook=0x6,
@@ -17703,7 +17761,7 @@ stable.fn(
 )
 
 stable.fn(
-    "String_FormatFloat",
+    "String_ForceDecimalPoint",
     "65 59 74 ?? 46 83 3D ??",
     match=-0x10,
     ret="void",
@@ -17725,12 +17783,16 @@ stable.fn(
     public=False,
     ret="char*",
     params=[
-        param("double*", "value", doc="Input double to convert."),
+        param("double const*", "value", doc="Input double to convert."),
         param("char*", "buffer", doc="Destination NUL-terminated output buffer."),
-        param("int32_t", "digit_count"),
-        param("int32_t", "precision"),
+        param("int32_t", "precision", doc="Number of digits after the decimal point."),
+        param(
+            "int32_t",
+            "uppercase_exponent",
+            doc="Nonzero selects uppercase E; zero selects lowercase e.",
+        ),
     ],
-    doc="Formats sign and mantissa digits, printing decimal_point_position - 1 as the scientific exponent.",
+    doc="Formats the value in scientific notation using the requested fractional precision and exponent-letter case, then returns buffer.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
@@ -17754,7 +17816,7 @@ stable.fn(
     match=-0xA,
     ret="char*",
     params=[
-        param("double*", "value", doc="Input double to convert."),
+        param("double const*", "value", doc="Input double to convert."),
         param("char*", "buffer", doc="Destination NUL-terminated output buffer."),
         param("int32_t", "precision", doc="Requested significant-digit precision."),
         param(
@@ -17775,12 +17837,16 @@ stable.fn(
     public=False,
     ret="char*",
     params=[
-        param("double*", "value"),
+        param("double const*", "value"),
         param("char*", "buffer"),
-        param("int32_t", "digit_count"),
         param("int32_t", "precision"),
+        param(
+            "int32_t",
+            "uppercase_exponent",
+            doc="Nonzero selects uppercase exponent lettering; this is not numeric precision.",
+        ),
     ],
-    doc="Forwards value, buffer, digit count, and precision to the CRT exponent-conversion core.",
+    doc="Enables cached-digit mode, formats the value in scientific notation with the requested precision and exponent-letter case, then clears the mode and returns buffer.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
@@ -17800,7 +17866,7 @@ stable.fn(
 )
 
 stable.fn(
-    "String_InsertSpace",
+    "String_MakeInsertionGap",
     "56 8B 74 24 0C 56 E8 ??",
     match=-0x9,
     ret="void",
@@ -17816,7 +17882,7 @@ stable.fn(
             doc="Number of bytes to make room for at buffer. Zero leaves the string unchanged.",
         ),
     ],
-    doc="Shifts the NUL-terminated string right by insertCount bytes using a backward memmove.",
+    doc="Moves the complete NUL-terminated string right by insert_count bytes. The new gap is left uninitialized.",
 )
 
 stable.fn(
@@ -17900,6 +17966,7 @@ stable.fn(
         param("uint32_t", "byte_count"),
     ],
     abi_status=AbiStatus.PLACEHOLDER,
+    doc="Writes bytes through a CRT file descriptor, expanding LF to CRLF in text mode and translating OS errors. After a successful short text-mode write, the return subtracts the inserted-CR count for the entire prepared chunk, not only the written prefix.",
 )
 
 stable.fn(
@@ -18031,12 +18098,12 @@ stable.fn(
             doc="Bit 0 makes digit_count relative to the computed decimal-point position.",
         ),
         param(
-            "uint8_t*",
+            "CRT_DecimalFloatOutput*",
             "output",
             doc="Receives int16 point position at +0, sign at +2, length at +3, and NUL-terminated digits or token at +4.",
         ),
     ],
-    doc="Returns FALSE only for INF, QNAN, SNAN, or IND output tokens. Every finite value, including zero, returns TRUE.",
+    doc="Converts a by-value 80-bit extended value carried in a 12-byte stack slot into decimal-position, sign, count, and digit/token output. Returns FALSE only for INF, QNAN, SNAN, or IND; finite values including zero return TRUE. This input format differs from CRT_LD12Fields arithmetic storage.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
@@ -18104,7 +18171,7 @@ stable.fn(
     hook=0x6,
     ret="int32_t",
     params=[param("Actor_State*", "actor")],
-    doc="Returns current animation progress in Q12. Missing or zero-span animation data yields 0x1000.",
+    doc="Returns unclamped animation progress in Q12. Missing animation data or a nonpositive frame span yields 0x1000.",
     stable=True,
 )
 
@@ -18134,27 +18201,26 @@ stable.fn(
 )
 
 stable.fn(
-    "Settings_GetDifficulty",
+    "Settings_GetSelectedSaveSlot",
     "8B 44 24 04 33 C9 85 C0 0F 94 C1 51 A2 ?? ?? ?? ?? E8 ?? ?? ?? ?? 59 C3 90 90 90 90 90 90 90 90",
     match=0x20,
     hook=0x7,
     ret="int32_t",
     params=[],
     doc=(
-        "Returns the signed save-slot selection used by menu and save code. The "
-        "difficulty-related name is kept for compatibility."
+        "Returns the sign-extended remembered save-slot index. Save/load menus use slots 0 through 4."
     ),
     stable=True,
 )
 
 stable.fn(
-    "Settings_SetDifficulty",
+    "Settings_SetSelectedSaveSlot",
     "8B 44 24 04 33 C9 85 C0 0F 94 C1 51 A2 ?? ?? ?? ?? E8 ?? ?? ?? ?? 59 C3 90 90 90 90 90 90 90 90",
     match=0x30,
     hook=0x9,
     ret="void",
-    params=[param("uint8_t", "difficulty")],
-    doc="Stores the save-slot selection. The difficulty-related name is kept for compatibility.",
+    params=[param("uint8_t", "slot_index")],
+    doc="Stores the remembered save-slot index; valid range is caller-controlled.",
     stable=True,
 )
 
@@ -18294,7 +18360,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Component_GetNextInChain",
+    "Component_GetMovementSpeedLimitQ12",
     "8B 44 24 04 85 C0 75 ?? C3 8B 40 08",
     hook=0x6,
     public=False,
@@ -18305,7 +18371,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Component_GetFlags",
+    "Component_GetMovementTurnStep",
     "8B 44 24 04 85 C0 75 ?? C3 66 8B 40 20",
     hook=0x6,
     public=False,
@@ -18316,7 +18382,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Component_GetPreviousInChain",
+    "Component_GetMovementAccelerationQ12",
     "8B 44 24 04 85 C0 75 ?? C3 8B 40 0C",
     hook=0x6,
     public=False,
@@ -18327,28 +18393,28 @@ stable.fn(
 )
 
 stable.fn(
-    "Component_GetLifetime",
+    "Component_GetCollisionCooldownFrames",
     "8B 4C 24 04 85 C9 75 ?? 33 C0",
     hook=0x6,
     ret="int32_t",
     params=[param("Component_Definition const*", "comp")],
-    doc="Returns zero for a null component. Otherwise returns its zero-extended 16-bit lifetime value.",
+    doc="Returns zero for a null definition, otherwise its zero-extended 16-bit damage cooldown at +0x52. Attachment-release code consumes the low byte as a timer.",
     stable=True,
 )
 
 stable.fn(
-    "ComponentBinding_ResolveActorByKey",
+    "ComponentCollision_ResolveReferenceActor",
     "8B 44 24 0C 56 85 C0 74 ?? 8B 4C 24 08 33 D2 66 8B 51 04 3B D0 74 ??",
     hook=0x5,
     public=False,
     ret="int32_t",
     params=[
-        param("Component_CollisionRecord*", "bindings"),
-        param("int32_t", "binding_count"),
-        param("int32_t", "binding_key"),
-        param("Actor_State**", "out_actor"),
+        param("Component_CollisionRecord*", "collision_records"),
+        param("int32_t", "record_count"),
+        param("int32_t", "attachment_joint_index"),
+        param("Actor_State**", "out_reference_actor"),
     ],
-    doc="Scans 0x24-byte component-binding slots for binding_key and writes the live matching actor to out_actor.",
+    doc="Scans collision records for a nonzero attachment joint index and writes the matching reference actor, filtering null actors and lifecycle flags 0x21. Returns the matching index even when the actor is filtered. Index zero leaves the output untouched.",
     unstable=True,
 )
 
@@ -18362,7 +18428,7 @@ stable.fn(
         param("Component_ProjectileActorView*", "comp"),
         param("Actor_State*", "other_actor"),
     ],
-    doc="Returns -1 only for eligible type-4 other_actor targets. Comp is an unused native ABI parameter.",
+    doc="Returns -1 only for eligible type-4 other_actor targets. Comp is unused.",
     unstable=True,
 )
 
@@ -18378,12 +18444,12 @@ stable.fn(
         param("Math_Vec3I32*", "segment_delta"),
         param("uint32_t", "sphere_radius"),
     ],
-    doc="Tests actor position against a swept sphere and returns the byte-sized intersection result.",
+    doc="Returns a byte-sized swept-sphere broadphase candidate result. After endpoint tests, the projected-distance test uses the supporting infinite line without bounding the projection to the segment.",
     unstable=True,
 )
 
 stable.fn(
-    "Collision_CalculateImpactVelocity",
+    "Collision_CalculateImpactContactData",
     "55 8B EC 83 EC 10 53 8B 5D 18",
     hook=0x6,
     public=False,
@@ -18391,11 +18457,14 @@ stable.fn(
     params=[
         param("Actor_State*", "actor"),
         param("Actor_State*", "other_actor"),
-        param("int32_t", "collision_push"),
-        param("Math_Vec3I32*", "velocity"),
-        param("Math_Vec3I32*", "impact_velocity"),
+        param("int32_t", "collision_fraction_q12"),
+        param("Math_Vec3I32*", "out_contact_pos"),
+        param("Math_Vec3I32*", "out_impact_motion"),
     ],
-    doc="Partitions impact velocity via the class-specific +0xC8 collision-shape overlay. +0x6E is a mode-dependent signed Q6 scalar.",
+    doc=(
+        "Computes world-space contact position and impact motion from collision-shape response "
+        "weights. The contact Y calculation omits relative Y displacement."
+    ),
     unstable=True,
 )
 
@@ -18521,12 +18590,12 @@ stable.fn(
 )
 
 stable.fn(
-    "Math_SinFP12",
+    "Math_SinQ14",
     "8B 4C 24 04 81 E1 FF 0F 00 00",
     hook=0xA,
     ret="int32_t",
     params=[param("int32_t", "angle")],
-    doc="Returns Q12 sine for a 12-bit turn angle using the engine's mirrored lookup table.",
+    doc="Returns Q14 sine amplitude for a 12-bit turn angle using the stored mirrored lookup table. Cardinal outputs are 0, 16384, 0, and -16384; callers shift by two when Q12 is needed.",
     stable=True,
 )
 
@@ -18538,7 +18607,7 @@ stable.fn(
         param("int32_t", "y"),
         param("int32_t", "x"),
     ],
-    doc="Approximates atan2(y, x) as a 12-bit turn angle using downscaled inputs and reciprocal/angle lookup tables.",
+    doc="Approximates a 12-bit turn angle with the first argument as the cosine-axis component and the second as the sine-axis component (conventional atan2(second, first)). Inputs are shifted right six before lookup; both shifted components zero return sentinel 0x1000.",
     stable=True,
 )
 
@@ -18550,20 +18619,20 @@ stable.fn(
         param("int32_t", "y"),
         param("int32_t", "x"),
     ],
-    doc="Computes atan2(y, x) as a 12-bit turn angle using integer division and an angle lookup table.",
+    doc="Computes a 12-bit turn angle with the first argument as the cosine-axis component and the second as the sine-axis component (conventional atan2(second, first)). Uses native 32-bit ratio arithmetic; (0,0) returns sentinel 0x1000.",
     stable=True,
 )
 
 stable.fn(
-    "Math_CalculateAtan2Lookup12",
+    "Math_AsinRatioFP12",
     "8B 44 24 08 56 57 8B 7C 24 0C",
     public=False,
     ret="int32_t",
     params=[
-        param("int32_t", "sin_value"),
-        param("int32_t", "cos_value"),
+        param("int32_t", "numerator"),
+        param("int32_t", "denominator"),
     ],
-    doc="Computes the engine's clamped signed atan-ratio angle. This is not an unrestricted atan2 implementation.",
+    doc="Computes a signed saturating asin ratio in 4096 units per turn; a zero denominator returns 0x1000. Ratio indexing uses wrapping 32-bit shifts/addition before unsigned division, so large inputs can differ from the mathematical ratio.",
     stable=True,
 )
 
@@ -18671,7 +18740,7 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("uint32_t*", "jump_buffer"),
+        param("CRT_JumpBuffer3*", "jump_buffer"),
         param("int32_t", "argument_count"),
     ],
     doc="Captures MSVC register, stack, PC, and SEH state. Optional words selected by argument_count are not modeled.",
@@ -18688,7 +18757,7 @@ stable.fn(
     callable=False,
     ret="void",
     params=[
-        param("int32_t*", "jump_buffer"),
+        param("CRT_JumpBuffer3*", "jump_buffer"),
         param("int32_t", "value"),
     ],
     doc="Restores a private MSVC jump buffer, unwinds SEH state, and jumps to the saved PC. It never returns to its caller.",
@@ -18935,19 +19004,19 @@ stable.fn(
     public=False,
     ret="void",
     params=[],
-    doc="Sets the x87 precision-control field through CRT_Control87(0x10000, 0x30000). No result is consumed.",
+    doc="Sets the x87 precision-control field through CRT_ControlFP(0x10000, 0x30000). No result is consumed.",
     abi_status=AbiStatus.VERIFIED,
     unstable=True,
 )
 
 stable.fn(
-    "String_FindDecimalPointFloat",
+    "String_TrimFractionalZeros",
     "8B 44 24 04 8A 15 ?? ?? ?? ?? 8A 08",
     hook=0xA,
     public=False,
     ret="void",
     params=[param("char*", "formatted_string")],
-    doc="Removes trailing fractional zeroes in place. The native _cropzeros helper returns void.",
+    doc="Removes trailing fractional zeroes in place.",
     unstable=True,
 )
 
@@ -18969,7 +19038,7 @@ stable.fn(
     public=False,
     ret="char*",
     params=[
-        param("double*", "value"),
+        param("double const*", "value"),
         param("char*", "buffer"),
         param("int32_t", "format"),
         param("int32_t", "precision"),
@@ -19029,7 +19098,7 @@ stable.fn(
     public=False,
     callable=False,
     ret="void",
-    params=[param("void*", "target_frame")],
+    params=[param("CRT_SEHRegistration3*", "target_frame")],
     doc="Runs the MSVC global SEH unwind path. Its compiler frame ABI is not callable through the SDK.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
@@ -19045,7 +19114,7 @@ stable.fn(
     params=[
         param("struct _EXCEPTION_RECORD*", "exception_record"),
         param("void*", "establisher_frame"),
-        param("void*", "context_record"),
+        param("struct _CONTEXT*", "context_record"),
         param("void**", "dispatcher_context"),
     ],
     doc="Returns ContinueSearch normally or records the establisher frame and returns CollidedUnwind during unwind.",
@@ -19062,7 +19131,7 @@ stable.fn(
     callable=False,
     ret="void",
     params=[
-        param("void*", "registration"),
+        param("CRT_SEHRegistration3*", "registration"),
         param("int32_t", "stop_try_level"),
     ],
     doc="Runs local MSVC SEH termination handlers. Its compiler frame ABI is not callable through the SDK.",
@@ -19142,7 +19211,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Mem_MemmoveBackwardACRT",
+    "Mem_MoveBytesOverlapSafeCRT",
     "83 25 ?? ?? ?? ?? 00 C7 05 ?? ?? ?? ?? 09 00 00 00 83 C8 FF 5F 5E 5B C9 C3 55 8B EC 57 56 8B 75 0C 8B",
     match=0x19,
     public=False,
@@ -19195,7 +19264,7 @@ stable.fn(
 )
 
 stable.fn(
-    "File_FindFileHandleEntryCRT",
+    "CRT_FindExceptionAction",
     "8B 54 24 04 8B 0D ?? ?? ?? ?? 39 15 ?? ?? ?? ??",
     hook=0xA,
     public=False,
@@ -19203,15 +19272,12 @@ stable.fn(
     params=[
         param(
             "uint32_t",
-            "file_handle",
-            doc=(
-                "OS exception code. The file_handle parameter name is kept for compatibility."
-            ),
+            "exception_code",
+            doc=("OS exception code."),
         )
     ],
     doc=(
-        "Finds a 12-byte CRT exception-action record by OS exception code. Returns the record "
-        "or NULL. The File_FindFileHandleEntryCRT name is kept for compatibility."
+        "Finds a 12-byte CRT exception-action record by OS exception code. Returns the record or NULL; records contain exception code, signal number, and tagged action."
     ),
     unstable=True,
 )
@@ -19287,14 +19353,14 @@ stable.fn(
     public=False,
     callable=False,
     ret="void",
-    params=[param("int32_t*", "jump_buffer")],
+    params=[param("CRT_JumpBuffer3*", "jump_buffer")],
     doc="Unwinds MSVC SEH state from a private jump buffer. Its compiler frame ABI is not callable through the SDK.",
     abi_status=AbiStatus.PLACEHOLDER,
     unstable=True,
 )
 
 stable.fn(
-    "CRT_ControlFP",
+    "CRT_Control87",
     "55 8B EC 51 56 9B D9 7D FC",
     public=False,
     ret="uint32_t",
@@ -19302,12 +19368,12 @@ stable.fn(
         param("uint32_t", "new_control"),
         param("uint32_t", "mask"),
     ],
-    doc="Translates abstract control-word masks, updates x87 control state, and returns abstracted prior/current flags.",
+    doc="Merges abstract floating-control flags under the supplied mask, translates them to x87 form, loads the control word, and returns the merged abstract flags. This is the _control87 core.",
     stable=True,
 )
 
 stable.fn(
-    "CRT_Control87",
+    "CRT_ControlFP",
     "8B 44 24 08 25 FF FF F7 FF",
     public=False,
     hook=0x9,
@@ -19316,27 +19382,27 @@ stable.fn(
         param("uint32_t", "new_value"),
         param("uint32_t", "mask"),
     ],
-    doc="Converts the control values and masks to x87 form, applies FLDCW, and converts the resulting control word back to CRT flags.",
+    doc="Clears denormal-operand mask bit 0x80000 before forwarding to CRT_Control87. This _controlfp wrapper preserves denormal-operand control.",
     stable=True,
 )
 
 stable.fn(
-    "CRT_AbstractCWToCW",
+    "CRT_CWToAbstractCW",
     "53 8B 5C 24 08 33 C0 55",
     public=False,
     ret="uint32_t",
-    params=[param("uint32_t", "abstract_control_word")],
-    doc="Maps CRT abstract floating-control flags to hardware x87 control-word bits.",
+    params=[param("uint32_t", "control_word")],
+    doc="Maps hardware x87 control-word exception, rounding, precision, and infinity fields to CRT abstract floating-control flags.",
     unstable=True,
 )
 
 stable.fn(
-    "CRT_CWToAbstractCW",
+    "CRT_AbstractCWToCW",
     "53 8B 5C 24 08 33 C0 56",
     public=False,
     ret="uint32_t",
-    params=[param("uint32_t", "control_word")],
-    doc="Maps x87 control-word bits to CRT abstract floating-control flags.",
+    params=[param("uint32_t", "abstract_control_word")],
+    doc="Maps CRT abstract floating-control flags to hardware x87 control-word bits.",
     unstable=True,
 )
 
@@ -19429,9 +19495,9 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("void*", "exception_record"),
-        param("void*", "registration"),
-        param("void*", "context"),
+        param("struct _EXCEPTION_RECORD*", "exception_record"),
+        param("CRT_SEHRegistration3*", "registration"),
+        param("struct _CONTEXT*", "context"),
         param("void*", "dispatcher_context"),
     ],
     doc="Implements the MSVC scope-table filter, unwind, and handler-transfer protocol for an SEH registration.",
@@ -19591,7 +19657,7 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("uint16_t const*", "value"),
+        param("CRT_LD12Fields const*", "value"),
         param("void*", "output"),
         param("CRT_IEEEFormatDescriptor const*", "format"),
     ],
@@ -19608,7 +19674,7 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("uint16_t const*", "value"),
+        param("CRT_LD12Fields const*", "value"),
         param("double*", "output"),
     ],
     doc="Converts an ld12 value to an IEEE double and returns conversion status.",
@@ -19625,7 +19691,7 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("uint16_t const*", "value"),
+        param("CRT_LD12Fields const*", "value"),
         param("float*", "output"),
     ],
     doc="Converts an ld12 value to an IEEE float and returns conversion status.",
@@ -19806,7 +19872,7 @@ stable.fn(
 )
 
 stable.fn(
-    "Mem_MemmoveBackwardBCRT",
+    "Mem_MoveBytesOverlapSafeDuplicateCRT",
     "8B 44 24 08 5F C3 8B 44 24 04 C3 CC CC CC CC CC CC CC CC 55 8B EC 57 56 8B 75 0C 8B 4D 10 8B 7D",
     match=0x13,
     public=False,
@@ -19844,13 +19910,13 @@ stable.fn(
 )
 
 stable.fn(
-    "CRT_IsLeadByteL",
+    "CRT_IsATTY",
     "8B 44 24 04 3B 05 ?? ?? ?? ?? 72 ?? 33 C0",
     public=False,
     hook=0xA,
     ret="int32_t",
-    params=[param("int32_t", "character")],
-    doc="Checks whether the active multibyte character table marks the byte as a lead byte.",
+    params=[param("int32_t", "fd")],
+    doc="Tests a CRT file descriptor's terminal/device flag 0x40. Returns zero for an out-of-range descriptor, including a negative descriptor; otherwise returns the masked flag.",
     stable=True,
 )
 
@@ -19933,13 +19999,13 @@ stable.fn(
 )
 
 stable.fn(
-    "CRT_IsDigit",
+    "CRT_IsMbLeadByte",
     "6A 04 6A 00 FF 74 24 0C",
     public=False,
     hook=0x8,
     ret="int32_t",
     params=[param("uint32_t", "ch")],
-    doc="Tests input against CRT digit character-type mask.",
+    doc="Tests whether the low byte of character is marked as a multibyte lead byte in the active CRT table. Returns 0 or 1.",
     stable=True,
 )
 
@@ -20043,7 +20109,7 @@ stable.fn(
         param("char const*", "str"),
         param("uint32_t", "max_count"),
     ],
-    doc="Scans until NUL or maxCount and returns traversed length.",
+    doc="Returns the length through the first NUL, bounded by max_count. The native exit still reads str[max_count] when the prefix reaches that bound, including str[0] for max_count zero.",
     stable=True,
 )
 
@@ -20112,7 +20178,7 @@ stable.fn(
     params=[
         param("uint8_t const*", "digits"),
         param("uint32_t", "digit_count"),
-        param("uint16_t*", "output"),
+        param("CRT_LD12Fields*", "output"),
     ],
     doc="Accumulates digit bytes into a normalized 12-byte ld12 value at output.",
     abi_status=AbiStatus.PLACEHOLDER,
@@ -20127,7 +20193,7 @@ stable.fn(
     hook=hook(0x0, kind=HookKind.UNSUPPORTED),
     ret="int32_t",
     params=[
-        param("uint16_t*", "output"),
+        param("CRT_LD12Fields*", "output"),
         param("char**", "end_pointer"),
         param("char const*", "text"),
         param("int32_t", "mult12"),
@@ -20148,8 +20214,8 @@ stable.fn(
     public=False,
     ret="void",
     params=[
-        param("uint16_t*", "left_and_result"),
-        param("uint16_t const*", "right"),
+        param("CRT_LD12Fields*", "left_and_result"),
+        param("CRT_LD12Fields const*", "right"),
     ],
     doc="Multiplies two ld12 values and writes the normalized result over the left operand.",
     abi_status=AbiStatus.VERIFIED,
@@ -20164,7 +20230,7 @@ stable.fn(
     public=False,
     ret="void",
     params=[
-        param("uint16_t*", "value"),
+        param("CRT_LD12Fields*", "value"),
         param("int32_t", "power"),
         param("int32_t", "mult12"),
     ],
@@ -20217,7 +20283,7 @@ stable.fn(
     "0B DA 80 F9 06 0F 84 ??",
     match=-0x68,
     ret="void",
-    params=[param("Entity_State*", "actor"), param("uint8_t**", "ip")],
+    params=[param("Entity_State*", "entity"), param("uint8_t**", "ip")],
     doc=(
         "Consumes rel16 target, LHS ref, comparison, RHS ref kind, arithmetic opcode, and a "
         "four-byte big-endian RHS. Resolves operands and rewinds ip to the relative target when "
@@ -20858,9 +20924,10 @@ stable.data(
     type="float",
 )
 stable.data(
-    "Math_SnapVertexToNearestPoint_DebugFPSUpdateInterval",
-    xref("Math_SnapVertexToNearestPoint", 0x69, 0x2),
+    "Math_Two",
+    xref("Graphics_SnapPointToFirstNearbyVertex", 0x69, 0x2),
     type="float const",
+    doc="Shared 2.0f constant used as the vertex snap tolerance and FPS refresh interval.",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_BottomEdgeClamp",
@@ -21004,14 +21071,16 @@ stable.data(
     type="Win32_GUID",
 )
 stable.data(
-    "D3D_SelectDefaultDevice_HALDeviceIID",
+    "D3D_SelectDefaultDevice_RefDeviceIID",
     xref("D3D_SelectDefaultDevice", 0x78, 0x1),
     type="Win32_GUID",
+    doc="IID_IDirect3DRefDevice (50936643-13E9-11D1-89AA-00A0C9054129).",
 )
 stable.data(
-    "D3D_CreateTextureSurface_RGBDeviceIID",
+    "D3D_CreateTextureSurface_HALDeviceIID",
     xref("D3D_CreateTextureSurface", 0x43, 0x1),
     type="Win32_GUID",
+    doc="IID_IDirect3DHALDevice (84E63DE0-46AA-11CF-816F-0000C020156E).",
 )
 stable.data(
     "DInput_Device2AIID",
@@ -21022,14 +21091,16 @@ stable.data(
     stable=True,
 )
 stable.data(
-    "CRT_TestFdivBugFallback_CRTZero",
+    "CRT_TestFdivBugFallback_CRTOne",
     xref("CRT_TestFdivBugFallback", 0x2A, 0x2),
     type="double const",
+    doc="Read-only double constant 1.0 used to test the FDIV residual.",
 )
 stable.data(
-    "CRT_TestFdivBugFallback_CRTNegativeTwo",
+    "CRT_TestFdivBugFallback_FdivTestNumerator",
     xref("CRT_TestFdivBugFallback", 0xF, 0x2),
     type="double",
+    doc="Double constant 4195835.0 used as the Pentium FDIV test numerator.",
 )
 stable.data(
     "CRT_TestPentiumFdivBug_CRTKernel32",
@@ -21062,9 +21133,10 @@ stable.data(
     type="char const[0x7]",
 )
 stable.data(
-    "Level_InitializeActorSystem_ComponentSpawnStateBuffer",
+    "Level_InitializeActorSystem_ModeScaleTable",
     xref("Level_InitializeActorSystem", 0x13B, 0x4),
     type="int16_t[0x14]",
+    doc="Twenty signed 16-bit base scale values indexed by game mode and multiplied by 4096 to initialize the level scale.",
 )
 stable.data(
     "Level_InitializeActorSystem_MaxLevelScale",
@@ -21075,7 +21147,7 @@ stable.data(
     "Graphics_AdjustLevelScale_OneOverThirtyFPS",
     xref("Graphics_AdjustLevelScale", 0x50, 0x2),
     type="float",
-    doc="Scalar float constant 1/30 (one frame at 30 FPS); not a reciprocal lookup table.",
+    doc="Frame duration constant of 1/30 second at 30 FPS.",
     write_policy=WritePolicy.READ_ONLY,
     stable=True,
 )
@@ -21520,34 +21592,47 @@ stable.data(
     type="char[0x82]",
 )
 stable.data(
-    "Video_OpenMovieFile_PlaybackState",
+    "Video_OpenMovieFile_CurrentRect",
     xref("Video_OpenMovieFile", 0x11, 0x1),
     type="RECT",
+    doc="Active movie playback rectangle copied from the default or alternate rectangle.",
 )
 stable.data(
-    "Video_OpenMovieFile_DefaultScreenWidth",
+    "Video_OpenMovieFile_CurrentRectRight",
     xref("Video_OpenMovieFile", 0x2C, 0x2),
+    doc="Right coordinate of the active movie playback rectangle.",
 )
 stable.data(
-    "Video_OpenMovieFile_DefaultScreenHeight",
+    "Video_OpenMovieFile_CurrentRectBottom",
     xref("Video_OpenMovieFile", 0x21, 0x1),
+    doc="Bottom coordinate of the active movie playback rectangle.",
 )
 stable.data(
-    "Video_OpenMovieFile_CurrentRectLeft",
+    "Video_OpenMovieFile_DefaultRect",
     xref("Video_OpenMovieFile", 0x0, 0x1),
     type="RECT",
-)
-stable.data("Video_OpenMovieFile_CurrentRectTop", xref("Video_OpenMovieFile", 0x5, 0x2))
-stable.data(
-    "Video_OpenMovieFile_CurrentRectRight", xref("Video_OpenMovieFile", 0xB, 0x2)
+    doc="Default movie playback rectangle selected when the alternate-rectangle flag is clear.",
 )
 stable.data(
-    "Video_OpenMovieFile_CurrentRectBottom", xref("Video_OpenMovieFile", 0x16, 0x1)
+    "Video_OpenMovieFile_DefaultRectTop",
+    xref("Video_OpenMovieFile", 0x5, 0x2),
+    doc="Top coordinate of the default movie playback rectangle.",
 )
 stable.data(
-    "Video_OpenMovieFile_AltRectLeft",
+    "Video_OpenMovieFile_DefaultRectRight",
+    xref("Video_OpenMovieFile", 0xB, 0x2),
+    doc="Right coordinate of the default movie playback rectangle.",
+)
+stable.data(
+    "Video_OpenMovieFile_DefaultRectBottom",
+    xref("Video_OpenMovieFile", 0x16, 0x1),
+    doc="Bottom coordinate of the default movie playback rectangle.",
+)
+stable.data(
+    "Video_OpenMovieFile_AltRect",
     xref("Video_OpenMovieFile", 0x34, 0x2),
     type="RECT",
+    doc="Alternate movie playback rectangle selected when the alternate-rectangle flag is set.",
 )
 stable.data("Video_OpenMovieFile_AltRectTop", xref("Video_OpenMovieFile", 0x3A, 0x2))
 stable.data("Video_OpenMovieFile_AltRectRight", xref("Video_OpenMovieFile", 0x40, 0x1))
@@ -21563,9 +21648,10 @@ stable.data(
     type="char[0x28]",
 )
 stable.data(
-    "Menu_RenderDifficultySelection_OptionEasy",
-    xref("Menu_RenderDifficultySelection", 0x3E, 0x1),
+    "Menu_RenderDifficultySelection_ControllerPresetConfirmationStringIDs",
+    xref("Menu_RenderControllerPresetConfirmation", 0x3E, 0x1),
     type="int32_t[0x2]",
+    doc="Two localized string IDs used by the controller-preset confirmation screen.",
 )
 stable.data(
     "g_sz_Level_BonusTOB",
@@ -21637,10 +21723,10 @@ stable.data(
     xref("Input_CheckCheatCodeSequence", 0x1E, 0x3),
 )
 stable.data(
-    "Replay_BonusReplayLevelIDs",
+    "Replay_BonusReplayRecordIndices",
     xref("Replay_LoadBonusReplay", 0x61, 0x3),
     type="int32_t[0x6]",
-    doc="Bonus replay level-id table read by Replay_LoadBonusReplay.",
+    doc="Six bonus replay archive record indices. Replay_LoadBonusReplay selects a 0xC84-byte source record and derives the game level ID by adding 7.",
 )
 stable.data(
     "Replay_LoadBonusReplay_Index",
@@ -21786,7 +21872,7 @@ stable.data(
     "PKG_FixUpResourceLevelPointers_VariableList",
     xref("PKG_FixUpResourceLevelPointers", 0x241, 0x1, required=Required.EN),
     type="char[0x10]",
-    doc="Level variable-list pointer/count region processed by PKG_FixUpResourceLevelPointers.",
+    doc="Diagnostic text for the variable-list relocation step in PKG_FixUpResourceLevelPointers.",
     unstable=True,
 )
 
@@ -22174,14 +22260,16 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "Input_IsKeyPressed_MappingTableSize",
+    "Input_IsKeyPressed_MappingTable",
     xref("Input_IsKeyPressed", 0x2C, 0x3),
     type="Input_KeyMappingRecord[0x56]",
+    doc="Keyboard mapping records containing scan codes and display-name pointers; the display-name pointer terminates the scan.",
 )
 stable.data(
-    "Input_IsKeyPressed_MappingTablePtr",
+    "Input_IsKeyPressed_FirstMappingDisplayName",
     xref("Input_IsKeyPressed", 0x0, 0x1),
     type="char const*",
+    doc="Display-name pointer in the first keyboard mapping record; the scan uses it as a null terminator.",
 )
 stable.data(
     "String_ParseInt_CharTypeTable",
@@ -22190,7 +22278,7 @@ stable.data(
 )
 stable.data(
     "String_FormatFloat_DecimalPointChar",
-    xref("String_FormatFloat", 0x40, 0x2),
+    xref("String_ForceDecimalPoint", 0x40, 0x2),
     type="char",
 )
 
@@ -22333,12 +22421,11 @@ stable.data(
 )
 
 stable.data(
-    "Game_TransitionAndSettingsFlags",
+    "Game_LevelTransitionMidFrame",
     xref("Camera_UpdateFollow", 0x7BA, 0x1),
     type="int32_t",
     doc=(
-        "Level-transition midpoint frame used by Camera_UpdateFollow. Historical name retained; "
-        "this dword is separate from Config_GameSettings."
+        "Level-transition midpoint frame used by camera and screen-transition updates; separate from Config_GameSettings."
     ),
 )
 
@@ -22542,24 +22629,28 @@ stable.data(
     "Graphics_DrawQuad_Vertex3V", xref("Graphics_DrawQuad", 0x372, 0x2), type="float"
 )
 stable.data(
-    "D3D_InitDirectDrawAndDirect3D_DeviceInit0",
+    "D3D_InitDirectDrawAndDirect3D_DisplayRectLeft",
     xref("D3D_InitDirectDrawAndDirect3D", 0x8A, 0x2),
     type="int32_t",
+    doc="Display rectangle left coordinate initialized during DirectDraw/Direct3D setup.",
 )
 stable.data(
-    "D3D_InitDirectDrawAndDirect3D_DeviceInit1",
+    "D3D_InitDirectDrawAndDirect3D_DisplayRectTop",
     xref("D3D_InitDirectDrawAndDirect3D", 0x85, 0x1),
     type="int32_t",
+    doc="Display rectangle top coordinate initialized during DirectDraw/Direct3D setup.",
 )
 stable.data(
-    "D3D_InitDirectDrawAndDirect3D_DeviceInit2",
+    "D3D_InitDirectDrawAndDirect3D_DisplayRectRight",
     xref("D3D_InitDirectDrawAndDirect3D", 0x90, 0x2),
     type="int32_t",
+    doc="Display rectangle right coordinate initialized during DirectDraw/Direct3D setup.",
 )
 stable.data(
-    "D3D_InitDirectDrawAndDirect3D_DeviceInit3",
+    "D3D_InitDirectDrawAndDirect3D_DisplayRectBottom",
     xref("D3D_InitDirectDrawAndDirect3D", 0x68, 0x2),
     type="int32_t",
+    doc="Display rectangle bottom coordinate initialized during DirectDraw/Direct3D setup.",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_VertexColorBuffer",
@@ -22630,8 +22721,9 @@ stable.data(
     xref("Graphics_ClipAndDrawPolygon", 0x41F, 0x1),
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV1Alt",
+    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV2Base",
     xref("Graphics_ClipAndDrawPolygon", 0x4A9, 0x1),
+    doc="Vertex 2 in the 28-byte-stride quad work buffer.",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipQuadSrcU",
@@ -22644,8 +22736,9 @@ stable.data(
     type="float",
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV2Base",
+    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV3Base",
     xref("Graphics_ClipAndDrawPolygon", 0x436, 0x1),
+    doc="Vertex 3 in the 28-byte-stride quad work buffer.",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipQuadDstU",
@@ -22732,32 +22825,37 @@ stable.data(
     xref("Graphics_ClipAndDrawPolygon", 0x413, 0x1),
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputBufferY",
+    "Graphics_ClipAndDrawPolygon_ClipInputBufferV1",
     xref("Graphics_ClipAndDrawPolygon", 0x424, 0x1),
+    doc="Vertex 1 in the 28-byte-stride clip input buffer.",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipInputBufferV2",
     xref("Graphics_ClipAndDrawPolygon", 0x43B, 0x1),
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_RenderClipMinX",
+    "Graphics_ClipAndDrawPolygon_ClipInputVertex2U",
     xref("Graphics_ClipAndDrawPolygon", 0x306, 0x2),
     type="float",
+    doc="U coordinate of clip input vertex 2.",
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_RenderClipMinY",
+    "Graphics_ClipAndDrawPolygon_ClipInputVertex2V",
     xref("Graphics_ClipAndDrawPolygon", 0x320, 0x2),
-    type="int32_t",
+    type="float",
+    doc="V coordinate of clip input vertex 2.",
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputBufferVertex2W",
+    "Graphics_ClipAndDrawPolygon_ClipInputVertex3U",
     xref("Graphics_ClipAndDrawPolygon", 0x30C, 0x2),
-    type="int32_t",
+    type="float",
+    doc="U coordinate of clip input vertex 3.",
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_RenderClipMaxX",
+    "Graphics_ClipAndDrawPolygon_ClipInputVertex3V",
     xref("Graphics_ClipAndDrawPolygon", 0x326, 0x2),
     type="float",
+    doc="V coordinate of clip input vertex 3.",
 )
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_GraphicsClientRectLeft",
@@ -22857,59 +22955,59 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff0",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute0Component1",
     xref("Graphics_ClipAndDrawPolygon", 0x384, 0x2),
     type="float",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Float component 1 of clip-input attribute record 0.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff1",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute0Component2",
     xref("Graphics_ClipAndDrawPolygon", 0x39C, 0x1),
     type="float",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Float component 2 of clip-input attribute record 0.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff2",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute1",
     xref("Graphics_ClipAndDrawPolygon", 0x3B0, 0x2),
     type="Graphics_ClipAttribute",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Clip-input attribute record 1; three float components copied from vertex colors.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff3",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute1Component1",
     xref("Graphics_ClipAndDrawPolygon", 0x3B6, 0x2),
     type="float",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Float component 1 of clip-input attribute record 1.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff4",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute1Component2",
     xref("Graphics_ClipAndDrawPolygon", 0x3BC, 0x1),
     type="float",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Float component 2 of clip-input attribute record 1.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff5",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute2",
     xref("Graphics_ClipAndDrawPolygon", 0x390, 0x2),
     type="Graphics_ClipAttribute",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Clip-input attribute record 2; three float components copied from vertex colors.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff6",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute2Component1",
     xref("Graphics_ClipAndDrawPolygon", 0x3A6, 0x2),
     type="float",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Float component 1 of clip-input attribute record 2.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipAndDrawPolygon_CameraClipPlaneCoeff7",
+    "Graphics_ClipAndDrawPolygon_ClipInputAttribute2Component2",
     xref("Graphics_ClipAndDrawPolygon", 0x3C1, 0x2),
     type="float",
-    doc="Scalar camera clip-plane coefficient entry used by Graphics_ClipAndDrawPolygon.",
+    doc="Float component 2 of clip-input attribute record 2.",
     unstable=True,
 )
 stable.data(
@@ -22973,9 +23071,10 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "D3D_CreateTextureSurface_GraphicsTexFormatIsSoftware",
+    "D3D_CreateTextureSurface_UseImplicitTextureFormat",
     xref("D3D_CreateTextureSurface", 0x183, 0x2),
     type="uint8_t",
+    doc="When set, texture/work-surface creation omits an explicit pixel format and lets DirectDraw choose it.",
 )
 stable.data(
     "Graphics_LoadAndUploadTexture_TexNeedsAlpha",
@@ -23223,19 +23322,22 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "Bone_TransformWeightedVerticesForRender_SpriteAnimFrame",
+    "Bone_TransformWeightedVerticesForRender_ProjectedSpriteVertices",
     xref("Bone_TransformWeightedVerticesForRender", 0x576, 0x4),
     type="Graphics_ProjectedVertex[0x3e8]",
+    doc="Shared 1000-entry projected sprite-vertex buffer. Each eight-byte entry holds signed 16-bit screen X/Y and signed 32-bit view Z.",
 )
 stable.data(
-    "Bone_TransformWeightedVerticesForRender_SpriteAnimFlags",
+    "Bone_TransformWeightedVerticesForRender_ProjectedSpriteVertex0ScreenY",
     xref("Bone_TransformWeightedVerticesForRender", 0x57E, 0x4),
     type="int16_t",
+    doc="Signed 16-bit screen Y coordinate of projected sprite vertex 0.",
 )
 stable.data(
-    "Bone_TransformWeightedVerticesForRender_SpriteAnimState",
+    "Bone_TransformWeightedVerticesForRender_ProjectedSpriteVertex0ViewZ",
     xref("Bone_TransformWeightedVerticesForRender", 0x47F, 0x3),
     type="int32_t",
+    doc="Signed 32-bit view Z coordinate of projected sprite vertex 0.",
 )
 stable.data(
     "UI_PuppyCounterAnimState",
@@ -23246,7 +23348,7 @@ stable.data(
     "g_dynamicStringSlot0",
     xref("String_GetRuntimeByNegativeIndex", 0x4, 0x1),
     type="char*",
-    doc="Dynamic string pointer selected by the shipped type-2 text token -1. Levels 6, 28, and 31 contain four such records in total.",
+    doc="Dynamic string pointer selected by type-2 text token -1.",
     write_policy=WritePolicy.ENGINE_MANAGED,
     stable=True,
 )
@@ -23266,10 +23368,10 @@ stable.data(
 )
 
 stable.data(
-    "Menu_PauseTransitionTimer",
+    "Menu_BoneCounterUIState",
     xref("Menu_UpdatePauseMenu", 0xD2, 0x3),
     type="int16_t",
-    doc="Bone-counter UI state word read by the pause menu. Historical name retained; separate from the byte pause timer.",
+    doc="Bone-counter UI state word read by the pause menu and updated by UI_UpdateBoneCounter.",
 )
 
 stable.data(
@@ -23286,7 +23388,7 @@ stable.data(
 stable.data(
     "Settings_Language",
     xref("Settings_SetLanguage", 0x4, 0x1),
-    doc="Persisted language ID byte (Config_GameSettings.language).",
+    doc="Persisted language ID byte at settings offset 2 in EU/SC.",
 )
 stable.data(
     "Menu_HandleOptionsLogic_OptionValueScratch",
@@ -23296,10 +23398,10 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "UI_BoneAndLivesCounterAnimState",
+    "UI_BoneCounterAnimState",
     xref("Menu_ClearTransitionFlags", 0x7, 0x3),
     type="int16_t",
-    doc="16-bit HUD counter animation state. This accessor does not include the neighboring lives-icon state.",
+    doc="16-bit bone-counter animation state; the neighboring lives-icon state is separate.",
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
@@ -23316,8 +23418,7 @@ stable.data(
     xref("Save_LoadGameState", 0x70, 0x2),
     type="int32_t",
     doc=(
-        "Four packed Save_VolumeSettings bytes from the save-file header. The existing dword "
-        "accessor matches the native load."
+        "Four packed Save_VolumeSettings bytes read as a dword from the save-file header."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
@@ -23326,18 +23427,16 @@ stable.data(
     xref("Save_LoadGameState", 0x76, 0x2),
     type="int32_t",
     doc=(
-        "Four packed Config_GameSettings bytes from the save-file header. The existing dword "
-        "accessor matches the native load."
+        "Four packed Config_GameSettings bytes read as a dword from the save-file header."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "Save_LoadGameState_FilePlayerLives",
+    "Save_LoadGameState_FileRumbleSuppressFlag",
     xref("Save_LoadGameState", 0x6B, 0x1),
     type="int32_t",
     doc=(
-        "Saved rumble-suppression flag at Save_GameData +0xC. The player-lives name and dword "
-        "accessor are kept for compatibility."
+        "Persisted rumble-suppression dword at Save_GameData offset 0xC, restored into Settings_RumbleSuppressFlag."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
@@ -23372,10 +23471,8 @@ stable.data(
     xref("Menu_HandleOptionsLogic", 0x425, 0x3, required=Required.EN),
     type="int32_t",
     doc=(
-        (
-            "First entry of the player-1/keyboard binding range inside options_menu_backup_data. "
-            "Options UI compares 11 keyboard-side entries."
-        )
+        "First entry of the player-1/keyboard binding range inside options_menu_backup_data. "
+        "Options UI compares 11 keyboard-side entries."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
@@ -23386,10 +23483,8 @@ stable.data(
     xref("Menu_HandleOptionsLogic", 0x9A, 0x1),
     type="int32_t",
     doc=(
-        (
-            "First entry of the player-2/gamepad binding range inside options_menu_backup_data. "
-            "Options UI uses 10 gamepad-side entries."
-        )
+        "First entry of the player-2/gamepad binding range inside options_menu_backup_data. "
+        "Options UI uses 10 gamepad-side entries."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
@@ -23482,9 +23577,10 @@ stable.data(
     type="Config_GameSettings",
 )
 stable.data(
-    "Game_BackupSettings_SavedPlayerLives",
+    "Game_BackupSettings_SavedRumbleSuppressFlag",
     xref("Game_BackupSettings", 0x1C, 0x2),
     type="int32_t",
+    doc="Options-menu backup of the rumble-suppression dword, restored when edits are canceled.",
 )
 stable.data(
     "Menu_UpdatePauseMenu_UILivesCurrentValue",
@@ -23492,9 +23588,10 @@ stable.data(
     type="int16_t",
 )
 stable.data(
-    "Level_CheckBonusUnlock_MenuResetFlag",
+    "Level_CheckBonusUnlock_CheckpointIndex1Based",
     xref("Level_CheckBonusUnlock", 0x26, 0x3),
     type="char",
+    doc="One-based index of the first active world-bonus checkpoint, used to avoid repeating the respawn-selector update.",
 )
 stable.data(
     "Save_GameLevelCompletion_CollectiblesData",
@@ -23504,13 +23601,10 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "Level_InitializeSaveState_GamePuppyCountBackup",
+    "Level_InitializeSaveState_GameLivesBackup",
     xref("Level_InitializeSaveState", 0x7, 0x1),
     type="uint8_t",
-    doc=(
-        "Backed-up player lives at Save_GameSlot +2. Save_InitializeGameState sets it to 3; "
-        "Save_BackupGamePuppyCount updates it."
-    ),
+    doc=("Lives-backup byte at offset 2 of the active Save_GameSlot."),
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
@@ -23560,9 +23654,10 @@ stable.data(
 stable.data("UI_UpdateLives_State", xref("UI_UpdateLives", 0x12F, 0x3))
 stable.data("UI_UpdateLives_Counter1", xref("UI_UpdateLives", 0x51, 0x1))
 stable.data(
-    "Shared_LoadCommonResources_TimerState",
+    "Shared_LoadCommonResources_SoundDataBase",
     xref("Shared_LoadCommonResources", 0x32, 0x1),
     type="uint8_t*",
+    doc="Base pointer for shared sound data loaded with the common resources.",
 )
 stable.data(
     "UI_LivesCounterLastValue",
@@ -23662,9 +23757,10 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "Menu_CheckPauseInput_Delay",
+    "Menu_CheckPauseInput_CompletionActor",
     xref("Menu_CheckPauseInput", 0x5A, 0x1),
     type="Actor_State*",
+    doc="Actor captured when the completion/pause transition starts and passed to Player_SetCompletionFlags when its timer reaches 7.",
 )
 stable.data(
     "Menu_HandleOptionsLogic_InputMenuControlsKeyIndex",
@@ -23684,13 +23780,10 @@ stable.data(
 )
 
 stable.data(
-    "g_backupPuppyCount",
+    "g_backupLives",
     xref("Level_InitializeSaveState", 0xF, 0x1),
     type="uint8_t",
-    doc=(
-        "Backed-up player lives later copied into the active save slot. The puppy-count name "
-        "is kept for compatibility."
-    ),
+    doc=("Backed-up player lives copied into the active save slot."),
     write_policy=WritePolicy.ENGINE_MANAGED,
     stable=True,
 )
@@ -23754,40 +23847,40 @@ stable.data(
     stable=True,
 )
 stable.data(
-    "Menu_UpdateInput_UpHeld",
+    "Menu_UpdateInput_ConfirmHeld",
     xref("Menu_UpdateInput", 0xBE, 0x1),
     type="uint8_t",
-    doc=("Held and debounce state for menu up input."),
-)
-stable.data(
-    "Menu_UpdateInput_DownHeld",
-    xref("Menu_UpdateInput", 0xA5, 0x2),
-    type="uint8_t",
-    doc=("Held and debounce state for menu down input."),
-)
-stable.data(
-    "Menu_UpdateInput_LeftHeld",
-    xref("Menu_UpdateInput", 0x35, 0x2),
-    type="uint8_t",
-    doc=("Held and debounce state for menu left input."),
-)
-stable.data(
-    "Menu_UpdateInput_RightHeld",
-    xref("Menu_UpdateInput", 0x5A, 0x2),
-    type="uint8_t",
-    doc=("Held and debounce state for menu right input."),
+    doc=("Held/debounce byte that gates the one-frame menu confirm pulse."),
 )
 stable.data(
     "Menu_UpdateInput_CancelHeld",
-    xref("Menu_UpdateInput", 0x73, 0x2),
+    xref("Menu_UpdateInput", 0xA5, 0x2),
     type="uint8_t",
-    doc=("Held and debounce state for menu cancel input."),
+    doc=("Held/debounce byte that gates the one-frame menu cancel pulse."),
 )
 stable.data(
-    "Menu_UpdateInput_ConfirmHeld",
+    "Menu_UpdateInput_UpHeld",
+    xref("Menu_UpdateInput", 0x35, 0x2),
+    type="uint8_t",
+    doc=("Held/debounce byte that gates the one-frame menu up pulse."),
+)
+stable.data(
+    "Menu_UpdateInput_DownHeld",
+    xref("Menu_UpdateInput", 0x5A, 0x2),
+    type="uint8_t",
+    doc=("Held/debounce byte that gates the one-frame menu down pulse."),
+)
+stable.data(
+    "Menu_UpdateInput_RightHeld",
+    xref("Menu_UpdateInput", 0x73, 0x2),
+    type="uint8_t",
+    doc=("Held/debounce byte that gates the one-frame menu right pulse."),
+)
+stable.data(
+    "Menu_UpdateInput_LeftHeld",
     xref("Menu_UpdateInput", 0x8C, 0x2),
     type="uint8_t",
-    doc=("Held and debounce state for menu confirm input."),
+    doc=("Held/debounce byte that gates the one-frame menu left pulse."),
 )
 
 stable.data(
@@ -23880,7 +23973,7 @@ stable.data(
     "Input_CheckCheatCodeSequence_LastPressedButton",
     xref("Input_CheckCheatCodeSequence", 0xB, 0x1, access="Write"),
     type="int32_t",
-    doc="Write-only latch of the most recently pressed button recorded by Input_CheckCheatCodeSequence; not a sequence-progress counter.",
+    doc="Write-only latch for the most recent button recorded by Input_CheckCheatCodeSequence.",
 )
 stable.data(
     "PKG_UpdateLoadingScreen_LoadingBlendTexturePtr",
@@ -23973,24 +24066,28 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "Collision_DetectObjectNodeCollisions_TestRadius",
+    "Collision_DetectObjectNodeCollisions_TestMotionXQ12",
     xref("Collision_DetectObjectNodeCollisions", 0x8F, 0x1),
     type="int32_t",
+    doc="Q12 collision-test motion X component, compared with the candidate actor sub-position/motion component.",
 )
 stable.data(
-    "Collision_DetectObjectNodeCollisions_TestVelX",
+    "Collision_DetectObjectNodeCollisions_TestMotionYQ12",
     xref("Collision_DetectObjectNodeCollisions", 0x83, 0x2),
     type="int32_t",
+    doc="Q12 collision-test motion Y component, compared with the candidate actor sub-position/motion component.",
 )
 stable.data(
-    "Collision_DetectObjectNodeCollisions_TestVelY",
+    "Collision_DetectObjectNodeCollisions_TestMotionZQ12",
     xref("Collision_DetectObjectNodeCollisions", 0x99, 0x2),
     type="int32_t",
+    doc="Q12 collision-test motion Z component, compared with the candidate actor sub-position/motion component.",
 )
 stable.data(
-    "Collision_DetectObjectNodeCollisions_TestVelZ",
+    "Collision_DetectObjectNodeCollisions_TestRadiusQ6",
     xref("Collision_DetectObjectNodeCollisions", 0xBB, 0x2),
     type="int32_t",
+    doc="Q6 collision-test radius; summed with candidate radius before conversion to Q12 broad-phase units.",
 )
 stable.data(
     "Collision_DetectAndResolve3DCollision_ResponseBuffer",
@@ -24052,7 +24149,7 @@ stable.data(
     type="ActorCollisionProbeCallback[4]",
     doc=(
         "Slot 0 of the sparse collision-state callback vector, initialized to "
-        "Actor_HandleDefaultUpdate by Graphics_InitializeDispatchTables."
+        "Actor_RejectCollisionProbe by Graphics_InitializeDispatchTables."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
@@ -24656,9 +24753,10 @@ stable.data(
     type="uint32_t",
 )
 stable.data(
-    "Mem_InitializeAllocator_HeapAllocatorInitialized",
+    "Mem_InitializeAllocator_LastPoolEntryNextFree",
     xref("Mem_InitializeAllocator", 0x2D, 0x2),
     type="Mem_HandlePoolEntry*",
+    doc="Final Mem_HandlePoolEntry.next_free cell; allocator initialization clears it to terminate the free list.",
 )
 stable.data(
     "Mem_AllocateHandle_PoolHead",
@@ -24721,35 +24819,38 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "Camera_SetViewport_Height", xref("Camera_SetViewport", 0x36, 0x2), type="int16_t"
+    "Camera_SetViewport_FOV",
+    xref("Camera_SetViewport", 0x36, 0x2),
+    type="int16_t",
+    doc="Camera field-of-view word consumed when rebuilding projection.",
 )
 stable.data(
-    "Camera_SetViewport_FarClipPlane",
+    "Camera_SetViewport_FocalDistance",
     xref("Camera_SetViewport", 0x3C, 0x2),
     type="int32_t",
+    doc="Camera focal-distance dword reset before projection is recalculated.",
 )
 stable.data(
     "Audio_ListenerCameraPos_Flag10Set",
     xref("Checkers_UpdateStateMachine", 0x73, 0x6),
-    type="Math_Vec3I32",
-    doc="Camera/listener position vector selected by positional-audio panning when "
-    "Game_FrameTransitionFlags bit 0x10 is set.",
+    type="Math_Vec3I32XZY",
+    doc="Camera eye position used as the audio listener when frame flag 0x10 is set. Storage component order is X, Z, Y.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
 stable.data(
     "Audio_ListenerCameraPos_Flag10Clear",
     xref("Audio_PlaySoundDefinition3D", 0x67, 0x1),
-    type="Math_Vec3I32",
-    doc="Camera/listener position vector selected by positional-audio panning when "
-    "Game_FrameTransitionFlags bit 0x10 is clear.",
+    type="Math_Vec3I32XZY",
+    doc="Camera target position used as the audio listener when frame flag 0x10 is clear. Storage component order is X, Z, Y.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
 stable.data(
-    "PKG_InitializeSystem_GraphicsFlags",
+    "PKG_InitializeSystem_MaxRenderDistanceQ12",
     xref("PKG_InitializeSystem", 0x14, 0x2),
     type="int32_t",
+    doc="Camera maximum render-distance dword in Q12 units at Camera_Runtime offset 0xB8.",
 )
 stable.data(
     "PKG_UnloadResourceGameData_LevelInitCallback2",
@@ -24806,9 +24907,10 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "Graphics_RenderMeshNode_ColorAdjustmentFlag",
+    "Graphics_RenderMeshNode_CurrentMaterial",
     xref("Graphics_RenderMeshNode", 0x6D8, 0x2),
     type="Material_TableEntry*",
+    doc="Current Material_TableEntry pointer shared by mesh rendering and vertex-color adjustment.",
 )
 stable.data(
     "Script_CurrentEntity",
@@ -24863,7 +24965,7 @@ stable.data(
 )
 
 stable.data(
-    "Graphics_InitializeDispatchTables_BehaviorTargetActor",
+    "Graphics_InitializeDispatchTables_ActorPhaseCallback4",
     xref("Graphics_InitializeDispatchTables", 0x31, 0x2),
     type="Actor_BehaviorCallback",
     doc="Actor-phase slot 4, initialized to Actor_ApplyVerticalMovement. Callers ignore its return value.",
@@ -24872,7 +24974,7 @@ stable.data(
 )
 
 stable.data(
-    "Graphics_InitializeDispatchTables_BehaviorParam0",
+    "Graphics_InitializeDispatchTables_ActorPhaseCallback5",
     xref("Graphics_InitializeDispatchTables", 0x3B, 0x2),
     type="Actor_BehaviorCallback",
     doc="Actor-phase slot 5, initialized to Actor_ProcessMovementCommands. Callers ignore its return value.",
@@ -24881,7 +24983,7 @@ stable.data(
 )
 
 stable.data(
-    "Graphics_InitializeDispatchTables_BehaviorParam1",
+    "Graphics_InitializeDispatchTables_ActorPhaseCallback6",
     xref("Graphics_InitializeDispatchTables", 0x45, 0x2),
     type="Actor_BehaviorCallback",
     doc="Actor-phase slot 6, initialized to Actor_FollowAttachedMovement. Callers ignore its return value.",
@@ -24890,7 +24992,7 @@ stable.data(
 )
 
 stable.data(
-    "Graphics_InitializeDispatchTables_BehaviorParam2",
+    "Graphics_InitializeDispatchTables_ActorPhaseCallback7",
     xref("Graphics_InitializeDispatchTables", 0x4F, 0x2),
     type="Actor_BehaviorCallback",
     doc="Actor-phase slot 7, initialized to Actor_ProcessMovementBehavior. Callers ignore its return value.",
@@ -24973,9 +25075,10 @@ stable.data(
 )
 
 stable.data(
-    "Window_RunWinMain_InstanceHandle",
+    "Window_RunWinMain_DisplayWindowHandle",
     xref("Window_RunWinMain", 0x21C, 0x1, required=Required.EN),
     type="HWND",
+    doc="Main HWND copied before Display_SetMode.",
 )
 
 stable.data(
@@ -24990,7 +25093,10 @@ stable.data(
 )
 
 stable.data(
-    "Window_RunWinMain_ShowCmd", xref("Window_RunWinMain", 0x18C, 0x2, required=Required.EN), type="HINSTANCE"
+    "Window_RunWinMain_ApplicationInstance",
+    xref("Window_RunWinMain", 0x18C, 0x2, required=Required.EN),
+    type="HINSTANCE",
+    doc="Application HINSTANCE saved from the WinMain hInstance argument.",
 )
 
 stable.data(
@@ -25018,7 +25124,9 @@ stable.data(
 )
 
 stable.data(
-    "String_GetByIndex_TableSize", xref("String_GetByIndex", 0x61, 0x2, required=Required.EN), type="int32_t"
+    "String_GetByIndex_TableSize",
+    xref("String_GetByIndex", 0x61, 0x2, required=Required.EN),
+    type="int32_t",
 )
 
 stable.data(
@@ -25207,10 +25315,8 @@ stable.data(
     xref("Config_ApplySettings", 0x86, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc=(
-        (
-            "First dword of the player-1 pcdogs.ini binding block; Config_ApplySettings applies "
-            "the first 10 normal mappings."
-        )
+        "First dword of the player-1 pcdogs.ini binding block; Config_ApplySettings applies "
+        "the first 10 normal mappings."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
@@ -25245,10 +25351,8 @@ stable.data(
     xref("Config_ApplySettings", 0x66, 0x2, required=Required.EU_SC),
     type="int32_t",
     doc=(
-        (
-            "First dword of the player-2/gamepad pcdogs.ini binding block; Config_ApplySettings "
-            "applies the first 10 normal mappings."
-        )
+        "First dword of the player-2/gamepad pcdogs.ini binding block; Config_ApplySettings "
+        "applies the first 10 normal mappings."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
 )
@@ -25362,9 +25466,10 @@ stable.data(
     type="char",
 )
 stable.data(
-    "Player_RespawnAfterDeath_IsLoadingLevel",
+    "Player_RespawnAfterDeath_PauseStateCounter",
     xref("Player_RespawnAfterDeath", 0x58, 0x2),
     type="uint8_t",
+    doc="Alias of Game_PauseStateCounter, the byte pause/fade counter tested by the scene update loop.",
 )
 stable.data(
     "Menu_ProcessMenuTransition_LevelIndex",
@@ -25388,7 +25493,7 @@ stable.data(
 )
 stable.data(
     "Input_ControllerHammerheadProfileName",
-    xref("Menu_RenderMusicSelection", 0x1A, 0x1),
+    xref("Menu_RenderControllerPresetSelection", 0x1A, 0x1),
     doc="Hammerhead controller name and preset information shown in menus.",
     unstable=True,
 )
@@ -25617,9 +25722,10 @@ stable.data(
     stable=True,
 )
 stable.data(
-    "Input_InitializeInputSubsystem_Initialized",
+    "Input_InitializeInputSubsystem_JoystickAvailable",
     xref("Input_InitializeInputSubsystem", 0x19, 0x1),
     type="uint8_t",
+    doc="Joystick availability flag that gates DirectInput gamepad polling; aliases Input_GetPressedButton_JoystickAvailable.",
 )
 stable.data(
     "D3D_SetBlendMode_GraphicsTextRenderingMode",
@@ -25688,9 +25794,10 @@ stable.data(
     type="uint32_t",
 )
 stable.data(
-    "D3D_InitializeDirectDraw_GraphicsCanFlipSurfaces",
+    "D3D_InitializeDirectDraw_GraphicsSupportsGammaRamp",
     xref("D3D_InitializeDirectDraw", 0x252, 0x2),
     type="uint32_t",
+    doc="Driver capability flag consulted before attempting a DirectDraw gamma-ramp update.",
 )
 stable.data(
     "D3D_InitDirectDrawAndDirect3D_3D7Interface",
@@ -25735,113 +25842,114 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "Graphics_ClipPolygonByCameraPyramid_LeftPlaneCoeff0",
+    "Graphics_ClipPolygonByCameraPyramid_SideClipPlanes",
     xref("Graphics_ClipPolygonByCameraPyramid", 0x6D, 0x1),
     type="Graphics_ClipPlane[0x3]",
-    doc="Left clip-plane coefficient 0 used by the camera-pyramid polygon clipper.",
+    doc="Three 16-byte software side-plane records. Each stores a three-float normal and a float distance.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_LeftPlaneCoeff1",
+    "Camera_SetupClipPlanes_SidePlane0NormalY",
     xref("Camera_SetupClipPlanes", 0xC6, 0x1),
     type="float",
-    doc="Left clip-plane coefficient 1 written while building the camera clip-plane set.",
+    doc="Side-plane 0 normal Y component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_LeftPlaneCoeff2",
+    "Camera_SetupClipPlanes_SidePlane0NormalZ",
     xref("Camera_SetupClipPlanes", 0xCF, 0x2),
     type="float",
-    doc="Left clip-plane coefficient 2 written while building the camera clip-plane set.",
+    doc="Side-plane 0 normal Z component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_RightPlaneCoeff0",
+    "Camera_SetupClipPlanes_SidePlane0Distance",
     xref("Camera_SetupClipPlanes", 0xF1, 0x2),
     type="float",
-    doc="Right clip-plane coefficient 0 written while building the camera clip-plane set.",
+    doc="Side-plane 0 distance.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_RightPlaneCoeff1",
+    "Camera_SetupClipPlanes_SidePlane1",
     xref("Camera_SetupClipPlanes", 0x158, 0x2),
     type="Graphics_ClipPlane",
-    doc="Right clip-plane coefficient 1 written while building the camera clip-plane set.",
+    doc="Complete side-plane 1 record.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_RightPlaneCoeff2",
+    "Camera_SetupClipPlanes_SidePlane1NormalY",
     xref("Camera_SetupClipPlanes", 0x166, 0x1),
     type="float",
-    doc="Right clip-plane coefficient 2 written while building the camera clip-plane set.",
+    doc="Side-plane 1 normal Y component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_TopPlaneCoeff0",
+    "Camera_SetupClipPlanes_SidePlane1NormalZ",
     xref("Camera_SetupClipPlanes", 0x16F, 0x2),
     type="float",
-    doc="Top clip-plane coefficient 0 written while building the camera clip-plane set.",
+    doc="Side-plane 1 normal Z component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_TopPlaneCoeff1",
+    "Camera_SetupClipPlanes_SidePlane1Distance",
     xref("Camera_SetupClipPlanes", 0x191, 0x2),
     type="float",
-    doc="Top clip-plane coefficient 1 written while building the camera clip-plane set.",
+    doc="Side-plane 1 distance.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_TopPlaneCoeff2",
+    "Camera_SetupClipPlanes_SidePlane2",
     xref("Camera_SetupClipPlanes", 0x1AF, 0x2),
     type="Graphics_ClipPlane",
-    doc="Top clip-plane coefficient 2 written while building the camera clip-plane set.",
+    doc="Complete side-plane 2 record.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_BottomPlaneCoeff0",
+    "Camera_SetupClipPlanes_SidePlane2NormalY",
     xref("Camera_SetupClipPlanes", 0x1B5, 0x1),
     type="float",
-    doc="Bottom clip-plane coefficient 0 written while building the camera clip-plane set.",
+    doc="Side-plane 2 normal Y component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_BottomPlaneCoeff1",
+    "Camera_SetupClipPlanes_SidePlane2NormalZ",
     xref("Camera_SetupClipPlanes", 0x1BA, 0x2),
     type="float",
-    doc="Bottom clip-plane coefficient 1 written while building the camera clip-plane set.",
+    doc="Side-plane 2 normal Z component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_BottomPlaneCoeff2",
+    "Camera_SetupClipPlanes_SidePlane2Distance",
     xref("Camera_SetupClipPlanes", 0x1C0, 0x2),
     type="float",
-    doc="Bottom clip-plane coefficient 2 written while building the camera clip-plane set.",
+    doc="Side-plane 2 distance.",
     unstable=True,
 )
 stable.data(
-    "Graphics_ClipPolygonByCameraPyramid_NearClipDistance",
+    "Graphics_ClipPolygonByCameraPyramid_FourthSideClipPlane",
     xref("Graphics_ClipPolygonByCameraPyramid", 0xA1, 0x2),
     type="Graphics_ClipPlane",
+    doc="Fourth software side-plane record, derived from screen-edge points by Camera_SetupClipPlanes.",
 )
 stable.data(
-    "Camera_SetupClipPlanes_NearClipPlaneCoeff0",
+    "Camera_SetupClipPlanes_SidePlane3NormalY",
     xref("Camera_SetupClipPlanes", 0x116, 0x1),
     type="float",
-    doc="Near clip-plane coefficient 0 written while building the camera clip-plane set.",
+    doc="Fourth side-plane normal Y component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_NearClipPlaneCoeff1",
+    "Camera_SetupClipPlanes_SidePlane3NormalZ",
     xref("Camera_SetupClipPlanes", 0x11F, 0x2),
     type="float",
-    doc="Near clip-plane coefficient 1 written while building the camera clip-plane set.",
+    doc="Fourth side-plane normal Z component.",
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_NearClipPlaneCoeff2",
+    "Camera_SetupClipPlanes_SidePlane3Distance",
     xref("Camera_SetupClipPlanes", 0x141, 0x2),
     type="float",
-    doc="Near clip-plane coefficient 2 written while building the camera clip-plane set.",
+    doc="Fourth side-plane distance.",
     unstable=True,
 )
 stable.data(
@@ -25970,9 +26078,10 @@ stable.data(
     type="Scene_Node*",
 )
 stable.data(
-    "Checkers_UpdateStateMachine_DalmatianSpawnStates",
+    "Checkers_UpdateStateMachine_MinigameState",
     xref("Checkers_UpdateStateMachine", 0x9, 0x1),
     type="int32_t",
+    doc="Checkers state-machine dword (states 0..5), also reused as the base of indexed save-completion working storage. The shared array extent is unresolved.",
 )
 stable.data(
     "Menu_LoadLevelProgressState_SubmenuCount",
@@ -25998,9 +26107,10 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "Checkers_UpdateStateMachine_PlayerIsHuman",
+    "Checkers_UpdateStateMachine_WorldBonusStateArray",
     xref("Checkers_UpdateStateMachine", 0x3D1, 0x3),
     type="int32_t[0x6]",
+    doc="Six-dword world-bonus working array reused by checkers. In checkers mode slot 0 is player-is-human, slot 3 enforces capture, slot 4 is AI difficulty, and slot 5 is the current player.",
 )
 stable.data(
     "Level_InitializeSaveState_GameBonusProgressValue",
@@ -26032,15 +26142,17 @@ stable.data(
 )
 
 stable.data(
-    "Script_OpPauseToggle_CameraTransitionCounter",
+    "Script_OpPauseToggle_CameraHeight",
     xref("Script_OpPauseToggle", 0x199, 0x1, required=Required.EN),
     type="int32_t",
+    doc="Pause-camera height control converted with (value << 12) / 12 before positioning the camera.",
 )
 
 stable.data(
-    "Script_OpPauseToggle_CameraRotationAngle",
+    "Script_OpPauseToggle_CameraDistance",
     xref("Script_OpPauseToggle", 0x19E, 0x1, required=Required.EN),
     type="int32_t",
+    doc="Pause-camera horizontal orbit-distance control converted with (value << 12) / 12.",
 )
 
 stable.data(
@@ -26189,10 +26301,10 @@ stable.data(
     stable=True,
 )
 stable.data(
-    "Audio_TriggerMusicTransition_Active",
+    "Audio_TriggerMusicTransition_CurrentTrackIndex",
     xref("Audio_TriggerMusicTransition", 0x29, 0x2),
     type="uint8_t",
-    doc="Byte-sized music transition active/selected-state flag read by Audio_TriggerMusicTransition.",
+    doc="Byte-sized selected level-theme index, used to index Level_Data.themes and changed when a new transition track is selected.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
@@ -26253,7 +26365,7 @@ stable.data(
 
 stable.data(
     "File_SeekAndGetPosition_DescriptorTable",
-    xref("File_SeekAndGetPosition", 0x5C, 0x3),
+    xref("File_GetPosition", 0x5C, 0x3),
     type="CRT_FileDescriptor*",
 )
 stable.data(
@@ -26324,7 +26436,7 @@ _unstable_rows.fn(
             ),
         )
     ],
-    doc="Preprocess slot 2. Updates projectile homing, gravity, tracking, return-to-owner, and timer state while the indexed dispatcher ignores EAX.",
+    doc="Preprocess slot 2. Updates projectile homing, gravity, tracking, attached-owner facing, and timers while indexed dispatchers ignore EAX.",
 )
 
 
@@ -26497,7 +26609,7 @@ _unstable_rows.fn(
     callable=False,
     public=False,
     ret="int32_t",
-    params=[param("void const*", "address")],
+    params=[param("uint32_t const volatile*", "address")],
     doc="Returns 1 after reading four bytes from address, or 0 on an access violation.",
     abi_status=AbiStatus.VERIFIED,
 )
@@ -26827,46 +26939,34 @@ _unstable_rows.struct(
         "Material_Node**",
         "texture_db1",
         0x4,
-        doc=(
-            "Material-node pointer table for layer 1. The texture_db1 name is kept for "
-            "compatibility."
-        ),
+        doc=("Material-node pointer table for layer 1."),
     ),
     member("Graphics_SpriteContext*", "sprite_ctx1", 0x8),
     member(
         "Mesh_CmdList*",
-        "anim_frames1",
+        "command_list1",
         0xC,
-        doc=(
-            "Mesh command list for layer 1. The anim_frames1 name is kept for compatibility."
-        ),
+        doc=("Mesh command list for layer 1."),
     ),
     member(
         "Material_Node**",
         "texture_db2",
         0x10,
-        doc=(
-            "Material-node pointer table for layer 2. The texture_db2 name is kept for "
-            "compatibility."
-        ),
+        doc=("Material-node pointer table for layer 2."),
     ),
     member("Graphics_SpriteContext*", "sprite_ctx2", 0x14),
     member(
         "Mesh_CmdList*",
-        "anim_frames2",
+        "command_list2",
         0x18,
-        doc=(
-            "Mesh command list for layer 2. The anim_frames2 name is kept for compatibility."
-        ),
+        doc=("Mesh command list for layer 2."),
     ),
     member(
         "int32_t",
-        "scene_node_ref",
+        "content_value",
         0x1C,
         doc=(
-            "Content value interpreted as a signed string index, numeric text, or packed "
-            "dimensions, depending on the entry type. The scene_node_ref name is kept for "
-            "compatibility."
+            "Content value interpreted as a signed string index, numeric text, or packed dimensions, depending on the entry type."
         ),
     ),
     member(
@@ -27571,8 +27671,18 @@ stable.struct(
     member("Math_Vec3I32", "frustum_plane_2_normal", 0x5C),
     member("int32_t", "frustum_plane_3_x", 0x68),
     member("uint8_t", "reserved_006c[0x48]", 0x6C),
-    member("int32_t", "projection_depth", 0xB4),
-    member("int32_t", "max_render_distance", 0xB8),
+    member(
+        "int32_t",
+        "projection_depth",
+        0xB4,
+        doc="Near-clip/projection distance in Q6, computed as focal_distance divided by the projection divisor; converted to float using 1/64 by Camera_SetupProjection.",
+    ),
+    member(
+        "int32_t",
+        "max_render_distance",
+        0xB8,
+        doc="Maximum render distance in Q12; default 0x3e8000 (1000), with dynamic level-scale updates.",
+    ),
     size=0xBC,
     incomplete=False,
     unstable=True,
@@ -27639,5 +27749,2223 @@ stable.signatures.extend(_unstable_rows.signatures)
 stable.functions.extend(_unstable_rows.functions)
 stable.globals.extend(_unstable_rows.globals)
 stable.types.extend(_unstable_rows.types)
+
+# Additional CRT layouts from live Binary Ninja MCP_1. Append before prototypes.
+# callback_type is the existing blueprint API for function-pointer aliases.
+stable.callback_type(
+    "CRT_UnwindCallback",
+    ret="void",
+    params=[param("CRT_JumpBuffer3*", "buffer")],
+    calling=CallingConvention.CALLBACK,
+    unstable=True,
+    doc="Stdcall unwind callback used by setjmp3.",
+)
+stable.callback_type(
+    "CRT_SEHFilterEntry",
+    doc=(
+        "Private SEH filter entry. Requires the enclosing frame supplied by the SEH runtime; the "
+        "cdecl declaration cannot be called independently."
+    ),
+    ret="int32_t",
+    params=[],
+    calling=CallingConvention.CDECL,
+    unstable=True,
+)
+stable.callback_type(
+    "CRT_SEHHandlerEntry",
+    doc=(
+        "Private SEH handler entry. Requires the enclosing frame supplied by the SEH runtime; the "
+        "cdecl declaration cannot be called independently."
+    ),
+    ret="void",
+    params=[],
+    calling=CallingConvention.CDECL,
+    unstable=True,
+)
+
+stable.struct(
+    "CRT_LD12Fields",
+    member("uint16_t", "extra_mantissa", 0x0),
+    member("uint32_t", "mantissa_low", 0x2),
+    member("uint32_t", "mantissa_high", 0x6),
+    member("uint16_t", "sign_exponent", 0xA),
+    size=0xC,
+    incomplete=False,
+    unstable=True,
+    doc=(
+        "CRT 12-byte conversion value with an extra low mantissa halfword. Uses a different "
+        "layout from the padded x87 stack argument."
+    ),
+)
+
+stable.struct(
+    "CRT_DecimalFloatOutput",
+    member("int16_t", "decimal_point_position", 0x0),
+    member("char", "sign_character", 0x2),
+    member("uint8_t", "digit_count", 0x3),
+    member("char", "digits[22]", 0x4),
+    size=0x1A,
+    incomplete=False,
+    unstable=True,
+    doc="Decimal conversion output: point position, sign, digit count, and a 22-byte digits or special-token buffer.",
+)
+
+stable.struct(
+    "CRT_SEHScopeEntry",
+    member("int32_t", "enclosing_level", 0x0),
+    member("CRT_SEHFilterEntry", "filter_entry", 0x4),
+    member("CRT_SEHHandlerEntry", "handler_entry", 0x8),
+    size=0xC,
+    incomplete=False,
+    unstable=True,
+    doc="MSVC x86 SEH scope-table entry with an enclosing try level and filter/handler entry points.",
+)
+
+stable.struct(
+    "CRT_SEHRegistration3",
+    member("EXCEPTION_REGISTRATION_RECORD*", "next", 0x0),
+    member("EXCEPTION_ROUTINE*", "handler", 0x4),
+    member("CRT_SEHScopeEntry*", "scope_table", 0x8),
+    member("int32_t", "try_level", 0xC),
+    size=0x10,
+    incomplete=False,
+    unstable=True,
+    doc="MSVC x86 SEH registration record used by local/global unwind and setjmp3.",
+)
+
+stable.struct(
+    "CRT_JumpBuffer3",
+    member("void*", "saved_ebp", 0x0),
+    member("uint32_t", "saved_ebx", 0x4),
+    member("uint32_t", "saved_edi", 0x8),
+    member("uint32_t", "saved_esi", 0xC),
+    member("void*", "saved_esp", 0x10),
+    member("void*", "resume_address", 0x14),
+    member("CRT_SEHRegistration3*", "registration", 0x18),
+    member("int32_t", "try_level", 0x1C),
+    member("uint32_t", "magic", 0x20),
+    member("CRT_UnwindCallback", "unwind_callback", 0x24),
+    member("uint32_t", "unwind_data[6]", 0x28),
+    size=0x40,
+    incomplete=False,
+    unstable=True,
+    doc=(
+        "MSVC x86 setjmp3 context with saved registers, SEH state, an unwind callback, and six "
+        "callback data words."
+    ),
+)
+
+stable.struct(
+    "CRT_HeapFreeBlock",
+    member("uint32_t", "size_flags", 0x0),
+    member("CRT_HeapFreeBlock*", "next", 0x4),
+    member("CRT_HeapFreeBlock*", "prev", 0x8),
+    size=0xC,
+    incomplete=False,
+    unstable=True,
+    doc="Free heap block header with size flags and doubly linked bin pointers.",
+)
+
+stable.struct(
+    "CRT_HeapFreeList",
+    member("CRT_HeapFreeBlock*", "next", 0x0),
+    member("CRT_HeapFreeBlock*", "prev", 0x4),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+    doc="Heap bin head containing forward and backward free-block links.",
+)
+
+stable.struct(
+    "CRT_HeapPageState",
+    member("int32_t", "allocated_count", 0x0),
+    member("CRT_HeapFreeList", "bins[64]", 0x4),
+    size=0x204,
+    incomplete=False,
+    unstable=True,
+    doc="Per-page allocation count and 64 free-list bins.",
+)
+
+stable.struct(
+    "CRT_HeapPageMap",
+    member("int32_t", "current_page_index", 0x0),
+    member("uint8_t", "free_count_by_class[64]", 0x4),
+    member("uint32_t", "low_class_bitmap_by_page[32]", 0x44),
+    member("uint32_t", "high_class_bitmap_by_page[32]", 0xC4),
+    member("CRT_HeapPageState", "pages[32]", 0x144),
+    size=0x41C4,
+    incomplete=False,
+    unstable=True,
+    doc="Heap page map with 64 class counters, two bitmap arrays, and 32 page states.",
+)
+
+
+# Missing native entries audited against the live EN Binary Ninja view.
+# Exact EN-only signatures; detour safety has not been validated.
+
+stable.fn(
+    "Script_OpIncrementVariable",
+    "8B 44 24 08 8D 54 24 08 8B 08 41 89 08 8B C1 33 C9 8A 48 FF 8B 44 24 04 51 52 50 E8 40 FB FF FF",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Consumes a one-byte variable reference, resolves its int32 storage, increments it, and advances the script cursor.",
+)
+
+stable.fn(
+    "Script_OpSkipBytes",
+    "8B 44 24 08 83 00 02 C3 90 90 90 90 90 90 90 90",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("Entity_State*", "entity"),
+        param("uint8_t**", "script_cursor_inout"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Advances the script cursor by two bytes. entity is unused.",
+)
+
+stable.fn(
+    "PKG_ReturnEngineInitializationFailure",
+    "32 C0 C3 E8 BF BF FE FF B0 01 C3 90 90 90 90 90",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="bool",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Clears AL and returns from the failure path in PKG_InitializeResourceGameEngine. "
+        "Internal entry at EN 0x42C819; exposed only as an address."
+    ),
+)
+
+stable.fn(
+    "PKG_InitializeGraphicsForGameEngine",
+    "E8 BF BF FE FF B0 01 C3 90 90 90 90 90 90 90 90",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="bool",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Calls D3D_InitializeDirectDraw, ignores its result, and returns true in AL. Internal "
+        "startup entry at EN 0x42C81C; exposed only as an address."
+    ),
+)
+
+stable.fn(
+    "Math_MulMat3x3Q12",
+    "8B 54 24 04 8B 4C 24 0C 83 EC 14 3B D1 53 56 57",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("Math_Matrix3x3I16*", "out_matrix"),
+        param("Math_Matrix3x3I16 const*", "right_factor"),
+        param("Math_Matrix3x3I16 const*", "left_factor"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Computes out_matrix = left_factor * right_factor for signed row-major Q12 matrices. "
+        "Output may equal either of two distinct inputs. Partial overlap and three identical "
+        "pointers are unsupported."
+    ),
+)
+
+stable.fn(
+    "Math_BuildMatrixRotationX",
+    "56 57 8B 7C 24 14 B8 00 04 00 00 2B C7 50 E8 BD",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("Math_Matrix3x3I16*", "out_matrix"),
+        param("Math_Matrix3x3I16 const*", "left_factor"),
+        param("int32_t", "angle"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Builds a right-handed X-axis Q12 rotation from Q14 sine values shifted right two bits. "
+        "Uses 0x1000 angle units per turn. Copies the rotation when left_factor is null; "
+        "otherwise multiplies left_factor by it. Uses shared scratch storage."
+    ),
+)
+
+stable.fn(
+    "Math_BuildMatrixRotationZ",
+    "56 57 8B 7C 24 14 B8 00 04 00 00 2B C7 50 E8 8D",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("Math_Matrix3x3I16*", "out_matrix"),
+        param("Math_Matrix3x3I16 const*", "left_factor"),
+        param("int32_t", "angle"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Builds a right-handed Z-axis Q12 rotation from Q14 sine values shifted right two bits. "
+        "Uses 0x1000 angle units per turn. Copies the rotation when left_factor is null; "
+        "otherwise multiplies left_factor by it. Uses shared scratch storage."
+    ),
+)
+
+stable.fn(
+    "Audio_IsSamplePlaying",
+    "8B 44 24 04 8D 04 80 C1 E0 02 8B 88 ?? ?? ?? ?? 85 C9 74 18 8B 80 ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("int32_t", "slot_index"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Returns 1 when the sample slot has a nonzero cached playback rate and Miles reports "
+        "status 4. Returns 0 otherwise. Requires a valid slot index."
+    ),
+)
+
+stable.fn(
+    "Audio_SetSamplePan",
+    "8B 44 24 04 8D 0C 80 C1 E1 02 8B 81 ?? ?? ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("int32_t", "slot_index"),
+        param("int32_t", "pan_fp12"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Updates pan for an initialized sample slot. Wraps the Q12 angle, mirrors it about 0x800, "
+        "scales by 16, and clamps to 0..128. Calls Miles only when pan changes. Requires a valid "
+        "slot index."
+    ),
+)
+
+stable.fn(
+    "Audio_GetEnabledFlag",
+    "0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 55 8B EC 51 8B 45 08 0F",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Returns the signed audio-enable byte as int32 without converting it to a boolean.",
+)
+
+stable.fn(
+    "Trail_CompareBoneNodes",
+    "8B 44 24 04 8B 4C 24 08 8B 00 8B 11 2B C2 C3 90",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("int32_t const*", "lhs_key"),
+        param("int32_t const*", "rhs_key"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Compares eight-byte bone-path entries by subtracting their first int32 keys with 32-bit wrapping.",
+)
+
+stable.fn(
+    "Signal_Emit",
+    "8A 0D ?? ?? ?? ?? 80 F9 28 7D 33 8A 54 24 08 0F",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("int16_t", "signal_id"),
+        param("uint8_t", "event_type"),
+        param("int16_t", "payload_06"),
+        param("int16_t", "payload_04"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Appends an eight-byte signal event. Drops the event when the queue holds 40 entries. "
+        "Arguments place payload_06 before payload_04."
+    ),
+)
+
+stable.fn(
+    "Audio_UpdateSoundPosition",
+    "8B 44 24 04 56 8D 04 40 C1 E0 04 05 ?? ?? ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="BOOL",
+    params=[
+        param("int32_t", "slot_index"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Copies a present source position into the sound slot and repoints the slot to that snapshot. Returns FALSE when definition flag bit 0 is set, otherwise TRUE, including when no definition exists. Requires a valid slot index.",
+)
+
+stable.fn(
+    "Mem_GetPointerByHandle",
+    "8B 4C 24 04 85 C9 7E 1C 81 F9 A0 86 01 00 7F 14",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void*",
+    params=[
+        param("uint32_t", "handle"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Returns the pointer for handles 1..100000 only when the pool entry still stores the same handle identifier; otherwise returns null.",
+)
+
+stable.fn(
+    "CRT_Ftol",
+    "55 8B EC 83 C4 F4 9B D9 7D FE 9B 66 8B 45 FE 80",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int64_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Converts x87 ST0 to int64 in EDX:EAX while temporarily changing rounding control. The "
+        "signature omits ST0, so no callable wrapper is provided."
+    ),
+)
+
+stable.fn(
+    "CRT_AllocaProbe",
+    "51 3D 00 10 00 00 8D 4C 24 08 72 14 81 E9 00 10",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Probes descending stack pages using the allocation size in EAX. Changes ESP while "
+        "preserving the return address. The signature omits EAX and cannot be called through the "
+        "SDK."
+    ),
+)
+
+stable.fn(
+    "Mem_AllocateCRTHeap",
+    "56 8B 74 24 08 3B 35 ?? ?? ?? ?? 77 0B 56 E8 9A",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void*",
+    params=[
+        param("uint32_t", "size"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Allocates from the CRT small-block heap when eligible; otherwise calls HeapAlloc on the CRT heap with a 16-byte-rounded request.",
+)
+
+stable.fn(
+    "File_Seek",
+    "56 8B 74 24 08 57 8B 46 0C A8 83 74 6F 8B 7C 24",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("File_Handle*", "stream"),
+        param("int32_t", "offset"),
+        param("int32_t", "origin"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Seeks a CRT stream after checking origin and reconciling buffered data. Returns 0 on "
+        "success or nonzero on failure."
+    ),
+)
+
+stable.fn(
+    "File_ReadElements",
+    "55 8B EC 51 53 56 57 8B 7D 0C 0F AF 7D 10 8B 5D",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="uint32_t",
+    params=[
+        param("void*", "buffer"),
+        param("uint32_t", "size"),
+        param("uint32_t", "count"),
+        param("File_Handle*", "stream"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Reads from a CRT stream using buffered data and descriptor reads. Returns the number of "
+        "complete elements read."
+    ),
+)
+
+stable.fn(
+    "CRT_InitStdio",
+    "A1 ?? ?? ?? ?? 56 6A 14 85 C0 5E 75 07 B8 00 02",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Initializes the CRT stream-pointer table and standard descriptors during startup. "
+        "Repeated calls are not safe as a stream reset."
+    ),
+)
+
+stable.fn(
+    "CRT_WinMainStartup",
+    "55 8B EC 6A FF 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 64 89 25 00 00 00 00 83 EC 58",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Installs CRT exception handling, initializes runtime state, calls WinMain, and exits. "
+        "Never returns. Exposed only as the process-entry address."
+    ),
+)
+
+stable.fn(
+    "CRT_StartupSEHFilter",
+    "8B 45 EC 8B 08 8B 09 89 4D 98 50 51 E8 71 2B 00",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Reads EXCEPTION_POINTERS through inherited EBP, saves the exception code in the parent "
+        "frame, and returns the CRT filter result. Requires the parent frame; EBP is omitted from "
+        "the signature."
+    ),
+)
+
+stable.fn(
+    "CRT_StartupSEHHandler",
+    "8B 65 E8 FF 75 98 E8 3C FD FF FF 83 3D ?? ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Restores ESP from inherited EBP and exits with the saved exception code. Never returns. "
+        "Requires the parent frame; EBP is omitted from the signature."
+    ),
+)
+
+stable.fn(
+    "CRT_NLG_NotifyFromECX",
+    "53 51 BB ?? ?? ?? ?? EB 0A 53 51 BB ?? ?? ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Records the continuation in EAX, code in ECX, and frame in EBP, then returns with RET 4. "
+        "The signature omits these registers and the discarded stack word. Not callable through "
+        "the SDK."
+    ),
+)
+
+stable.fn(
+    "CRT_ProbeReadSEHFilter",
+    "8B 45 EC 8B 00 8B 00 33 C9 3D 05 00 00 C0 0F 94",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Reads EXCEPTION_POINTERS through inherited EBP. Returns 1 for an access violation or 0 "
+        "otherwise. Requires the parent frame; not callable through the SDK."
+    ),
+)
+
+stable.fn(
+    "CRT_ProbeReadSEHHandler",
+    "8B 65 E8 33 C0 83 4D FC FF 8B 4D F0 64 89 0D 00",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Restores ESP through inherited EBP, clears EAX, and enters the parent epilogue. Requires "
+        "the parent frame and saved registers; EBP is omitted from the signature."
+    ),
+)
+
+stable.fn(
+    "File_FreeBufferCRT",
+    "56 8B 74 24 08 8B 46 0C A8 83 74 1D A8 08 74 19",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("File_Handle*", "stream"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Frees a heap-owned CRT stream buffer and clears its cursor, base, and count. Returns no value.",
+)
+
+stable.fn(
+    "File_OpenIntoStreamCRT",
+    "55 8B EC 51 51 53 56 8B 35 ?? ?? ?? ?? 57 8B 7D",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="File_Handle*",
+    params=[
+        param("char const*", "filename"),
+        param("char const*", "mode"),
+        param("int32_t", "sharing_flag"),
+        param("File_Handle*", "stream"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Parses the CRT mode string and opens filename with the requested sharing flag into the supplied stream. Returns that stream on success or null on failure; invalid/repeated mode modifiers terminate modifier scanning.",
+)
+
+stable.fn(
+    "Mem_AllocateSmallBlockCRT",
+    "55 8B EC 83 EC 14 A1 ?? ?? ?? ?? 8B 15 ?? ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void*",
+    params=[
+        param("uint32_t", "size"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Allocates a CRT small-heap size-class block, splitting any remainder and updating page/segment masks and boundary tags.",
+)
+
+stable.fn(
+    "Mem_AllocateSmallBlockRegionCRT",
+    "A1 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 56 57 33 FF 3B",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="CRT_HeapSegment*",
+    params=[],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Grows the CRT region-header table as needed, allocates a page map, and reserves a one-MiB small-block heap arena.",
+)
+
+stable.fn(
+    "Mem_AllocateSmallBlockGroupCRT",
+    "55 8B EC 51 8B 4D 08 53 56 57 8B 71 10 8B 41 08",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("CRT_HeapSegment*", "segment"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Commits a 0x8000-byte group in the selected CRT heap region and initializes its size-class free lists. Returns the group index or -1 on failure.",
+)
+
+stable.fn(
+    "Mem_ResizeSmallBlockCRT",
+    "55 8B EC 83 EC 0C 8B 4D 08 8B 45 10 53 56 57 8B",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("CRT_HeapSegment*", "segment"),
+        param("void*", "user_ptr"),
+        param("uint32_t", "new_size"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Attempts an in-place CRT small-block resize by splitting the block or merging an adjacent free block; returns nonzero on success.",
+)
+
+stable.fn(
+    "CRT_StrchrCdecl",
+    "33 C0 8A 44 24 08 53 8B D8 C1 E0 08 8B 54 24 08",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="char*",
+    params=[
+        param("char const*", "string"),
+        param("int32_t", "character"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Finds the first matching byte, or returns null. Character zero matches the terminator. "
+        "Loads the low byte of the second argument and enters String_StrchrCRT at +6 using cdecl."
+    ),
+)
+
+stable.fn(
+    "CRT_InitIO",
+    "83 EC 44 53 55 56 57 68 00 01 00 00 E8 87 D4 FF",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Initializes CRT descriptor blocks from inherited process handles and installs standard "
+        "descriptors. Returns no value."
+    ),
+)
+
+stable.fn(
+    "File_SeekDescriptorCRT",
+    "8B 44 24 04 53 3B 05 ?? ?? ?? ?? 56 57 73 73 8B",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("int32_t", "fd"),
+        param("int32_t", "offset"),
+        param("int32_t", "origin"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Seeks a CRT descriptor with SetFilePointer, clears descriptor EOF state on success, and returns the new offset or -1 on failure.",
+)
+
+stable.fn(
+    "File_FillBufferCRT",
+    "56 8B 74 24 08 8B 46 0C A8 83 0F 84 C4 00 00 00",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("File_Handle*", "stream"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Refills a CRT stream buffer, allocating it if needed, and returns the next unsigned byte as int32 or -1 on EOF/error.",
+)
+
+stable.fn(
+    "File_ReadBytes",
+    "55 8B EC 83 EC 0C 53 56 8B 75 08 57 3B 35 ?? ??",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("int32_t", "fd"),
+        param("void*", "buffer"),
+        param("uint32_t", "count"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Reads a CRT descriptor into buffer, applying text-mode CRLF translation and Ctrl-Z EOF handling. Returns bytes read or -1 on failure.",
+)
+
+stable.fn(
+    "CRT_GetStringTypeA_AllocaExceptionFilter",
+    "6A 01 58 C3 8B 65 E8 33 DB 33 F6 83 4D FC FF 3B",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Handles CRT_GetStringTypeA allocation exceptions and returns EXCEPTION_EXECUTE_HANDLER "
+        "(1). Private SEH entry; exposed only as an address."
+    ),
+)
+
+stable.fn(
+    "CRT_GetStringTypeAAllocaFailure",
+    "8B 65 E8 33 DB 33 F6 83 4D FC FF 3B F3 74 29 FF",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Restores ESP from inherited EBP, clears buffer registers, and rejoins CRT_GetStringTypeA "
+        "after allocation failure. Requires the parent frame; not callable through the SDK."
+    ),
+)
+
+stable.fn(
+    "File_GetBufferCRT",
+    "FF 05 ?? ?? ?? ?? 68 00 10 00 00 E8 C7 B4 FF FF",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="void",
+    params=[
+        param("File_Handle*", "stream"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Installs a 0x1000-byte CRT stream buffer, falling back to the embedded two-byte character buffer on allocation failure, then resets count and cursor.",
+)
+
+stable.fn(
+    "File_SharedOpenCRT",
+    "55 8B EC 83 EC 1C 8B 4D 0C 53 33 DB 56 F6 C1 80",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("char const*", "filename"),
+        param("int32_t", "oflag"),
+        param("int32_t", "shflag"),
+    ],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Opens a shared CRT file using cdecl. Takes filename, oflag, and shflag, plus an int "
+        "permissions argument when _O_CREAT is set. Checks the text-file tail. The signature "
+        "omits the variable argument, so no callable wrapper is provided."
+    ),
+)
+
+stable.fn(
+    "CRT_ValidateCharacterClass",
+    "0F B6 44 24 04 8A 4C 24 0C 84 88 ?? ?? ?? ?? 75",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("uint8_t", "character"),
+        param("int32_t", "fallback_mask"),
+        param("uint8_t", "multibyte_mask"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc=(
+        "Tests the low bytes of character and multibyte_mask, with fallback_mask applied to the "
+        "16-bit class table. Returns a boolean result. Arguments use cdecl integer promotion."
+    ),
+)
+
+stable.fn(
+    "CRT_LCMapStringA_SourceAllocationExceptionFilter",
+    "6A 01 58 C3 8B 65 E8 33 FF 89 7D DC 83 4D FC FF",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Handles CRT_LCMapStringA source-buffer allocation exceptions and returns "
+        "EXCEPTION_EXECUTE_HANDLER (1). Private SEH entry; exposed only as an address."
+    ),
+)
+
+stable.fn(
+    "CRT_LCMapStringASourceAllocationFailure",
+    "8B 65 E8 33 FF 89 7D DC 83 4D FC FF 8B 5D E4 39",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Restores ESP from inherited EBP after allocation failure. Clears the first buffer, "
+        "resets the SEH try level, and rejoins CRT_LCMapStringA. Requires the parent frame; not "
+        "callable through the SDK."
+    ),
+)
+
+stable.fn(
+    "CRT_LCMapStringA_MappedAllocationExceptionFilter",
+    "6A 01 58 C3 8B 65 E8 33 FF 33 DB 83 4D FC FF 8B",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Handles CRT_LCMapStringA mapped-buffer allocation exceptions and returns "
+        "EXCEPTION_EXECUTE_HANDLER (1). Private SEH entry; exposed only as an address."
+    ),
+)
+
+stable.fn(
+    "CRT_LCMapStringAMappedAllocationFailure",
+    "8B 65 E8 33 FF 33 DB 83 4D FC FF 8B 75 D8 3B DF",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[],
+    callable=False,
+    public=False,
+    abi_status=AbiStatus.PLACEHOLDER,
+    unstable=True,
+    doc=(
+        "Restores ESP from inherited EBP after allocation failure. Clears the second buffer, "
+        "resets the SEH try level, and rejoins CRT_LCMapStringA. Requires the parent frame; not "
+        "callable through the SDK."
+    ),
+)
+
+stable.fn(
+    "File_ChangeSizeCRT",
+    "55 8B EC B8 00 10 00 00 E8 81 98 FF FF 53 8B 5D",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("int32_t", "fd"),
+        param("int32_t", "size"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Changes a CRT descriptor file size by zero-filling extension or truncating with SetEndOfFile, restoring the saved offset. Returns 0 on success or -1 on failure.",
+)
+
+stable.fn(
+    "File_SetModeCRT",
+    "8B 44 24 04 56 3B 05 ?? ?? ?? ?? 73 5A 8B C8 83",
+    hook=hook(0, kind=HookKind.UNSUPPORTED),
+    required=Required.EN,
+    ret="int32_t",
+    params=[
+        param("int32_t", "fd"),
+        param("int32_t", "mode"),
+    ],
+    abi_status=AbiStatus.VERIFIED,
+    unstable=True,
+    doc="Sets CRT descriptor text (0x4000) or binary (0x8000) mode and returns the previous mode, or -1 for invalid descriptor/mode.",
+)
+
+# Named EN globals with native instruction operands verified against Binary Ninja.
+
+stable.data(
+    "D3D_MinimumGammaScale",
+    xref("D3D_SetGammaRamp", 0x4, 0x2, required=Required.EN, access="Read"),
+    type="float const",
+    unstable=True,
+    doc="Minimum gamma value of 0.1f, checked after brightness changes.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "DInput_ConstantForceGUID",
+    xref(
+        "DInput_CreateConfiguredJoystickDevice",
+        0x182,
+        0x1,
+        required=Required.EN,
+        access="Read",
+    ),
+    type="Win32_GUID",
+    unstable=True,
+    doc="DirectInput constant-force effect GUID used when creating the rumble effect.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "DInput_JoystickDataFormat",
+    xref("Input_SetJoystickDataFormat", 0x4, 0x1, required=Required.EN, access="Read"),
+    type="DInput_DataFormat",
+    unstable=True,
+    doc="DIJOYSTATE data-format descriptor: 0x50-byte samples and 44 object-format records.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "DInput_Joystick2DataFormat",
+    xref("Input_SetJoystick2DataFormat", 0x4, 0x1, required=Required.EN, access="Read"),
+    type="DInput_DataFormat",
+    unstable=True,
+    doc="DIJOYSTATE2 data-format descriptor: 0x110-byte samples and 164 object-format records.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_crtFdivProbeDivisor",
+    xref("CRT_TestFdivBugFallback", 0x6, 0x2, required=Required.EN, access="Read"),
+    type="double",
+    unstable=True,
+    doc="CRT state used by CRT_TestFdivBugFallback.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_dCRT_PositiveZero",
+    xref("Float_IsNonnegative", 0x6, 0x2, required=Required.EN, access="Read"),
+    type="double",
+    unstable=True,
+    doc="CRT state used by Float_IsNonnegative.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_RuntimeLibTitle",
+    xref("CRT_NmsgWrite", 0x119, 0x1, required=Required.EN, access="Read"),
+    type="char const[0x25]",
+    unstable=True,
+    doc="CRT state used by CRT_NmsgWrite.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_NewlinePad",
+    xref("CRT_NmsgWrite", 0xF1, 0x1, required=Required.EN, access="Read"),
+    unstable=True,
+    doc="CRT storage used by CRT_NmsgWrite. Type and size are unknown.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_RuntimeErrorPrefix",
+    xref("CRT_NmsgWrite", 0xD3, 0x1, required=Required.EN, access="Read"),
+    type="char const[0x1a]",
+    unstable=True,
+    doc="CRT state used by CRT_NmsgWrite.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_Ellipsis",
+    xref("CRT_NmsgWrite", 0xBF, 0x1, required=Required.EN, access="Read"),
+    type="char const[0x4]",
+    unstable=True,
+    doc="CRT state used by CRT_NmsgWrite.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_ProgramNameUnknown",
+    xref("CRT_NmsgWrite", 0x7D, 0x1, required=Required.EN, access="Read"),
+    type="char const[0x17]",
+    unstable=True,
+    doc="CRT state used by CRT_NmsgWrite.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_GetLastActivePopup",
+    xref("CRT_ShowMessageBoxA", 0x3D, 0x1, required=Required.EN, access="Read"),
+    type="char const[0x13]",
+    unstable=True,
+    doc="CRT state used by CRT_ShowMessageBoxA.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_GetActiveWindow",
+    xref("CRT_ShowMessageBoxA", 0x35, 0x1, required=Required.EN, access="Read"),
+    type="char const[0x10]",
+    unstable=True,
+    doc="CRT state used by CRT_ShowMessageBoxA.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_MessageBoxA",
+    xref("CRT_ShowMessageBoxA", 0x24, 0x1, required=Required.EN, access="Read"),
+    type="char const[0xc]",
+    unstable=True,
+    doc="CRT state used by CRT_ShowMessageBoxA.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_sz_CRT_User32Dll",
+    xref("CRT_ShowMessageBoxA", 0xD, 0x1, required=Required.EN, access="Read"),
+    type="char const[0xb]",
+    unstable=True,
+    doc="CRT state used by CRT_ShowMessageBoxA.",
+    write_policy=WritePolicy.READ_ONLY,
+)
+
+stable.data(
+    "g_fmt_MCI_OpenAviWithAlias",
+    xref("Video_OpenAVIFile", 0x33, 0x1, required=Required.EN),
+    type="char const[0x1f]",
+    unstable=True,
+    doc="MCI open command format used by Video_OpenAVIFile to assign a movie alias.",
+)
+
+stable.data(
+    "Camera_ShakeOffsetTable",
+    xref("Camera_UpdateShakeOffset", 0x28, 0x4, required=Required.EN),
+    type="int16_t[0xc]",
+    unstable=True,
+    doc="Fixed-point camera-shake multipliers indexed by the shake timer.",
+)
+
+stable.data(
+    "D3D_CurrentGammaScale",
+    xref("D3D_SetGammaRamp", 0x14, 0x1, required=Required.EN),
+    type="float",
+    unstable=True,
+    doc="Current gamma scale used by D3D_SetGammaRamp.",
+)
+
+stable.data(
+    "Input_ForceFeedbackScale",
+    xref("Input_SetForceFeedbackScale", 0x4, 0x1, required=Required.EN),
+    type="float",
+    unstable=True,
+    doc="Force-feedback scale used when setting the constant-force effect.",
+)
+
+stable.data(
+    "Math_RotationX_NegSinScratch",
+    xref("Math_BuildRotationMatrix", 0x2F, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Negative sine scratch value used when building X-axis rotations.",
+)
+
+stable.data(
+    "Math_RotationZ_NegSinScratch",
+    xref("Math_BuildRotationMatrix", 0x140, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Negative sine scratch value used when building Z-axis rotations.",
+)
+
+stable.data(
+    "g_matrixFixedZero_5",
+    xref("Math_BuildMatrixRotationZ", 0x69, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Storage used by Math_BuildMatrixRotationZ.",
+)
+
+stable.data(
+    "g_matrixFixedZero_6",
+    xref("Math_BuildMatrixRotationZ", 0x7A, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Storage used by Math_BuildMatrixRotationZ.",
+)
+
+stable.data(
+    "g_matrixFixedOne_short3",
+    xref("Math_BuildMatrixRotationZ", 0x83, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Storage used by Math_BuildMatrixRotationZ.",
+)
+
+stable.data(
+    "Video_IntroMovieUseRplFlags",
+    xref("Video_PlayMovieIntro", 0x30, 0x2, required=Required.EN),
+    type="uint8_t[0x4]",
+    unstable=True,
+    doc="Four per-intro format flags used to choose the RPL versus AVI playback path.",
+)
+
+stable.data(
+    "Config_ControlRowMasks",
+    xref("Config_ApplySettings", 0x51, 0x2, required=Required.EN),
+    type="uint32_t[0xa]",
+    unstable=True,
+    doc="Ten action masks paired with persisted control bindings by Config_ApplySettings.",
+)
+
+stable.data(
+    "Math_SinTableQ14",
+    xref("Math_SinQ14", 0x14, 0x4, required=Required.EN),
+    type="int16_t[0x800]",
+    unstable=True,
+    doc="2048 signed 16-bit sine lookup entries in Q14, addressed with 12-bit full-turn angles.",
+)
+
+stable.data(
+    "Math_AtanRatioAngleTableQ12",
+    xref("Math_CalculateAtan2Fast", 0x49, 0x4, required=Required.EN),
+    type="int16_t const[0x801]",
+    unstable=True,
+    doc="2049 arctangent lookup entries for ratios 0..1; angle scale is 4096 units per full turn.",
+)
+
+stable.data(
+    "Math_AsinRatioAngleTableQ12",
+    xref("Math_AsinRatioFP12", 0x43, 0x4, required=Required.EN),
+    type="int16_t const[0x801]",
+    unstable=True,
+    doc="2049 arcsine lookup entries for ratios 0..1; angle scale is 4096 units per full turn.",
+)
+
+stable.data(
+    "Math_AtanReciprocalQ12",
+    xref("Math_CalculateAtan2Fast", 0x3B, 0x4, required=Required.EN),
+    type="uint16_t const[0x41]",
+    unstable=True,
+    doc="65 reciprocal lookup entries used by the fast atan2 helper.",
+)
+
+stable.data(
+    "g_crtFloatingPointInitializer",
+    xref("CRT_CInit", 0x0, 0x1, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT floating-point initializer callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pCRT_ErrorHandler",
+    xref("CRT_AmsgExit", 0x1C, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT error-handler callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_crtConsoleMode",
+    xref("CRT_NmsgWrite", 0x46, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc=(
+        "CRT state used by CRT_WriteRuntimeErrorBanner, CRT_NmsgWrite, "
+        "File_ClearFileDescriptorCRT, File_SetOSHandleCRT."
+    ),
+)
+
+stable.data(
+    "g_pFloatConvertFunction",
+    xref("String_FormatCRTVStringAlt", 0x3AA, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT floating-point conversion callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pFloatOutputFunction",
+    xref("String_FormatCRTVStringAlt", 0x3E2, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT formatted-string output callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pCRT_FloatHandler0",
+    xref("CRT_InitFloatFormatDispatch", 0x14, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT floating-point callback using a custom register convention. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pFloatCropFunction",
+    xref("String_FormatCRTVStringAlt", 0x3CB, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT fractional-zero trimming callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pCRT_FloatHandler1",
+    xref("CRT_InitFloatFormatDispatch", 0x28, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT floating-point callback taking a double pointer. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pCRT_FloatHandler2",
+    xref("CRT_InitFloatFormatDispatch", 0x32, 0x1, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT floating-point formatting callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_CRT_WideCharValidatorTable",
+    xref("CRT_ValidateCharacterClass", 0x18, 0x4, required=Required.EN),
+    type="uint16_t[0x100]",
+    unstable=True,
+    doc="256-entry CRT wide-character classification table.",
+)
+
+stable.data(
+    "g_crtMaxMultibyteCharBytes",
+    xref("CRT_ToLower", 0x3C, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Maximum bytes per multibyte character used by CRT conversion and string operations.",
+)
+
+stable.data(
+    "g_formatNullString",
+    xref("String_FormatCRTVStringAlt", 0x364, 0x1, required=Required.EN),
+    type="char const*",
+    unstable=True,
+    doc="Narrow null-string fallback used by the CRT formatter.",
+)
+
+stable.data(
+    "g_pFormatStringNullWide",
+    xref("String_FormatCRTVStringAlt", 0x259, 0x2, required=Required.EN),
+    type="uint16_t const*",
+    unstable=True,
+    doc="Wide null-string fallback used by the CRT formatter.",
+)
+
+stable.data(
+    "g_smallBlockAllocThreshold",
+    xref("Mem_Realloc", 0x4D, 0x2, required=Required.EN),
+    type="uint32_t",
+    unstable=True,
+    doc="Allocation size threshold for the custom small-block heap.",
+)
+
+stable.data(
+    "g_CRT_FileCharBuffer",
+    xref("File_WriteChar", 0xBD, 0x1, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by File_FillBufferCRT, File_WriteChar. Type and size are unknown.",
+)
+
+stable.data(
+    "g_crtExceptionActions",
+    xref("CRT_FindExceptionAction", 0xA, 0x2, required=Required.EN),
+    type="CRT_ExceptionAction[0xa]",
+    unstable=True,
+    doc="CRT exception-action table searched by CRT_FindExceptionAction.",
+)
+
+stable.data(
+    "g_crtExceptionCode1",
+    xref("CRT_XcptFilter", 0x58, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_XcptFilter.",
+)
+
+stable.data(
+    "g_crtExceptionCode2",
+    xref("CRT_XcptFilter", 0x5E, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_XcptFilter.",
+)
+
+stable.data(
+    "g_crtExceptionActionCount",
+    xref("CRT_FindExceptionAction", 0x4, 0x2, required=Required.EN),
+    type="uint32_t",
+    unstable=True,
+    doc="CRT exception-action count dword consumed by the exception filter.",
+)
+
+stable.data(
+    "g_crtErrnoBackup",
+    xref("CRT_XcptFilter", 0x82, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_XcptFilter.",
+)
+
+stable.data(
+    "g_crtRuntimeErrorID1",
+    xref("CRT_NmsgWrite", 0xE, 0x1, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by CRT_NmsgWrite. Type and size are unknown.",
+)
+
+stable.data(
+    "g_ieeeDoubleFormatDescriptor",
+    xref("CRT_NmsgWrite", 0x1B, 0x1, required=Required.EN),
+    type="CRT_IEEEFormatDescriptor",
+    unstable=True,
+    doc="IEEE double format descriptor used by CRT conversion and error-output code.",
+)
+
+stable.data(
+    "g_ieeeFloatFormatDescriptor",
+    xref("CRT_LD12ToFloat", 0x0, 0x1, required=Required.EN),
+    type="CRT_IEEEFormatDescriptor",
+    unstable=True,
+    doc="IEEE float format descriptor used by CRT_LD12ToFloat.",
+)
+
+stable.data(
+    "g_crtOSErrorToErrnoTable",
+    xref("CRT_DosMapErr", 0xC, 0x1, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by CRT_DosMapErr. Type and size are unknown.",
+)
+
+stable.data(
+    "g_CRT_ErrorMappingTable",
+    xref("CRT_DosMapErr", 0x35, 0x3, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by CRT_DosMapErr. Type and size are unknown.",
+)
+
+stable.data(
+    "g_crtMultiByteCodePage1",
+    xref("CRT_SetMbcp", 0x2F, 0x1, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by CRT_SetMbcp. Type and size are unknown.",
+)
+
+stable.data(
+    "EntityNavigationWorkList_PeerBackingBuffer",
+    xref("Camera_UpdateFollow", 0x86D, 0x1, required=Required.EN),
+    type="EntityNavigationWorkListBuffer",
+    unstable=True,
+    doc="Second entity/navigation work buffer selected by Camera_UpdateFollowAndEntityWorklists. Storage also supports the wider EntityWorkListBuffer pointer-array view.",
+)
+
+stable.data(
+    "Graphics_ClipPingPongVertices0",
+    xref("Graphics_ClipPolygonByCameraPyramid", 0x7F, 0x2, required=Required.EN),
+    type="Graphics_ClipVertex[0x10]",
+    unstable=True,
+    doc="First 16-vertex clipping work buffer. Graphics_ClipPolygonByCameraPyramid selects the peer buffer at byte offset 0x280.",
+)
+
+stable.data(
+    "Graphics_ClipPingPongAttributes0",
+    xref("Graphics_ClipPolygonByCameraPyramid", 0x79, 0x2, required=Required.EN),
+    type="Graphics_ClipAttribute[0x10]",
+    unstable=True,
+    doc="First 16-record clipping-attribute work buffer. Graphics_ClipPolygonByCameraPyramid selects the peer buffer at byte offset 0x280.",
+)
+
+stable.data(
+    "D3D_EmptyLogMessage",
+    xref("D3D_InitDirectDrawAndDirect3D", 0x25F, 0x1, required=Required.EN),
+    type="char[0x1]",
+    unstable=True,
+    doc="Empty message used when initializing the DirectDraw log.",
+)
+
+stable.data(
+    "D3D_ErrorMessageBuffer",
+    xref("D3D_FormatDirectXError", 0x311, 0x1, required=Required.EN),
+    unstable=True,
+    doc="DirectX error-message buffer. Type and size are unknown.",
+)
+
+stable.data(
+    "g_transformedVertex1ScreenY",
+    xref("Graphics_RenderPolygonBatch", 0x729, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc=(
+        "Storage used by Graphics_RenderPolygonBatch, Graphics_RenderSceneGeometry, "
+        "Graphics_RenderSceneGeometryAlt."
+    ),
+)
+
+stable.data(
+    "g_transformedVertex2ScreenY",
+    xref("Graphics_RenderPolygonBatch", 0x890, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc=(
+        "Storage used by Graphics_RenderPolygonBatch, Graphics_RenderSceneGeometry, "
+        "Graphics_RenderSceneGeometryAlt."
+    ),
+)
+
+stable.data(
+    "g_transformedVertex3ScreenY",
+    xref("Graphics_RenderPolygonBatch", 0x9F7, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc=(
+        "Storage used by Graphics_RenderPolygonBatch, Graphics_RenderSceneGeometry, "
+        "Graphics_RenderSceneGeometryAlt."
+    ),
+)
+
+stable.data(
+    "Level_BonusRespawnEntitySelector",
+    xref("Level_ResetBonusState", 0x17, 0x3, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Bonus respawn entity selector used when checking unlocks and resetting bonus state.",
+)
+
+stable.data(
+    "Menu_PauseInputTransitionTimer",
+    xref("Menu_ResetState", 0x2, 0x1, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="Pause-input transition timer used by the menu state handlers.",
+)
+
+stable.data(
+    "Game_Settings",
+    xref("Save_LoadGameState", 0x87, 0x2, required=Required.EN),
+    type="Config_GameSettings",
+    unstable=True,
+    doc="Packed game settings with sound-enable, save-slot, player-character, and initialized bytes.",
+)
+
+stable.data(
+    "UI_LivesCounterAnimState",
+    xref("UI_UpdateLives", 0x3, 0x3, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="16-bit lives-counter animation state used by pause-menu and HUD updates.",
+)
+
+stable.data(
+    "g_menuSelection",
+    xref("Menu_ProcessMenuState", 0xD2, 0x1, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="Menu selection used by Menu_ProcessMenuState.",
+)
+
+stable.data(
+    "g_menuFadeCounter_2",
+    xref("Menu_ProcessMenuState", 0x5B, 0x1, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="Menu fade counter used by Menu_ProcessMenuState.",
+)
+
+stable.data(
+    "Level_StartPuppyCount",
+    xref("Player_InitializeState", 0x13, 0x3, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="Puppy-count snapshot initialized by Level_InitializeSaveState and consumed by Player_InitializeState.",
+)
+
+stable.data(
+    "Level_HighestBoneCount",
+    xref("Player_CollectPowerup", 0xF, 0x3, required=Required.EN),
+    type="uint8_t",
+    unstable=True,
+    doc="Highest per-level bone count reached; Player_CollectPowerup updates it and unlocks the bonus when it reaches 100.",
+)
+
+stable.data(
+    "Level_UpdateInterLevelMenu_OptionSelection",
+    xref("Level_UpdateInterLevelMenu", 0xB5, 0x3, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="Selected option in the inter-level menu.",
+)
+
+stable.data(
+    "Collision_ObjectCount",
+    xref("Collision_DetectActorObstacles", 0x111, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Collision-object count from 0 to 100. Reset each frame during collision detection.",
+)
+
+stable.data(
+    "Audio_MusicFadeTicksRemaining",
+    xref("Audio_InitializeSystem", 0x117, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc=(
+        "Signed 16-bit fade duration set to frameCount+1 by Audio_SetMusicFadeTarget. Separate "
+        "from the transition timestamp at 0x455EC8."
+    ),
+)
+
+stable.data(
+    "Video_IntroMoviePathBuffer",
+    xref("Video_PlayMovieIntro", 0x26, 0x1, required=Required.EN),
+    type="char[0x200]",
+    unstable=True,
+    doc="512-byte movie path buffer used by Video_PlayMovieIntro.",
+)
+
+stable.data(
+    "Video_WindowHandleTextBuffer",
+    xref("Video_PlayMovieIntro", 0x9E, 0x1, required=Required.EN),
+    type="char[0x40]",
+    unstable=True,
+    doc="64-byte window-handle text buffer used by Video_PlayMovieIntro.",
+)
+
+stable.data(
+    "Input_ControlButtonNameBuffer",
+    xref("Input_GetButtonString", 0x23, 0x1, required=Required.EN),
+    type="char[0x14]",
+    unstable=True,
+    doc="20-byte control-button name buffer used by input and menu code.",
+)
+
+stable.data(
+    "g_crtPentiumFdivBugPresent",
+    xref("CRT_InitializeFloatingPoint", 0xA, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Pentium FDIV bug flag set during CRT floating-point initialization.",
+)
+
+stable.data(
+    "g_crtLastError",
+    xref("File_Seek", 0x7C, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT error code used by file and string operations.",
+)
+
+stable.data(
+    "g_crtLastOSError",
+    xref("CRT_DosMapErr", 0x6, 0x2, required=Required.EN),
+    type="uint32_t",
+    unstable=True,
+    doc="Windows error code saved by CRT file operations.",
+)
+
+stable.data(
+    "g_crtOpenFileFlags",
+    xref("File_SharedOpenCRT", 0x13A, 0x2, required=Required.EN),
+    type="uint32_t",
+    unstable=True,
+    doc="Open flags used by File_SharedOpenCRT.",
+)
+
+stable.data(
+    "g_crtStartupFlags",
+    xref("CRT_WinMainStartup", 0x52, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT startup flags.",
+)
+
+stable.data(
+    "g_windowsVersionCombined",
+    xref("CRT_WinMainStartup", 0x49, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Combined Windows version recorded during CRT startup.",
+)
+
+stable.data(
+    "g_windowsVersionMajor",
+    xref("CRT_WinMainStartup", 0x3E, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Windows major version recorded during CRT startup.",
+)
+
+stable.data(
+    "g_windowsVersionMinor",
+    xref("CRT_WinMainStartup", 0x30, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Windows minor version recorded during CRT startup.",
+)
+
+stable.data(
+    "g_argc",
+    xref("CRT_SetArgv", 0x91, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Command-line argument count.",
+)
+
+stable.data(
+    "g_argv",
+    xref("CRT_SetArgv", 0x89, 0x2, required=Required.EN),
+    type="char**",
+    unstable=True,
+    doc="Command-line argument array.",
+)
+
+stable.data(
+    "g_environ",
+    xref("CRT_SetEnvp", 0x44, 0x2, required=Required.EN),
+    type="char**",
+    unstable=True,
+    doc="CRT environment string array.",
+)
+
+stable.data(
+    "g_pgmptr",
+    xref("CRT_SetArgv", 0x2E, 0x2, required=Required.EN),
+    type="char*",
+    unstable=True,
+    doc="Program-path string used by CRT argument setup.",
+)
+
+stable.data(
+    "g_crtExitProcessing",
+    xref("CRT_DoExit", 0x2D, 0x2, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="CRT exit-processing state used during exit and stream shutdown.",
+)
+
+stable.data(
+    "g_crtExitCode",
+    xref("CRT_DoExit", 0x27, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Exit code used by CRT_DoExit.",
+)
+
+stable.data(
+    "g_crtExitInProgress",
+    xref("CRT_DoExit", 0x4, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Exit-in-progress state used by CRT_DoExit.",
+)
+
+stable.data(
+    "g_crtFileBufferSerial",
+    xref("File_GetBufferCRT", 0x0, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by File_GetBufferCRT, File_OpenIntoStreamCRT, File_AllocateBuffer.",
+)
+
+stable.data(
+    "g_environmentBlock",
+    xref("CRT_SetEnvp", 0x12, 0x2, required=Required.EN),
+    type="char*",
+    unstable=True,
+    doc="Environment string block used during CRT startup.",
+)
+
+stable.data(
+    "g_crtAppType",
+    xref("CRT_AmsgExit", 0x0, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc=(
+        "CRT state used by CRT_WriteRuntimeErrorBanner, CRT_ExitWithRuntimeError, CRT_NmsgWrite, "
+        "CRT_AmsgExit."
+    ),
+)
+
+stable.data(
+    "g_crtFloatFormatDecimalExponent",
+    xref("String_ConvertFloatToFixed", 0x11, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Decimal exponent used by CRT fixed and general floating-point formatting.",
+)
+
+stable.data(
+    "g_crtDecimalPoint",
+    xref("String_ConvertFloatGeneral", 0x51, 0x2, required=Required.EN),
+    type="char",
+    unstable=True,
+    doc="Decimal-point character used by CRT floating-point formatting.",
+)
+
+stable.data(
+    "g_crtStdioBufferTable",
+    xref("File_AllocateBuffer", 0x37, 0x3, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by File_AllocateBuffer. Type and size are unknown.",
+)
+
+stable.data(
+    "g_crtNewMode",
+    xref("Mem_Realloc", 0xFC, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Allocation-failure mode used by CRT allocation functions.",
+)
+
+stable.data(
+    "g_crtNewHandler",
+    xref("CRT_CallNewHandler", 0x0, 0x1, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT allocation-failure callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_crtCurrentExceptionPointers",
+    xref("CRT_XcptFilter", 0x3A, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="Current exception pointers used by the CRT exception filter.",
+)
+
+stable.data(
+    "g_crtCommandLineBuffer",
+    xref("CRT_SetArgv", 0x17, 0x1, required=Required.EN),
+    unstable=True,
+    doc="CRT storage used by CRT_SetArgv. Type and size are unknown.",
+)
+
+stable.data(
+    "g_crtEnvStringsMode",
+    xref("CRT_GetEnvironmentStringsA", 0x2, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Environment-string API mode used by CRT_GetEnvironmentStringsA.",
+)
+
+stable.data(
+    "g_crtRuntimeErrorBannerCallback",
+    xref("CRT_WriteRuntimeErrorBanner", 0x21, 0x1, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="CRT runtime-error banner callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_crtFloatOutExp",
+    xref("CRT_FPMath", 0x1A, 0x1, required=Required.EN),
+    type="CRT_DecimalFloatOutput",
+    unstable=True,
+    doc="Decimal conversion output used by CRT floating-point formatting.",
+)
+
+stable.data(
+    "g_crtFloatState",
+    xref("CRT_FPMath", 0x40, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc=(
+        "CRT state used by CRT_FPMath, String_ConvertToExponentialFloat, "
+        "String_ConvertFloatToFixed, String_ConvertFloatGeneral."
+    ),
+)
+
+stable.data(
+    "g_crtFloatPrecision",
+    xref("CRT_FPMath", 0x4D, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_FPMath, String_ConvertFloatToFixed, String_ConvertFloatGeneral.",
+)
+
+stable.data(
+    "g_crtFPMathState0",
+    xref("CRT_FPMath", 0x31, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_FPMath.",
+)
+
+stable.data(
+    "g_crtFloatDigits",
+    xref("CRT_FPMath", 0x52, 0x2, required=Required.EN),
+    type="char*",
+    unstable=True,
+    doc="Digit buffer used by CRT floating-point formatting.",
+)
+
+stable.data(
+    "g_crtGetStringTypeApiMode",
+    xref("CRT_GetStringTypeA", 0x26, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="API-selection mode used by CRT_GetStringTypeA.",
+)
+
+stable.data(
+    "g_crtDefaultTextMode",
+    xref("File_OpenIntoStreamCRT", 0x7, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Default text mode used when opening a CRT stream.",
+)
+
+stable.data(
+    "g_crtCodePageFromSystem",
+    xref("CRT_SetMbcp", 0x17B, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_ResolveRequestedCodePage, CRT_SetMbcp.",
+)
+
+stable.data(
+    "g_pMessageBoxA",
+    xref("CRT_ShowMessageBoxA", 0x3, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="Resolved MessageBoxA callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pGetActiveWindow",
+    xref("CRT_ShowMessageBoxA", 0x43, 0x1, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="Resolved GetActiveWindow callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_pGetLastActivePopup",
+    xref("CRT_ShowMessageBoxA", 0x4A, 0x1, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="Resolved GetLastActivePopup callback. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_crtExceptionList",
+    xref("CRT_LCMapStringA", 0x28, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_LCMapStringA.",
+)
+
+stable.data(
+    "g_crtLocaleFlags",
+    xref("CRT_ToLower", 0x4, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc=(
+        "CRT state used by String_ConvertCRTWideCharToMultiByte, CRT_GetStringTypeA, CRT_Strcmpi, "
+        "CRT_ToLower."
+    ),
+)
+
+stable.data(
+    "g_crtWideCharFlags",
+    xref("CRT_LCMapStringA", 0xC0, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc=(
+        "CRT state used by CRT_ResolveRequestedCodePage, String_ConvertCRTWideCharToMultiByte, "
+        "CRT_GetStringTypeA, CRT_LCMapStringA."
+    ),
+)
+
+stable.data(
+    "g_crtUmask",
+    xref("File_SharedOpenCRT", 0x3F, 0x2, required=Required.EN),
+    type="uint32_t",
+    unstable=True,
+    doc="File-permission mask used by File_SharedOpenCRT.",
+)
+
+stable.data(
+    "Camera_ShakeTicksRemaining",
+    xref("Camera_StartShake", 0x5, 0x3, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Remaining camera-shake duration written by Camera_StartShake.",
+)
+
+stable.data(
+    "Camera_ShakeAmplitude",
+    xref("Camera_StartShake", 0xE, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Camera-shake amplitude written by Camera_StartShake.",
+)
+
+stable.data(
+    "Camera_RollTicksRemaining",
+    xref("Camera_StartRollEffect", 0xA, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Remaining roll-effect duration written by Camera_StartRollEffect.",
+)
+
+stable.data(
+    "Camera_RollDurationTicks",
+    xref("Camera_StartRollEffect", 0x4, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Total roll-effect duration written by Camera_StartRollEffect.",
+)
+
+stable.data(
+    "Camera_RollAmplitude",
+    xref("Camera_StartRollEffect", 0x15, 0x2, required=Required.EN),
+    type="int16_t",
+    unstable=True,
+    doc="Roll-effect amplitude written by Camera_StartRollEffect.",
+)
+
+stable.data(
+    "Audio_SharedSoundDefinitions",
+    xref("Script_OpStopSound", 0x2F, 0x2, required=Required.EN),
+    type="Audio_SoundDefinition*",
+    unstable=True,
+    doc="Pointer to shared Audio_SoundDefinition records loaded by Shared_LoadCommonResources and indexed by menu, script, and physics audio paths.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn1",
+    xref("Input_InitializeControllerMappings", 0x178, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 1 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn2",
+    xref("Input_InitializeControllerMappings", 0x15F, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 2 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn3",
+    xref("Input_InitializeControllerMappings", 0x167, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 3 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn4",
+    xref("Input_InitializeControllerMappings", 0x182, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 4 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn5",
+    xref("Input_InitializeControllerMappings", 0x153, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 5 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn6",
+    xref("Input_InitializeControllerMappings", 0x159, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 6 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn7",
+    xref("Input_InitializeControllerMappings", 0x18C, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 7 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn8",
+    xref("Input_InitializeControllerMappings", 0x196, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 8 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "g_controllerWingmanBtn9",
+    xref("Input_InitializeControllerMappings", 0x1A0, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Wingman button 9 mapping set by Input_InitializeControllerMappings.",
+)
+
+stable.data(
+    "UI_Update_MenuStateFlag",
+    xref("UI_Update", 0x45, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc=(
+        "State read by UI_Update. Its address also marks the end of Menu_AnimateSlots. Separate "
+        "from UI_InitializedFlag; its lifecycle is unknown."
+    ),
+)
+
+stable.data(
+    "Script_OpPauseToggle_CameraOrbitAngleDeg",
+    xref("Camera_UpdateFollow", 0x566, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Pause-camera orbit angle converted with value*0x200/0x2D during camera updates.",
+)
+
+stable.data(
+    "Video_AVIMciAliasBuffer",
+    xref("Video_OpenAVIFile", 0x1A, 0x1, required=Required.EN),
+    type="char[0x34]",
+    unstable=True,
+    doc="52-byte MCI alias buffer formatted as movie%d from the AVI movie counter.",
+)
+
+stable.data(
+    "Video_AVIMciCommandBuffer",
+    xref("Video_OpenAVIFile", 0x38, 0x1, required=Required.EN),
+    type="char[0x100]",
+    unstable=True,
+    doc="256-byte MCI command buffer used for open, play, close, and status commands.",
+)
+
+stable.data(
+    "g_crtCurrentMultibyteCodePage",
+    xref("CRT_SetMbcp", 0x14, 0x2, required=Required.EN),
+    type="uint32_t",
+    unstable=True,
+    doc="Current multibyte code page used by CRT character-table updates.",
+)
+
+stable.data(
+    "g_crtMultibyteCodepage",
+    xref("CRT_SetMbcp", 0x123, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_ResetMbcp, CRT_SetMbcp.",
+)
+
+stable.data(
+    "g_crtMultibyteState",
+    xref("CRT_SetMbcp", 0x108, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_ResetMbcp, CRT_SetMbcp.",
+)
+
+stable.data(
+    "g_crtMultibyteClassTable",
+    xref("CRT_SetMbcp", 0x5C, 0x1, required=Required.EN),
+    type="uint8_t[0x101]",
+    unstable=True,
+    doc="257-byte CRT multibyte character-class table.",
+)
+
+stable.data(
+    "g_crtMultibyteCodepageInfo",
+    xref("CRT_SetMbcp", 0x6E, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_ResetMbcp, CRT_SetMbcp, CRT_SetMbcpUpdateTables.",
+)
+
+stable.data(
+    "g_fileDescriptorTableExtended",
+    xref("CRT_InitIO", 0x92, 0x1, required=Required.EN),
+    type="CRT_FileDescriptor*[0x3f]",
+    unstable=True,
+    doc="63 pointer cells extending the CRT descriptor-block table beyond its first block.",
+)
+
+stable.data(
+    "g_crtHeapHandle",
+    xref("Mem_Realloc", 0xA9, 0x2, required=Required.EN),
+    type="HANDLE",
+    unstable=True,
+    doc="CRT heap handle passed to Windows heap allocation and release helpers.",
+)
+
+stable.data(
+    "g_commandLine",
+    xref("CRT_SetArgv", 0x29, 0x1, required=Required.EN),
+    type="char*",
+    unstable=True,
+    doc="Command-line string used by CRT startup and argument parsing.",
+)
+
+stable.data(
+    "g_fileHandleArray",
+    xref("CRT_InitStdio", 0x28, 0x1, required=Required.EN),
+    type="File_Handle**",
+    unstable=True,
+    doc="Pointer to the CRT array of File_Handle pointers allocated by _initstdio.",
+)
+
+stable.data(
+    "g_maxFileHandleCount",
+    xref("CRT_InitStdio", 0x0, 0x1, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="Capacity of the CRT File_Handle pointer array.",
+)
+
+stable.data(
+    "g_CRT_EnvironmentBlock",
+    xref("CRT_SetEnvp", 0xAD, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT state used by CRT_SetEnvp.",
+)
+
+stable.data(
+    "g_crtInitialized",
+    xref("CRT_SetEnvp", 0x3, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="CRT initialization state used by command-line, argument, environment, and multibyte setup.",
+)
+
+stable.data(
+    "g_atexitHandlerNext",
+    xref("CRT_OnExit", 0x13, 0x2, required=Required.EN),
+    type="void*",
+    unstable=True,
+    doc="Pointer to the next atexit callback slot. Stored as an opaque pointer.",
+)
+
+stable.data(
+    "g_atexitHandlerBase",
+    xref("CRT_OnExit", 0x1, 0x2, required=Required.EN),
+    type="int32_t",
+    unstable=True,
+    doc="32-bit base-address cell for the dynamically allocated atexit callback table.",
+)
 
 BLUEPRINT = stable

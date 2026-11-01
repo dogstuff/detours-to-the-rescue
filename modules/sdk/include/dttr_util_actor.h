@@ -20,7 +20,8 @@
 extern "C" {
 #endif
 
-/// Return the current active actor, or `NULL` when unavailable or inactive.
+/// Return the current active actor, falling back to the first active list entry.
+/// Return `NULL` when no active actor exists or lookup is unavailable.
 static inline DTTR_PCDOGS_T_Actor_State *DTTR_Util_GetActiveActor(
 	const DTTR_Core_Context *ctx
 ) {
