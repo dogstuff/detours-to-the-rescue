@@ -51,7 +51,7 @@ typedef struct DTTR_Util_WorldView {
 	/// The near plane in world fixed point.
 	int32_t near_fp;
 
-	/// The screen center and per-axis focal lengths are in draw-space pixels.
+	/// The screen center is in pixels. Per-axis focal lengths are Q12 pixels.
 	DTTR_PCDOGS_T_Math_Vec2F center;
 	DTTR_PCDOGS_T_Math_Vec2F focal;
 } DTTR_Util_WorldView;
@@ -84,10 +84,10 @@ static inline int16_t dttr_util_worldview_norm_q12(int64_t component, uint32_t l
 
 /// Rebuild the camera frame from live Graphics_ListState data for a draw target.
 ///
-/// The basis is built from the eye and target positions because view_matrix
-/// does not hold a plain basis, with the right vector flipped horizontally
-/// and up = forward * right. The focal length is rescaled from the camera's
-/// reference resolution to the draw rectangle, given in draw-space pixels.
+/// The basis is built from the eye and target positions, with the right vector
+/// flipped horizontally and up = forward cross right. Camera roll is not
+/// included. The focal length is rescaled from the camera's reference resolution
+/// to the draw rectangle, given in draw-space pixels.
 static inline bool DTTR_Util_WorldView_Refresh(
 	DTTR_Util_WorldView *view,
 	const DTTR_PCDOGS_T_Math_RectI32 *target
@@ -155,7 +155,9 @@ static inline bool DTTR_Util_WorldView_Refresh(
 					   / DTTR_UTIL_WORLDVIEW_FIXED_ONE),
 		.z = (int16_t)(-((int32_t)forward.y * right.x) / DTTR_UTIL_WORLDVIEW_FIXED_ONE),
 	};
-	int32_t near_fp = list_state->projection_near_fp;
+	// The camera stores the near distance in Q6; world positions use Q12.
+	int64_t near_fp = (int64_t)list_state->projection_near_fp
+					  * (DTTR_UTIL_WORLDVIEW_FIXED_ONE / 64);
 	if (near_fp < DTTR_UTIL_WORLDVIEW_FIXED_ONE / 4
 		|| near_fp > DTTR_UTIL_WORLDVIEW_FIXED_ONE * 64) {
 		near_fp = DTTR_UTIL_WORLDVIEW_FIXED_ONE / 4;
@@ -185,7 +187,7 @@ static inline bool DTTR_Util_WorldView_Refresh(
 		.forward = forward,
 		.right = right,
 		.up = up,
-		.near_fp = near_fp,
+		.near_fp = (int32_t)near_fp,
 		.center = {
 			.x = (float)target->x + (float)target->w * 0.5f,
 			.y = (float)target->y + (float)target->h * 0.5f,

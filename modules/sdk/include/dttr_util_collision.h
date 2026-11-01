@@ -76,12 +76,13 @@ static inline bool DTTR_Util_CollisionVertexWorld(
 		const int32_t ry = y;
 		const int32_t rz = z;
 		const DTTR_PCDOGS_T_Math_Matrix3x3I16 *m = &node->transform_matrix;
-		x = (int32_t)(((int64_t)rx * m->m00 + (int64_t)ry * m->m01 + (int64_t)rz * m->m02)
-					  / DTTR_UTIL_COLLISION_Q12_ONE);
-		y = (int32_t)(((int64_t)rx * m->m10 + (int64_t)ry * m->m11 + (int64_t)rz * m->m12)
-					  / DTTR_UTIL_COLLISION_Q12_ONE);
-		z = (int32_t)(((int64_t)rx * m->m20 + (int64_t)ry * m->m21 + (int64_t)rz * m->m22)
-					  / DTTR_UTIL_COLLISION_Q12_ONE);
+		// Native rotation rounds down and stores each component as int16.
+		x = (int16_t)(((int64_t)rx * m->m00 + (int64_t)ry * m->m01 + (int64_t)rz * m->m02)
+					  >> 12);
+		y = (int16_t)(((int64_t)rx * m->m10 + (int64_t)ry * m->m11 + (int64_t)rz * m->m12)
+					  >> 12);
+		z = (int16_t)(((int64_t)rx * m->m20 + (int64_t)ry * m->m21 + (int64_t)rz * m->m22)
+					  >> 12);
 	}
 
 	const int64_t wx = (int64_t)node->origin.x
@@ -162,7 +163,7 @@ static inline bool DTTR_Util_CollisionPolygonInNode(
 /// 0x0C plane prefix: the low two bits hold the neighbor edge, and the rest is
 /// a one-based index into the owning node's polygon array. Runtime temporary
 /// face planes end at +0xC and do not carry this adjacency tail. Local decoding
-/// avoids native stale-record crashes and leaves walkability filtering to callers.
+/// checks readability and leaves collision-active filtering to callers.
 static inline DTTR_PCDOGS_T_Collision_Polygon *DTTR_Util_CollisionAdjacentPolygon(
 	const DTTR_PCDOGS_T_Collision_Node *node,
 	const DTTR_PCDOGS_T_Collision_Polygon *polygon,
@@ -230,17 +231,16 @@ static inline uint8_t dttr_util_collision_vertex_wall_tag(
 	return ((const uint8_t *)vertex)[DTTR_UTIL_COLLISION_VERTEX_WALL_TAG_OFFSET];
 }
 
-/// Return whether a polygon edge is a wall, per the engine's rule in
+/// Return whether a polygon edge is a wall candidate, using the local checks in
 /// Collision_BuildAndResolveGroundEdgeWalls. Make sure you validate polygon
 /// membership with DTTR_Util_CollisionPolygonInNode first.
 ///
 /// A wall edge belongs to a boundary polygon (flags 0x4000), has at least
 /// one endpoint with a nonzero wall tag (byte +0xB of the vertex record),
-/// and its neighbor across the edge is missing or not walkable (neighbor
-/// flags bit 0x4 clear), unless flags 0x400 plus bit 0 of the face-plane
-/// record mark it as a one-way or disabled barrier. The engine only
-/// extrudes such edges into vertical planes near a touching actor, while
-/// this predicate classifies them anywhere.
+/// and its neighbor across the edge is missing or not collision-active
+/// (neighbor flags bit 0x4 clear). Flags 0x400 plus bit 0 of plane_data->normal.x
+/// suppress the wall. Actor contact, game-mode checks, and neighbor traversal
+/// are not included.
 static inline bool DTTR_Util_CollisionEdgeIsWall(
 	const DTTR_PCDOGS_T_Collision_Node *node,
 	const DTTR_PCDOGS_T_Collision_Polygon *polygon,

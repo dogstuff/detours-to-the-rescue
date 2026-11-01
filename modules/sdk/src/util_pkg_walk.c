@@ -3,13 +3,8 @@
 #endif
 
 #include <stdint.h>
-#include <string.h>
 
 #include <dttr_util_pkg.h>
-
-enum {
-	PKG_LOAD_ENTRY_TOC_OPERAND_OFFSET = 0x48u,
-};
 
 static DTTR_Util_PkgWalkResult make_result(DTTR_Util_PkgVisitStatus status) {
 	return (DTTR_Util_PkgWalkResult){.status = status};
@@ -127,25 +122,17 @@ static bool resolve_toc(
 		return true;
 	}
 
-	uintptr_t pkg_load_entry_addr = 0;
-	DTTR_Result resolved = DTTR_PCDOGS_FunctionResolve(
+	uintptr_t toc_addr = 0;
+	DTTR_Result resolved = DTTR_PCDOGS_DataResolve(
 		ctx,
-		DTTR_PCDOGS_FUNCTION_PKG_LOAD_ENTRY,
-		&pkg_load_entry_addr
+		DTTR_PCDOGS_DATA_PKG_LOAD_ENTRY_TOC,
+		&toc_addr
 	);
-	if (!DTTR_ResultOK(resolved) || !pkg_load_entry_addr) {
+	if (!DTTR_ResultOK(resolved) || !toc_addr) {
 		return false;
 	}
 
-	uint32_t toc_addr = 0;
-	const uintptr_t toc_operand_addr = pkg_load_entry_addr
-									   + PKG_LOAD_ENTRY_TOC_OPERAND_OFFSET;
-	memcpy(&toc_addr, (const void *)toc_operand_addr, sizeof(toc_addr));
-	if (!toc_addr) {
-		return false;
-	}
-
-	*out_entries = (const DTTR_PCDOGS_T_PKG_TOCEntry *)(uintptr_t)toc_addr;
+	*out_entries = (const DTTR_PCDOGS_T_PKG_TOCEntry *)toc_addr;
 	*out_count = requested_count;
 
 	return true;
@@ -235,7 +222,7 @@ static bool emit_decode_boundary(
 	DTTR_Util_PkgVisit unsupported_visit = make_visit(
 		options,
 		DTTR_UTIL_PKG_VISIT_UNSUPPORTED,
-		DTTR_UTIL_PKG_STATUS_OK,
+		DTTR_UTIL_PKG_STATUS_DECODE_UNSUPPORTED,
 		loaded_visit->depth + 1,
 		loaded_visit->toc_index,
 		loaded_visit->toc_entry,

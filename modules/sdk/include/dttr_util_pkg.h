@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/// Default TOC entry count when options provide neither entries nor a count.
+/// Default TOC entry count when toc_count is zero.
 #define DTTR_UTIL_PKG_DEFAULT_TOC_COUNT 138u
 
 /// Bit flags for DTTR_Util_PkgWalkOptions.domains.
@@ -152,7 +152,8 @@ typedef struct DTTR_Util_PkgWalkResult {
 /// Return default options covering all known domains, entry loading included.
 DTTR_UTIL_API DTTR_Util_PkgWalkOptions DTTR_Util_PkgWalk_DefaultOptions();
 
-/// Walk live package structures and call the visitor for each visit.
+/// Walk the package TOC and loaded entries, calling the visitor for each visit.
+/// Child decoding reports DECODE_UNSUPPORTED; child structures are not visited.
 DTTR_UTIL_API DTTR_Util_PkgWalkResult DTTR_Util_PkgWalk(
 	const DTTR_Core_Context *ctx,
 	const DTTR_Util_PkgWalkOptions *options,

@@ -26530,7 +26530,7 @@ _unstable_rows.struct(
         "int32_t",
         "projection_near_fp",
         0xB4,
-        doc="Fixed-point near-plane threshold.",
+        doc="Near-plane distance in Q6. Multiply by 64 for Q12 world coordinates.",
     ),
     member("int32_t", "dynamic_level_scale", 0xB8),
     member("Actor_State*", "render_actor_ptr", 0xBC),
