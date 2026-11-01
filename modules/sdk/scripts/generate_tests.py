@@ -94,7 +94,7 @@ static const blueprint_function ${symbol}_FUNCTIONS[] = {
 % for fn in blueprint.functions:
 <% patch_size = fn.hook.patch_size %>\
 <% entry_patch_size = fn.hook.entry_patch_size or patch_size %>\
-\t{"${fn.name}", (const uint8_t *)${c_sig(fn.pattern)}, ${c_mask(fn.pattern)}, ${required_enum(fn.required)}, ${int(fn.match_offset)}, ${cc_enum(function_cc(fn))}, ${hook_enum(fn.hook.kind)}, ${int(patch_size)}u, ${int(entry_patch_size)}u, ${len(typed_params(fn))}u, ${abi_stack_bytes(fn)}u},
+\t{"${fn.name}", (const uint8_t *)${c_sig(fn.pattern)}, ${c_mask(fn.pattern)}, ${required_enum(fn.required)}, ${int(fn.match_offset)}, ${cc_enum(function_cc(fn))}, ${hook_enum(fn.hook.kind)}, ${int(patch_size)}u, ${int(entry_patch_size)}u, ${len(typed_params(fn))}u, ${abi_stack_bytes(fn)}u, ${"true" if str(fn.abi_status) == "verified" else "false"}},
 % endfor
 };
 

@@ -21,6 +21,7 @@ typedef struct {
 	uint32_t entry_patch_size;
 	uint32_t param_count;
 	uint32_t stack_param_bytes;
+	bool abi_verified;
 } blueprint_function;
 
 typedef struct {
@@ -247,6 +248,11 @@ static void assert_abi_return_matches(
 	const DTTR_TestPEImage *image,
 	uintptr_t site
 ) {
+	// Placeholder signatures may omit inherited registers and stack state.
+	if (!fn->abi_verified) {
+		return;
+	}
+
 	const uint32_t expected = fn->calling_convention == DTTR_PCDOGS_CC_CDECL
 								  ? 0u
 								  : fn->stack_param_bytes;
