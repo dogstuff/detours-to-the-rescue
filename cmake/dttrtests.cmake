@@ -124,6 +124,10 @@ function(dttr_add_cmocka_test_suite target)
         WORKING_DIRECTORY "$<TARGET_FILE_DIR:${target}>"
         TIMEOUT "${DTTR_SUITE_TIMEOUT}"
     )
+    if(CMAKE_CROSSCOMPILING_EMULATOR STREQUAL "wine")
+        # Shared Wine services can hold one test's output pipe open until another exits.
+        set_property(TEST "${target}" PROPERTY RESOURCE_LOCK wine_prefix)
+    endif()
     if(dttr_suite_environment)
         set_property(TEST "${target}" PROPERTY ENVIRONMENT ${dttr_suite_environment})
     endif()

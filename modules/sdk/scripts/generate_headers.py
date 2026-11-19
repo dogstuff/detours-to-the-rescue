@@ -1135,16 +1135,11 @@ def pcdogs_type_names(rows: list[object]) -> dict[str, str]:
 def c_type_with_pcdogs_prefix(value: object, names: dict[str, str]) -> str:
     """Normalize a C type and prefix generated PCDOGS type identifiers."""
 
-    text = c_type(value)
-    for name, prefixed_name in sorted(
-        names.items(), key=lambda item: len(item[0]), reverse=True
-    ):
-        text = re.sub(
-            rf"(?<!DTTR_PCDOGS_[EPSTP]_)\b{re.escape(name)}\b",
-            prefixed_name,
-            text,
-        )
-    return text
+    def public_name(match: re.Match[str]) -> str:
+        identifier = match.group()
+        return names.get(identifier, identifier)
+
+    return re.sub(r"\b[A-Za-z_]\w*\b", public_name, c_type(value))
 
 
 def inner_parens(value: str) -> str:

@@ -12,6 +12,36 @@ dttr_add_test_group(dttr_sdk_tests)
 
 add_dependencies(dttr_sdk_tests dttr_sdk_bundle_header)
 
+function(dttr_test_sdk_header name header)
+    add_test(NAME "dttr_sdk_header_${name}"
+        COMMAND "${CMAKE_C_COMPILER}" -std=gnu${CMAKE_C_STANDARD} -x c -fsyntax-only
+            ${ARGN} "${header}"
+    )
+    set_tests_properties("dttr_sdk_header_${name}" PROPERTIES LABELS "sdk;headers")
+endfunction()
+
+foreach(header IN LISTS DTTR_SDK_STABLE_HEADERS DTTR_SDK_UNSTABLE_HEADERS)
+    get_filename_component(name "${header}" NAME_WE)
+    set(flags "")
+    if(header IN_LIST DTTR_SDK_UNSTABLE_HEADERS)
+        list(APPEND flags -DDTTR_SDK_ENABLE_UNSTABLE)
+    endif()
+    if(name STREQUAL "dttr_util_gamedraw")
+        list(APPEND flags -include d3d.h)
+    endif()
+    dttr_test_sdk_header("${name}" "${header}" ${flags}
+        "-I${DTTR_SDK_GENERATED_INCLUDE_DIR}"
+        "-I${CMAKE_SOURCE_DIR}/modules/common/include"
+        "-I${CMAKE_CURRENT_SOURCE_DIR}/include"
+    )
+endforeach()
+
+# Consumers can use the bundle without any other SDK include directories.
+dttr_test_sdk_header(bundle "${DTTR_SDK_BUNDLE_HEADER}")
+dttr_test_sdk_header(bundle_unstable "${DTTR_SDK_BUNDLE_HEADER}"
+    -DDTTR_SDK_ENABLE_UNSTABLE -include d3d.h
+)
+
 add_test(
     NAME dttr_pcdogs_generated_headers
     COMMAND ${DTTR_PCDOGS_GENERATOR_COMMAND} --check
