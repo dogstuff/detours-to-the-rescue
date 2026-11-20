@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/// Default TOC entry count when toc_count is zero.
+/// Historical default for caller-supplied TOCs with no explicit count.
 #define DTTR_UTIL_PKG_DEFAULT_TOC_COUNT 138u
 
 /// Bit flags for DTTR_Util_PkgWalkOptions.domains.
@@ -134,6 +134,8 @@ typedef struct DTTR_Util_PkgWalkOptions {
 	uint32_t max_depth;
 	bool load_entries;
 	const DTTR_PCDOGS_T_PKG_TOCEntry *toc_entries;
+	/// Live table limit. Zero visits every native entry (EN 138, EU 305, SC 235).
+	/// For caller-supplied tables, set this to the number of accessible entries.
 	uint32_t toc_count;
 	DTTR_Util_PkgLoadEntryFn load_entry;
 	DTTR_Util_PkgFreeEntryFn free_entry;

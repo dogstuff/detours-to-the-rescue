@@ -299,6 +299,7 @@ def computed_type(row: object) -> ComputedType:
         kind=kind,
         sdk_name=pcdogs_type_name(row.name),
         size=getattr(row, "size", None),
+        alignment=getattr(row, "alignment", None),
         docs=doc_text(row_doc(row)),
         unstable=bool(getattr(row, "unstable", False)),
     )
@@ -1073,6 +1074,7 @@ def manifest_counts(
         types=len(authored_type_rows(authored)),
         signatures=len(authored.signatures),
         structs=struct_count,
+        unions=sum(1 for row in computed.types if row.kind == "union"),
         function_xrefs=len(computed.xrefs.functions),
         data_xrefs=len(computed.xrefs.data),
         resolved_addresses=len(analysis.resolved_addresses),

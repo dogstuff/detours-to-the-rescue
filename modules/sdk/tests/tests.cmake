@@ -99,6 +99,17 @@ dttr_add_cmocka_test_suite(dttr_core_sdk_tests
         sdk
 )
 
+dttr_add_cmocka_test_suite(dttr_pcdogs_pkg_walk_tests
+    GROUP dttr_sdk_tests
+    SOURCES
+        "${DTTR_SDK_TEST_SOURCE_DIR}/pkg_walk.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/util_pkg_walk.c"
+    INCLUDE_DIRS ${DTTR_SDK_TEST_INCLUDE_DIRS}
+    LINK_LIBRARIES dttr_sdk_runtime
+    DEPENDS dttr_pcdogs_generated_headers
+    LABELS sdk pcdogs
+)
+
 dttr_add_cmocka_test_suite(dttr_hook_registry_tests
     GROUP
         dttr_sdk_tests
@@ -125,6 +136,7 @@ add_custom_command(
         ${DTTR_PCDOGS_TEST_GENERATOR_ARGS}
     DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_headers.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/codegen.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/blueprint.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/blueprints/dttr_pcdogs.py"

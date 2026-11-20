@@ -21,7 +21,7 @@ typedef ${c_type(row.source_type)} ${alias_name(row.name)};
 % elif type_row_kind(row) == TYPE_ROW.FUNCTION_TYPE_ALIAS:
 ${doxy_comment(row_doc(row) or "PCDOGS callback type.", params=param_doc_pairs(row.params))}
 typedef ${c_type(row.ret)}(${row.calling}*${function_type_name(row.name)})${c_params(row.params) if row.params else "(void)"};
-% elif type_row_kind(row) == TYPE_ROW.STRUCT:
+% elif type_row_kind(row) in (TYPE_ROW.STRUCT, TYPE_ROW.UNION):
 % if row.incomplete:
 #if defined(DTTR_SDK_ENABLE_UNSTABLE) || defined(DTTR_PCDOGS_IMPLEMENTATION)
 ${doxy_brief(row_doc(row)) if row_doc(row) else ""}
@@ -33,9 +33,9 @@ ${doxy_brief(row_doc(row)) if row_doc(row) else ""}
 % elif row.size is not None:
 // Size 0x${format(row.size, "X")}
 % endif
-struct ${struct_name(row.name)} {
+${row.tag} ${f"DECLSPEC_ALIGN({row.alignment}) " if row.alignment > 1 else ""}${struct_name(row.name)} {
 % for member in row.members:
-	${c_type(member.type)} ${member.name};${" ///< " + member_doc(member) if member_doc(member) else ""}
+	${c_type(member.type)} ${member.name}${f" : {member.bit_width}" if member.bit_width else ""};${" ///< " + member_doc(member) if member_doc(member) else ""}
 % endfor
 };
 % if row.incomplete:
@@ -50,8 +50,8 @@ typedef enum ${enum_name(row.name)} {
 } ${enum_name(row.alias or row.name)};
 	% endif
 		</%def>
-% for name in forward_names:
-typedef struct ${struct_name(name)} ${struct_name(name)};
+% for name, tag in forward_names.items():
+typedef ${tag} ${struct_name(name)} ${struct_name(name)};
 % endfor
 	% for row in type_prefix_rows:
 % if row.unstable:
@@ -65,7 +65,7 @@ typedef struct ${struct_name(name)} ${struct_name(name)};
 % if packed_type_rows:
 <% in_pack = False %>
 % for row in packed_type_rows:
-<% is_struct = type_row_kind(row) == TYPE_ROW.STRUCT %>
+<% is_struct = type_row_kind(row) in (TYPE_ROW.STRUCT, TYPE_ROW.UNION) %>
 % if is_struct and not in_pack:
 #pragma pack(push, 1)
 <% in_pack = True %>
@@ -781,6 +781,8 @@ DTTR_PCDOGS_API const struct DTTR_PCDOGS_D_${c_public_token(row.name)}_type* con
 % endif
 % endfor
 
+/// Identify the loaded retail build, or return DTTR_PCDOGS_BUILD_MASK_NONE.
+DTTR_PCDOGS_API DTTR_PCDOGS_T_Build_Mask DTTR_PCDOGS_ContextBuild(const DTTR_Core_Context* ctx);
 DTTR_PCDOGS_API uint32_t DTTR_PCDOGS_FunctionCount();
 DTTR_PCDOGS_API uint32_t DTTR_PCDOGS_DataCount();
 DTTR_PCDOGS_API bool DTTR_PCDOGS_ResolveAll(const DTTR_Core_Context* ctx);
@@ -951,7 +953,7 @@ static bool dttr_pcdogs_context_valid(const DTTR_Core_Context* ctx) {
 
 // Match known PE build identities before trusting region-specific signatures.
 // Unknown/repacked builds remain unavailable until their layout is verified.
-static DTTR_PCDOGS_T_Build_Mask dttr_pcdogs_context_build(const DTTR_Core_Context* ctx) {
+DTTR_PCDOGS_T_Build_Mask DTTR_PCDOGS_ContextBuild(const DTTR_Core_Context* ctx) {
     if (!dttr_pcdogs_context_valid(ctx)) {
         return DTTR_PCDOGS_BUILD_MASK_NONE;
     }
@@ -1135,7 +1137,7 @@ bool DTTR_PCDOGS_SymbolFunctionIsCallable(
 	const DTTR_PCDOGS_T_Symbol_Function* fn
 ) {
 	return fn && fn->callable
-           && (fn->supported_builds & dttr_pcdogs_context_build(ctx))
+           && (fn->supported_builds & DTTR_PCDOGS_ContextBuild(ctx))
 		   && dttr_pcdogs_function_address_valid(
 			   ctx,
 			   fn->address,
@@ -1146,7 +1148,7 @@ bool DTTR_PCDOGS_SymbolFunctionIsCallable(
 }
 
 bool DTTR_PCDOGS_SymbolsResolveAll(const DTTR_Core_Context* ctx) {
-    const DTTR_PCDOGS_T_Build_Mask build = dttr_pcdogs_context_build(ctx);
+    const DTTR_PCDOGS_T_Build_Mask build = DTTR_PCDOGS_ContextBuild(ctx);
     bool conflicts[DTTR_PCDOGS_SYMBOL_DATA_COUNT_VALUE] = {false};
 
 	for (uint32_t i = 0; i < DTTR_PCDOGS_SYMBOL_FUNCTION_COUNT; i++) {
@@ -1261,7 +1263,7 @@ static bool dttr_pcdogs_${row.name}_IsResolved() {
 
 static bool dttr_pcdogs_${row.name}_IsCallable(const DTTR_Core_Context* ctx) {
 	return ${row.callable}
-           && (dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & dttr_pcdogs_context_build(ctx))
+           && (dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & DTTR_PCDOGS_ContextBuild(ctx))
 		   && dttr_pcdogs_function_address_valid(
 			   ctx,
 			   dttr_pcdogs_${row.name}_addr,
@@ -1278,7 +1280,7 @@ static DTTR_Result dttr_pcdogs_${row.name}_Status(
 		return (DTTR_Result){DTTR_ERR_INVALID_ARGUMENT, NULL};
 	}
 
-    if (!(dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & dttr_pcdogs_context_build(ctx))) {
+    if (!(dttr_pcdogs_symbol_functions[${row.symbol_id}].supported_builds & DTTR_PCDOGS_ContextBuild(ctx))) {
         return (DTTR_Result){DTTR_ERR_UNRESOLVED, NULL};
     }
 
@@ -1534,7 +1536,7 @@ uint32_t DTTR_PCDOGS_DataCount() {
 bool DTTR_PCDOGS_ResolveAll(const DTTR_Core_Context* ctx) {
 	bool all_ok = DTTR_PCDOGS_SymbolsResolveAll(ctx);
 % if any(not row.reuse_symbol_address for row in typed_function_rows):
-	const DTTR_PCDOGS_T_Build_Mask build = dttr_pcdogs_context_build(ctx);
+	const DTTR_PCDOGS_T_Build_Mask build = DTTR_PCDOGS_ContextBuild(ctx);
 % endif
 
 % for row in typed_function_rows:

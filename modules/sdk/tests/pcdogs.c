@@ -1,3 +1,6 @@
+#define DTTR_SDK_ENABLE_UNSTABLE
+
+#include <stddef.h>
 #include <dttr_test.h>
 
 #include <dttr_pcdogs.h>

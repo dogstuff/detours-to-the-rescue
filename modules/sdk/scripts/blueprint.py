@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any, TypeAlias
+from functools import partialmethod
+from typing import Any, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -131,6 +132,7 @@ class FunctionTypeAlias(FrozenBlueprintModel):
 
 
 class StructMember(FrozenBlueprintModel):
+    bit_width: StrictInt | None = Field(default=None, ge=1)
     type: StrictStr
     name: StrictStr
     offset: StrictInt | None = None
@@ -138,7 +140,9 @@ class StructMember(FrozenBlueprintModel):
 
 
 class Struct(FrozenBlueprintModel):
+    tag: Literal["struct", "union"] = "struct"
     name: StrictStr
+    alignment: Literal[1, 2, 4, 8] = 1
     members: list[StructMember]
     size: StrictInt | None = None
     incomplete: StrictBool = True
@@ -340,9 +344,14 @@ def fx(
 
 
 def member(
-    type: str, name: str, offset: int | None = None, *, doc: str | None = None
+    type: str,
+    name: str,
+    offset: int | None = None,
+    *,
+    bit_width: int | None = None,
+    doc: str | None = None,
 ) -> StructMember:
-    return StructMember(type=type, name=name, offset=offset, doc=doc)
+    return StructMember(type=type, name=name, offset=offset, bit_width=bit_width, doc=doc)
 
 
 def param(type: str, name: str, *, doc: str | None = None) -> Param:
@@ -572,26 +581,35 @@ class Blueprint(BlueprintModel):
         self.types.append(row)
         return row
 
-    def struct(
+    def _record(
         self,
+        tag: Literal["struct", "union"],
         name: str,
         *members: StructMember,
         size: int | None = None,
+        alignment: Literal[1, 2, 4, 8] = 1,
         incomplete: bool = True,
         stable: bool = False,
         unstable: bool | None = None,
         doc: str | None = None,
     ) -> Struct:
+        if tag == "union" and any(m.offset not in (0, None) for m in members):
+            raise ValueError(f"union {name} has a member with a nonzero offset")
         row = Struct(
+            tag=tag,
             name=name,
             members=list(members),
             size=size,
+            alignment=alignment,
             incomplete=incomplete,
             unstable=self.row_unstable(unstable, stable),
             doc=doc,
         )
         self.types.append(row)
         return row
+
+    struct = partialmethod(_record, "struct")
+    union = partialmethod(_record, "union")
 
     def enum(
         self,

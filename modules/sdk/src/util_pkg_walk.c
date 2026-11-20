@@ -16,7 +16,6 @@ DTTR_Util_PkgWalkOptions DTTR_Util_PkgWalk_DefaultOptions() {
 		.domains = DTTR_UTIL_PKG_DOMAIN_ALL_KNOWN,
 		.max_depth = 64,
 		.load_entries = true,
-		.toc_count = DTTR_UTIL_PKG_DEFAULT_TOC_COUNT,
 	};
 }
 
@@ -113,13 +112,25 @@ static bool resolve_toc(
 	*out_entries = NULL;
 	*out_count = 0;
 
-	uint32_t requested_count = options->toc_count ? options->toc_count
-												  : DTTR_UTIL_PKG_DEFAULT_TOC_COUNT;
-
 	if (options->toc_entries) {
 		*out_entries = options->toc_entries;
-		*out_count = requested_count;
+		*out_count = options->toc_count ? options->toc_count : DTTR_UTIL_PKG_DEFAULT_TOC_COUNT;
 		return true;
+	}
+
+	uint32_t capacity;
+	switch (DTTR_PCDOGS_ContextBuild(ctx)) {
+	case DTTR_PCDOGS_BUILD_MASK_EN:
+		capacity = DTTR_ARRAY_COUNT(((DTTR_PCDOGS_T_PKG_Header *)0)->entries);
+		break;
+	case DTTR_PCDOGS_BUILD_MASK_EU:
+		capacity = 305; // EU PKG_OpenAndReadTOC copies 0x988 bytes.
+		break;
+	case DTTR_PCDOGS_BUILD_MASK_SC:
+		capacity = 235; // SC PKG_OpenAndReadTOC copies 0x758 bytes.
+		break;
+	default:
+		return false;
 	}
 
 	uintptr_t toc_addr = 0;
@@ -133,7 +144,7 @@ static bool resolve_toc(
 	}
 
 	*out_entries = (const DTTR_PCDOGS_T_PKG_TOCEntry *)toc_addr;
-	*out_count = requested_count;
+	*out_count = options->toc_count && options->toc_count < capacity ? options->toc_count : capacity;
 
 	return true;
 }

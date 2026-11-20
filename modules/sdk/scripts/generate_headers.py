@@ -73,6 +73,7 @@ class TypeRowKind(StrEnum):
     TYPE_ALIAS = "type_alias"
     FUNCTION_TYPE_ALIAS = "function_type_alias"
     STRUCT = "struct"
+    UNION = "union"
     ENUM = "enum"
 
 
@@ -105,7 +106,7 @@ TYPED_FIELDS = tuple(TypedField)
 class HeaderTypes:
     type_prefix_rows: list[object]
     packed_type_rows: list[object]
-    forward_names: list[str]
+    forward_names: dict[str, str]
     generated_type_names: dict[str, str]
 
 
@@ -243,6 +244,7 @@ class FunctionTypeAliasRow:
 
 @dataclass(slots=True)
 class StructMemberRow:
+    bit_width: int | None
     type: str
     name: str
     offset: int | None = None
@@ -251,7 +253,9 @@ class StructMemberRow:
 
 @dataclass(slots=True)
 class StructRow:
+    tag: str
     name: str
+    alignment: int
     members: list[StructMemberRow]
     size: int | None
     incomplete: bool
@@ -327,7 +331,7 @@ class HeaderContext:
     hook_macro_name: str
     type_prefix_rows: list[object]
     packed_type_rows: list[object]
-    forward_names: list[str]
+    forward_names: dict[str, str]
     signatures: list[SignatureRow]
     functions: list[FunctionRow]
     globals: list[GlobalRow]
@@ -506,9 +510,12 @@ def normalize_type_row(row: object) -> object:
             )
         case BlueprintTypeKind.STRUCT:
             return StructRow(
+                row.tag,
                 row.name,
+                row.alignment,
                 [
                     StructMemberRow(
+                        member.bit_width,
                         member.type,
                         member.name,
                         member.offset,
@@ -833,7 +840,7 @@ def validate_stable_complete_type_dependencies(blueprint: BlueprintRows) -> None
             )
 
     for row in blueprint.structs:
-        if row.unstable or type_row_kind(row) != TypeRowKind.STRUCT:
+        if row.unstable or not isinstance(row, StructRow):
             continue
 
         for member in row.members:
@@ -1114,7 +1121,7 @@ def type_row_kind(row: object) -> TypeRowKind:
         return TypeRowKind.FUNCTION_TYPE_ALIAS
 
     if isinstance(row, StructRow):
-        return TypeRowKind.STRUCT
+        return TypeRowKind(row.tag)
 
     if isinstance(row, EnumRow):
         return TypeRowKind.ENUM
@@ -1508,7 +1515,7 @@ def split_type_rows(rows: list[object]) -> tuple[list[object], list[object]]:
     """Separate prefix rows from packed structs for safe header ordering."""
 
     for index, row in enumerate(rows):
-        if type_row_kind(row) == TypeRowKind.STRUCT:
+        if isinstance(row, StructRow):
             return rows[:index], rows[index:]
 
     return rows, []
@@ -1527,7 +1534,7 @@ def sort_struct_rows_by_value_dependencies(rows: list[object]) -> list[object]:
     """Order struct rows so embedded struct fields are defined before their users."""
 
     structs = {
-        row.name: row for row in rows if type_row_kind(row) == TypeRowKind.STRUCT
+        row.name: row for row in rows if isinstance(row, StructRow)
     }
     if not structs:
         return rows
@@ -1558,7 +1565,7 @@ def sort_struct_rows_by_value_dependencies(rows: list[object]) -> list[object]:
             del pending[name]
 
     ordered_structs = [structs[name] for name in ordered_names]
-    non_structs = [row for row in rows if type_row_kind(row) != TypeRowKind.STRUCT]
+    non_structs = [row for row in rows if not isinstance(row, StructRow)]
     return non_structs + ordered_structs
 
 
@@ -1610,7 +1617,7 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
     seen = set()
     excluded_names = declared_type_names(rows)
     struct_names = {
-        row.name for row in rows if type_row_kind(row) == TypeRowKind.STRUCT
+        row.name for row in rows if isinstance(row, StructRow)
     }
 
     def add(name: str) -> None:
@@ -1625,7 +1632,7 @@ def derived_forward_names(blueprint: BlueprintRows, rows: list[object]) -> list[
             names.append(name)
 
     for row in rows:
-        if type_row_kind(row) != TypeRowKind.STRUCT:
+        if not isinstance(row, StructRow):
             continue
 
         add(row.name)
@@ -1658,9 +1665,11 @@ def header_type_context(blueprint: BlueprintRows) -> HeaderTypes:
 
     type_prefix_rows, packed_type_rows = split_type_rows(blueprint.structs)
     packed_type_rows = sort_struct_rows_by_value_dependencies(packed_type_rows)
-    forward_names = [
-        name for name in derived_forward_names(blueprint, blueprint.structs)
-    ]
+    record_tags = {row.name: row.tag for row in blueprint.structs if isinstance(row, StructRow)}
+    forward_names = {
+        name: record_tags.get(name, "struct")
+        for name in derived_forward_names(blueprint, blueprint.structs)
+    }
     generated_type_names = {
         **pcdogs_type_names(blueprint.structs),
         **{name: pcdogs_type_name(name) for name in forward_names},

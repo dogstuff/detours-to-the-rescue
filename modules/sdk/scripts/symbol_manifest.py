@@ -140,9 +140,10 @@ class ComputedDataSymbol(ManifestModel):
 
 class ComputedType(ManifestModel):
     name: StrictStr
-    kind: Literal["type_alias", "function_type_alias", "struct", "enum"]
+    kind: Literal["type_alias", "function_type_alias", "struct", "union", "enum"]
     sdk_name: StrictStr
     size: StrictInt | None = None
+    alignment: Literal[1, 2, 4, 8] | None = None
     docs: StrictStr | None = None
     unstable: StrictBool
 
@@ -323,6 +324,7 @@ class ManifestCounts(ManifestModel):
     types: StrictInt = Field(ge=0)
     signatures: StrictInt = Field(ge=0)
     structs: StrictInt = Field(ge=0)
+    unions: StrictInt = Field(default=0, ge=0)
     function_xrefs: StrictInt = Field(ge=0)
     data_xrefs: StrictInt = Field(ge=0)
     resolved_addresses: StrictInt = Field(ge=0)

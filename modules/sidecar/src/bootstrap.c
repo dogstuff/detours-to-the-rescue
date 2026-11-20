@@ -107,20 +107,22 @@ void dttr_bootstrap_cleanup_runtime(const DTTR_Mods_Context *ctx) {
 	DTTR_Core_HookCleanupAll();
 }
 
-// Enters PKG_InitializeSystem through its true per-build entry. EU/SC builds prefix
-// the shared body with the instruction that enables the multi-language boot flow
-// (the pre-title region/language select); entering past it suppresses that screen.
+// The EU and SC entries set the language-selection bit before the shared body.
 static bool call_pkg_initialize_system(const DTTR_Core_Context *ctx, HWND hwnd) {
-	HINSTANCE h_instance = GetModuleHandleA(NULL);
-
-	if (DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->IsCallable(ctx)) {
-		return REQUIRE_PCDOGS_CALL(
-			DTTR_PCDOGS_F_PKG_InitializeSystemMultiLanguage->Call(ctx, hwnd, h_instance)
-		);
+	const DTTR_PCDOGS_T_Build_Mask build = DTTR_PCDOGS_ContextBuild(ctx);
+	if (build == DTTR_PCDOGS_BUILD_MASK_EU || build == DTTR_PCDOGS_BUILD_MASK_SC) {
+		uint32_t flags;
+		if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Game_FrameTransitionFlags->Read(&flags))) {
+			return false;
+		}
+		flags |= 0x04000000u;
+		if (!REQUIRE_PCDOGS_CALL(DTTR_PCDOGS_D_Game_FrameTransitionFlags->Write(flags))) {
+			return false;
+		}
 	}
 
 	return REQUIRE_PCDOGS_CALL(
-		DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, hwnd, h_instance)
+		DTTR_PCDOGS_F_PKG_InitializeSystem->Call(ctx, hwnd, GetModuleHandleA(NULL))
 	);
 }
 
@@ -271,20 +273,22 @@ dttr_startup_movies_result dttr_bootstrap_attempt_play_startup_movies() {
 		return DTTR_STARTUP_MOVIES_CONTINUE;
 	}
 
-	const char *prefix = DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->Ptr();
-	char **names = (char **)DTTR_PCDOGS_D_Video_PlayMovieIntro_FileNames->Ptr();
+	const char (*prefix)[DTTR_PCDOGS_D_VIDEO_PLAY_MOVIE_INTRO_PATH_PREFIX_COUNT] =
+		DTTR_PCDOGS_D_Video_PlayMovieIntro_PathPrefix->Ptr();
+	char *(*names)[DTTR_PCDOGS_D_VIDEO_PLAY_MOVIE_INTRO_FILE_NAMES_COUNT] =
+		DTTR_PCDOGS_D_Video_PlayMovieIntro_FileNames->Ptr();
 	if (!prefix || !names) {
 		DTTR_LOG_WARN("Startup movie metadata unavailable; skipping intro movies");
 		return DTTR_STARTUP_MOVIES_CONTINUE;
 	}
 
-	for (int i = 0; i < 4; i++) {
-		if (!names[i]) {
+	for (size_t i = 0; i < DTTR_PCDOGS_D_VIDEO_PLAY_MOVIE_INTRO_FILE_NAMES_COUNT; i++) {
+		if (!(*names)[i]) {
 			break;
 		}
 
-		sds path = sdsnew(prefix);
-		if (!path || !DTTR_Path_AppendSegment(&path, names[i], '\\')) {
+		sds path = sdsnew(*prefix);
+		if (!path || !DTTR_Path_AppendSegment(&path, (*names)[i], '\\')) {
 			sdsfree(path);
 			break;
 		}

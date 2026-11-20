@@ -34,6 +34,7 @@ stable.struct(
     "Audio_MusicStreamRecord",
     member("Audio_AILHStream", "handle", 0x0),
     size=0x4,
+    alignment=4,
     doc="Stream handle prefix. The music filename follows at byte 4.",
     stable=True,
 )
@@ -44,6 +45,7 @@ stable.struct(
     member("int16_t", "node_id", 0x4),
     member("int16_t", "path_depth", 0x6),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
 )
@@ -56,6 +58,7 @@ stable.struct(
     member("uint8_t*", "reserved_base", 0xC),
     member("CRT_HeapPageMap*", "page_map", 0x10),
     size=0x14,
+    alignment=4,
     unstable=True,
     doc="CRT heap segment header with per-page free lists and class bitmaps.",
 )
@@ -67,6 +70,7 @@ stable.struct(
     member("uint32_t", "type", 0x8),
     member("uint32_t", "flags", 0xC),
     size=0x10,
+    alignment=4,
     incomplete=False,
     stable=True,
 )
@@ -80,6 +84,7 @@ stable.struct(
     member("uint32_t", "object_count", 0x10),
     member("DInput_ObjectDataFormat*", "objects", 0x14),
     size=0x18,
+    alignment=4,
     incomplete=False,
     stable=True,
 )
@@ -88,6 +93,7 @@ stable.struct(
     "CRT_LongDouble12",
     member("uint8_t", "ld12[12]", 0x0),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Private CRT 12-byte container for an x87 extended value and two bytes of alignment padding.",
@@ -102,6 +108,7 @@ stable.struct(
     member("int32_t", "storage_bits", 0x10),
     member("int32_t", "exponent_bias", 0x14),
     size=0x18,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Format limits used by the CRT long-double converter.",
@@ -116,6 +123,7 @@ stable.struct(
     member("int16_t", "turn_step_angle12", 0x20),
     member("uint8_t", "reserved_22[2]", 0x22),
     size=0x24,
+    alignment=4,
     unstable=True,
     doc="Movement values read by the speed, acceleration, and turn-step accessors.",
 )
@@ -132,6 +140,7 @@ stable.struct(
     ),
     member("char*", "mantissa_digits", 0xC),
     size=0x10,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="CRT float conversion result: sign, decimal-point position, finiteness, and mantissa digits.",
@@ -147,6 +156,7 @@ stable.struct(
         doc="Caller-owned destination array for discovered device GUIDs.",
     ),
     size=0x8,
+    alignment=4,
     doc="DirectInput joystick enumeration context for discovered device GUIDs.",
     stable=True,
     incomplete=False,
@@ -167,6 +177,7 @@ stable.struct(
     member("int16_t", "frame_counter", 0x1A),
     member("int32_t", "transition_time", 0x1C),
     size=0x20,
+    alignment=4,
 )
 
 stable.struct(
@@ -175,6 +186,7 @@ stable.struct(
     member("uint8_t", "loop_flags", 0x7),
     member("Math_RangeI16", "keyframe_range", 0x8),
     size=0xC,
+    alignment=2,
 )
 
 stable.struct(
@@ -184,6 +196,7 @@ stable.struct(
     member("uint32_t", "color", 0x4),
     member("uint32_t", "interpolation_mode", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -265,6 +278,7 @@ stable.struct(
         doc="Signed RGB delta keyframe array, sampled by Animation_ProcessVertexColor.",
     ),
     size=0x18,
+    alignment=4,
     incomplete=False,
     unstable=True,
 )
@@ -308,6 +322,7 @@ stable.struct(
         ),
     ),
     size=0x10,
+    alignment=4,
     doc="Type-0 mesh command passed to Animation_ProcessController.",
     incomplete=False,
     unstable=True,
@@ -326,6 +341,7 @@ stable.struct(
     member("int32_t", "blend_weight", 0x18),
     member("int32_t", "target_data", 0x1C),
     size=0x20,
+    alignment=4,
 )
 
 stable.struct(
@@ -340,6 +356,7 @@ stable.struct(
     member("int16_t", "controller_count", 0x2),
     member("Animation_ControllerSlot**", "controller_slot_array", 0x4),
     size=0x8,
+    alignment=4,
     unstable=True,
 )
 
@@ -367,6 +384,7 @@ stable.struct(
     ),
     member("Animation_FrameHeader*", "frame_sequence_ptr", 0xC),
     size=0x10,
+    alignment=4,
     unstable=True,
 )
 
@@ -378,6 +396,7 @@ stable.struct(
     member("uint8_t", "reserved", 0x3),
     member("uint32_t", "keyframe_data[6]", 0x4),
     size=0x1C,
+    alignment=4,
 )
 
 stable.type_alias(
@@ -435,6 +454,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Serialized channel descriptor. Direct data offset is blob-relative, while 0xFFFFFFFF preserves the constant-channel sentinel.",
@@ -458,6 +478,7 @@ stable.struct(
     member("uint32_t", "blob_relative_color_channels_offset", 0x1C),
     member("uint32_t", "blob_relative_nested_channels_offset", 0x20),
     size=0x24,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Serialized animation block overlay whose six channel-array offsets are rebased from the package blob base.",
@@ -493,6 +514,7 @@ stable.struct(
     member("Animation_SplineChannelMorph*", "morph_channels", 0x1C),
     member("Animation_SplineChannelScalar*", "scalar_channels", 0x20),
     size=0x24,
+    alignment=4,
     unstable=True,
 )
 
@@ -517,6 +539,7 @@ stable.struct(
     member("int16_t", "frame_count", 0x2),
     member("Animation_FrameData**", "frame_ptrs", 0x4),
     size=0x8,
+    alignment=4,
     unstable=True,
 )
 
@@ -525,6 +548,7 @@ stable.struct(
     member("Math_Vec3I16", "pos", 0x0),
     member("int16_t", "padding", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -536,6 +560,7 @@ stable.struct(
     member("uint8_t", "target_id", 0x9),
     member("int16_t", "flags", 0xA),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -543,6 +568,7 @@ stable.struct(
     member("Math_Vec3I16", "delta", 0x0),
     member("int16_t", "flags", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -552,6 +578,7 @@ stable.struct(
     member("Math_Vec3I16", "normal", 0x8),
     member("int16_t", "vertex_index", 0xE),
     size=0x10,
+    alignment=2,
 )
 
 stable.struct(
@@ -561,6 +588,7 @@ stable.struct(
     member("Math_Vec3I32", "tangent_out", 0x10),
     member("Math_Vec3I32", "tangent_in", 0x1C),
     size=0x28,
+    alignment=4,
 )
 
 stable.struct(
@@ -570,6 +598,7 @@ stable.struct(
     member("Math_Vec3I32", "tangent_out", 0x10),
     member("Math_Vec3I32", "tangent_in", 0x1C),
     size=0x28,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Generic position-or-scale spline keyframe. Animation_InterpolateVec3 advances records at a 0x28-byte stride.",
@@ -583,6 +612,7 @@ stable.struct(
     member("Math_QuaternionI16", "tangent_out", 0x10),
     member("Math_QuaternionI16", "tangent_in", 0x18),
     size=0x20,
+    alignment=4,
 )
 
 stable.struct(
@@ -592,6 +622,7 @@ stable.struct(
     member("int32_t", "tangent_out", 0x8),
     member("int32_t", "tangent_in", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -614,6 +645,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Dynamic spline descriptor with the time bias in the low 16 bits at offset 4 and the end time in bits 20 through 31.",
@@ -631,6 +663,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -651,6 +684,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -671,6 +705,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -691,6 +726,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -705,6 +741,7 @@ stable.struct(
     member("Math_Vec3I16", "value_q12", 0x4),
     member("uint16_t", "reserved_0a", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Constant Vec3 sentinel overlay. The 0xFFFFFFFF pointer selects three inline signed Q12 values.",
@@ -715,6 +752,7 @@ stable.struct(
     member("uint8_t*", "channel_data_minus_one_sentinel", 0x0),
     member("Math_QuaternionI16", "value_q14", 0x4),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Constant quaternion sentinel overlay. The 0xFFFFFFFF pointer selects four inline signed Q14 components.",
@@ -726,6 +764,7 @@ stable.struct(
     member("int32_t", "packed_value", 0x4),
     member("uint32_t", "reserved_08", 0x8),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Constant scalar sentinel overlay. The interpolator consumes packed_value shifted right by 12.",
@@ -737,6 +776,7 @@ stable.struct(
     member("int32_t", "activation_time", 0x4),
     member("uint32_t", "reserved_08", 0x8),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Constant visibility sentinel overlay. Activation compares the signed sample time against activation_time.",
@@ -754,6 +794,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -770,6 +811,7 @@ stable.struct(
     member("uint8_t", "target_index", 0x9),
     member("Animation_SplineChannelFlags", "channel_flags", 0xA),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Raw nested 0x0C spline descriptor whose byte-addressed channel-data offset is rebased when the outer channel has flag 0x40.",
@@ -779,6 +821,7 @@ stable.struct(
     "Animation_StateTable",
     member("Animation_DataBlock*", "anim_ptrs[43]", 0x0),
     size=0xAC,
+    alignment=4,
 )
 
 
@@ -786,6 +829,7 @@ stable.struct(
     "Animation_VisibilityKeyframe",
     member("Animation_VisibilityKeyframePackedView", "timing_and_visibility", 0x0),
     size=0x4,
+    alignment=4,
 )
 
 stable.struct(
@@ -796,6 +840,7 @@ stable.struct(
     member("int32_t*", "sample_handle", 0xC),
     member("int32_t", "status_flags", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -806,6 +851,7 @@ stable.struct(
     member("Audio_SoundEntry*", "sound_entry", 0xC),
     member("uint32_t", "additional_data", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 
@@ -814,6 +860,7 @@ stable.struct(
     member("int32_t", "sound_id", 0x0),
     member("int32_t", "flags", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -830,6 +877,7 @@ stable.struct(
     member("uint8_t", "flags", 0x2E),
     member("uint8_t", "padding_2f", 0x2F),
     size=0x30,
+    alignment=4,
 )
 
 stable.struct(
@@ -841,6 +889,7 @@ stable.struct(
     member("uint32_t", "start_frame", 0x20),
     member("uint32_t", "expires_frame", 0x24),
     size=0x28,
+    alignment=4,
 )
 
 stable.struct(
@@ -888,6 +937,7 @@ stable.struct(
     member("int32_t", "base_playback_rate", 0xC),
     member("Audio_AILHSample", "sample_handle", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -897,6 +947,7 @@ stable.struct(
     member("int16_t", "bits_per_sample", 0x4),
     member("int16_t", "block_align", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -910,6 +961,7 @@ stable.struct(
     member("int16_t", "pad_22", 0x22),
     member("Scene_Node*", "node", 0x24),
     size=0x28,
+    alignment=4,
     doc="Joint head/eye tracking state advanced by Bone_UpdateJointTracking: angle limits, current yaw/pitch, base rotation, and the tracked scene node.",
 )
 
@@ -920,6 +972,7 @@ stable.struct(
     member("int16_t", "vertex_index", 0x8),
     member("int16_t", "weight_q12", 0xA),
     size=0xC,
+    alignment=2,
 )
 
 stable.struct(
@@ -940,6 +993,7 @@ stable.struct(
     member("int32_t", "viewport_y", 0x60),
     member("int32_t", "viewport_w", 0x64),
     size=0x68,
+    alignment=4,
 )
 
 stable.struct(
@@ -947,6 +1001,7 @@ stable.struct(
     member("Math_Vec3I16", "dir", 0x0),
     member("int16_t", "pad", 0x6),
     size=0x8,
+    alignment=2,
     doc="One int16 frustum direction triple plus padding (stride 8).",
 )
 
@@ -954,6 +1009,7 @@ stable.struct(
     "Camera_FrustumDirTable",
     member("Camera_FrustumDirEntry", "v[5]", 0x0),
     size=0x28,
+    alignment=2,
     doc="Five frustum direction entries written by Camera_BuildViewMatrix and embedded in Camera_Runtime at +0x30.",
 )
 
@@ -1004,6 +1060,7 @@ stable.struct(
         doc="Reserved trailing camera-render scratch block after scene_setup_callback.",
     ),
     size=0xC4,
+    alignment=4,
     unstable=True,
 )
 
@@ -1040,6 +1097,7 @@ stable.struct(
     member("Math_Vec3I32", "target_pos", 0x14C),
     member("uint8_t", "look_at_target_data[32]", 0x158),
     size=0x178,
+    alignment=4,
     doc=(
         "Camera record indexed by entity. Stores camera and link data and may reference a spawned actor, whose lifetime and list membership are managed by the actor and entity systems."
     ),
@@ -1057,6 +1115,7 @@ stable.struct(
     member("Math_Vec3I32", "cam_offset", 0xC),
     member("Math_Vec3I32", "target_offset", 0x18),
     size=0x24,
+    alignment=4,
 )
 
 stable.struct(
@@ -1069,6 +1128,7 @@ stable.struct(
     member("Math_Vec3I32XZY", "eye_pos", 0xC),
     member("Math_Vec3I32XZY", "target_pos", 0x18),
     size=0x24,
+    alignment=4,
 )
 
 stable.struct(
@@ -1086,6 +1146,7 @@ stable.struct(
         doc="Embedded live camera pose interpolated toward a target pose.",
     ),
     size=0x28,
+    alignment=4,
     doc="Live camera-state prefix read by Camera_InterpolateTransition.",
 )
 
@@ -1170,6 +1231,7 @@ stable.struct(
     member("uint32_t", "packed_to_cols", 0x8),
     member("uint32_t", "packed_to_rows", 0xC),
     size=0x10,
+    alignment=4,
     doc="One checkers move with successive destination columns and rows packed into 3-bit fields.",
     stable=True,
     incomplete=False,
@@ -1180,6 +1242,7 @@ stable.struct(
     member("int32_t", "count", 0x0),
     member("Checkers_MoveSequence", "records[60]", 0x4),
     size=0x3C4,
+    alignment=4,
     doc="Count-prefixed fixed-capacity list of sixty checkers move sequences.",
     stable=True,
     incomplete=False,
@@ -1190,6 +1253,7 @@ stable.struct(
     member("Math_Vec3I32", "center", 0x0),
     member("int32_t", "radius", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -1198,6 +1262,7 @@ stable.struct(
     member("int16_t", "reserved_6c", 0x4),
     member("int16_t", "collision_probe_radius_q6", 0x6),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Mode zero uses a signed Q12 sphere radius and a signed Q6 probe radius.",
@@ -1210,15 +1275,21 @@ stable.struct(
     member("int16_t", "extent_z_q6", 0x4),
     member("int16_t", "collision_probe_radius_q6", 0x6),
     size=0x8,
+    alignment=2,
     incomplete=False,
     unstable=True,
     doc="Nonzero modes use three signed Q6 half extents and a signed Q6 probe radius.",
 )
 
-stable.struct(
+stable.union(
     "Actor_CollisionShapeExtentOverlay",
     member("uint8_t", "raw[0x8]", 0x0),
+    member("Actor_CollisionSphereExtentView", "sphere", 0x0),
+    member("Actor_CollisionBoxExtentView", "box", 0x0),
+    member("Actor_CollisionExtentPackedYZ", "packed_yz", 0x0),
+    member("Actor_CollisionExtentPackedPairs", "packed_pairs", 0x0),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Eight-byte union storage. View as Actor_CollisionSphereExtentView or Actor_CollisionBoxExtentView according to the mode byte.",
@@ -1233,6 +1304,7 @@ stable.struct(
     member("uint8_t", "reserved_67", 0x67),
     member("Actor_CollisionShapeExtentOverlay", "shape", 0x68),
     size=0x70,
+    alignment=4,
     doc=(
         "Collision shape and render origin reached through Actor +0xC8 for the relevant actor "
         "classes. Shares the Scene_Node prefix. Other actor layouts use +0xCA for the "
@@ -1264,9 +1336,11 @@ stable.struct(
     unstable=True,
 )
 
-stable.struct(
+stable.union(
     "Collision_NodeBoundsOverlay",
     member("uint8_t", "raw[0x28]", 0x0),
+    member("Collision_SphereNodeBoundsView", "sphere", 0x0),
+    member("Collision_OrientedBoxNodeBoundsView", "oriented_box", 0x0),
     size=0x28,
     doc="Tagged collision-node tail storage. node_type selects the sphere or oriented-box view.",
     unstable=True,
@@ -1305,6 +1379,7 @@ stable.struct(
     member("uint8_t", "node_cull_flags", 0x65),
     member("uint8_t", "reserved_66[2]", 0x66),
     size=0x68,
+    alignment=4,
     doc=(
         "Temporary 0x68-byte collision source for generated edge walls. Only the transform, "
         "origin, offset, and type fields are initialized before type-0 resolution."
@@ -1333,6 +1408,7 @@ stable.struct(
     member("uint32_t", "start_frame", 0x4),
     member("uint32_t", "expire_frame", 0x8),
     size=0xC,
+    alignment=4,
     doc="Hit-cooldown entry layout. Registration tables contain eight slots.",
 )
 
@@ -1349,6 +1425,7 @@ stable.struct(
         doc=("This surface classifier is copied from package collision face data."),
     ),
     size=0x1C,
+    alignment=4,
 )
 
 stable.struct(
@@ -1366,6 +1443,7 @@ stable.struct(
     member("int16_t", "adj_edge0", 0x14),
     member("int16_t", "pad_16", 0x16),
     size=0x18,
+    alignment=4,
 )
 
 stable.struct(
@@ -1376,6 +1454,7 @@ stable.struct(
     member("int16_t", "penetration_depth", 0x14),
     member("uint16_t", "landing_state", 0x16),
     size=0x18,
+    alignment=4,
     doc="Collision response record containing normal, velocity, depth, and landing-state fields.",
 )
 
@@ -1410,6 +1489,7 @@ stable.struct(
     member("int32_t", "previous_distance", 0x1C),
     member("int32_t", "current_distance", 0x20),
     size=0x24,
+    alignment=4,
 )
 
 stable.type_alias(
@@ -1438,6 +1518,7 @@ stable.struct(
     member("Math_Vec3I16", "half_extents", 0x0),
     member("uint8_t", "is_box", 0x6),
     size=0x8,
+    alignment=2,
     doc=(
         "Compact component collision-volume descriptor with half extents and a shape discriminator."
     ),
@@ -1522,6 +1603,7 @@ stable.struct(
     member("Actor_State*", "actor_templates[4]", 0x60),
     member("int32_t", "sound_ids[3]", 0x70),
     size=0x7C,
+    alignment=4,
 )
 
 stable.struct(
@@ -1534,6 +1616,7 @@ stable.struct(
     member("uint8_t", "mesh_block_data[108]", 0x10),
     member("Animation_ControllerSlot*", "animation_controller_ptr", 0x7C),
     size=0x80,
+    alignment=4,
     unstable=True,
 )
 
@@ -1552,6 +1635,7 @@ stable.struct(
         doc="Start and expiry frames for duplicate admission.",
     ),
     size=0xC,
+    alignment=4,
     doc="One entry in the fixed eight-slot component hit-cooldown table.",
 )
 
@@ -1596,6 +1680,7 @@ stable.struct(
     member("int16_t", "homing_response_scale", 0x114),
     member("int16_t", "pad_116", 0x116),
     size=0x118,
+    alignment=4,
 )
 
 stable.struct(
@@ -1631,6 +1716,7 @@ stable.struct(
     member("int16_t", "segment_index", 0x1A),
     member("Trail_Segment*", "segment_array", 0x1C),
     size=0x20,
+    alignment=4,
     unstable=True,
 )
 
@@ -1639,6 +1725,7 @@ stable.struct(
     member("uint32_t", "color_space_low_value", 0x0),
     member("uint32_t", "color_space_high_value", 0x4),
     size=0x8,
+    alignment=4,
     doc="DirectDraw DDCOLORKEY range.",
     stable=True,
     incomplete=False,
@@ -1655,6 +1742,7 @@ stable.struct(
     member("uint32_t", "mask_2", 0x18),
     member("uint32_t", "mask_3", 0x1C),
     size=0x20,
+    alignment=4,
     doc="DirectDraw DDPIXELFORMAT. Bit-count and mask fields are unioned by format flags.",
     stable=True,
     incomplete=False,
@@ -1667,6 +1755,7 @@ stable.struct(
     member("uint32_t", "caps_3", 0x8),
     member("uint32_t", "caps_4", 0xC),
     size=0x10,
+    alignment=4,
     doc="DirectDraw DDSCAPS2 capability words.",
     stable=True,
     incomplete=False,
@@ -1676,6 +1765,7 @@ stable.struct(
     "DDSCAPS",
     member("DWORD", "dwCaps", 0x0),
     size=0x4,
+    alignment=4,
     doc="DirectDraw 7 legacy DDSCAPS capability word. The native SDK declares the structure tag as _DDSCAPS and typedefs it as DDSCAPS.",
     stable=True,
     incomplete=False,
@@ -1748,6 +1838,7 @@ stable.struct(
     member("DWORD", "dwNLVBRops[8]", 0x14C),
     member("DDSCAPS2", "ddsCaps", 0x16C),
     size=0x17C,
+    alignment=4,
     doc="DirectDraw 7 DDCAPS_DX7 layout used by GetCaps on IDirectDraw7. DwCaps2 is at +0x8, legacy ddsOldCaps is DDSCAPS at +0x84, and ddsCaps is DDSCAPS2 at +0x16C.",
     stable=True,
     incomplete=False,
@@ -1780,6 +1871,7 @@ stable.struct(
     member("DDraw_Caps2", "caps", 0x68),
     member("uint32_t", "texture_stage", 0x78),
     size=0x7C,
+    alignment=4,
     doc="DirectDraw 7 DDSURFACEDESC2 layout used for surfaces and enumerated display modes.",
     stable=True,
     incomplete=False,
@@ -1811,6 +1903,7 @@ stable.struct(
     member("DDraw_ColorKey", "dest_color_key", 0x54),
     member("DDraw_ColorKey", "src_color_key", 0x5C),
     size=0x64,
+    alignment=4,
     doc="DirectDraw 7 DDBLTFX layout. fill_color is the union member used by color-fill blits.",
     stable=True,
     incomplete=False,
@@ -1833,6 +1926,7 @@ stable.struct(
     member("uint32_t", "stipple_width", 0x30),
     member("uint32_t", "stipple_height", 0x34),
     size=0x38,
+    alignment=4,
     doc="Direct3D 7 D3DPRIMCAPS layout.",
     stable=True,
     incomplete=False,
@@ -1873,6 +1967,7 @@ stable.struct(
     member("uint32_t", "reserved_3", 0xE4),
     member("uint32_t", "reserved_4", 0xE8),
     size=0xEC,
+    alignment=4,
     doc="Direct3D 7 D3DDEVICEDESC7 layout with its embedded 16-byte device GUID.",
     stable=True,
     incomplete=False,
@@ -1911,6 +2006,7 @@ stable.struct(
         doc=("Set when at least one stereo display mode exists."),
     ),
     size=0x2B8C,
+    alignment=4,
     doc="DirectDraw/Direct3D driver enumeration record. The hardware and HEL capability blocks are 0x17C-byte DDCAPS values at +0x120 and +0x29C.",
     unstable=True,
 )
@@ -1927,6 +2023,7 @@ stable.struct(
     member("int32_t", "bufsiz", 0x18),
     member("char*", "tmpfname", 0x1C),
     size=0x20,
+    alignment=4,
     doc="CRT-compatible file handle layout, used by package and asset loading streams.",
     stable=True,
 )
@@ -1936,6 +2033,7 @@ stable.struct(
     member("int32_t", "access", 0x0),
     member("int32_t", "share", 0x4),
     size=0x8,
+    alignment=4,
     doc="Access/share-mode pair, passed through file-open wrappers.",
     stable=True,
     incomplete=False,
@@ -1956,6 +2054,7 @@ stable.struct(
         doc="Input event payload, usually a button/key value associated with the event type.",
     ),
     size=0x8,
+    alignment=4,
     doc="Compact input event record, passed through game input processing.",
     stable=True,
     incomplete=False,
@@ -1987,6 +2086,7 @@ stable.struct(
         doc="DIJOYSTATE.rgbButtons prefix read by Input_GetJoystickButtonByte for button lookup.",
     ),
     size=0x50,
+    alignment=4,
     doc=(
         "Joystick sample for the current frame, read by Input_ReadGamepad and Input_GetJoystickAxis*."
     ),
@@ -1998,6 +2098,7 @@ stable.struct(
     member("Math_Vec2I16", "axis", 0x4),
     member("Math_Vec2I16", "axis_aux", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -2006,6 +2107,7 @@ stable.struct(
     member("uint32_t", "scene_graph_offset", 0x4),
     member("uint32_t", "mesh_collision_offset", 0x8),
     size=0xC,
+    alignment=4,
     doc="Package level-blob header whose relocation fields are rebased from the loaded blob base.",
     stable=True,
     incomplete=False,
@@ -2018,6 +2120,7 @@ stable.struct(
     member("int32_t", "object_tree_offset", 0x4),
     member("int32_t", "level_data_offset", 0x8),
     size=0xC,
+    alignment=4,
     doc="Level data header containing relocation fields fixed up against the loaded level-data relocation base.",
     stable=True,
     incomplete=False,
@@ -2032,6 +2135,7 @@ stable.struct(
     member("uint32_t", "collision_off", 0x10),
     member("uint32_t", "data_size", 0x14),
     size=0x18,
+    alignment=4,
     doc="Level-file header for material, object-tree, and collision data. The payload after the header is still undocumented.",
     stable=True,
     incomplete=False,
@@ -2044,6 +2148,7 @@ stable.struct(
     member("int32_t", "mid_duration_fp12", 0x4),
     member("int32_t", "end_duration_fp12", 0x8),
     size=0xC,
+    alignment=4,
     doc=(
         "Three consecutive Q12 phase durations shared by level and music transitions. Both read the record without modifying it and convert the durations to 30 Hz frame deadlines without clamping."
     ),
@@ -2064,6 +2169,7 @@ stable.struct(
     member("uint32_t", "pixel_data_ofs", 0x4),
     member("uint32_t", "palette_ofs", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -2080,6 +2186,7 @@ stable.struct(
     ),
     member("uint32_t", "average_transparent_color", 0x70),
     size=0x74,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Raw texture descriptor. +4/+8 offsets are rebased from the separate texture-data package entry into runtime pointers.",
@@ -2106,6 +2213,7 @@ stable.struct(
         ),
     ),
     size=0x74,
+    alignment=4,
 )
 
 stable.struct(
@@ -2139,6 +2247,7 @@ stable.struct(
     member("Math_ColorRGB8", "color_mod", 0x14),
     member("uint8_t", "pad_17", 0x17),
     size=0x18,
+    alignment=4,
     unstable=True,
 )
 
@@ -2154,6 +2263,7 @@ stable.struct(
     member("uint8_t", "mipmap_count", 0x11),
     member("uint16_t", "reserved", 0x12),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -2166,6 +2276,7 @@ stable.struct(
     member("uint8_t*", "animation_record", 0x8),
     member("Material_RuntimeDescriptor**", "frame_table", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -2259,6 +2370,7 @@ stable.struct(
         doc="Packed material-node reference written by Material_BuildStructure and masked by Material_FindTextureByFrame to index material nodes.",
     ),
     size=0x10,
+    alignment=4,
     unstable=True,
 )
 
@@ -2280,6 +2392,7 @@ stable.struct(
     ),
     member("Material_FrameData**", "frame_ptr_array", 0x4),
     size=0x8,
+    alignment=4,
     doc="Material animation frame-set header, built for Material_FindTextureByFrame lookups.",
     stable=True,
     incomplete=False,
@@ -2293,6 +2406,7 @@ stable.struct(
     member("uint32_t", "actual_dimensions", 0x8),
     member("uint8_t", "reserved[12]", 0xC),
     size=0x18,
+    alignment=4,
     unstable=True,
 )
 
@@ -2305,6 +2419,7 @@ stable.struct(
     member("int16_t", "blend_mode", 0xE),
     member("uint32_t", "runtime_flags", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -2343,6 +2458,7 @@ stable.struct(
     member("uint32_t", "ambient_color", 0x2C),
     member("uint32_t", "diffuse_color", 0x30),
     size=0x34,
+    alignment=4,
 )
 
 stable.struct(
@@ -2357,6 +2473,7 @@ stable.struct(
     member("int16_t", "u", 0x0),
     member("int16_t", "v", 0x2),
     size=0x4,
+    alignment=2,
 )
 
 stable.struct(
@@ -2364,6 +2481,7 @@ stable.struct(
     member("float", "u", 0x0),
     member("float", "v", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -2388,6 +2506,7 @@ stable.struct(
     member("int32_t", "g", 0x4),
     member("int32_t", "b", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -2397,6 +2516,7 @@ stable.struct(
     member("int32_t", "b", 0x8),
     member("int32_t", "a", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -2413,6 +2533,7 @@ stable.struct(
     member("Material_TableEntry*", "next_material_entry", 0x18),
     member("Math_UV8", "explicit_uvs[4]", 0x1C),
     size=0x24,
+    alignment=4,
 )
 
 stable.struct(
@@ -2432,6 +2553,7 @@ stable.struct(
     member("int32_t", "next_material_index_1based", 0x18),
     member("Math_UV8", "explicit_uvs[4]", 0x1C),
     size=0x24,
+    alignment=4,
 )
 
 stable.struct(
@@ -2461,6 +2583,7 @@ stable.struct(
     member("int16_t", "entry_count", 0x2),
     member("PKG_MaterialIndexEntry**", "entries", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -2510,6 +2633,7 @@ stable.struct(
     member("DDraw_IDirectDrawSurface7*", "texture_data", 0x8),
     member("Animation_FrameData*", "anim_frame_data", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -2530,6 +2654,7 @@ stable.struct(
     member("int32_t", "x", 0x0),
     member("int32_t", "z", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -2539,6 +2664,7 @@ stable.struct(
     member("float", "w", 0x8),
     member("float", "h", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -2572,6 +2698,7 @@ stable.struct(
     member("int16_t", "x", 0x0),
     member("int16_t", "y", 0x2),
     size=0x4,
+    alignment=2,
 )
 
 stable.struct(
@@ -2579,6 +2706,7 @@ stable.struct(
     member("int32_t", "start", 0x0),
     member("int32_t", "target", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -2586,6 +2714,7 @@ stable.struct(
     member("int16_t", "min", 0x0),
     member("int16_t", "max", 0x2),
     size=0x4,
+    alignment=2,
 )
 
 stable.struct(
@@ -2593,6 +2722,7 @@ stable.struct(
     member("int32_t", "min", 0x0),
     member("int32_t", "max", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -2614,6 +2744,7 @@ stable.struct(
     member("int16_t", "m21", 0xE),
     member("int16_t", "m22", 0x10),
     size=0x12,
+    alignment=2,
 )
 
 stable.struct(
@@ -2637,6 +2768,7 @@ stable.struct(
     member("uint8_t", "subtype_index", 0x66),
     member("uint8_t", "subtype_secondary", 0x67),
     size=0x68,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Shared 0x68 transform prefix used when attachment APIs accept either Scene_Node or Actor_State records.",
@@ -2676,6 +2808,7 @@ stable.struct(
         doc="Signed Q12 weight for vertex 1. Equals 0x1000 minus weights A and B.",
     ),
     size=0x8,
+    alignment=2,
     doc="Ground-contact interpretation of Actor_State+0x20. The three signed Q12 weights sum to 0x1000.",
     unstable=True,
     incomplete=False,
@@ -2950,10 +3083,12 @@ stable.struct(
     unstable=True,
 )
 
-stable.struct(
+stable.union(
     "Component_LocalPositionState",
     member("Math_Vec3I32", "local_pos", 0x0),
+    member("Component_LocalPositionCounts", "counts", 0x0),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -3025,6 +3160,7 @@ stable.struct(
     member("int32_t", "damage_cooldown_timer", 0x104),
     member("int32_t", "script_vars[71]", 0x108),
     size=0x224,
+    alignment=4,
     unstable=True,
 )
 
@@ -3032,8 +3168,8 @@ stable.struct(
     "Entity_State",
     member("uint32_t", "flags", 0x0),
     member("Math_Vec3I32", "bonus_respawn_pos", 0x4),
-    member("int32_t", "collision_radius_sq", 0x10),
-    member("int32_t", "collision_height_sq", 0x14),
+    member("uint32_t", "collision_radius_sq", 0x10),
+    member("uint32_t", "collision_height_sq", 0x14),
     member("uint8_t", "active_flag", 0x18),
     member("uint8_t", "bonus_respawn_mode", 0x19),
     member("uint16_t", "reserved_1A", 0x1A),
@@ -3119,10 +3255,11 @@ stable.struct(
     member("Math_Vec3I32", "navigation_command_position", 0x160),
     member("int32_t", "target_offset_phase", 0x16C),
     member("int32_t", "target_offset_step", 0x170),
-    member("int32_t", "saved_collision_radius_sq", 0x174),
-    member("int32_t", "saved_collision_height_sq", 0x178),
+    member("uint32_t", "saved_collision_radius_sq", 0x174),
+    member("uint32_t", "saved_collision_height_sq", 0x178),
     member("uint32_t", "saved_flags", 0x17C),
     size=0x180,
+    alignment=4,
 )
 
 stable.struct(
@@ -3159,6 +3296,7 @@ stable.struct(
     ),
     member("Math_Vec2I32", "orientation_vec_1", 0x24),
     size=0x2C,
+    alignment=4,
     doc=(
         "Oriented-bounds record containing center, extent, and orientation-vector fields."
     ),
@@ -3171,6 +3309,7 @@ stable.struct(
     member("int32_t", "y", 0x4),
     member("int32_t", "z", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -3179,6 +3318,7 @@ stable.struct(
     member("int16_t", "reserved_12", 0x12),
     member("Math_Vec3I32", "translation_q6", 0x14),
     size=0x20,
+    alignment=4,
     doc="Compact transform containing a Q12 rotation matrix and Q6 translation vector.",
     unstable=True,
     incomplete=False,
@@ -3190,6 +3330,7 @@ stable.struct(
     member("int32_t", "z", 0x4),
     member("int32_t", "y", 0x8),
     size=0xC,
+    alignment=4,
     doc="Three signed 32-bit vector components stored in X/Z/Y order.",
     stable=True,
     incomplete=False,
@@ -3202,6 +3343,7 @@ stable.struct(
     member("uint32_t", "y", 0x4),
     member("uint32_t", "z", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -3210,6 +3352,7 @@ stable.struct(
     member("float", "y", 0x4),
     member("float", "z", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 
@@ -3219,6 +3362,7 @@ stable.struct(
     member("int16_t", "y", 0x2),
     member("int16_t", "z", 0x4),
     size=0x6,
+    alignment=2,
 )
 
 
@@ -3227,6 +3371,7 @@ stable.struct(
     member("int16_t", "x", 0x0),
     member("int16_t", "y", 0x2),
     size=0x4,
+    alignment=2,
 )
 
 stable.struct(
@@ -3234,6 +3379,7 @@ stable.struct(
     member("int32_t", "x", 0x0),
     member("int32_t", "y", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -3241,6 +3387,7 @@ stable.struct(
     member("float", "x", 0x0),
     member("float", "y", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -3255,6 +3402,7 @@ stable.struct(
     member("int16_t", "width", 0x0),
     member("int16_t", "height", 0x2),
     size=0x4,
+    alignment=2,
 )
 
 stable.struct(
@@ -3264,6 +3412,7 @@ stable.struct(
     member("int16_t", "w", 0x4),
     member("int16_t", "h", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -3273,6 +3422,7 @@ stable.struct(
     member("int16_t", "w", 0x4),
     member("int16_t", "h", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -3282,6 +3432,7 @@ stable.struct(
     member("int32_t", "w", 0x8),
     member("int32_t", "h", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -3289,6 +3440,7 @@ stable.struct(
     member("uint16_t", "width", 0x0),
     member("uint16_t", "height", 0x2),
     size=0x4,
+    alignment=2,
 )
 
 stable.struct(
@@ -3296,6 +3448,7 @@ stable.struct(
     member("uint32_t", "width", 0x0),
     member("uint32_t", "height", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.type_alias(
@@ -3381,6 +3534,7 @@ stable.struct(
         doc="Opaque command-specific payload through offset 0xF. MESH_COMMAND_CONTROLLER passes it to Animation_ProcessController, while MESH_COMMAND_VERTEX_COLOR uses the header as a color command.",
     ),
     size=0x10,
+    alignment=4,
     doc=(
         "Mesh animation/render command prefix shared by Graphics_ProcessMeshCommands and Graphics_UpdateMeshCommandState."
     ),
@@ -3394,6 +3548,7 @@ stable.struct(
     member("int16_t", "count", 0x2),
     member("Mesh_Command**", "cmd_ptrs", 0x4),
     size=0x8,
+    alignment=4,
     doc="Mesh command-list header. Byte +1 stores the base command count restored into count by Actor_UpdateAnimationAndVisibility.",
     unstable=True,
     incomplete=False,
@@ -3409,6 +3564,7 @@ stable.struct(
     member("uint16_t", "reserved_14", 0x14),
     member("int16_t", "normal_offset", 0x16),
     size=0x18,
+    alignment=4,
     unstable=True,
 )
 
@@ -3426,6 +3582,7 @@ stable.struct(
     member("Math_Vec3I16", "normal", 0x0),
     member("int16_t", "pad_06", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -3434,6 +3591,7 @@ stable.struct(
     member("Math_Vec3I16", "normal", 0x4),
     member("int16_t", "padding", 0xA),
     size=0xC,
+    alignment=4,
     doc="Face normal referenced by Graphics_Polygon.face_normal and stored with the mesh polygon data.",
 )
 
@@ -3452,6 +3610,7 @@ stable.struct(
     member("int16_t", "depth_bias", 0x14),
     member("int16_t", "depth_bias_q12", 0x16),
     size=0x18,
+    alignment=4,
 )
 
 stable.struct(
@@ -3499,6 +3658,7 @@ stable.struct(
         doc="Entry tail pointer rebased by the render-node fixup helper called from PKG_FixUpResourceObjectNodeType3ComplexActorLike.",
     ),
     size=0x20,
+    alignment=4,
     doc="Mesh render-node entry rebased by PKG_FixUpResourceObjectNodeType3ComplexActorLike's entry-table helper.",
     unstable=True,
 )
@@ -3517,6 +3677,7 @@ stable.struct(
     member("int16_t", "effect_count", 0xE),
     member("Math_Vec2I16", "scale", 0x10),
     size=0x14,
+    alignment=2,
     doc="Skinned mesh-piece descriptor selecting vertex and polygon index ranges; consumed by Bone_BlendVerticesMultiWeight and Bone_ComputeNormalsPostTransform.",
 )
 
@@ -3538,6 +3699,7 @@ stable.struct(
     member("int16_t", "cached_offset_10", 0x10),
     member("int16_t", "cached_offset_12", 0x12),
     size=0x14,
+    alignment=4,
     doc="Submesh render span selecting polygon-ref and weighted-vertex ranges; consumed by Scene_RenderSubMesh and Bone_TransformWeightedVerticesForRender.",
 )
 
@@ -3552,6 +3714,7 @@ stable.struct(
     member("uint16_t", "flags", 0x1C),
     member("uint16_t", "reserved", 0x1E),
     size=0x20,
+    alignment=4,
 )
 
 stable.struct(
@@ -3598,6 +3761,7 @@ stable.struct(
     member("int32_t", "sort_key", 0xD4),
     member("Material_Entry*", "material_list_ptr", 0xD8),
     size=0xDC,
+    alignment=4,
     unstable=True,
 )
 
@@ -3645,6 +3809,7 @@ stable.struct(
     ),
     member("void*", "group_linked_list_b", 0xA4),
     size=0xA8,
+    alignment=4,
     unstable=True,
 )
 
@@ -3658,6 +3823,7 @@ stable.struct(
     member("uint16_t", "node_count", 0x12),
     member("uint32_t", "reserved_14", 0x14),
     size=0x18,
+    alignment=4,
     unstable=True,
 )
 
@@ -3669,6 +3835,7 @@ stable.struct(
     member("int16_t", "index_c", 0x8),
     member("int16_t", "index_d", 0xA),
     size=0xC,
+    alignment=4,
     unstable=True,
 )
 
@@ -3682,6 +3849,7 @@ stable.struct(
     member("int16_t", "uv_offset", 0x14),
     member("int16_t", "normal_offset", 0x16),
     size=0x18,
+    alignment=4,
     unstable=True,
 )
 
@@ -3698,6 +3866,7 @@ stable.struct(
     member("Math_Vec3F", "normal_2", 0xC),
     member("uint32_t", "color", 0x18),
     size=0x1C,
+    alignment=4,
 )
 
 stable.struct(
@@ -3728,6 +3897,7 @@ stable.struct(
     member("Math_UV16", "uv", 0x10),
     member("uint32_t", "color", 0x14),
     size=0x18,
+    alignment=4,
 )
 
 
@@ -3738,6 +3908,7 @@ stable.struct(
     member("int32_t", "nav_command_count", 0x14),
     member("Nav_Command", "nav_commands[100]", 0x18),
     size=0x978,
+    alignment=4,
     doc="Double-buffered next-pass work queue with four active-entity slots and 100 navigation commands. Append and scan paths trust both counts without local bounds checks.",
 )
 
@@ -3749,6 +3920,7 @@ stable.struct(
     member("int32_t", "speed", 0x8),
     member("Math_Vec3I32", "pos", 0xC),
     size=0x18,
+    alignment=4,
 )
 
 stable.struct(
@@ -3756,6 +3928,7 @@ stable.struct(
     member("uint16_t", "packed_id", 0x0),
     member("uint16_t", "cost", 0x2),
     size=0x4,
+    alignment=2,
     unstable=True,
 )
 
@@ -3764,6 +3937,7 @@ stable.struct(
     member("int32_t", "node_count", 0x0),
     member("Nav_Node*", "nodes", 0x4),
     size=0x8,
+    alignment=4,
     unstable=True,
 )
 
@@ -3775,6 +3949,7 @@ stable.struct(
     member("Nav_OpenSetEntry*", "pathfind_state", 0x10),
     member("Nav_NeighborEntry*", "neighbor_list", 0x14),
     size=0x18,
+    alignment=4,
 )
 
 stable.struct(
@@ -3785,6 +3960,7 @@ stable.struct(
     member("int16_t", "step_count", 0x8),
     member("int16_t", "reserved", 0xA),
     size=0xC,
+    alignment=4,
     unstable=True,
 )
 
@@ -3824,6 +4000,7 @@ stable.struct(
         0x78,
     ),
     size=0x7C,
+    alignment=4,
     doc="Class-0x0D force emitter with signed Q6 extents/probe radius and Q12 forces. Radial flag 0x8 uses the maximum extent.",
     unstable=True,
 )
@@ -3838,6 +4015,7 @@ stable.struct(
     member("Actor_State*", "ground_object", 0x1C),
     member("Collision_Polygon*", "ground_polygon", 0x20),
     size=0x24,
+    alignment=4,
     unstable=True,
 )
 
@@ -3846,6 +4024,7 @@ stable.struct(
     member("uint32_t", "format_tag", 0x0),
     member("uint8_t", "pixel_data[1228800]", 0x4),
     size=0x12C004,
+    alignment=4,
     unstable=True,
 )
 
@@ -3857,6 +4036,7 @@ stable.struct(
     member("char", "name[16]", 0xC),
     member("uint8_t", "pixel_data[1228800]", 0x1C),
     size=0x12C01C,
+    alignment=4,
     unstable=True,
 )
 
@@ -3869,6 +4049,7 @@ stable.struct(
     member("uint16_t", "lod_distance_threshold", 0xE),
     member("Animation_StateTable*", "anim_table", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -3882,6 +4063,7 @@ stable.struct(
     member("Math_Vec3I32", "cam_offset", 0xC),
     member("Math_Vec3I32", "target_offset", 0x18),
     size=0x24,
+    alignment=4,
 )
 
 stable.struct(
@@ -3908,6 +4090,7 @@ stable.struct(
     member("int16_t", "adj_face_index", 0xE),
     member("int32_t", "plane_offset", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -3919,6 +4102,7 @@ stable.struct(
     member("Math_Vec3I16", "navigation_offset", 0x14),
     member("uint16_t", "navigation_link_id", 0x1A),
     size=0x1C,
+    alignment=4,
     doc="Package-only face plane. Nonzero +0xA gates the navigation offset stored at +0x14.",
 )
 
@@ -3929,6 +4113,7 @@ stable.struct(
     member("uint32_t", "data_offset", 0xC),
     member("uint8_t", "collision_reserved[16]", 0x10),
     size=0x20,
+    alignment=4,
 )
 
 stable.struct(
@@ -3948,6 +4133,7 @@ stable.struct(
     member("int32_t", "vertex_count", 0x38),
     member("uint32_t", "reserved_3c", 0x3C),
     size=0x40,
+    alignment=4,
 )
 
 stable.struct(
@@ -3955,6 +4141,7 @@ stable.struct(
     member("Math_Vec3I16", "pos", 0x0, doc="Signed Q0 local-space position."),
     member("Math_Vec3I16", "normal", 0x6),
     size=0xC,
+    alignment=2,
 )
 
 stable.struct(
@@ -3984,6 +4171,7 @@ stable.struct(
         ),
     ),
     size=0xC,
+    alignment=2,
     unstable=True,
 )
 
@@ -4052,6 +4240,7 @@ stable.struct(
     member("Math_Vec3I16", "normal", 0x4),
     member("uint8_t", "padding_0a[2]", 0xA),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -4063,6 +4252,7 @@ stable.struct(
     member("uint32_t", "material_ref", 0x10),
     member("uint32_t", "flags", 0x14),
     size=0x18,
+    alignment=4,
 )
 
 stable.struct(
@@ -4078,6 +4268,7 @@ stable.struct(
     member("uint32_t", "version", 0x20),
     member("uint8_t", "geometry_reserved[12]", 0x24),
     size=0x30,
+    alignment=4,
 )
 
 
@@ -4141,6 +4332,7 @@ stable.struct(
     member("uint32_t", "material_table_offset", 0x8),
     member("uint32_t", "material_count", 0xC),
     size=0x10,
+    alignment=4,
     doc="Package level-resource header used as the relocation base for resource-manager and material-table fields.",
 )
 
@@ -4150,6 +4342,7 @@ stable.struct(
     member("Material_Descriptor*", "texture_desc_ptr", 0x4),
     member("uint32_t", "properties", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -4165,6 +4358,7 @@ stable.struct(
     member("uint32_t", "extra_flags", 0x1C),
     member("uint32_t", "extra_data", 0x20),
     size=0x24,
+    alignment=4,
 )
 
 stable.struct(
@@ -4174,6 +4368,7 @@ stable.struct(
     member("uint32_t", "reserved", 0x8),
     member("char", "filename[16]", 0xC),
     size=0x1C,
+    alignment=4,
 )
 
 stable.struct(
@@ -4242,33 +4437,6 @@ stable.struct(
 
 
 stable.struct(
-    "PKG_PolygonDataRaw",
-    member("uint32_t", "material_index", 0x0),
-    member("uint16_t", "vertex_indices[4]", 0x4),
-    member(
-        "uint32_t",
-        "face_normal_offset",
-        0xC,
-        doc=(
-            "Serialized face-normal offset; PKG_PolygonListEntry exposes the relocated pointer."
-        ),
-    ),
-    member(
-        "uint32_t",
-        "render_flags",
-        0x10,
-        doc="Packed flags in the low word and texture-coordinate index in the high word.",
-    ),
-    member(
-        "uint32_t",
-        "polygon_flags",
-        0x14,
-        doc="Packed reserved low word and signed sort-bias high word.",
-    ),
-    size=0x18,
-)
-
-stable.struct(
     "PKG_PolygonListEntry",
     member("uint32_t", "material_index", 0x0),
     member("uint16_t", "vertex_indices[4]", 0x4),
@@ -4278,6 +4446,7 @@ stable.struct(
     member("uint16_t", "reserved", 0x14),
     member("int16_t", "sort_bias", 0x16),
     size=0x18,
+    alignment=4,
 )
 
 
@@ -4287,6 +4456,7 @@ stable.struct(
     member("uint32_t", "mesh_node_root_offset", 0x4),
     member("uint32_t", "level_data_offset", 0x8),
     size=0xC,
+    alignment=4,
     doc=(
         "Package resource directory for material, mesh-node, and level-data sections."
     ),
@@ -4304,6 +4474,7 @@ stable.struct(
     member("uint32_t", "info_2", 0x1C),
     member("uint32_t", "reserved", 0x20),
     size=0x24,
+    alignment=4,
     doc="Package header for one resource, including type, relocation fields, sizes, and flags. Resource-specific payloads are still undocumented.",
     unstable=True,
 )
@@ -4319,25 +4490,213 @@ stable.struct(
     "PKG_SoundResource",
     member("uint32_t", "data_offset", 0x0),
     size=0x4,
+    alignment=4,
 )
 
 stable.struct(
     "PKG_SpriteAtlasResource",
     member("uint32_t", "data_offset", 0x0),
     size=0x4,
+    alignment=4,
 )
 
+
+stable.struct(
+    "PKG_ActorRecord",
+    member("uint32_t", "flags", 0x0),
+    member("Math_Vec3I32", "bonus_respawn_pos", 0x4),
+    member("int32_t", "collision_radius_sq", 0x10),
+    member("int32_t", "collision_height_sq", 0x14),
+    member("uint8_t", "active_flag", 0x18),
+    member("uint8_t", "bonus_respawn_mode", 0x19),
+    member("uint16_t", "reserved_1A", 0x1a),
+    member("Math_Vec3I32*", "bonus_respawn_target_pos", 0x1c),
+    member("int16_t", "attach_offset_x", 0x20),
+    member("int16_t", "default_anim_state", 0x22),
+    member("int32_t", "local_vars[9]", 0x24),
+    member("void*", "script_base_ptr", 0x48),
+    member("void*", "actor_template_header_ref", 0x4c),
+    member("void*", "shared_ref_50", 0x50),
+    member("void*", "shared_ref_54", 0x54),
+    member("Math_Vec3I32*", "runtime_target_pos", 0x58),
+    member("uint8_t", "reserved_5C[44]", 0x5c),
+    member("int32_t", "respawn_transition_speed", 0x88),
+    member("uint8_t", "reserved_8C[52]", 0x8c),
+    member("Math_Vec3I32*", "position_ptr", 0xc0),
+    member("int32_t", "param_gravity_friction", 0xc4),
+    member("int32_t", "param_c8", 0xc8),
+    member("int32_t", "param_cc", 0xcc),
+    member("int32_t", "param_max_speed_0", 0xd0),
+    member("int32_t", "param_max_speed_1", 0xd4),
+    member("int32_t", "param_accel_0", 0xd8),
+    member("int32_t", "param_max_speed_2", 0xdc),
+    member("int32_t", "param_accel_1", 0xe0),
+    member("int32_t", "param_accel_2", 0xe4),
+    member("int32_t", "param_accel_3", 0xe8),
+    member("int32_t", "param_accel_4", 0xec),
+    member("int32_t", "param_f0", 0xf0),
+    member("int32_t", "param_turn_step", 0xf4),
+    member("int32_t", "param_mass", 0xf8),
+    member("int32_t", "param_fc", 0xfc),
+    member("uint8_t", "param_jump_frames", 0x100),
+    member("uint8_t", "param_jump_strength", 0x101),
+    member("uint8_t", "param_direction_mode", 0x102),
+    member("uint8_t", "param_pad_103", 0x103),
+    member("int32_t", "param_max_health", 0x104),
+    member("int32_t", "param_108", 0x108),
+    member("int32_t", "param_10c", 0x10c),
+    member("int32_t", "param_110", 0x110),
+    member("int32_t", "param_114", 0x114),
+    member("int32_t", "param_118", 0x118),
+    member("int32_t", "param_11c", 0x11c),
+    member("int32_t", "param_120", 0x120),
+    member("int32_t", "param_124", 0x124),
+    member("Actor_State*", "runtime_actor", 0x128),
+    member("uint8_t", "team_bitmask[16]", 0x12c),
+    member("int32_t", "script_timer", 0x13c),
+    member("uint8_t", "behavior_index", 0x140),
+    member("uint8_t", "behavior_stack[3]", 0x141),
+    member("int32_t", "path_best_distance", 0x144),
+    member("Math_Vec3I32", "path_target", 0x148),
+    member("Math_Vec3I32", "path_result", 0x154),
+    member("uint8_t", "reserved_160[12]", 0x160),
+    member("int32_t", "target_offset_phase", 0x16c),
+    member("int32_t", "target_offset_step", 0x170),
+    member("int32_t", "saved_collision_radius_sq", 0x174),
+    member("int32_t", "saved_collision_height_sq", 0x178),
+    member("uint32_t", "saved_flags", 0x17c),
+    size=0x180,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+    doc="Package actor record used during object fixup. The four component pointer slots start at shared_ref_50.",
+)
+
+stable.struct(
+    "PKG_ResourceManager",
+    member("void*", "data_base", 0x0),
+    member("int32_t", "data_size", 0x4),
+    member("void*", "alloc_ptr", 0x8),
+    member("int32_t", "alloc_remaining", 0xc),
+    member("int32_t", "entry_count", 0x10),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+    doc="Resource arena and entry count used by package allocation.",
+)
+
+stable.struct(
+    "Shadow_EdgePlane",
+    member("int16_t", "nx", 0x0),
+    member("int16_t", "ny", 0x2),
+    member("int16_t", "nz", 0x4),
+    member("uint16_t", "unused_06", 0x6),
+    size=0x8,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+    doc="Packed edge normal used by shadow rendering.",
+)
+
+stable.struct(
+    "MaterialControllerSlot",
+    member("uint8_t", "relocation_kind", 0x0),
+    member("uint8_t", "opaque_01[11]", 0x1),
+    member("Animation_PackedControllerState", "packed_state", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+    doc="Material controller relocation kind and packed animation state.",
+)
+
+stable.struct(
+    "Camera_EffectsRuntimeView",
+    member("Camera_Runtime", "camera", 0x0),
+    member("uint8_t", "reserved_00bc[65560]", 0xbc),
+    member("int16_t", "shake_ticks_remaining", 0x100d4),
+    member("int16_t", "shake_amplitude", 0x100d6),
+    member("int16_t", "roll_ticks_remaining", 0x100d8),
+    member("int16_t", "roll_duration_ticks", 0x100da),
+    member("int16_t", "roll_amplitude", 0x100dc),
+    member("uint8_t", "reserved_100de[2]", 0x100DE),
+    size=0x100e0,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+    doc="Camera and its shake and roll timers in the render work area.",
+)
+
+stable.type_alias(
+    "Level_Data",
+    "Level_RuntimeData",
+    stable=True,
+    doc="Level runtime data. Enable the unstable SDK to access its members.",
+)
+
+stable.callback_type(
+    "COM_IUnknownQueryInterfaceFn",
+    ret="HRESULT",
+    params=[param("COM_IUnknown*", "self"), param("GUID const*", "iid"), param("void**", "out_object")],
+    calling=CallingConvention.CALLBACK,
+)
+stable.callback_type(
+    "COM_IUnknownAddRefFn",
+    ret="ULONG",
+    params=[param("COM_IUnknown*", "self")],
+    calling=CallingConvention.CALLBACK,
+)
+stable.callback_type(
+    "COM_IUnknownReleaseFn",
+    ret="ULONG",
+    params=[param("COM_IUnknown*", "self")],
+    calling=CallingConvention.CALLBACK,
+)
+
+stable.struct(
+    "COM_IUnknownVtbl",
+    member("COM_IUnknownQueryInterfaceFn", "query_interface", 0x0),
+    member("COM_IUnknownAddRefFn", "add_ref", 0x4),
+    member("COM_IUnknownReleaseFn", "release", 0x8),
+    size=0xC,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "COM_IUnknown",
+    member("COM_IUnknownVtbl*", "vtable", 0x0),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Text_StringEntry",
+    member("int16_t", "id", 0x0),
+    member("int16_t", "text_offset", 0x2, doc="Signed byte offset from the beginning of the string table."),
+    size=0x4,
+    alignment=2,
+    incomplete=False,
+    stable=True,
+    doc="Localization string table entry used by String_GetByIndex.",
+)
 
 stable.struct(
     "PKG_StringEntry",
     member("uint32_t", "offset", 0x0),
     size=0x4,
+    alignment=4,
 )
 
 stable.struct(
     "PKG_TextureResource",
     member("uint32_t", "data_offset", 0x0),
     size=0x4,
+    alignment=4,
 )
 
 stable.struct(
@@ -4345,6 +4704,7 @@ stable.struct(
     member("uint32_t", "offset", 0x0),
     member("uint32_t", "size", 0x4),
     size=0x8,
+    alignment=4,
     doc="Package table-of-contents entry. The size aliases share the same storage.",
 )
 
@@ -4357,6 +4717,7 @@ stable.struct(
     member("int16_t", "param_b", 0xA),
     member("uint32_t", "reserved", 0xC),
     size=0x10,
+    alignment=4,
     unstable=True,
 )
 
@@ -4389,6 +4750,7 @@ stable.struct(
     member("uint8_t", "b", 0xA),
     member("uint8_t", "a", 0xB),
     size=0xC,
+    alignment=2,
 )
 
 stable.struct(
@@ -4396,6 +4758,7 @@ stable.struct(
     member("Math_Vec3I16", "normal", 0x0),
     member("int16_t", "padding", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 
@@ -4410,6 +4773,7 @@ stable.struct(
     member("float", "fog_depth", 0x70),
     member("uint32_t", "vertex_colors[4]", 0x74),
     size=0x84,
+    alignment=4,
     unstable=True,
 )
 
@@ -4424,6 +4788,7 @@ stable.struct(
         doc="Alignment/pad word in the frustum/clip-plane record.",
     ),
     size=0xC,
+    alignment=4,
     doc="Graphics_ListState frustum/clip-plane record, used by actor visibility checks.",
     unstable=True,
 )
@@ -4433,6 +4798,7 @@ stable.struct(
     member("Math_Vec3F", "normal", 0x0),
     member("float", "distance", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -4440,6 +4806,7 @@ stable.struct(
     member("Math_Vec3F", "pos", 0x0),
     member("float", "rhw", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -4449,6 +4816,7 @@ stable.struct(
     member("uint32_t", "color", 0x10),
     member("Math_UVFloat", "uv", 0x14),
     size=0x1C,
+    alignment=4,
 )
 
 stable.struct(
@@ -4457,6 +4825,7 @@ stable.struct(
     member("float", "color_or_data", 0x10),
     member("Math_UVFloat", "uv", 0x14),
     size=0x1C,
+    alignment=4,
     unstable=True,
 )
 
@@ -4492,6 +4861,7 @@ stable.struct(
     member("uint32_t", "polygon_count", 0x28),
     member("int32_t*", "transform_matrix", 0x2C),
     size=0x30,
+    alignment=4,
 )
 
 stable.struct(
@@ -4499,6 +4869,7 @@ stable.struct(
     member("int32_t", "start_color", 0x0),
     member("int32_t", "end_color", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -4525,6 +4896,7 @@ stable.struct(
     member("uint16_t", "padding", 0x12),
     member("uint16_t", "uv_indices[4]", 0x14),
     size=0x1C,
+    alignment=4,
 )
 
 stable.struct(
@@ -4544,6 +4916,7 @@ stable.struct(
     ),
     member("uint16_t", "material_index", 0xA),
     size=0xC,
+    alignment=2,
 )
 
 stable.struct(
@@ -4551,6 +4924,7 @@ stable.struct(
     member("Math_ScreenPointI16", "screen", 0x0),
     member("int32_t", "z", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -4568,6 +4942,7 @@ stable.struct(
     member("Math_UV8", "tex_uvs[4]", 0x7C),
     member("uint32_t", "render_state_flags", 0x84),
     size=0x88,
+    alignment=4,
     doc="Shared 0x88-byte polygon-batch record. All eight known producers increment the frame index without a capacity guard.",
 )
 
@@ -4585,7 +4960,7 @@ stable.struct(
         "face_normal",
         0xC,
         doc=(
-            "Relocated face-normal pointer; serialized offsets belong to PKG_PolygonDataRaw."
+            "Relocated face-normal pointer. Pkg_MaterialRefFixupView holds its serialized offset."
         ),
     ),
     member("uint16_t", "flags", 0x10),
@@ -4598,6 +4973,7 @@ stable.struct(
         doc="Fixed-point depth bias stored alongside depth_bias in polygon render references.",
     ),
     size=0x18,
+    alignment=4,
 )
 
 stable.struct(
@@ -4634,6 +5010,7 @@ stable.struct(
     member("uint8_t", "texture_coords[16]", 0x78),
     member("uint32_t", "vertex_colors[4]", 0x88),
     size=0x98,
+    alignment=4,
     unstable=True,
 )
 
@@ -4657,6 +5034,7 @@ stable.struct(
     member("int32_t", "depth_bias_sign", 0x60),
     member("uint32_t", "vertex_tint", 0x64),
     size=0x68,
+    alignment=4,
     unstable=True,
 )
 
@@ -4664,6 +5042,7 @@ stable.struct(
     "Graphics_RGB555Palette",
     member("uint16_t", "colors[256]", 0x0),
     size=0x200,
+    alignment=2,
 )
 
 stable.struct(
@@ -4671,6 +5050,7 @@ stable.struct(
     member("Math_Vec2I32", "pos", 0x0),
     member("int32_t", "texture_id", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -4680,6 +5060,7 @@ stable.struct(
     member("Graphics_SpriteData*", "sprite_list_ptr", 0x8),
     member("Graphics_SpriteLayer*", "next_layer_ptr", 0xC),
     size=0x10,
+    alignment=4,
 )
 
 stable.struct(
@@ -4692,6 +5073,7 @@ stable.struct(
     member("int16_t", "sort_key", 0xE),
     member("Math_Vec2I16", "bound_extent", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 stable.struct(
@@ -4703,6 +5085,7 @@ stable.struct(
     member("int16_t", "random_face_count", 0xA),
     member("uint8_t", "reserved_0c[8]", 0xC),
     size=0x14,
+    alignment=2,
     incomplete=False,
     unstable=True,
     doc="Attachment overlay for a render slot. Automatic selection requires a nonpositive selection value and positive random_face_count.",
@@ -4722,6 +5105,7 @@ stable.struct(
     member("Math_ColorRGB8", "color", 0x8),
     member("uint8_t", "vertex_state", 0xB),
     size=0xC,
+    alignment=2,
 )
 
 stable.struct(
@@ -4732,6 +5116,7 @@ stable.struct(
     member("float", "color_data[20]", 0x5F8),
     member("Math_ColorRGBF", "colors[4]", 0x648),
     size=0x678,
+    alignment=4,
     unstable=True,
 )
 
@@ -4759,6 +5144,7 @@ stable.struct(
     member("int32_t", "keyboard_bindings[13]", 0x4),
     member("int32_t", "joystick_bindings[13]", 0x38),
     size=0x6C,
+    alignment=4,
 )
 
 stable.struct(
@@ -4789,6 +5175,7 @@ stable.struct(
     member("uint16_t", "sfx_volume", 0x0, doc="Sound-effect volume in Q12 units."),
     member("uint16_t", "music_volume", 0x2, doc="Music volume in Q12 units."),
     size=0x4,
+    alignment=2,
     doc="Persisted Q12 SFX and music volumes exposed by the Settings volume accessors.",
 )
 
@@ -4823,6 +5210,7 @@ stable.struct(
     member("Config_GameSettings", "game_settings", 0x8),
     member("uint32_t", "rumble_suppress_flag", 0xC),
     size=0x10,
+    alignment=2,
 )
 
 stable.struct(
@@ -4907,6 +5295,7 @@ stable.struct(
         doc="Name-entry/bonus scratch data copied as part of the save slot payload.",
     ),
     size=0x5C,
+    alignment=2,
     doc="Per-slot progress payload, used by save/load UI and completion calculations.",
     unstable=True,
 )
@@ -4919,6 +5308,7 @@ stable.struct(
     member("uint32_t", "data_offset", 0x8),
     member("uint32_t", "child_table_ptr", 0xC),
     size=0x10,
+    alignment=4,
     unstable=True,
 )
 
@@ -4928,6 +5318,7 @@ stable.struct(
     member("Scene_Node*", "root_node_ptr", 0x4),
     member("Scene_Node**", "scene_node_list_ptr", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -4937,10 +5328,9 @@ stable.struct(
     member("uint8_t", "flags", 0xC),
     member("uint8_t", "padding_0d[1]", 0xD),
     size=0xE,
+    alignment=2,
     unstable=True,
 )
-
-# Camera_Runtime preserves the public prefix; Graphics_ListState includes the full tail.
 
 stable.struct(
     "Camera_Runtime",
@@ -4970,13 +5360,14 @@ stable.struct(
     member("int32_t", "frustum_plane_1_z", 0x58),
     member("Math_Vec3I32", "frustum_plane_2_normal", 0x5C),
     member("int32_t", "frustum_plane_3_x", 0x68),
-    size=0x6C,
+    member("uint8_t", "reserved_6c[0x48]", 0x6C),
+    member("int32_t", "near_clip_distance_q6", 0xB4),
+    member("int32_t", "max_render_distance_q12", 0xB8),
+    size=0xBC,
+    alignment=4,
+    incomplete=False,
     unstable=True,
-    doc=(
-        "Camera prefix ending at +0x6b. Use Camera_FullRuntime for the full 0xbc-byte camera "
-        "or Graphics_ListState for render and effect fields. sizeof this prefix is too small "
-        "to allocate a complete camera."
-    ),
+    doc="Camera view with XZY eye and target coordinates and fixed-point clip distances.",
 )
 
 stable.struct(
@@ -5244,6 +5635,7 @@ stable.struct(
         doc="Reserved variant-tail pointer.",
     ),
     size=0xDC,
+    alignment=4,
     doc=(
         "Scene graph node. The root node repurposes +0x70 as the collision list head, "
         "+0x78 as the active node array, and +0xB4 as the background color."
@@ -5255,6 +5647,7 @@ stable.struct(
     "Scene_NodeType",
     member("uint32_t", "type", 0x0),
     size=0x4,
+    alignment=4,
 )
 
 
@@ -5266,6 +5659,7 @@ stable.struct(
     member("int32_t*", "var_base", 0xC),
     member("uint32_t", "flags", 0x10),
     size=0x14,
+    alignment=4,
     doc="Script interpreter context for instruction state and game-script execution data.",
 )
 
@@ -5278,6 +5672,7 @@ stable.struct(
     member("uint16_t", "rotation", 0x1C),
     member("uint16_t", "scale", 0x1E),
     size=0x20,
+    alignment=4,
 )
 
 stable.struct(
@@ -5286,6 +5681,7 @@ stable.struct(
     member("uint16_t", "data_type", 0x2),
     member("void*", "data_ptr", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 stable.struct(
@@ -5307,6 +5703,7 @@ stable.struct(
         doc="High half of the packed end coordinate word written by Trail_UpdateEffect; Trail_RenderAnimated reads it as part of the packed word.",
     ),
     size=0x34,
+    alignment=4,
     unstable=True,
 )
 
@@ -5315,6 +5712,7 @@ stable.struct(
     member("Math_Vec2I32", "pos", 0x0),
     member("int32_t", "timer", 0x8),
     size=0xC,
+    alignment=4,
 )
 
 stable.struct(
@@ -5331,6 +5729,7 @@ stable.struct(
     ),
     member("int16_t", "player_lives", 0x6),
     size=0x8,
+    alignment=2,
 )
 
 stable.struct(
@@ -5346,6 +5745,7 @@ stable.struct(
     "UI_StringTableEntry",
     member("uint32_t", "offset", 0x0),
     size=0x4,
+    alignment=4,
 )
 
 stable.struct(
@@ -5355,8 +5755,7 @@ stable.struct(
     member("Tree_MapNode*", "parent", 0x8),
     member("Tree_MapNode*", "child", 0xC),
     member("int16_t", "rank", 0x10),
-    member("uint8_t", "marked", 0x12),
-    member("uint8_t", "pad13", 0x13),
+    member("uint16_t", "marked", 0x12),
     size=0x14,
 )
 
@@ -5368,6 +5767,7 @@ stable.struct(
     member("int16_t", "payload_04", 0x4),
     member("int16_t", "payload_06", 0x6),
     size=0x8,
+    alignment=2,
     doc="Queued signal record with signal ID, event type, and two payload words.",
     stable=True,
     incomplete=False,
@@ -5393,6 +5793,7 @@ stable.struct(
     member("WORD", "wUsagePage", 0x240),
     member("WORD", "wUsage", 0x242),
     size=0x244,
+    alignment=4,
     doc="DX5+ ANSI DirectInput device-instance layout used by joystick enumeration.",
     incomplete=False,
     unstable=True,
@@ -5407,6 +5808,7 @@ stable.struct(
     member("DWORD", "dwDynamicParams", 0x1C),
     member("char", "tszName[260]", 0x20),
     size=0x124,
+    alignment=4,
     doc="DX7 ANSI DirectInput effect-information layout.",
     incomplete=False,
     unstable=True,
@@ -5421,6 +5823,7 @@ stable.struct(
     member("void*", "lpvOutBuffer", 0x10),
     member("DWORD", "cbOutBuffer", 0x14),
     size=0x18,
+    alignment=4,
     doc="DX7 DirectInput force-feedback escape layout.",
     incomplete=False,
     unstable=True,
@@ -5432,6 +5835,7 @@ stable.struct(
     member("WORD", "green[256]", 0x200),
     member("WORD", "blue[256]", 0x400),
     size=0x600,
+    alignment=2,
     doc="DirectDraw gamma-ramp layout. The native C tag is _DDGAMMARAMP.",
     incomplete=False,
     unstable=True,
@@ -5455,6 +5859,7 @@ stable.struct(
         doc="Native i686 tail padding from the structure's eight-byte alignment.",
     ),
     size=0x430,
+    alignment=8,
     doc="i686 DX7 DDDEVICEIDENTIFIER2 layout used by GetDeviceIdentifier on IDirectDraw7.",
     incomplete=False,
     unstable=True,
@@ -6215,6 +6620,7 @@ stable.struct(
     member("DDraw_IDirectDrawGammaControl_GetGammaRampFn", "get_gamma_ramp", 0xC),
     member("DDraw_IDirectDrawGammaControl_SetGammaRampFn", "set_gamma_ramp", 0x10),
     size=0x14,
+    alignment=4,
     doc="Five-slot IDirectDrawGammaControl COM vtable.",
     incomplete=False,
     unstable=True,
@@ -6224,6 +6630,7 @@ stable.struct(
     "DDraw_IDirectDrawGammaControl",
     member("DDraw_IDirectDrawGammaControlVtbl*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirectDrawGammaControl COM interface wrapper.",
     incomplete=False,
     unstable=True,
@@ -6245,6 +6652,7 @@ stable.struct(
     member("DInput_IDirectInputEffect_NoArgsFn", "unload", 0x2C),
     member("DInput_IDirectInputEffect_EscapeFn", "escape", 0x30),
     size=0x34,
+    alignment=4,
     doc="Thirteen-slot DX7 IDirectInputEffect COM vtable.",
     incomplete=False,
     unstable=True,
@@ -6254,6 +6662,7 @@ stable.struct(
     "DInput_IDirectInputEffect",
     member("DInput_IDirectInputEffectVtbl*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirectInputEffect COM interface wrapper.",
     incomplete=False,
     unstable=True,
@@ -6270,6 +6679,7 @@ stable.struct(
     member("DInput_IDirectInputA_RunControlPanelFn", "run_control_panel", 0x18),
     member("DInput_IDirectInputA_InitializeFn", "initialize", 0x1C),
     size=0x20,
+    alignment=4,
     doc="Eight-slot DX7 IDirectInputA COM vtable.",
     incomplete=False,
     unstable=True,
@@ -6279,6 +6689,7 @@ stable.struct(
     "DInput_IDirectInputA",
     member("DInput_IDirectInputAVTable*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirectInputA COM interface wrapper.",
     incomplete=False,
     unstable=True,
@@ -6313,6 +6724,7 @@ stable.struct(
     member("DInput_IDirectInputDeviceA_RunControlPanelFn", "run_control_panel", 0x40),
     member("DInput_IDirectInputDeviceA_InitializeFn", "initialize", 0x44),
     size=0x48,
+    alignment=4,
     doc="Eighteen-slot DX7 IDirectInputDeviceA COM vtable.",
     incomplete=False,
     unstable=True,
@@ -6322,6 +6734,7 @@ stable.struct(
     "DInput_IDirectInputDeviceA",
     member("DInput_IDirectInputDeviceAVTable*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc=(
         "Base DirectInput device interface returned by IDirectInputA::CreateDevice. The "
         "device helper then queries IDirectInputDevice2A."
@@ -6380,6 +6793,7 @@ stable.struct(
     member("DInput_IDirectInputDevice2A_NoArgsFn", "poll", 0x64),
     member("DInput_IDirectInputDevice2A_SendDeviceDataFn", "send_device_data", 0x68),
     size=0x6C,
+    alignment=4,
     doc=(
         "DX7 IDirectInputDevice2A vtable with 27 slots. Records without known layouts use opaque pointers."
     ),
@@ -6391,6 +6805,7 @@ stable.struct(
     "DInput_IDirectInputDevice2A",
     member("DInput_IDirectInputDevice2AVTable*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirectInputDevice2A COM interface wrapper.",
     incomplete=False,
     unstable=True,
@@ -6405,6 +6820,7 @@ stable.struct(
     member("float", "min_z", 0x10),
     member("float", "max_z", 0x14),
     size=0x18,
+    alignment=4,
     doc="Direct3D 7 D3DVIEWPORT7 layout used by SetViewport on IDirect3DDevice7.",
     incomplete=False,
     unstable=True,
@@ -7504,6 +7920,7 @@ stable.struct(
     member("DDraw_IDirectDraw7_StartModeTestFn", "start_mode_test", 0x70),
     member("DDraw_IDirectDraw7_EvaluateModeFn", "evaluate_mode", 0x74),
     size=0x78,
+    alignment=4,
     doc=(
         "DX7 IDirectDraw7 vtable, 0x78 bytes long. The seven methods used by the SDK and four "
         "DX4/DX7 tail methods have typed slots."
@@ -7516,6 +7933,7 @@ stable.struct(
     "DDraw_IDirectDraw7",
     member("DDraw_IDirectDraw7Vtbl*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirectDraw7 COM interface pointer wrapper.",
     incomplete=False,
     unstable=True,
@@ -7591,6 +8009,7 @@ stable.struct(
     member("DDraw_IDirectDrawSurface7_DwordFn", "set_lod", 0xBC),
     member("DDraw_IDirectDrawSurface7_DwordOutFn", "get_lod", 0xC0),
     size=0xC4,
+    alignment=4,
     doc="Forty-nine-slot DX7 IDirectDrawSurface7 vtable through GetLOD. Each slot uses the CALLBACK calling convention and its listed parameter count.",
     incomplete=False,
     unstable=True,
@@ -7600,6 +8019,7 @@ stable.struct(
     "DDraw_IDirectDrawSurface7",
     member("DDraw_IDirectDrawSurface7Vtbl*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirectDrawSurface7 COM interface pointer wrapper.",
     incomplete=False,
     unstable=True,
@@ -7675,6 +8095,7 @@ stable.struct(
     member("D3D_IDirect3DDevice7_ClipPlaneFn", "get_clip_plane", 0xBC),
     member("D3D_IDirect3DDevice7_GetInfoFn", "get_info", 0xC0),
     size=0xC4,
+    alignment=4,
     doc="Forty-nine-slot DX7 IDirect3DDevice7 vtable through GetInfo. Each slot uses the CALLBACK calling convention and its listed parameter count.",
     incomplete=False,
     unstable=True,
@@ -7684,6 +8105,7 @@ stable.struct(
     "D3D_IDirect3DDevice7",
     member("D3D_IDirect3DDevice7Vtbl*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirect3DDevice7 COM interface pointer wrapper.",
     incomplete=False,
     unstable=True,
@@ -7700,6 +8122,7 @@ stable.struct(
     member("D3D_IDirect3D7_EnumZBufferFormatsFn", "enum_z_buffer_formats", 0x18),
     member("D3D_IDirect3D7_NoArgsFn", "evict_managed_textures", 0x1C),
     size=0x20,
+    alignment=4,
     doc="Eight-slot DX7 IDirect3D7 vtable through EvictManagedTextures. Each slot uses the CALLBACK calling convention and its listed parameter count.",
     incomplete=False,
     unstable=True,
@@ -7709,6 +8132,7 @@ stable.struct(
     "D3D_IDirect3D7",
     member("D3D_IDirect3D7Vtbl*", "vtable", 0x0),
     size=0x4,
+    alignment=4,
     doc="IDirect3D7 COM interface pointer wrapper.",
     incomplete=False,
     unstable=True,
@@ -7895,69 +8319,14 @@ stable.enum(
     enum_value("PROP_TRACEMODE3", 103),
 )
 
-stable.enum("Camera_TransitionMode", enum_value("CAMERA_SNAP", 200))
-
-stable.sig("DDraw_ObjectAnchor", "A1 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 81 EC 9C 00 00 00")
-
-stable.sig("Game_InitializedAnchor", "89 35 ?? ?? ?? ?? C6 44 24 ?? 10")
-
-stable.sig(
-    "Input_GamepadButtonFlags", "8B 15 ?? ?? ?? ?? 8B 06 0B C2 89 06 81 FB BC 02 00 00"
-)
-
-stable.sig("Input_JoystickAvailableAnchor", "A0 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? A1")
-
-stable.sig("Input_KeyboardMappingButtons", "8B 15 ?? ?? ?? ?? 50 56")
-
-stable.sig("Input_KeyboardMappingKeys", "A3 ?? ?? ?? ?? A1 ?? ?? ?? ?? 8D 14 8D")
-
-stable.sig("Window_MainHandleAnchor", "A1 ?? ?? ?? ?? 83 C4 08 6A 03")
-
-stable.sig("Window_RunWinMain_SecondaryWindowHandleAnchor", "A3 ?? ?? ?? ?? FF D7")
-
-stable.sig("Input_MappingCount", "8B 0D ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 50")
-
-stable.sig("Graphics_RenderingEnabledAnchor", "39 35 ?? ?? ?? ?? 74 ?? E8")
-
-stable.sig("Window_ShouldQuitAnchor", "39 35 ?? ?? ?? ?? 75 ?? 39 35")
-
-stable.sig("File_DirectoryAnchor", "68 ?? ?? ?? ?? 68 04 01 00 00 FF 15")
-
-stable.sig("Audio_DigitalDriverAnchor", "A1 ?? ?? ?? ?? 6A 7F 50 FF 15")
-
-stable.sig("Video_MovieFileNamesAndPathPrefix", "8B 04 B5 ?? ?? ?? ?? 50 68")
-
-stable.sig(
-    "Title_ResourceCleanupBundle",
-    "6A 01 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ??",
-)
-
-stable.sig("PKG_FindAndLoadGamePKFile", "81 EC 10 01 00 00 57 ??")
-
-stable.sig("Game_InitializeEngine", "E8 ?? ?? ?? ?? 85 C0 75 ?? 32 C0")
-
-stable.sig("Graphics_InitializeSubsystem", "E8 ?? ?? ?? ?? 8B 44 24 ?? 8B 4C 24 ?? 50")
-
-stable.sig("D3D_InitializeCapabilities", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 50 A3")
-
-stable.sig(
-    "Display_SetMode_Anchor",
-    "A1 ?? ?? ?? ?? 56 57 8B 7C 24",
-    doc="Signature anchor for Display_SetMode, the HWND display-mode initializer.",
-    stable=True,
-)
-
-stable.sig("Game_InitializeSystems", "E8 ?? ?? ?? ?? 8D 54 24 ?? 56")
+stable.type_alias("Camera_TransitionMode", "uint8_t")
+stable.enum("Camera_TransitionModeValue", enum_value("CAMERA_SNAP", 200))
 
 stable.sig("Graphics_RenderFrame", "51 53 E8 ?? ?? ?? ?? A1")
 
 stable.sig("Input_IsKeyPressed", "A1 ?? ?? ?? ?? 33 C9 85 C0 53")
 
-stable.sig("Input_ResetInputAndState", "E8 ?? ?? ?? ?? A1 ?? ?? ?? ?? 25 DF F4 FF FF")
-
 stable.sig("Graphics_TakeScreenshot", "81 EC 04 01 00 00 56 ??")
-
-stable.sig("Mem_Malloc", "FF 35 ?? ?? ?? ?? FF 74 24")
 
 stable.sig("Audio_ShutdownSystem", "A1 ?? ?? ?? ?? 85 C0 74 ?? 53 8B 1D")
 
@@ -7975,11 +8344,6 @@ stable.sig(
 stable.sig(
     "Timer_GetElapsedTickCountThunk",
     "E9 ?? ?? ?? ?? 90 90 90 90 90 90 90 90 90 90 90 55",
-)
-
-stable.sig(
-    "Audio_PlayLevelSoundIndexAtPositionAnchor",
-    "8B 0D ?? ?? ?? ?? 56 85",
 )
 
 stable.sig("Entity_SetActorProperty", "00 00 83 F9 09 0F 87 ??")
@@ -8858,7 +9222,7 @@ stable.fn(
     "55 8B EC 51 8B 4D 08 66 8B 81 D4 00 01 00",
     hook=0x6,
     ret="void",
-    params=[param("Graphics_ListState*", "camera")],
+    params=[param("Camera_Runtime*", "camera", doc="Camera prefix in a render list with the full effect-state tail.")],
     doc=(
         "Applies the next signed shake sample to camera eye and target together, using the countdown and amplitude in the camera effect-state tail."
     ),
@@ -9661,13 +10025,13 @@ stable.fn(
     ret="int32_t",
     params=[
         param(
-            "uint8_t",
-            "progress_var_index",
-            doc="Selector adjusted by +9 before resolving the script or global progress variable.",
+            "uint32_t",
+            "progress_var_slot",
+            doc="Native 32-bit argument slot. The low byte selects the variable, and the resolver uses the slot for its storage pointer.",
         )
     ],
     doc=(
-        "Returns the level/global script value for reference (progress_var_index + 9) modulo 256. Ordinary supported indices are 0 through 240; later byte indices select special or entity-local references."
+        "Returns the level/global script value for reference (progress_var_slot + 9) modulo 256. Ordinary supported indices are 0 through 240; later byte indices select special or entity-local references."
     ),
 )
 
@@ -9679,9 +10043,9 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "uint8_t",
-            "progress_var_index",
-            doc="Selector adjusted by +9 before resolving the script or global progress variable.",
+            "uint32_t",
+            "progress_var_slot",
+            doc="Native 32-bit argument slot. The low byte selects the variable, and the resolver uses the slot for its storage pointer.",
         ),
         param(
             "int32_t",
@@ -9689,7 +10053,7 @@ stable.fn(
             doc="Value written to the resolved progress variable.",
         ),
     ],
-    doc="Converts progress_var_index to script ref ID index+9, resolves the storage pointer, and writes progress_value. Sole caller discards EAX.",
+    doc="Converts progress_var_slot to script ref ID index+9, resolves the storage pointer, and writes progress_value. Sole caller discards EAX.",
     stable=True,
 )
 
@@ -10025,7 +10389,7 @@ stable.fn(
     "E0 0C 99 F7 F9 50 E8 ??",
     match=-0x43,
     ret="void",
-    params=[param("Graphics_ListState*", "camera")],
+    params=[param("Camera_Runtime*", "camera", doc="Camera prefix in a render list with the full effect-state tail.")],
     doc=(
         "Advances the roll-effect countdown, computes eased signed roll from its stored duration and amplitude, and writes camera.view_roll. The final tick clears roll."
     ),
@@ -10604,7 +10968,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "int32_t",
+            "DWORD",
             "color_operation",
             doc="D3DTEXTUREOP value for texture stage 0 D3DTSS_COLOROP. Known callers pass 1 (disable) or 4 (modulate).",
         )
@@ -11051,7 +11415,7 @@ stable.fn(
     "D3D_ClearViewport",
     "?? 6A 00 68 00 00 80 3F 6A 00 8B 08 6A 03",
     match=-0x4,
-    ret="int32_t",
+    ret="HRESULT",
     params=[],
     doc="Clears the current viewport target and Z buffer through Clear on IDirect3DDevice7 and forwards its HRESULT. Requires an initialized global device.",
 )
@@ -11060,7 +11424,7 @@ stable.fn(
     "Graphics_ClearDepthBuffer",
     "?? 6A 00 68 00 00 80 3F 6A 00 8B 08 6A 02",
     match=-0x4,
-    ret="int32_t",
+    ret="HRESULT",
     params=[],
     doc="Clears only the current viewport Z buffer through Clear on IDirect3DDevice7 and forwards its HRESULT. Requires an initialized global device.",
 )
@@ -11179,8 +11543,8 @@ stable.fn(
     "8B 54 24 04 56 8B 74 24 0C 8B 42 0C 8B 4E 0C 3B C1 73 ?? 83 C8 FF 5E C3 76 ?? B8 01 00 00 00 5E C3 8B 42 08",
     ret="int32_t",
     params=[
-        param("DDraw_SurfaceDesc2 const*", "left"),
-        param("DDraw_SurfaceDesc2 const*", "right"),
+        param("void const*", "left", doc="First DDraw_SurfaceDesc2 record."),
+        param("void const*", "right", doc="Second DDraw_SurfaceDesc2 record."),
     ],
     doc=(
         "Qsort comparator ordering display modes ascending by width, then height, then RGB bit "
@@ -11206,7 +11570,7 @@ stable.fn(
     ret="HRESULT",
     params=[
         param("DDraw_SurfaceDesc2*", "surface_desc"),
-        param("D3D_DriverInfo*", "parent_driver_info"),
+        param("void*", "context", doc="Parent D3D_DriverInfo supplied for enumeration."),
     ],
     doc="Internal EnumDisplayModes on IDirectDraw7 HRESULT callback. Copies one DDSURFACEDESC2 into slots 0 through 79, increments mode_count, and returns DDENUMRET_CANCEL exactly when the new count reaches 80.",
     stable=True,
@@ -11242,7 +11606,7 @@ stable.fn(
         param("char*", "device_description"),
         param("char*", "device_name"),
         param("D3D_DeviceDesc7*", "device_desc"),
-        param("D3D_DriverInfo*", "parent_driver_info"),
+        param("void*", "context", doc="Parent D3D_DriverInfo supplied for enumeration."),
     ],
     doc="Handles IDirect3D7 device enumeration and records usable devices. The 20-record list has no capacity guard, so a later accepted device can write past it.",
     stable=True,
@@ -11398,7 +11762,7 @@ stable.fn(
     ret="BOOL",
     params=[
         param("DIDEVICEINSTANCEA const*", "device_instance"),
-        param("DInput_DeviceEnumContext*", "enum_context"),
+        param("void*", "enum_context", doc="DInput_DeviceEnumContext supplied for enumeration."),
     ],
     doc="Copies device_instance.guidInstance into enum_context.guid_list, increments the count, marks that a device was seen, and returns DIENUM_CONTINUE. The context has no capacity check.",
 )
@@ -11426,8 +11790,8 @@ stable.fn(
     ret="BOOL",
     params=[
         param("DInput_IDirectInputDeviceA*", "device"),
-        param("int32_t", "min_value"),
-        param("int32_t", "max_value"),
+        param("LONG", "min_value"),
+        param("LONG", "max_value"),
     ],
     doc=(
         "Sets DIPROP_RANGE by DIJOFS_X and returns 1 only for DI_OK. The helper does not validate "
@@ -11443,8 +11807,8 @@ stable.fn(
     ret="BOOL",
     params=[
         param("DInput_IDirectInputDeviceA*", "device"),
-        param("int32_t", "min_value"),
-        param("int32_t", "max_value"),
+        param("LONG", "min_value"),
+        param("LONG", "max_value"),
     ],
     doc=(
         "Sets DIPROP_RANGE by DIJOFS_Y and returns 1 only for DI_OK. The helper does not validate "
@@ -11460,8 +11824,8 @@ stable.fn(
     ret="BOOL",
     params=[
         param("DInput_IDirectInputDeviceA*", "device"),
-        param("int32_t", "min_value"),
-        param("int32_t", "max_value"),
+        param("LONG", "min_value"),
+        param("LONG", "max_value"),
     ],
     doc=(
         "Sets DIPROP_RANGE by DIJOFS_Z and returns 1 only for DI_OK. The helper does not validate "
@@ -11477,8 +11841,8 @@ stable.fn(
     ret="BOOL",
     params=[
         param("DInput_IDirectInputDeviceA*", "device"),
-        param("int32_t", "min_value"),
-        param("int32_t", "max_value"),
+        param("LONG", "min_value"),
+        param("LONG", "max_value"),
     ],
     doc=(
         "Sets DIPROP_RANGE by DIJOFS_RZ and returns 1 only for DI_OK. The helper does not validate "
@@ -11878,7 +12242,11 @@ stable.fn(
     match=-0x21,
     hook=0x6,
     ret="void",
-    params=[param("Trail_RenderRuntimeView*", "trail")],
+    params=[
+        param("Trail_RenderRuntimeView*", "trail"),
+        param("Actor_State*", "actor", doc="Caller-supplied actor or NULL. Unused by the renderer."),
+        param("Submesh_RenderSpan*", "span", doc="Caller-supplied submesh span or NULL. Unused by the renderer."),
+    ],
     doc="Builds camera-facing animated trail polygon batches from renderer-specific trail records and their segment ring, then links them into render buckets.",
 )
 
@@ -12242,36 +12610,6 @@ stable.fn(
 )
 
 stable.fn(
-    "Settings_GetLanguage",
-    "0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8B 44 24 04 BA",
-    required=Required.EU_SC,
-    hook=0x7,
-    ret="int32_t",
-    params=[],
-    doc=(
-        "Returns the signed persisted language ID from settings byte offset 2 in EU/SC."
-    ),
-)
-
-stable.fn(
-    "Settings_SetLanguage",
-    "8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8B 44 24 04 BA",
-    required=Required.EU_SC,
-    hook=0x9,
-    ret="void",
-    params=[
-        param(
-            "char",
-            "language_id",
-            doc="Language ID. 0 English.",
-        )
-    ],
-    doc=(
-        "Stores the persisted language ID in settings byte offset 2 in EU/SC. The multi-language boot flow supplies the selected language; Save_InitializeNewGame clears it."
-    ),
-)
-
-stable.fn(
     "Save_SetGameComplete",
     "8A 44 24 04 A2 ?? ?? ?? ?? C3 90 90 90 90 90 90 0F BE 05 ?? ?? ?? ?? C3 90 90 90 90 90 90 90 90 8B 44 24 04 BA ?? ?? ?? ?? 8D 0C 85 04 00 00 00 2B D1 8B 02 C3",
     hook=0x9,
@@ -12480,35 +12818,6 @@ stable.fn(
 )
 
 stable.fn(
-    "String_InstallLocaleOverlay",
-    "8B 0D ?? ?? ?? ?? 53 56 8B 74 24 0C 8B 41 08 57 03 C1 8B 08 8D 50 04 8B D9 8B FA C1 E9 02 F3 A5 8B CB 83 E1 03 F3 A4",
-    required=Required.EU_SC,
-    ret="void",
-    params=[
-        param(
-            "void*",
-            "locale_data",
-            doc="Locale payload copied over the loaded overlay resource blob.",
-        )
-    ],
-    abi_status=AbiStatus.PLACEHOLDER,
-    doc=(
-        "Copies the supplied locale payload into the loaded overlay resource at the blob's stored "
-        "offset and installs the localized string table that follows the copied block."
-    ),
-)
-
-stable.fn(
-    "Save_CheckContinueSlotLanguage",
-    "66 83 3D ?? ?? ?? ?? 00 74 0C 66 C7 05 ?? ?? ?? ?? 00 00 32 C0 C3 E8 ?? ?? ?? ?? 0F BE 0D ?? ?? ?? ?? 49 83 F9 03 77 EB FF 24 8D ?? ?? ?? ?? 85 C0 75 E0 B0 01 C3",
-    required=Required.EU_SC,
-    hook=0x8,
-    ret="BOOL",
-    params=[],
-    doc="Returns TRUE when the saved language belongs to the language group selected at startup.",
-)
-
-stable.fn(
     "Menu_ShutdownResources",
     "A1 ?? ?? ?? ?? 85 C0 74 ?? A1 ?? ?? ?? ?? 6A 00 50 E8 ?? ?? ?? ?? 8B 0D ?? ?? ?? ?? 51 E8 ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 52 E8 ?? ?? ?? ??",
     ret="void",
@@ -12624,12 +12933,12 @@ stable.fn(
             doc="Player entity. Its linked actor receives refreshed completion flags.",
         ),
         param(
-            "Player_ControllerRecordView*",
+            "PKG_ActorRecord*",
             "record",
-            doc="Player controller record whose lives and health/energy fields are initialized from saved globals.",
+            doc="Package record receiving saved lives and the level-start count at +0x74.",
         ),
     ],
-    doc="Initializes player-controller lives and health/energy from saved globals, then refreshes actor completion flags.",
+    doc="Restores saved lives and the level-start count, initializes entity health to four, and refreshes actor completion flags.",
 )
 
 stable.fn(
@@ -12662,13 +12971,13 @@ stable.fn(
             doc="Unused ABI slot. The respawn caller passes the current entity before the record.",
         ),
         param(
-            "Player_ControllerRecordView*",
+            "PKG_ActorRecord*",
             "record",
-            doc="Player controller record whose health_or_energy field at +0x74 is reset to 4.",
+            doc="Package record receiving the four-byte reset at +0x74.",
         ),
     ],
     doc=(
-        "Resets player-controller health_or_energy at +0x74 to 4. Keeps the legacy function "
+        "Writes 4 to the 32-bit slot at +0x74. Keeps the legacy function "
         "name; current_entity is unused."
     ),
     stable=True,
@@ -12905,7 +13214,7 @@ stable.fn(
     "Menu_ProcessMenuState",
     "83 EC 08 53 55 56 57 E8 ??",
     ret="bool",
-    params=[],
+    params=[param("int32_t", "reserved", doc="The game passes zero.")],
     doc=(
         "Updates the active menu and returns a boolean in AL indicating whether it consumes "
         "or skips the normal frame. Yes/No choices use 0 for Yes and 1 for No."
@@ -13063,7 +13372,7 @@ stable.fn(
         param("uint32_t", "packed_xy"),
         param("char const*", "text"),
         param("uint32_t", "text_flags"),
-        param("Material_RefEntry*", "font_context"),
+        param("void*", "font_context", doc="Material_RefEntry for the font, or NULL for the default."),
     ],
     doc="Renders a NUL-terminated string at packed_xy using the selected color and font context.",
 )
@@ -13079,7 +13388,7 @@ stable.fn(
         param("uint32_t", "packed_xy"),
         param("char const*", "text"),
         param("uint32_t", "text_flags"),
-        param("Material_RefEntry*", "font_context"),
+        param("void*", "font_context", doc="Material_RefEntry for the font, or NULL for the default."),
         param("uint32_t", "glyph_advance"),
     ],
     doc="Renders NUL-terminated text at packed_xy with glyph_advance + 1 spacing. text_flags selects alignment, render mode, and optional RGB tint; a null font context selects the shared default.",
@@ -13748,8 +14057,8 @@ stable.fn(
     match=-0x15,
     ret="int32_t",
     params=[
-        param("Component_ProjectileActorView*", "comp"),
-        param("Actor_State*", "other_actor"),
+        param("void*", "subject", doc="Projectile as a Component_ProjectileActorView."),
+        param("void*", "other_object", doc="Contacted Actor_State."),
         param("Collision_Polygon*", "collision_poly"),
         param("int32_t", "collision_depth"),
     ],
@@ -15130,9 +15439,9 @@ stable.fn(
     "Timer_GetGameTime",
     "83 EC 08 FF 15 ??",
     hook=0x9,
-    ret="float",
+    ret="long double",
     params=[],
-    doc="Returns the current GetTickCount-based game clock in seconds.",
+    doc="Returns GetTickCount scaled to seconds in the x87 return register.",
     stable=True,
 )
 
@@ -15334,7 +15643,7 @@ stable.fn(
             doc="Caller-supplied effect source id preserved by the ABI.",
         ),
         param(
-            "int32_t",
+            "BOOL",
             "strong_feedback",
             doc="Nonzero doubles the force-feedback magnitude scale from 5000 to 10000.",
         ),
@@ -15525,19 +15834,6 @@ stable.fn(
 )
 
 stable.fn(
-    "PKG_InitializeSystemMultiLanguage",
-    "81 0D ?? ?? ?? ?? 00 00 00 04 E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? E8 ?? ?? ?? ?? A1",
-    required=Required.EU_SC,
-    hook=0xA,
-    ret="void",
-    params=[param("HWND", "hwnd"), param("HINSTANCE", "h_instance")],
-    doc=(
-        "Sets the EU/SC multi-language flag, then calls PKG_InitializeSystem with the two startup arguments."
-    ),
-    unstable=True,
-)
-
-stable.fn(
     "Window_RequestClose",
     "51 8D 44 24 00 6A 00 50 6A 00 6A 61 FF 15 ??",
     ret="void",
@@ -15708,7 +16004,7 @@ stable.fn(
             doc="Unused third argument.",
         ),
     ],
-    doc="Loads one of 138 raw TOC entries while retaining all three cdecl slots. Index, file bounds, destination capacity, seek, and read results are unchecked.",
+    doc="Loads a raw TOC entry (138 entries in EN, 305 in EU, 235 in SC). Index, file bounds, destination capacity, seek, and read results are unchecked.",
     stable=True,
 )
 
@@ -15738,7 +16034,7 @@ stable.fn(
     hook=0x6,
     ret="void",
     params=[],
-    doc="Opens the package, reads one 0x800-byte sector, and copies its first 0x450 bytes as 138 raw (offset,size) pairs. The reference header has 135 valid aligned entries, sentinels 27/29/34, and zeros from 0x450 through 0x7FF.",
+    doc="Reads a 0x800-byte header in EN and SC, or 0x1000 bytes in EU. Copies 138 (EN), 235 (SC), or 305 (EU) offset/size pairs to the live TOC.",
     stable=True,
 )
 
@@ -16230,7 +16526,7 @@ stable.fn(
     "?? ?? ?? 83 C4 04 C3 A0",
     match=-0x31,
     ret="void",
-    params=[],
+    params=[param("Camera_FullRuntime*", "camera", doc="Current camera forwarded by the caller.")],
     doc="Advances the pause and screen-fade counters and updates their Q12 fade values.",
     stable=True,
 )
@@ -16239,13 +16535,7 @@ stable.fn(
     "Game_RenderOverlays",
     "E8 ?? ?? ?? ?? 8B 44 24 04",
     ret="void",
-    params=[
-        param(
-            "int32_t",
-            "reserved_arg",
-            doc="Unused callback argument.",
-        )
-    ],
+    params=[param("Camera_FullRuntime*", "camera", doc="Forwarded to Graphics_UpdateFadeCounters.")],
     doc=(
         "Updates transition and fade state and renders UI sprites, then calls the pause-menu "
         "helper. Does not return a value."
@@ -16490,7 +16780,7 @@ stable.fn(
     ],
     doc=(
         "Computes positional-audio attenuation and pan from source_pos relative to the selected listener/camera position. "
-        "Game_FrameTransitionFlags bit 0x10 selects Audio_ListenerCameraPos_Flag10Set when set and Audio_ListenerCameraPos_Flag10Clear when clear."
+        "Game_FrameTransitionFlags bit 0x10 selects the camera eye position when set and the target position when clear."
     ),
 )
 
@@ -16760,7 +17050,7 @@ stable.fn(
     ret="void",
     params=[
         param(
-            "int16_t*",
+            "Text_StringEntry*",
             "string_table",
             doc="Base pointer to the loaded string table block used by String_GetByIndex.",
         ),
@@ -20194,7 +20484,7 @@ stable.fn(
     ret="int32_t",
     params=[
         param("CRT_LD12Fields*", "output"),
-        param("char**", "end_pointer"),
+        param("char const**", "end_pointer"),
         param("char const*", "text"),
         param("int32_t", "mult12"),
         param("int32_t", "scale"),
@@ -20374,8 +20664,8 @@ stable.data(
 stable.data(
     "Video_PlayMovieIntro_PathPrefix",
     xref("Video_PlayMovieIntro", 0x17, 0x1),
-    type="char",
-    doc="First byte of the NUL-terminated data/movies path prefix used by movie-loading routines.",
+    type="char[13]",
+    doc="NUL-terminated data/movies path prefix used by movie-loading routines.",
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
@@ -20439,7 +20729,7 @@ stable.data(
 stable.data(
     "Scene_TraverseNodeTree_TypeDispatchTable",
     xref("Scene_TraverseNodeTree", 0x37A, 0x3),
-    type="uint32_t",
+    type="uint32_t[7]",
     doc="Seven-entry uint32_t jump table used by Scene_TraverseNodeTree to dispatch child "
     "scene-node type values 1..7.",
     write_policy=WritePolicy.READ_ONLY,
@@ -20447,7 +20737,7 @@ stable.data(
 stable.data(
     "Input_CheckButtonState_ControlCodeDispatchTable",
     xref("Input_CheckButtonState", 0x82, 0x3),
-    type="uint32_t",
+    type="uint32_t[10]",
     doc=(
         "Ten-entry uint32_t jump table used by Input_CheckButtonState for control codes 0x20..0x47. "
         "Slots 0..8 handle aggregate direction axes and signed axis thresholds; slot 9 is "
@@ -20459,7 +20749,7 @@ stable.data(
 stable.data(
     "Input_CheckButtonState_ControlCodeDispatchIndexTable",
     xref("Input_CheckButtonState", 0x7C, 0x2),
-    type="uint8_t",
+    type="uint8_t[40]",
     doc=(
         "Byte lookup table mapping control codes onto input_control_code_dispatch_table slots."
     ),
@@ -20469,14 +20759,14 @@ stable.data(
 stable.data(
     "Actor_TracePath_TargetSelectorDispatchTable",
     xref("Actor_TracePath", 0x2C0, 0x3),
-    type="uint32_t",
+    type="uint32_t[10]",
     doc="Ten-entry uint32_t jump table used by Actor_TracePath for negative target-selector sentinel values -0x8000..-0x7FF7.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Entity_SetActorProperty_IDDispatchTable",
     xref("Entity_SetActorProperty", 0x3E, 0x3),
-    type="uint32_t",
+    type="uint32_t[10]",
     doc="Ten-entry uint32_t jump table used by Entity_SetActorProperty for property ids 0..9.",
     write_policy=WritePolicy.READ_ONLY,
 )
@@ -20484,7 +20774,7 @@ stable.data(
 stable.data(
     "Actor_ProcessPlayerBehavior_StateDispatchTable",
     xref("Actor_ProcessPlayerBehavior", 0x26F, 0x3, required=Required.EN),
-    type="uint32_t",
+    type="uint32_t[5]",
     doc="Five-entry uint32_t jump table used by Actor_ProcessPlayerBehavior for player behavior state values 0..4.",
     write_policy=WritePolicy.READ_ONLY,
 )
@@ -20492,35 +20782,35 @@ stable.data(
 stable.data(
     "Actor_ProcessCollisionResponse_NodeTypeDispatchTable",
     xref("Actor_ProcessCollisionResponse", 0x14F, 0x3),
-    type="uint32_t",
+    type="uint32_t[5]",
     doc="Five-entry uint32_t jump table used by Actor_ProcessCollisionResponse for collided actor/node type values 0..4.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Script_OpCheckTerminator_OpcodeTable",
     xref("Script_OpCheckTerminator", 0x1A, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table for Script_OpCheckTerminator opcodes 1 through 4.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Script_OpBranchConditional_ArithmeticOpTable",
     xref("Script_OpBranchConditional", 0x10B, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Script_OpBranchConditional for arithmetic/combine opcodes before comparison.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Script_OpBranchConditional_ComparisonOpTable",
     xref("Script_OpBranchConditional", 0x187, 0x3),
-    type="uint32_t",
+    type="uint32_t[6]",
     doc="Six-entry uint32_t jump table used by Script_OpBranchConditional for comparison opcodes.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Script_OpSetVariable_OpJumpTable",
     xref("Script_OpSetVariable", 0x111, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc=(
         "Four-entry uint32_t jump table used by Script_OpSetVariable for arithmetic opcode dispatch."
     ),
@@ -20529,7 +20819,7 @@ stable.data(
 stable.data(
     "Checkers_CheckCapturePossible_PieceTypeDispatchTable",
     xref("Checkers_CheckCapturePossible", 0x20, 0x3),
-    type="uint32_t",
+    type="uint32_t[6]",
     doc=(
         "Six-entry uint32_t jump table for Checkers_CheckCapturePossible piece values 1..6. "
         "Pieces 1/2 are men, 5/6 are kings, and 3/4 fall through to the no-capture path."
@@ -20539,7 +20829,7 @@ stable.data(
 stable.data(
     "Checkers_ValidateMove_SimpleMovePieceTypeDispatchTable",
     xref("Checkers_ValidateMove", 0x68, 0x3),
-    type="uint32_t",
+    type="uint32_t[6]",
     doc=(
         "Six-entry uint32_t Checkers_ValidateMove jump table for one-square moves by piece value "
         "1..6; pieces 3/4 share the invalid/default path and 5/6 share king movement."
@@ -20549,7 +20839,7 @@ stable.data(
 stable.data(
     "Checkers_ValidateMove_CaptureMovePieceTypeDispatchTable",
     xref("Checkers_ValidateMove", 0x10F, 0x3),
-    type="uint32_t",
+    type="uint32_t[6]",
     doc=(
         "Six-entry uint32_t Checkers_ValidateMove jump table for two-square captures by piece value "
         "1..6; pieces 3/4 share the invalid/default path and 5/6 share king capture logic."
@@ -20559,21 +20849,21 @@ stable.data(
 stable.data(
     "Graphics_UpdateMeshCommandState_SignalDispatchTable",
     xref("Graphics_UpdateMeshCommandState", 0x77, 0x3),
-    type="uint32_t",
+    type="uint32_t[11]",
     doc="Eleven-entry uint32_t jump table used by Graphics_UpdateMeshCommandState for Mesh_CommandEvent values 0 through 10.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "D3D_FormatDirectXError_88760028RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0xDF, 0x3),
-    type="uint32_t",
+    type="uint32_t[8]",
     doc="Eight-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760028..0x88760078 DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "D3D_FormatDirectXError_88760028RangeIndexTable",
     xref("D3D_FormatDirectXError", 0xD9, 0x2),
-    type="uint8_t",
+    type="uint8_t[81]",
     doc=(
         "Byte lookup table that maps sparse 0x88760028..0x88760078 HRESULT positions to "
         "D3D_FormatDirectXError jump-table slots."
@@ -20584,7 +20874,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_88760091RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x14C, 0x3),
-    type="uint32_t",
+    type="uint32_t[15]",
     doc="Fifteen-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760091..0x887600E1 DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20592,7 +20882,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_88760091RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x146, 0x2),
-    type="uint8_t",
+    type="uint8_t[81]",
     doc=(
         "Byte lookup table that maps sparse 0x88760091..0x887600E1 HRESULT positions to "
         "D3D_FormatDirectXError jump-table slots."
@@ -20603,7 +20893,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_887600F0RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x201, 0x3),
-    type="uint32_t",
+    type="uint32_t[30]",
     doc="Thirty-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x887600F0..0x887601D6 DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20611,7 +20901,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_887600F0RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x1FB, 0x2),
-    type="uint8_t",
+    type="uint8_t[231]",
     doc=(
         "Byte lookup table that maps sparse 0x887600F0..0x887601D6 HRESULT positions to "
         "D3D_FormatDirectXError jump-table slots."
@@ -20622,7 +20912,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_887601EARangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x38E, 0x3),
-    type="uint32_t",
+    type="uint32_t[30]",
     doc="Thirty-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x887601EA..0x88760245 DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20630,7 +20920,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_887601EARangeIndexTable",
     xref("D3D_FormatDirectXError", 0x388, 0x2),
-    type="uint8_t",
+    type="uint8_t[92]",
     doc=(
         "Byte lookup table that maps sparse 0x887601EA..0x88760245 HRESULT positions to "
         "D3D_FormatDirectXError jump-table slots."
@@ -20641,7 +20931,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_88760247RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x4FA, 0x3),
-    type="uint32_t",
+    type="uint32_t[16]",
     doc="Sixteen-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760247..0x8876026C DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20649,7 +20939,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_88760247RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x4F4, 0x2),
-    type="uint8_t",
+    type="uint8_t[38]",
     doc=(
         "Byte lookup table that maps sparse 0x88760247..0x8876026C HRESULT positions to "
         "D3D_FormatDirectXError jump-table slots; 0x88760276 is handled as a separate "
@@ -20661,7 +20951,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_88760280RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x5D7, 0x3),
-    type="uint32_t",
+    type="uint32_t[7]",
     doc="Seven-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the 0x88760280..0x887602B4 DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20669,7 +20959,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_88760280RangeIndexTable",
     xref("D3D_FormatDirectXError", 0x5D1, 0x2),
-    type="uint8_t",
+    type="uint8_t[53]",
     doc=(
         "Byte lookup table that maps sparse 0x88760280..0x887602B4 HRESULT positions to "
         "D3D_FormatDirectXError jump-table slots."
@@ -20680,7 +20970,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_887602B6RangeDispatchTable",
     xref("D3D_FormatDirectXError", 0x61F, 0x3),
-    type="uint32_t",
+    type="uint32_t[6]",
     doc="Six-entry uint32_t jump table for D3D_FormatDirectXError HRESULT values in the contiguous 0x887602B6..0x887602BB DirectDraw error range.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20688,7 +20978,7 @@ stable.data(
 stable.data(
     "Level_InitializeBonusData_CodeDispatchTable",
     xref("Level_InitializeBonusData", 0x27, 0x3),
-    type="uint32_t",
+    type="uint32_t[5]",
     doc="Five-entry uint32_t jump table used by Level_InitializeBonusData for bonus level ids 27..31.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20696,7 +20986,7 @@ stable.data(
 stable.data(
     "Level_BuildCompletionTable_SlotDispatchTable",
     xref("Level_BuildCompletionTable", 0x178, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Level_BuildCompletionTable to store four packed completion masks.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20704,7 +20994,7 @@ stable.data(
 stable.data(
     "Menu_RenderOptionsMenu_ItemDispatchTable",
     xref("Menu_RenderOptionsMenu", 0x103, 0x3),
-    type="uint32_t",
+    type="uint32_t[7]",
     doc="Seven-entry uint32_t jump table used by Menu_RenderOptionsMenu to render options menu rows 0..6.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20712,7 +21002,7 @@ stable.data(
 stable.data(
     "Menu_ProcessMenuState_DispatchTable",
     xref("Menu_ProcessMenuState", 0xB1, 0x3),
-    type="uint32_t",
+    type="uint32_t[13]",
     doc="Thirteen-entry uint32_t jump table used by Menu_ProcessMenuState for menu state values 1..13.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20720,7 +21010,7 @@ stable.data(
 stable.data(
     "Level_Load_StateDispatchTable",
     xref("Level_Load", 0x10, 0x3),
-    type="uint32_t",
+    type="uint32_t[11]",
     doc="Eleven-entry uint32_t jump table used by Level_Load for level-loading state values 0..10; state 9 maps to the idle/default return path.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20728,7 +21018,7 @@ stable.data(
 stable.data(
     "Collision_ProcessProjectileHit_NodeTypeDispatchTable",
     xref("Collision_ProcessProjectileHit", 0x5D, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Collision_ProcessProjectileHit for hit actor/node type values 1..4.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20736,7 +21026,7 @@ stable.data(
 stable.data(
     "Collision_DetectAndResolve3DCollision_3dAxisDispatchTable",
     xref("Collision_DetectAndResolve3DCollision", 0xDFB, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Collision_DetectAndResolve3DCollision to select one of four collision-normal/contact axes.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20744,7 +21034,7 @@ stable.data(
 stable.data(
     "Collision_ResolveObjectNodeCollision_AxisDispatchTable",
     xref("Collision_ResolveObjectNodeCollision", 0x15A, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Collision_ResolveObjectNodeCollision to select one of four node collision axes.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20752,7 +21042,7 @@ stable.data(
 stable.data(
     "Actor_EvaluateCollisionConditionSelector_ConditionSubtypeDispatchTable",
     xref("Actor_EvaluateCollisionConditionSelector", 0x27, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry jump table used after remapping collision subtype values 0x0D through 0x17.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20760,7 +21050,7 @@ stable.data(
 stable.data(
     "Actor_EvaluateCollisionConditionSelector_ConditionSubtypeIndexTable",
     xref("Actor_EvaluateCollisionConditionSelector", 0x21, 0x2),
-    type="uint8_t",
+    type="uint8_t[11]",
     doc=(
         "Byte lookup table mapping collision subtype values 0x0D..0x17 onto "
         "collision_condition_subtype_dispatch_table slots; max slot is 3."
@@ -20771,7 +21061,7 @@ stable.data(
 stable.data(
     "Actor_EvaluateCollisionConditionSelector_ConditionFlagMaskDispatchTable",
     xref("Actor_EvaluateCollisionConditionSelector", 0x123, 0x3),
-    type="uint32_t",
+    type="uint32_t[8]",
     doc="Eight-entry jump table testing selector values 2 through 9 against masks 0x10,0x20,0x40,0x80,1,2,4,8.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20779,7 +21069,7 @@ stable.data(
 stable.data(
     "Actor_HandleCollisionResponse_SubtypeDispatchTable",
     xref("Actor_HandleCollisionResponse", 0x22, 0x3),
-    type="uint32_t",
+    type="uint32_t[7]",
     doc="Seven-entry uint32_t jump table used by Actor_HandleCollisionResponse for collision subtype values 0x0D..0x13.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20787,7 +21077,7 @@ stable.data(
 stable.data(
     "Input_GetButtonIndex_MaskDispatchTable",
     xref("Input_GetButtonIndex", 0x19, 0x3),
-    type="uint32_t",
+    type="uint32_t[7]",
     doc="Seven-entry uint32_t jump table mapping low input button bitmasks 1,2,4,8,0x10,0x20 through input_button_mask_index_table; slot 6 is the default unrecognized-mask path.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20795,7 +21085,7 @@ stable.data(
 stable.data(
     "Input_GetButtonIndex_MaskIndexTable",
     xref("Input_GetButtonIndex", 0x13, 0x2),
-    type="uint8_t",
+    type="uint8_t[32]",
     doc=(
         "Byte lookup table for Input_GetButtonIndex masks 1..0x20; larger recognized masks "
         "are handled by direct compares."
@@ -20806,7 +21096,7 @@ stable.data(
 stable.data(
     "Window_ProcessGameProc_LowMessageDispatchTable",
     xref("Window_ProcessGameProc", 0x40, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Window_ProcessGameProc for sparse low Win32 messages 0x02..0x10, including destroy/size/close handling; WM_KEYDOWN (0x100) is handled by a direct branch.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20814,7 +21104,7 @@ stable.data(
 stable.data(
     "Window_ProcessGameProc_LowMessageIndexTable",
     xref("Window_ProcessGameProc", 0x3A, 0x2),
-    type="uint8_t",
+    type="uint8_t[15]",
     doc=(
         "Byte lookup table mapping Win32 message IDs 0x02..0x10 to "
         "window_low_message_dispatch_table slots."
@@ -20825,7 +21115,7 @@ stable.data(
 stable.data(
     "Window_ProcessGameProc_HighMessageDispatchTable",
     xref("Window_ProcessGameProc", 0x169, 0x3),
-    type="uint32_t",
+    type="uint32_t[4]",
     doc="Four-entry uint32_t jump table used by Window_ProcessGameProc for Win32 messages 0x101..0x112, including WM_KEYUP, system key messages, and WM_SYSCOMMAND filtering.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20833,7 +21123,7 @@ stable.data(
 stable.data(
     "Window_ProcessGameProc_HighMessageIndexTable",
     xref("Window_ProcessGameProc", 0x163, 0x2),
-    type="uint8_t",
+    type="uint8_t[18]",
     doc=(
         "Byte lookup table mapping sparse high Win32 message IDs 0x101..0x112 to "
         "window_high_message_dispatch_table slots."
@@ -20844,7 +21134,7 @@ stable.data(
 stable.data(
     "UI_UpdateAndRenderSprites_SpriteAnchorDispatchTable",
     xref("UI_UpdateAndRenderSprites", 0x4EB, 0x3),
-    type="uint32_t",
+    type="uint32_t[8]",
     doc="Eight-entry uint32_t jump table used by UI_UpdateAndRenderSprites for sprite anchor codes 1..8.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -20852,7 +21142,7 @@ stable.data(
 stable.data(
     "Input_CalculateMovementVector_DirectionDispatchTable",
     xref("Input_CalculateMovementVector", 0x29, 0x3),
-    type="uint32_t",
+    type="uint32_t[10]",
     doc=(
         "Ten-entry uint32_t jump table used by Input_CalculateMovementVector to map "
         "low-nibble direction masks to heading positions. The accessor exposes the first "
@@ -20864,7 +21154,7 @@ stable.data(
 stable.data(
     "Actor_ProcessMovementCommands_CommandOpcodeDispatchTable",
     xref("Actor_ProcessMovementCommands", 0x4F, 0x3),
-    type="uint32_t",
+    type="uint32_t[11]",
     doc=(
         "Eleven-entry uint32_t jump table used by Actor_ProcessMovementCommands for movement "
         "command opcodes 0..10. The accessor exposes the first entry as a read-only scalar."
@@ -20875,7 +21165,7 @@ stable.data(
 stable.data(
     "Title_UpdateAndRenderScreen_StateDispatchTable",
     xref("Title_UpdateAndRenderScreen", 0x20, 0x3),
-    type="uint32_t",
+    type="uint32_t[7]",
     doc="Seven-entry uint32_t jump table used by Title_UpdateAndRenderScreen for title-screen state values 0..6.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
@@ -21155,8 +21445,8 @@ stable.data(
 stable.data(
     "Video_MCI_OpenAVIVideo",
     xref("Video_InitializeAVIPlayer", 0x6, 0x1),
-    type="char",
-    doc='NUL-terminated MCI command fragment "open" used by AVI/movie playback setup.',
+    type="char[14]",
+    doc="The NUL-terminated MCI command fragment \"open avivideo\".",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
@@ -21410,14 +21700,6 @@ stable.data(
     type="char[0x8]",
 )
 stable.data(
-    "D3D_InitializeDirectDraw_LogFileMode",
-    xref("D3D_InitializeDirectDraw", 0x10, 0x1),
-)
-stable.data(
-    "Graphics_TakeScreenshot_FileModeReadBinary",
-    xref("Graphics_TakeScreenshot", 0x1D, 0x1),
-)
-stable.data(
     "Graphics_TakeScreenshot_FormatString",
     xref("Graphics_TakeScreenshot", 0xE, 0x1),
     type="char[0xe]",
@@ -21474,7 +21756,7 @@ stable.data(
 stable.data(
     "D3D_FormatDirectXError_DDrawErrorUnknownMessage",
     xref("D3D_FormatDirectXError", 0x650, 0x1),
-    type="char",
+    type="char[15]",
     doc=(
         "NUL-terminated fallback DirectDraw error string used by D3D_FormatDirectXError."
     ),
@@ -21598,35 +21880,10 @@ stable.data(
     doc="Active movie playback rectangle copied from the default or alternate rectangle.",
 )
 stable.data(
-    "Video_OpenMovieFile_CurrentRectRight",
-    xref("Video_OpenMovieFile", 0x2C, 0x2),
-    doc="Right coordinate of the active movie playback rectangle.",
-)
-stable.data(
-    "Video_OpenMovieFile_CurrentRectBottom",
-    xref("Video_OpenMovieFile", 0x21, 0x1),
-    doc="Bottom coordinate of the active movie playback rectangle.",
-)
-stable.data(
     "Video_OpenMovieFile_DefaultRect",
     xref("Video_OpenMovieFile", 0x0, 0x1),
     type="RECT",
     doc="Default movie playback rectangle selected when the alternate-rectangle flag is clear.",
-)
-stable.data(
-    "Video_OpenMovieFile_DefaultRectTop",
-    xref("Video_OpenMovieFile", 0x5, 0x2),
-    doc="Top coordinate of the default movie playback rectangle.",
-)
-stable.data(
-    "Video_OpenMovieFile_DefaultRectRight",
-    xref("Video_OpenMovieFile", 0xB, 0x2),
-    doc="Right coordinate of the default movie playback rectangle.",
-)
-stable.data(
-    "Video_OpenMovieFile_DefaultRectBottom",
-    xref("Video_OpenMovieFile", 0x16, 0x1),
-    doc="Bottom coordinate of the default movie playback rectangle.",
 )
 stable.data(
     "Video_OpenMovieFile_AltRect",
@@ -21634,9 +21891,6 @@ stable.data(
     type="RECT",
     doc="Alternate movie playback rectangle selected when the alternate-rectangle flag is set.",
 )
-stable.data("Video_OpenMovieFile_AltRectTop", xref("Video_OpenMovieFile", 0x3A, 0x2))
-stable.data("Video_OpenMovieFile_AltRectRight", xref("Video_OpenMovieFile", 0x40, 0x1))
-stable.data("Video_OpenMovieFile_AltRectBottom", xref("Video_OpenMovieFile", 0x4B, 0x2))
 stable.data(
     "Save_GameLevelCompletion_DalmatianBonusLevelIds",
     xref("Save_SaveGameLevelCompletion", 0x14D, 0x3),
@@ -21645,7 +21899,8 @@ stable.data(
 stable.data(
     "Menu_ProcessNameEntryInput_Charset",
     xref("Menu_ProcessNameEntryInput", 0x37, 0x4),
-    type="char[0x28]",
+    doc="Forty printable name-entry keys followed by the signed backspace and finish action codes.",
+    type="int8_t[42]",
 )
 stable.data(
     "Menu_RenderDifficultySelection_ControllerPresetConfirmationStringIDs",
@@ -21721,6 +21976,8 @@ stable.data(
 stable.data(
     "Input_CheckCheatCodeSequence_Sequence",
     xref("Input_CheckCheatCodeSequence", 0x1E, 0x3),
+    type="uint32_t[6]",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Replay_BonusReplayRecordIndices",
@@ -21842,6 +22099,8 @@ stable.data(
     "PKG_FixUpResourceLevelPointers_PowerupCount",
     xref("PKG_FixUpResourceLevelPointers", 0x420, 0x1, required=Required.EN),
     xref("PKG_FixUpResourceLevelPointers", 0x468, 0x1, required=Required.EU_SC),
+    type="char[18]",
+    write_policy=WritePolicy.READ_ONLY,
 )
 
 stable.data(
@@ -21953,15 +22212,13 @@ stable.data(
 stable.data(
     "Save_ReadGameFile_Dat",
     xref("Save_ReadGameFile", 0x6, 0x1),
-    type="char",
+    type="char[13]",
     doc=(
-        'First byte of the "savegame.dat" path literal shared by Save_ReadGameFile and '
-        "Save_WriteGameFile."
+        "NUL-terminated \"savegame.dat\" path used by Save_ReadGameFile and Save_WriteGameFile."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
-stable.data("Save_WriteGameFile_ModeWriteBinary", xref("Save_WriteGameFile", 0x1, 0x1))
 stable.data(
     "Video_PlayMovieIntro_ErrPlay",
     xref("Video_PlayMovieIntro", 0xF9, 0x1),
@@ -22153,6 +22410,8 @@ stable.data(
     "PKG_LocatePackagePath_PcdogsPKG",
     xref("PKG_LocatePackagePath", 0x45, 0x1, required=Required.EN),
     xref("PKG_LocatePackagePath", 0x4A, 0x1, required=Required.EU_SC),
+    type="char[11]",
+    write_policy=WritePolicy.READ_ONLY,
 )
 stable.data(
     "Math_GenerateRandom_Seed", xref("Math_GenerateRandom", 0x0, 0x2), type="int32_t"
@@ -22264,12 +22523,6 @@ stable.data(
     xref("Input_IsKeyPressed", 0x2C, 0x3),
     type="Input_KeyMappingRecord[0x56]",
     doc="Keyboard mapping records containing scan codes and display-name pointers; the display-name pointer terminates the scan.",
-)
-stable.data(
-    "Input_IsKeyPressed_FirstMappingDisplayName",
-    xref("Input_IsKeyPressed", 0x0, 0x1),
-    type="char const*",
-    doc="Display-name pointer in the first keyboard mapping record; the scan uses it as a null terminator.",
 )
 stable.data(
     "String_ParseInt_CharTypeTable",
@@ -22593,7 +22846,11 @@ stable.data(
     type="int32_t",
 )
 
-stable.data("Graphics_DrawQuad_Vertex0", xref("Graphics_DrawQuad", 0x3CC, 0x6))
+stable.data(
+    "Graphics_DrawQuad_Vertex0",
+    xref("Graphics_DrawQuad", 0x3CC, 0x6),
+    type="D3D_TransformedVertex",
+)
 
 stable.data(
     "Graphics_DrawQuad_Vertex0U", xref("Graphics_DrawQuad", 0x288, 0x2), type="float"
@@ -22602,7 +22859,11 @@ stable.data(
     "Graphics_DrawQuad_Vertex0V", xref("Graphics_DrawQuad", 0x29D, 0x2), type="float"
 )
 
-stable.data("Graphics_DrawQuad_Vertex1", xref("Graphics_DrawQuad", 0x3D6, 0x6))
+stable.data(
+    "Graphics_DrawQuad_Vertex1",
+    xref("Graphics_DrawQuad", 0x3D6, 0x6),
+    type="D3D_TransformedVertex",
+)
 
 stable.data(
     "Graphics_DrawQuad_Vertex1U", xref("Graphics_DrawQuad", 0x2B4, 0x2), type="float"
@@ -22611,7 +22872,11 @@ stable.data(
     "Graphics_DrawQuad_Vertex1V", xref("Graphics_DrawQuad", 0x2C9, 0x2), type="float"
 )
 
-stable.data("Graphics_DrawQuad_Vertex2", xref("Graphics_DrawQuad", 0x3E0, 0x6))
+stable.data(
+    "Graphics_DrawQuad_Vertex2",
+    xref("Graphics_DrawQuad", 0x3E0, 0x6),
+    type="D3D_TransformedVertex",
+)
 
 stable.data(
     "Graphics_DrawQuad_Vertex2U", xref("Graphics_DrawQuad", 0x2EC, 0x2), type="float"
@@ -22620,7 +22885,11 @@ stable.data(
     "Graphics_DrawQuad_Vertex2V", xref("Graphics_DrawQuad", 0x304, 0x2), type="float"
 )
 
-stable.data("Graphics_DrawQuad_Vertex3", xref("Graphics_DrawQuad", 0x3EA, 0x6))
+stable.data(
+    "Graphics_DrawQuad_Vertex3",
+    xref("Graphics_DrawQuad", 0x3EA, 0x6),
+    type="D3D_TransformedVertex",
+)
 
 stable.data(
     "Graphics_DrawQuad_Vertex3U", xref("Graphics_DrawQuad", 0x35A, 0x2), type="float"
@@ -22715,15 +22984,7 @@ stable.data(
 stable.data(
     "Graphics_ClipAndDrawPolygon_VertexWorkBuffer",
     xref("Graphics_ClipAndDrawPolygon", 0x40E, 0x1),
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV1Base",
-    xref("Graphics_ClipAndDrawPolygon", 0x41F, 0x1),
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV2Base",
-    xref("Graphics_ClipAndDrawPolygon", 0x4A9, 0x1),
-    doc="Vertex 2 in the 28-byte-stride quad work buffer.",
+    type="Graphics_ClipVertex",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipQuadSrcU",
@@ -22734,11 +22995,6 @@ stable.data(
     "Graphics_ClipAndDrawPolygon_ClipQuadSrcV",
     xref("Graphics_ClipAndDrawPolygon", 0x347, 0x2),
     type="float",
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_VertexWorkBufferV3Base",
-    xref("Graphics_ClipAndDrawPolygon", 0x436, 0x1),
-    doc="Vertex 3 in the 28-byte-stride quad work buffer.",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipQuadDstU",
@@ -22823,15 +23079,7 @@ stable.data(
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipInputBuffer",
     xref("Graphics_ClipAndDrawPolygon", 0x413, 0x1),
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputBufferV1",
-    xref("Graphics_ClipAndDrawPolygon", 0x424, 0x1),
-    doc="Vertex 1 in the 28-byte-stride clip input buffer.",
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputBufferV2",
-    xref("Graphics_ClipAndDrawPolygon", 0x43B, 0x1),
+    type="Graphics_ClipVertex",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipInputVertex2U",
@@ -22893,21 +23141,25 @@ stable.data(
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBuffer",
     xref("Graphics_DrawQuad", 0x4ED, 0x1),
+    type="D3D_TransformedVertexNoTex",
 )
 
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBufferVertex1",
     xref("Graphics_DrawQuad", 0x512, 0x6),
+    type="D3D_TransformedVertexNoTex",
 )
 
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBufferVertex2",
     xref("Graphics_DrawQuad", 0x52D, 0x6),
+    type="D3D_TransformedVertexNoTex",
 )
 
 stable.data(
     "Graphics_DrawQuad_UntexturedVertexBufferVertex3",
     xref("Graphics_DrawQuad", 0x523, 0x6),
+    type="D3D_TransformedVertexNoTex",
 )
 
 stable.data(
@@ -22946,68 +23198,13 @@ stable.data(
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipOutputBuffer",
     xref("Graphics_ClipAndDrawPolygon", 0x5A8, 0x1),
+    type="Graphics_ClipVertex",
 )
 stable.data(
     "Graphics_ClipAndDrawPolygon_ClipInputAttributes",
     xref("Graphics_ClipAndDrawPolygon", 0x378, 0x2),
     type="Graphics_ClipAttribute[3]",
     doc="Three Graphics_ClipAttribute records used as input by Graphics_ClipAndDrawPolygon.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute0Component1",
-    xref("Graphics_ClipAndDrawPolygon", 0x384, 0x2),
-    type="float",
-    doc="Float component 1 of clip-input attribute record 0.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute0Component2",
-    xref("Graphics_ClipAndDrawPolygon", 0x39C, 0x1),
-    type="float",
-    doc="Float component 2 of clip-input attribute record 0.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute1",
-    xref("Graphics_ClipAndDrawPolygon", 0x3B0, 0x2),
-    type="Graphics_ClipAttribute",
-    doc="Clip-input attribute record 1; three float components copied from vertex colors.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute1Component1",
-    xref("Graphics_ClipAndDrawPolygon", 0x3B6, 0x2),
-    type="float",
-    doc="Float component 1 of clip-input attribute record 1.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute1Component2",
-    xref("Graphics_ClipAndDrawPolygon", 0x3BC, 0x1),
-    type="float",
-    doc="Float component 2 of clip-input attribute record 1.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute2",
-    xref("Graphics_ClipAndDrawPolygon", 0x390, 0x2),
-    type="Graphics_ClipAttribute",
-    doc="Clip-input attribute record 2; three float components copied from vertex colors.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute2Component1",
-    xref("Graphics_ClipAndDrawPolygon", 0x3A6, 0x2),
-    type="float",
-    doc="Float component 1 of clip-input attribute record 2.",
-    unstable=True,
-)
-stable.data(
-    "Graphics_ClipAndDrawPolygon_ClipInputAttribute2Component2",
-    xref("Graphics_ClipAndDrawPolygon", 0x3C1, 0x2),
-    type="float",
-    doc="Float component 2 of clip-input attribute record 2.",
     unstable=True,
 )
 stable.data(
@@ -23021,10 +23218,12 @@ stable.data(
 stable.data(
     "Graphics_ClipPolygonByCameraPyramid_TempVertexBuffer",
     xref("Graphics_ClipPolygonByCameraPyramid", 0x18, 0x1),
+    type="Graphics_ClipVertex",
 )
 stable.data(
     "Graphics_ClipPolygonByCameraPyramid_TempUVBuffer",
     xref("Graphics_ClipPolygonByCameraPyramid", 0x1D, 0x1),
+    type="Graphics_ClipAttribute",
 )
 stable.data(
     "Graphics_CurrentBoundTextureSurface",
@@ -23302,11 +23501,6 @@ stable.data(
     type="int32_t",
 )
 stable.data(
-    "Bone_TransformWeightedVerticesForRender_SpriteVertexFlags",
-    xref("Bone_TransformWeightedVerticesForRender", 0x5D3, 0x2),
-    type="uint8_t",
-)
-stable.data(
     "Bone_TransformWeightedVerticesForRender_SpriteLastPositionX",
     xref("Bone_TransformWeightedVerticesForRender", 0x300, 0x2),
     type="int32_t",
@@ -23326,18 +23520,6 @@ stable.data(
     xref("Bone_TransformWeightedVerticesForRender", 0x576, 0x4),
     type="Graphics_ProjectedVertex[0x3e8]",
     doc="Shared 1000-entry projected sprite-vertex buffer. Each eight-byte entry holds signed 16-bit screen X/Y and signed 32-bit view Z.",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_ProjectedSpriteVertex0ScreenY",
-    xref("Bone_TransformWeightedVerticesForRender", 0x57E, 0x4),
-    type="int16_t",
-    doc="Signed 16-bit screen Y coordinate of projected sprite vertex 0.",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_ProjectedSpriteVertex0ViewZ",
-    xref("Bone_TransformWeightedVerticesForRender", 0x47F, 0x3),
-    type="int32_t",
-    doc="Signed 32-bit view Z coordinate of projected sprite vertex 0.",
 )
 stable.data(
     "UI_PuppyCounterAnimState",
@@ -23386,11 +23568,6 @@ stable.data(
     type="uint8_t",
 )
 stable.data(
-    "Settings_Language",
-    xref("Settings_SetLanguage", 0x4, 0x1),
-    doc="Persisted language ID byte at settings offset 2 in EU/SC.",
-)
-stable.data(
     "Menu_HandleOptionsLogic_OptionValueScratch",
     xref("Menu_HandleOptionsLogic", 0x95, 0x1),
     type="int32_t[0xa]",
@@ -23408,53 +23585,16 @@ stable.data(
 stable.data(
     "Save_LoadGameState_FileBuffer",
     xref("Save_LoadGameState", 0xD, 0x1),
-    type="Save_GameData",
+    type="Save_GameRecord",
     doc="Save-file header followed by save-slot payloads; passed to Save_InitGameOperation with total size 0x1dc.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
 stable.data(
-    "Save_LoadGameState_FileGameState",
-    xref("Save_LoadGameState", 0x70, 0x2),
-    type="int32_t",
-    doc=(
-        "Four packed Save_VolumeSettings bytes read as a dword from the save-file header."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-)
-stable.data(
-    "Save_LoadGameState_FileGameSettings",
-    xref("Save_LoadGameState", 0x76, 0x2),
-    type="int32_t",
-    doc=(
-        "Four packed Config_GameSettings bytes read as a dword from the save-file header."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-)
-stable.data(
-    "Save_LoadGameState_FileRumbleSuppressFlag",
-    xref("Save_LoadGameState", 0x6B, 0x1),
-    type="int32_t",
-    doc=(
-        "Persisted rumble-suppression dword at Save_GameData offset 0xC, restored into Settings_RumbleSuppressFlag."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-)
-stable.data(
     "Menu_HandleSaveGameLogic_Buffer",
     xref("Menu_HandleSaveGameLogic", 0x318, 0x2),
-    type="Save_GameSlot",
-    doc=(
-        "First save-slot record immediately after the Save_GameData header. Native file operations cover storage, consistent with five slot-sized records."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "Menu_HandleSaveGameLogic_SlotValidFlags",
-    xref("Menu_HandleSaveGameLogic", 0x13C, 0x3),
-    type="uint8_t",
-    doc="First save-slot valid byte at Save_GameSlot+1; Save_SaveGameToSlot sets saveSlots[slotIndex].is_valid to 1.",
+    type="Save_GameSlot[5]",
+    doc="The five slots in g_saveRecord.slots, also named g_saveGameBuffer.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
@@ -23466,29 +23606,6 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
 )
 
-stable.data(
-    "Menu_HandleOptionsLogic_InputKeyboardMappings",
-    xref("Menu_HandleOptionsLogic", 0x425, 0x3, required=Required.EN),
-    type="int32_t",
-    doc=(
-        "First entry of the player-1/keyboard binding range inside options_menu_backup_data. "
-        "Options UI compares 11 keyboard-side entries."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-
-stable.data(
-    "Menu_HandleOptionsLogic_InputGamepadMappings",
-    xref("Menu_HandleOptionsLogic", 0x9A, 0x1),
-    type="int32_t",
-    doc=(
-        "First entry of the player-2/gamepad binding range inside options_menu_backup_data. "
-        "Options UI uses 10 gamepad-side entries."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
 stable.data(
     "Shared_LoadCommonResources_PKGResourceDataBuffer",
     xref("Shared_LoadCommonResources", 0x4D, 0x1),
@@ -23601,58 +23718,15 @@ stable.data(
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
-    "Level_InitializeSaveState_GameLivesBackup",
-    xref("Level_InitializeSaveState", 0x7, 0x1),
+    "UI_UpdateLives_State",
+    xref("UI_UpdateLives", 0x12F, 0x3),
+    type="UI_LivesIconState[4]",
+)
+stable.data(
+    "UI_UpdateLives_Counter1",
+    xref("UI_UpdateLives", 0x51, 0x1),
     type="uint8_t",
-    doc=("Lives-backup byte at offset 2 of the active Save_GameSlot."),
-    write_policy=WritePolicy.RAW_MEMORY,
 )
-stable.data(
-    "Save_InitializeGameState_InitFlag",
-    xref("Save_InitializeGameState", 0x16, 0x2),
-    type="uint8_t",
-    doc="Active Save_GameSlot+3 initialization flag set to 4 by Save_InitializeGameState.",
-    write_policy=WritePolicy.RAW_MEMORY,
-)
-stable.data(
-    "Save_SetGameComplete_Flag",
-    xref("Save_SetGameComplete", 0x4, 0x1),
-    type="uint8_t",
-    doc="Active Save_GameSlot+4 game-complete flag written by Save_SetGameComplete.",
-    write_policy=WritePolicy.RAW_MEMORY,
-)
-stable.data(
-    "Level_InitializeBonusData_SaveGameBonusData",
-    xref("Level_InitializeBonusData", 0x6, 0x4),
-    type="uint16_t",
-    doc=(
-        "First entry of the active Save_GameSlot packed bonus-level parameter table read by "
-        "Level_InitializeBonusData."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "Save_GameLevelCompletion_BestTime",
-    xref("Save_SaveGameLevelCompletion", 0x83, 0x3),
-    type="uint16_t",
-    doc=(
-        "Active Save_GameSlot best time/value for the TOB bonus level, written from menu_items by "
-        "Save_SaveGameLevelCompletion."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "Level_InitializeBonusData_SaveGameBonusNameEntryBuffer",
-    xref("Level_InitializeBonusData", 0x12, 0x3),
-    type="uint8_t",
-    doc="First byte of the active Save_GameSlot bonus/name-entry payload copied with each save slot.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data("UI_UpdateLives_State", xref("UI_UpdateLives", 0x12F, 0x3))
-stable.data("UI_UpdateLives_Counter1", xref("UI_UpdateLives", 0x51, 0x1))
 stable.data(
     "Shared_LoadCommonResources_SoundDataBase",
     xref("Shared_LoadCommonResources", 0x32, 0x1),
@@ -23708,14 +23782,14 @@ stable.data(
     "Menu_RenderSaveGame_LoadModeFlag",
     xref("Menu_RenderSaveGame", 0x114, 0x1),
     type="uint8_t",
-    doc="Save/load mode byte in the save-menu state cluster.",
+    doc="Success byte in the save-menu operation, named g_saveLoadModeFlag in the decomp.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
     "Menu_HandleSaveGameLogic_OperationResult",
     xref("Menu_HandleSaveGameLogic", 0x93, 0x2),
     type="uint8_t",
-    doc="Save operation result/status byte written by Menu_HandleSaveGameLogic.",
+    doc="Completed operation code, named g_saveOperationResult in the decomp.",
     write_policy=WritePolicy.RAW_MEMORY,
     stable=True,
 )
@@ -23751,7 +23825,7 @@ stable.data(
 stable.data(
     "Menu_RenderSaveGame_State",
     xref("Menu_RenderSaveGame", 0xF9, 0x2),
-    type="int32_t",
+    type="Save_MenuDelays",
     doc="Packed save-menu transition/countdown dword; native code accesses individual byte lanes.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
@@ -24042,6 +24116,7 @@ stable.data(
 stable.data(
     "Collision_DetectActorCollisions_ObjectList",
     xref("Collision_DetectActorCollisions", 0x41, 0x1),
+    type="Collision_Node*[100]",
 )
 
 stable.data(
@@ -24092,6 +24167,7 @@ stable.data(
 stable.data(
     "Collision_DetectAndResolve3DCollision_ResponseBuffer",
     xref("Collision_DetectAndResolve3DCollision", 0x1AC6, 0x3),
+    type="Collision_Polygon[6]",
 )
 stable.data(
     "Collision_InitializePlaneLookupTables_CollisionPlanePointers",
@@ -24156,24 +24232,6 @@ stable.data(
 )
 
 stable.data(
-    "Level_InitializeActorSystem_CollisionDispatchActorFunc",
-    xref("Level_InitializeActorSystem", 0x11, 0x2),
-    type="ActorCollisionProbeCallback",
-    doc="Actor collision response callback slot initialized to Actor_ProcessCollisionResponse; part of the sparse collision-state callback vector.",
-    write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
-)
-
-stable.data(
-    "Collision_InitializeFunctionPointers_ComponentResponseFunc",
-    xref("Collision_InitializeFunctionPointers", 0xA, 0x2),
-    type="ActorCollisionProbeCallback",
-    doc="Component and projectile collision response callback slot initialized to Collision_ProcessProjectileHit.",
-    write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
-)
-
-stable.data(
     "Powerup_CollisionFilterCallback",
     xref("Collision_ProcessPowerupCollisions", 0x3, 0x1),
     type="Powerup_CollisionCallback",
@@ -24204,20 +24262,12 @@ stable.data(
 stable.data(
     "Audio_StartSoundPlayback_Slots",
     xref("Audio_StartSoundPlayback", 0x70, 0x2),
-    type="Audio_SoundSlot",
+    type="Audio_SoundSlot[9]",
     doc=(
-        "Base entry of the nine-slot Audio_SoundSlot array. Audio_InitializeSystem seeds the "
-        "allocation cursor after the base entry, and SDK typed globals resolve to the array base."
+        "Nine sound playback slots. Audio_InitializeSystem seeds the allocation cursor after the first slot."
     ),
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
-)
-stable.data(
-    "Audio_ShutdownSystem_SoundSlot0SampleHandle",
-    xref("Audio_ShutdownSystem", 0x11, 0x1),
-    type="Audio_AILHSample",
-    doc="Sample-handle field of sound_slots[0]. Audio_ShutdownSystem iterates this field across all sound slots.",
-    write_policy=WritePolicy.RAW_MEMORY,
 )
 stable.data(
     "Audio_SetStreamVolume_MusicStreamHandle",
@@ -24299,6 +24349,9 @@ stable.data(
 stable.data(
     "Trail_UpdateAndRenderBone_Entries",
     xref("Trail_UpdateAndRenderBone", 0x497, 0x1),
+    type="Trail_BoneQueueEntry[5]",
+    doc="Five bone markers preceding the path nodes. Each marker records a position and spawn frame.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
 )
 stable.data(
     "Trail_ResetBone_Entry0Timestamp",
@@ -24308,6 +24361,7 @@ stable.data(
 stable.data(
     "Trail_UpdateAndRenderBone_Entry0PosX",
     xref("Trail_UpdateAndRenderBone", 0x40B, 0x1),
+    type="int32_t",
 )
 
 stable.data(
@@ -24536,7 +24590,7 @@ stable.data(
     "PKG_LoadEntry_Toc",
     xref("PKG_LoadEntry", 0x45, 0x3),
     type="PKG_TOCEntry",
-    doc=("Package table of contents. Each PKG_TOCEntry stores a file offset and size."),
+    doc="First package table-of-contents entry. PKG_OpenAndReadTOC copies 138 entries in EN, 305 in EU, and 235 in SC.",
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
 )
@@ -24578,16 +24632,8 @@ stable.data(
 stable.data(
     "Audio_FreeSoundSlot_Entries",
     xref("Audio_FreeSoundSlot", 0xA, 0x1),
-    type="Audio_SoundEntry",
-    doc="Base of the active and free sound-entry pool; Audio_AllocateSoundSlot computes slot indices from this base.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "Audio_AllocateSoundSlot_Reserved",
-    xref("Audio_AllocateSoundSlot", 0x11, 0x1),
-    type="Audio_SoundEntry",
-    doc="Ninth Audio_SoundEntry at sound_entries[8], reserved for Audio_SoundDefinition flags bit 0x80 before being linked into the active list.",
+    type="Audio_SoundEntry[9]",
+    doc="Nine sound entries shared by the free and active lists. Slot 8 is reserved.",
     write_policy=WritePolicy.RAW_MEMORY,
     unstable=True,
 )
@@ -24654,7 +24700,7 @@ stable.data(
 stable.data(
     "String_SetTable_Table",
     xref("String_SetTable", 0x4, 0x1),
-    type="int16_t*",
+    type="Text_StringEntry*",
     doc="Active package or localization string table read by String_GetByIndex.",
     write_policy=WritePolicy.RAW_MEMORY,
 )
@@ -24713,11 +24759,6 @@ stable.data(
     type="Title_SpotRecord[0x18]",
 )
 stable.data(
-    "Title_InitializeSpots_TimerArray",
-    xref("Title_InitializeSpots", 0x152, 0x4),
-    type="int16_t",
-)
-stable.data(
     "PKG_ResourceTitleBonusReplayResource",
     xref("Title_CleanupScreenResources", 0xC, 0x1),
 )
@@ -24746,17 +24787,6 @@ stable.data(
     "Mem_AllocateHandle_Pool",
     xref("Mem_AllocateHandle", 0x52, 0x2),
     type="Mem_HandlePoolEntry[0x186a0]",
-)
-stable.data(
-    "Mem_InitializeAllocator_HandlePoolHandleID",
-    xref("Mem_InitializeAllocator", 0xA, 0x1),
-    type="uint32_t",
-)
-stable.data(
-    "Mem_InitializeAllocator_LastPoolEntryNextFree",
-    xref("Mem_InitializeAllocator", 0x2D, 0x2),
-    type="Mem_HandlePoolEntry*",
-    doc="Final Mem_HandlePoolEntry.next_free cell; allocator initialization clears it to terminate the free list.",
 )
 stable.data(
     "Mem_AllocateHandle_PoolHead",
@@ -24806,53 +24836,6 @@ stable.data(
     type="Camera_FullRuntime",
 )
 stable.data(
-    "Player_ProcessMovement_FacingAngle",
-    xref("Player_ProcessMovement", 0x159, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Player_ProcessMovement_CameraYawAngle",
-    xref("Player_ProcessMovement", 0x162, 0x3),
-    type="int16_t",
-    doc="Signed camera yaw word at EN 0x624348, subtracted at 0x409b62. The adjacent word is camera FOV; do not read or write this alias as a packed uint32_t.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "Camera_SetViewport_FOV",
-    xref("Camera_SetViewport", 0x36, 0x2),
-    type="int16_t",
-    doc="Camera field-of-view word consumed when rebuilding projection.",
-)
-stable.data(
-    "Camera_SetViewport_FocalDistance",
-    xref("Camera_SetViewport", 0x3C, 0x2),
-    type="int32_t",
-    doc="Camera focal-distance dword reset before projection is recalculated.",
-)
-stable.data(
-    "Audio_ListenerCameraPos_Flag10Set",
-    xref("Checkers_UpdateStateMachine", 0x73, 0x6),
-    type="Math_Vec3I32XZY",
-    doc="Camera eye position used as the audio listener when frame flag 0x10 is set. Storage component order is X, Z, Y.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "Audio_ListenerCameraPos_Flag10Clear",
-    xref("Audio_PlaySoundDefinition3D", 0x67, 0x1),
-    type="Math_Vec3I32XZY",
-    doc="Camera target position used as the audio listener when frame flag 0x10 is clear. Storage component order is X, Z, Y.",
-    write_policy=WritePolicy.RAW_MEMORY,
-    unstable=True,
-)
-stable.data(
-    "PKG_InitializeSystem_MaxRenderDistanceQ12",
-    xref("PKG_InitializeSystem", 0x14, 0x2),
-    type="int32_t",
-    doc="Camera maximum render-distance dword in Q12 units at Camera_Runtime offset 0xB8.",
-)
-stable.data(
     "PKG_UnloadResourceGameData_LevelInitCallback2",
     xref("PKG_UnloadResourceGameData", 0x43, 0x2),
     type="Graphics_Render_ListCallback",
@@ -24869,9 +24852,6 @@ stable.data(
     type="Graphics_Render_ListCallback",
     doc="Fixed nullable Graphics_ListState +0xC8 pre-list slot. Resource activation installs Graphics_ClearBackground.",
     write_policy=WritePolicy.ENGINE_MANAGED,
-)
-stable.data(
-    "Scene_RenderFrame_VertexBatchBuffer", xref("Scene_RenderFrame", 0x57A, 0x1)
 )
 stable.data(
     "Menu_UpdateInput_StatePreviousP1",
@@ -25033,8 +25013,8 @@ stable.data(
 stable.data(
     "Collision_InitializeFunctionPointers_ProjectileLogicFunc",
     xref("Collision_InitializeFunctionPointers", 0x0, 0x2),
-    type="Actor_BehaviorCallback",
-    doc="Preprocess slot 2, initialized to Component_UpdateProjectileLogic. Callers ignore its return value.",
+    type="Component_ProjectileLogicCallback",
+    doc="Preprocess slot 2, initialized to Component_UpdateProjectileLogic.",
     write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
@@ -25103,42 +25083,6 @@ stable.data(
     "Graphics_DrawQuad_RenderFrameCount",
     xref("Graphics_DrawQuad", 0xB9D, 0x2),
     type="int32_t",
-)
-
-stable.data(
-    "String_GetByIndex_LocalizationLanguageID",
-    xref("String_GetByIndex", 0xA1, 0x1, required=Required.EN),
-    type="int32_t",
-)
-
-stable.data(
-    "String_GetByIndex_TableLoaded",
-    xref("String_GetByIndex", 0x7C, 0x1, required=Required.EN),
-    type="int32_t",
-)
-
-stable.data(
-    "Menu_RenderConfirmPrompt_StringMenuBufferPtr",
-    xref("Menu_RenderConfirmPrompt", 0x50, 0x2),
-    type="char*",
-)
-
-stable.data(
-    "String_GetByIndex_TableSize",
-    xref("String_GetByIndex", 0x61, 0x2, required=Required.EN),
-    type="int32_t",
-)
-
-stable.data(
-    "Input_FormatButtonName_NoKeyAssignedString",
-    xref("Input_FormatButtonName", 0x5C, 0x1),
-    type="char*",
-    doc=(
-        'Cached heap string for "No key assigned"; slot 12 of input_button_name_buffers shares '
-        "this address."
-    ),
-    write_policy=WritePolicy.RAW_MEMORY,
-    stable=True,
 )
 
 stable.data(
@@ -25414,28 +25358,18 @@ stable.data(
 stable.data(
     "Collision_ProcessActorToActorCollisions_StateHandlerTable",
     xref("Collision_ProcessActorToActorCollisions", 0xC6, 0x3),
-    type="Collision_ProcessCallback",
+    type="Collision_ProcessCallback[4]",
     doc=(
-        "Read-only first entry of the collision-state callback table indexed by actor "
-        "collision subtype; slot 2 aliases collision_process_func."
+        "Collision callbacks indexed by actor subclass. Slot 2 aliases the actor collision processing callback."
     ),
     write_policy=WritePolicy.READ_ONLY,
     unstable=True,
 )
 
 stable.data(
-    "Level_InitializeActorSystem_CollisionProcessFunc",
-    xref("Level_InitializeActorSystem", 0x1B, 0x2),
-    type="Collision_ProcessCallback",
-    doc="Engine-managed scalar actor collision processing callback slot initialized to Physics_ProcessActorCollision and aliased by collision_state_handler_table slot 2.",
-    write_policy=WritePolicy.ENGINE_MANAGED,
-    unstable=True,
-)
-
-stable.data(
     "Collision_DebugPolygonListCounts",
     xref("Graphics_IsPolygonInDebugList", 0x0, 0x1),
-    type="int32_t",
+    type="int32_t[10]",
     doc=(
         "Parallel count array for collision polygon list slices registered by "
         "Collision_DetectAndResolve3DCollision and queried by Graphics_IsPolygonInDebugList."
@@ -25444,6 +25378,7 @@ stable.data(
 stable.data(
     "Collision_DebugPolygonListBases",
     xref("Graphics_IsPolygonInDebugList", 0x27, 0x3),
+    type="Collision_Polygon*[10]",
     doc=(
         "Parallel base-pointer array for Collision_Polygon slices registered by Collision_DetectAndResolve3DCollision. Graphics_IsPolygonInDebugList checks whether a candidate polygon address falls inside one of these slices."
     ),
@@ -25494,7 +25429,9 @@ stable.data(
 stable.data(
     "Input_ControllerHammerheadProfileName",
     xref("Menu_RenderControllerPresetSelection", 0x1A, 0x1),
-    doc="Hammerhead controller name and preset information shown in menus.",
+    type="Input_ControllerPreset",
+    doc="First controller preset, beginning with its name. The EN table contains four presets.",
+    write_policy=WritePolicy.ENGINE_MANAGED,
     unstable=True,
 )
 
@@ -25547,7 +25484,7 @@ stable.data(
 stable.data(
     "Menu_AnimateSlots_PKGResourceCurrentUsableMaterials",
     xref("Menu_AnimateSlots", 0x16, 0x2),
-    type="int32_t",
+    type="Material_RefEntry*",
 )
 stable.data(
     "Menu_ProcessMenuState_GradientColorValue",
@@ -25558,46 +25495,6 @@ stable.data(
     "Bone_TransformWeightedVerticesForRender_GraphicsRenderTransformMatrix",
     xref("Bone_TransformWeightedVerticesForRender", 0x1C, 0x1),
     type="int16_t[0x9]",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix01",
-    xref("Bone_TransformWeightedVerticesForRender", 0x23, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix02",
-    xref("Bone_TransformWeightedVerticesForRender", 0x3C, 0x2),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix10",
-    xref("Bone_TransformWeightedVerticesForRender", 0x35, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix11",
-    xref("Bone_TransformWeightedVerticesForRender", 0xA1, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix12",
-    xref("Bone_TransformWeightedVerticesForRender", 0x57, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix20",
-    xref("Bone_TransformWeightedVerticesForRender", 0x50, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix21",
-    xref("Bone_TransformWeightedVerticesForRender", 0x62, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Bone_TransformWeightedVerticesForRender_GraphicsRenderMatrix22",
-    xref("Bone_TransformWeightedVerticesForRender", 0xCD, 0x3),
-    type="int16_t",
 )
 stable.data(
     "Graphics_RenderPolygonBatch_HighlightMode",
@@ -25628,46 +25525,6 @@ stable.data(
     "Graphics_SetPolygonUVs_CameraTransformMatrix",
     xref("Graphics_SetPolygonUVs", 0x15B, 0x3),
     type="Math_Matrix3x3I16",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_TransformMatrixElement1",
-    xref("Graphics_SetPolygonUVs", 0x13E, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM02",
-    xref("Graphics_SetPolygonUVs", 0x167, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM10",
-    xref("Graphics_SetPolygonUVs", 0x130, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM11",
-    xref("Graphics_SetPolygonUVs", 0x173, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM12",
-    xref("Graphics_SetPolygonUVs", 0x17F, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM20",
-    xref("Graphics_SetPolygonUVs", 0x18B, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM21",
-    xref("Graphics_SetPolygonUVs", 0x195, 0x3),
-    type="int16_t",
-)
-stable.data(
-    "Graphics_SetPolygonUVs_CameraMatrixM22",
-    xref("Graphics_SetPolygonUVs", 0x19F, 0x3),
-    type="int16_t",
 )
 stable.data(
     "Graphics_RenderPolygonMesh_NodeViewTranslationX",
@@ -25739,59 +25596,14 @@ stable.data(
     type="uint32_t[0x4]",
 )
 stable.data(
-    "Graphics_DrawQuad_TempVertexColorBlueVertex1",
-    xref("Graphics_DrawQuad", 0x7BB, 0x2),
-    type="uint32_t",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorBlueVertex2",
-    xref("Graphics_DrawQuad", 0x87D, 0x2),
-    type="uint32_t",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorBlueVertex3",
-    xref("Graphics_DrawQuad", 0x98, 0x2),
-    type="uint32_t",
-)
-stable.data(
     "Graphics_ClipAndDrawPolygon_ColorGreen",
     xref("Graphics_ClipAndDrawPolygon", 0x247, 0x3),
     type="uint32_t[0x4]",
 )
 stable.data(
-    "Graphics_DrawQuad_TempVertexColorGreenVertex1",
-    xref("Graphics_DrawQuad", 0x7A4, 0x2),
-    type="uint32_t",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorGreenVertex2",
-    xref("Graphics_DrawQuad", 0x866, 0x2),
-    type="uint32_t",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorGreenVertex3",
-    xref("Graphics_DrawQuad", 0x8D, 0x2),
-    type="uint32_t",
-)
-stable.data(
     "Graphics_ClipAndDrawPolygon_ColorRed",
     xref("Graphics_ClipAndDrawPolygon", 0x229, 0x3),
     type="uint32_t[0x4]",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorRedVertex1",
-    xref("Graphics_DrawQuad", 0x791, 0x1),
-    type="uint32_t",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorRedVertex2",
-    xref("Graphics_DrawQuad", 0x851, 0x2),
-    type="uint32_t",
-)
-stable.data(
-    "Graphics_DrawQuad_TempVertexColorRedVertex3",
-    xref("Graphics_DrawQuad", 0x194, 0x2),
-    type="uint32_t",
 )
 stable.data(
     "D3D_InitializeDirectDraw_GraphicsSupportsGammaRamp",
@@ -25849,108 +25661,10 @@ stable.data(
     unstable=True,
 )
 stable.data(
-    "Camera_SetupClipPlanes_SidePlane0NormalY",
-    xref("Camera_SetupClipPlanes", 0xC6, 0x1),
-    type="float",
-    doc="Side-plane 0 normal Y component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane0NormalZ",
-    xref("Camera_SetupClipPlanes", 0xCF, 0x2),
-    type="float",
-    doc="Side-plane 0 normal Z component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane0Distance",
-    xref("Camera_SetupClipPlanes", 0xF1, 0x2),
-    type="float",
-    doc="Side-plane 0 distance.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane1",
-    xref("Camera_SetupClipPlanes", 0x158, 0x2),
-    type="Graphics_ClipPlane",
-    doc="Complete side-plane 1 record.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane1NormalY",
-    xref("Camera_SetupClipPlanes", 0x166, 0x1),
-    type="float",
-    doc="Side-plane 1 normal Y component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane1NormalZ",
-    xref("Camera_SetupClipPlanes", 0x16F, 0x2),
-    type="float",
-    doc="Side-plane 1 normal Z component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane1Distance",
-    xref("Camera_SetupClipPlanes", 0x191, 0x2),
-    type="float",
-    doc="Side-plane 1 distance.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane2",
-    xref("Camera_SetupClipPlanes", 0x1AF, 0x2),
-    type="Graphics_ClipPlane",
-    doc="Complete side-plane 2 record.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane2NormalY",
-    xref("Camera_SetupClipPlanes", 0x1B5, 0x1),
-    type="float",
-    doc="Side-plane 2 normal Y component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane2NormalZ",
-    xref("Camera_SetupClipPlanes", 0x1BA, 0x2),
-    type="float",
-    doc="Side-plane 2 normal Z component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane2Distance",
-    xref("Camera_SetupClipPlanes", 0x1C0, 0x2),
-    type="float",
-    doc="Side-plane 2 distance.",
-    unstable=True,
-)
-stable.data(
     "Graphics_ClipPolygonByCameraPyramid_FourthSideClipPlane",
     xref("Graphics_ClipPolygonByCameraPyramid", 0xA1, 0x2),
     type="Graphics_ClipPlane",
     doc="Fourth software side-plane record, derived from screen-edge points by Camera_SetupClipPlanes.",
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane3NormalY",
-    xref("Camera_SetupClipPlanes", 0x116, 0x1),
-    type="float",
-    doc="Fourth side-plane normal Y component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane3NormalZ",
-    xref("Camera_SetupClipPlanes", 0x11F, 0x2),
-    type="float",
-    doc="Fourth side-plane normal Z component.",
-    unstable=True,
-)
-stable.data(
-    "Camera_SetupClipPlanes_SidePlane3Distance",
-    xref("Camera_SetupClipPlanes", 0x141, 0x2),
-    type="float",
-    doc="Fourth side-plane distance.",
-    unstable=True,
 )
 stable.data(
     "D3D_CreateTextureSurface_GraphicsPixelBlueShift",
@@ -26094,7 +25808,8 @@ stable.data(
     type="int32_t[0x6]",
 )
 stable.data(
-    "Level_InitializeSaveState_MenuSlots", xref("Level_InitializeSaveState", 0xF6, 0x2)
+    "Level_InitializeSaveState_MenuSlots", xref("Level_InitializeSaveState", 0xF6, 0x2),
+    type="uint32_t[8]"
 )
 stable.data(
     "Actor_UpdateAnimationState_ConfirmTextEnabled",
@@ -26112,35 +25827,6 @@ stable.data(
     type="int32_t[0x6]",
     doc="Six-dword world-bonus working array reused by checkers. In checkers mode slot 0 is player-is-human, slot 3 enforces capture, slot 4 is AI difficulty, and slot 5 is the current player.",
 )
-stable.data(
-    "Level_InitializeSaveState_GameBonusProgressValue",
-    xref("Level_InitializeSaveState", 0x1E5, 0x1),
-    type="int32_t",
-)
-stable.data(
-    "Level_InitializeSaveState_GameStateInitFlag",
-    xref("Level_InitializeSaveState", 0x1F0, 0x2),
-    type="int32_t",
-)
-stable.data(
-    "Checkers_UpdateStateMachine_EnforceCaptureRule",
-    xref("Checkers_UpdateStateMachine", 0x26D, 0x2),
-    type="int32_t",
-)
-stable.data(
-    "Checkers_AIDifficulty",
-    xref("Checkers_UpdateStateMachine", 0x598, 0x1),
-    type="int32_t",
-    doc="Checkers AI difficulty selector read by the state machine.",
-    unstable=True,
-)
-stable.data(
-    "Checkers_UpdateStateMachine_CurrentPlayer",
-    xref("Checkers_UpdateStateMachine", 0x105, 0x2),
-    type="int32_t",
-    doc="Current checkers side: live play uses player values 1 and 2, toggled with xor 3, and is set to 0 for the no-move/end state.",
-)
-
 stable.data(
     "Script_OpPauseToggle_CameraHeight",
     xref("Script_OpPauseToggle", 0x199, 0x1, required=Required.EN),
@@ -26241,7 +25927,7 @@ stable.data(
     xref("Audio_TriggerMusicTransition", 0x41, 0x1),
     type="Level_Data*",
     doc=(
-        "Active Level_Data pointer. Cast to Level_RuntimeData to access the unstable full layout."
+        "Active level data pointer. Enable the unstable SDK to access its members."
     ),
     write_policy=WritePolicy.ENGINE_MANAGED,
     stable=True,
@@ -26366,7 +26052,7 @@ stable.data(
 stable.data(
     "File_SeekAndGetPosition_DescriptorTable",
     xref("File_GetPosition", 0x5C, 0x3),
-    type="CRT_FileDescriptor*",
+    type="CRT_FileDescriptor*[64]",
 )
 stable.data(
     "File_FlushToDisk_IoBufferHighWaterMark",
@@ -26407,16 +26093,9 @@ stable.data(
     "Video_PlayMovieLoop_GetAsyncKeyStateThunk",
     xref("Video_PlayMovieLoop", 0x29, 0x2),
     type="void*",
-    doc="Movie-loop input import cell for GetAsyncKeyState-style key polling; the API binding remains unresolved.",
+    doc="Movie-loop import cell for the Win32 GetAsyncKeyState function.",
     unstable=True,
 )
-stable.data(
-    "Audio_ShutdownSystem_AILReleaseSampleHandle",
-    xref("Audio_ShutdownSystem", 0xA, 0x2),
-    doc="Miles AIL sample-handle release call site/data reference used during audio shutdown.",
-)
-stable.data("Audio_ShutdownSystem_AILShutdown", xref("Audio_ShutdownSystem", 0x37, 0x2))
-
 # Lower-confidence rows stay in the blueprint and carry unstable=True.
 _unstable_rows = Blueprint("unstable")
 
@@ -26634,6 +26313,7 @@ _unstable_rows.struct(
     member("uint16_t", "material_count", 0x1E),
     member("char*", "string_table", 0x20),
     size=0x24,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -26763,6 +26443,7 @@ _unstable_rows.struct(
     member("int16_t", "effect_count", 0xE),
     member("Math_Vec2I16", "scale", 0x10),
     size=0x14,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -26773,6 +26454,7 @@ _unstable_rows.struct(
     member("uint8_t", "frame_pixel_data[572]", 0x20C),
     member("int32_t*", "callback_context", 0x448),
     size=0x44C,
+    alignment=4,
     doc="Movie playback buffer state, covering frame reads, input, and close/skip handling.",
 )
 
@@ -26861,6 +26543,7 @@ _unstable_rows.struct(
         doc="Reserved mesh-node header dword.",
     ),
     size=0x100,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -26921,6 +26604,7 @@ _unstable_rows.struct(
         doc="Relocated pointer and position slot in LOD data rebased by PKG_FixUpResourceObjectNodeType3ComplexActorLike and Actor_CloneTemplateWithTemplateRelativeFixups.",
     ),
     size=0x28,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -26928,6 +26612,7 @@ _unstable_rows.struct(
     member("uint32_t", "mesh_offsets[16]", 0x0),
     member("uint8_t", "offset_padding[64]", 0x40),
     size=0x80,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -27064,6 +26749,7 @@ _unstable_rows.struct(
     ),
     member("int16_t", "reserved_aa", 0xAA),
     size=0xAC,
+    alignment=4,
     doc=(
         "Sprite/UI entry with two texture/context/frame layers plus move, scale, color, "
         "and rotation tween blocks; mutated by Script_OpSetSpriteProperty and "
@@ -27077,6 +26763,7 @@ _unstable_rows.struct(
     member("uint16_t", "reserved", 0x2),
     member("Component_TrailObject*", "ptr", 0x4),
     size=0x8,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -27085,6 +26772,7 @@ _unstable_rows.struct(
     member("uint32_t", "entry_count", 0x4),
     member("uint8_t", "layout_padding[12]", 0x8),
     size=0x14,
+    alignment=4,
 )
 
 _unstable_rows.struct(
@@ -27097,6 +26785,8 @@ _unstable_rows.struct(
         doc="Unparsed package-header bytes after the table of contents copied by PKG_OpenAndReadTOC.",
     ),
     size=0x800,
+    alignment=4,
+    doc="English on-disk package header.",
 )
 
 _unstable_rows.struct(
@@ -27110,6 +26800,7 @@ _unstable_rows.struct(
     member("uint16_t", "padding", 0x1C),
     member("uint8_t", "padding_1e[2]", 0x1E),
     size=0x20,
+    alignment=4,
     doc="Compact scene-node payload/resource-record prefix shared by older Group, Model, and "
     "Object shapes.",
 )
@@ -27126,6 +26817,7 @@ _unstable_rows.struct(
     member("uint8_t", "padding_1e[2]", 0x1E),
     member("int32_t", "extra_data", 0x20),
     size=0x24,
+    alignment=4,
     doc="Compact scene sub-node payload/resource-record variant.",
 )
 
@@ -27150,6 +26842,7 @@ stable.struct(
     member("Actor_State*", "attached_actors[0x2]", 0x19C),
     member("Actor_ContactSlot", "contact_slots[0x4]", 0x1A4),
     size=0x1C4,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27171,6 +26864,7 @@ stable.struct(
     member("uint8_t", "reserved_89[0x27]", 0x89),
     member("Animation_FrameVertex**", "skin_frame_tables", 0xB0),
     size=0xB4,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27243,6 +26937,7 @@ stable.struct(
     member("int32_t", "rotation", 0xF0),
     member("Component_SpawnParams*", "spawn_context", 0xF4),
     size=0xF8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27260,6 +26955,7 @@ stable.struct(
     member("uint32_t", "diffuse_color", 0x10),
     member("Math_UVFloat", "uv", 0x14),
     size=0x1C,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27279,6 +26975,7 @@ stable.struct(
     member("uint32_t", "opaque_6c", 0x6C),
     member("Material_TableEntry*", "material", 0x70),
     size=0x74,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27295,6 +26992,7 @@ stable.struct(
     member("Math_Vec3I16", "offset", 0xC),
     member("uint16_t", "opaque_12", 0x12),
     size=0x14,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27310,6 +27008,7 @@ stable.struct(
     member("int16_t", "controller_count", 0x2),
     member("MaterialControllerSlot**", "controller_slot_array", 0x4),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27334,6 +27033,7 @@ stable.struct(
     member("uint8_t", "reserved_71[0x47]", 0x71),
     member("Actor_State*", "pending_ground_actor", 0xB8),
     size=0xBC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27353,6 +27053,7 @@ stable.struct(
     member("int16_t", "depth_bias", 0x14),
     member("int16_t", "depth_bias_q12", 0x16),
     size=0x18,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27424,6 +27125,7 @@ stable.struct(
     member("Actor_State*", "attached_actors[0x2]", 0x19C),
     member("Actor_ContactSlot", "contact_slots[0x4]", 0x1A4),
     size=0x1C4,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27442,6 +27144,7 @@ stable.struct(
     member("uint32_t", "frame", 0x20),
     member("uint32_t", "reserved_24", 0x24),
     size=0x28,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27459,6 +27162,7 @@ stable.struct(
     member("int16_t", "aux_x", 0xC),
     member("int16_t", "aux_y", 0xE),
     size=0x10,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27478,6 +27182,7 @@ stable.struct(
     member("Math_Vec2I16", "bound_extent", 0x68),
     member("Graphics_Render_MeshBillboardRuntimeView", "payload", 0x6C),
     size=0x80,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27521,6 +27226,7 @@ stable.struct(
     member("Math_Vec3I32", "render_offset", 0xCC),
     member("Scene_Type1RenderOwnerView*", "animation_source_owner", 0xD8),
     size=0xDC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27548,6 +27254,7 @@ stable.struct(
     member("int16_t", "repeat_countdown_7a", 0x7A),
     member("Signal_TimedEventNode*", "next_7c", 0x7C),
     size=0x80,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27571,6 +27278,7 @@ stable.struct(
     member("int16_t", "segment_index", 0x1A),
     member("Trail_Segment*", "segment_array", 0x1C),
     size=0x20,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27585,6 +27293,7 @@ stable.struct(
     member("int32_t", "signalNumber", 0x4),
     member("uint32_t", "action", 0x8),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27600,6 +27309,7 @@ stable.struct(
     member("uint16_t", "reserved_02", 0x2),
     member("char const*", "display_name", 0x4),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Key code and display-name entry from the English executable. The word at +2 remains reserved.",
@@ -27612,6 +27322,7 @@ stable.struct(
     member("float", "rhw", 0xC),
     member("uint32_t", "diffuse_color", 0x10),
     size=0x14,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27631,6 +27342,7 @@ stable.struct(
     member("int16_t", "start_tick", 0x8),
     member("uint16_t", "unknown_0a", 0xA),
     size=0xC,
+    alignment=2,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27646,6 +27358,7 @@ stable.struct(
     member("uint32_t", "handle_id", 0x8),
     member("uint32_t", "size", 0xC),
     size=0x10,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27698,6 +27411,7 @@ stable.struct(
     member("Replay_InputRecord32*", "records", 0x4),
     member("uint32_t", "unknown_08", 0x8),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27722,6 +27436,7 @@ stable.struct(
     member("uint32_t", "exclusion_flags", 0x88),
     member("int32_t", "cull_radius", 0x8C),
     size=0x90,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27737,6 +27452,7 @@ stable.struct(
     member("uint8_t", "lookahead", 0x5),
     member("uint16_t", "reserved", 0x6),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27805,6 +27521,7 @@ stable.struct(
     member("uint8_t", "digit_count", 0x3),
     member("char", "digits[22]", 0x4),
     size=0x1A,
+    alignment=2,
     incomplete=False,
     unstable=True,
     doc="Decimal conversion output: point position, sign, digit count, and a 22-byte digits or special-token buffer.",
@@ -27816,6 +27533,7 @@ stable.struct(
     member("CRT_SEHFilterEntry", "filter_entry", 0x4),
     member("CRT_SEHHandlerEntry", "handler_entry", 0x8),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="MSVC x86 SEH scope-table entry with an enclosing try level and filter/handler entry points.",
@@ -27828,6 +27546,7 @@ stable.struct(
     member("CRT_SEHScopeEntry*", "scope_table", 0x8),
     member("int32_t", "try_level", 0xC),
     size=0x10,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="MSVC x86 SEH registration record used by local/global unwind and setjmp3.",
@@ -27847,6 +27566,7 @@ stable.struct(
     member("CRT_UnwindCallback", "unwind_callback", 0x24),
     member("uint32_t", "unwind_data[6]", 0x28),
     size=0x40,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc=(
@@ -27861,6 +27581,7 @@ stable.struct(
     member("CRT_HeapFreeBlock*", "next", 0x4),
     member("CRT_HeapFreeBlock*", "prev", 0x8),
     size=0xC,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Free heap block header with size flags and doubly linked bin pointers.",
@@ -27871,6 +27592,7 @@ stable.struct(
     member("CRT_HeapFreeBlock*", "next", 0x0),
     member("CRT_HeapFreeBlock*", "prev", 0x4),
     size=0x8,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Heap bin head containing forward and backward free-block links.",
@@ -27881,6 +27603,7 @@ stable.struct(
     member("int32_t", "allocated_count", 0x0),
     member("CRT_HeapFreeList", "bins[64]", 0x4),
     size=0x204,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Per-page allocation count and 64 free-list bins.",
@@ -27894,6 +27617,7 @@ stable.struct(
     member("uint32_t", "high_class_bitmap_by_page[32]", 0xC4),
     member("CRT_HeapPageState", "pages[32]", 0x144),
     size=0x41C4,
+    alignment=4,
     incomplete=False,
     unstable=True,
     doc="Heap page map with 64 class counters, two bitmap arrays, and 32 page states.",
@@ -29544,7 +29268,7 @@ stable.data(
 stable.data(
     "g_crtCurrentExceptionPointers",
     xref("CRT_XcptFilter", 0x3A, 0x2, required=Required.EN),
-    type="void*",
+    type="struct _EXCEPTION_POINTERS*",
     unstable=True,
     doc="Current exception pointers used by the CRT exception filter.",
 )
@@ -29552,8 +29276,9 @@ stable.data(
 stable.data(
     "g_crtCommandLineBuffer",
     xref("CRT_SetArgv", 0x17, 0x1, required=Required.EN),
+    type="char[260]",
     unstable=True,
-    doc="CRT storage used by CRT_SetArgv. Type and size are unknown.",
+    doc="Path to the current executable populated by GetModuleFileNameA during CRT argument setup.",
 )
 
 stable.data(
@@ -29897,14 +29622,6 @@ stable.data(
 )
 
 stable.data(
-    "g_fileDescriptorTableExtended",
-    xref("CRT_InitIO", 0x92, 0x1, required=Required.EN),
-    type="CRT_FileDescriptor*[0x3f]",
-    unstable=True,
-    doc="63 pointer cells extending the CRT descriptor-block table beyond its first block.",
-)
-
-stable.data(
     "g_crtHeapHandle",
     xref("Mem_Realloc", 0xA9, 0x2, required=Required.EN),
     type="HANDLE",
@@ -29955,17 +29672,2537 @@ stable.data(
 stable.data(
     "g_atexitHandlerNext",
     xref("CRT_OnExit", 0x13, 0x2, required=Required.EN),
-    type="void*",
+    type="CRT_ExitCallback*",
     unstable=True,
-    doc="Pointer to the next atexit callback slot. Stored as an opaque pointer.",
+    doc="Next free callback slot in the dynamically allocated atexit table.",
 )
 
 stable.data(
     "g_atexitHandlerBase",
     xref("CRT_OnExit", 0x1, 0x2, required=Required.EN),
-    type="int32_t",
+    type="CRT_ExitCallback*",
     unstable=True,
-    doc="32-bit base-address cell for the dynamically allocated atexit callback table.",
+    doc="Pointer to the first callback slot in the dynamically allocated atexit table.",
 )
+
+stable.data(
+    "CRT_PrintfStateTable",
+    xref("String_FormatCRTVStringAlt", 0x57, 0x4, required=Required.EN),
+    type="uint8_t const",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="First byte of the combined character-class and parser-state table used by the CRT formatter.",
+)
+
+stable.data(
+    "CRT_ApplicationInitializers",
+    xref("CRT_CInit", 0x1f, 0x1, required=Required.EN),
+    type="CRT_ExitCallback[1]",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="Callback slots traversed during CRT application initializer processing.",
+)
+
+stable.data(
+    "CRT_SubsystemInitializers",
+    xref("CRT_CInit", 0x10, 0x1, required=Required.EN),
+    type="CRT_ExitCallback[4]",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="Callback slots traversed during CRT subsystem initializer processing.",
+)
+
+stable.data(
+    "CRT_PreTerminators",
+    xref("CRT_DoExit", 0x65, 0x1, required=Required.EN),
+    type="CRT_ExitCallback[2]",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="Callback slots traversed during CRT pre-termination processing.",
+)
+
+stable.data(
+    "CRT_Terminators",
+    xref("CRT_DoExit", 0x76, 0x1, required=Required.EN),
+    type="CRT_ExitCallback[1]",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="Callback slots traversed during CRT termination processing.",
+)
+
+stable.data(
+    "CRT_StaticStreams",
+    xref("CRT_InitStdio", 0x55, 0x1, required=Required.EN),
+    type="File_Handle[20]",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="Twenty statically allocated streams linked into the CRT file-handle table during startup.",
+)
+
+stable.data(
+    "CRT_MultibyteClassMasks",
+    xref("CRT_SetMbcp", 0xe1, 0x2, required=Required.EN),
+    type="uint8_t const[4]",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="Masks applied to the four character ranges when installing a multibyte code page.",
+)
+
+stable.data(
+    "CRT_PositivePowersOfTen",
+    xref("CRT_FltPower10", 0x7, 0x1, required=Required.EN),
+    type="CRT_LD12Fields const",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="First entry of the packed positive power-of-ten table used for extended-precision decimal scaling.",
+)
+
+stable.data(
+    "CRT_NegativePowersOfTen",
+    xref("CRT_FltPower10", 0x1b, 0x1, required=Required.EN),
+    type="CRT_LD12Fields const",
+    write_policy=WritePolicy.READ_ONLY,
+    unstable=True,
+    doc="First entry of the packed reciprocal power-of-ten table used for extended-precision decimal scaling.",
+)
+
+stable.data(
+    "Debug_LogMessageBuffer",
+    xref("Debug_Log", 0x17, 0x1, required=Required.EN),
+    type="char",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="First byte of the shared scratch buffer used to format diagnostic log messages.",
+)
+
+stable.data(
+    "Menu_NameEntryCursor",
+    xref("Menu_ProcessNameEntryInput", 0x44, 0x3, required=Required.EN),
+    type="int8_t",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="Cursor into the three-character bonus-name input field.",
+)
+
+stable.data(
+    "Menu_NameEntryText",
+    xref("Menu_ProcessNameEntryInput", 0x4b, 0x2, required=Required.EN),
+    type="char[4]",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="Editable bonus name with space for three characters and a NUL terminator.",
+)
+
+stable.data(
+    "Menu_HighlightGradient",
+    xref("Menu_RenderControllerPresetSelection", 0x4, 0x1, required=Required.EN),
+    type="Menu_ColorGradientState",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="Gradient state shared by menu rendering and selection highlighting.",
+)
+
+stable.data(
+    "CRT_MultibyteCaseFold",
+    xref("CRT_SetMbcpUpdateTables", 0x10c, 0x2, required=Required.EN),
+    type="uint8_t[256]",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="One case-conversion byte per single-byte character code.",
+)
+
+stable.data(
+    "String_FormatBuffer",
+    xref("String_GetByIndex", 0x1b1, 0x1, required=Required.EN),
+    type="char",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="First byte of the shared buffer for localized controller prompts.",
+)
+
+stable.data(
+    "Graphics_SpriteVertexWorkspace",
+    xref("Scene_FinalizeNodeRender", 0x2e8, 0x1, required=Required.EN),
+    type="Graphics_SpriteVertexData[1000]",
+    write_policy=WritePolicy.ENGINE_MANAGED,
+    unstable=True,
+    doc="Sprite vertex records prepared by the skinning pass and consumed during scene rendering.",
+)
+
+# Named game constants from dogstuff/decomp b1bebd6 (PC English).
+stable.enum(
+    "Actor_MovementOpcode",
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_RESET", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_RIGHT", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_LEFT", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_FORWARD", 3),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_STEP_FORWARD", 4),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_REVERSE", 5),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_STEP_REVERSE", 6),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_RESUME", 7),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_PAUSE", 8),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_SKIP_UPDATE", 9),
+    enum_value("DTTR_PCDOGS_ACTOR_MOVE_LATCH_STOP", 10),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_AnimationState",
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_NONE", -1),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_IDLE", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_DEATH", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_WALK", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_RUN", 3),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_JUMP_START", 4),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_AIRBORNE", 5),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_DAMAGE", 6),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_DRIFT", 7),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_PRIMARY_ACTION", 8),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_ATTACHMENT_ACTION", 9),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_FORCED", 10),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_NO_BONE", 18),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_BONE_ACTION", 19),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_DEATH_SETTLE", 20),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_SURFACE_IDLE", 21),
+    enum_value("DTTR_PCDOGS_ACTOR_ANIMATION_SURFACE_MOVE", 22),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_DeathStage",
+    enum_value("DTTR_PCDOGS_ACTOR_DEATH_ALIVE", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_DEATH_WAIT_FOR_LANDING", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_DEATH_ANIMATING", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_DEATH_SETTLING", 3),
+    enum_value("DTTR_PCDOGS_ACTOR_DEATH_RESPAWN_OR_FADE", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_ObjectKind",
+    enum_value("DTTR_PCDOGS_ACTOR_OBJECT_UNTYPED", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_OBJECT_SCENE_OWNER", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_OBJECT_STATIC_COLLISION", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_OBJECT_RUNTIME", 3),
+    enum_value("DTTR_PCDOGS_ACTOR_OBJECT_FORCE_EMITTER", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_TransitionPhase",
+    enum_value("DTTR_PCDOGS_ACTOR_PHASE_NONE", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_PHASE_ACTIVE", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_PHASE_PROJECTILE", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_PHASE_LEAVING", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_TraceTarget",
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_ACTIVE_ENTITIES", -32768),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_CURRENT_RESPAWN", -32767),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_NEAREST_RESPAWN", -32766),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_ENTITY_SCAN", -32765),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_NAVIGATION_POSITION", -32764),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_CURRENT_RESPAWN_ALTERNATE", -32763),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_FIRST_RESPAWN", -32762),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_LAST_RESPAWN", -32761),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_NAVIGATION_POSITION_ALTERNATE", -32760),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_CURRENT_RESPAWN_FALLBACK", -32759),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_BONUS_RESPAWN_POSITION", -32756),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_ALL_ENTITIES", -32755),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_COMMAND_FIRST", -20000),
+    enum_value("DTTR_PCDOGS_ACTOR_TARGET_COMMAND_END", -19745),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_InputCondition",
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_ALWAYS", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_MOVING", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_ACTION_1", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_ACTION_2", 3),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_ACTION_3", 4),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_CONFIRM", 5),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_LEFT", 6),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_RIGHT", 7),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_UP", 8),
+    enum_value("DTTR_PCDOGS_ACTOR_INPUT_CONDITION_DOWN", 9),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_FacingSelector",
+    enum_value("DTTR_PCDOGS_ACTOR_FACING_RELATIVE", -32760),
+    enum_value("DTTR_PCDOGS_ACTOR_FACING_ABSOLUTE", -32758),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_ConditionSelector",
+    enum_value("DTTR_PCDOGS_ACTOR_CONDITION_ALWAYS", 0),
+    enum_value("DTTR_PCDOGS_ACTOR_CONDITION_HAZARD_TIMER_EXPIRED", 1),
+    enum_value("DTTR_PCDOGS_ACTOR_CONDITION_CAMERA_PRIORITY", 2),
+    enum_value("DTTR_PCDOGS_ACTOR_CONDITION_INPUT_OR_CONTACT", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_ContactLayer",
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_RESPONSE_SLOT_0", 13),
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_TIMED_DAMAGE", 14),
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_RESPONSE_SLOT_2", 15),
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_RESPONSE_SLOT_3", 16),
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_RESPONSE_SLOT_4", 17),
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_MOVING_PLATFORM", 18),
+    enum_value("DTTR_PCDOGS_ACTOR_CONTACT_CAMERA_OVERRIDE", 19),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_RenderExclusionMode",
+    enum_value("DTTR_PCDOGS_ACTOR_RENDER_DISTANCE_RANGE_EXCLUSION", 17),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_TraceFilter",
+    enum_value("DTTR_PCDOGS_ACTOR_TRACE_FILTER_ACTIVE_ENTITIES", -19896),
+    enum_value("DTTR_PCDOGS_ACTOR_TRACE_FILTER_INACTIVE_ENTITIES", -19895),
+    unstable=True,
+)
+
+stable.enum(
+    "Actor_NavigationCommand",
+    enum_value("DTTR_PCDOGS_ACTOR_NAV_COMMAND_DEATH", 100),
+    enum_value("DTTR_PCDOGS_ACTOR_NAV_COMMAND_GEOMETRY_CONTACT", 102),
+    enum_value("DTTR_PCDOGS_ACTOR_NAV_COMMAND_ACTOR_CONTACT", 103),
+    enum_value("DTTR_PCDOGS_ACTOR_NAV_COMMAND_FIRST_COMPONENT_ACTION", 106),
+    unstable=True,
+)
+
+stable.enum(
+    "Animation_MaterialControllerKind",
+    enum_value("DTTR_PCDOGS_ANIMATION_CONTROLLER_UV_SCROLL", 1),
+    enum_value("DTTR_PCDOGS_ANIMATION_CONTROLLER_COLOR", 2),
+    enum_value("DTTR_PCDOGS_ANIMATION_CONTROLLER_FRAMES", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Animation_VertexColorTimeMode",
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_SHARED_TIME", 0),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_SHARED_TIME_ALTERNATE", 1),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_REFLECT", 2),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_OFFSET_VARIANT_3", 3),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_OFFSET_VARIANT_4", 4),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_OFFSET_VARIANT_5", 5),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_OFFSET_VARIANT_6", 6),
+    enum_value("DTTR_PCDOGS_ANIMATION_VERTEX_COLOR_OFFSET_VARIANT_7", 7),
+    unstable=True,
+)
+
+stable.enum(
+    "Audio_PlaybackStatus",
+    enum_value("DTTR_PCDOGS_AUDIO_PLAYBACK_PLAYING", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Audio_StreamPauseMode",
+    enum_value("DTTR_PCDOGS_AUDIO_STREAM_RESUME", 0),
+    enum_value("DTTR_PCDOGS_AUDIO_STREAM_PAUSE", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Audio_MilesPreference",
+    enum_value("DTTR_PCDOGS_AUDIO_MILES_PREFERENCE_WAVEOUT", 15),
+    enum_value("DTTR_PCDOGS_AUDIO_MILES_PREFERENCE_STARTUP_OPTION", 33),
+    unstable=True,
+)
+
+stable.enum(
+    "Camera_DefinitionMode",
+    enum_value("DTTR_PCDOGS_CAMERA_DEFINITION_ENTITY_RELATIVE", 0),
+    enum_value("DTTR_PCDOGS_CAMERA_DEFINITION_ABSOLUTE", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Camera_ScreenBorderState",
+    enum_value("DTTR_PCDOGS_CAMERA_SCREEN_BORDER_ACTIVE", 1),
+    enum_value("DTTR_PCDOGS_CAMERA_SCREEN_BORDER_SKIPPABLE", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Checkers_Difficulty",
+    enum_value("DTTR_PCDOGS_CHECKERS_DIFFICULTY_EASY", 0),
+    enum_value("DTTR_PCDOGS_CHECKERS_DIFFICULTY_NORMAL", 1),
+    enum_value("DTTR_PCDOGS_CHECKERS_DIFFICULTY_HARD", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Checkers_NavigationCommand",
+    enum_value("DTTR_PCDOGS_CHECKERS_NAV_SOURCE_CELL", 115),
+    enum_value("DTTR_PCDOGS_CHECKERS_NAV_DESTINATION_CELL", 116),
+    enum_value("DTTR_PCDOGS_CHECKERS_NAV_SELECTABLE_CELL", 117),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_NodeKind",
+    enum_value("DTTR_PCDOGS_COLLISION_NODE_MESH", 1),
+    enum_value("DTTR_PCDOGS_COLLISION_NODE_ORIENTED_BOX", 2),
+    enum_value("DTTR_PCDOGS_COLLISION_NODE_ACTOR", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_ProbeClass",
+    enum_value("DTTR_PCDOGS_COLLISION_CLASS_WALL_PROBE", 0xfe),
+    enum_value("DTTR_PCDOGS_COLLISION_CLASS_CAMERA_PROBE", 0xff),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_ActorClass",
+    enum_value("DTTR_PCDOGS_COLLISION_ACTOR_CLASS_CHARACTER", 2),
+    enum_value("DTTR_PCDOGS_COLLISION_ACTOR_CLASS_PROJECTILE", 3),
+    enum_value("DTTR_PCDOGS_COLLISION_ACTOR_CLASS_POWERUP", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_ExtentEncoding",
+    enum_value("DTTR_PCDOGS_COLLISION_EXTENTS_PACKED_PAIRS", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_TargetKind",
+    enum_value("DTTR_PCDOGS_COLLISION_TARGET_MESH", 1),
+    enum_value("DTTR_PCDOGS_COLLISION_TARGET_ORIENTED_BOX", 2),
+    enum_value("DTTR_PCDOGS_COLLISION_TARGET_ACTOR", 3),
+    enum_value("DTTR_PCDOGS_COLLISION_TARGET_CHAIN", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_SurfaceTrailMode",
+    enum_value("DTTR_PCDOGS_COLLISION_SURFACE_TRAIL_IMPACT", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Collision_ProbeResult",
+    enum_value("DTTR_PCDOGS_COLLISION_PROBE_SKIP_PAIR", -2),
+    enum_value("DTTR_PCDOGS_COLLISION_PROBE_NO_RESPONSE", -1),
+    unstable=True,
+)
+
+stable.enum(
+    "Component_ActorKind",
+    enum_value("DTTR_PCDOGS_COMPONENT_ACTOR_CHILD", 0),
+    enum_value("DTTR_PCDOGS_COMPONENT_ACTOR_FOLLOWUP", 1),
+    enum_value("DTTR_PCDOGS_COMPONENT_ACTOR_PROJECTILE", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Component_SoundSlot",
+    enum_value("DTTR_PCDOGS_COMPONENT_SOUND_SPAWN", 0),
+    enum_value("DTTR_PCDOGS_COMPONENT_SOUND_FOLLOWUP", 1),
+    enum_value("DTTR_PCDOGS_COMPONENT_SOUND_LAUNCH", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Component_MovementHandler",
+    enum_value("DTTR_PCDOGS_COMPONENT_MOVEMENT_IDLE", 0),
+    enum_value("DTTR_PCDOGS_COMPONENT_MOVEMENT_PROJECTILE", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Component_TransitionPhase",
+    enum_value("DTTR_PCDOGS_COMPONENT_PHASE_INITIAL", 0),
+    enum_value("DTTR_PCDOGS_COMPONENT_PHASE_DEFERRED_PROJECTILE", 2),
+    enum_value("DTTR_PCDOGS_COMPONENT_PHASE_PAUSE_ATTACHMENT", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Entity_DirectionMode",
+    enum_value("DTTR_PCDOGS_ENTITY_DIRECTION_SPEED_HEIGHT_OFFSET_FIRST", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Player_MovementMode",
+    enum_value("DTTR_PCDOGS_PLAYER_MOVEMENT_GROUND", 0),
+    enum_value("DTTR_PCDOGS_PLAYER_MOVEMENT_FIXED", 1),
+    enum_value("DTTR_PCDOGS_PLAYER_MOVEMENT_PATH_JUMP_FIXED", 2),
+    enum_value("DTTR_PCDOGS_PLAYER_MOVEMENT_PATH_JUMP_STEERED", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Graphics_BlendMode",
+    enum_value("DTTR_PCDOGS_GRAPHICS_BLEND_DEFAULT", 0),
+    enum_value("DTTR_PCDOGS_GRAPHICS_BLEND_ALPHA", 1),
+    enum_value("DTTR_PCDOGS_GRAPHICS_BLEND_ADDITIVE", 2),
+    enum_value("DTTR_PCDOGS_GRAPHICS_BLEND_ALPHA_DIM", 3),
+    enum_value("DTTR_PCDOGS_GRAPHICS_BLEND_ADDITIVE_DIM", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Graphics_VertexLayout",
+    enum_value("DTTR_PCDOGS_GRAPHICS_VERTEX_LAYOUT_COLOR", 1),
+    enum_value("DTTR_PCDOGS_GRAPHICS_VERTEX_LAYOUT_TEXTURED", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Graphics_SpriteVertexState",
+    enum_value("DTTR_PCDOGS_GRAPHICS_SPRITE_VERTEX_INVALID", 0),
+    enum_value("DTTR_PCDOGS_GRAPHICS_SPRITE_VERTEX_NEEDS_PROJECTION", 1),
+    enum_value("DTTR_PCDOGS_GRAPHICS_SPRITE_VERTEX_PROJECTED", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Input_JoystickSetupMode",
+    enum_value("DTTR_PCDOGS_INPUT_JOYSTICK_BASIC", 1),
+    enum_value("DTTR_PCDOGS_INPUT_JOYSTICK_EXTENDED", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Input_GamepadControlCode",
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_UP", 1000),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_DOWN", 1001),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_LEFT", 1002),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_RIGHT", 1003),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_RZ_NEGATIVE", 1004),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_RZ_POSITIVE", 1005),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_0", 1006),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_1", 1007),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_2", 1008),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_3", 1009),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_4", 1010),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_5", 1011),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_6", 1012),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_7", 1013),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_8", 1014),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_9", 1015),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_10", 1016),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_11", 1017),
+    enum_value("DTTR_PCDOGS_INPUT_GAMEPAD_BUTTON_12", 1018),
+    unstable=True,
+)
+
+stable.enum(
+    "Input_AnalogControlCode",
+    enum_value("DTTR_PCDOGS_INPUT_ANALOG_COMBINED_POSITIVE_X", 32),
+    enum_value("DTTR_PCDOGS_INPUT_ANALOG_COMBINED_NEGATIVE_X", 33),
+    enum_value("DTTR_PCDOGS_INPUT_ANALOG_COMBINED_POSITIVE_Y", 34),
+    enum_value("DTTR_PCDOGS_INPUT_ANALOG_COMBINED_NEGATIVE_Y", 35),
+    unstable=True,
+)
+
+stable.enum(
+    "Input_AxisDispatch",
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_COMBINED", 0),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_PRIMARY_POSITIVE_X", 1),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_PRIMARY_NEGATIVE_X", 2),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_PRIMARY_POSITIVE_Y", 3),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_PRIMARY_NEGATIVE_Y", 4),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_AUX_POSITIVE_X", 5),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_AUX_NEGATIVE_X", 6),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_AUX_POSITIVE_Y", 7),
+    enum_value("DTTR_PCDOGS_INPUT_AXIS_AUX_NEGATIVE_Y", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "Input_ButtonNameIndex",
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_LEFT", 0),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_RIGHT", 1),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_UP", 2),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_DOWN", 3),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_LEFT_TRIGGER", 4),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_RIGHT_TRIGGER", 5),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_CONFIRM", 6),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_ACTION_1", 7),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_ACTION_3", 8),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_ACTION_2", 9),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_CANCEL", 10),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_SPECIAL", 11),
+    enum_value("DTTR_PCDOGS_INPUT_BUTTON_NAME_UNASSIGNED", 12),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_TransitionSelector",
+    enum_value("DTTR_PCDOGS_LEVEL_TRANSITION_DEFAULT", 200),
+    enum_value("DTTR_PCDOGS_LEVEL_TRANSITION_IDLE", 255),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_LoadMenuState",
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_INITIALIZE", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_SAVED_GAME", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_TITLE", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_MAIN_MENU", 3),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_NEW_STORY", 4),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_OPEN_WORLD_MENU", 5),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_WORLD_MENU", 6),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_STORY", 7),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_WORLD_HUB", 8),
+    enum_value("DTTR_PCDOGS_LEVEL_LOAD_DIRECT", 10),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_StreamState",
+    enum_value("DTTR_PCDOGS_LEVEL_STREAM_TEXTURES", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_STREAM_WAIT_TEXTURES", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_STREAM_AUDIO", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_STREAM_WAIT_AUDIO", 4),
+    enum_value("DTTR_PCDOGS_LEVEL_STREAM_DATA", 5),
+    enum_value("DTTR_PCDOGS_LEVEL_STREAM_FIXUP", 7),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_MainMenuState",
+    enum_value("DTTR_PCDOGS_LEVEL_MAIN_MENU_INITIALIZE", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_MAIN_MENU_INPUT", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_MAIN_MENU_OPTIONS", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_MAIN_MENU_FADE_OUT", 3),
+    enum_value("DTTR_PCDOGS_LEVEL_MAIN_MENU_WAIT_UNLOAD", 4),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_WorldSelectState",
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_SELECT_INITIALIZE", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_SELECT_INPUT", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_SELECT_FADE_OUT", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_SELECT_WAIT_UNLOAD", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_MainMenuChoice",
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_NEW_STORY", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_WORLD_SELECT", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_OPTIONS", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_CHOICE_COUNT", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_IdBoundary",
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_HUB", 6),
+    enum_value("DTTR_PCDOGS_LEVEL_CAMPAIGN_FIRST", 7),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_ONE_BOSS", 11),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_TWO_BOSS", 16),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_THREE_BOSS", 21),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_FOUR_BOSS", 26),
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_FIRST", 27),
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_SECOND", 28),
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_THIRD", 29),
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_FOURTH", 30),
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_FIFTH", 31),
+    enum_value("DTTR_PCDOGS_LEVEL_AFTER_BONUS", 33),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_MenuResult",
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_RESULT_START_STORY", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_RESULT_OPEN_WORLD_SELECT", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_RESULT_START_WORLD_HUB", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_MENU_RESULT_PENDING", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_MainMenuString",
+    enum_value("DTTR_PCDOGS_LEVEL_STRING_NEW_STORY", 15),
+    enum_value("DTTR_PCDOGS_LEVEL_STRING_WORLD_SELECT", 16),
+    enum_value("DTTR_PCDOGS_LEVEL_STRING_OPTIONS", 11),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_BonusCheckpointState",
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_CHECKPOINT_RESET", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_CHECKPOINT_FIRST", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_BonusCommandTarget",
+    enum_value("DTTR_PCDOGS_LEVEL_BONUS_UNLOCK_COMMAND_TARGET", -19884),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_WorldIndex",
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_INDEX_FIRST", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_INDEX_SECOND", 1),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_INDEX_THIRD", 2),
+    enum_value("DTTR_PCDOGS_LEVEL_WORLD_INDEX_FOURTH", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Level_SaveLoadStep",
+    enum_value("DTTR_PCDOGS_LEVEL_SAVE_LOAD_BEGIN", 0),
+    enum_value("DTTR_PCDOGS_LEVEL_SAVE_LOAD_CONTINUE", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Material_NodeKind",
+    enum_value("DTTR_PCDOGS_MATERIAL_NODE_TEXTURE_FRAMES", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_StateCode",
+    enum_value("DTTR_PCDOGS_MENU_STATE_CLOSED", 0),
+    enum_value("DTTR_PCDOGS_MENU_STATE_PAUSE", 1),
+    enum_value("DTTR_PCDOGS_MENU_STATE_OPTIONS", 2),
+    enum_value("DTTR_PCDOGS_MENU_STATE_EXIT_CONFIRM", 3),
+    enum_value("DTTR_PCDOGS_MENU_STATE_RESTART_CONFIRM", 4),
+    enum_value("DTTR_PCDOGS_MENU_STATE_SAVE_PROMPT", 5),
+    enum_value("DTTR_PCDOGS_MENU_STATE_SAVE_BEFORE_EXIT", 6),
+    enum_value("DTTR_PCDOGS_MENU_STATE_TRANSITION_WAIT", 7),
+    enum_value("DTTR_PCDOGS_MENU_STATE_SAVE_SLOTS", 8),
+    enum_value("DTTR_PCDOGS_MENU_STATE_GAME_OVER", 9),
+    enum_value("DTTR_PCDOGS_MENU_STATE_NAME_ENTRY", 10),
+    enum_value("DTTR_PCDOGS_MENU_STATE_GAMEPLAY_FIRST", 11),
+    enum_value("DTTR_PCDOGS_MENU_STATE_GAMEPLAY_SECOND", 12),
+    enum_value("DTTR_PCDOGS_MENU_STATE_LOAD_SLOTS", 13),
+    unstable=True,
+)
+
+stable.enum(
+    "Options_Submenu",
+    enum_value("DTTR_PCDOGS_OPTIONS_SUBMENU_MAIN", 0),
+    enum_value("DTTR_PCDOGS_OPTIONS_SUBMENU_BINDINGS", 1),
+    enum_value("DTTR_PCDOGS_OPTIONS_SUBMENU_PRESET_LIST", 2),
+    enum_value("DTTR_PCDOGS_OPTIONS_SUBMENU_PRESET_CONFIRM", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_Action",
+    enum_value("DTTR_PCDOGS_MENU_ACTION_CONTINUE", 0),
+    enum_value("DTTR_PCDOGS_MENU_ACTION_BACK", 1),
+    enum_value("DTTR_PCDOGS_MENU_ACTION_COMPLETE", 2),
+    enum_value("DTTR_PCDOGS_MENU_ACTION_BINDINGS", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Options_Row",
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_MUSIC_VOLUME", 0),
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_SFX_VOLUME", 1),
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_STEREO", 2),
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_RUMBLE", 3),
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_GAMMA", 4),
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_CONTROLS", 5),
+    enum_value("DTTR_PCDOGS_OPTIONS_ROW_BACK", 6),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_Transition",
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_CONTINUE", 0),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_RESUME", 1),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_RESTORE_MUSIC", 3),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_LEVEL_SELECT", 4),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_TITLE", 5),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_RELOAD_LEVEL", 6),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_QUIT", 7),
+    enum_value("DTTR_PCDOGS_MENU_TRANSITION_SKIP_TITLE", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_BindingDevice",
+    enum_value("DTTR_PCDOGS_MENU_BINDING_KEYBOARD", 0),
+    enum_value("DTTR_PCDOGS_MENU_BINDING_JOYSTICK", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_SaveDialogChoice",
+    enum_value("DTTR_PCDOGS_MENU_SAVE_DIALOG_YES", 0),
+    enum_value("DTTR_PCDOGS_MENU_SAVE_DIALOG_NO", 1),
+    enum_value("DTTR_PCDOGS_MENU_SAVE_DIALOG_HIDDEN", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_SaveStatus",
+    enum_value("DTTR_PCDOGS_MENU_SAVE_STATUS_RESET", 3),
+    enum_value("DTTR_PCDOGS_MENU_SAVE_STATUS_OVERWRITE_CONFIRM", 4),
+    enum_value("DTTR_PCDOGS_MENU_SAVE_STATUS_FOOTER_READY", 6),
+    enum_value("DTTR_PCDOGS_MENU_SAVE_STATUS_CONFIRM_REQUEST", 10),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_NameEntryCommand",
+    enum_value("DTTR_PCDOGS_MENU_NAME_ENTRY_BACKSPACE", -1),
+    enum_value("DTTR_PCDOGS_MENU_NAME_ENTRY_FINISH", -2),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_BindingRow",
+    enum_value("DTTR_PCDOGS_MENU_BINDING_ROW_KEYBOARD_ONLY", 10),
+    enum_value("DTTR_PCDOGS_MENU_BINDING_ROW_PRESETS", 11),
+    enum_value("DTTR_PCDOGS_MENU_BINDING_ROW_ACTIONS", 12),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_ExitContext",
+    enum_value("DTTR_PCDOGS_MENU_EXIT_CONTEXT_PAUSE_EXIT", 3),
+    enum_value("DTTR_PCDOGS_MENU_EXIT_CONTEXT_MANUAL_SAVE", 5),
+    enum_value("DTTR_PCDOGS_MENU_EXIT_CONTEXT_NAME_ENTRY", 10),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_PauseRow",
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_RESUME", 0),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_OPTIONS", 1),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_PLAYER_TRANSITION", 2),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_RESTART", 3),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_TITLE", 4),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_LOAD", 5),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_EXIT", 6),
+    enum_value("DTTR_PCDOGS_MENU_PAUSE_ROW_COUNT", 7),
+    unstable=True,
+)
+
+stable.enum(
+    "Menu_BindingActionColumn",
+    enum_value("DTTR_PCDOGS_MENU_BINDING_ACTION_RESET", 0),
+    enum_value("DTTR_PCDOGS_MENU_BINDING_ACTION_ACCEPT", 1),
+    enum_value("DTTR_PCDOGS_MENU_BINDING_ACTION_CANCEL", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_NodeFixupKind",
+    enum_value("DTTR_PCDOGS_PKG_NODE_HIERARCHY", 0),
+    enum_value("DTTR_PCDOGS_PKG_NODE_MESH", 1),
+    enum_value("DTTR_PCDOGS_PKG_NODE_SIBLING_ONLY", 2),
+    enum_value("DTTR_PCDOGS_PKG_NODE_MESH_COMPONENTS", 3),
+    enum_value("DTTR_PCDOGS_PKG_NODE_SPRITE", 7),
+    enum_value("DTTR_PCDOGS_PKG_NODE_MATERIAL_POINTER", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_MaterialEntryKind",
+    enum_value("DTTR_PCDOGS_PKG_MATERIAL_ENTRY_EXTRA_PAYLOAD", 1),
+    enum_value("DTTR_PCDOGS_PKG_MATERIAL_ENTRY_TABLE_REFERENCE", 7),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_CommonEntry",
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_TITLE_TEXTURES", 0),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_TITLE_AUDIO", 1),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_TITLE_PACKAGE", 2),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_SHARED_TEXTURES", 31),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_SHARED_AUDIO", 32),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_SHARED_PACKAGE", 33),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_LEVEL_TEXTURES", 36),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_LEVEL_AUDIO", 37),
+    enum_value("DTTR_PCDOGS_PKG_ENTRY_LEVEL_DATA", 38),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_LoadingScreenState",
+    enum_value("DTTR_PCDOGS_PKG_LOADING_SELECT_IMAGE", 0),
+    enum_value("DTTR_PCDOGS_PKG_LOADING_FADE_IN", 1),
+    enum_value("DTTR_PCDOGS_PKG_LOADING_WAIT_RESOURCE", 2),
+    enum_value("DTTR_PCDOGS_PKG_LOADING_FADE_OUT", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_MeshSubtype",
+    enum_value("DTTR_PCDOGS_PKG_MESH_WITH_EXTRA_POINTER", 6),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_LoadingString",
+    enum_value("DTTR_PCDOGS_PKG_STRING_LOADING_HEADER", 47),
+    enum_value("DTTR_PCDOGS_PKG_STRING_CAMPAIGN_LEVEL_OFFSET", 793),
+    enum_value("DTTR_PCDOGS_PKG_STRING_BONUS_LEVEL_OFFSET", 873),
+    enum_value("DTTR_PCDOGS_PKG_STRING_AFTER_BONUS", 856),
+    unstable=True,
+)
+
+stable.enum(
+    "Package_TrailDataKind",
+    enum_value("DTTR_PCDOGS_PKG_TRAIL_DATA_SCENE_NODE", 0),
+    unstable=True,
+)
+
+stable.enum(
+    "Physics_MovementMode",
+    enum_value("DTTR_PCDOGS_PHYSICS_MOVE_FREE_STEERING", 0),
+    enum_value("DTTR_PCDOGS_PHYSICS_MOVE_FACING_DRIVE", 1),
+    enum_value("DTTR_PCDOGS_PHYSICS_MOVE_FACING_DRIVE_AIR_ROLL", 2),
+    enum_value("DTTR_PCDOGS_PHYSICS_MOVE_FREE_STEERING_AIR_ROLL", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Powerup_TypeBoundary",
+    enum_value("DTTR_PCDOGS_POWERUP_SCORE_LAST", 3),
+    enum_value("DTTR_PCDOGS_POWERUP_HEALTH_FIRST", 4),
+    enum_value("DTTR_PCDOGS_POWERUP_INVENTORY_FIRST", 6),
+    enum_value("DTTR_PCDOGS_POWERUP_EXTRA_LIFE", 14),
+    enum_value("DTTR_PCDOGS_POWERUP_TRAIL_TEMPLATE", 15),
+    unstable=True,
+)
+
+stable.enum(
+    "Powerup_SpawnSignalEvent",
+    enum_value("DTTR_PCDOGS_POWERUP_SIGNAL_ENABLE", 1),
+    enum_value("DTTR_PCDOGS_POWERUP_SIGNAL_DISABLE", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Powerup_AnimationState",
+    enum_value("DTTR_PCDOGS_POWERUP_ANIMATION_COLLECTION", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Powerup_ActorPhase",
+    enum_value("DTTR_PCDOGS_POWERUP_PHASE_IDLE", 0),
+    enum_value("DTTR_PCDOGS_POWERUP_PHASE_COLLECTED", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_SharingMode",
+    enum_value("DTTR_PCDOGS_CRT_SHARE_DENY_READ_WRITE", 0x10),
+    enum_value("DTTR_PCDOGS_CRT_SHARE_DENY_WRITE", 0x20),
+    enum_value("DTTR_PCDOGS_CRT_SHARE_DENY_READ", 0x30),
+    enum_value("DTTR_PCDOGS_CRT_SHARE_DENY_NONE", 0x40),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_WindowsApiMode",
+    enum_value("DTTR_PCDOGS_CRT_API_UNSELECTED", 0x0),
+    enum_value("DTTR_PCDOGS_CRT_API_WIDE", 0x1),
+    enum_value("DTTR_PCDOGS_CRT_API_ANSI", 0x2),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_SEHTryLevel",
+    enum_value("DTTR_PCDOGS_CRT_SEH_TRY_NONE", -1),
+    enum_value("DTTR_PCDOGS_CRT_SEH_TRY_PROTECTED", 0),
+    enum_value("DTTR_PCDOGS_CRT_SEH_TRY_MAPPED_BUFFER", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_SignalAction",
+    enum_value("DTTR_PCDOGS_CRT_SIGNAL_DEFAULT", 0),
+    enum_value("DTTR_PCDOGS_CRT_SIGNAL_IGNORE", 1),
+    enum_value("DTTR_PCDOGS_CRT_SIGNAL_DIE", 5),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_SignalNumber",
+    enum_value("DTTR_PCDOGS_CRT_SIGNAL_FLOATING_POINT", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_FloatingException",
+    enum_value("DTTR_PCDOGS_CRT_FPE_INVALID", 129),
+    enum_value("DTTR_PCDOGS_CRT_FPE_DENORMAL", 130),
+    enum_value("DTTR_PCDOGS_CRT_FPE_ZERO_DIVIDE", 131),
+    enum_value("DTTR_PCDOGS_CRT_FPE_OVERFLOW", 132),
+    enum_value("DTTR_PCDOGS_CRT_FPE_UNDERFLOW", 133),
+    enum_value("DTTR_PCDOGS_CRT_FPE_INEXACT", 134),
+    enum_value("DTTR_PCDOGS_CRT_FPE_STACK_CHECK", 138),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_CodePageSelector",
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_OEM", -2),
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_ANSI", -3),
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_LOCALE", -4),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_EastAsianCodePage",
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_JAPANESE", 932),
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_SIMPLIFIED_CHINESE", 936),
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_KOREAN", 949),
+    enum_value("DTTR_PCDOGS_CRT_CODEPAGE_TRADITIONAL_CHINESE", 950),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_EastAsianLocale",
+    enum_value("DTTR_PCDOGS_CRT_LOCALE_JAPANESE", 1041),
+    enum_value("DTTR_PCDOGS_CRT_LOCALE_SIMPLIFIED_CHINESE", 2052),
+    enum_value("DTTR_PCDOGS_CRT_LOCALE_KOREAN", 1042),
+    enum_value("DTTR_PCDOGS_CRT_LOCALE_TRADITIONAL_CHINESE", 1028),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_FloatingEncodingStatus",
+    enum_value("DTTR_PCDOGS_CRT_FLOAT_NORMAL", 0),
+    enum_value("DTTR_PCDOGS_CRT_FLOAT_UNDERFLOW", 2),
+    enum_value("DTTR_PCDOGS_CRT_FLOAT_OVERFLOW", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_ApplicationType",
+    enum_value("DTTR_PCDOGS_CRT_APPLICATION_DEFAULT", 0),
+    enum_value("DTTR_PCDOGS_CRT_APPLICATION_CONSOLE", 1),
+    enum_value("DTTR_PCDOGS_CRT_APPLICATION_WINDOWS", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_ErrorNumber",
+    enum_value("DTTR_PCDOGS_CRT_ERROR_EXEC_FORMAT", 8),
+    enum_value("DTTR_PCDOGS_CRT_ERROR_BAD_DESCRIPTOR", 9),
+    enum_value("DTTR_PCDOGS_CRT_ERROR_ACCESS_DENIED", 13),
+    enum_value("DTTR_PCDOGS_CRT_ERROR_INVALID_ARGUMENT", 22),
+    enum_value("DTTR_PCDOGS_CRT_ERROR_TOO_MANY_FILES", 24),
+    enum_value("DTTR_PCDOGS_CRT_ERROR_NO_SPACE", 28),
+    enum_value("DTTR_PCDOGS_CRT_ERROR_INVALID_MULTIBYTE", 42),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_RuntimeError",
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_FLOAT_UNAVAILABLE", 2),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_ARGUMENT_SPACE", 8),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_ENVIRONMENT_SPACE", 9),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_EXIT_TABLE", 24),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_STDIO_INIT", 26),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_LOWIO_INIT", 27),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_HEAP_INIT", 28),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_NEWLINE", 252),
+    enum_value("DTTR_PCDOGS_CRT_RUNTIME_BANNER", 255),
+    unstable=True,
+)
+
+stable.enum(
+    "CRT_SeekOrigin",
+    enum_value("DTTR_PCDOGS_CRT_SEEK_BEGIN", 0),
+    enum_value("DTTR_PCDOGS_CRT_SEEK_CURRENT", 1),
+    enum_value("DTTR_PCDOGS_CRT_SEEK_END", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Save_Operation",
+    enum_value("DTTR_PCDOGS_SAVE_OPERATION_NONE", 0),
+    enum_value("DTTR_PCDOGS_SAVE_OPERATION_READ", 8),
+    enum_value("DTTR_PCDOGS_SAVE_OPERATION_WRITE", 9),
+    enum_value("DTTR_PCDOGS_SAVE_OPERATION_CLEANUP", 11),
+    enum_value("DTTR_PCDOGS_SAVE_OPERATION_VERIFY", 12),
+    unstable=True,
+)
+
+stable.enum(
+    "Save_Status",
+    enum_value("DTTR_PCDOGS_SAVE_STATUS_READY", 0),
+    enum_value("DTTR_PCDOGS_SAVE_STATUS_ACCEPTED_1", 1),
+    enum_value("DTTR_PCDOGS_SAVE_STATUS_ACCEPTED_2", 2),
+    enum_value("DTTR_PCDOGS_SAVE_STATUS_ACCEPTED_4", 4),
+    enum_value("DTTR_PCDOGS_SAVE_STATUS_READ_FAILED", 5),
+    enum_value("DTTR_PCDOGS_SAVE_STATUS_ACCEPTED_7", 7),
+    unstable=True,
+)
+
+stable.enum(
+    "Save_LoadResult",
+    enum_value("DTTR_PCDOGS_SAVE_LOAD_PENDING", 0),
+    enum_value("DTTR_PCDOGS_SAVE_LOAD_DEFAULTS", 1),
+    enum_value("DTTR_PCDOGS_SAVE_LOAD_VALID", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Scene_NodeKind",
+    enum_value("DTTR_PCDOGS_SCENE_NODE_ACTOR", 1),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_STATIC", 2),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_SCALED_GEOMETRY", 3),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_EVENT", 4),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_NO_RENDER_KIND_5", 5),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_SUBMESH", 6),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_BILLBOARD", 7),
+    enum_value("DTTR_PCDOGS_SCENE_NODE_SCALAR_PARAMETERS", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "Scene_AnimationDispatch",
+    enum_value("DTTR_PCDOGS_SCENE_ANIMATION_FIXED_PHASE", 5),
+    enum_value("DTTR_PCDOGS_SCENE_ANIMATION_PARENT_TIME", 6),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_SpecialReference",
+    enum_value("DTTR_PCDOGS_SCRIPT_VALUE_ZERO", 0xfc),
+    enum_value("DTTR_PCDOGS_SCRIPT_VALUE_TIMER", 0xfd),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_BranchExtension",
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_ALWAYS_CONTINUE", 6),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_EntitySelector",
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_GROUP_NEXT", 0x8001),
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_GROUP_PREVIOUS", 0x8005),
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_CURRENT", 0x8008),
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_NO_TRACE_SOURCE", 0x800b),
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_GROUP_RANDOM", 0x8009),
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_EXECUTING", 0x800e),
+    enum_value("DTTR_PCDOGS_SCRIPT_ENTITY_NO_TARGET", 0x7fff),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_SpriteProperty",
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_ENABLED", 0),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_ALIGNMENT", 0x1000000),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_VARIABLE_CONTENT", 0x2000000),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_LAYER", 0x3000000),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_LITERAL_CONTENT", 0x4000000),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_LINK", 0x5000000),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_ANCHOR", 0x6000000),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_SpriteContentType",
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_LITERAL_TYPE", 2),
+    enum_value("DTTR_PCDOGS_SCRIPT_SPRITE_VARIABLE_TYPE", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_PauseMode",
+    enum_value("DTTR_PCDOGS_SCRIPT_PAUSE_CLEAR", 1),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_NavigationOpcode",
+    enum_value("DTTR_PCDOGS_SCRIPT_NAV_SELECT_CURRENT_ENTITY", 0x67),
+    enum_value("DTTR_PCDOGS_SCRIPT_TRACE_DEFAULT_FLAGS_FIRST", 0x64),
+    enum_value("DTTR_PCDOGS_SCRIPT_TRACE_DEFAULT_FLAGS_SECOND", 0x66),
+    enum_value("DTTR_PCDOGS_SCRIPT_TRACE_DISTANCE_RANGE_FIRST", 0x6a),
+    enum_value("DTTR_PCDOGS_SCRIPT_TRACE_DISTANCE_RANGE_END", 0x9b),
+    enum_value("DTTR_PCDOGS_SCRIPT_TRACE_SKIP", 0xff),
+    unstable=True,
+)
+
+stable.enum(
+    "Script_OptionalSelector",
+    enum_value("DTTR_PCDOGS_SCRIPT_BEHAVIOR_ANY", 0xff),
+    enum_value("DTTR_PCDOGS_SCRIPT_SOUND_NONE", 0xff),
+    enum_value("DTTR_PCDOGS_SCRIPT_INPUT_ANY_BUTTON", 0xff),
+    unstable=True,
+)
+
+stable.enum(
+    "Config_DefaultKey",
+    enum_value("DTTR_PCDOGS_CONFIG_KEY_ENTER", 13),
+    enum_value("DTTR_PCDOGS_CONFIG_KEY_ESCAPE", 27),
+    enum_value("DTTR_PCDOGS_CONFIG_KEY_SPACE", 32),
+    enum_value("DTTR_PCDOGS_CONFIG_KEY_CONTROLLER_ESCAPE", 1014),
+    unstable=True,
+)
+
+stable.enum(
+    "Title_State",
+    enum_value("DTTR_PCDOGS_TITLE_STATE_LOAD", 0),
+    enum_value("DTTR_PCDOGS_TITLE_STATE_START_MUSIC", 1),
+    enum_value("DTTR_PCDOGS_TITLE_STATE_FADE_IN", 2),
+    enum_value("DTTR_PCDOGS_TITLE_STATE_WAIT_FOR_SPOTS", 3),
+    enum_value("DTTR_PCDOGS_TITLE_STATE_WAIT_FOR_INPUT", 4),
+    enum_value("DTTR_PCDOGS_TITLE_STATE_FADE_OUT", 5),
+    enum_value("DTTR_PCDOGS_TITLE_STATE_DELAYED_UNLOAD", 6),
+    unstable=True,
+)
+
+stable.enum(
+    "UI_SpriteAnchor",
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_TOP_LEFT", 0),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_TOP_RIGHT", 1),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_BOTTOM_LEFT", 2),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_BOTTOM_RIGHT", 3),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_CENTER_LEFT", 4),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_TOP_CENTER", 5),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_CENTER_RIGHT", 6),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_BOTTOM_CENTER", 7),
+    enum_value("DTTR_PCDOGS_UI_ANCHOR_CENTER", 8),
+    unstable=True,
+)
+
+stable.enum(
+    "UI_SpriteType",
+    enum_value("DTTR_PCDOGS_UI_SPRITE_IMAGE", 1),
+    enum_value("DTTR_PCDOGS_UI_SPRITE_TEXT", 2),
+    enum_value("DTTR_PCDOGS_UI_SPRITE_NUMBER", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "UI_SpriteAxisAnchor",
+    enum_value("DTTR_PCDOGS_UI_AXIS_ANCHOR_START", 0),
+    enum_value("DTTR_PCDOGS_UI_AXIS_ANCHOR_CENTER", 1),
+    enum_value("DTTR_PCDOGS_UI_AXIS_ANCHOR_END", 2),
+    unstable=True,
+)
+
+stable.enum(
+    "Video_PlaybackExitReason",
+    enum_value("DTTR_PCDOGS_VIDEO_PLAYBACK_FINISHED", 1),
+    enum_value("DTTR_PCDOGS_VIDEO_PLAYBACK_SKIPPED", 2),
+    enum_value("DTTR_PCDOGS_VIDEO_PLAYBACK_CLOSE_REQUESTED", 3),
+    unstable=True,
+)
+
+stable.enum(
+    "Video_IntroMovieSlot",
+    enum_value("DTTR_PCDOGS_VIDEO_INTRO_FIRST", 0),
+    enum_value("DTTR_PCDOGS_VIDEO_INTRO_ALTERNATE_RECT", 2),
+    enum_value("DTTR_PCDOGS_VIDEO_INTRO_LAST", 3),
+    unstable=True,
+)
+
+stable.type_alias("Game_Mode", "uint32_t", unstable=True)
+stable.enum(
+    "Game_ModeValue",
+    enum_value("DTTR_PCDOGS_GAME_MODE_COLLISION_CHECK", 0x2),
+    enum_value("DTTR_PCDOGS_GAME_MODE_EXTENDED_RENDER_DISTANCE", 0x4),
+    enum_value("DTTR_PCDOGS_GAME_MODE_STRING_LOOKUP", 0x8),
+    enum_value("DTTR_PCDOGS_GAME_MODE_KEEP_LEVEL_SCALE", 0x9),
+    enum_value("DTTR_PCDOGS_GAME_MODE_MENU_STRINGS", 0xe),
+    enum_value("DTTR_PCDOGS_GAME_MODE_RENDER_BATCH", 0x10),
+    enum_value("DTTR_PCDOGS_GAME_MODE_PAUSE_BLOCKED", 0x11),
+    enum_value("DTTR_PCDOGS_GAME_MODE_FPS_DEBUG", 0x12),
+    enum_value("DTTR_PCDOGS_GAME_MODE_LOADING_SCREEN", 0x13),
+    enum_value("DTTR_PCDOGS_GAME_MODE_GAMEPLAY_3D", 0x14),
+    enum_value("DTTR_PCDOGS_GAME_MODE_UI_SPRITES", 0x17),
+    enum_value("DTTR_PCDOGS_GAME_MODE_SPRITE_MESH", 0x18),
+    enum_value("DTTR_PCDOGS_GAME_MODE_STANDARD_RENDER_DISTANCE_NEGATIVE", 0xfffffffd),
+    enum_value("DTTR_PCDOGS_GAME_MODE_SPECIAL_TEXT_LAYOUT", 0xffffffff),
+    unstable=True,
+)
+
+stable.type_alias("Input_EventType", "uint32_t", unstable=True)
+stable.enum(
+    "Input_EventTypeValue",
+    enum_value("DTTR_PCDOGS_INPUT_EVENT_NONE", 0x0),
+    enum_value("DTTR_PCDOGS_INPUT_EVENT_BUTTON_PRESS", 0x1),
+    enum_value("DTTR_PCDOGS_INPUT_EVENT_BUTTON_RELEASE", 0x2),
+    enum_value("DTTR_PCDOGS_INPUT_EVENT_AXIS_MOVE", 0x3),
+    enum_value("DTTR_PCDOGS_INPUT_EVENT_KEY_DOWN", 0x4),
+    enum_value("DTTR_PCDOGS_INPUT_EVENT_KEY_UP", 0x5),
+    unstable=True,
+)
+
+stable.type_alias("Script_Opcode", "uint8_t", unstable=True)
+stable.enum(
+    "Script_OpcodeValue",
+    enum_value("DTTR_PCDOGS_OP_NOP", 0x0),
+    enum_value("DTTR_PCDOGS_OP_TERMINATE_1", 0x1),
+    enum_value("DTTR_PCDOGS_OP_TERMINATE_2", 0x2),
+    enum_value("DTTR_PCDOGS_OP_TERMINATE_3", 0x3),
+    enum_value("DTTR_PCDOGS_OP_TERMINATE_4", 0x4),
+    enum_value("DTTR_PCDOGS_OP_PATHFIND_TRACE", 0x5),
+    enum_value("DTTR_PCDOGS_OP_CALL_INDIRECT", 0x6),
+    enum_value("DTTR_PCDOGS_OP_SKIP_BYTES", 0x7),
+    enum_value("DTTR_PCDOGS_OP_SET_BEHAVIOR", 0x8),
+    enum_value("DTTR_PCDOGS_OP_COND_BRANCH", 0x9),
+    enum_value("DTTR_PCDOGS_OP_SET_VARIABLE", 0xa),
+    enum_value("DTTR_PCDOGS_OP_INCREMENT", 0xb),
+    enum_value("DTTR_PCDOGS_OP_DECREMENT", 0xc),
+    enum_value("DTTR_PCDOGS_OP_MOVE_TO", 0xd),
+    enum_value("DTTR_PCDOGS_OP_WALK_TO", 0xe),
+    enum_value("DTTR_PCDOGS_OP_RUN_TO", 0xf),
+    enum_value("DTTR_PCDOGS_OP_WAIT_ANIM", 0x10),
+    enum_value("DTTR_PCDOGS_OP_SET_PLAYER_STATE", 0x11),
+    enum_value("DTTR_PCDOGS_OP_SET_ACTOR_PROP", 0x12),
+    enum_value("DTTR_PCDOGS_OP_PLAY_SOUND", 0x13),
+    enum_value("DTTR_PCDOGS_OP_PATHFIND_ENTITY", 0x14),
+    enum_value("DTTR_PCDOGS_OP_CHECK_COLLISION", 0x15),
+    enum_value("DTTR_PCDOGS_OP_ADD_NAV_CMD", 0x16),
+    enum_value("DTTR_PCDOGS_OP_TEST_PATH", 0x17),
+    enum_value("DTTR_PCDOGS_OP_EMIT_SIGNAL", 0x18),
+    enum_value("DTTR_PCDOGS_OP_POLL_SIGNAL", 0x19),
+    enum_value("DTTR_PCDOGS_OP_REMOVE_ACTOR", 0x1a),
+    enum_value("DTTR_PCDOGS_OP_CLEAR_PROP", 0x1b),
+    enum_value("DTTR_PCDOGS_OP_COND_JUMP", 0x1c),
+    enum_value("DTTR_PCDOGS_OP_STOP_SOUND", 0x1d),
+    enum_value("DTTR_PCDOGS_OP_ROTATE_ACTOR", 0x1e),
+    enum_value("DTTR_PCDOGS_OP_ENSURE_CAMERA_ACTIVE", 0x1f),
+    enum_value("DTTR_PCDOGS_OP_MOVE_WITH_CAM", 0x20),
+    enum_value("DTTR_PCDOGS_OP_WITH_ACTOR", 0x21),
+    enum_value("DTTR_PCDOGS_OP_PLAY_SOUND_EXT", 0x22),
+    enum_value("DTTR_PCDOGS_OP_PAUSE_TOGGLE", 0x23),
+    enum_value("DTTR_PCDOGS_OP_LEVEL_TRANSITION", 0x24),
+    enum_value("DTTR_PCDOGS_OP_CHECK_BUTTON", 0x25),
+    enum_value("DTTR_PCDOGS_OP_MUSIC_TRANSITION", 0x26),
+    enum_value("DTTR_PCDOGS_OP_MUSIC_FADE", 0x27),
+    enum_value("DTTR_PCDOGS_OP_ANIM_ROTATION", 0x28),
+    enum_value("DTTR_PCDOGS_OP_ANIM_ZOOM", 0x29),
+    enum_value("DTTR_PCDOGS_OP_ANIM_TARGET", 0x2a),
+    enum_value("DTTR_PCDOGS_OP_SET_SPRITE_PROP", 0x2b),
+    enum_value("DTTR_PCDOGS_OP_SPRITE_ROTATION", 0x2c),
+    unstable=True,
+)
+
+stable.type_alias("Script_ActorOpcode", "uint32_t", unstable=True)
+stable.enum(
+    "Script_ActorOpcodeValue",
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_NULL", 0x0),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_END", 0x1),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SKIP_NESTED_BLOCK", 0x2),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_PUSH_ENTITY_SLOT", 0x3),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_POP_ENTITY_SLOT", 0x4),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_TRACE_ACTOR_PATH", 0x5),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_CALL_INDIRECT", 0x6),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SKIP_BYTES", 0x7),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SET_ENTITY_INDEX", 0x8),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_BRANCH_CONDITIONAL", 0x9),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SET_VARIABLE", 0xa),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_INCREMENT_VARIABLE", 0xb),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_DECREMENT_VARIABLE", 0xc),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_MOVE_TO_TARGET", 0xd),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_WALK_TO_TARGET", 0xe),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_RUN_TO_TARGET", 0xf),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_WAIT_FOR_ANIMATION", 0x10),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SET_PLAYER_STATE", 0x11),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SET_ACTOR_PROPERTY", 0x12),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_PLAY_SOUND_INDEX", 0x13),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_PATHFIND_TO_ENTITY", 0x14),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_UPDATE_COLLISION_AND_SET_FLAG", 0x15),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_ADD_NAVIGATION_COMMAND", 0x16),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_TEST_PATH_TRACE", 0x17),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_EMIT_SIGNAL", 0x18),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_POLL_SIGNAL", 0x19),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_REMOVE_ACTOR", 0x1a),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_CLEAR_ACTOR_PROPERTY", 0x1b),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_JUMP_CONDITIONAL", 0x1c),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_STOP_SOUND", 0x1d),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_ROTATE_ACTOR", 0x1e),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_ENSURE_CAMERA_ACTIVE", 0x1f),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_MOVE_TO_TARGET_WITH_CAMERA", 0x20),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_RUN_WITH_ACTOR", 0x21),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_PLAY_SOUND_BLOCK_OR_WAIT", 0x22),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_PAUSE_TOGGLE", 0x23),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_TRIGGER_LEVEL_TRANSITION", 0x24),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_CHECK_BUTTON_STATE", 0x25),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_TRIGGER_MUSIC_TRANSITION", 0x26),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_TRIGGER_MUSIC_FADE", 0x27),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_ANIMATE_SPRITE_MOVE", 0x28),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_ANIMATE_ZOOM", 0x29),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_ANIMATE_TARGET", 0x2a),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_SET_SPRITE_PROPERTY", 0x2b),
+    enum_value("DTTR_PCDOGS_SCRIPT_OP_PROCESS_SPRITE_ROTATION", 0x2c),
+    unstable=True,
+)
+
+stable.type_alias("Script_ArithmeticOp", "uint32_t", unstable=True)
+stable.enum(
+    "Script_ArithmeticOpValue",
+    enum_value("DTTR_PCDOGS_SCRIPT_ARITH_ADD", 0x0),
+    enum_value("DTTR_PCDOGS_SCRIPT_ARITH_SUB_CLAMP_ZERO", 0x1),
+    enum_value("DTTR_PCDOGS_SCRIPT_ARITH_MUL", 0x2),
+    enum_value("DTTR_PCDOGS_SCRIPT_ARITH_DIV", 0x3),
+    unstable=True,
+)
+
+stable.type_alias("Script_BranchCompareOp", "uint32_t", unstable=True)
+stable.enum(
+    "Script_BranchCompareOpValue",
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_LT", 0x0),
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_LE", 0x1),
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_EQ", 0x2),
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_GE", 0x3),
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_GT", 0x4),
+    enum_value("DTTR_PCDOGS_SCRIPT_CMP_NE", 0x5),
+    unstable=True,
+)
+
+stable.type_alias("Script_OperandRefKind", "uint32_t", unstable=True)
+stable.enum(
+    "Script_OperandRefKindValue",
+    enum_value("DTTR_PCDOGS_SCRIPT_VALUE_INPUT_BUTTON_P0", 0xfa),
+    enum_value("DTTR_PCDOGS_SCRIPT_VALUE_INPUT_BUTTON_P1", 0xfb),
+    enum_value("DTTR_PCDOGS_SCRIPT_VALUE_IMMEDIATE_U24", 0xfe),
+    enum_value("DTTR_PCDOGS_SCRIPT_VALUE_RANDOM_MOD_U24", 0xff),
+    unstable=True,
+)
+
+stable.type_alias("Script_TerminatorOpcode", "uint32_t", unstable=True)
+stable.enum(
+    "Script_TerminatorOpcodeValue",
+    enum_value("DTTR_PCDOGS_SCRIPT_TERM_END", 0x1),
+    enum_value("DTTR_PCDOGS_SCRIPT_TERM_SKIP_NESTED_BLOCK", 0x2),
+    enum_value("DTTR_PCDOGS_SCRIPT_TERM_PUSH_ENTITY_SLOT", 0x3),
+    enum_value("DTTR_PCDOGS_SCRIPT_TERM_POP_ENTITY_SLOT", 0x4),
+    unstable=True,
+)
+
+stable.type_alias("Signal_Type", "uint8_t", unstable=True)
+stable.enum(
+    "Signal_TypeValue",
+    enum_value("DTTR_PCDOGS_SIG_TOGGLE_ACTIVE", 0x0),
+    enum_value("DTTR_PCDOGS_SIG_MOVE_RIGHT", 0x1),
+    enum_value("DTTR_PCDOGS_SIG_MOVE_LEFT", 0x2),
+    enum_value("DTTR_PCDOGS_SIG_PLAY_ANIM_FWD", 0x3),
+    enum_value("DTTR_PCDOGS_SIG_PLAY_ANIM_FWD_EX", 0x4),
+    enum_value("DTTR_PCDOGS_SIG_PLAY_ANIM_REV", 0x5),
+    enum_value("DTTR_PCDOGS_SIG_PLAY_ANIM_REV_EX", 0x6),
+    enum_value("DTTR_PCDOGS_SIG_SET_ANIM_SPEED", 0x7),
+    enum_value("DTTR_PCDOGS_SIG_STOP_ANIM", 0x8),
+    enum_value("DTTR_PCDOGS_SIG_UNKNOWN_9", 0x9),
+    enum_value("DTTR_PCDOGS_SIG_RESUME_ANIM", 0xa),
+    enum_value("DTTR_PCDOGS_SIG_SOUND_TRIGGER", 0xb),
+    enum_value("DTTR_PCDOGS_SIG_WILDCARD", 0xfd),
+    unstable=True,
+)
+
+stable.type_alias("CRT_PrintfParserState", "uint32_t", unstable=True)
+stable.enum(
+    "CRT_PrintfParserStateValue",
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_LITERAL", 0x0),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_BEGIN", 0x1),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_FLAGS", 0x2),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_WIDTH", 0x3),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_DOT", 0x4),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_PRECISION", 0x5),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_LENGTH", 0x6),
+    enum_value("DTTR_PCDOGS_CRT_PRINTF_CONVERSION", 0x7),
+    unstable=True,
+)
+
+# Game record layouts from dogstuff/decomp b1bebd6 (PC English).
+stable.struct(
+    "Actor_CollisionFractionView",
+    member("uint8_t", "actor_prefix[206]", 0x0),
+    member("int16_t", "collision_fraction_q12", 0xce),
+    size=0xd0,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Actor_MovementCommand",
+    member("uint16_t", "active", 0x0),
+    member("char", "opcode", 0x2),
+    member("uint8_t", "unknown_03", 0x3),
+    member("uint16_t", "parameter", 0x4),
+    member("uint16_t", "unknown_06", 0x6),
+    size=0x8,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Actor_RenderNodeView",
+    member("void*", "resource_link", 0x0),
+    member("uint32_t", "subtree_skip_count", 0x4),
+    member("Scene_TransformNodePrefix*", "parent_transform", 0x8),
+    member("Math_Matrix3x3I16", "local_rotation", 0xc),
+    member("int16_t", "reserved_1e", 0x1e),
+    member("Math_Vec3I32", "local_position", 0x20),
+    member("Math_TransformQ12Q6", "world_transform", 0x2c),
+    member("Math_Vec3I32", "world_delta_position", 0x4c),
+    member("char", "position_channel", 0x58),
+    member("char", "rotation_channel", 0x59),
+    member("char", "visibility_channel", 0x5a),
+    member("char", "scale_channel", 0x5b),
+    member("uint16_t", "animation_sequence", 0x5c),
+    member("int16_t", "blend_duration", 0x5e),
+    member("int32_t", "animation_start_tick", 0x60),
+    member("uint8_t", "node_type", 0x64),
+    member("uint8_t", "flags", 0x65),
+    member("int8_t", "render_entry_index", 0x66),
+    member("char", "secondary_index", 0x67),
+    member("uint32_t", "packed_morph_timing", 0x68),
+    size=0x6c,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Animation_EaseRecord",
+    member("int16_t", "end_curve_start_q12", 0x0),
+    member("int16_t", "start_curve_end_q12", 0x2),
+    member("int32_t", "end_curve_coefficient_q12", 0x4),
+    member("int32_t", "start_curve_coefficient_q12", 0x8),
+    size=0xc,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Animation_MorphNormal",
+    member("Math_Vec3I16", "normal", 0x0),
+    member("uint16_t", "padding_06", 0x6),
+    member("uint8_t", "reserved_08[4]", 0x8),
+    size=0xc,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Audio_PCMWaveFormat16",
+    member("uint16_t", "format_tag", 0x0),
+    member("uint16_t", "channel_count", 0x2),
+    member("uint32_t", "samples_per_second", 0x4),
+    member("uint32_t", "average_bytes_per_second", 0x8),
+    member("uint16_t", "block_align", 0xc),
+    member("uint16_t", "bits_per_sample", 0xe),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Bone_JointTrackingDeltaView",
+    member("uint32_t", "unused_prefix", 0x0),
+    member("Math_Vec3I32", "world_delta", 0x4),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Camera_CollisionProbeView",
+    member("uint8_t", "reserved_000[44]", 0x0),
+    member("Math_Matrix3x3I16", "rot_mat", 0x2c),
+    member("uint16_t", "reserved_03e", 0x3e),
+    member("uint8_t", "reserved_040[12]", 0x40),
+    member("Math_Vec3I32", "sweep_delta", 0x4c),
+    member("uint8_t", "reserved_058[48]", 0x58),
+    member("uint32_t", "behavior_flags", 0x88),
+    member("uint8_t", "reserved_08c[12]", 0x8c),
+    member("Math_Vec3I32", "sweep_origin", 0x98),
+    member("int16_t", "collision_height", 0xa4),
+    member("int16_t", "collision_height_hi", 0xa6),
+    member("int16_t", "collision_radius", 0xa8),
+    member("int16_t", "cull_radius", 0xaa),
+    member("uint8_t", "reserved_0ac[26]", 0xac),
+    member("uint8_t", "collision_class", 0xc6),
+    member("uint8_t", "reserved_0c7", 0xc7),
+    member("Component_Instance*", "collision_component", 0xc8),
+    member("uint16_t", "reserved_0cc", 0xcc),
+    member("int16_t", "collision_fraction_q12", 0xce),
+    member("uint32_t", "reserved_0d0", 0xd0),
+    member("Math_Vec3I32", "velocity", 0xd4),
+    member("uint8_t", "reserved_0e0[8]", 0xe0),
+    member("Collision_Node*", "ground_collision_node", 0xe8),
+    member("Collision_Polygon*", "ground_contact_polygon", 0xec),
+    member("uint8_t", "reserved_0f0[28]", 0xf0),
+    member("uint32_t", "collision_push_xz", 0x10c),
+    member("uint32_t", "collision_response_xz", 0x110),
+    size=0x114,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Camera_DefinitionOverrideNodeView",
+    member("uint8_t", "reserved_000[64]", 0x0),
+    member("Math_Vec3I32", "world_pos", 0x40),
+    member("uint8_t", "reserved_04c[36]", 0x4c),
+    member("uint32_t", "camera_definition_index", 0x70),
+    size=0x74,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Collision_BoxCornerQ6",
+    member("Math_Vec3I16", "position_q6", 0x0),
+    member("uint16_t", "padding_06", 0x6),
+    size=0x8,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Collision_ClipVertexQ6",
+    member("Math_Vec3I16", "position_q6", 0x0),
+    member("uint16_t", "padding_06", 0x6),
+    member("Collision_ClipVertexQ6*", "next", 0x8),
+    size=0xc,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Collision_TransformOriginSnapshot",
+    member("Math_Matrix3x3I16", "rotation_q12", 0x0),
+    member("uint16_t", "padding_12", 0x12),
+    member("Math_Vec3I32", "origin", 0x14),
+    size=0x20,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Collision_TransformedVertexQ0",
+    member("Math_Vec3I16", "pos", 0x0),
+    member("uint16_t", "reserved_06", 0x6),
+    size=0x8,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Config_AppInstanceData",
+    member("HINSTANCE", "h_instance", 0x0),
+    member("HINSTANCE", "h_prev_instance", 0x4),
+    size=0x8,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Config_SettingsBlock",
+    member("char", "display_setting", 0x0),
+    member("char", "pad_1[3]", 0x1),
+    member("int32_t", "player1_controls[10]", 0x4),
+    member("int32_t", "special_button", 0x2c),
+    member("int32_t", "player1_reserved[2]", 0x30),
+    member("int32_t", "player2_controls[10]", 0x38),
+    member("int32_t", "player2_reserved[3]", 0x60),
+    size=0x6c,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "D3D_DriverConfig",
+    member("uint8_t", "display_config[172]", 0x0),
+    member("uint32_t", "colorkey_support", 0xac),
+    member("uint8_t", "device_extra_config[112]", 0xb0),
+    member("uint8_t", "driver_tail_config[16]", 0x120),
+    member("char*", "description_ptr", 0x130),
+    size=0x134,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "D3D_State",
+    member("DDraw_IDirectDraw7*", "d3d_object", 0x0),
+    member("D3D_IDirect3DDevice7*", "d3d_device", 0x4),
+    member("DDraw_IDirectDrawSurface7*", "primary_surface", 0x8),
+    member("DDraw_IDirectDrawSurface7*", "back_buffer", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "DirectDrawInitializationRecord",
+    member("Win32_GUID", "driver_guid", 0x0),
+    member("Win32_GUID*", "device_guid", 0x10),
+    member("char", "device_description[80]", 0x14),
+    member("char", "driver_description[80]", 0x64),
+    member("uint32_t", "supports_color_key", 0xb4),
+    member("uint8_t", "reserved_b8[4]", 0xb8),
+    size=0xbc,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "EntityWorkListBuffer",
+    member("int32_t", "count", 0x0),
+    member("Entity_State*", "entries[605]", 0x4),
+    size=0x978,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Font_Context",
+    member("Font_Resource*", "font_ptr", 0x0),
+    member("Math_Vec2I32", "screen_position", 0x4),
+    size=0xc,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Font_Glyph",
+    member("Math_SizeI16", "size", 0x0),
+    member("Math_Vec2I16", "offset", 0x4),
+    size=0x8,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Font_GlyphData",
+    member("uint16_t", "char_code", 0x0),
+    member("Math_SizeU8", "size", 0x2),
+    member("uint32_t", "pixel_data_offset", 0x4),
+    member("Font_GlyphPixelData*", "pixel_data_ptr", 0x8),
+    member("uint32_t", "texture_handle", 0xc),
+    member("uint32_t", "texture_handle_alt", 0x10),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Font_GlyphPixelData",
+    member("Math_SizeI16", "size", 0x0),
+    member("int16_t", "pitch", 0x4),
+    member("int16_t", "bits_per_pixel", 0x6),
+    member("uint32_t", "data_size", 0x8),
+    member("DDraw_IDirectDrawSurface7*", "surfaces[2]", 0xc),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Font_Resource",
+    member("Font_Glyph*", "glyph_table_base", 0x0),
+    member("Font_Context*", "font_context", 0x4),
+    member("Material_Entry*", "material_resource", 0x8),
+    member("uint32_t", "glyph_count", 0xc),
+    member("Math_SizeU8", "alignment", 0x10),
+    member("uint16_t", "line_height", 0x12),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Game_Object",
+    member("uint8_t", "object_properties[101]", 0x0),
+    member("uint8_t", "state_flags_1", 0x65),
+    member("uint8_t", "state_flags_2", 0x66),
+    member("uint8_t", "object_type", 0x67),
+    member("uint8_t", "script_context[8]", 0x68),
+    member("int16_t", "object_id", 0x70),
+    member("uint8_t", "priority", 0x72),
+    member("char", "repeat_count", 0x73),
+    member("uint8_t", "trigger_type", 0x74),
+    member("uint8_t", "padding_75[1]", 0x75),
+    member("uint16_t", "condition_id", 0x76),
+    member("uint16_t", "parameter", 0x78),
+    member("int16_t", "duration", 0x7a),
+    member("int16_t", "timer", 0x7c),
+    member("uint8_t", "padding_7e[2]", 0x7e),
+    member("Game_Object*", "next", 0x80),
+    size=0x84,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Game_OverDispatch",
+    member("uint32_t", "size", 0x0),
+    member("uint32_t", "flags", 0x4),
+    member("uint32_t", "final_score", 0x8),
+    member("uint32_t", "reserved[11]", 0xc),
+    size=0x38,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Input_ControllerPreset",
+    member("char", "name[88]", 0x0),
+    member("int32_t", "bindings[10]", 0x58),
+    member("uint8_t", "reserved_80[12]", 0x80),
+    size=0x8c,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Material_ColorControllerRecord",
+    member("Math_ColorRGB8", "start_color", 0x0),
+    member("uint8_t", "hold_frames", 0x3),
+    member("Math_ColorRGB8", "end_color", 0x4),
+    member("uint8_t", "transition_frames", 0x7),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Material_NodeFixupView",
+    member("uint32_t", "material_index_or_ptr", 0x0),
+    member("uint8_t", "node_type", 0x4),
+    member("uint8_t", "controller_flags", 0x5),
+    member("uint8_t", "reserved_06[2]", 0x6),
+    member("uint32_t", "animation_offset_or_ptr", 0x8),
+    member("uint32_t", "frame_table_offset_or_ptr", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Math_ColorRGBAF",
+    member("float", "r", 0x0),
+    member("float", "g", 0x4),
+    member("float", "b", 0x8),
+    member("float", "a", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Math_SizeI32",
+    member("int32_t", "width", 0x0),
+    member("int32_t", "height", 0x4),
+    size=0x8,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Math_Vec2I16XZ",
+    member("int16_t", "x", 0x0),
+    member("int16_t", "z", 0x2),
+    size=0x4,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Mem_AllocationHeader",
+    member("uint32_t", "size", 0x0),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Mem_Extent",
+    member("void*", "base", 0x0),
+    member("uint32_t", "size", 0x4),
+    member("void*", "current", 0x8),
+    member("uint32_t", "remaining", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Mem_HandleEntry",
+    member("uint32_t", "handle_id", 0x0),
+    member("Mem_HandleEntry*", "next_free", 0x4),
+    member("uint32_t", "alloc_size", 0x8),
+    member("uint32_t", "alloc_flags", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Menu_InputPulseAndHeldState",
+    member("int32_t", "up_pulse", 0x0),
+    member("int32_t", "down_pulse", 0x4),
+    member("int32_t", "left_pulse", 0x8),
+    member("int32_t", "right_pulse", 0xc),
+    member("int32_t", "confirm_pulse", 0x10),
+    member("int32_t", "cancel_pulse", 0x14),
+    member("uint8_t", "confirm_held", 0x18),
+    member("uint8_t", "cancel_held", 0x19),
+    member("uint8_t", "up_held", 0x1a),
+    member("uint8_t", "down_held", 0x1b),
+    member("uint8_t", "right_held", 0x1c),
+    member("uint8_t", "left_held", 0x1d),
+    member("uint8_t", "padding_1e[2]", 0x1e),
+    size=0x20,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Menu_NameEntryState",
+    member("char", "cursor_row", 0x0),
+    member("char", "cursor_column", 0x1),
+    member("char", "name_length", 0x2),
+    member("char", "text[4]", 0x3),
+    size=0x7,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Menu_State",
+    member("int32_t", "current_option", 0x0),
+    member("int32_t", "flags", 0x4),
+    size=0x8,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Menu_StateMachineBytes",
+    member("uint8_t", "state", 0x0),
+    member("uint8_t", "pad_01", 0x1),
+    member("uint8_t", "selection", 0x2),
+    member("uint8_t", "skip_background_render", 0x3),
+    member("uint8_t", "display_flags", 0x4),
+    member("uint8_t", "transition_delay", 0x5),
+    member("uint8_t", "sound_effect", 0x6),
+    member("uint8_t", "post_transition_action", 0x7),
+    member("uint8_t", "context", 0x8),
+    member("uint8_t", "fade_counter", 0x9),
+    member("uint8_t", "fade_counter2", 0xa),
+    member("uint8_t", "pad_0b", 0xb),
+    member("int16_t", "stored_fade_level", 0xc),
+    member("uint8_t", "option_index", 0xe),
+    member("uint8_t", "name_entry_active", 0xf),
+    size=0x10,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Mesh_PolygonPlane",
+    member("int32_t", "distance", 0x0),
+    member("Math_Vec3I16", "normal", 0x4),
+    member("int16_t", "unk_0a", 0xa),
+    member("int16_t", "edge_data[4]", 0xc),
+    size=0x14,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Nav_GroundProbeActorView",
+    member("uint8_t", "reserved_000[64]", 0x0),
+    member("Math_Vec3I32", "position", 0x40),
+    member("uint8_t", "reserved_04c[60]", 0x4c),
+    member("uint32_t", "behavior_flags", 0x88),
+    member("uint8_t", "reserved_08c[58]", 0x8c),
+    member("uint8_t", "collision_class", 0xc6),
+    member("uint8_t", "reserved_0c7[33]", 0xc7),
+    member("Collision_Node*", "ground_collision_node", 0xe8),
+    member("Collision_Polygon*", "ground_contact_polygon", 0xec),
+    size=0xf0,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "ColorControllerPayload",
+    member("uint8_t", "start_r", 0x0),
+    member("uint8_t", "start_g", 0x1),
+    member("uint8_t", "start_b", 0x2),
+    member("uint8_t", "hold_frames", 0x3),
+    member("uint8_t", "end_r", 0x4),
+    member("uint8_t", "end_g", 0x5),
+    member("uint8_t", "end_b", 0x6),
+    member("uint8_t", "transition_frames", 0x7),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "FrameControllerPrefix",
+    member("int32_t", "frame_rate_q16", 0x0),
+    member("uint8_t", "unknown04", 0x4),
+    member("uint8_t", "max_frame_index", 0x5),
+    size=0x6,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_BonusReplay",
+    member("uint32_t", "random_seed", 0x0),
+    member("Replay_InputEvent", "events[200]", 0x4),
+    size=0xc84,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_BonusReplaySet",
+    member("PKG_BonusReplay", "replays[20]", 0x0),
+    size=0xfa50,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_ComponentOwnerBinding",
+    member("uint32_t", "reserved_00", 0x0),
+    member("PKG_ComponentData*", "component_data", 0x4),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_GlobalMaterialBindingView",
+    member("uint8_t", "reserved_00[108]", 0x0),
+    member("Material_RefEntry", "shared_material", 0x6c),
+    size=0x78,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_LevelContainer",
+    member("uint32_t", "material_section_offset", 0x0),
+    member("uint32_t", "object_node_root_offset", 0x4),
+    member("uint32_t", "level_header_offset", 0x8),
+    size=0xc,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_LinkedPayloadFixupView",
+    member("uint8_t", "reserved_00[8]", 0x0),
+    member("uint32_t", "payload_offset_or_pointer", 0x8),
+    size=0xc,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_LoadingScreen",
+    member("uint32_t", "unk_00", 0x0),
+    member("uint32_t", "pixels_offset", 0x4),
+    member("uint32_t", "unk_08", 0x8),
+    member("char", "music_name[16]", 0xc),
+    member("uint8_t", "pixels[1228800]", 0x1c),
+    size=0x12c01c,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_OwnerPayloadFixupRecord",
+    member("uint8_t", "reserved_00[8]", 0x0),
+    member("uint32_t", "blob_payload", 0x8),
+    member("uint8_t", "reserved_0c[24]", 0xc),
+    size=0x24,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_PrimaryOwnerFixupView",
+    member("uint8_t", "reserved_00[420]", 0x0),
+    member("PKG_OwnerPayloadFixupRecord", "payload_records[2]", 0x1a4),
+    size=0x1ec,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_ResourceAllocationHeader",
+    member("uint32_t", "memory_handle", 0x0),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_SecondaryEntry",
+    member("uint32_t", "data_00[9]", 0x0),
+    member("uint32_t", "ptr_24", 0x24),
+    size=0x28,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_SecondaryOwnerFixupView",
+    member("uint8_t", "reserved_00[452]", 0x0),
+    member("PKG_OwnerPayloadFixupRecord", "payload_records[2]", 0x1c4),
+    size=0x20c,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_StringSection",
+    member("uint32_t", "data_size", 0x0),
+    member("uint32_t", "table_offset", 0x4),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_TypedMaterialEntry",
+    member("uint8_t", "entry_kind", 0x0),
+    member("uint8_t", "reserved_01[3]", 0x1),
+    member("uint32_t", "material_index_or_pointer", 0x4),
+    member("uint8_t", "reserved_08[12]", 0x8),
+    size=0x14,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Physics_AccelerationDragModifierView",
+    member("uint8_t", "reserved_00[112]", 0x0),
+    member("int32_t", "acceleration_multiplier_q12", 0x70),
+    member("int32_t", "drag_multiplier_q12", 0x74),
+    size=0x78,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Physics_GroundTiltChildView",
+    member("uint8_t", "reserved_00[12]", 0x0),
+    member("Math_QuaternionI16", "target_tilt_q14", 0xc),
+    member("Math_QuaternionI16", "blended_tilt_q14", 0x14),
+    member("uint8_t", "reserved_1c[66]", 0x1c),
+    member("int16_t", "blend_remaining_q6", 0x5e),
+    size=0x60,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Physics_SpeedJumpModifierView",
+    member("uint8_t", "reserved_00[112]", 0x0),
+    member("int32_t", "speed_multiplier_q12", 0x70),
+    member("int32_t", "jump_multiplier_q12", 0x74),
+    size=0x78,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_ResourceBlobHeader",
+    member("uint32_t", "magic", 0x0),
+    member("uint32_t", "version", 0x4),
+    member("uint32_t", "data_offset", 0x8),
+    member("uint32_t", "data_size", 0xc),
+    member("uint32_t", "entry_count", 0x10),
+    member("uint32_t", "flags", 0x14),
+    size=0x18,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "PKG_ResourceData_Entry",
+    member("uint32_t", "offset", 0x0),
+    member("uint32_t", "size", 0x4),
+    member("uint32_t", "type", 0x8),
+    member("uint32_t", "id", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Replay_Frame",
+    member("int32_t", "frame_num", 0x0),
+    member("int32_t", "input_state", 0x4),
+    member("Math_Vec3I32", "pos", 0x8),
+    member("int32_t", "angle", 0x14),
+    size=0x18,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Replay_InputEvent",
+    member("uint32_t", "frame", 0x0),
+    member("uint32_t", "buttons", 0x4),
+    member("Math_Vec2I16", "axis", 0x8),
+    member("Math_Vec2I16", "aux", 0xc),
+    size=0x10,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Save_GameRecord",
+    member("Save_GameData", "header", 0x0),
+    member("Save_GameSlot", "slots[5]", 0x10),
+    size=0x1dc,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Save_MenuDelays",
+    member("uint8_t", "load_completion_frames", 0x0),
+    member("uint8_t", "save_completion_frames", 0x1),
+    member("uint8_t", "error_notice_frames", 0x2),
+    member("uint8_t", "write_error", 0x3),
+    size=0x4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Scene_StaticRenderNodeView",
+    member("uint32_t", "subtree_skip_count", 0x0),
+    member("uint8_t", "reserved_04[40]", 0x4),
+    member("Math_TransformQ12Q6", "world_transform", 0x2c),
+    member("uint8_t", "reserved_4c[20]", 0x4c),
+    member("int32_t", "last_render_frame", 0x60),
+    member("uint8_t", "node_type", 0x64),
+    member("uint8_t", "traversal_flags", 0x65),
+    member("int16_t", "polygon_ref_count", 0x66),
+    member("uint32_t", "reserved_68", 0x68),
+    member("Graphics_PolygonRenderRef*", "polygon_refs", 0x6c),
+    member("void*", "vertex_data_or_shared_owner", 0x70),
+    member("void*", "reserved_74", 0x74),
+    member("Material_Node**", "controller_slots", 0x78),
+    member("Mesh_CmdList*", "command_list", 0x7c),
+    member("uint8_t", "reserved_80[8]", 0x80),
+    member("uint32_t", "render_flags", 0x88),
+    member("int32_t", "cull_radius", 0x8c),
+    size=0x90,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Script_OpcodeTable",
+    member("Script_CommandCallback", "handlers[45]", 0x0),
+    size=0xb4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Sprite_RenderContext",
+    member("uint32_t", "flags", 0x0),
+    member("Material_RuntimeDescriptor*", "texture_descriptor", 0x4),
+    member("uint8_t", "reserved_08[8]", 0x8),
+    member("Math_UV8", "subrect_uv", 0x10),
+    member("uint8_t", "reserved_12[2]", 0x12),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Timer_State",
+    member("int32_t", "start_time", 0x0),
+    member("int32_t", "elapsed", 0x4),
+    member("int32_t", "interval", 0x8),
+    member("int32_t", "flags", 0xc),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Trail_BoneQueueEntry",
+    member("int32_t", "segment_index", 0x0),
+    member("int32_t", "lateral_offset_x", 0x4),
+    member("int32_t", "lateral_offset_z", 0x8),
+    member("int16_t", "facing_angle", 0xc),
+    member("uint16_t", "unknown_0e", 0xe),
+    member("uint32_t", "spawn_frame", 0x10),
+    member("Math_Vec3I32", "position", 0x14),
+    size=0x20,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Actor_CollisionExtentPackedYZ",
+    member("int16_t", "extent_x_q6", 0x0),
+    member("int32_t", "extents_yz_q6", 0x2),
+    member("int16_t", "collision_probe_radius_q6", 0x6),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Actor_CollisionExtentPackedPairs",
+    member("int32_t", "extents_xy_q6", 0x0),
+    member("int32_t", "extent_z_and_probe_radius_q6", 0x4),
+    size=0x8,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Component_LocalPositionCounts",
+    member("Math_Vec2I32", "local_xy", 0x0),
+    member("uint8_t", "spawn_count_byte0", 0x8),
+    member("uint8_t", "active_count", 0x9),
+    member("uint8_t", "spawn_count_byte2", 0xa),
+    member("uint8_t", "active_max", 0xb),
+    size=0xc,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Math_RotationElementPairs",
+    member("uint32_t", "m00_m01", 0x0),
+    member("uint32_t", "m02_m10", 0x4),
+    member("uint32_t", "m11_m12", 0x8),
+    member("uint32_t", "m20_m21", 0xc),
+    member("int16_t", "m22", 0x10),
+    size=0x12,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Math_RotationCrossingPair",
+    member("int16_t", "preceding_elements[3]", 0x0),
+    member("uint32_t", "m10_m11", 0x6),
+    size=0xa,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Physics_PreprocessVelocityView",
+    member("uint32_t", "reserved_00", 0x0),
+    member("Math_Vec3I32", "resolved_velocity_q12", 0x4),
+    size=0x10,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Animation_KeyframeTimingFields",
+    member("uint32_t", "ease_record_index", 0x0, bit_width=8),
+    member("uint32_t", "curve_shape_parameter", 0x0, bit_width=12),
+    member("uint32_t", "time_index_q6", 0x0, bit_width=12),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.struct(
+    "Animation_VisibilityTimingFields",
+    member("uint32_t", "reserved_or_flags", 0x0, bit_width=20),
+    member("uint32_t", "time_index_q6", 0x0, bit_width=11),
+    member("uint32_t", "visible", 0x0, bit_width=1),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Math_RotationScratch",
+    member("Math_Matrix3x3I16", "matrix", 0x0),
+    member("Math_RotationElementPairs", "pairs", 0x0),
+    member("Math_RotationCrossingPair", "crossing_pair", 0x0),
+    size=0x12,
+    alignment=2,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Physics_PreprocessMatrixOrVelocity",
+    member("Math_Matrix3x3I16", "rotation_q12", 0x0),
+    member("Physics_PreprocessVelocityView", "collision", 0x0),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Physics_PreprocessQuaternionOrVelocity",
+    member("Animation_SplineChannelQuatConstantView", "constant_quaternion", 0x0),
+    member("Math_Vec3I32", "saved_velocity_q12", 0x0),
+    size=0xc,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Animation_KeyframeTiming",
+    member("Animation_KeyframeTimingPackedView", "packed", 0x0),
+    member("Animation_KeyframeTimingFields", "fields", 0x0),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Animation_VisibilityTiming",
+    member("Animation_VisibilityKeyframePackedView", "packed", 0x0),
+    member("Animation_VisibilityTimingFields", "fields", 0x0),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Bone_JointTrackingScratch",
+    member("Math_Matrix3x3I16", "rotation", 0x0),
+    member("Bone_JointTrackingDeltaView", "target", 0x0),
+    size=0x14,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Bone_SkinSourceScratch",
+    member("Animation_FrameVertex*", "tables[10]", 0x0),
+    member("uint32_t", "target_indices[10]", 0x0),
+    size=0x28,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "Scene_AnimationSource",
+    member("Animation_DataBlock*", "direct_block", 0x0),
+    member("Animation_StateTable*", "state_table", 0x0),
+    size=0x4,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "D3D_InitFormatOrViewport",
+    member("DDraw_PixelFormat", "z_buffer_format", 0x0),
+    member("D3D_Viewport7", "viewport", 0x0),
+    size=0x20,
+    alignment=4,
+    incomplete=False,
+    unstable=True,
+)
+
+stable.union(
+    "ControllerPayload",
+    member("ColorControllerPayload", "color", 0x0),
+    member("FrameControllerPrefix", "frames", 0x0),
+    size=0x8,
+    incomplete=False,
+    unstable=True,
+)
+
 
 BLUEPRINT = stable
